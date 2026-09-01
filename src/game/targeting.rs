@@ -266,8 +266,9 @@ impl Game {
         // Grist isn't on the battlefield, it's a 1/1 Insect creature in
         // addition to its other types" is a clause about a card rather than
         // about a permanent, so nothing in the battlefield layer walk would
-        // ever read it.
-        if let Some(zone) = context.zone() {
+        // ever read it. The stack is one of the zones it reaches: the spell
+        // on its way in is a creature spell there.
+        if let Some(zone) = context.self_characteristic_zone() {
             for effect in Self::self_characteristics_in_zone(definition, zone) {
                 match effect {
                     AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(

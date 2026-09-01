@@ -497,3 +497,115 @@ fn the_plus_finishes_without_him() {
         "with Grist himself in the graveyard, having nowhere to take a counter",
     );
 }
+
+/// Player One casts Grist with Player Two holding `answer` and the mana for
+/// it, and hands priority over with the spell still on the stack.
+fn cast_him_into(answer: CardDefinitionId) -> (Game, GameObjectId, GameObjectId) {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[1].hand.clear();
+    let grist = card(133_000, cards::GRIST_THE_HUNGER_TIDE, PlayerId::One);
+    let grist_id = grist.id;
+    game.players[0].hand.push(grist);
+    let held = card(133_001, answer, PlayerId::Two);
+    let held_id = held.id;
+    game.players[1].hand.push(held);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == grist_id))
+        .expect("three mana casts him");
+    game.apply(PlayerId::One, cast).expect("he is cast");
+    let spell = game.stack.iter().last().expect("he is on the stack").id;
+    game.priority = PlayerId::Two;
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    (game, spell, held_id)
+}
+
+/// Whether `answer` is offered at the spell `spell`.
+fn answers(game: &Game, answer: GameObjectId, spell: GameObjectId) -> Option<Action> {
+    game.legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == answer
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(spell))
+            }
+            _ => false,
+        })
+}
+
+/// Its ruling: "it could be countered by Essence Scatter (but not by
+/// Negate)." The zone list the clause reads reaches the stack, so the spell
+/// on its way in is a creature spell and answers to one.
+#[test]
+fn essence_scatter_counters_the_grist_spell() {
+    let (mut game, spell, scatter) = cast_him_into(cards::ESSENCE_SCATTER);
+
+    let cast = answers(&game, scatter, spell).expect("a creature spell is what it counters");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GRIST_THE_HUNGER_TIDE),
+        "he was countered on his way in",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GRIST_THE_HUNGER_TIDE),
+        "and never arrived",
+    );
+}
+
+/// The other half of the same ruling: a creature spell is no target for
+/// Negate. The same position offers Essence Scatter, so what stops it is
+/// the spell's type rather than the mana or the priority.
+#[test]
+fn negate_cannot_touch_the_grist_spell() {
+    let (game, spell, negate) = cast_him_into(cards::NEGATE);
+    assert!(
+        answers(&game, negate, spell).is_none(),
+        "\"counter target noncreature spell\" does not describe him",
+    );
+
+    let (control, spell, scatter) = cast_him_into(cards::ESSENCE_SCATTER);
+    assert!(
+        answers(&control, scatter, spell).is_some(),
+        "the seat could answer a creature spell from here",
+    );
+}
+
+/// He is only a creature until he lands: the spell that resolves is a
+/// planeswalker and nothing more.
+#[test]
+fn the_creature_spell_still_resolves_into_a_planeswalker() {
+    let (mut game, _spell, _held) = cast_him_into(cards::NEGATE);
+    settle(&mut game);
+
+    let permanent = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIST_THE_HUNGER_TIDE)
+        .expect("he arrived");
+    let types = game.permanent_types(permanent).expect("he has types");
+    assert!(types.contains(CardType::Planeswalker), "a planeswalker");
+    assert!(
+        !types.contains(CardType::Creature),
+        "and no longer a creature",
+    );
+}

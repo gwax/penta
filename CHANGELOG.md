@@ -51,6 +51,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A card's own zone-scoped clause is read on the stack too.** "As long as
+  Grist isn't on the battlefield, it's a 1/1 Insect creature in addition to
+  its other types" describes the card in every zone but one, and the stack is
+  one of them: the ruling is that Grist "could be countered by Essence
+  Scatter (but not by Negate)". The card view resolved a source zone for
+  every zone except the stack and the battlefield, so a Grist spell was a
+  bare planeswalker spell -- Essence Scatter could not touch it and Negate
+  could. The stack now answers as the zone it is, while the battlefield keeps
+  its own layer walk and answers nothing. What resolves is unchanged: the
+  spell still becomes a planeswalker and nothing else.
+
 - **A spell on the stack has the mana value its X gives it.** CR 202.3b: the
   X in a spell's cost is the number its caster announced, and the mana value
   read off the spell counts it. The stack read ignored X entirely, so a Mana

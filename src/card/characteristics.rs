@@ -45,6 +45,19 @@ impl CharacteristicContext {
         }
     }
 
+    /// The zone a card's own zone-scoped static clause is read in. "As long
+    /// as this isn't on the battlefield" reaches the spell on the stack too,
+    /// so this answers where [`Self::zone`] deliberately does not; the
+    /// battlefield keeps its own layer walk and answers `None` here.
+    #[must_use]
+    pub const fn self_characteristic_zone(&self) -> Option<super::ZoneKind> {
+        match self {
+            Self::Stack { .. } => Some(super::ZoneKind::Stack),
+            Self::Battlefield { .. } => None,
+            other => other.zone(),
+        }
+    }
+
     const fn uses_canonical_outside_stack_parts(&self) -> bool {
         matches!(
             self,

@@ -281,7 +281,9 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                 && shared_cannot_be_countered_effect(effect);
             // "As long as this isn't on the battlefield, it's a 1/1 Insect
             // creature": what a card says about itself, read by the card
-            // view in whichever of its zones the clause names.
+            // view in whichever of its zones the clause names. The stack is
+            // one of them -- the spell on its way in wears the clause too --
+            // and only the battlefield, with its own layer walk, is not.
             let card_source_effect = !source_zones.is_empty()
                 && source_zones.iter().all(|zone| {
                     matches!(
@@ -289,6 +291,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
                         ZoneKind::Library
                             | ZoneKind::Hand
                             | ZoneKind::Graveyard
+                            | ZoneKind::Stack
                             | ZoneKind::Exile
                             | ZoneKind::Command
                     )
