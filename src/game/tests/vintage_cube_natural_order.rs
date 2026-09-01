@@ -188,3 +188,142 @@ fn the_creature_is_gone_before_anybody_may_answer() {
         "with the mana spent as well",
     );
 }
+
+/// "You can't sacrifice more creatures to search for more creature cards."
+/// Two green creatures are two ways to pay the one cost, never a way to pay
+/// it twice: every cast on offer gives up exactly one of them.
+#[test]
+fn two_green_creatures_are_two_ways_to_pay_and_not_a_double_cost() {
+    let (mut game, order) = staged(true);
+    let second = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let elves = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::LLANOWAR_ELVES)
+        .expect("the Elf is out")
+        .card
+        .id;
+
+    let paid: Vec<Vec<GameObjectId>> = cast_actions(&game, order)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { sacrifices, .. } => Some(sacrifices),
+            _ => None,
+        })
+        .collect();
+
+    assert!(!paid.is_empty(), "two green creatures make it castable");
+    assert!(
+        paid.iter().all(|sacrifice| sacrifice.len() == 1),
+        "one creature apiece, never a pair: {paid:?}",
+    );
+    assert!(
+        paid.iter().any(|sacrifice| sacrifice == &[elves]),
+        "the Elf is one way to pay",
+    );
+    assert!(
+        paid.iter().any(|sacrifice| sacrifice == &[second]),
+        "and the bear is the other",
+    );
+}
+
+/// "Sacrifice a green creature" is one you control: theirs pays for nothing,
+/// however green it is.
+#[test]
+fn their_green_creature_does_not_pay_for_it() {
+    let (mut game, order) = staged(false);
+    game.put_onto_battlefield(PlayerId::Two, cards::LLANOWAR_ELVES)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert!(
+        cast_actions(&game, order).is_empty(),
+        "a green creature across the table is not yours to give up",
+    );
+}
+
+/// The sacrifice is paid on announcement, so a library with no green
+/// creature in it still costs you the Elf: the search is made and finds
+/// nothing.
+#[test]
+fn a_library_with_nothing_to_find_still_eats_the_creature() {
+    let (mut game, order) = staged(true);
+    game.players[0]
+        .library
+        .retain(|card| card.definition != cards::WORLDSPINE_WURM);
+
+    let cast = cast_actions(&game, order)
+        .into_iter()
+        .next()
+        .expect("the Elf makes it castable whether or not it can find");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LLANOWAR_ELVES),
+        "the Elf was given up before anything was searched for",
+    );
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert!(game.battlefield.is_empty(), "and nothing came back for it");
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "the Bolt it looked past is still there",
+    );
+}
+
+/// It is put onto the battlefield rather than cast, and that hurries
+/// nothing: the Wurm it finds cannot attack the turn it arrives.
+#[test]
+fn what_it_finds_arrives_summoning_sick() {
+    let (mut game, order) = staged(true);
+    let cast = cast_actions(&game, order)
+        .into_iter()
+        .next()
+        .expect("the Elf pays for it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+    let search = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the search offers what it found");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: vec![search.options[0].id],
+        },
+    )
+    .expect("taking the Wurm is legal");
+    drain_pending(&mut game);
+
+    let wurm = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::WORLDSPINE_WURM)
+        .expect("it arrived")
+        .card
+        .id;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::DeclareAttacker { attacker, .. } if *attacker == wurm
+            )),
+        "put onto the battlefield is not the same as having been here",
+    );
+}
