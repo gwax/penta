@@ -503,3 +503,66 @@ fn the_avenger_waits_for_a_main_phase_with_an_empty_stack() {
         "and a spell on the stack closes the window too",
     );
 }
+
+/// "The mana value of a transforming double-faced card is the mana value of
+/// its front face, no matter which face is up." The Avenger has no mana cost
+/// printed on him at all, and he is worth the Pariah's two.
+#[test]
+fn the_avenger_is_worth_the_pariahs_mana_value() {
+    let (mut game, ajani) = ajani_on_battlefield();
+    let pariah_value = game.permanent_mana_value(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == ajani)
+            .expect("he is out"),
+    );
+    assert_eq!(pariah_value, 2, "{{1}}{{W}} is two");
+
+    let avenger = avenger(&mut game);
+
+    assert_eq!(
+        game.permanent_mana_value(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == avenger)
+                .expect("he turned over"),
+        ),
+        2,
+        "and turning him over does not change what he cost",
+    );
+}
+
+/// "In every zone other than the battlefield, consider only the
+/// characteristics of its front face." A card in the graveyard is the
+/// Pariah: a creature card, and no planeswalker at all.
+#[test]
+fn off_the_battlefield_he_is_the_front_face_only() {
+    let (mut game, ajani) = ajani_on_battlefield();
+    let buried = game
+        .build_zone(PlayerId::One, &[cards::AJANI_NACATL_PARIAH])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].graveyard.push(buried);
+    let card = game.players[0].graveyard.last().expect("he is lying there");
+
+    assert!(
+        game.card_object_matches(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            card,
+            ZoneKind::Graveyard,
+            ajani,
+        ),
+        "the front face is a Cat Warrior",
+    );
+    assert!(
+        !game.card_object_matches(
+            ObjectPredicateDef::HasType(CardType::Planeswalker),
+            card,
+            ZoneKind::Graveyard,
+            ajani,
+        ),
+        "and the back face is no part of him there",
+    );
+}
