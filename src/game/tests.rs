@@ -747,6 +747,7 @@ mod vintage_cube_urza;
 mod vintage_cube_urzas_bauble;
 mod vintage_cube_urzas_saga;
 mod vintage_cube_vampire_hexmage;
+mod vintage_cube_vampiric_tutor;
 mod vintage_cube_vaultborn_tyrant;
 mod vintage_cube_verdant_catacombs;
 mod vintage_cube_verge;
