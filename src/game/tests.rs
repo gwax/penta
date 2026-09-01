@@ -506,6 +506,7 @@ mod vintage_cube_imperial_seal;
 mod vintage_cube_infect;
 mod vintage_cube_infernal_grasp;
 mod vintage_cube_inquisition_of_kozilek;
+mod vintage_cube_inspiring_vantage;
 mod vintage_cube_inti;
 mod vintage_cube_invigorate;
 mod vintage_cube_ivora;
