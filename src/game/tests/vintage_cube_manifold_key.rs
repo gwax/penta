@@ -320,3 +320,116 @@ fn an_untapped_artifact_is_a_legal_target_and_nothing_happens() {
         "along with the mana",
     );
 }
+
+/// Both abilities want the Key's own tap, so it does one of them a turn: the
+/// untap spends the tap the unblockable clause would have wanted.
+#[test]
+fn its_two_abilities_share_the_one_tap() {
+    let (mut game, key) = staged();
+    let sol_ring = game
+        .put_onto_battlefield(PlayerId::One, cards::SOL_RING)
+        .expect("cataloged");
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == sol_ring)
+        .expect("it is there")
+        .tapped = true;
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 6);
+
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(
+                |action| matches!(action, Action::ActivateAbility { source, .. } if *source == key),
+            )
+            .count()
+    };
+    assert!(
+        offered(&game) >= 2,
+        "with mana for both, the Ring and the bear are each on offer",
+    );
+
+    activate_at(&mut game, key, sol_ring);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == sol_ring)
+            .expect("it is there")
+            .tapped,
+        "the Ring came back up",
+    );
+    assert_eq!(
+        offered(&game),
+        0,
+        "and the Key is tapped, so nothing else of its is on offer",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears),
+        "the bear it might have made unblockable is still standing there",
+    );
+}
+
+/// "Target creature" names no controller: making one of theirs unblockable
+/// is legal, and rarely what you want.
+#[test]
+fn the_unblockable_clause_may_name_their_creature() {
+    let (mut game, key) = staged();
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::ISLAND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    let named = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } if source == key => Some(
+                targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .filter_map(|target| match target {
+                        Target::Permanent(id) => Some(*id),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert!(named.contains(&mine), "your own bear is a creature");
+    assert!(named.contains(&theirs), "and so is their Angel");
+    assert!(
+        !named.iter().any(|id| {
+            game.battlefield.iter().any(|permanent| {
+                permanent.card.id == *id && permanent.card.definition == cards::ISLAND
+            })
+        }),
+        "their land is neither a creature nor an artifact: {named:?}",
+    );
+}
