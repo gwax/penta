@@ -417,3 +417,106 @@ fn the_prisoner_leaves_its_counters_behind() {
         "so what came back is the printed 2/2",
     );
 }
+
+/// "Auras attached to the exiled permanent will be put into their owners'
+/// graveyards. Any Equipment will become unattached and remain on the
+/// battlefield." The prisoner is taken alone, and the two kinds of
+/// attachment left behind are dealt with differently.
+#[test]
+fn what_was_attached_to_the_prisoner_is_left_behind() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    let aura = game
+        .put_onto_battlefield(PlayerId::Two, cards::HOLY_STRENGTH)
+        .expect("cataloged");
+    // The Aura changes zones on its way out, so what it becomes is a new
+    // object: it is followed by its card rather than by its id.
+    let carapace = game
+        .put_onto_battlefield(PlayerId::Two, cards::COPPER_CARAPACE)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == aura || permanent.card.id == carapace {
+            permanent.attached_to = Some(angel);
+        }
+    }
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+    let dressed = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == angel)
+        .expect("the Angel is out");
+    assert_eq!(
+        (game.power(dressed), game.toughness(dressed)),
+        (Some(7), Some(8)),
+        "a 4/4 wearing both of them",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::STATIC_PRISON)
+        .expect("cataloged");
+    // All three are nonland permanents they control, so the Angel is named
+    // rather than taken as whatever came first.
+    for _ in 0..16 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            if game.apply(game.priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        let wanted = decision
+            .options
+            .iter()
+            .find(|option| option.label == "Serra Angel")
+            .or_else(|| decision.options.first());
+        let options = wanted.map(|option| vec![option.id]).unwrap_or_default();
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("the decision accepts what it offered");
+    }
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != angel),
+        "the Angel was taken",
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::HOLY_STRENGTH),
+        "the Aura went to its owner's graveyard",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::HOLY_STRENGTH),
+        "and did not stay behind attached to nothing",
+    );
+    let carapace = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == carapace)
+        .expect("the Equipment stayed on the battlefield");
+    assert_eq!(
+        carapace.attached_to, None,
+        "unattached, with nothing left to equip",
+    );
+}
