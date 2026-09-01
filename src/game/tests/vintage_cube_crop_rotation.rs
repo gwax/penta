@@ -269,3 +269,67 @@ fn what_it_finds_arrives_as_that_land_says() {
         );
     }
 }
+
+/// "You can't cast Crop Rotation without sacrificing a land": a board with
+/// no land offers no cast, whatever mana is up.
+#[test]
+fn without_a_land_it_cannot_be_cast() {
+    let (game, rotation, _) = staged(0);
+
+    assert!(
+        casts(&game, rotation).is_empty(),
+        "there is nothing to give up, so there is nothing to cast",
+    );
+}
+
+/// "Search your library for a *land* card": a spell in the library is no
+/// answer, and neither is a land in theirs.
+#[test]
+fn the_search_finds_only_a_land_of_your_own() {
+    let (mut game, rotation, lands) = staged(1);
+    game.players[0]
+        .library
+        .push(card(126_300, cards::LIGHTNING_BOLT, PlayerId::One));
+    game.players[1].library.clear();
+    game.players[1]
+        .library
+        .push(card(126_301, cards::STRIP_MINE, PlayerId::Two));
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell {
+                card, sacrifices, ..
+            } => *card == rotation && sacrifices.contains(&lands[0]),
+            _ => false,
+        })
+        .expect("one green and one land casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_priority_pair(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the search asks what to find");
+    let offered = decision
+        .options
+        .iter()
+        .filter_map(|option| {
+            option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition())
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        offered,
+        vec![cards::GAEAS_CRADLE],
+        "the land in your own library and nothing else",
+    );
+    assert_eq!(
+        game.players[1].library.len(),
+        1,
+        "and theirs was never looked at",
+    );
+}
