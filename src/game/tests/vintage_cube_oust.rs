@@ -164,3 +164,117 @@ fn a_one_card_library_puts_it_on_the_bottom() {
         "one card above it is all there was",
     );
 }
+
+/// "If the targeted creature's owner has no cards left in their library,
+/// that creature is put into that library as the only card there." Second
+/// from the top of nothing is the top.
+#[test]
+fn an_empty_library_takes_it_as_its_only_card() {
+    let (mut game, oust) = staged();
+    game.players[1].library.clear();
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    cast_oust(&mut game, oust, bears);
+
+    assert_eq!(
+        library_from_top(&game, PlayerId::Two),
+        vec![cards::GRIZZLY_BEARS],
+        "it is the whole library now",
+    );
+    assert_eq!(game.players[1].life, 23, "and they were paid all the same");
+}
+
+/// "If the targeted creature is a token, it will cease to exist after it's
+/// put into its owner's library." The library is no fuller for it, and the
+/// three life is paid regardless.
+#[test]
+fn a_token_ceases_to_exist_and_the_life_is_still_paid() {
+    let (mut game, oust) = staged();
+    game.create_token(
+        PlayerId::Two,
+        tokens::creature(&["Bear"], &[ManaColor::Green], 2, 2),
+    );
+    drain_pending(&mut game);
+    let token = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("the token is out")
+        .card
+        .id;
+    game.priority = PlayerId::One;
+    let library_before = game.players[1].library.len();
+
+    cast_oust(&mut game, oust, token);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != token),
+        "it left the battlefield",
+    );
+    assert_eq!(
+        game.players[1].library.len(),
+        library_before,
+        "and a token that leaves ceases to exist rather than joining a library",
+    );
+    assert_eq!(game.players[1].life, 23, "the three life was paid anyway");
+}
+
+/// "If the targeted creature is an illegal target by the time Oust resolves,
+/// the spell doesn't resolve. No one gains life."
+#[test]
+fn a_target_that_is_gone_pays_nobody() {
+    let (mut game, oust) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let library_before = game.players[1].library.len();
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == oust
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(bears))
+            }
+            _ => false,
+        })
+        .expect("the bear is a legal target");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    game.move_permanents_to_graveyard(&[bears]);
+    game.check_state_based_actions();
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        if game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert_eq!(game.players[1].life, 20, "nobody gained anything");
+    assert_eq!(
+        game.players[1].library.len(),
+        library_before,
+        "and the library is as it was",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::OUST),
+        "the Oust itself went to the graveyard",
+    );
+}
