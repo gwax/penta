@@ -260,3 +260,82 @@ fn it_needs_a_planeswalker_to_point_at() {
 
     assert_eq!(game.players[1].life, 16);
 }
+
+/// Its ruling: "once a creature with power 3 or greater has blocked this
+/// creature, changing the power of the blocking creature won't cause this
+/// creature to become unblocked." The restriction is read as blockers are
+/// declared and never again.
+#[test]
+fn a_blocker_shrunk_after_blocking_stays_in_the_way() {
+    let (mut game, beast) = staged();
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.declare_attacker(beast, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    game.step = Step::DeclareBlockers;
+    game.declare_blocker(angel, beast);
+    game.finish_declaring_blockers();
+    settle(&mut game);
+
+    // Two power taken off it after the block: a 2/2 could never have
+    // blocked, and it is blocking all the same.
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == angel)
+        .expect("it is there")
+        .set_counters(CounterKind::MinusOneMinusOne, 2);
+    let life = game.players[1].life;
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[1].life, life,
+        "the Beast is still blocked, so nothing got through",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != angel),
+        "and deathtouch finished what stood in front of it",
+    );
+}
+
+/// The other side of the same restriction: it is the power as blockers are
+/// declared that matters, so a 2/2 grown before that step may block.
+#[test]
+fn a_blocker_grown_before_blocking_may_stand_in_the_way() {
+    let (mut game, beast) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.declare_attacker(beast, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    game.step = Step::DeclareBlockers;
+
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::Two).into_iter().any(|action| {
+            matches!(
+                action,
+                Action::DeclareBlocker { blocker, attacker }
+                    if blocker == bears && attacker == beast
+            )
+        })
+    };
+    assert!(!offered(&game), "a 2/2 may not block it");
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("it is there")
+        .set_counters(CounterKind::PlusOnePlusOne, 1);
+
+    assert!(
+        offered(&game),
+        "and a 3/3 may, whatever it was a moment ago",
+    );
+}
