@@ -727,6 +727,7 @@ mod vintage_cube_tinker;
 mod vintage_cube_tireless_tracker;
 mod vintage_cube_tishanas_tidebinder;
 mod vintage_cube_titania;
+mod vintage_cube_tolarian_academy;
 mod vintage_cube_torsten;
 mod vintage_cube_touch_spirit_realm;
 mod vintage_cube_toxic_deluge;
