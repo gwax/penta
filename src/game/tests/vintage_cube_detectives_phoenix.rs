@@ -336,3 +336,75 @@ fn the_host_gains_haste_as_well() {
     );
     assert!(game.has_flying(host), "and its flying");
 }
+
+/// "Opponents can't try to remove cards from your graveyard to stop you from
+/// collecting evidence": the cards are exiled as the spell is announced,
+/// while it is still on the stack and before anybody has priority.
+#[test]
+fn the_evidence_is_collected_on_announcement() {
+    let (mut game, phoenix, bears) = staged(true, &SIX_MANA_VALUE);
+    let cast = bestow_cast(&game, phoenix, bears).expect("bestow is offered");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    assert_eq!(game.stack.len(), 1, "the Phoenix has not resolved yet");
+    let collected: u16 = game.players[0]
+        .exile
+        .iter()
+        .filter_map(|card| game.catalog.get(card.definition))
+        .map(|definition| definition.rules.printed_mana_cost().mana_value())
+        .sum();
+    assert!(
+        collected >= 6,
+        "and six mana value has already left the graveyard for exile: {collected}",
+    );
+}
+
+/// "An Aura with bestow remains untapped when it becomes unattached ... It
+/// can attack on the turn it becomes unattached if it's been under your
+/// control continuously, even as an Aura, since your most recent turn
+/// began." The Phoenix that loses its host is an attacker that turn.
+#[test]
+fn the_unattached_phoenix_is_untapped_and_may_attack() {
+    let (mut game, phoenix, bears) = staged(true, &SIX_MANA_VALUE);
+    let cast = bestow_cast(&game, phoenix, bears).expect("bestow is offered");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+    // It has been here since before this turn, Aura or not.
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("the host is there")
+        .tapped = true;
+    let bird = on_battlefield(&game).expect("the Aura is there").card.id;
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bird)
+            .expect("it is there")
+            .tapped,
+        "a tapped host does not tap the Aura on it",
+    );
+
+    game.battlefield
+        .retain(|permanent| permanent.card.id != bears);
+    game.check_state_based_actions();
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+
+    let creature = on_battlefield(&game).expect("it stayed behind");
+    assert!(!creature.tapped, "and it is untapped as a creature too");
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| matches!(
+                action,
+                Action::DeclareAttacker { attacker, .. } if attacker == bird
+            )),
+        "so it may attack the turn it came loose",
+    );
+}
