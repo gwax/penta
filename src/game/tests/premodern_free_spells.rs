@@ -257,3 +257,105 @@ fn a_free_daze_is_still_worth_two() {
         "and the Island came back to hand rather than dying",
     );
 }
+
+/// "Two Islands you control" is the land type rather than the card name: a
+/// Tropical Island and an Underground Sea are two Islands, and a Wasteland
+/// beside them is none.
+#[test]
+fn gush_reads_the_island_type_rather_than_the_card() {
+    assert!(
+        free_cast_over(
+            cards::GUSH,
+            &[cards::TROPICAL_ISLAND, cards::UNDERGROUND_SEA],
+        )
+        .1
+        .is_some(),
+        "two duals with the Island type pay for it",
+    );
+    assert!(
+        free_cast_over(cards::GUSH, &[cards::TROPICAL_ISLAND, cards::WASTELAND])
+            .1
+            .is_none(),
+        "and a colourless land is not the second one",
+    );
+}
+
+/// "Islands *you control*": theirs are no help, however many they have.
+#[test]
+fn gush_cannot_bounce_their_islands() {
+    let mut game = ready();
+    for index in 0..3 {
+        game.battlefield
+            .push(creature(11_000 + index, cards::ISLAND, PlayerId::Two));
+    }
+    let gush = card(20_010, cards::GUSH, PlayerId::One);
+    let gush_id = gush.id;
+    game.players[PlayerId::One.index()].hand.push(gush);
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == gush_id && choices.costs().alternative().is_some())
+        }),
+        "three Islands across the table are nobody's to return",
+    );
+}
+
+/// The Islands are returned to pay for the spell rather than by it, so a
+/// Gush that never resolves has still cost them: the lands are in hand and
+/// the two cards are not.
+#[test]
+fn a_countered_gush_still_costs_its_islands() {
+    let (mut game, cast) = free_cast(cards::GUSH, 2);
+    game.stack.clear();
+    let counter = card(20_020, cards::COUNTERSPELL, PlayerId::Two);
+    let counter_id = counter.id;
+    game.players[PlayerId::Two.index()].hand.push(counter);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    game.apply(PlayerId::One, cast.expect("two Islands pay for it"))
+        .expect("it is cast");
+    let gush = game.stack.last().expect("the Gush is on the stack").id;
+    assert_eq!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .filter(|card| card.definition == cards::ISLAND)
+            .count(),
+        2,
+        "the lands came back as the cost was paid, before anything resolved",
+    );
+
+    game.priority = PlayerId::Two;
+    let answer = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == counter_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(gush))
+            }
+            _ => false,
+        })
+        .expect("a Counterspell answers it");
+    game.apply(PlayerId::Two, answer).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library,
+        "nothing was drawn",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .filter(|card| card.definition == cards::ISLAND)
+            .count(),
+        2,
+        "and the two lands are still bounced: a cost is paid whatever follows",
+    );
+}
