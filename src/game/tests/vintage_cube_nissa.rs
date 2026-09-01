@@ -16,9 +16,17 @@ fn resolve(game: &mut Game) {
     }
 }
 
-/// Puts Nissa on the battlefield and returns her object id.
+/// Puts Nissa on the battlefield with the loyalty she would have entered
+/// carrying, and returns her object id.
+///
+/// A permanent built by hand has no counters, and a planeswalker at zero
+/// loyalty is binned by the first state-based check -- which an entering
+/// land carrying an ability of its own is enough to run. Without the
+/// counters she survives only until something makes the game look, and a
+/// clause of hers read after that quietly answers nothing.
 fn nissa_on_the_battlefield(game: &mut Game, id: u32) -> GameObjectId {
-    let nissa = creature(id, cards::NISSA_WHO_SHAKES_THE_WORLD, PlayerId::One);
+    let mut nissa = creature(id, cards::NISSA_WHO_SHAKES_THE_WORLD, PlayerId::One);
+    nissa.set_counters(CounterKind::Loyalty, 5);
     let nissa_id = nissa.card.id;
     game.battlefield.push(nissa);
     nissa_id
@@ -364,19 +372,16 @@ fn tap_for(game: &mut Game, land: GameObjectId, color: ManaColor, player: Player
 }
 
 /// "Whenever you tap a Forest *for mana*" -- it does not say for green. A
-/// Taiga tapped for red is still a Forest being tapped, so the extra green
-/// comes anyway and the pool holds one of each.
+/// Stomping Ground tapped for red is still a Forest being tapped, so the
+/// extra green comes anyway and the pool holds one of each.
 #[test]
 fn a_forest_tapped_for_another_colour_still_adds_green() {
     let mut game = ready_game();
     game.battlefield.clear();
     nissa_on_the_battlefield(&mut game, 85_110);
-    let taiga = game
-        .put_onto_battlefield(PlayerId::One, cards::TAIGA)
-        .expect("cataloged");
-    drain_pending(&mut game);
+    let ground = land_ready(&mut game, cards::STOMPING_GROUND);
 
-    tap_for(&mut game, taiga, ManaColor::Red, PlayerId::One);
+    tap_for(&mut game, ground, ManaColor::Red, PlayerId::One);
 
     assert_eq!(
         game.players[0].mana_pool.red, 1,
@@ -453,4 +458,45 @@ fn the_plus_one_may_name_nothing() {
         before + 1,
         "the loyalty went up with nothing to show for it",
     );
+}
+
+/// Puts `definition` down untapped, whatever its own entry clause wanted.
+fn land_ready(game: &mut Game, definition: CardDefinitionId) -> GameObjectId {
+    let land = game
+        .put_onto_battlefield(PlayerId::One, definition)
+        .expect("cataloged");
+    drain_pending(game);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == land)
+    {
+        permanent.tapped = false;
+    }
+    land
+}
+
+/// "A Forest" is the land type rather than the card name, and the cube's
+/// Forests are mostly nonbasic: an ability-free Taiga, two shocklands and a
+/// surveil land all carry the type, and every one of them doubles.
+#[test]
+fn every_land_carrying_the_forest_type_doubles() {
+    for definition in [
+        cards::TAIGA,
+        cards::STOMPING_GROUND,
+        cards::TEMPLE_GARDEN,
+        cards::COMMERCIAL_DISTRICT,
+    ] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        nissa_on_the_battlefield(&mut game, 85_100);
+        let land = land_ready(&mut game, definition);
+
+        tap_for(&mut game, land, ManaColor::Green, PlayerId::One);
+
+        assert_eq!(
+            game.players[0].mana_pool.green, 2,
+            "{definition:?} is a Forest and doubles like one",
+        );
+    }
 }
