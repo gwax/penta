@@ -168,11 +168,22 @@ catalog-report: ## Print catalog and inline-audit coverage for every format cate
 # Seconds the *normal* Rust tier may spend running. Compilation is excluded:
 # it is bounded by the job timeout and says nothing about whether a test got
 # slow. The deferred sweeps are excluded too -- they are the nightly lane's
-# job, and folding them in here is what made this budget meaningless. Roughly
-# five thousand tests make runner variance meaningful, so keep output terse and
-# the normal profile lean while retaining a tight enough limit for one
-# accidentally slow test to show up.
-RUST_TEST_BUDGET_SECONDS ?= 30
+# job, and folding them in here is what made this budget meaningless.
+#
+# This number tracks the suite, and the suite grows. At about 5,750 tests the
+# tier measures roughly 35s on the public four-core runner and half that on a
+# developer machine, so 30s had started failing every push with nothing
+# actually wrong. 60s is that measurement with room to spare.
+#
+# Room to spare is not a licence. A change that adds seconds here is still
+# worth looking at, and one accidentally slow test still shows up against this
+# limit. What the limit cannot do is say *which* test, because a total is
+# dominated by how many tests there are: a red run means "the tier got
+# slower", never "someone wrote a slow test". Before raising it again, check
+# which of those two happened. Per-test times name the culprit --
+#   cargo nextest run --cargo-profile quick-test --workspace --all-targets
+# -- and twice now that has found a real quadratic rather than honest growth.
+RUST_TEST_BUDGET_SECONDS ?= 60
 
 test-rust-budget: ## Fail when the normal Rust tier runs longer than its budget.
 	cargo test --locked --profile quick-test $(RUST_NORMAL_TARGETS) --no-run
