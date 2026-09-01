@@ -187,3 +187,84 @@ fn without_a_rebel_he_stays_where_he_is() {
         "the mana alone does not buy him back",
     );
 }
+
+/// Its ruling: "tapping a Rebel you control is part of the cost... once a
+/// player has begun to activate the ability, other players may not respond
+/// by removing that Rebel to prevent it from being tapped." Both halves of
+/// the cost are paid as it is announced, with the return still on the stack.
+#[test]
+fn the_rebel_is_tapped_before_the_ability_resolves() {
+    let (mut game, otharri, _) = staged(&[]);
+    attack(&mut game, otharri);
+    let rebel = rebels(&game)[0].card.id;
+    game.move_permanents_to_graveyard(&[otharri]);
+    drain_pending(&mut game);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == rebel)
+        .expect("it is here")
+        .tapped = false;
+    let returning = game.players[0]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::OTHARRI_SUNS_GLORY)
+        .expect("he is in the graveyard")
+        .id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == returning),
+        )
+        .expect("four mana and an untapped Rebel buy him back");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    assert_eq!(game.stack.len(), 1, "the return is still on the stack");
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == rebel)
+            .is_some_and(|permanent| permanent.tapped),
+        "and the Rebel is already tapped, out of reach of an answer",
+    );
+    assert!(
+        game.players[0].mana.is_empty(),
+        "with the mana spent as well",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::OTHARRI_SUNS_GLORY),
+        "while he himself has not arrived yet",
+    );
+}
+
+/// Lifelink on a flier: the damage he deals is life he gains, and the Rebels
+/// he made carry none of it.
+#[test]
+fn his_damage_is_life_and_the_rebels_carry_none() {
+    let (mut game, otharri, _) = staged(&[]);
+    attack(&mut game, otharri);
+    let rebels = rebels(&game).len();
+    assert_eq!(rebels, 1, "one Rebel came with the attack");
+
+    game.step = Step::DeclareBlockers;
+    game.finish_declaring_blockers();
+    drain_pending(&mut game);
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[1].life,
+        20 - 5,
+        "three from him and two from the Rebel",
+    );
+    assert_eq!(
+        game.players[0].life, 23,
+        "and only his three came back as life",
+    );
+}
