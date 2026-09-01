@@ -322,3 +322,131 @@ fn the_loot_may_be_declined() {
     );
     assert!(game.players[PlayerId::One.index()].graveyard.is_empty());
 }
+
+/// "Vehicle is an artifact type, not a creature type. A Vehicle that's
+/// crewed won't normally have any creature type." It is a 3/3 artifact
+/// creature and a Vehicle, and nothing a tribal card would recognise.
+#[test]
+fn a_crewed_copter_has_no_creature_type() {
+    let (mut game, copter, _) = staged(&[cards::GRIZZLY_BEARS]);
+
+    crew(&mut game, copter);
+
+    let subtypes = game.effective_subtypes(permanent(&game, copter));
+    assert_eq!(
+        subtypes,
+        vec!["Vehicle"],
+        "the artifact type it was printed with, and no creature type at all",
+    );
+    assert!(
+        game.permanent_types(permanent(&game, copter))
+            .is_some_and(
+                |types| types.contains(CardType::Creature) && types.contains(CardType::Artifact)
+            ),
+        "while being both an artifact and a creature",
+    );
+}
+
+/// "When a Vehicle becomes a creature, that doesn't count as having a
+/// creature enter the battlefield." A Champion of Lambholt watching for
+/// arrivals sees nothing: the Copter was already there.
+#[test]
+fn crewing_is_not_a_creature_entering() {
+    let (mut game, copter, _) = staged(&[cards::GRIZZLY_BEARS]);
+    let champion = game
+        .put_onto_battlefield(PlayerId::One, cards::CHAMPION_OF_LAMBHOLT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let before = permanent(&game, champion).counters(CounterKind::PlusOnePlusOne);
+
+    crew(&mut game, copter);
+
+    assert_eq!(
+        permanent(&game, champion).counters(CounterKind::PlusOnePlusOne),
+        before,
+        "it only changed what it is",
+    );
+}
+
+/// "Creatures that crew a Vehicle aren't attached to it or related in any
+/// other way. Effects that affect the Vehicle don't affect the creatures
+/// that crewed it." Destroying the Copter leaves the bear that flew it
+/// standing, tapped and otherwise untouched.
+#[test]
+fn destroying_the_copter_leaves_its_crew_alone() {
+    let (mut game, copter, crewers) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = crewers[0];
+    crew(&mut game, copter);
+
+    game.destroy_permanent(copter);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != copter),
+        "the Vehicle is gone",
+    );
+    let bear = permanent(&game, bears);
+    assert_eq!(
+        (game.power(bear), game.toughness(bear)),
+        (Some(2), Some(2)),
+        "and the bear that crewed it is a bear still",
+    );
+    assert!(bear.tapped, "tapped, which is all the crewing cost it");
+}
+
+/// "You may tap more creatures than necessary to activate a crew ability."
+/// The cost is asked one creature at a time, and the seat that has already
+/// paid crew 1 is still offered the second creature: tapping both is legal,
+/// and both end up tapped for it.
+#[test]
+fn more_crew_than_needed_may_be_tapped() {
+    let (mut game, copter, crewers) = staged(&[cards::GRIZZLY_BEARS, cards::SAVANNAH_LIONS]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == copter),
+        )
+        .expect("crew is activatable");
+    game.apply(PlayerId::One, action).expect("it crews");
+    // The cost is paid one creature at a time, so both are tapped by
+    // answering twice rather than by naming a pair.
+    for crewer in &crewers {
+        let decision = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+            .expect("it asks who crews");
+        let option = decision
+            .options
+            .iter()
+            .find(|option| option.card.is_some_and(|(object, _)| object == *crewer))
+            .unwrap_or_else(|| panic!("{crewer:?} is still on offer"))
+            .id;
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![option],
+            },
+        )
+        .expect("tapping it is legal");
+    }
+    settle(&mut game);
+
+    assert!(
+        is_creature(&game, copter),
+        "one power was enough twice over"
+    );
+    assert!(
+        crewers
+            .iter()
+            .all(|crewer| permanent(&game, *crewer).tapped),
+        "and both of them paid for it",
+    );
+}
