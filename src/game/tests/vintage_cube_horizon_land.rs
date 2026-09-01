@@ -448,3 +448,110 @@ fn the_mana_resolves_at_once_and_the_draw_waits_on_the_stack() {
         "the card arrives when the ability resolves",
     );
 }
+
+/// The Grove as it is actually played: it has no clause to tap it, and a
+/// land has no summoning sickness, so the turn it comes down is a turn it
+/// pays for something.
+#[test]
+fn a_grove_played_this_turn_taps_the_same_turn() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    let held = card(43_000, cards::WATERLOGGED_GROVE, PlayerId::One);
+    let held_id = held.id;
+    game.players[PlayerId::One.index()].hand.push(held);
+    game.players[PlayerId::One.index()].lands_played_this_turn = 0;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == held_id))
+        .expect("a land drop is available");
+    game.apply(PlayerId::One, play).expect("it is playable");
+    drain_pending(&mut game);
+
+    let grove = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::WATERLOGGED_GROVE)
+        .expect("it was played");
+    assert!(!grove.tapped, "a horizon land enters untapped");
+    let grove_id = grove.card.id;
+    assert_eq!(
+        mana_colors(&game, grove_id),
+        vec![ManaColor::Green, ManaColor::Blue],
+        "and offers both its colours at once",
+    );
+
+    let tap = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility { source, color, .. }
+                    if *source == grove_id && *color == ManaColor::Green
+            )
+        })
+        .expect("green is on offer");
+    game.apply(PlayerId::One, tap).expect("it taps");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[0].life, 19, "the life is paid on the way");
+    assert_eq!(
+        game.players[0].mana_pool.green, 1,
+        "and the green is in the pool",
+    );
+}
+
+/// The same land drop cashed in instead: with a mana from somewhere else the
+/// Grove is a card the turn it arrives, without ever having made mana or
+/// having paid a life.
+#[test]
+fn a_grove_played_this_turn_may_be_cashed_in_at_once() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    let held = card(43_100, cards::WATERLOGGED_GROVE, PlayerId::One);
+    let held_id = held.id;
+    game.players[PlayerId::One.index()].hand.push(held);
+    game.players[PlayerId::One.index()].lands_played_this_turn = 0;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let before = game.players[0].hand.len();
+
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == held_id))
+        .expect("a land drop is available");
+    game.apply(PlayerId::One, play).expect("it is playable");
+    drain_pending(&mut game);
+    let grove = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::WATERLOGGED_GROVE)
+        .expect("it was played")
+        .card
+        .id;
+
+    cash_in(&mut game, grove);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == grove),
+        "it sacrificed itself to pay",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        before,
+        "the land left the hand and a card came back to it",
+    );
+    assert_eq!(game.players[0].life, 20, "and no life was paid for that");
+}
