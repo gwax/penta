@@ -218,3 +218,110 @@ fn it_blocks_only_fliers() {
         "and the Angel is not",
     );
 }
+
+/// "If an Adventure spell leaves the stack in any way other than resolving,
+/// that card won't be exiled and its controller won't be able to play it
+/// from exile later." A countered Petty Theft is an ordinary card in an
+/// ordinary graveyard.
+#[test]
+fn a_countered_adventure_is_buried_rather_than_exiled() {
+    let (mut game, card) = staged(2);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let counter = game
+        .build_zone(PlayerId::Two, &[cards::COUNTERSPELL])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let counter_id = counter.id;
+    game.players[PlayerId::Two.index()].hand.push(counter);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+    game.priority = PlayerId::One;
+
+    let theft = cast_with(&game, card, PlayOptionId(1)).expect("two mana casts it");
+    game.apply(PlayerId::One, theft).expect("it is cast");
+    let spell = game.stack.last().expect("the Theft is on the stack").id;
+    game.priority = PlayerId::Two;
+    let answer = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == counter_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(spell))
+            }
+            _ => false,
+        })
+        .expect("a Counterspell answers an Adventure like any other spell");
+    game.apply(PlayerId::Two, answer).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == theirs),
+        "their Angel never left",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].exile.is_empty(),
+        "and nothing waits in exile",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::BRAZEN_BORROWER),
+        "the card is in the graveyard, where a countered spell goes",
+    );
+}
+
+/// "When playing a card as an Adventure, use the alternative characteristics
+/// and ignore all of the card's normal characteristics." On the stack, Petty
+/// Theft is an instant: an Essence Scatter cannot name it, and the Faerie it
+/// comes back as is exactly what an Essence Scatter is for.
+#[test]
+fn the_adventure_on_the_stack_is_no_creature_spell() {
+    let scatter_offered = |option: PlayOptionId| {
+        let (mut game, card) = staged(3);
+        game.put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        let scatter = game
+            .build_zone(PlayerId::Two, &[cards::ESSENCE_SCATTER])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        let scatter_id = scatter.id;
+        game.players[PlayerId::Two.index()].hand.push(scatter);
+        game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 1);
+        game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+        game.priority = PlayerId::One;
+
+        let cast = cast_with(&game, card, option).expect("that half is castable");
+        game.apply(PlayerId::One, cast).expect("it is cast");
+        let spell = game.stack.last().expect("it is on the stack").id;
+        game.priority = PlayerId::Two;
+        game.legal_actions(PlayerId::Two).into_iter().any(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if card == scatter_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(spell)))
+        })
+    };
+
+    assert!(
+        !scatter_offered(PlayOptionId(1)),
+        "Petty Theft is an instant while it is on the stack",
+    );
+    assert!(
+        scatter_offered(PlayOptionId(0)),
+        "and the Faerie half is the creature spell it was waiting for",
+    );
+}
