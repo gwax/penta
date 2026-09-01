@@ -304,3 +304,95 @@ fn five_treasures_can_find_a_dragon_instead() {
     );
     assert_eq!(treasures(&game), 0, "and all five Treasures paid for it");
 }
+
+/// The five Treasures are a cost: a library with nothing to find spends them
+/// all the same, which is what makes the ability a one-shot rather than a
+/// look.
+#[test]
+fn a_library_with_nothing_to_find_still_eats_the_treasures() {
+    let (mut game, magda) = staged(&[]);
+    give_treasures(&mut game, 5);
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(99_700, cards::LIGHTNING_BOLT, PlayerId::One));
+    assert_eq!(treasures(&game), 5, "five to spend");
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == magda))
+        .expect("five Treasures pay for it");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    // Which Treasures to spend is asked one at a time; paying them is what
+    // announcing the ability costs.
+    let mut paid_before_resolution = false;
+    for _ in 0..12 {
+        let Some(seat) = deciding(&game) else {
+            settle(&mut game);
+            if deciding(&game).is_none() {
+                break;
+            }
+            continue;
+        };
+        let decision = game.observe(seat).decision.expect("just checked");
+        let options = decision
+            .options
+            .iter()
+            .take(decision.minimum.max(1))
+            .map(|option| option.id)
+            .collect();
+        game.apply(
+            seat,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("the answer is legal");
+        if treasures(&game) == 0 && !paid_before_resolution {
+            paid_before_resolution = !game.stack.is_empty();
+        }
+    }
+    settle(&mut game);
+
+    assert!(
+        paid_before_resolution,
+        "the Treasures were gone while the ability was still on the stack",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "the Bolt is neither an artifact nor a Dragon, so nothing was taken",
+    );
+    assert_eq!(treasures(&game), 0, "and the five are spent for nothing");
+}
+
+/// Nothing on the ability says when: five Treasures buy an artifact in the
+/// middle of their turn as readily as in your main phase.
+#[test]
+fn the_search_may_be_made_on_their_turn() {
+    let (mut game, magda) = staged(&[]);
+    give_treasures(&mut game, 5);
+    let ring = game
+        .build_zone(PlayerId::One, &[cards::SOL_RING])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].library.clear();
+    game.players[0].library.push(ring);
+    game.active_player = PlayerId::Two;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    fetch_with(&mut game, magda, cards::SOL_RING);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SOL_RING),
+        "their end step is as good a time as any",
+    );
+}
