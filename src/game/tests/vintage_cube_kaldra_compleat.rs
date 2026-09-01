@@ -464,3 +464,96 @@ fn the_equip_waits_for_your_own_main_phase() {
         "and equip is a sorcery-speed ability whatever the mana says",
     );
 }
+
+/// Haste is what makes seven mana a threat rather than a plan: the Germ
+/// arrives with the Equipment and swings the same turn.
+#[test]
+fn the_germ_attacks_the_turn_it_arrives() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.put_onto_battlefield(PlayerId::One, cards::KALDRA_COMPLEAT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+    let germ = germ(&game).card.id;
+
+    game.declare_attacker(germ, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    game.step = Step::CombatDamage;
+    game.deal_combat_damage();
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[1].life, 15,
+        "a 0/0 wearing +5/+5 swings for five the turn it is made",
+    );
+}
+
+/// Indestructible on the wearer, not only on the Equipment. Combat cannot
+/// show this -- first strike and the exile clause together mean nothing ever
+/// strikes the Germ back -- so the damage comes from outside it: six on a
+/// 5/5 is lethal, and the Germ stands there with it marked.
+#[test]
+fn the_germ_survives_lethal_damage() {
+    let (mut game, _kaldra, _) = staged(&[]);
+    let germ = germ(&game).card.id;
+
+    game.damage_target_from_kind(None, Some(Target::Permanent(germ)), 6, false);
+    game.check_state_based_actions();
+
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == germ)
+        .expect("six damage on a 5/5 is lethal, and indestructible does not care");
+    assert_eq!(
+        survivor.damage, 6,
+        "with the damage marked on it all the same"
+    );
+    assert_eq!(
+        (game.power(survivor), game.toughness(survivor)),
+        (Some(5), Some(5)),
+        "and still the size the Equipment makes it",
+    );
+}
+
+/// Equip {7} is seven: six mana leaves the Equipment where it is.
+#[test]
+fn the_equip_costs_seven() {
+    let (mut game, kaldra, _) = staged(&[]);
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let equips = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    source == kaldra
+                        && targets
+                            .iter()
+                            .flat_map(crate::casting::TargetSelection::targets)
+                            .any(|target| *target == Target::Permanent(bears))
+                }
+                _ => false,
+            })
+    };
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 6);
+    assert!(!equips(&game), "six is not seven");
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(equips(&game), "and the seventh buys the move");
+}
