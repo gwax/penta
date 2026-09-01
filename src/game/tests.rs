@@ -549,6 +549,7 @@ mod vintage_cube_loran;
 mod vintage_cube_lorien;
 mod vintage_cube_lose_focus;
 mod vintage_cube_lotus_cobra;
+mod vintage_cube_lotus_petal;
 mod vintage_cube_luminarch_aspirant;
 mod vintage_cube_lurrus;
 mod vintage_cube_lutri;
