@@ -237,3 +237,64 @@ fn proliferate_adds_a_story_counter() {
         "and the tap is still the limit on spending them",
     );
 }
+
+/// The {W} is a white mana and not a generic one: a pool of colourless
+/// leaves the draw unoffered, and one white turns it back on.
+#[test]
+fn the_draw_wants_white_specifically() {
+    let (mut game, staff) = staged();
+    game.players[PlayerId::One.index()].mana_pool = ManaPool::default();
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    assert_eq!(story(&game, staff), 1, "the counter is there");
+    assert!(
+        draws(&game, staff).is_empty(),
+        "three colourless is no white at all",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    assert!(
+        !draws(&game, staff).is_empty(),
+        "and one white is the whole of what was missing",
+    );
+}
+
+/// Untapping is not the half that was spent: with the counter gone the Staff
+/// draws nothing however much white is up.
+#[test]
+fn an_untapped_staff_with_no_counter_draws_nothing() {
+    let (mut game, staff) = staged();
+    let draw = draws(&game, staff)
+        .into_iter()
+        .next()
+        .expect("a white and the tap draw");
+    game.apply(PlayerId::One, draw).expect("it activates");
+    drain_pending(&mut game);
+    assert_eq!(story(&game, staff), 0, "the counter paid for it");
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == staff)
+        .expect("it is there")
+        .tapped = false;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 2);
+
+    assert!(
+        draws(&game, staff).is_empty(),
+        "the counter is the half that has to be made again",
+    );
+
+    // A creature token of any kind puts one back.
+    game.put_onto_battlefield(PlayerId::One, cards::ESIKA_S_CHARIOT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        story(&game, staff),
+        1,
+        "the Chariot's Cats are creature tokens of yours",
+    );
+    assert!(
+        !draws(&game, staff).is_empty(),
+        "and the Staff is buying cards again",
+    );
+}
