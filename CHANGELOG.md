@@ -51,6 +51,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A bestowed spell is an Aura spell and not a creature spell.** Detective's
+  Phoenix's ruling: "On the stack, a spell with bestow is either a creature
+  spell or an Aura spell. It's never both, although it's an enchantment spell
+  in either case." Which one it is follows from how the spell was paid for,
+  and the stack view was built from the printed card alone, so a Phoenix cast
+  for its bestow cost was still a creature spell on its way in: Essence
+  Scatter countered it and Negate could not touch it, both backwards. The
+  battlefield already drew this line for the permanent; the stack now draws
+  it too, dropping Creature and carrying the Aura subtype for a spell cast
+  for a bestow cost. Annul still answers either half.
+
 - **What arrives on the battlefield arrives at the size the board gives it.**
   Sword of the Meek's ruling: "if a creature is entering the battlefield
   under your control, consider static abilities to determine whether its

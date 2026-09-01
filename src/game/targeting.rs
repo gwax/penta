@@ -51,7 +51,12 @@ impl Game {
             .get(object.card.definition.card_definition()?)?;
         let signature = object.signature.as_ref()?;
         let option = definition.play_option(signature.play_option())?;
-        Self::play_option_types(definition, option)
+        let types = Self::play_option_types(definition, option)?;
+        Some(if self.was_cast_for_bestow(object) {
+            Self::without_creature(types)
+        } else {
+            types
+        })
     }
 
     pub(super) fn stack_trigger_event_object(
@@ -59,14 +64,36 @@ impl Game {
         object: &StackObject,
     ) -> Option<TriggerEventObject> {
         let signature = object.signature.as_ref()?;
-        self.printed_trigger_event_object(
+        let mut view = self.printed_trigger_event_object(
             object.id,
             object.card.definition.card_definition()?,
             object.controller,
             &CharacteristicContext::Stack {
                 form: signature.form().clone(),
             },
-        )
+        )?;
+        // Bestow (CR 702.103b): a spell cast for its bestow cost is an Aura
+        // spell rather than a creature spell -- an enchantment spell either
+        // way, but never both halves at once. Which one it is follows from
+        // how it was paid for, so the printed view cannot see it and this
+        // is where the split is drawn.
+        if self.was_cast_for_bestow(object) {
+            view.types = Self::without_creature(view.types);
+            if !view.subtypes.contains(&"Aura") {
+                view.subtypes.to_mut().push("Aura");
+            }
+        }
+        Some(view)
+    }
+
+    /// Card types with Creature taken out of them.
+    fn without_creature(types: CardTypeSet) -> CardTypeSet {
+        crate::card::CardType::ALL
+            .into_iter()
+            .filter(|card_type| {
+                types.contains(*card_type) && *card_type != crate::card::CardType::Creature
+            })
+            .fold(CardTypeSet::empty(), CardTypeSet::with)
     }
 
     /// The same view, widened to the abilities waiting on the stack. An

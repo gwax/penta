@@ -369,7 +369,7 @@ impl Game {
     /// Whether this spell was cast for its bestow cost. CR 702.103c: such a
     /// spell is not countered when its target is gone -- it stops being an
     /// Aura spell and resolves as an enchantment creature instead.
-    fn was_cast_for_bestow(&self, object: &StackObject) -> bool {
+    pub(super) fn was_cast_for_bestow(&self, object: &StackObject) -> bool {
         let Some(definition) = object.card.definition.card_definition() else {
             return false;
         };

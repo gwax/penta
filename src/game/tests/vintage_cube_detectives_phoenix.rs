@@ -408,3 +408,95 @@ fn the_unattached_phoenix_is_untapped_and_may_attack() {
         "so it may attack the turn it came loose",
     );
 }
+
+/// The Phoenix cast one way or the other and left on the stack, with `answer`
+/// in the opponent's hand and the blue mana to cast it.
+fn cast_it_into(bestowed: bool, answer: CardDefinitionId) -> (Game, GameObjectId, GameObjectId) {
+    let (mut game, phoenix, bears) = staged(bestowed, &SIX_MANA_VALUE);
+    game.players[1].hand.clear();
+    let held = card(96_900, answer, PlayerId::Two);
+    let held_id = held.id;
+    game.players[1].hand.push(held);
+    let cast = if bestowed {
+        bestow_cast(&game, phoenix, bears).expect("bestow is offered")
+    } else {
+        casts(&game, phoenix)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::CastSpell { choices, .. } if choices.targets().is_empty())
+            })
+            .expect("three mana casts it outright")
+    };
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    let spell = game.stack.iter().last().expect("it is on the stack").id;
+    game.priority = PlayerId::Two;
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    (game, spell, held_id)
+}
+
+/// Whether `answer` is offered at the spell `spell`.
+fn answers(game: &Game, answer: GameObjectId, spell: GameObjectId) -> Option<Action> {
+    game.legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == answer
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(spell))
+            }
+            _ => false,
+        })
+}
+
+/// "On the stack, a spell with bestow is either a creature spell or an Aura
+/// spell. It's never both." The printed cast answers to Essence Scatter and
+/// not to Negate; the bestowed cast is the other way round.
+#[test]
+fn the_bestowed_spell_is_an_aura_spell_and_not_a_creature_spell() {
+    let (game, spell, scatter) = cast_it_into(true, cards::ESSENCE_SCATTER);
+    assert!(
+        answers(&game, scatter, spell).is_none(),
+        "an Aura spell is no creature spell",
+    );
+
+    let (game, spell, negate) = cast_it_into(true, cards::NEGATE);
+    assert!(
+        answers(&game, negate, spell).is_some(),
+        "and it is a noncreature spell while it is one",
+    );
+
+    let (game, spell, scatter) = cast_it_into(false, cards::ESSENCE_SCATTER);
+    assert!(
+        answers(&game, scatter, spell).is_some(),
+        "the same card cast for its printed cost is a creature spell",
+    );
+
+    let (game, spell, negate) = cast_it_into(false, cards::NEGATE);
+    assert!(
+        answers(&game, negate, spell).is_none(),
+        "which Negate cannot touch",
+    );
+}
+
+/// "...although it's an enchantment spell in either case." Annul counters
+/// artifact or enchantment spells, and it is offered at both halves of the
+/// split the counterspells above draw.
+#[test]
+fn it_is_an_enchantment_spell_cast_either_way() {
+    for bestowed in [false, true] {
+        let (mut game, spell, annul) = cast_it_into(bestowed, cards::ANNUL);
+
+        let cast = answers(&game, annul, spell)
+            .unwrap_or_else(|| panic!("an enchantment spell, bestowed: {bestowed}"));
+        game.apply(PlayerId::Two, cast).expect("it is cast");
+        pass_until_decision(&mut game);
+        drain_pending(&mut game);
+
+        assert!(
+            on_battlefield(&game).is_none(),
+            "it was countered on its way in, bestowed: {bestowed}",
+        );
+    }
+}
