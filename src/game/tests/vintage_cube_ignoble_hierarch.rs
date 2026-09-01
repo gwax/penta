@@ -189,3 +189,94 @@ fn two_hierarchs_exalt_twice() {
         "one +1/+1 from each of them",
     );
 }
+
+/// He is a creature with a {T} ability and no haste, so the turn he arrives
+/// he makes nothing: the mana is a turn-two mana, which is the whole shape
+/// of the card.
+#[test]
+fn the_turn_he_arrives_he_makes_no_mana() {
+    let (mut game, hierarch, _others) = staged(&[]);
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == hierarch {
+            permanent.entered_controller_turn = game.turn;
+        }
+    }
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == hierarch
+            )),
+        "a summoning-sick mana creature taps for nothing",
+    );
+
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == hierarch {
+            permanent.entered_controller_turn = 0;
+        }
+    }
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == hierarch
+            )),
+        "and the next turn he does",
+    );
+}
+
+/// Exalted is a triggered ability of his, not something he spends himself
+/// on: a Hierarch already tapped for mana still exalts the creature that
+/// swings alone, which is how the turn-two attack is meant to go.
+#[test]
+fn a_tapped_hierarch_still_exalts() {
+    let (mut game, hierarch, others) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = others[0];
+    let tap = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == hierarch
+            )
+        })
+        .expect("he taps for mana");
+    game.apply(PlayerId::One, tap).expect("it activates");
+    drain_pending(&mut game);
+
+    attack_with(&mut game, &[bears]);
+
+    assert_eq!(
+        stats(&game, bears),
+        (Some(3), Some(3)),
+        "the Bears swung alone and took the +1/+1 anyway",
+    );
+}
+
+/// "Until end of turn": the Bears is a 2/2 again by the next turn, with
+/// nothing left over from the swing.
+#[test]
+fn the_bonus_wears_off_with_the_turn() {
+    let (mut game, _hierarch, others) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = others[0];
+
+    attack_with(&mut game, &[bears]);
+    assert_eq!(stats(&game, bears), (Some(3), Some(3)), "exalted this turn");
+
+    game.step = Step::End;
+    game.cleanup();
+    game.finish_cleanup();
+    game.start_next_turn();
+
+    assert_eq!(
+        stats(&game, bears),
+        (Some(2), Some(2)),
+        "and a plain 2/2 once the turn it belonged to is over",
+    );
+}
