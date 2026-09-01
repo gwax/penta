@@ -230,3 +230,68 @@ fn attacking_a_planeswalker_still_draws_while_you_are_ahead() {
         "and the clause that names a player still said nothing",
     );
 }
+
+/// "Create a 1/1 white Vampire creature token with lifelink" and nothing
+/// more: it arrives untapped and out of the attack, which is what separates
+/// it from the tokens that say "tapped and attacking".
+#[test]
+fn the_vampire_arrives_untapped_and_out_of_the_attack() {
+    let (mut game, preacher) = staged(10, 20);
+
+    attack(&mut game, preacher);
+
+    let token = game
+        .battlefield
+        .iter()
+        .find(|permanent| !matches!(permanent.card.definition, ObjectKind::Card(_)))
+        .expect("the Vampire arrived");
+    assert!(!token.tapped, "untapped");
+    assert!(!token.attacking, "and not part of the attack it came from");
+    let life = game.players[1].life;
+    game.step = Step::DeclareBlockers;
+    game.finish_declaring_blockers();
+    settle(&mut game);
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[1].life,
+        life - 2,
+        "so only the Preacher's two got through",
+    );
+}
+
+/// Deathtouch is not only a keyword on her: a Grave Titan that blocks her
+/// takes two damage and dies of it, and its own six kills her back.
+#[test]
+fn her_deathtouch_kills_what_blocks_her() {
+    let (mut game, preacher) = staged(10, 20);
+    let titan = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRAVE_TITAN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    attack(&mut game, preacher);
+    game.step = Step::DeclareBlockers;
+    game.declare_blocker(titan, preacher);
+    game.finish_declaring_blockers();
+    settle(&mut game);
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != titan),
+        "two deathtouch damage is lethal to a 6/6",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != preacher),
+        "and the six it dealt back is lethal to a 2/4, so both go",
+    );
+}
