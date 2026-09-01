@@ -361,3 +361,83 @@ fn the_otter_arrives_even_if_the_spell_is_countered() {
         "and the Recall drew nothing, having been countered",
     );
 }
+
+/// "Gaining a level is a normal activated ability. It uses the stack and can
+/// be responded to." The counter is not there until it resolves.
+#[test]
+fn levelling_up_uses_the_stack() {
+    let (mut game, talent) = staged();
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 10);
+
+    let level = level_ups(&game, talent)
+        .into_iter()
+        .next()
+        .expect("level 2 is what a level-1 Class may buy");
+    game.apply(PlayerId::One, level).expect("it is activated");
+
+    assert_eq!(game.stack.len(), 1, "the level-up is on the stack");
+    assert_eq!(
+        level_counters(&game, talent),
+        0,
+        "and the Class is still level 1 until it resolves",
+    );
+
+    settle(&mut game);
+    assert_eq!(level_counters(&game, talent), 1, "then it is level 2");
+}
+
+/// "There's no restriction on how many Class permanents you can control...
+/// Each Class permanent tracks its own level separately." One Talent at
+/// level 3 makes one Otter a spell; the second one, still level 1, makes
+/// none until it has climbed too.
+#[test]
+fn two_talents_keep_their_own_levels() {
+    let (mut game, first) = staged();
+    let second = game
+        .put_onto_battlefield(PlayerId::One, cards::STORMCHASERS_TALENT)
+        .expect("cataloged");
+    settle(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 20);
+    for _ in 0..2 {
+        let level = level_ups(&game, first)
+            .into_iter()
+            .next()
+            .expect("the first Class climbs");
+        game.apply(PlayerId::One, level).expect("it levels up");
+        settle(&mut game);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 20);
+    }
+    assert_eq!(level_counters(&game, first), 2, "the first is level 3");
+    assert_eq!(
+        level_counters(&game, second),
+        0,
+        "and the second is where it started",
+    );
+
+    let before = otters(&game);
+    cast_a_cantrip(&mut game, 900);
+    assert_eq!(
+        otters(&game) - before,
+        1,
+        "one Otter for one Class at level 3",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 20);
+    for _ in 0..2 {
+        let level = level_ups(&game, second)
+            .into_iter()
+            .next()
+            .expect("the second Class climbs too");
+        game.apply(PlayerId::One, level).expect("it levels up");
+        settle(&mut game);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 20);
+    }
+
+    let before = otters(&game);
+    cast_a_cantrip(&mut game, 901);
+    assert_eq!(
+        otters(&game) - before,
+        2,
+        "and two Classes at level 3 are two Otters a spell",
+    );
+}
