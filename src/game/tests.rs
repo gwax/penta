@@ -644,6 +644,7 @@ mod vintage_cube_remand;
 mod vintage_cube_reprieve;
 mod vintage_cube_retrofitter_foundry;
 mod vintage_cube_robber_of_the_rich;
+mod vintage_cube_sacred_foundry;
 mod vintage_cube_saheeli;
 mod vintage_cube_savannah;
 mod vintage_cube_screaming_nemesis;
