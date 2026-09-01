@@ -197,3 +197,101 @@ fn a_stolen_creature_goes_back_to_its_owner() {
         "and it went home to the player who owns it",
     );
 }
+
+/// A token returned to its owner's hand ceases to exist on the way (CR
+/// 111.7): the Spellbomb answers a Cat for good and the hand it went to is
+/// no fuller for it.
+#[test]
+fn a_token_it_bounces_simply_stops_existing() {
+    let (mut game, spellbomb) = staged();
+    game.put_onto_battlefield(PlayerId::Two, cards::ESIKA_S_CHARIOT)
+        .expect("cataloged");
+    settle(&mut game);
+    let cats = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == ObjectKind::Token)
+        .count();
+    assert_eq!(cats, 2, "the Chariot brought two Cats");
+    let cat = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("a Cat is there")
+        .card
+        .id;
+    let held = game.players[PlayerId::Two.index()].hand.len();
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.priority = PlayerId::One;
+
+    let bounce = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == spellbomb
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(cat))
+            }
+            _ => false,
+        })
+        .expect("a token is a creature like any other");
+    game.apply(PlayerId::One, bounce).expect("it activates");
+    settle(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == ObjectKind::Token)
+            .count(),
+        1,
+        "the Cat left the battlefield",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        held,
+        "and nothing arrived in their hand: a token in another zone is gone",
+    );
+}
+
+/// One artifact, one ability: the sacrifice is a cost, so activating the
+/// bounce spends the Spellbomb and the draw is no longer on offer -- not
+/// even while the bounce is still on the stack.
+#[test]
+fn the_sacrifice_leaves_only_one_of_the_two() {
+    let (mut game, spellbomb) = staged();
+    game.put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.priority = PlayerId::One;
+    assert!(
+        activation(&game, spellbomb, 0).is_some() && activation(&game, spellbomb, 1).is_some(),
+        "with the mana for both, both halves are on offer",
+    );
+
+    let bounce = activation(&game, spellbomb, 0).expect("the bounce is offered");
+    game.apply(PlayerId::One, bounce).expect("it activates");
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != spellbomb),
+        "the artifact was sacrificed to pay for it",
+    );
+    assert!(
+        activation(&game, spellbomb, 1).is_none(),
+        "so the draw cannot be taken in response to its own bounce",
+    );
+
+    settle(&mut game);
+    assert!(
+        game.players[PlayerId::One.index()].hand.is_empty(),
+        "and no card was drawn: the other half was never paid for",
+    );
+}
