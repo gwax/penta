@@ -242,3 +242,105 @@ fn an_enchantment_answered_in_response_exiles_nothing() {
         "so nothing waits on an enchantment that is gone",
     );
 }
+
+/// "If a token is exiled this way, it will cease to exist and won't return
+/// to the battlefield." The blink is a one-way door for anything that was
+/// never a card.
+#[test]
+fn a_token_it_blinks_never_comes_back() {
+    let (mut game, touch, _) = staged(&[]);
+    let token = token_permanent(
+        107_500,
+        tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
+        PlayerId::One,
+    );
+    let token_id = token.card.id;
+    game.battlefield.push(token);
+
+    let channel = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == touch))
+        .expect("a token is an artifact-or-creature it may name");
+    game.apply(PlayerId::One, channel).expect("it activates");
+    settle(&mut game, Some(token_id));
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != token_id),
+        "the token was exiled",
+    );
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    settle(&mut game, None);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != token_id),
+        "and a token that left the battlefield has ceased to exist",
+    );
+    assert!(
+        game.battlefield.is_empty(),
+        "nothing came back in its place either",
+    );
+}
+
+/// "If a channel ability requires a target, you may not activate it without
+/// a target just to discard the card." An empty board offers no channel at
+/// all, however much mana is up.
+#[test]
+fn an_empty_board_offers_no_channel() {
+    let (game, touch, _) = staged(&[]);
+
+    assert!(
+        game.legal_actions(PlayerId::One).into_iter().all(
+            |action| !matches!(action, Action::ActivateAbility { source, .. } if source == touch)
+        ),
+        "there is nothing to name, so there is nothing to activate",
+    );
+}
+
+/// "Any counters on the exiled permanent will cease to exist. When the card
+/// returns to the battlefield, it will be a new object." What comes back is
+/// the printed creature rather than the one that left.
+#[test]
+fn counters_do_not_come_back_with_it() {
+    let (mut game, touch, ids) = staged(&[(cards::GRIZZLY_BEARS, PlayerId::One)]);
+    let bears = ids[0];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("it is there")
+        .set_counters(CounterKind::PlusOnePlusOne, 3);
+
+    let channel = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == touch))
+        .expect("the channel is offered");
+    game.apply(PlayerId::One, channel).expect("it activates");
+    settle(&mut game, Some(bears));
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    settle(&mut game, None);
+
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("it came back");
+    assert_eq!(
+        returned.counters(CounterKind::PlusOnePlusOne),
+        0,
+        "the counters did not come back with it",
+    );
+    assert_eq!(
+        (game.power(returned), game.toughness(returned)),
+        (Some(2), Some(2)),
+        "so what returned is a plain 2/2",
+    );
+}
