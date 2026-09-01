@@ -734,6 +734,7 @@ mod vintage_cube_ugin_eye_of_the_storms;
 mod vintage_cube_ulvenwald_oddity;
 mod vintage_cube_underworld_breach;
 mod vintage_cube_unearth;
+mod vintage_cube_unholy_heat;
 mod vintage_cube_unruly_krasis;
 mod vintage_cube_upheaval;
 mod vintage_cube_urborg;
