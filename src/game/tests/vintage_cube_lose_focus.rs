@@ -232,3 +232,92 @@ fn only_the_card_goes_to_the_graveyard() {
         "three Lose Focuses resolved and one card was ever there",
     );
 }
+
+/// "The copies that replicate creates are created on the stack, so they're
+/// not cast. Abilities that trigger when a player casts a spell won't
+/// trigger." A Dryad watching its controller sees one blue spell however
+/// many copies follow it.
+#[test]
+fn the_copies_are_created_rather_than_cast() {
+    let (mut game, focus, theirs) = staged(4);
+    let dryad = game
+        .put_onto_battlefield(PlayerId::One, cards::QUIRION_DRYAD)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    cast_theirs(&mut game, theirs);
+
+    cast_focus(&mut game, focus, 2);
+    settle(&mut game, "Decline");
+
+    let watcher = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == dryad)
+        .expect("it is there");
+    assert_eq!(
+        (game.power(watcher), game.toughness(watcher)),
+        (Some(2), Some(2)),
+        "one counter for the one spell that was cast, and none for the copies",
+    );
+}
+
+/// "As the replicate triggered ability resolves, you'll copy Lose Focus for
+/// each time you paid its replicate cost, even if the original spell is no
+/// longer on the stack at that time." Countering the Focus under its own
+/// trigger takes the original and leaves the copies.
+#[test]
+fn the_copies_survive_the_original_being_countered() {
+    let (mut game, focus, theirs) = staged_with_their_mana(3, 4);
+    game.players[1]
+        .hand
+        .push(card(110_900, cards::COUNTERSPELL, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+    cast_theirs(&mut game, theirs);
+
+    cast_focus(&mut game, focus, 1);
+    // The replicate trigger is waiting; the Focus itself is still under it.
+    game.priority = PlayerId::Two;
+    let on_stack = game
+        .stack
+        .iter()
+        .find(|object| object.card.definition == ObjectKind::Card(cards::LOSE_FOCUS))
+        .expect("the Focus is on the stack")
+        .id;
+    let counter = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == CardInstanceId(110_900)
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(on_stack))
+            }
+            _ => false,
+        })
+        .expect("two blue answers the Focus");
+    game.apply(PlayerId::Two, counter).expect("it is cast");
+    settle(&mut game, "Decline");
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LOSE_FOCUS),
+        "the Focus itself was countered",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == ObjectKind::Card(cards::SERRA_ANGEL)),
+        "and the copy it had already paid for still countered the Angel",
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "which is where a countered Angel goes",
+    );
+}
