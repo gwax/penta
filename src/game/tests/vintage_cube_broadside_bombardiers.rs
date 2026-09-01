@@ -332,3 +332,66 @@ fn menace_asks_for_a_second_blocker() {
         "and two of them together are what menace asks for",
     );
 }
+
+/// Haste is what makes boast reachable the turn it lands: a Goblin that
+/// arrived this turn attacks, and attacking is what opens the throw.
+#[test]
+fn haste_opens_the_boast_the_turn_it_arrives() {
+    let (mut game, bombardiers, others) = staged(&[cards::GRIZZLY_BEARS]);
+    let arrived = game.turns_started[PlayerId::One.index()];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bombardiers)
+        .expect("it is there")
+        .entered_controller_turn = arrived;
+
+    assert!(
+        boasts(&game, bombardiers).is_empty(),
+        "nothing has attacked yet",
+    );
+    attack(&mut game, bombardiers);
+
+    let life = game.players[PlayerId::Two.index()].life;
+    boast_throwing(&mut game, bombardiers, others[0]);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life - 4,
+        "two plus a two-drop, thrown on the turn the Goblin arrived",
+    );
+}
+
+/// A token's mana value is zero, so throwing one is two damage and no more
+/// -- which is what makes a Cat a worse missile than a bear.
+#[test]
+fn a_token_thrown_is_worth_exactly_two() {
+    let (mut game, bombardiers, _others) = staged(&[cards::ESIKA_S_CHARIOT]);
+    settle(&mut game);
+    let cat = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("the Chariot brought Cats")
+        .card
+        .id;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+    attack(&mut game, bombardiers);
+    let life = game.players[PlayerId::Two.index()].life;
+
+    boast_throwing(&mut game, bombardiers, cat);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life - 2,
+        "two plus nothing: a token has no mana cost to read",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == cat),
+        "and the Cat was the cost",
+    );
+}
