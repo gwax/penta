@@ -365,3 +365,96 @@ fn nobody_acts_between_the_reveal_and_the_counter() {
         game.legal_actions(PlayerId::Two),
     );
 }
+
+/// "Activate only as a sorcery": the Map waits for your own main phase with
+/// an empty stack, which is what keeps it from being a combat trick.
+#[test]
+fn the_map_is_a_sorcery_speed_ability() {
+    let (mut game, sentinel) = staged();
+    let map = game
+        .battlefield
+        .iter()
+        .find(|permanent| game.effective_subtypes(permanent).contains(&"Map"))
+        .expect("the Map is there")
+        .card
+        .id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == map),
+        )
+    };
+
+    game.step = Step::DeclareBlockers;
+    assert!(!offered(&game), "not in the middle of your own combat");
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    assert!(!offered(&game), "and not on their main phase either");
+
+    game.active_player = PlayerId::One;
+    assert!(
+        offered(&game),
+        "your own main phase with an empty stack is where it lives",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == sentinel),
+        "with the creature it would point at still standing",
+    );
+}
+
+/// "Target creature you control": their creature is no target for your Map,
+/// however much you would like to grow it.
+#[test]
+fn the_map_explores_only_your_own_creatures() {
+    let (mut game, sentinel) = staged();
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let map = game
+        .battlefield
+        .iter()
+        .find(|permanent| game.effective_subtypes(permanent).contains(&"Map"))
+        .expect("the Map is there")
+        .card
+        .id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let named = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } if source == map => Some(
+                targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .filter_map(|target| match target {
+                        Target::Permanent(id) => Some(*id),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        named,
+        vec![sentinel],
+        "the Sentinel is the only creature you control",
+    );
+    assert!(
+        !named.contains(&theirs),
+        "and theirs is not on the list at all",
+    );
+}
