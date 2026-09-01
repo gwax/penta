@@ -201,3 +201,80 @@ fn the_titan_taps_a_fastland_that_would_have_come_in_untapped() {
         "the Titan said tapped, and no land count argues with that",
     );
 }
+
+/// "Whenever this creature enters *or attacks*": the second half of the
+/// clause, which is why the Titan is worth leaving alive. Attacking finds
+/// two more lands, and they arrive tapped like the first two.
+#[test]
+fn attacking_searches_again() {
+    let (mut game, titan) = staged(&[
+        (105_000, cards::FOREST),
+        (105_001, cards::ISLAND),
+        (105_002, cards::MOUNTAIN),
+    ]);
+    // Its own arrival is answered first, so the attack is the only trigger
+    // this test is counting.
+    let search = accept_the_search(&mut game);
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("finding nothing is an answer");
+    drain_pending(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id == titan),
+        "nothing came in on the way down",
+    );
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == titan)
+        .expect("it is there")
+        .entered_controller_turn = 0;
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::One;
+    game.declare_attacker(titan, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+
+    let search = accept_the_search(&mut game);
+    let two = search
+        .options
+        .iter()
+        .map(|option| option.id)
+        .take(2)
+        .collect::<Vec<_>>();
+    assert_eq!(two.len(), 2, "every land in the library is on offer");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: two,
+        },
+    )
+    .expect("two of them is what it allows");
+    drain_pending(&mut game);
+
+    let arrived = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.id != titan)
+        .collect::<Vec<_>>();
+    assert_eq!(arrived.len(), 2, "the attack found two lands");
+    assert!(
+        arrived.iter().all(|permanent| permanent.tapped),
+        "and they arrive tapped, attacking or arriving",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        1,
+        "leaving what it did not take",
+    );
+}
