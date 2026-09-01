@@ -224,3 +224,94 @@ fn transforming_an_empty_incubator_kills_it() {
         "a 0/0 with no counters is put into a graveyard by state-based actions",
     );
 }
+
+/// "Exile all creatures" rather than destroy them, which is the whole reason
+/// the deck pays five for it: a Darksteel Myr shrugs off a Wrath and goes to
+/// exile all the same, and it counts toward X while it goes.
+#[test]
+fn indestructible_creatures_go_too_and_still_count() {
+    let (mut game, sunfall) = staged(&[cards::DARKSTEEL_MYR], &[cards::SAVANNAH_LIONS]);
+
+    cast(&mut game, sunfall);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::DARKSTEEL_MYR),
+        "indestructible is no answer to exile",
+    );
+    assert_eq!(
+        incubator(&game).counters(CounterKind::PlusOnePlusOne),
+        2,
+        "and it was one of the two counted",
+    );
+}
+
+/// A token exiled ceases to exist rather than joining anybody's exile zone,
+/// and it was still a creature exiled this way: X counts it.
+#[test]
+fn a_token_ceases_to_exist_and_still_counts_for_x() {
+    let (mut game, sunfall) = staged(&[cards::SAVANNAH_LIONS], &[]);
+    game.create_token(
+        PlayerId::Two,
+        tokens::creature(&["Bear"], &[ManaColor::Green], 2, 2),
+    );
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    cast(&mut game, sunfall);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == ObjectKind::Token
+                && permanent.controller == PlayerId::Two),
+        "the token is gone",
+    );
+    assert!(
+        game.players[1].exile.is_empty(),
+        "and it went nowhere: a token that leaves ceases to exist",
+    );
+    assert_eq!(
+        incubator(&game).counters(CounterKind::PlusOnePlusOne),
+        2,
+        "but it was a creature exiled this way, so X counted it",
+    );
+}
+
+/// "All creatures" and nothing else: a planeswalker and an enchantment are
+/// left standing, however much the board would rather they were not.
+#[test]
+fn it_leaves_the_noncreatures_where_they_stand() {
+    let (mut game, sunfall) = staged(&[cards::SAVANNAH_LIONS], &[]);
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::JACE_THE_MIND_SCULPTOR)
+        .expect("cataloged");
+    let moat = game
+        .put_onto_battlefield(PlayerId::Two, cards::MOAT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    cast(&mut game, sunfall);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == walker),
+        "the planeswalker stayed",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == moat),
+        "and so did the enchantment",
+    );
+    assert_eq!(
+        incubator(&game).counters(CounterKind::PlusOnePlusOne),
+        1,
+        "one creature was all there was to exile",
+    );
+}
