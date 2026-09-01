@@ -10,8 +10,8 @@
 use super::super::ScopedEffect;
 use super::super::model::AbilityLocator;
 use super::super::semantics::{
-    ability_locator, applied_effect_locator, applied_effects, catalog_ability,
-    catalog_applied_effect, catalog_mana_payload, catalog_replacement_effect,
+    ability_locator, ability_locator_index, applied_effect_locator, applied_effects,
+    catalog_ability, catalog_applied_effect, catalog_mana_payload, catalog_replacement_effect,
     catalog_scoped_effect, child_abilities, mana_effects, mana_payload_locator,
     replacement_effect_locator, replacement_effects, scoped_effect_snapshot,
 };
@@ -63,10 +63,15 @@ fn card_name(catalog: &CardCatalog, definition: CardDefinitionId) -> String {
 #[test]
 fn every_catalog_ability_has_a_locator_that_rebuilds_it() {
     let catalog = crate::poc::catalog().expect("catalog builds");
+    // One walk, rather than one search per ability: the index is built by the
+    // same traversal the search uses, so it answers for every ability at once
+    // without weakening what the audit proves.
+    let locators = ability_locator_index(&catalog);
     let mut unaddressable = Vec::new();
     for (definition, _, ability) in catalog_abilities(&catalog) {
-        let rebuilt = ability_locator(&catalog, |candidate| *candidate == ability)
-            .and_then(|locator| catalog_ability(&catalog, &locator));
+        let rebuilt = locators
+            .get(&ability)
+            .and_then(|locator| catalog_ability(&catalog, locator));
         if rebuilt != Some(ability) {
             unaddressable.push(format!(
                 "{}: {}",
@@ -226,9 +231,10 @@ fn produced_mana(effect: AddManaEffectDef) -> Vec<Mana> {
 #[test]
 fn every_catalog_effect_is_addressable_from_its_ability_root() {
     let catalog = crate::poc::catalog().expect("catalog builds");
+    let locators = ability_locator_index(&catalog);
     let mut unaddressable = Vec::new();
     for (definition, _, ability) in catalog_abilities(&catalog) {
-        let Some(locator) = ability_locator(&catalog, |candidate| *candidate == ability) else {
+        let Some(locator) = locators.get(&ability) else {
             continue;
         };
         let roots = match ability.effect.definition {
@@ -243,7 +249,7 @@ fn every_catalog_effect_is_addressable_from_its_ability_root() {
                 target_base: 0,
             };
             let rebuilt = scoped_effect_snapshot(&ability, scoped)
-                .and_then(|snapshot| catalog_scoped_effect(&catalog, &locator, &snapshot));
+                .and_then(|snapshot| catalog_scoped_effect(&catalog, locator, &snapshot));
             if rebuilt.map(|rebuilt| rebuilt.effect) != Some(effect) {
                 unaddressable.push(format!(
                     "{}: {}",

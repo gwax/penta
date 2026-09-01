@@ -1,9 +1,13 @@
+mod ability_address;
 mod emblem;
 mod keyword;
 mod token;
 mod virtual_objects;
 
 pub(super) use crate::card::child_effects;
+pub(super) use ability_address::ability_locator;
+#[cfg(test)]
+pub(super) use ability_address::ability_locator_index;
 use emblem::authored_emblems;
 pub(super) use emblem::{catalog_emblem_characteristics, emblem_characteristics_locator};
 pub(super) use keyword::{keyword_snapshot, parse_keyword};
@@ -13,7 +17,6 @@ pub(super) use token::{
     face_down_characteristics_snapshot, object_characteristics_from_snapshot,
     object_characteristics_snapshot, token_characteristics_locator,
 };
-use virtual_objects::token_parts;
 
 use super::model::{
     AbilityLocator, AppliedEffectLocator, ManaPayloadLocator, ReplacementEffectLocator,
@@ -28,57 +31,6 @@ use crate::card::{
     ObjectPredicateDef, ReplacementEffectDef, SpellAbilityDef,
 };
 use crate::{CardCatalog, CardPartId};
-
-pub(super) fn ability_locator(
-    catalog: &CardCatalog,
-    mut matches: impl FnMut(&AbilityDef) -> bool,
-) -> Option<AbilityLocator> {
-    for definition in catalog.definitions() {
-        for part in &definition.parts {
-            for attached in part.rules.indexed_abilities() {
-                let mut nested = Vec::new();
-                if locate_ability(&attached.definition, &mut matches, &mut nested) {
-                    return Some(AbilityLocator::Card {
-                        definition: definition.id,
-                        part_id: part.id.0,
-                        ability_id: attached.id.0,
-                        nested,
-                    });
-                }
-            }
-        }
-    }
-    for (token, token_locator) in authored_tokens(catalog) {
-        for part in token_parts(token) {
-            for attached in part.rules().indexed_abilities() {
-                let mut nested = Vec::new();
-                if locate_ability(&attached.definition, &mut matches, &mut nested) {
-                    return Some(AbilityLocator::Token {
-                        token: token_locator,
-                        part_id: part.id.0,
-                        ability_id: attached.id.0,
-                        nested,
-                    });
-                }
-            }
-        }
-    }
-    for (emblem, emblem_locator) in authored_emblems(catalog) {
-        for (index, ability) in emblem.abilities().iter().enumerate() {
-            let ability_id = crate::AbilityId::from_index(index)
-                .expect("validated emblem ability count has positional IDs");
-            let mut nested = Vec::new();
-            if locate_ability(ability, &mut matches, &mut nested) {
-                return Some(AbilityLocator::Emblem {
-                    emblem: emblem_locator,
-                    ability_id: ability_id.0,
-                    nested,
-                });
-            }
-        }
-    }
-    None
-}
 
 /// Locates an authored ability beneath the exact positional origin retained by
 /// runtime state. Token origins do not carry a catalog definition, so their
