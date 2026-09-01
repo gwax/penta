@@ -33,16 +33,22 @@ jobs:
     #
     # Raised from 60 on 2026-09-01, and not because the sweeps grew. They did
     # not: the builtin gauntlet has played the same 55 pairings since
-    # 2026-07-30, and Premodern went from seven decks to eight. Between the
-    # nightly of 08-19 and that of 08-20 the work grew 14% and the runtime
-    # grew 433%, and it has been killed at this limit every night since
-    # 08-23, so the tier has reported nothing for eleven nights.
+    # 2026-07-30, and Premodern went from seven decks to eight. The tier has
+    # been killed at this limit every night since 08-23 and has reported
+    # nothing since 08-21.
     #
-    # The cause is an engine slowdown of roughly ten times on constructed
-    # decks under greedy bots -- a path the Random/Random benchmark does not
-    # exercise, which is why no benchmark caught it. Commit d357bbdd recovered
-    # about 1.66x of it; the rest is still out there, with apply_legal_action
-    # now the hot path.
+    # Two things are known to be slower and it is not yet settled how much
+    # each contributes. The engine is: one fixed command, two Artifacts vs
+    # Goblins games, took about 2s at the 08-19, 08-20 and 08-23 revisions
+    # and about 13s on 09-01, and a pure memoization at 09-01 (d357bbdd,
+    # bdba42af) bought 2.1x of that back, so the layer it caches was
+    # genuinely dominating. Compilation is too: this job builds a third Cargo
+    # profile from cold, and the crate has grown by hundreds of cards.
+    #
+    # What is NOT established is why the 08-20 nightly jumped to 32 minutes,
+    # since the engine still measured 2s at that revision. Do not assume the
+    # engine explains the job duration until someone separates compile time
+    # from test time in the log.
     #
     # So this number is a stopgap to get the tier reporting again, not a
     # measurement of what the sweeps deserve. Put it back to 60 once the
