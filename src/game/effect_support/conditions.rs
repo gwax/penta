@@ -6,14 +6,92 @@
 // ordinary members of the same `impl Game`. The paths and imports are the
 // parent module's.
 
+/// Answers already given during one outermost object-set count condition.
+///
+/// These conditions re-enter. Counting the Islands for "can't attack unless
+/// there are five or more" asks every battlefield object for its basic land
+/// types, which walks continuous effects, which evaluates conditional
+/// statics, which asks the same question one level further down. On a
+/// seven-permanent board that turned 100 real questions into 49,673, and the
+/// cost grew with the cube of the battlefield.
+///
+/// Within one outermost call the answer cannot move: `&self` forbids a
+/// mutation while it runs, and the evaluation reads nothing else. In
+/// particular no prospective permanent reaches it -- the enclosing frame may
+/// be weighing a hypothetical board, but `source_object_set_targets` always
+/// queries the real one -- so the board a nested repeat would see is the board
+/// already answered for.
+///
+/// Thread-local rather than a field, because `Game` stays `Send + Sync` for
+/// the Python binding and a `RefCell` field would cost that.
+type ConditionMemo = std::collections::HashMap<
+    (crate::card::ObjectSetCountConditionDef, GameObjectId),
+    bool,
+>;
+
+thread_local! {
+    /// The memo and the address of the game that installed it.
+    static CONDITION_MEMO: std::cell::RefCell<Option<(usize, ConditionMemo)>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Drops the memo when the call that installed it returns, panic included, so
+/// no evaluation ever reads an answer given for an older board.
+struct ConditionMemoGuard {
+    installed: bool,
+}
+
+impl Drop for ConditionMemoGuard {
+    fn drop(&mut self) {
+        if self.installed {
+            CONDITION_MEMO.with(|memo| *memo.borrow_mut() = None);
+        }
+    }
+}
+
 impl Game {
     pub(super) fn source_object_set_count_condition_holds(
         &self,
         condition: crate::card::ObjectSetCountConditionDef,
         source: GameObjectId,
     ) -> bool {
+        let game = std::ptr::from_ref(self) as usize;
+        let installed = CONDITION_MEMO.with(|memo| {
+            let mut memo = memo.borrow_mut();
+            if memo.is_none() {
+                *memo = Some((game, ConditionMemo::new()));
+                true
+            } else {
+                false
+            }
+        });
+        let _guard = ConditionMemoGuard { installed };
+
+        // The address identifies the board an answer was given for. A nested
+        // call is normally the same game, but the installing borrow keeps it
+        // alive for the whole memo, so a different address is a different
+        // game and never a reused one.
+        let key = (condition, source);
+        let remembered = CONDITION_MEMO.with(|memo| {
+            memo.borrow()
+                .as_ref()
+                .filter(|(owner, _)| *owner == game)
+                .and_then(|(_, memo)| memo.get(&key).copied())
+        });
+        if let Some(holds) = remembered {
+            return holds;
+        }
+
         let objects = self.source_object_set_targets(*condition.objects, source);
-        self.object_set_count_condition_holds(condition, objects, source)
+        let holds = self.object_set_count_condition_holds(condition, objects, source);
+        CONDITION_MEMO.with(|memo| {
+            if let Some((owner, memo)) = memo.borrow_mut().as_mut()
+                && *owner == game
+            {
+                memo.insert(key, holds);
+            }
+        });
+        holds
     }
 
     fn object_set_count_condition_holds(
