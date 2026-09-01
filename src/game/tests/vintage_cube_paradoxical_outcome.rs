@@ -161,3 +161,97 @@ fn a_permanent_you_do_not_own_draws_you_nothing() {
         "which draws you nothing at all",
     );
 }
+
+/// "Permanents you control": theirs are never on the list, however
+/// nonland and nontoken they are.
+#[test]
+fn their_permanents_are_not_on_the_list() {
+    let (mut game, spell) = staged();
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::MOX_JET)
+        .expect("cataloged");
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::MOX_RUBY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let named = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == spell => Some(
+                choices
+                    .iter_targets()
+                    .filter_map(|target| match target {
+                        Target::Permanent(id) => Some(*id),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert!(named.contains(&mine), "your own Mox is a target");
+    assert!(!named.contains(&theirs), "and theirs is not: {named:?}");
+}
+
+/// The targets are named as it is cast: one answered in response is simply
+/// not returned, and the draw shrinks with it while the rest come back.
+#[test]
+fn a_target_answered_in_response_costs_its_own_card() {
+    let (mut game, spell) = staged();
+    let doomed = game
+        .put_onto_battlefield(PlayerId::One, cards::MOX_JET)
+        .expect("cataloged");
+    let survivor = game
+        .put_onto_battlefield(PlayerId::One, cards::MOX_RUBY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.players[PlayerId::One.index()]
+        .hand
+        .retain(|card| card.definition == cards::PARADOXICAL_OUTCOME);
+    game.priority = PlayerId::One;
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                let named = choices.iter_targets().copied().collect::<Vec<_>>();
+                *card == spell
+                    && named.len() == 2
+                    && named.contains(&Target::Permanent(doomed))
+                    && named.contains(&Target::Permanent(survivor))
+            }
+            _ => false,
+        })
+        .expect("both Moxen are on offer together");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+
+    // In response, one of the two is gone.
+    game.move_permanents_to_graveyard(&[doomed]);
+    resolve(&mut game);
+
+    assert!(
+        !on_battlefield(&game, survivor),
+        "the Mox that was still there came back",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .filter(|card| card.definition == cards::MOX_RUBY)
+            .count(),
+        1,
+        "into hand",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library - 1,
+        "and one card drawn: the dead Mox pays nothing",
+    );
+}
