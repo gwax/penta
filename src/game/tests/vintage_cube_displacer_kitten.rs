@@ -250,3 +250,144 @@ fn it_may_name_nothing() {
         "the spell drew its three either way",
     );
 }
+
+/// "If a token is exiled this way, it will cease to exist and won't return
+/// to the battlefield." Blinking your own token is how the Kitten eats it.
+#[test]
+fn a_token_it_blinks_never_comes_back() {
+    let (mut game, _) = staged(&[cards::ANCESTRAL_RECALL], &[]);
+    game.create_token(
+        PlayerId::One,
+        tokens::creature(&["Bear"], &[ManaColor::Green], 2, 2),
+    );
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let token = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("the token is out")
+        .card
+        .id;
+
+    cast(&mut game, cards::ANCESTRAL_RECALL, Some(token));
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != token),
+        "it left the battlefield",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != ObjectKind::Token),
+        "and a token that leaves ceases to exist rather than blinking back",
+    );
+    assert!(
+        game.players[0].exile.is_empty(),
+        "with nothing left in exile either",
+    );
+}
+
+/// "When the card returns to the battlefield, it will be a new object with
+/// no connection to the card that was exiled. Auras attached to the exiled
+/// creature will be put into their owners' graveyards. Any Equipment will
+/// become unattached and remain on the battlefield. Any counters on the
+/// exiled permanent will cease to exist."
+#[test]
+fn the_blink_strips_counters_and_what_was_attached() {
+    let (mut game, others) = staged(
+        &[cards::ANCESTRAL_RECALL],
+        &[
+            cards::SERRA_ANGEL,
+            cards::HOLY_STRENGTH,
+            cards::COPPER_CARAPACE,
+        ],
+    );
+    let (angel, aura, carapace) = (others[0], others[1], others[2]);
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == aura || permanent.card.id == carapace {
+            permanent.attached_to = Some(angel);
+        }
+        if permanent.card.id == angel {
+            permanent.add_counters(CounterKind::PlusOnePlusOne, 3);
+        }
+    }
+    game.check_state_based_actions();
+    game.priority = PlayerId::One;
+
+    cast(&mut game, cards::ANCESTRAL_RECALL, Some(angel));
+
+    let returned = permanent_of(&game, cards::SERRA_ANGEL).expect("she blinked back");
+    assert_ne!(returned.card.id, angel, "what returned is a new object");
+    assert_eq!(
+        returned.counters(CounterKind::PlusOnePlusOne),
+        0,
+        "and its counters ceased to exist",
+    );
+    assert_eq!(
+        (game.power(returned), game.toughness(returned)),
+        (Some(4), Some(4)),
+        "so the printed 4/4 is what came back",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::HOLY_STRENGTH),
+        "the Aura went to its owner's graveyard",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == carapace)
+            .expect("the Equipment stayed")
+            .attached_to,
+        None,
+        "unattached, with nothing left to equip",
+    );
+}
+
+/// "Target nonland permanent *you control*": their board is no part of it,
+/// which is what stops the Kitten from being removal.
+#[test]
+fn it_cannot_blink_their_permanent() {
+    let (mut game, _) = staged(&[cards::ANCESTRAL_RECALL], &[]);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let card = game.players[0]
+        .hand
+        .iter()
+        .find(|card| card.definition == cards::ANCESTRAL_RECALL)
+        .expect("it is in hand")
+        .id;
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card: cast, .. } if *cast == card))
+        .expect("there is mana for it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    let offered: Vec<_> = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the trigger asks what to blink")
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(object, _)| object))
+        .collect();
+
+    assert!(offered.contains(&mine), "your own Lions is on the menu");
+    assert!(
+        !offered.contains(&theirs),
+        "and their bear is not, however much you would like it to be",
+    );
+}
