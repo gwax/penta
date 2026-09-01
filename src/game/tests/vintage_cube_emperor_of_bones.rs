@@ -374,3 +374,91 @@ fn a_finality_counter_does_not_stop_a_bounce() {
         "the finality counter answers the graveyard and nothing else",
     );
 }
+
+/// "Whenever one or more +1/+1 counters are put on this creature" says
+/// nothing about adapt: an Arwen blessing puts one there and the Emperor
+/// reads it the same way, reanimating without the two mana.
+#[test]
+fn a_counter_from_anywhere_else_brings_the_card_back() {
+    let (mut game, emperor) = staged(&[cards::SERRA_ANGEL]);
+    let arwen = game
+        .put_onto_battlefield(PlayerId::One, cards::ARWEN_MORTAL_QUEEN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    reach_combat(&mut game, Some(cards::SERRA_ANGEL));
+    assert!(
+        on_battlefield(&game, cards::SERRA_ANGEL).is_none(),
+        "the Angel is still in exile",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.priority = PlayerId::One;
+    let blessing = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == arwen
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(emperor))
+            }
+            _ => false,
+        })
+        .expect("another creature you control is what she names");
+    game.apply(PlayerId::One, blessing).expect("it activates");
+    settle(&mut game);
+    if deciding(&game).is_some() {
+        answer(&mut game, Some(cards::SERRA_ANGEL));
+    }
+    settle(&mut game);
+
+    assert_eq!(
+        permanent(&game, emperor).counters(CounterKind::PlusOnePlusOne),
+        1,
+        "her counter went on the Emperor",
+    );
+    let angel = on_battlefield(&game, cards::SERRA_ANGEL)
+        .expect("and the Emperor read it as its own trigger asks");
+    assert_eq!(angel.controller, PlayerId::One);
+    assert_eq!(angel.counters(CounterKind::Finality), 1);
+}
+
+/// "A card from *a* graveyard": your own is as good a place to dig as
+/// theirs.
+#[test]
+fn it_eats_out_of_your_own_graveyard_too() {
+    let (mut game, emperor) = staged(&[]);
+    game.players[PlayerId::One.index()].graveyard.clear();
+    let mine = game
+        .build_zone(PlayerId::One, &[cards::GRIZZLY_BEARS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[PlayerId::One.index()].graveyard.push(mine);
+
+    reach_combat(&mut game, Some(cards::GRIZZLY_BEARS));
+    assert!(
+        game.players[PlayerId::One.index()].graveyard.is_empty(),
+        "your own bear was the card it exiled",
+    );
+
+    adapt(&mut game, emperor);
+    if deciding(&game).is_some() {
+        answer(&mut game, Some(cards::GRIZZLY_BEARS));
+    }
+
+    let bear = on_battlefield(&game, cards::GRIZZLY_BEARS).expect("and it came back");
+    assert_eq!(
+        bear.controller,
+        PlayerId::One,
+        "under your control, where it started",
+    );
+}
