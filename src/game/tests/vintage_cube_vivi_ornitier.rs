@@ -142,3 +142,91 @@ fn a_creature_spell_does_not_grow_it() {
     assert_eq!(counters_on(&game, vivi), 0, "no counter for a creature");
     assert_eq!(game.players[1].life, life, "and no damage either");
 }
+
+/// "Add X mana ... where X is Vivi Ornitier's power." A Vivi that has not
+/// grown yet is a 0/3, and there is no division of nothing to offer.
+#[test]
+fn a_vivi_that_has_not_grown_makes_no_mana() {
+    let (game, vivi) = staged(0);
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == vivi
+            )),
+        "zero power is zero mana",
+    );
+}
+
+/// The cost is {0} and nothing else: no tap symbol, so a Vivi that has
+/// already attacked -- or is tapped for any other reason -- still turns its
+/// power into mana.
+#[test]
+fn a_tapped_vivi_still_makes_its_mana() {
+    let (mut game, vivi) = staged(2);
+    game.tap_permanent(vivi);
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == vivi
+            )
+        })
+        .expect("the ability wants no tap");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    assert_eq!(
+        game.players[0].mana_pool.blue + game.players[0].mana_pool.red,
+        2,
+        "two power is still two mana",
+    );
+}
+
+/// "Whenever you cast a noncreature spell" is once per spell: two Bolts are
+/// two counters and two points, and the second one reads the size the first
+/// left behind.
+#[test]
+fn every_noncreature_spell_grows_it_again() {
+    let (mut game, vivi) = staged(0);
+    for id in [116_300, 116_301] {
+        game.players[0]
+            .hand
+            .push(card(id, cards::LIGHTNING_BOLT, PlayerId::One));
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    }
+    let life = game.players[1].life;
+
+    for id in [116_300, 116_301] {
+        game.priority = PlayerId::One;
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == CardInstanceId(id)
+                        && choices
+                            .iter_targets()
+                            .any(|target| *target == Target::Player(PlayerId::Two))
+                }
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("one red points {id} at them"));
+        game.apply(PlayerId::One, cast).expect("it is cast");
+        drain_pending(&mut game);
+    }
+
+    assert_eq!(counters_on(&game, vivi), 2, "a counter for each spell");
+    assert_eq!(
+        game.players[1].life,
+        life - 2 - 6,
+        "two triggers and two Bolts",
+    );
+}
