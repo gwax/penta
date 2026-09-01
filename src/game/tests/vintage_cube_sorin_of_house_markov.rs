@@ -292,3 +292,92 @@ fn life_gained_before_he_arrived_still_counts() {
         "he read a tally kept by the turn rather than by himself",
     );
 }
+
+/// Extort is the other half of the front face: casting anything offers the
+/// {W/B}, and paying it drains them for one and gains you one -- which is a
+/// third of what turns him over.
+#[test]
+fn extort_drains_them_and_feeds_his_own_tally() {
+    let (mut game, _sorin) = staged();
+    let bolt = card(96_900, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::One.index()].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    let theirs = game.players[PlayerId::Two.index()].life;
+    let mine = game.players[PlayerId::One.index()].life;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(bolt_id, vec![Target::Player(PlayerId::Two)], Vec::new(), 0),
+    )
+    .expect("a Bolt at their face");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        mine + 1,
+        "the extort payment gains you what it drains",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        theirs - 4,
+        "three from the Bolt and one from the extort",
+    );
+
+    // One life gained is not three, so the postcombat main leaves him a
+    // creature.
+    postcombat_main(&mut game);
+    assert!(
+        permanent_named(&game, "Sorin of House Markov").is_some(),
+        "one is not three",
+    );
+
+    // Two more, however they arrive, are enough.
+    game.gain_life(PlayerId::One, 2);
+    postcombat_main(&mut game);
+    assert!(
+        permanent_named(&game, "Sorin, Ravenous Neonate").is_some(),
+        "and the extort's own life counted toward the three",
+    );
+}
+
+/// Lifelink is printed on the front face: four damage across the table is
+/// four life, which is more than the three he asks for.
+#[test]
+fn his_lifelink_turns_him_over_by_itself() {
+    let (mut game, sorin) = staged();
+    // A 1/4 hits for one, so give him something to hit with: his own body
+    // is the source, and the life it gains is what the trigger counts.
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == sorin)
+        .expect("he is there")
+        .add_counters(CounterKind::PlusOnePlusOne, 3);
+    let mine = game.players[PlayerId::One.index()].life;
+    let theirs = game.players[PlayerId::Two.index()].life;
+
+    game.step = Step::DeclareAttackers;
+    game.declare_attacker(sorin, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        theirs - 4,
+        "a 4/7 connects for four",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        mine + 4,
+        "and lifelink gains that much",
+    );
+
+    postcombat_main(&mut game);
+    assert!(
+        permanent_named(&game, "Sorin, Ravenous Neonate").is_some(),
+        "four is three or more, so he turns over in his own postcombat main",
+    );
+}
