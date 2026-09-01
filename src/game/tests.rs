@@ -625,6 +625,7 @@ mod vintage_cube_recurring_nightmare;
 mod vintage_cube_relic;
 mod vintage_cube_relic_of_sauron;
 mod vintage_cube_remand;
+mod vintage_cube_reprieve;
 mod vintage_cube_retrofitter_foundry;
 mod vintage_cube_robber_of_the_rich;
 mod vintage_cube_saheeli;
