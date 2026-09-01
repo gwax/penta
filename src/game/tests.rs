@@ -663,6 +663,7 @@ mod vintage_cube_sedgemoor_witch;
 mod vintage_cube_senseis_divining_top;
 mod vintage_cube_sentinel_nameless_city;
 mod vintage_cube_serra_paragon;
+mod vintage_cube_shallow_grave;
 mod vintage_cube_shelldock_isle;
 mod vintage_cube_sheltering_landscape;
 mod vintage_cube_sheoldred;
