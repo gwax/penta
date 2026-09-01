@@ -296,3 +296,95 @@ fn a_countered_trainer_leaves_no_token_behind() {
         "and nothing was dug up either",
     );
 }
+
+/// "You can pay an offspring cost only once as you cast a spell with
+/// offspring. You can't try to pay it multiple times to get more token
+/// copies." A pool deep enough to pay it twice over still offers two prices
+/// and no third.
+#[test]
+fn the_offspring_cost_is_paid_once_or_not_at_all() {
+    let (mut game, trainer) = staged(&[cards::MOUNTAIN, cards::FOREST, cards::ISLAND]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 12);
+
+    let mut prices = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell {
+                card: id, choices, ..
+            } if id == trainer => Some(choices.costs().alternative()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    prices.sort_unstable();
+    prices.dedup();
+
+    assert_eq!(
+        prices.len(),
+        2,
+        "his own cost and the offspring one, and nothing beyond: {prices:?}",
+    );
+    assert_eq!(
+        prices.iter().filter(|price| price.is_none()).count(),
+        1,
+        "one of the two is the printed cost",
+    );
+}
+
+/// "The token copies exactly what was printed on the original creature and
+/// nothing else, except it's a 1/1. It doesn't copy ... any counters on it."
+/// A counter that lands while the offspring trigger waits stays behind.
+#[test]
+fn the_token_leaves_his_counters_behind() {
+    let (mut game, trainer) = staged(&[
+        cards::MOUNTAIN,
+        cards::FOREST,
+        cards::ISLAND,
+        cards::SWAMP,
+        cards::MOUNTAIN,
+    ]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 6);
+
+    cast_for(&mut game, trainer, true);
+
+    // He is on the battlefield and the offspring trigger has not resolved.
+    let body = loop {
+        if let Some(permanent) = trainers(&game).first() {
+            break permanent.card.id;
+        }
+        let player = game.priority;
+        game.apply(player, Action::PassPriority)
+            .expect("the spell is on the stack");
+    };
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == body)
+        .expect("he is here")
+        .set_counters(CounterKind::PlusOnePlusOne, 2);
+    settle_taking(&mut game, None);
+
+    let token = trainers(&game)
+        .into_iter()
+        .find(|permanent| permanent.card.definition.is_token())
+        .expect("the copy was made");
+    assert_eq!(
+        token.counters(CounterKind::PlusOnePlusOne),
+        0,
+        "the counters were not part of what it copied",
+    );
+    assert_eq!(
+        (game.power(token), game.toughness(token)),
+        (Some(1), Some(1)),
+        "so it is the 1/1 the ability makes",
+    );
+    let original = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == body)
+        .expect("he is still here");
+    assert_eq!(
+        (game.power(original), game.toughness(original)),
+        (Some(3), Some(4)),
+        "while he kept his own",
+    );
+}
