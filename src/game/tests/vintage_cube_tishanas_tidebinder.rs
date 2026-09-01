@@ -498,3 +498,89 @@ fn a_source_that_dies_first_is_countered_and_nothing_else() {
         "and the Tidebinder is unbothered by having silenced nobody",
     );
 }
+
+/// "Loses all abilities" is all of them, not only the one that was
+/// countered: a Shivan Dragon whose firebreathing is answered is left
+/// without its wings as well.
+#[test]
+fn the_silence_takes_the_keywords_too() {
+    let (mut game, tidebinder, ids) = staged(&[cards::SHIVAN_DRAGON]);
+    let dragon = ids[0];
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == dragon)
+            .is_some_and(|permanent| game.has_flying(permanent)),
+        "it flies to begin with",
+    );
+
+    let pump = activations(&game, PlayerId::Two, dragon)
+        .into_iter()
+        .next()
+        .expect("one red buys it a point of power");
+    game.apply(PlayerId::Two, pump).expect("it activates");
+    game.priority = PlayerId::One;
+    flash_it_in(&mut game, tidebinder);
+
+    let dragon = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == dragon)
+        .expect("it is still there");
+    assert!(
+        !game.has_flying(dragon),
+        "the silence took the flying with the firebreathing",
+    );
+    assert_eq!(
+        (game.power(dragon), game.toughness(dragon)),
+        (Some(5), Some(5)),
+        "and the pump it was buying never resolved",
+    );
+}
+
+/// "Up to one target activated or triggered ability" does not say whose: a
+/// Tidebinder flashed in on your own turn may answer your own trigger, which
+/// is a thing you do only to silence your own permanent on purpose.
+#[test]
+fn it_may_counter_your_own_ability() {
+    let (mut game, tidebinder, _) = staged(&[]);
+    let sorcerer = game
+        .put_onto_battlefield(PlayerId::One, cards::PRODIGAL_SORCERER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let ping = activations(&game, PlayerId::One, sorcerer)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility { targets, .. } => targets
+                .iter()
+                .any(|selection| selection.targets().contains(&Target::Player(PlayerId::Two))),
+            _ => false,
+        })
+        .expect("your own Sorcerer can point across the table");
+    game.apply(PlayerId::One, ping).expect("it activates");
+    let life = game.players[1].life;
+
+    flash_it_in(&mut game, tidebinder);
+
+    assert_eq!(
+        game.players[1].life, life,
+        "your own ping was countered by your own Merfolk",
+    );
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == sorcerer)
+        .expect("he is there")
+        .tapped = false;
+    assert!(
+        activations(&game, PlayerId::One, sorcerer).is_empty(),
+        "and your own Sorcerer is the one left silent",
+    );
+}
