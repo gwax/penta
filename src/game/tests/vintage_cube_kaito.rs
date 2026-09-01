@@ -207,3 +207,99 @@ fn the_minus_stuns_a_creature() {
     assert!(permanent(&game, bears_id).tapped, "one counter came off");
     assert_eq!(permanent(&game, bears_id).counters(CounterKind::Stun), 1);
 }
+
+/// Ninjutsu is how he is meant to arrive: an unblocked bear goes home and
+/// Kaito takes its place, tapped and attacking the player it was attacking.
+/// He arrives with his loyalty, so on your own turn he is at once the 3/4
+/// Ninja his static clause promises -- and he connects for it.
+#[test]
+fn ninjutsu_brings_him_in_attacking_and_he_connects() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    let bears = creature(109_000, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let kaito = card(109_001, cards::KAITO_BANE_OF_NIGHTMARES, PlayerId::One);
+    let kaito_id = kaito.id;
+    game.players[PlayerId::One.index()].hand.push(kaito);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = true;
+    game.priority = PlayerId::One;
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == bears_id {
+            permanent.attacking = true;
+            permanent.tapped = true;
+            permanent.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+        }
+    }
+    let life = game.players[PlayerId::Two.index()].life;
+
+    let ninjutsu = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == kaito_id))
+        .expect("an unblocked attacker and three mana is the whole cost");
+    game.apply(PlayerId::One, ninjutsu)
+        .expect("the ability activates");
+    settle(&mut game);
+
+    assert!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "the bear he replaced is back in hand",
+    );
+    let arrived = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::KAITO_BANE_OF_NIGHTMARES)
+        .expect("Kaito arrived");
+    let kaito_on_board = arrived.card.id;
+    assert!(arrived.tapped, "tapped, as ninjutsu puts him");
+    assert!(arrived.attacking, "and attacking");
+    assert_eq!(
+        arrived.attack_defender,
+        Some(AttackDefender::Player(PlayerId::Two)),
+        "the player the bear was attacking",
+    );
+    assert_eq!(
+        arrived.counters(CounterKind::Loyalty),
+        4,
+        "with his printed loyalty",
+    );
+    assert_eq!(
+        (game.power(arrived), game.toughness(arrived)),
+        (Some(3), Some(4)),
+        "which on your own turn makes him the 3/4 his static clause promises",
+    );
+    assert!(
+        game.permanent_has_executable_keyword(arrived, KeywordAbility::Hexproof),
+        "and hexproof with it",
+    );
+
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life - 3,
+        "a tapped attacker still deals its damage",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == kaito_on_board),
+        "and he is still standing afterwards",
+    );
+}
