@@ -386,3 +386,133 @@ fn a_room_card_off_the_top_costs_both_doors() {
         "three for the Closet and five for the Cellar",
     );
 }
+
+/// "'Saddled' isn't an ability that a creature has. It's just something true
+/// about that creature. It won't stop being saddled until the turn ends or
+/// it leaves the battlefield." A Bronco bounced and replayed the same turn
+/// is a new object with nothing true about it, so the drain turns back
+/// around.
+#[test]
+fn leaving_the_battlefield_unsaddles_it() {
+    let (mut game, bronco) = staged(
+        &[cards::GRIZZLY_BEARS, cards::GRIZZLY_BEARS],
+        &[cards::SERRA_ANGEL],
+    );
+    let before = [
+        game.players[PlayerId::One.index()].life,
+        game.players[PlayerId::Two.index()].life,
+    ];
+    let saddle = saddle_action(&game, bronco).expect("two bears are four power");
+    game.apply(PlayerId::One, saddle).expect("it activates");
+    settle(&mut game);
+    assert!(saddled(&game, bronco), "saddled for the turn");
+
+    game.return_permanent_to_hand(bronco);
+    drain_pending(&mut game);
+    let replayed = game
+        .put_onto_battlefield(PlayerId::One, cards::CAUSTIC_BRONCO)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    assert!(
+        !saddled(&game, replayed),
+        "what came back is a new object and nothing is true about it",
+    );
+
+    attack(&mut game, replayed);
+
+    assert_eq!(
+        [
+            game.players[PlayerId::One.index()].life,
+            game.players[PlayerId::Two.index()].life,
+        ],
+        [before[0] - 5, before[1]],
+        "so the Angel costs its own controller five again",
+    );
+}
+
+/// "If a permanent becomes a copy of a saddled Mount, the copy won't be
+/// saddled." Being saddled is not a copiable value, so a Clone that arrives
+/// as a saddled Bronco arrives unsaddled and drains its own controller.
+#[test]
+fn a_copy_of_a_saddled_bronco_is_not_saddled() {
+    let (mut game, bronco) = staged(
+        &[cards::GRIZZLY_BEARS, cards::GRIZZLY_BEARS],
+        &[cards::SERRA_ANGEL, cards::SERRA_ANGEL],
+    );
+    let saddle = saddle_action(&game, bronco).expect("two bears are four power");
+    game.apply(PlayerId::One, saddle).expect("it activates");
+    settle(&mut game);
+    assert!(saddled(&game, bronco), "the original is saddled");
+
+    let held = card(92_500, cards::CLONE, PlayerId::One);
+    let clone = held.id;
+    game.players[PlayerId::One.index()].hand.push(held);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == clone))
+        .expect("four mana casts the Clone");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    // Two Bears are on the board beside the Bronco, so the copy is named
+    // rather than taken as whatever the entry replacement offered first.
+    for _ in 0..16 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            if game.apply(game.priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        let wanted = decision
+            .options
+            .iter()
+            .find(|option| option.label == "Enter as a copy of Caustic Bronco")
+            .or_else(|| decision.options.first());
+        let options = wanted.map(|option| vec![option.id]).unwrap_or_default();
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("the decision accepts what it offered");
+    }
+    settle(&mut game);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+    // The Clone changes zones on its way in, so what stands there is a new
+    // object: it is found by what it copied rather than by the card's id.
+    let copy = game
+        .battlefield
+        .iter()
+        .find(|permanent| {
+            permanent.card.id != bronco
+                && Game::effective_rules_source(permanent)
+                    == ObjectCharacteristics::card(cards::CAUSTIC_BRONCO, CardPartId::PRIMARY)
+        })
+        .expect("the Clone arrived as a second Bronco");
+
+    assert!(
+        !copy.saddled,
+        "and copied nothing about the original being saddled",
+    );
+    assert!(
+        saddled(&game, bronco),
+        "while the original is saddled still",
+    );
+}
