@@ -354,3 +354,67 @@ fn the_bound_holds_on_every_players_turn() {
         "and one more once the turn has turned over",
     );
 }
+
+/// "If an opponent hasn't drawn any cards in a turn and a spell or ability
+/// instructs that player to draw multiple cards, that player will just draw
+/// one card." One instruction rather than two, and it is still one card.
+#[test]
+fn a_single_instruction_to_draw_three_draws_one() {
+    let (mut game, _) = staged();
+    let before = game.players[1].library.len();
+    assert_eq!(game.players[1].hand.len(), 0, "they have drawn nothing yet");
+
+    game.draw_cards(PlayerId::Two, 3);
+
+    assert_eq!(
+        game.players[1].hand.len(),
+        1,
+        "the instruction was for three and one is what it got",
+    );
+    assert_eq!(
+        game.players[1].library.len(),
+        before - 1,
+        "and the other two never left the library",
+    );
+}
+
+/// "Leovold will see cards drawn by opponents earlier in the turn before it
+/// entered the battlefield, although Leovold can't affect cards drawn before
+/// it entered." Two cards drawn before he lands are kept, and they are the
+/// two that stop a third.
+#[test]
+fn he_counts_the_cards_drawn_before_he_arrived() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[1].hand.clear();
+    game.players[1].library.clear();
+    for index in 0..8 {
+        game.players[1]
+            .library
+            .push(card(110_200 + index, cards::ISLAND, PlayerId::Two));
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    game.draw_cards(PlayerId::Two, 2);
+    assert_eq!(
+        game.players[1].hand.len(),
+        2,
+        "with nobody watching, two cards is two cards",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::LEOVOLD_EMISSARY_OF_TREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    game.draw_cards(PlayerId::Two, 1);
+
+    assert_eq!(
+        game.players[1].hand.len(),
+        2,
+        "he cannot take back what was drawn, and he allows nothing more",
+    );
+}
