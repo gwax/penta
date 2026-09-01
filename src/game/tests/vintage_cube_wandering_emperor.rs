@@ -262,3 +262,56 @@ fn instant_speed_is_still_one_ability_a_turn() {
         "one loyalty ability a turn is one, whatever the timing permission says",
     );
 }
+
+/// "Up to one target creature": with nobody on the battlefield the plus is
+/// still activatable, and it is loyalty gained for nothing else.
+#[test]
+fn the_plus_may_name_nobody() {
+    let (mut game, emperor) = staged();
+    let loyalty = |game: &Game| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == emperor)
+            .expect("she is there")
+            .counters(CounterKind::Loyalty)
+    };
+    assert_eq!(loyalty(&game), 3, "her printed loyalty");
+
+    let plus = loyalty_action(&game, emperor, 2)
+        .expect("up to one means none is an answer, even on an empty board");
+    game.apply(PlayerId::One, plus).expect("it activates");
+    settle(&mut game);
+
+    assert_eq!(loyalty(&game), 4, "and the counter went on regardless");
+}
+
+/// The minus names a tapped creature and says nothing about whose: your own
+/// attacker, tapped from swinging, is as legal a target as theirs -- and the
+/// two life is yours either way.
+#[test]
+fn the_second_minus_reaches_your_own_tapped_creature() {
+    let (mut game, emperor) = staged();
+    let mine = tapped_creature(&mut game, 130_400, PlayerId::One);
+    let life = game.players[PlayerId::One.index()].life;
+
+    let exile = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| targets_with(action, emperor, 4, mine))
+        .expect("a tapped creature of your own is a legal target");
+    game.apply(PlayerId::One, exile).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == mine),
+        "your own creature is what you exiled",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life + 2,
+        "and the two life is the caster's, whoever the creature belonged to",
+    );
+}
