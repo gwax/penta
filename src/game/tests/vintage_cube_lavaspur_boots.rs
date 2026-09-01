@@ -311,3 +311,120 @@ fn a_ward_nobody_can_pay_counters_without_asking() {
         "and the Bolt was countered",
     );
 }
+
+/// Every equip activation the Boots are offering right now, by what each
+/// would attach them to.
+fn equip_offers(game: &Game, boots: GameObjectId) -> Vec<Target> {
+    game.legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } if source == boots => Some(
+                targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .copied()
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect()
+}
+
+/// The printed equip ability, rather than the fixture's shortcut: one mana
+/// straps them on, and what they are strapped to grows and gains haste.
+#[test]
+fn equipping_costs_one_and_hands_over_the_grants() {
+    let (mut game, boots, lion) = staged(&[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == boots
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(lion))
+            }
+            _ => false,
+        })
+        .expect("one mana equips them");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        permanent(&game, boots).attached_to,
+        Some(lion),
+        "the Boots are on the Lions",
+    );
+    let lion = permanent(&game, lion);
+    assert_eq!(
+        (game.power(lion), game.toughness(lion)),
+        (Some(3), Some(1)),
+        "a 2/1 wearing +1/+0",
+    );
+    assert!(
+        game.permanent_has_executable_keyword(lion, KeywordAbility::Haste),
+        "and hasty for it",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        0,
+        "with the one mana spent",
+    );
+}
+
+/// "Equip only as a sorcery": their turn is no time to move the Boots.
+#[test]
+fn equip_waits_for_a_sorcery_window() {
+    let (mut game, boots, lion) = staged(&[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(
+        equip_offers(&game, boots).contains(&Target::Permanent(lion)),
+        "your own main phase is when it is offered",
+    );
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    assert!(
+        equip_offers(&game, boots).is_empty(),
+        "and their turn is not",
+    );
+
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    assert!(
+        equip_offers(&game, boots).is_empty(),
+        "nor is your own combat",
+    );
+}
+
+/// Equip names a creature you control: theirs is no host for your Boots.
+#[test]
+fn equip_names_only_your_own_creature() {
+    let (mut game, boots, lion) = staged(&[]);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.priority = PlayerId::One;
+
+    let offered = equip_offers(&game, boots);
+    assert!(
+        offered.contains(&Target::Permanent(lion)),
+        "your Lions are a host: {offered:?}",
+    );
+    assert!(
+        !offered.contains(&Target::Permanent(theirs)),
+        "their bear is not",
+    );
+}
