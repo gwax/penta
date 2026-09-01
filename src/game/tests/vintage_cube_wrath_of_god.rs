@@ -207,3 +207,71 @@ fn an_animated_artifact_is_swept_with_the_rest() {
         "an artifact that made itself a creature is a creature to be destroyed",
     );
 }
+
+/// Protection is damage, enchanting, blocking and targeting -- and a Wrath
+/// is none of the four. A Black Knight's protection from white is no answer
+/// to a white sweeper that names nothing.
+#[test]
+fn protection_from_white_is_no_answer_to_it() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    let knight = game
+        .put_onto_battlefield(PlayerId::Two, cards::BLACK_KNIGHT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert!(
+        game.permanent_has_executable_keyword(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == knight)
+                .expect("it is there"),
+            KeywordAbility::ProtectionFrom(&ObjectPredicateDef::Color(ManaColor::White)),
+        ),
+        "the Knight is protected from white to begin with",
+    );
+
+    wrath(&mut game);
+
+    assert!(
+        !on_battlefield(&game, cards::BLACK_KNIGHT),
+        "and destruction is not one of the things protection stops",
+    );
+}
+
+/// Everything dies at once, so every death trigger the sweep sets off is put
+/// on the stack together: two Drakes are two cards.
+#[test]
+fn the_deaths_it_causes_all_trigger() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    for _ in 0..2 {
+        game.put_onto_battlefield(PlayerId::One, cards::DARKSLICK_DRAKE)
+            .expect("cataloged");
+    }
+    game.put_onto_battlefield(PlayerId::Two, cards::DARKSLICK_DRAKE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let mine = game.players[PlayerId::One.index()].library.len();
+    let theirs = game.players[PlayerId::Two.index()].library.len();
+
+    wrath(&mut game);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !on_battlefield(&game, cards::DARKSLICK_DRAKE),
+        "all three Drakes died together",
+    );
+    assert_eq!(
+        mine - game.players[PlayerId::One.index()].library.len(),
+        2,
+        "and both of yours drew you a card",
+    );
+    assert_eq!(
+        theirs - game.players[PlayerId::Two.index()].library.len(),
+        1,
+        "as theirs drew them one",
+    );
+}
