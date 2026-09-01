@@ -220,3 +220,68 @@ fn warping_it_lends_the_body_for_a_turn() {
         "into exile, to be cast again later",
     );
 }
+
+/// Its ruling: "if a creature's power is less than 0 when it's doubled,
+/// instead that creature gets -X/-0, where X is how much less than 0 its
+/// power is." A Spider shrunk to -1/1 comes out of a land drop at -2/1.
+#[test]
+fn doubling_a_negative_power_makes_it_worse() {
+    let (mut game, harmonizer, ids) = staged(&[cards::GIANT_SPIDER]);
+    cast(&mut game, harmonizer, false);
+    let spider = ids[0];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == spider)
+        .expect("it is there")
+        .set_counters(CounterKind::MinusOneMinusOne, 3);
+    let shrunk = permanent(&game, spider);
+    assert_eq!(
+        (game.power(shrunk), game.toughness(shrunk)),
+        (Some(-1), Some(1)),
+        "a 2/4 under three counters",
+    );
+
+    play_land(&mut game);
+    settle(&mut game, Some(spider));
+
+    let doubled = permanent(&game, spider);
+    assert_eq!(
+        (game.power(doubled), game.toughness(doubled)),
+        (Some(-2), Some(1)),
+        "doubling minus one is minus two, and the toughness is untouched",
+    );
+}
+
+/// "Target creature you control": theirs is no target of yours, so with an
+/// Angel of theirs the only creature on the other side, the doubling has
+/// nowhere to go but the Harmonizer itself.
+#[test]
+fn it_cannot_double_their_creature() {
+    let (mut game, harmonizer, _) = staged(&[]);
+    cast(&mut game, harmonizer, false);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    play_land(&mut game);
+    settle(&mut game, None);
+
+    let angel = permanent(&game, theirs);
+    assert_eq!(
+        (game.power(angel), game.toughness(angel)),
+        (Some(4), Some(4)),
+        "their Angel is the size it was printed",
+    );
+    let mine = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::MIGHTFORM_HARMONIZER)
+        .expect("he is there");
+    assert_eq!(
+        game.power(mine),
+        Some(8),
+        "and the doubling landed on the only creature you control",
+    );
+}
