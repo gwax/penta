@@ -221,3 +221,53 @@ fn a_second_opal_never_turns_metalcraft_on() {
         "so metalcraft was never on when anybody could act",
     );
 }
+
+/// "Three or more artifacts" counts artifacts, not artifacts of one kind:
+/// an artifact creature and a Vehicle are each one of the three.
+#[test]
+fn every_kind_of_artifact_counts_toward_metalcraft() {
+    let (mut game, opal) = staged(0);
+    game.put_onto_battlefield(PlayerId::One, cards::BALEFUL_STRIX)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert!(
+        mana_action(&game, opal, ManaColor::Blue).is_none(),
+        "an artifact creature is one of the three and not three of them",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::SMUGGLER_S_COPTER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert!(
+        mana_action(&game, opal, ManaColor::Blue).is_some(),
+        "the Mox, a creature and a Vehicle are three artifacts",
+    );
+}
+
+/// "You control": their side of the table is no part of the count.
+#[test]
+fn their_artifacts_do_not_turn_it_on() {
+    let (mut game, opal) = staged(0);
+    for _ in 0..4 {
+        game.put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+
+    assert!(
+        mana_action(&game, opal, ManaColor::Blue).is_none(),
+        "four of theirs is none of yours",
+    );
+
+    // The same two artifacts on your own side switch it on.
+    for _ in 0..2 {
+        game.put_onto_battlefield(PlayerId::One, cards::MANIFOLD_KEY)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+    assert!(
+        mana_action(&game, opal, ManaColor::Blue).is_some(),
+        "and two of yours beside it are enough",
+    );
+}
