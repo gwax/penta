@@ -196,3 +196,79 @@ fn one_life_does_not_stop_the_colored_half() {
         "and the artifact killed its own controller",
     );
 }
+
+/// The mirror of the horizon land: a Guardian Angel's shield answers damage,
+/// and a Talisman deals damage, so the shield eats the one point and the
+/// mana is made for free.
+#[test]
+fn a_prevention_shield_answers_the_talismans_damage() {
+    let (mut game, talisman) = staged_with(cards::TALISMAN_OF_PROGRESS);
+    let angel = card(94_900, cards::GUARDIAN_ANGEL, PlayerId::One);
+    let angel_id = angel.id;
+    game.players[PlayerId::One.index()].hand.push(angel);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.apply(
+        PlayerId::One,
+        cast_action(angel_id, vec![Target::Player(PlayerId::One)], Vec::new(), 1),
+    )
+    .expect("a shield of one is castable");
+    drain_pending(&mut game);
+    game.empty_mana_pools();
+    let life = game.players[PlayerId::One.index()].life;
+
+    let blue = mana_action(&game, talisman, ManaColor::Blue).expect("it makes blue");
+    game.apply(PlayerId::One, blue).expect("it activates");
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.blue,
+        1,
+        "the blue was made",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life,
+        "and the shield ate the damage the Talisman deals",
+    );
+}
+
+/// A Talisman's abilities are mana abilities: they neither use the stack nor
+/// wait for one to be empty, so they pay for a spell in the middle of
+/// casting it -- on the other player's turn, from a board that has just
+/// arrived.
+#[test]
+fn its_mana_pays_for_a_spell_on_their_turn() {
+    let (mut game, talisman) = staged_with(cards::TALISMAN_OF_PROGRESS);
+    let arrived = game.turns_started[PlayerId::One.index()];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == talisman)
+        .expect("it is there")
+        .entered_controller_turn = arrived;
+    game.players[PlayerId::One.index()].hand.clear();
+    game.empty_mana_pools();
+    let scour = card(94_950, cards::THOUGHT_SCOUR, PlayerId::One);
+    let scour_id = scour.id;
+    game.players[PlayerId::One.index()].hand.push(scour);
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.stack.push(crate::game::tests::spell(
+        94_960,
+        cards::GRIZZLY_BEARS,
+        PlayerId::Two,
+        0,
+    ));
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == scour_id))
+        .expect("one blue is castable with the Talisman untapped");
+    let sources = game.mana_sources_for_action(PlayerId::One, &cast);
+    assert!(
+        sources.contains(&talisman),
+        "and the Talisman is one of the sources offered to pay for it",
+    );
+}
