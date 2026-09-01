@@ -79,14 +79,15 @@ fn x_is_however_much_life_you_will_pay() {
         .collect::<Vec<_>>();
     offered.sort_unstable();
     offered.dedup();
-    // One is the floor rather than zero: every share of a divided total has
-    // to be at least one damage, so an X of nothing has nothing to divide
-    // and no way to fill the slot.
+    // "If X is 0, the number of targets must also be 0": paying nothing is
+    // a legal cast that names nobody, and one life is the smallest that
+    // does anything.
     assert_eq!(
         offered.first().copied(),
-        Some(1),
-        "one life is the smallest cast that does anything",
+        Some(0),
+        "an X of nothing is a cast for nothing",
     );
+    assert!(offered.contains(&1), "one life is the smallest that burns");
     assert!(
         offered.contains(&20),
         "and every point of life you have is on offer: {offered:?}",
@@ -99,7 +100,11 @@ fn x_is_however_much_life_you_will_pay() {
         .collect::<Vec<_>>();
     poorer.sort_unstable();
     poorer.dedup();
-    assert_eq!(poorer, vec![1, 2], "two life buys two damage and no more");
+    assert_eq!(
+        poorer,
+        vec![0, 1, 2],
+        "two life buys two damage and no more",
+    );
 }
 
 /// The damage is divided as its caster chooses, and the life is spent for
@@ -283,5 +288,44 @@ fn the_split_cannot_be_redistributed_after_the_fact() {
     assert_eq!(
         game.players[0].life, 18,
         "and the two life is spent either way"
+    );
+}
+
+/// "If X is 0, the number of targets must also be 0." The cast is legal and
+/// pointless: no life, no targets, no damage -- and a spell cast all the
+/// same, which is the only reason anybody would.
+#[test]
+fn an_x_of_zero_names_nobody_and_is_still_a_spell() {
+    let (mut game, covenant, creatures) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = creatures[0];
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == covenant && choices.x() == 0 && choices.iter_targets().count() == 0
+            }
+            _ => false,
+        })
+        .expect("an X of zero names nobody");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(game.players[0].life, 20, "no life was paid for it");
+    assert_eq!(damage_on(&game, bears), Some(0), "and nothing was dealt");
+    assert!(
+        game.events.iter().any(|event| matches!(
+            event,
+            GameEvent::SpellResolved { definition, .. } if *definition == cards::FIRE_COVENANT
+        )),
+        "the spell resolved rather than being countered for want of targets",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::FIRE_COVENANT),
+        "and went to the graveyard like any other",
     );
 }

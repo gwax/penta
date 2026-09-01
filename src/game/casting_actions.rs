@@ -796,7 +796,12 @@ impl Game {
                     DividedTotal::ChosenX => u8::try_from(x).unwrap_or(u8::MAX),
                 };
                 // Every chosen target takes at least one, so the number of
-                // targets follows from how the total is split.
+                // targets follows from how the total is split -- and "if X is
+                // 0, the number of targets must also be 0", which is a legal
+                // cast wherever the slot has no minimum of its own.
+                if total == 0 && slot.minimum == 0 {
+                    choices.push(TargetSelection::divided(slot.id, Vec::new(), Vec::new()));
+                }
                 for count in 1..=usize::from(total).min(candidates.len()) {
                     for targets in target_combinations(&candidates, count) {
                         for amounts in positive_compositions(total, count) {
@@ -881,7 +886,11 @@ impl Game {
                         DividedTotal::ChosenX => u8::try_from(x).unwrap_or(u8::MAX),
                     };
                     // Every chosen target takes at least one, so the number
-                    // of targets follows from how the total is split.
+                    // of targets follows from how the total is split -- and a
+                    // total of nothing divides into no targets at all.
+                    if total == 0 && slot.minimum == 0 {
+                        choices.push(TargetSelection::divided(id, Vec::new(), Vec::new()));
+                    }
                     for count in 1..=usize::from(total).min(candidates.len()) {
                         for targets in target_combinations(&candidates, count) {
                             for amounts in positive_compositions(total, count) {

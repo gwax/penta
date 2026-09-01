@@ -51,6 +51,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A divided total of zero divides among no targets.** Fire Covenant's
+  ruling: "if X is 0, the number of targets must also be 0." Both target
+  enumerations for "X damage divided as you choose" started counting targets
+  at one, so an X of zero produced no selection at all and the cast was never
+  offered -- a legal, if pointless, spell that a prowess or storm deck has a
+  reason to cast. A slot with no minimum of its own now offers the empty
+  division; one that names a minimum still owes it.
+
 - **Somebody else's alternative cost is not the card's own.** CR 601.2f
   allows one alternative cost per cast, and Baleful Mastery's ruling spells
   out what that means: "if an effect lets you cast a Mastery spell without
