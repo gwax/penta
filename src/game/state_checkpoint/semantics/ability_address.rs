@@ -1,9 +1,11 @@
-//! Addressing an authored ability by a durable catalog locator.
+//! Addressing an authored ability, and the effects beneath it, by a durable
+//! catalog locator.
 //!
 //! Every ability the rules engine can be holding has to be nameable as a
 //! position in the catalog, because that position is all a checkpoint ships.
-//! One walk defines those positions, and both the single-ability search and
-//! the audits' whole-catalog index are expressed on top of it.
+//! One walk defines those positions, and the single-ability search, the
+//! effect searches rooted in it, and the audits' whole-catalog indexes are all
+//! expressed on top of it.
 
 use std::ops::ControlFlow;
 
@@ -16,6 +18,20 @@ use super::token::authored_tokens;
 use super::virtual_objects::token_parts;
 use crate::card::AbilityDef;
 use crate::{CardCatalog, CardDefinitionId};
+
+#[cfg(test)]
+use std::collections::HashMap;
+#[cfg(test)]
+use std::hash::Hash;
+
+#[cfg(test)]
+use super::super::model::{AppliedEffectLocator, ManaPayloadLocator, ReplacementEffectLocator};
+#[cfg(test)]
+use super::{applied_effects, mana_effect_matches, mana_effects, replacement_effects};
+#[cfg(test)]
+use crate::card::{ManaColor, ManaRestrictionDef, ManaSpendEffectDef};
+#[cfg(test)]
+use crate::game::Mana;
 
 /// Where an authored ability tree is rooted, and the identifiers a locator
 /// into it is built from. The virtual-object locators are held by reference so
@@ -168,12 +184,129 @@ pub(in crate::game::state_checkpoint) fn ability_locator(
 #[cfg(test)]
 pub(in crate::game::state_checkpoint) fn ability_locator_index(
     catalog: &CardCatalog,
-) -> std::collections::HashMap<AbilityDef, AbilityLocator> {
-    let mut index = std::collections::HashMap::new();
+) -> HashMap<AbilityDef, AbilityLocator> {
+    let mut index = HashMap::new();
     let walk: ControlFlow<()> = visit_authored_abilities(catalog, &mut |ability, root, nested| {
         index
             .entry(*ability)
             .or_insert_with(|| root.locator(nested.to_vec()));
+        ControlFlow::Continue(())
+    });
+    debug_assert!(walk.is_continue(), "the index walk never breaks");
+    index
+}
+
+/// One catalog-wide index from an effect to the locator that rebuilds it,
+/// built by the same walk the matching search uses.
+///
+/// The search answers "the first ability holding this effect, and where the
+/// effect sits inside it". Inserting only on vacancy reproduces both halves of
+/// that: the first ability in walk order wins, and within it the earliest
+/// position holding an equal effect wins.
+#[cfg(test)]
+fn effect_locator_index<Effect, Locator>(
+    catalog: &CardCatalog,
+    effects: impl Fn(&AbilityDef) -> Vec<Effect>,
+    locate: impl Fn(AbilityLocator, usize) -> Locator,
+) -> HashMap<Effect, Locator>
+where
+    Effect: Copy + Eq + Hash,
+{
+    let mut index = HashMap::new();
+    let walk: ControlFlow<()> = visit_authored_abilities(catalog, &mut |ability, root, nested| {
+        for (effect_index, effect) in effects(ability).into_iter().enumerate() {
+            index
+                .entry(effect)
+                .or_insert_with(|| locate(root.locator(nested.to_vec()), effect_index));
+        }
+        ControlFlow::Continue(())
+    });
+    debug_assert!(walk.is_continue(), "the index walk never breaks");
+    index
+}
+
+/// Every applied effect in the catalog paired with the locator that
+/// `applied_effect_locator` resolves it to.
+#[cfg(test)]
+pub(in crate::game::state_checkpoint) fn applied_effect_locator_index(
+    catalog: &CardCatalog,
+) -> HashMap<crate::card::AppliedEffectDef, AppliedEffectLocator> {
+    effect_locator_index(catalog, applied_effects, |ability, effect_index| {
+        AppliedEffectLocator {
+            ability,
+            effect_index,
+        }
+    })
+}
+
+/// Every replacement effect in the catalog paired with the locator that
+/// `replacement_effect_locator` resolves it to.
+#[cfg(test)]
+pub(in crate::game::state_checkpoint) fn replacement_effect_locator_index(
+    catalog: &CardCatalog,
+) -> HashMap<crate::card::ReplacementEffectDef, ReplacementEffectLocator> {
+    effect_locator_index(catalog, replacement_effects, |ability, effect_index| {
+        ReplacementEffectLocator {
+            ability,
+            effect_index,
+        }
+    })
+}
+
+/// What decides whether a mana unit is served by a given mana effect.
+///
+/// `source` is deliberately absent: the search ignores it, so folding it into
+/// the key would split entries that the search treats as one.
+#[cfg(test)]
+pub(in crate::game::state_checkpoint) type ManaPayloadKey = (
+    &'static [ManaRestrictionDef],
+    &'static [ManaSpendEffectDef],
+    ManaColor,
+);
+
+/// The key under which [`mana_payload_locator_index`] holds `mana`.
+#[cfg(test)]
+pub(in crate::game::state_checkpoint) fn mana_payload_key(mana: Mana) -> ManaPayloadKey {
+    (mana.restrictions, mana.spend_effects, mana.color)
+}
+
+/// Every locatable mana unit in the catalog paired with the locator that
+/// `mana_payload_locator` resolves it to.
+///
+/// Unlike the effect indexes above, a mana effect is matched by a relation
+/// rather than by equality -- one that names a chosen colour serves any of
+/// them. So each effect is offered every colour and the real predicate decides,
+/// which keeps the index from restating which selections cover which colours
+/// and then drifting from the search that does.
+#[cfg(test)]
+pub(in crate::game::state_checkpoint) fn mana_payload_locator_index(
+    catalog: &CardCatalog,
+) -> HashMap<ManaPayloadKey, ManaPayloadLocator> {
+    let mut index = HashMap::new();
+    let walk: ControlFlow<()> = visit_authored_abilities(catalog, &mut |ability, root, nested| {
+        for (effect_index, effect) in mana_effects(ability).into_iter().enumerate() {
+            // Unrestricted mana rides as a plain coloured count and the search
+            // declines to locate it at all.
+            if effect.restrictions.is_empty() && effect.spend_effects.is_empty() {
+                continue;
+            }
+            for color in ManaColor::ALL {
+                let offered = Mana {
+                    color,
+                    source: None,
+                    restrictions: effect.restrictions,
+                    spend_effects: effect.spend_effects,
+                };
+                if mana_effect_matches(effect, offered) {
+                    index
+                        .entry(mana_payload_key(offered))
+                        .or_insert_with(|| ManaPayloadLocator {
+                            ability: root.locator(nested.to_vec()),
+                            effect_index,
+                        });
+                }
+            }
+        }
         ControlFlow::Continue(())
     });
     debug_assert!(walk.is_continue(), "the index walk never breaks");

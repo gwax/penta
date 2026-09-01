@@ -7,7 +7,10 @@ mod virtual_objects;
 pub(super) use crate::card::child_effects;
 pub(super) use ability_address::ability_locator;
 #[cfg(test)]
-pub(super) use ability_address::ability_locator_index;
+pub(super) use ability_address::{
+    ability_locator_index, applied_effect_locator_index, mana_payload_key,
+    mana_payload_locator_index, replacement_effect_locator_index,
+};
 use emblem::authored_emblems;
 pub(super) use emblem::{catalog_emblem_characteristics, emblem_characteristics_locator};
 pub(super) use keyword::{keyword_snapshot, parse_keyword};
@@ -520,26 +523,6 @@ pub(super) fn catalog_scoped_effect(
     Some(ScopedEffect {
         effect,
         target_base: snapshot.target_base,
-    })
-}
-
-#[cfg(test)]
-pub(super) fn replacement_effect_locator(
-    catalog: &CardCatalog,
-    expected: ReplacementEffectDef,
-) -> Option<ReplacementEffectLocator> {
-    let ability = ability_locator(catalog, |candidate| {
-        replacement_effects(candidate)
-            .into_iter()
-            .any(|effect| effect == expected)
-    })?;
-    let definition = catalog_ability(catalog, &ability)?;
-    let effect_index = replacement_effects(&definition)
-        .into_iter()
-        .position(|effect| effect == expected)?;
-    Some(ReplacementEffectLocator {
-        ability,
-        effect_index,
     })
 }
 

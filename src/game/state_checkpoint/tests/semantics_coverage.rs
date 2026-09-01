@@ -10,10 +10,11 @@
 use super::super::ScopedEffect;
 use super::super::model::AbilityLocator;
 use super::super::semantics::{
-    ability_locator, ability_locator_index, applied_effect_locator, applied_effects,
+    ability_locator, ability_locator_index, applied_effect_locator_index, applied_effects,
     catalog_ability, catalog_applied_effect, catalog_mana_payload, catalog_replacement_effect,
-    catalog_scoped_effect, child_abilities, mana_effects, mana_payload_locator,
-    replacement_effect_locator, replacement_effects, scoped_effect_snapshot,
+    catalog_scoped_effect, child_abilities, mana_effects, mana_payload_key,
+    mana_payload_locator_index, replacement_effect_locator_index, replacement_effects,
+    scoped_effect_snapshot,
 };
 use crate::card::{
     AbilityDef, AbilityProgramDef, AddManaEffectDef, EffectDef, ManaColor, ManaSelectionDef,
@@ -120,11 +121,13 @@ fn one_shot_cast_grant_has_a_stable_locator() {
 #[test]
 fn every_catalog_applied_effect_has_a_locator_that_rebuilds_it() {
     let catalog = crate::poc::catalog().expect("catalog builds");
+    let locators = applied_effect_locator_index(&catalog);
     let mut unaddressable = Vec::new();
     for (definition, _, ability) in catalog_abilities(&catalog) {
         for effect in applied_effects(&ability) {
-            let rebuilt = applied_effect_locator(&catalog, effect)
-                .and_then(|locator| catalog_applied_effect(&catalog, &locator));
+            let rebuilt = locators
+                .get(&effect)
+                .and_then(|locator| catalog_applied_effect(&catalog, locator));
             if rebuilt != Some(effect) {
                 unaddressable.push(format!(
                     "{}: {}",
@@ -143,11 +146,13 @@ fn every_catalog_applied_effect_has_a_locator_that_rebuilds_it() {
 #[test]
 fn every_catalog_replacement_effect_has_a_locator_that_rebuilds_it() {
     let catalog = crate::poc::catalog().expect("catalog builds");
+    let locators = replacement_effect_locator_index(&catalog);
     let mut unaddressable = Vec::new();
     for (definition, _, ability) in catalog_abilities(&catalog) {
         for effect in replacement_effects(&ability) {
-            let rebuilt = replacement_effect_locator(&catalog, effect)
-                .and_then(|locator| catalog_replacement_effect(&catalog, &locator));
+            let rebuilt = locators
+                .get(&effect)
+                .and_then(|locator| catalog_replacement_effect(&catalog, locator));
             if rebuilt != Some(effect) {
                 unaddressable.push(format!(
                     "{}: {}",
@@ -169,6 +174,7 @@ fn every_catalog_replacement_effect_has_a_locator_that_rebuilds_it() {
 #[test]
 fn every_catalog_mana_unit_that_needs_a_locator_has_one() {
     let catalog = crate::poc::catalog().expect("catalog builds");
+    let locators = mana_payload_locator_index(&catalog);
     let mut unaddressable = Vec::new();
     for (definition, _, ability) in catalog_abilities(&catalog) {
         for effect in mana_effects(&ability) {
@@ -176,8 +182,9 @@ fn every_catalog_mana_unit_that_needs_a_locator_has_one() {
                 continue;
             }
             for mana in produced_mana(effect) {
-                let rebuilt = mana_payload_locator(&catalog, mana)
-                    .and_then(|locator| catalog_mana_payload(&catalog, &locator));
+                let rebuilt = locators
+                    .get(&mana_payload_key(mana))
+                    .and_then(|locator| catalog_mana_payload(&catalog, locator));
                 let matches = rebuilt.is_some_and(|rebuilt| {
                     rebuilt.restrictions == mana.restrictions
                         && rebuilt.spend_effects == mana.spend_effects
