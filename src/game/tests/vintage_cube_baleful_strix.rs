@@ -246,3 +246,84 @@ fn settle_combat(game: &mut Game) {
     }
     game.check_state_based_actions();
 }
+
+/// Deathtouch destroys, and indestructible ignores destruction: a Darksteel
+/// Myr the Bird bites takes its one damage and stands there, which is the
+/// one board a 1/1 deathtoucher cannot answer.
+#[test]
+fn indestructible_survives_the_bite() {
+    let (mut game, strix) = staged();
+    let myr = game
+        .put_onto_battlefield(PlayerId::Two, cards::DARKSTEEL_MYR)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+
+    game.declare_attacker(strix, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    game.declare_blocker(myr, strix);
+    game.finish_declaring_blockers();
+    settle_combat(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == myr),
+        "deathtouch says destroy, and it cannot be destroyed",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == myr)
+            .expect("it is still there")
+            .damage,
+        1,
+        "with the Bird's one point marked on it all the same",
+    );
+}
+
+/// Deathtouch is about creatures: damage to a planeswalker is loyalty and
+/// nothing more, so the Bird takes one counter off Jace rather than the
+/// whole of him.
+#[test]
+fn a_planeswalker_loses_one_loyalty_and_no_more() {
+    let (mut game, strix) = staged();
+    let jace = game
+        .put_onto_battlefield(PlayerId::Two, cards::JACE_THE_MIND_SCULPTOR)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+
+    game.declare_attacker(strix, AttackDefender::Planeswalker(jace));
+    game.finish_declaring_attackers();
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    game.finish_declaring_blockers();
+    settle_combat(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == jace)
+            .expect("he is still standing")
+            .counters(CounterKind::Loyalty),
+        2,
+        "one point of deathtouch damage is one loyalty counter",
+    );
+}
