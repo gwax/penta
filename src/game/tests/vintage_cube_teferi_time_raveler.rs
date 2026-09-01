@@ -326,3 +326,75 @@ fn a_bounce_with_no_target_left_draws_nothing() {
         "and the library is where it was",
     );
 }
+
+/// "Cast spells only any time they could cast a sorcery" is about spells:
+/// their activated abilities keep instant speed, so a fetchland of theirs
+/// cracks on your turn while their Bolt sits in hand.
+#[test]
+fn their_abilities_are_untouched_by_the_restriction() {
+    let (mut game, _teferi, _mine, _ponder, their_bolt) = staged();
+    game.players[PlayerId::Two.index()].library.clear();
+    game.players[PlayerId::Two.index()]
+        .library
+        .push(card(274_500, cards::ISLAND, PlayerId::Two));
+    let fetch = game
+        .put_onto_battlefield(PlayerId::Two, cards::FLOODED_STRAND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+
+    assert!(
+        !can_cast(&game, PlayerId::Two, their_bolt),
+        "their spell waits for a sorcery window that is not on your turn",
+    );
+    let crack = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == fetch))
+        .expect("an ability of theirs is not a spell");
+    game.apply(PlayerId::Two, crack).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::ISLAND
+                && permanent.controller == PlayerId::Two),
+        "and it found what it went looking for, on your turn",
+    );
+}
+
+/// "Until your next turn": the permission is not forever. Once your next
+/// turn has begun the sorcery is stuck where every sorcery is again.
+#[test]
+fn the_plus_one_expires_when_your_next_turn_comes() {
+    let (mut game, teferi, _mine, ponder, _theirs) = staged();
+    activate(&mut game, teferi, 1, None);
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+    assert!(
+        can_cast(&game, PlayerId::One, ponder),
+        "their turn is covered by the permission",
+    );
+
+    // Your next turn arrives, which is where the clause stops.
+    let started = game.turns_started[PlayerId::One.index()];
+    for _ in 0..4 {
+        if game.turns_started[PlayerId::One.index()] > started {
+            break;
+        }
+        game.cleanup();
+        game.start_next_turn();
+        drain_pending(&mut game);
+    }
+    game.step = Step::EndOfCombat;
+    game.priority = PlayerId::One;
+
+    assert_eq!(game.active_player, PlayerId::One, "it is your turn again");
+    assert!(
+        !can_cast(&game, PlayerId::One, ponder),
+        "and the flash it lent is spent: a sorcery waits for a main phase",
+    );
+}
