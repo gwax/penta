@@ -211,3 +211,82 @@ fn paying_the_last_two_life_loses_the_game() {
         "nobody survives paying their last two life",
     );
 }
+
+/// The reason it costs nothing: on their turn, with their Bolt on the stack
+/// and no mana of yours open, two life turns the 2/2 into a 4/4 that lives
+/// through three damage.
+#[test]
+fn two_life_saves_a_creature_from_their_bolt() {
+    let (mut game, growth, bears) = staged();
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.players[PlayerId::One.index()].mana_pool = ManaPool::default();
+    let bolt = card(113_000, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(bolt_id, vec![Target::Permanent(bears)], Vec::new(), 0),
+    )
+    .expect("their Bolt names your bear");
+
+    game.priority = PlayerId::One;
+    let save = cast_at(&game, growth, bears, true)
+        .expect("no mana at all, and their turn, and it is still castable");
+    game.apply(PlayerId::One, save).expect("it is cast");
+    for _ in 0..8 {
+        if game.stack.iter().count() == 0 {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("a 4/4 lives through three damage");
+    assert_eq!(survivor.damage, 3, "the Bolt still dealt its three");
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        18,
+        "and the two life was what paid for the save",
+    );
+}
+
+/// The life is paid rather than dealt, so a shield that answers damage
+/// answers none of it: the Growth still costs its two.
+#[test]
+fn the_life_is_paid_and_not_dealt() {
+    let (mut game, growth, bears) = staged();
+    let angel = card(113_100, cards::GUARDIAN_ANGEL, PlayerId::One);
+    let angel_id = angel.id;
+    game.players[PlayerId::One.index()].hand.push(angel);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.apply(
+        PlayerId::One,
+        cast_action(angel_id, vec![Target::Player(PlayerId::One)], Vec::new(), 2),
+    )
+    .expect("a shield of two is castable");
+    drain_pending(&mut game);
+    game.empty_mana_pools();
+    let life = game.players[PlayerId::One.index()].life;
+
+    let cast = cast_at(&game, growth, bears, true).expect("two life pays for it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life - 2,
+        "the shield answers damage, and this is a payment",
+    );
+    assert_eq!(power(&game, bears), Some(4), "and the bear grew for it");
+}
