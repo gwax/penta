@@ -692,6 +692,7 @@ mod vintage_cube_starting_town;
 mod vintage_cube_static_prison;
 mod vintage_cube_stern_scolding;
 mod vintage_cube_stock_up;
+mod vintage_cube_stomping_ground;
 mod vintage_cube_stoneforge;
 mod vintage_cube_stormchasers_talent;
 mod vintage_cube_strip_mine;
