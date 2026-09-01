@@ -225,3 +225,100 @@ fn the_crew_wears_off() {
 
     assert!(!is_creature(&game, copter), "back to being an artifact");
 }
+
+/// "Any untapped creature you control can be tapped to pay a crew cost, even
+/// one that just came under your control." A bear that cannot attack is a
+/// bear that can still crew.
+#[test]
+fn a_creature_that_arrived_this_turn_may_still_crew() {
+    let (mut game, copter, crewers) = staged(&[cards::GRIZZLY_BEARS]);
+    let bear = crewers[0];
+    let arrived = game.turns_started[PlayerId::One.index()];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bear)
+        .expect("it is there")
+        .entered_controller_turn = arrived;
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::DeclareAttacker { attacker, .. } if *attacker == bear)
+        }),
+        "the bear itself is too new to attack",
+    );
+
+    crew(&mut game, copter);
+
+    assert!(is_creature(&game, copter), "and new or not, it crewed");
+    assert!(
+        permanent(&game, bear).tapped,
+        "the crew cost taps whoever pays it",
+    );
+    assert_eq!(
+        (
+            game.power(permanent(&game, copter)),
+            game.toughness(permanent(&game, copter))
+        ),
+        (Some(3), Some(3)),
+        "the Vehicle is the printed 3/3, not the bear that crewed it",
+    );
+}
+
+/// The loot is a "you may": declining draws nothing and discards nothing,
+/// which is what you want with a hand you would rather keep.
+#[test]
+fn the_loot_may_be_declined() {
+    let (mut game, copter, _) = staged(&[cards::GRIZZLY_BEARS]);
+    crew(&mut game, copter);
+    game.players[PlayerId::One.index()]
+        .hand
+        .push(card(99_100, cards::MOUNTAIN, PlayerId::One));
+    let hand = game.players[PlayerId::One.index()].hand.len();
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(copter, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+
+    let decision = loop {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            break decision;
+        }
+        let priority = game.priority;
+        assert!(
+            game.apply(priority, Action::PassPriority).is_ok(),
+            "the attack trigger is waiting to ask",
+        );
+    };
+    let decline = decision
+        .options
+        .iter()
+        .find(|option| option.label != "Do it")
+        .expect("declining is one of the answers");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decline.id],
+        },
+    )
+    .expect("a may is a may");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library,
+        "nothing was drawn",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        hand,
+        "so nothing had to be discarded",
+    );
+    assert!(game.players[PlayerId::One.index()].graveyard.is_empty());
+}
