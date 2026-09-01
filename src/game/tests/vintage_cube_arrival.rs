@@ -399,3 +399,158 @@ fn an_evoked_fury_burns_and_then_sacrifices_itself() {
         );
     }
 }
+
+/// "If some of the targets are illegal as the ability resolves, the original
+/// division still applies, but the damage that would have been dealt to the
+/// illegal targets isn't dealt at all." Killing one of the two Angels in
+/// response saves it two damage and buys the other nothing.
+#[test]
+fn a_target_that_leaves_takes_its_share_of_the_damage_with_it() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let doomed = creature(77_200, cards::SERRA_ANGEL, PlayerId::Two);
+    let doomed_id = doomed.card.id;
+    game.battlefield.push(doomed);
+    let survivor = creature(77_201, cards::SERRA_ANGEL, PlayerId::Two);
+    let survivor_id = survivor.card.id;
+    game.battlefield.push(survivor);
+
+    game.put_onto_battlefield(PlayerId::One, cards::FURY)
+        .expect("cataloged");
+    let targets = loop {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            break decision;
+        }
+        let player = game.priority;
+        assert!(
+            game.apply(player, Action::PassPriority).is_ok(),
+            "the enters trigger is waiting on its targets",
+        );
+    };
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: targets.id,
+            options: targets
+                .options
+                .iter()
+                .filter(|option| option.label == "Serra Angel")
+                .map(|option| option.id)
+                .collect(),
+        },
+    )
+    .expect("naming both Angels is legal");
+    let division = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the split is asked once the targets are known");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: division.id,
+            options: vec![
+                division
+                    .options
+                    .iter()
+                    .find(|option| option.label.starts_with("2 to"))
+                    .expect("two and two is one of the splits")
+                    .id,
+            ],
+        },
+    )
+    .expect("the split is chosen");
+
+    // In response to the trigger, one of the two is gone.
+    game.move_permanents_to_graveyard(&[doomed_id]);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == survivor_id)
+        .expect("the other Angel is still standing");
+    assert_eq!(
+        survivor.damage, 2,
+        "its own two, and not the two the dead Angel was owed",
+    );
+}
+
+/// Double strike is printed on the body: a Fury that points its arrival at
+/// something else and survives hits for three twice.
+#[test]
+fn fury_hits_twice_in_combat() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.battlefield
+        .push(creature(77_300, cards::SERRA_ANGEL, PlayerId::Two));
+    let fury = game
+        .put_onto_battlefield(PlayerId::One, cards::FURY)
+        .expect("cataloged");
+
+    // Fury is a creature too, so the arrival has to be aimed away from it.
+    let targets = loop {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            break decision;
+        }
+        let player = game.priority;
+        assert!(
+            game.apply(player, Action::PassPriority).is_ok(),
+            "the enters trigger is waiting on its targets",
+        );
+    };
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: targets.id,
+            options: vec![
+                targets
+                    .options
+                    .iter()
+                    .find(|option| option.label == "Serra Angel")
+                    .expect("their Angel is eligible")
+                    .id,
+            ],
+        },
+    )
+    .expect("naming their Angel is legal");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == fury)
+        .expect("it survived its own arrival")
+        .entered_controller_turn = 0;
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::One;
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::One;
+    let life = game.players[PlayerId::Two.index()].life;
+    assert!(
+        game.permanent_has_executable_keyword(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == fury)
+                .expect("it is there"),
+            KeywordAbility::DoubleStrike,
+        ),
+        "it is printed with double strike",
+    );
+
+    game.declare_attacker(fury, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+    game.advance_step();
+    game.deal_combat_damage();
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life - 6,
+        "three in the first strike step and three in the second",
+    );
+}
