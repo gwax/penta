@@ -144,3 +144,83 @@ fn it_costs_a_mana_to_spend() {
         "the generic mana in the cost has to come from somewhere",
     );
 }
+
+/// The trigger reads "put into a graveyard from the battlefield": a Star
+/// exiled instead never reaches one, so the card stays in the library.
+#[test]
+fn exiling_it_draws_nothing() {
+    let (mut game, star) = staged();
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    game.exile_permanent(star);
+    settle(&mut game);
+
+    assert!(
+        game.players[PlayerId::One.index()]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::CHROMATIC_STAR),
+        "the Star is in exile",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library,
+        "and nothing was drawn on the way",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].graveyard.is_empty(),
+        "it never touched a graveyard",
+    );
+}
+
+/// The sacrifice is a cost, so the Star answers the removal pointed at it:
+/// spent in response to an Abrade, it makes its mana, draws its card, and
+/// leaves the spell with nothing to destroy.
+#[test]
+fn spending_it_in_response_leaves_their_removal_with_nothing() {
+    let (mut game, star) = staged();
+    let abrade = card(92_500, cards::ABRADE, PlayerId::Two);
+    let abrade_id = abrade.id;
+    game.players[PlayerId::Two.index()].hand.push(abrade);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    game.priority = PlayerId::Two;
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == abrade_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(star))
+            }
+            _ => false,
+        })
+        .expect("Abrade's second mode names an artifact");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+
+    game.priority = PlayerId::One;
+    let green = mana_action(&game, star, ManaColor::Green)
+        .expect("the Star may be spent while their spell waits");
+    game.apply(PlayerId::One, green).expect("it activates");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.green,
+        1,
+        "the mana was made before their spell resolved",
+    );
+    assert!(
+        in_hand(&game, cards::LIGHTNING_BOLT),
+        "and the card came with it",
+    );
+    assert!(
+        game.players[PlayerId::Two.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::ABRADE),
+        "their Abrade resolved into nothing and is spent",
+    );
+}
