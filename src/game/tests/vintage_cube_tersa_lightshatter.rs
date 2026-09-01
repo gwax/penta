@@ -272,3 +272,106 @@ fn discarding_none_draws_none() {
     assert_eq!(game.players[0].library.len(), 1);
     assert!(game.players[0].graveyard.is_empty());
 }
+
+/// Its ruling: the ability "will check again as it tries to resolve. If you
+/// don't have seven or more cards in your graveyard at that time, the ability
+/// won't resolve and none of its effects will happen." A single card leaving
+/// the graveyard under the trigger turns it off.
+#[test]
+fn the_condition_is_checked_again_on_resolution() {
+    let (mut game, tersa) = staged(&[cards::MOUNTAIN; 7]);
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: tersa,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("she attacks");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration finishes");
+    assert_eq!(game.stack.len(), 1, "the trigger is waiting to resolve");
+
+    // Something eats the graveyard while the trigger is on the stack.
+    let taken = game.players[0].graveyard.pop().expect("seven were here");
+    game.players[0].exile.push(taken);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        6,
+        "the trigger exiled nothing on top of what left",
+    );
+    assert_eq!(
+        game.players[0].exile.len(),
+        1,
+        "only the card that left on its own is in exile",
+    );
+}
+
+/// "You pay all costs": a spell exiled this way is cast the ordinary way, so
+/// an empty pool buys nothing and a red mana buys the Bolt.
+#[test]
+fn a_spell_exiled_this_way_is_still_paid_for() {
+    let (mut game, tersa) = staged(&[cards::LIGHTNING_BOLT; 7]);
+    attack(&mut game, tersa);
+    let exiled = game.players[0].exile[0].id;
+    game.step = Step::PostcombatMain;
+    game.priority = PlayerId::One;
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .all(|action| !matches!(action, Action::CastSpell { card, .. } if card == exiled)),
+        "the permission is not a discount",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == exiled
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::Two))
+            }
+            _ => false,
+        })
+        .expect("one red mana casts it out of exile");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[1].life, 17, "the Bolt resolved from exile");
+}
+
+/// "Follow all timing rules": the land it exiled is a land drop like any
+/// other, unavailable in combat and gone once the drop is spent.
+#[test]
+fn a_land_exiled_this_way_obeys_the_ordinary_timing() {
+    let (mut game, tersa) = staged(&[cards::MOUNTAIN; 7]);
+    attack(&mut game, tersa);
+    let exiled = game.players[0].exile[0].id;
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if card == exiled))
+    };
+
+    game.players[0].lands_played_this_turn = 0;
+    assert!(
+        !offered(&game),
+        "the declare-attackers step is no time to play a land",
+    );
+
+    game.step = Step::PostcombatMain;
+    game.priority = PlayerId::One;
+    assert!(offered(&game), "the main phase is");
+
+    game.players[0].lands_played_this_turn = 1;
+    assert!(
+        !offered(&game),
+        "and it costs the land drop, which was already spent",
+    );
+}
