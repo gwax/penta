@@ -343,3 +343,114 @@ fn she_cannot_wake_the_same_land_twice() {
         "and what she woke is a creature land the +1 cannot name again",
     );
 }
+
+/// Taps `land` for `color` under `player`.
+fn tap_for(game: &mut Game, land: GameObjectId, color: ManaColor, player: PlayerId) {
+    game.priority = player;
+    game.apply(
+        player,
+        Action::ActivateManaAbility {
+            source: land,
+            ability: mana_ability_for(game, land, color),
+            color,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("the land taps for mana");
+    drain_pending(game);
+}
+
+/// "Whenever you tap a Forest *for mana*" -- it does not say for green. A
+/// Taiga tapped for red is still a Forest being tapped, so the extra green
+/// comes anyway and the pool holds one of each.
+#[test]
+fn a_forest_tapped_for_another_colour_still_adds_green() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    nissa_on_the_battlefield(&mut game, 85_110);
+    let taiga = game
+        .put_onto_battlefield(PlayerId::One, cards::TAIGA)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    tap_for(&mut game, taiga, ManaColor::Red, PlayerId::One);
+
+    assert_eq!(
+        game.players[0].mana_pool.red, 1,
+        "the red it was tapped for"
+    );
+    assert_eq!(
+        game.players[0].mana_pool.green, 1,
+        "and the green her clause adds for the tapping itself",
+    );
+}
+
+/// "Whenever *you* tap a Forest": theirs is their own business, and nobody
+/// is handed a second green for it.
+#[test]
+fn their_forest_adds_nothing_to_anyone() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    nissa_on_the_battlefield(&mut game, 85_120);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::FOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    tap_for(&mut game, theirs, ManaColor::Green, PlayerId::Two);
+
+    assert_eq!(
+        game.players[1].mana_pool.green, 1,
+        "one green, and no more, for the seat that tapped it",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.green, 0,
+        "and nothing at all for Nissa's own",
+    );
+}
+
+/// "Up to one target noncreature land": none is a legal answer, so the +1 is
+/// on offer with no land to point it at and simply grows her loyalty.
+#[test]
+fn the_plus_one_may_name_nothing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let nissa = nissa_on_the_battlefield(&mut game, 85_130);
+    let before = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == nissa)
+        .expect("she is out")
+        .counters(CounterKind::Loyalty);
+
+    let empty = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == nissa
+                    && targets
+                        .iter()
+                        .all(|selection| selection.targets().is_empty())
+            }
+            _ => false,
+        })
+        .expect("naming nothing is a legal way to use it");
+    game.apply(PlayerId::One, empty).expect("it activates");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == nissa)
+            .expect("she is still there")
+            .counters(CounterKind::Loyalty),
+        before + 1,
+        "the loyalty went up with nothing to show for it",
+    );
+}
