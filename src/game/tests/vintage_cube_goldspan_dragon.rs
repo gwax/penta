@@ -190,3 +190,94 @@ fn the_grant_covers_every_treasure_and_ends_with_him() {
         "with him gone only the Treasure's own five colours remain",
     );
 }
+
+/// "An ability that triggers when a creature becomes the target of a spell
+/// resolves before the spell that caused it to trigger. Such an ability
+/// resolves even if that spell is countered." The Treasure is on the
+/// battlefield while their Bolt is still on the stack, and it stays there
+/// when the Bolt never resolves.
+#[test]
+fn the_treasure_arrives_before_the_spell_and_outlives_a_counter() {
+    let (mut game, dragon) = staged();
+    let bolt = card(180_500, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    let counter = card(180_501, cards::COUNTERSPELL, PlayerId::One);
+    let counter_id = counter.id;
+    game.players[PlayerId::One.index()].hand.push(counter);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    game.priority = PlayerId::Two;
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(dragon))
+            }
+            _ => false,
+        })
+        .expect("the Dragon is a legal target");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    // The Treasure trigger goes on the stack above the Bolt as it is cast,
+    // so the Bolt is the object underneath it.
+    let bolt_spell = game
+        .stack
+        .iter()
+        .next()
+        .expect("the Bolt is on the stack")
+        .id;
+
+    // The Treasure trigger is above the Bolt, so it resolves first.
+    for _ in 0..8 {
+        if !treasures(&game).is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(
+        treasures(&game).len(),
+        1,
+        "the Treasure is here while their Bolt is still waiting",
+    );
+    assert!(
+        game.stack.iter().any(|spell| spell.id == bolt_spell),
+        "and the Bolt has not resolved",
+    );
+
+    game.priority = PlayerId::One;
+    let answer = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == counter_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(bolt_spell))
+            }
+            _ => false,
+        })
+        .expect("a Counterspell answers it");
+    game.apply(PlayerId::One, answer).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        treasures(&game).len(),
+        1,
+        "countering the spell takes nothing back",
+    );
+    let dragon = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == dragon)
+        .expect("he is untouched");
+    assert_eq!(dragon.damage, 0, "and the Dragon took no damage at all");
+}
