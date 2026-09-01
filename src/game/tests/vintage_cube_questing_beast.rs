@@ -339,3 +339,77 @@ fn a_blocker_grown_before_blocking_may_stand_in_the_way() {
         "and a 3/3 may, whatever it was a moment ago",
     );
 }
+
+/// Puts an Amulet of Kroog under Player Two with the mana to fire it, and
+/// hangs its shield on `target`.
+fn shield(game: &mut Game, target: Target) {
+    let amulet = game
+        .put_onto_battlefield(PlayerId::Two, cards::AMULET_OF_KROOG)
+        .expect("cataloged");
+    drain_pending(game);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 2);
+    // Hung before the attack, from a step where the seat that owns it has
+    // priority to spend.
+    game.step = Step::PrecombatMain;
+    game.attackers_declared = false;
+    game.priority = PlayerId::Two;
+    let activate = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == amulet
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|named| *named == target)
+            }
+            _ => false,
+        })
+        .unwrap_or_else(|| panic!("actions={:?}", game.legal_actions(PlayerId::Two)));
+    game.apply(PlayerId::Two, activate)
+        .expect("the ability activates");
+    settle(game);
+    game.priority = PlayerId::One;
+}
+
+/// "The damage Questing Beast deals to the target planeswalker as its last
+/// ability resolves isn't combat damage." So the Beast's own clause does not
+/// cover it: a prevention shield on the planeswalker holds a point back, and
+/// Teferi lives on the loyalty it saved him.
+#[test]
+fn the_planeswalker_damage_is_not_combat_damage_and_may_be_prevented() {
+    let (mut game, beast) = staged();
+    let teferi = game
+        .put_onto_battlefield(PlayerId::Two, cards::TEFERI_HERO_OF_DOMINARIA)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    shield(&mut game, Target::Permanent(teferi));
+
+    attack(&mut game, &[beast]);
+
+    assert_eq!(game.players[1].life, 16, "the player still took all four");
+    assert_eq!(
+        permanent(&game, teferi).counters(CounterKind::Loyalty),
+        1,
+        "and Teferi took three of the four, one having been prevented",
+    );
+}
+
+/// The other half of the same pair: the combat damage is combat damage, and
+/// the Beast says that cannot be prevented. The same shield hung on the
+/// player holds nothing back at all.
+#[test]
+fn the_same_shield_on_the_player_prevents_nothing() {
+    let (mut game, beast) = staged();
+    shield(&mut game, Target::Player(PlayerId::Two));
+
+    attack(&mut game, &[beast]);
+
+    assert_eq!(
+        game.players[1].life, 16,
+        "four combat damage, none of it preventable",
+    );
+}
