@@ -212,3 +212,60 @@ fn splitting_two_attackers_between_defenders_is_not_attacking_alone() {
         "and the Lions gained nothing either",
     );
 }
+
+/// "Attacks alone" counts attackers, not defenders: one creature sent at a
+/// planeswalker is still one creature, and the exalted trigger reads it that
+/// way.
+#[test]
+fn a_lone_attacker_at_a_planeswalker_is_still_alone() {
+    let (mut game, _hierarch, others) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = others[0];
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::TEFERI_TIME_RAVELER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(bears, AttackDefender::Planeswalker(walker));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+
+    assert_eq!(
+        stats(&game, bears),
+        (Some(3), Some(3)),
+        "a 2/2 attacking a planeswalker alone is exalted like any other",
+    );
+}
+
+/// Her mana carries no rider: unlike a Delighted Halfling's, the blue she
+/// makes pays for anything blue.
+#[test]
+fn her_mana_is_ordinary_mana() {
+    let (mut game, hierarch, _others) = staged(&[]);
+    let scour = card(105_500, cards::THOUGHT_SCOUR, PlayerId::One);
+    let scour_id = scour.id;
+    game.players[PlayerId::One.index()].hand.push(scour);
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: hierarch,
+            ability: mana_ability_for(&game, hierarch, ManaColor::Blue),
+            color: ManaColor::Blue,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("she taps for blue");
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == scour_id)),
+        "a nonlegendary, noncreature spell is as castable as anything else",
+    );
+}
