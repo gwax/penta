@@ -967,6 +967,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             AlternativeCastKindDef::Kicked => {
                 effect == EffectDef::None || shared_stack_effect(effect)
             }
+            // What a cast wears when another permanent supplied the cost.
+            // No card prints it, so no card may claim it.
+            AlternativeCastKindDef::Granted => false,
         },
         // Neither clause resolves anything: a cost clause has already been
         // paid where the spell was announced, and a deck-construction

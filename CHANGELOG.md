@@ -51,6 +51,18 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Somebody else's alternative cost is not the card's own.** CR 601.2f
+  allows one alternative cost per cast, and Baleful Mastery's ruling spells
+  out what that means: "if an effect lets you cast a Mastery spell without
+  paying its mana cost, you can't also choose to pay its given alternative
+  cost." A cast using an alternative granted by another permanent -- an
+  Omniscience free cast -- had no printed clause to recover its kind from and
+  was recorded as the card's own alternative cost, so a Baleful Mastery cast
+  free off an Omniscience handed the opponent a card as though the {1}{B}
+  cost had been paid. Such a cast now records a granted kind of its own,
+  which every cost path treats as the alternative it is and no printed rider
+  mistakes for its own.
+
 - **A card's own zone-scoped clause is read on the stack too.** "As long as
   Grist isn't on the battlefield, it's a 1/1 Insect creature in addition to
   its other types" describes the card in every zone but one, and the stack is

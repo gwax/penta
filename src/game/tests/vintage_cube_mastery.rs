@@ -342,3 +342,45 @@ fn a_copy_of_the_cheap_half_hands_them_another_card() {
         "and the copy resolved as though the cheap cost had been paid for it too",
     );
 }
+
+/// "If you choose to pay one alternative cost, you can't pay any other
+/// alternative costs. For example, if an effect lets you cast a Mastery
+/// spell without paying its mana cost, you can't also choose to pay its
+/// given alternative cost." Cast off an Omniscience with an empty pool, the
+/// {1}{B} cost was not the cost that was paid, so nobody draws.
+#[test]
+fn a_free_cast_is_not_the_cheap_cast() {
+    let (mut game, mastery, _victim) = staged();
+    game.players[0].mana_pool = ManaPool::default();
+    game.battlefield
+        .push(creature(89_100, cards::OMNISCIENCE, PlayerId::One));
+    let their_hand = game.players[1].hand.len();
+
+    let casts = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter(|action| matches!(action, Action::CastSpell { card, .. } if *card == mastery))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        casts.len(),
+        1,
+        "an empty pool pays for the free cast and nothing else: {casts:?}",
+    );
+    game.apply(PlayerId::One, casts.into_iter().next().expect("one cast"))
+        .expect("it is cast");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the exile happened either way",
+    );
+    assert_eq!(
+        game.players[1].hand.len(),
+        their_hand,
+        "and the rider rides on the cost that was actually paid",
+    );
+}

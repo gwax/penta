@@ -178,9 +178,11 @@ impl Game {
             .map(|(_, _, kind)| kind)
             // A runtime alternative has no printed clause to recover. Its ID
             // was validated while the cast was announced, and the signature
-            // must keep saying "alternative cost" even after its battlefield
-            // source is gone.
-            .or(Some(AlternativeCastKindDef::AlternativeCost))
+            // must keep saying it was cast for an alternative cost even after
+            // its battlefield source is gone -- but somebody else's cost is
+            // not the card's own, which is what a rider on the printed
+            // alternative asks about.
+            .or(Some(AlternativeCastKindDef::Granted))
     }
 
     /// The smallest X the selected alternative may be cast for. "Kicker

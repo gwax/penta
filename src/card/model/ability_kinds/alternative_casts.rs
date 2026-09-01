@@ -153,6 +153,14 @@ pub enum AlternativeCastKindDef {
     /// is written as an alternative so the splice cost has somewhere printed
     /// to live, and nothing offers it as a cast.
     Splice,
+    /// An alternative cost supplied by something else's text rather than by
+    /// the card being cast -- Omniscience's "you may cast spells from your
+    /// hand without paying their mana costs" is one. The cast is still an
+    /// alternative one for every purpose that only asks whether the printed
+    /// cost was paid, but it is not the card's own alternative cost: a rider
+    /// reading "if the {1}{B} cost was paid" is asking about that clause, and
+    /// CR 601.2f allows only one alternative cost per cast.
+    Granted,
     /// Cast using the supplied face-down copiable values. The spell's own
     /// clauses are not what it does while face down, so this kind changes the
     /// object rather than only its cost. Morph and Disguise choose different
@@ -203,6 +211,7 @@ impl AlternativeCastKindDef {
             Self::Miracle => "Miracle",
             Self::Kicked => "Kicker",
             Self::AlternativeCost => "Alternative cost",
+            Self::Granted => "Granted alternative cost",
             Self::Escape => "Escape",
             Self::Impending => "Impending",
             Self::Dash => "Dash",
@@ -243,6 +252,7 @@ impl AlternativeCastKindDef {
             Self::Miracle,
             Self::Kicked,
             Self::AlternativeCost,
+            Self::Granted,
             crate::card::face_down::morph_cast(),
             crate::card::face_down::disguise_cast(),
         ]
@@ -349,6 +359,20 @@ impl AlternativeCastAbilityDef {
         Some(self.printed_rules_text(default))
     }
 
+    /// Morph is printed on the card that has it; casting face down is the
+    /// rule that applies to every such card, and the cost of doing it is
+    /// always {3}.
+    fn face_down_rules_text(characteristics: super::super::FaceDownCharacteristics) -> String {
+        format!(
+            "You may cast this card face down as a {} for {{3}}.",
+            if characteristics == crate::card::face_down::disguise() {
+                "2/2 creature spell with ward {2}"
+            } else {
+                "2/2 creature spell"
+            }
+        )
+    }
+
     #[must_use]
     pub fn rules_text(self) -> String {
         if let Some(text) = self.fixed_rules_text() {
@@ -431,27 +455,19 @@ impl AlternativeCastAbilityDef {
             // Whatever printed or granted these said it in its own words, so
             // that text is the reminder and the kind's name is the fallback.
             (
-                AlternativeCastKindDef::WithoutPayingManaCost | AlternativeCastKindDef::Offspring,
+                AlternativeCastKindDef::WithoutPayingManaCost
+                | AlternativeCastKindDef::Offspring
+                | AlternativeCastKindDef::Granted,
                 _,
             ) => self
                 .stack_text
                 .map_or_else(|| self.kind.label().to_owned(), std::borrow::ToOwned::to_owned),
-            // Morph is printed on the card that has it; casting face down is
-            // the rule that applies to every such card, and the cost of doing
-            // it is always {3}.
             (
                 AlternativeCastKindDef::FaceDown {
                     characteristics, ..
                 },
                 _,
-            ) => format!(
-                "You may cast this card face down as a {} for {{3}}.",
-                if characteristics == crate::card::face_down::disguise() {
-                    "2/2 creature spell with ward {2}"
-                } else {
-                    "2/2 creature spell"
-                }
-            ),
+            ) => Self::face_down_rules_text(characteristics),
             // Every kind whose reminder is a fixed sentence answered above.
             (
                 AlternativeCastKindDef::Rebound
