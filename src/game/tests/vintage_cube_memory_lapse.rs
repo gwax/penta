@@ -322,3 +322,192 @@ fn a_spell_that_cannot_be_countered_is_not_stacked_either() {
         "the Lapse is spent either way",
     );
 }
+
+/// An Adventure spell that resolves is exiled, to be cast later as the
+/// creature. One that is countered never gets there: the Lapse's
+/// replacement puts the card on top of its owner's library like any other.
+#[test]
+fn a_countered_adventure_is_stacked_rather_than_exiled() {
+    let (mut game, lapse, spell) = staged(cards::BRAZEN_BORROWER);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::Two;
+
+    // The adventure half, which is the one with a target.
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == spell
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(mine))
+            }
+            _ => false,
+        })
+        .expect("Petty Theft points at a nonland permanent of yours");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    for _ in 0..4 {
+        if game.priority == PlayerId::One {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let answer = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == lapse))
+        .expect("the Lapse can answer an adventure");
+    game.apply(PlayerId::One, answer).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == mine),
+        "your bear was never bounced",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()]
+            .library
+            .last()
+            .map(|card| card.definition),
+        Some(cards::BRAZEN_BORROWER),
+        "the whole card is on top of their library",
+    );
+    assert!(
+        game.players[PlayerId::Two.index()].exile.is_empty(),
+        "and nothing was exiled to be cast as the creature later",
+    );
+}
+
+/// Player Two Forks the spell already on the stack and lets the Fork
+/// resolve, returning the copy it left behind.
+fn fork_onto(game: &mut Game, fork: GameObjectId, original: GameObjectId) -> GameObjectId {
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == fork
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(original))
+            }
+            _ => false,
+        })
+        .expect("Fork copies a spell on the stack");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    let fork_spell = game.stack.last().expect("the Fork is on the stack").id;
+    for _ in 0..12 {
+        if let Some(copy) = game
+            .stack
+            .iter()
+            .map(|spell| spell.id)
+            .find(|id| *id != original && *id != fork_spell)
+        {
+            return copy;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: decision
+                        .options
+                        .iter()
+                        .map(|option| option.id)
+                        .take(decision.minimum.max(1))
+                        .collect(),
+                },
+            )
+            .expect("the copy's targets are the caster's to keep");
+            continue;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    panic!("the Fork left a copy on the stack");
+}
+
+/// A copy on the stack is not a card, so there is nothing to put anywhere:
+/// countering it makes it cease to exist, and the spell it was copied from
+/// resolves as it always would have.
+#[test]
+fn a_countered_copy_leaves_nothing_behind() {
+    let (mut game, lapse, bolt) = staged(cards::LIGHTNING_BOLT);
+    let fork = game
+        .build_zone(PlayerId::Two, &[cards::FORK])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let fork_id = fork.id;
+    game.players[PlayerId::Two.index()].hand.push(fork);
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::One))
+            }
+            _ => false,
+        })
+        .expect("they can aim a Bolt at your face");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    let original = game.stack.last().expect("the Bolt is on the stack").id;
+
+    let copy = fork_onto(&mut game, fork_id, original);
+
+    game.priority = PlayerId::One;
+    let answer = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == lapse
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(copy))
+            }
+            _ => false,
+        })
+        .expect("a copy is a spell, and the Lapse counters spells");
+    game.apply(PlayerId::One, answer).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        17,
+        "the copy was countered and the Bolt it came from still hit",
+    );
+    assert!(
+        game.players[PlayerId::Two.index()].library.is_empty(),
+        "and a copy is no card, so nothing went on top of anything",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()]
+            .graveyard
+            .iter()
+            .filter(|card| card.definition == cards::LIGHTNING_BOLT)
+            .count(),
+        1,
+        "one Bolt card, which is all there ever was",
+    );
+}
