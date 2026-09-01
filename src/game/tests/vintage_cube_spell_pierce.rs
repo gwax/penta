@@ -108,3 +108,83 @@ fn spell_pierce_may_name_your_own_spell() {
         "your own noncreature spell is a legal target for it",
     );
 }
+
+/// The tax is all of {2} or none of it: a controller holding one mana is no
+/// better off than one holding none, and pays nothing on the way to the
+/// graveyard. The pair either side of the boundary is what pins it -- two
+/// mana is offered the choice, one is not.
+#[test]
+fn one_mana_short_is_no_payment_at_all() {
+    for (held, offered) in [(1, false), (2, true)] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        let bolt = card(50_860, cards::LIGHTNING_BOLT, PlayerId::Two);
+        let bolt_id = bolt.id;
+        game.players[PlayerId::Two.index()].hand.push(bolt);
+        game.players[PlayerId::Two.index()].mana_pool.red = 1;
+        game.players[PlayerId::One.index()].life = 20;
+        game.priority = PlayerId::Two;
+        game.apply(
+            PlayerId::Two,
+            cast_action(bolt_id, vec![Target::Player(PlayerId::One)], Vec::new(), 0),
+        )
+        .expect("they cast something to answer");
+        let on_stack = game.stack.last().expect("it is on the stack").id;
+        game.apply(PlayerId::Two, Action::PassPriority).unwrap();
+
+        let pierce = card(50_861, cards::SPELL_PIERCE, PlayerId::One);
+        let pierce_id = pierce.id;
+        game.players[PlayerId::One.index()].hand.push(pierce);
+        game.players[PlayerId::One.index()].mana_pool.blue = 1;
+        game.apply(
+            PlayerId::One,
+            cast_action(pierce_id, vec![Target::Spell(on_stack)], Vec::new(), 0),
+        )
+        .expect("the Pierce answers it");
+        // What is left in the pool after the Bolt was paid for.
+        game.players[PlayerId::Two.index()].mana_pool.colorless = held;
+        pass_priority_pair(&mut game);
+
+        // One mana short there is nothing to decide, so the engine asks
+        // nothing at all rather than offering a tax that cannot be paid.
+        let decision = game.observe(PlayerId::Two).decision;
+        assert_eq!(
+            decision.as_ref().is_some_and(|decision| decision
+                .options
+                .iter()
+                .any(|option| option.label == "Pay the cost")),
+            offered,
+            "holding {held} of the two",
+        );
+        if offered {
+            continue;
+        }
+        for _ in 0..4 {
+            let Some(decision) = game.observe(PlayerId::Two).decision else {
+                break;
+            };
+            let only = decision.options[0].id;
+            game.apply(
+                PlayerId::Two,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: vec![only],
+                },
+            )
+            .expect("the one answer is legal");
+        }
+        assert_eq!(
+            game.players[PlayerId::Two.index()].mana_pool.colorless,
+            held,
+            "the mana it could not spend was not taken from it",
+        );
+        pass_priority_pair(&mut game);
+        drain_pending(&mut game);
+
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            20,
+            "the Bolt was countered for want of one more mana",
+        );
+    }
+}
