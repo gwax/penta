@@ -290,3 +290,42 @@ fn the_life_is_paid_and_not_dealt() {
     );
     assert_eq!(power(&game, bears), Some(4), "and the bear grew for it");
 }
+
+/// The life is part of the cost and is paid on announcement, so answering
+/// the Growth by killing what it named leaves its caster two life down with
+/// nothing to show for it: the spell fizzles rather than half-resolving.
+#[test]
+fn the_life_is_gone_even_when_the_growth_fizzles() {
+    let (mut game, growth, bears) = staged();
+
+    let cast = cast_at(&game, growth, bears, true).expect("two life casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    assert_eq!(
+        game.players[0].life, 18,
+        "the two life went on announcement",
+    );
+
+    game.move_permanents_to_graveyard(&[bears]);
+    game.check_state_based_actions();
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        if game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[0].life, 18,
+        "and nothing gave it back when the spell found nothing",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MUTAGENIC_GROWTH),
+        "the Growth went to the graveyard having done nothing",
+    );
+}
