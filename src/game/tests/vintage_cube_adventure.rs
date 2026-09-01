@@ -265,3 +265,145 @@ fn a_countered_stomp_takes_the_giant_with_it() {
         "so there is no Giant to cast later",
     );
 }
+
+/// "That spell's controller" is whoever cast it, yours included: a Giant
+/// Growth of your own aimed at your own Giant burns you for two.
+#[test]
+fn your_own_spell_aimed_at_the_giant_burns_you() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    let giant = creature(80_100, cards::BONECRUSHER_GIANT, PlayerId::One);
+    let giant_id = giant.card.id;
+    game.battlefield.push(giant);
+    let growth = card(80_101, cards::GIANT_GROWTH, PlayerId::One);
+    let growth_id = growth.id;
+    game.players[PlayerId::One.index()].hand.push(growth);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    game.priority = PlayerId::One;
+    let life = game.players[PlayerId::One.index()].life;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == growth_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(giant_id))
+            }
+            _ => false,
+        })
+        .expect("your own creature is a legal target for your own pump");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life - 2,
+        "the clause names the spell's controller, and that is you",
+    );
+    let pumped = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == giant_id)
+        .expect("he is still there");
+    assert_eq!(
+        (game.power(pumped), game.toughness(pumped)),
+        (Some(7), Some(6)),
+        "and the Growth still resolved",
+    );
+}
+
+/// "Bonecrusher Giant's ability resolves before the spell that caused it to
+/// trigger. It resolves even if that spell is countered." The two damage is
+/// dealt while their removal is still waiting, and countering it takes
+/// nothing back.
+#[test]
+fn the_burn_lands_before_the_spell_and_outlives_a_counter() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    let giant = creature(80_200, cards::BONECRUSHER_GIANT, PlayerId::One);
+    let giant_id = giant.card.id;
+    game.battlefield.push(giant);
+    let bolt = card(80_201, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    let counter = card(80_202, cards::COUNTERSPELL, PlayerId::One);
+    let counter_id = counter.id;
+    game.players[PlayerId::One.index()].hand.push(counter);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    game.priority = PlayerId::Two;
+    let theirs = game.players[PlayerId::Two.index()].life;
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(giant_id))
+            }
+            _ => false,
+        })
+        .expect("the Bolt can point at the Giant");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    let bolt_spell = game
+        .stack
+        .iter()
+        .next()
+        .expect("the Bolt is under its own trigger")
+        .id;
+
+    // The trigger sits above the Bolt, so it resolves first.
+    for _ in 0..8 {
+        if game.players[PlayerId::Two.index()].life < theirs {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        theirs - 2,
+        "the two damage lands while their Bolt is still waiting",
+    );
+
+    game.priority = PlayerId::One;
+    let answer = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == counter_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(bolt_spell))
+            }
+            _ => false,
+        })
+        .expect("a Counterspell answers it");
+    game.apply(PlayerId::One, answer).expect("it is cast");
+    resolve(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        theirs - 2,
+        "countering the spell takes none of it back",
+    );
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == giant_id)
+        .expect("the Giant is untouched");
+    assert_eq!(survivor.damage, 0, "and took no damage of his own");
+}
