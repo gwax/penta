@@ -171,3 +171,90 @@ fn no_lands_looks_at_nothing() {
     assert!(hand(&game).is_empty(), "nothing was kept");
     assert_eq!(game.players[0].library.len(), 1);
 }
+
+/// "The value of X is calculated only once, as Consult the Star Charts
+/// resolves": a land that arrives while it is on the stack is one more card
+/// seen.
+#[test]
+fn x_is_read_when_it_resolves_rather_than_when_it_is_cast() {
+    let (mut game, consult) = staged(
+        2,
+        &[
+            cards::BLACK_LOTUS,
+            cards::MOX_JET,
+            cards::GRIZZLY_BEARS,
+            cards::SERRA_ANGEL,
+        ],
+    );
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == consult && choices.costs().alternative().is_none())
+        })
+        .expect("two mana casts it unkicked");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    // In response, a third land: X has not been read yet.
+    game.put_onto_battlefield(PlayerId::One, cards::ISLAND)
+        .expect("cataloged");
+    for _ in 0..12 {
+        if game.observe(PlayerId::One).decision.is_some() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the look asks what to keep");
+    assert_eq!(
+        decision.options.len(),
+        3,
+        "three lands by the time it resolved, so three cards seen",
+    );
+}
+
+/// "The number of lands *you control*": theirs are none of yours.
+#[test]
+fn their_lands_are_not_counted() {
+    let (mut game, consult) = staged(
+        1,
+        &[
+            cards::BLACK_LOTUS,
+            cards::MOX_JET,
+            cards::GRIZZLY_BEARS,
+            cards::SERRA_ANGEL,
+        ],
+    );
+    for index in 0..4 {
+        game.battlefield
+            .push(creature(99_500 + index, cards::MOUNTAIN, PlayerId::Two));
+    }
+    game.priority = PlayerId::One;
+
+    cast(&mut game, consult, false);
+
+    // One land is one card seen, and one card seen is no choice to make:
+    // nobody is asked, and the top card is simply taken.
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "their four Mountains would have made this a choice among five",
+    );
+    assert_eq!(
+        hand(&game),
+        vec![cards::BLACK_LOTUS],
+        "your one Island is the whole of X",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        3,
+        "and the rest of the library was never looked at",
+    );
+}
