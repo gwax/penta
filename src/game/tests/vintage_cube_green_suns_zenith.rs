@@ -315,3 +315,54 @@ fn it_searches_the_library_and_nowhere_else() {
         "and the Zenith shuffled itself back all the same",
     );
 }
+
+/// "A green creature card" is a card that is green, not a card that is only
+/// green: a Knight of the Reliquary is {1}{G}{W} and green enough. The
+/// Aspect of Wolf beside it is green and no creature, which is the other
+/// half of the same clause.
+#[test]
+fn a_gold_card_with_green_in_it_is_green_enough() {
+    let (mut game, zenith) = staged(&[cards::KNIGHT_OF_THE_RELIQUARY, cards::ASPECT_OF_WOLF], 7);
+
+    let offered = cast_for(&mut game, zenith, 3);
+
+    assert_eq!(
+        offered,
+        vec!["Knight of the Reliquary".to_string()],
+        "the green-white creature, and not the green enchantment",
+    );
+}
+
+/// It is put onto the battlefield rather than cast, and nothing about that
+/// hurries it: what arrives is summoning sick and cannot attack the turn the
+/// Zenith found it.
+#[test]
+fn what_it_finds_arrives_summoning_sick() {
+    let (mut game, zenith) = staged(&[cards::GRIZZLY_BEARS], 3);
+
+    let offered = cast_for(&mut game, zenith, 2);
+    assert_eq!(offered, vec!["Grizzly Bears".to_string()], "it found them");
+    settle(&mut game);
+
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("the Bears arrived")
+        .card
+        .id;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::DeclareAttacker { attacker, .. } if *attacker == bears
+            )),
+        "put onto the battlefield is not the same as having been here",
+    );
+}
