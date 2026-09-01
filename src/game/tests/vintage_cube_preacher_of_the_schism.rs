@@ -295,3 +295,74 @@ fn her_deathtouch_kills_what_blocks_her() {
         "and the six it dealt back is lethal to a 2/4, so both go",
     );
 }
+
+/// "You'll create a Vampire token even if the player she attacked doesn't
+/// have the most life as the ability resolves." The other side of the same
+/// ruling: they were ahead when she swung, they are behind by the time it
+/// resolves, and the Vampire arrives anyway.
+#[test]
+fn the_token_arrives_even_after_the_lead_changes_hands() {
+    let (mut game, preacher) = staged(10, 20);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(preacher, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+
+    // The trigger is waiting; they fall behind before it resolves.
+    game.players[1].life = 1;
+    settle(&mut game);
+
+    assert_eq!(
+        tokens(&game),
+        vec![(1, 1)],
+        "they were the leader when she attacked, and that is what it read",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        0,
+        "and you were behind then, whatever you are now",
+    );
+}
+
+/// The token's lifelink is not just a keyword on it: the Vampire connecting
+/// next turn is a point of damage and a point of life.
+#[test]
+fn the_vampires_lifelink_pays_out_when_it_connects() {
+    let (mut game, preacher) = staged(10, 20);
+    attack(&mut game, preacher);
+    let vampire = game
+        .battlefield
+        .iter()
+        .find(|permanent| !matches!(permanent.card.definition, ObjectKind::Card(_)))
+        .expect("the Vampire is there")
+        .card
+        .id;
+
+    // She goes, so the only damage in the next combat is the Vampire's.
+    game.battlefield
+        .retain(|permanent| permanent.card.id != preacher);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.turn += 2;
+    game.turns_started = [7, 6];
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+    let before = game.players[0].life;
+
+    game.declare_attacker(vampire, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    game.step = Step::CombatDamage;
+    game.deal_combat_damage();
+    settle(&mut game);
+
+    assert_eq!(game.players[1].life, 19, "one damage got through");
+    assert_eq!(
+        game.players[0].life,
+        before + 1,
+        "and lifelink turned it into a life",
+    );
+}
