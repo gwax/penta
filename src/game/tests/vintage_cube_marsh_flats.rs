@@ -132,3 +132,51 @@ fn the_fetch_comes_back_when_the_moon_goes() {
         "a life for it"
     );
 }
+
+/// The Moon is only ever late once the ability is announced: the land and
+/// the life are costs, the ability is its own object on the stack, and a
+/// Blood Moon resolving on top of it takes nothing back. The Scrubland the
+/// search finds is read out of the library, where the Moon reaches nothing
+/// -- and then arrives on a battlefield where it is a Mountain.
+#[test]
+fn a_moon_landing_on_top_of_the_fetch_does_not_stop_it() {
+    let (mut game, flats) = staged(false);
+    let life = game.players[PlayerId::One.index()].life;
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == flats))
+        .expect("with no Moon out it is a fetchland");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == flats),
+        "the land was sacrificed on announcement",
+    );
+
+    game.battlefield
+        .push(creature(84_100, cards::BLOOD_MOON, PlayerId::Two));
+    game.check_state_based_actions();
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    let found = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SCRUBLAND)
+        .expect("the search still found it in the library");
+    let id = found.card.id;
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life - 1,
+        "one life, paid before the Moon was anywhere",
+    );
+    assert_eq!(
+        colors(&game, id),
+        vec![ManaColor::Red],
+        "and what arrived is a Mountain, whatever it was in the library",
+    );
+}
