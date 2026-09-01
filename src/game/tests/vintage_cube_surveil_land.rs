@@ -764,3 +764,36 @@ fn it_carries_the_types_without_the_supertype() {
         "the Swamp is a basic land card and the Mortuary is not",
     );
 }
+
+/// The cost the cycle actually charges: the turn it comes down it makes no
+/// mana at all, and it is the untap step of your next turn that frees it.
+/// The per-member checks untap it by hand to read its colours, so this is
+/// where the tapped clause is paid.
+#[test]
+fn the_turn_it_arrives_it_makes_no_mana_and_the_next_one_it_does() {
+    let (mut game, mortuary) = staged_with(cards::UNDERGROUND_MORTUARY, cards::LIGHTNING_BOLT);
+
+    play_and_surveil(&mut game, mortuary, true);
+
+    let permanent =
+        the_land_named(&game, cards::UNDERGROUND_MORTUARY).expect("it is on the battlefield");
+    let id = permanent.card.id;
+    assert!(permanent.tapped, "tapped on arrival");
+    assert!(
+        colors_of(&game, id).is_empty(),
+        "and a tapped land offers nothing to tap",
+    );
+
+    game.start_next_turn();
+    game.start_next_turn();
+
+    assert!(
+        !the_land_named(&game, cards::UNDERGROUND_MORTUARY)
+            .expect("still there")
+            .tapped,
+        "your own untap step is what frees it",
+    );
+    let colors = colors_of(&game, id);
+    assert!(colors.contains(&ManaColor::Black), "a Swamp");
+    assert!(colors.contains(&ManaColor::Green), "and a Forest");
+}
