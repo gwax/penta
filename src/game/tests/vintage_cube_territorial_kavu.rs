@@ -321,3 +321,46 @@ fn the_second_mode_may_eat_your_own_or_nothing_at_all() {
         "nothing was taken, so the Bolt stayed where it was",
     );
 }
+
+/// "Land types other than basic land types don't contribute to domain." A
+/// board of colourless utility lands is a board of no basic land types at
+/// all, and a Kavu with none of them is a 0/0.
+#[test]
+fn a_land_without_a_basic_type_counts_for_nothing() {
+    let (mut game, kavu) = staged(&[cards::WASTELAND, cards::ANCIENT_TOMB], &[]);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != kavu),
+        "two lands and no basic land types leaves a 0/0, which dies",
+    );
+
+    let (mut game, kavu) = staged(&[cards::WASTELAND, cards::FOREST], &[]);
+    game.check_state_based_actions();
+    assert_eq!(
+        size(&game, kavu),
+        (Some(1), Some(1)),
+        "the Forest is the only land on the board that says anything",
+    );
+}
+
+/// Urborg says every land is a Swamp, and domain reads the types a land has
+/// rather than the ones it was printed with: one Forest and an Urborg are
+/// two of the five.
+#[test]
+fn urborg_hands_him_a_basic_type_he_did_not_have() {
+    let (mut game, kavu) = staged(&[cards::FOREST], &[]);
+    assert_eq!(size(&game, kavu), (Some(1), Some(1)), "a Forest is one");
+
+    game.put_onto_battlefield(PlayerId::One, cards::URBORG_TOMB_OF_YAWGMOTH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        size(&game, kavu),
+        (Some(2), Some(2)),
+        "and with every land a Swamp as well, the Forest brings a second",
+    );
+}
