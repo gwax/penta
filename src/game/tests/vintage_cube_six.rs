@@ -305,3 +305,74 @@ fn a_countered_retrace_may_be_retraced_again() {
         "and the second land in hand pays for another try",
     );
 }
+
+/// "A land card from among them" is the three the attack just milled. A
+/// land that was already in the graveyard is not among them, so an attack
+/// that mills nothing but spells finds nothing to take.
+#[test]
+fn the_land_must_come_from_the_three_that_were_milled() {
+    let (mut game, six) = staged(
+        &[
+            cards::LIGHTNING_BOLT,
+            cards::LIGHTNING_BOLT,
+            cards::LIGHTNING_BOLT,
+        ],
+        &[cards::MOUNTAIN],
+    );
+
+    attack_with(&mut game, six, Some(cards::MOUNTAIN));
+
+    assert!(
+        game.players[0].hand.is_empty(),
+        "the Mountain already in the graveyard was not on offer",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MOUNTAIN),
+        "it is where it was",
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .filter(|card| card.definition == cards::LIGHTNING_BOLT)
+            .count(),
+        3,
+        "and the three were milled all the same",
+    );
+}
+
+/// "Nonland permanent cards in your graveyard": the pile the permission
+/// reaches is its controller's own. What is in theirs stays there.
+#[test]
+fn the_permission_does_not_reach_their_graveyard() {
+    let (mut game, _six) = staged(&[], &[]);
+    game.players[1].graveyard.clear();
+    game.players[1]
+        .graveyard
+        .push(card(250_400, cards::GRIZZLY_BEARS, PlayerId::Two));
+    let theirs = game.players[1].graveyard[0].id;
+    game.players[0]
+        .hand
+        .push(card(250_401, cards::MOUNTAIN, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .all(|action| !matches!(action, Action::CastSpell { card, .. } if *card == theirs)),
+        "their graveyard is not yours to retrace out of",
+    );
+
+    // The same card in your own graveyard, to show the mana and the land
+    // were there for it all along.
+    game.players[0]
+        .graveyard
+        .push(card(250_402, cards::GRIZZLY_BEARS, PlayerId::One));
+    assert!(
+        castable(&game, cards::GRIZZLY_BEARS),
+        "yours is castable from the same position",
+    );
+}
