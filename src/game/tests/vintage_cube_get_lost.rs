@@ -480,3 +480,79 @@ fn exploring_an_empty_library_is_just_a_counter() {
     );
     assert!(game.players[1].hand.is_empty(), "and nothing came to hand");
 }
+
+/// "Destroy target creature... Its controller creates two Map tokens." The
+/// Maps are not payment for a creature that died: an indestructible Myr
+/// shrugs off the first half and its controller collects the second.
+#[test]
+fn an_indestructible_creature_survives_and_still_takes_the_maps() {
+    let (mut game, get_lost) = staged(&[cards::DARKSTEEL_MYR]);
+    let myr = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::DARKSTEEL_MYR)
+        .expect("it is there")
+        .card
+        .id;
+
+    cast_at(&mut game, get_lost, myr);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == myr),
+        "destruction is what it cannot answer",
+    );
+    let made = maps(&game);
+    assert_eq!(made.len(), 2, "and the two Maps happen regardless");
+    assert!(
+        made.iter()
+            .all(|permanent| permanent.controller == PlayerId::Two),
+        "under the controller of what it named",
+    );
+}
+
+/// The two halves are one spell: a creature answered in response takes the
+/// Maps with it, because nothing resolves at all.
+#[test]
+fn a_target_that_leaves_first_costs_them_the_maps() {
+    let (mut game, get_lost) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("it is there")
+        .card
+        .id;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == get_lost
+                    && choices
+                        .iter_targets()
+                        .any(|found| *found == Target::Permanent(bears))
+            }
+            _ => false,
+        })
+        .expect("it is castable at their bear");
+    game.apply(PlayerId::One, action).expect("it casts");
+
+    // In response, the bear is gone.
+    game.move_permanents_to_graveyard(&[bears]);
+    settle(&mut game);
+
+    assert!(
+        maps(&game).is_empty(),
+        "no target, no resolution, and no Maps",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::GET_LOST),
+        "the spell is spent all the same",
+    );
+}
