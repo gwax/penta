@@ -556,3 +556,111 @@ fn a_target_that_leaves_first_costs_them_the_maps() {
         "the spell is spent all the same",
     );
 }
+
+/// "Activate only as a sorcery": the Map waits for its controller's own main
+/// phase with an empty stack, whatever else is going on.
+#[test]
+fn the_map_waits_for_a_sorcery_window() {
+    let (mut game, get_lost) = staged(&[cards::SERRA_ANGEL, cards::GRIZZLY_BEARS]);
+    let angel = permanents_of(&game, cards::SERRA_ANGEL)[0].card.id;
+    cast_at(&mut game, get_lost, angel);
+    let map = maps(&game)[0].card.id;
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::Two)
+            .into_iter()
+            .any(|action| matches!(action, Action::ActivateAbility { source, .. } if source == map))
+    };
+
+    // Player One's turn: the Map's controller has no sorcery window at all.
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    assert!(!offered(&game), "not on the other player's turn");
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::Two;
+    assert!(!offered(&game), "and not in their own combat either");
+
+    game.step = Step::PrecombatMain;
+    assert!(offered(&game), "their main phase is what it wants");
+}
+
+/// "If you reveal a nonland card and leave it on top of your library, then
+/// the creature explores again immediately afterwards, you'll reveal the
+/// same card again." Two Maps, one card, seen twice.
+#[test]
+fn the_second_map_reveals_the_same_card_left_on_top() {
+    let (mut game, get_lost) = staged(&[cards::SERRA_ANGEL, cards::GRIZZLY_BEARS]);
+    let angel = permanents_of(&game, cards::SERRA_ANGEL)[0].card.id;
+    cast_at(&mut game, get_lost, angel);
+    let bears = permanents_of(&game, cards::GRIZZLY_BEARS)[0].card.id;
+    let spell = game
+        .build_zone(PlayerId::Two, &[cards::LIGHTNING_BOLT])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[1].library.push(spell);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 2);
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+
+    for pass in 0..2 {
+        let map = maps(&game)
+            .first()
+            .unwrap_or_else(|| panic!("a Map is left for pass {pass}"))
+            .card
+            .id;
+        let action = game
+            .legal_actions(PlayerId::Two)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == map
+                        && targets.iter().any(|selection| {
+                            selection.targets().contains(&Target::Permanent(bears))
+                        })
+                }
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("the Map is activatable on pass {pass}"));
+        game.apply(PlayerId::Two, action).expect("it activates");
+        settle(&mut game);
+        let seat = deciding(&game).unwrap_or_else(|| panic!("it asks on pass {pass}"));
+        let decision = game.observe(seat).decision.expect("just checked");
+        assert!(
+            decision.options.iter().any(|option| option
+                .card
+                .is_some_and(|(_, found)| found.card_definition() == Some(cards::LIGHTNING_BOLT))),
+            "the same Bolt is what pass {pass} reveals",
+        );
+        // Leave it on top for the next Map to find.
+        game.apply(
+            seat,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![0],
+            },
+        )
+        .expect("leaving it is an answer");
+        settle(&mut game);
+        game.priority = PlayerId::Two;
+    }
+
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("it is there");
+    assert_eq!(
+        bears.counters(CounterKind::PlusOnePlusOne),
+        2,
+        "a counter for each explore, since neither revealed a land",
+    );
+}
