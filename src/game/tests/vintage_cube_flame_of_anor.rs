@@ -246,3 +246,110 @@ fn a_pair_that_loses_one_target_still_does_the_other() {
             .any(|card| card.definition == cards::BLACK_LOTUS),
     );
 }
+
+/// "Target player" is any player: the draw half can be pointed across the
+/// table, which is how the pair is aimed when you want the burn and they want
+/// nothing.
+#[test]
+fn the_draw_half_may_be_aimed_at_the_opponent() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.battlefield
+        .push(creature(76_050, cards::VIVI_ORNITIER, PlayerId::One));
+    let flame = card(76_051, cards::FLAME_OF_ANOR, PlayerId::One);
+    let flame_id = flame.id;
+    game.players[0].hand.push(flame);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 1;
+    let mine = game.players[0].hand.len();
+    let theirs = game.players[1].hand.len();
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } if *card == flame_id => {
+                choices.modes() == [ModeId(0)]
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::Two))
+            }
+            _ => false,
+        })
+        .expect("the draw half takes either player");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1].hand.len(),
+        theirs + 2,
+        "the player it targeted drew the two",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        mine - 1,
+        "and the caster only spent the spell",
+    );
+}
+
+/// CR 608.2b the other way: when a pair loses *both* of its targets the spell
+/// is countered on resolution and does nothing at all.
+#[test]
+fn a_pair_that_loses_both_targets_does_nothing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.battlefield
+        .push(creature(76_060, cards::VIVI_ORNITIER, PlayerId::One));
+    let bears = creature(76_061, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let lotus = creature(76_062, cards::BLACK_LOTUS, PlayerId::Two);
+    let lotus_id = lotus.card.id;
+    game.battlefield.push(lotus);
+    let flame = card(76_063, cards::FLAME_OF_ANOR, PlayerId::One);
+    let flame_id = flame.id;
+    game.players[0].hand.push(flame);
+    game.players[0].mana_pool.blue = 1;
+    game.players[0].mana_pool.red = 1;
+    game.players[0].mana_pool.colorless = 1;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } if *card == flame_id => {
+                choices.modes() == [ModeId(1), ModeId(2)]
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(bears_id))
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(lotus_id))
+            }
+            _ => false,
+        })
+        .expect("shattering and burning is a legal pair beside a Wizard");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    // Both halves lose their target underneath the spell.
+    game.move_permanents_to_graveyard(&[bears_id, lotus_id]);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+
+    assert!(game.stack.is_empty(), "the spell left the stack");
+    assert!(
+        game.events.iter().any(|event| matches!(
+            event,
+            GameEvent::SpellFizzled { definition, .. } if *definition == cards::FLAME_OF_ANOR
+        )),
+        "it was countered on resolution rather than resolving for nothing",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::FLAME_OF_ANOR),
+        "and went to its owner's graveyard",
+    );
+}
