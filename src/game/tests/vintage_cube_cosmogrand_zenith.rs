@@ -370,3 +370,62 @@ fn the_count_starts_again_each_turn() {
     cast(&mut game, held[2], 0);
     assert_eq!(soldiers(&game), 2, "and the one after it is the second");
 }
+
+/// "Two 1/1 white Human Soldier creature tokens", and the mode is a choice
+/// of one: taking the tokens puts no counters on anything.
+#[test]
+fn the_soldiers_are_one_one_white_humans_and_nothing_is_grown() {
+    let (mut game, zenith, held) = staged(&[cards::LIGHTNING_BOLT, cards::GIANT_GROWTH]);
+
+    cast(&mut game, held[0], 0);
+    cast(&mut game, held[1], 0);
+
+    let made: Vec<_> = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == ObjectKind::Token)
+        .collect();
+    assert_eq!(made.len(), 2, "two of them");
+    for token in made {
+        assert_eq!(
+            (game.power(token), game.toughness(token)),
+            (Some(1), Some(1)),
+            "a 1/1",
+        );
+        assert_eq!(
+            game.effective_colors(token, &game.effective_rules(token).expect("rules")),
+            [true, false, false, false, false],
+            "white and nothing else",
+        );
+        let subtypes = game.effective_subtypes(token);
+        assert!(subtypes.contains(&"Human"), "a Human");
+        assert!(subtypes.contains(&"Soldier"), "and a Soldier");
+    }
+    assert_eq!(
+        counters_on(&game, zenith),
+        0,
+        "and choosing one mode is choosing not the other",
+    );
+}
+
+/// "Put a +1/+1 counter on each creature *you* control": their board grows
+/// by nothing, however much of it there is.
+#[test]
+fn the_counters_go_only_on_your_own_creatures() {
+    let (mut game, zenith, held) = staged(&[cards::LIGHTNING_BOLT, cards::GIANT_GROWTH]);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    cast(&mut game, held[0], 1);
+    cast(&mut game, held[1], 1);
+
+    assert_eq!(counters_on(&game, zenith), 1, "yours grew");
+    assert_eq!(
+        counters_on(&game, theirs),
+        0,
+        "and the Angel across the table did not",
+    );
+}
