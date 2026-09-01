@@ -261,3 +261,64 @@ fn what_watches_creatures_enter_sees_a_two_two() {
         "two counters for the 2/2 that entered, not zero for a token yet to be sized",
     );
 }
+
+/// "At least one other creature" is a condition rather than a count: three
+/// attackers with the Lens among them is still one card.
+#[test]
+fn a_wider_attack_still_draws_one() {
+    let (mut game, _lens, rebel) = lensed();
+    let mut friends = Vec::new();
+    for index in 0..2 {
+        let bears = creature(70_400 + index, cards::GRIZZLY_BEARS, PlayerId::One);
+        friends.push(bears.card.id);
+        game.battlefield.push(bears);
+    }
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    let before = hand_size(&game);
+
+    attack_with(&mut game, &[rebel, friends[0], friends[1]]);
+
+    assert_eq!(
+        hand_size(&game),
+        before + 1,
+        "one trigger, however many came with it",
+    );
+}
+
+/// Equip is sorcery speed: the Lens cannot be moved onto whichever creature
+/// the attack wants once the attack is under way.
+#[test]
+fn the_lens_cannot_be_moved_mid_combat() {
+    let (mut game, lens, rebel) = lensed();
+    let bears = creature(70_500, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    game.players[PlayerId::One.index()].mana_pool.white = 1;
+
+    let equip_offered = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == lens),
+        )
+    };
+
+    attack_with(&mut game, &[bears_id, rebel]);
+    game.priority = PlayerId::One;
+    assert!(!equip_offered(&game), "not with attackers already declared");
+
+    game.step = Step::PostcombatMain;
+    assert!(
+        equip_offered(&game),
+        "and the main phase after it is where the equip cost may be paid",
+    );
+    assert_eq!(
+        host_of(&game, lens),
+        Some(rebel),
+        "so it spent the combat on the creature it started on",
+    );
+}
