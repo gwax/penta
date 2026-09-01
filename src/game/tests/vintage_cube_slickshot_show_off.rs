@@ -261,3 +261,96 @@ fn a_plotted_card_is_still_a_sorcery_speed_cast() {
         "and a free cast is not a free instant on their turn",
     );
 }
+
+/// "Whenever *you* cast a noncreature spell": their Bolt is not one of
+/// yours, and the Bird is the 1/2 it was printed as.
+#[test]
+fn their_noncreature_spell_does_not_grow_it() {
+    let (mut game, held, _others) = staged(&[]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    cast(&mut game, held);
+    assert_eq!(game.power(bird(&game)), Some(1), "a 1/2 to begin with");
+
+    let bolt = card(112_000, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(bolt_id, vec![Target::Player(PlayerId::One)], Vec::new(), 0),
+    )
+    .expect("their Bolt is castable");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        17,
+        "their spell resolved",
+    );
+    assert_eq!(
+        game.power(bird(&game)),
+        Some(1),
+        "and grew nothing of yours doing it",
+    );
+}
+
+/// The trigger is on casting rather than on resolving: a Bolt of yours that
+/// is countered has still been cast, and the Bird keeps the two.
+#[test]
+fn a_countered_spell_of_yours_still_grows_it() {
+    let (mut game, held, others) = staged(&[cards::LIGHTNING_BOLT]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    cast(&mut game, held);
+    let counter = card(112_100, cards::COUNTERSPELL, PlayerId::Two);
+    let counter_id = counter.id;
+    game.players[PlayerId::Two.index()].hand.push(counter);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+    game.priority = PlayerId::One;
+
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            others[0],
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("your Bolt is castable");
+    let bolt_spell = game
+        .stack
+        .iter()
+        .next()
+        .expect("the Bolt is on the stack")
+        .id;
+    game.priority = PlayerId::Two;
+    let answer = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == counter_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(bolt_spell))
+            }
+            _ => false,
+        })
+        .expect("a Counterspell answers it");
+    game.apply(PlayerId::Two, answer).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        20,
+        "the Bolt never resolved",
+    );
+    assert_eq!(
+        game.power(bird(&game)),
+        Some(3),
+        "and casting it is all the trigger ever asked for",
+    );
+}
