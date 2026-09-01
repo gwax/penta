@@ -309,3 +309,73 @@ fn it_can_take_back_the_spell_that_put_it_down() {
         "with the Witness itself still standing, for the turn at least",
     );
 }
+
+/// The trigger is on entering, so an Ephemerate is a second card back: the
+/// Witness leaves and returns as a new object, and the new object asks the
+/// question again -- for the Ephemerate itself, which is waiting in exile
+/// rather than the graveyard, or for whatever else is buried.
+#[test]
+fn blinking_her_asks_a_second_time() {
+    let (mut game, witness) = staged(&[cards::LIGHTNING_BOLT, cards::FOREST]);
+    cast(&mut game, witness);
+    answer(&mut game, Some(cards::LIGHTNING_BOLT), None);
+    answer(&mut game, None, Some("Do it"));
+    assert!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "the first arrival took the Bolt",
+    );
+    let body = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::ETERNAL_WITNESS)
+        .expect("she resolved")
+        .card
+        .id;
+
+    let ephemerate = card(107_000, cards::EPHEMERATE, PlayerId::One);
+    let ephemerate_id = ephemerate.id;
+    game.players[PlayerId::One.index()].hand.push(ephemerate);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.priority = PlayerId::One;
+
+    let blink = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == ephemerate_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(body))
+            }
+            _ => false,
+        })
+        .expect("a creature you control is what it names");
+    game.apply(PlayerId::One, blink).expect("it is cast");
+    settle(&mut game);
+
+    // The Witness that came back is a new object, and it is asking again.
+    answer(&mut game, Some(cards::FOREST), None);
+    answer(&mut game, None, Some("Do it"));
+
+    assert!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::FOREST),
+        "the second arrival took the land",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::ETERNAL_WITNESS),
+        "and she is back on the battlefield",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].graveyard.is_empty(),
+        "with the graveyard emptied between the two arrivals",
+    );
+}
