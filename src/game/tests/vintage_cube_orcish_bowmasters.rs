@@ -184,3 +184,102 @@ fn their_draw_during_your_draw_step_is_not_spared() {
     assert_eq!(game.players[1].life, 18);
     assert_eq!(army_counters(&game), 2);
 }
+
+/// "If a spell or ability causes an opponent to put cards into their hand
+/// without specifically using the word draw, it's not a card drawn." Their
+/// bear bounced back to hand is a card in hand and no arrow at all.
+#[test]
+fn a_card_returned_to_their_hand_is_not_a_draw() {
+    let mut game = staged();
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let counters = army_counters(&game);
+    let life = game.players[PlayerId::Two.index()].life;
+    let held = game.players[PlayerId::Two.index()].hand.len();
+
+    let theft = game
+        .build_zone(PlayerId::One, &[cards::BRAZEN_BORROWER])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let theft_id = theft.id;
+    game.players[PlayerId::One.index()].hand.push(theft);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == theft_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(theirs))
+            }
+            _ => false,
+        })
+        .expect("Petty Theft bounces a nonland permanent of theirs");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        held + 1,
+        "the bear is in their hand",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life,
+        "and nobody was shot for putting it there",
+    );
+    assert_eq!(
+        army_counters(&game),
+        counters,
+        "so the Army is the size it was",
+    );
+}
+
+/// Flash is what makes the entry trigger an answer: cast on their turn with
+/// their own draw spell on the stack, the Orc arrives first and the arrow
+/// lands before anything of theirs resolves.
+#[test]
+fn flash_lets_it_arrive_on_their_turn() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    let bowmasters = card(101_000, cards::ORCISH_BOWMASTERS, PlayerId::One);
+    let bowmasters_id = bowmasters.id;
+    game.players[PlayerId::One.index()].hand.push(bowmasters);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let life = game.players[PlayerId::Two.index()].life;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == bowmasters_id))
+        .expect("flash casts it on their turn");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life - 1,
+        "the entry trigger shot them on their own turn",
+    );
+    assert_eq!(
+        army_counters(&game),
+        1,
+        "and amassed an Orc while it was at it"
+    );
+}
