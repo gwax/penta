@@ -293,3 +293,81 @@ fn what_returns_remembers_nothing_but_its_own_counter() {
     assert_eq!(game.power(returned), Some(5), "so a 5/5 rather than a 7/7");
     assert!(!returned.tapped, "and untapped, whatever it was before");
 }
+
+/// A +1/+1 counter and a -1/-1 counter annihilate as a state-based action
+/// (CR 704.5q), so a Primus that has come back once and then grown a plus
+/// counter has no minus counter left -- and persist reads it as fresh the
+/// next time it dies.
+#[test]
+fn a_plus_counter_wipes_the_minus_and_persist_reads_it_again() {
+    let (mut game, primus, ids) = staged(&[cards::SOL_RING, cards::MOX_PEARL, cards::MOX_JET]);
+    cast(&mut game, primus, Some(ids[0]));
+    let first = body(&game).expect("it is here").card.id;
+    game.move_permanents_to_graveyard(&[first]);
+    cast_settle_with_target(&mut game, ids[1]);
+    let returned = body(&game).expect("persist brought it back").card.id;
+    assert_eq!(
+        body(&game)
+            .expect("it is here")
+            .counters(CounterKind::MinusOneMinusOne),
+        1,
+        "the first return leaves a -1/-1 counter",
+    );
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == returned)
+        .expect("it is there")
+        .add_counters(CounterKind::PlusOnePlusOne, 1);
+    game.check_state_based_actions();
+
+    let grown = body(&game).expect("it is still here");
+    assert_eq!(
+        (
+            grown.counters(CounterKind::PlusOnePlusOne),
+            grown.counters(CounterKind::MinusOneMinusOne)
+        ),
+        (0, 0),
+        "the pair annihilated, leaving neither",
+    );
+    assert_eq!(game.power(grown), Some(6), "so it is the printed 6/6 again");
+
+    game.move_permanents_to_graveyard(&[returned]);
+    cast_settle_with_target(&mut game, ids[2]);
+
+    let again = body(&game).expect("persist had nothing to stop it this time");
+    assert_eq!(
+        again.counters(CounterKind::MinusOneMinusOne),
+        1,
+        "and it comes back with a fresh counter",
+    );
+    assert!(
+        !on_battlefield(&game, cards::MOX_JET),
+        "answering a third permanent on the way in",
+    );
+}
+
+/// "The persist ability triggers when the permanent is put into a
+/// graveyard": exiled instead, it never gets there and never comes back.
+#[test]
+fn exiling_it_stops_persist() {
+    let (mut game, primus, ids) = staged(&[cards::SOL_RING]);
+    cast(&mut game, primus, Some(ids[0]));
+    let standing = body(&game).expect("it is here").card.id;
+
+    game.exile_permanent(standing);
+    settle(&mut game);
+
+    assert!(body(&game).is_none(), "it did not come back");
+    assert!(
+        game.players[PlayerId::One.index()]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::WOODFALL_PRIMUS),
+        "it is in exile",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].graveyard.is_empty(),
+        "and never touched a graveyard for persist to read",
+    );
+}
