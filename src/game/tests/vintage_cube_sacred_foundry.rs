@@ -140,3 +140,78 @@ fn a_wasteland_answers_it_and_not_the_basic() {
     assert!(named(&game, foundry), "a nonbasic land, types and all");
     assert!(!named(&game, mountain), "and a Mountain is not one");
 }
+
+/// A fetchland says nothing about tapped, so the shock clause is live when
+/// it lands: pay and it arrives ready, decline and it arrives tapped. The
+/// mirror of the Wight fetching it tapped, where the payment buys nothing.
+#[test]
+fn a_fetchland_leaves_the_shock_choice_worth_making() {
+    for pay in [true, false] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[0].library.clear();
+        game.players[0]
+            .library
+            .push(card(114_200, cards::SACRED_FOUNDRY, PlayerId::One));
+        let mesa = game
+            .put_onto_battlefield(PlayerId::One, cards::ARID_MESA)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        let life = game.players[0].life;
+
+        let fetch = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(
+                |action| matches!(action, Action::ActivateAbility { source, .. } if *source == mesa),
+            )
+            .expect("the fetchland is ready to crack");
+        game.apply(PlayerId::One, fetch).expect("it activates");
+        pass_priority_pair(&mut game);
+
+        let search = game
+            .observe(PlayerId::One)
+            .decision
+            .expect("the search offers what it found");
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: search.id,
+                options: vec![search.options[0].id],
+            },
+        )
+        .expect("taking it is legal");
+
+        let shock = game
+            .observe(PlayerId::One)
+            .decision
+            .expect("and then it asks about its two life");
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: shock.id,
+                options: vec![u32::from(pay)],
+            },
+        )
+        .expect("either answer is legal");
+        drain_pending(&mut game);
+
+        let foundry = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == cards::SACRED_FOUNDRY)
+            .expect("it arrived");
+        assert_eq!(
+            foundry.tapped, !pay,
+            "nothing said tapped, so the payment decides it (paid: {pay})",
+        );
+        assert_eq!(
+            game.players[0].life,
+            life - 1 - if pay { 2 } else { 0 },
+            "the Mesa's own life plus what the shock was answered with (paid: {pay})",
+        );
+    }
+}
