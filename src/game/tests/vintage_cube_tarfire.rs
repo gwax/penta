@@ -131,3 +131,39 @@ fn a_ringleader_draws_it_as_a_goblin_card() {
     assert!(hand.contains(&cards::GOBLIN_LACKEY), "and the Goblin");
     assert_eq!(hand.len(), 2, "and neither of the lands");
 }
+
+/// "Kindred is a card type and will be counted by effects that refer to the
+/// number of card types among cards in a zone." A Tarfire in the graveyard
+/// is two of them at once, which a Lhurgoyf reads as two.
+#[test]
+fn it_is_two_card_types_to_a_lhurgoyf() {
+    let size_with = |definition: CardDefinitionId| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[PlayerId::One.index()].graveyard.clear();
+        game.players[PlayerId::Two.index()].graveyard.clear();
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .push(card(96_800, definition, PlayerId::One));
+        let goyf = game
+            .put_onto_battlefield(PlayerId::One, cards::PYROGOYF)
+            .expect("cataloged");
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == goyf)
+            .expect("it is there");
+        (game.power(permanent), game.toughness(permanent))
+    };
+
+    assert_eq!(
+        size_with(cards::LIGHTNING_BOLT),
+        (Some(1), Some(2)),
+        "an ordinary instant is one card type",
+    );
+    assert_eq!(
+        size_with(cards::TARFIRE),
+        (Some(2), Some(3)),
+        "and a Kindred Instant is two, off the one card",
+    );
+}
