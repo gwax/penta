@@ -153,3 +153,90 @@ fn an_empty_hand_and_no_life_cannot_cast_it() {
 
     assert!(casts(&game, triumph).is_empty());
 }
+
+/// "Target creature or planeswalker": the other half of the target line,
+/// and the reason it is played over a creature-only answer.
+#[test]
+fn it_destroys_a_planeswalker_too() {
+    let (mut game, triumph, _bears) = staged(2, 20);
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::TEFERI_TIME_RAVELER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == triumph
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(walker))
+            }
+            _ => false,
+        })
+        .expect("a planeswalker is a legal target");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != walker),
+        "the planeswalker was destroyed",
+    );
+}
+
+/// The discard is an additional cost, so it is paid as the spell is
+/// announced: a Counterspell answers the Triumph and the card stays in the
+/// graveyard.
+#[test]
+fn the_additional_cost_is_spent_even_when_it_is_countered() {
+    let (mut game, triumph, bears) = staged(2, 20);
+    game.players[1]
+        .hand
+        .push(card(96_900, cards::COUNTERSPELL, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, sacrifices, .. }
+                if *card == triumph && sacrifices.len() == 1)
+        })
+        .expect("a card in hand pays for it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    assert_eq!(
+        game.players[0].hand.len(),
+        1,
+        "the discard happened on announcement",
+    );
+
+    game.priority = PlayerId::Two;
+    let counter = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(96_900))
+        })
+        .expect("two blue answers it");
+    game.apply(PlayerId::Two, counter).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears),
+        "the bear lived",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MOUNTAIN),
+        "and the card it cost is still in the graveyard",
+    );
+    assert_eq!(game.players[0].life, 20, "the life was never the cost here");
+}
