@@ -351,3 +351,105 @@ fn arriving_after_the_targeting_grants_nothing_for_it() {
         "so nothing was revealed off the top",
     );
 }
+
+/// "Becomes the target of a spell *or ability*": a Manifold Key pointed at
+/// your own bear is an ability, and the Bird reads it the same way it reads
+/// a Giant Growth.
+#[test]
+fn an_ability_that_targets_a_creature_sets_it_off() {
+    let (mut game, _nadu, bears) = staged(&[cards::LIGHTNING_BOLT]);
+    let key = game
+        .put_onto_battlefield(PlayerId::One, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == key)
+        .expect("it is there")
+        .entered_controller_turn = 0;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    game.priority = PlayerId::One;
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    let unblockable = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == key
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(bears))
+            }
+            _ => false,
+        })
+        .expect("the Key names a creature");
+    game.apply(PlayerId::One, unblockable)
+        .expect("the ability activates");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library - 1,
+        "the top card was revealed and taken",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and a nonland goes to hand",
+    );
+}
+
+/// The clause says nothing about whose spell it is: their removal aimed at
+/// your creature is a targeting like any other, and the card is drawn before
+/// the creature dies.
+#[test]
+fn their_spell_aimed_at_your_creature_sets_it_off_too() {
+    let (mut game, _nadu, bears) = staged(&[cards::LIGHTNING_BOLT]);
+    let bolt = game
+        .build_zone(PlayerId::Two, &[cards::LIGHTNING_BOLT])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.priority = PlayerId::Two;
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(bears))
+            }
+            _ => false,
+        })
+        .expect("their Bolt can point at your bear");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library - 1,
+        "your Bird read their targeting",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears),
+        "and the bear still died to the Bolt",
+    );
+}
