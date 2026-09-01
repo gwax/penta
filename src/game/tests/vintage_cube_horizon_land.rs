@@ -282,3 +282,111 @@ fn the_grove_may_be_cashed_in_at_one_life() {
     );
     assert!(game.result.is_none(), "so nobody dies for a card");
 }
+
+/// A horizon land is a plain Land: it makes two colours and carries neither
+/// of their basic types, so a fetchland that reads for a Forest or an Island
+/// walks straight past a Waterlogged Grove.
+#[test]
+fn a_fetchland_cannot_find_the_grove() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].library.clear();
+    game.players[PlayerId::One.index()].library.push(card(
+        98_000,
+        cards::WATERLOGGED_GROVE,
+        PlayerId::One,
+    ));
+    let fetch = game
+        .put_onto_battlefield(PlayerId::One, cards::MISTY_RAINFOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == fetch))
+        .expect("a life and a sacrifice");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::WATERLOGGED_GROVE),
+        "the Grove says Land and nothing else, so there was nothing to find",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        1,
+        "and it is still in the library",
+    );
+}
+
+/// The land is sacrificed to pay for the card, which makes cashing it in an
+/// answer to the Strip Mine pointed at it: the cost is paid before their
+/// ability resolves, and what resolves has nothing left to destroy.
+#[test]
+fn cashing_it_in_answers_a_strip_mine() {
+    let (mut game, grove) = staged_land(cards::WATERLOGGED_GROVE);
+    let forest = game
+        .put_onto_battlefield(PlayerId::One, cards::FOREST)
+        .expect("cataloged");
+    let mine = game
+        .put_onto_battlefield(PlayerId::Two, cards::STRIP_MINE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    let blow_up = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == mine
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(grove))
+            }
+            _ => false,
+        })
+        .expect("the Grove is a land like any other");
+    game.apply(PlayerId::Two, blow_up).expect("it activates");
+
+    game.priority = PlayerId::One;
+    cash_in(&mut game, grove);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library - 1,
+        "the card was drawn before their ability resolved",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == forest),
+        "and the ability found nothing else to take with it",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == mine),
+        "the Strip Mine paid for itself either way",
+    );
+}
