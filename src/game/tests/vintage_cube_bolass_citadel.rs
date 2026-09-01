@@ -366,3 +366,85 @@ fn a_wide_board_still_offers_the_ability_once() {
         "twenty nonland permanents would be 184,756 ways to choose ten",
     );
 }
+
+/// "Bolas's Citadel may be one of the permanents you sacrifice to activate
+/// its last ability." Nine Lions and the Citadel itself is ten.
+#[test]
+fn the_citadel_may_eat_itself() {
+    let (mut game, citadel) = staged(&[]);
+    for _ in 0..9 {
+        game.put_onto_battlefield(PlayerId::One, cards::SAVANNAH_LIONS)
+            .expect("cataloged");
+    }
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == citadel),
+        )
+        .expect("nine Lions and the Citadel are ten nonland permanents");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    for _ in 0..10 {
+        let decision = game
+            .observe(PlayerId::One)
+            .decision
+            .expect("one permanent is asked for at a time");
+        let option = decision.options.first().expect("something is offered").id;
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![option],
+            },
+        )
+        .expect("the answer is legal");
+    }
+    resolve(&mut game);
+
+    assert_eq!(game.players[1].life, 10, "the drain happened all the same");
+    assert!(
+        game.battlefield.is_empty(),
+        "and the board it ate included the Citadel itself",
+    );
+}
+
+/// "If a spell has {X} in its mana cost, you must choose 0 as the value of X
+/// when casting it without paying its mana cost." A Ballista off the top is
+/// an {X}{X} spell at nought, so the life it asks for is nothing and what
+/// arrives is a 0/0 that nothing can save.
+#[test]
+fn an_x_spell_from_the_top_is_cast_for_nought() {
+    let (mut game, _citadel) = staged(&[cards::WALKING_BALLISTA]);
+    let ballista = top(&game);
+    let life = game.players[0].life;
+
+    let cast = cast_of(&game, ballista).expect("the top card is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    resolve(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[0].life, life,
+        "X of nought is a mana value of nought, and no life to pay",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::WALKING_BALLISTA),
+        "and X was nought, so what arrived was a 0/0",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::WALKING_BALLISTA),
+        "buried by state-based actions",
+    );
+}
