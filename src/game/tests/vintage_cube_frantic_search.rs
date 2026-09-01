@@ -315,3 +315,107 @@ fn the_lands_that_paid_for_it_come_back_up() {
         "and the three blue it was paid with is spent, not refunded",
     );
 }
+
+/// "Untap up to three lands" says nothing about tapped ones: an untapped
+/// land is a legal choice and untapping it changes nothing, which is what
+/// the count being of lands rather than of tapped lands means.
+#[test]
+fn an_untapped_land_is_a_legal_choice() {
+    let (mut game, search) = staged(1, 0);
+    let ready = game
+        .put_onto_battlefield(PlayerId::One, cards::MOUNTAIN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    // Draw and discard first; the land choice is the decision after those.
+    let mut decision = cast(&mut game, search);
+    for _ in 0..4 {
+        if decision
+            .options
+            .iter()
+            .any(|option| option.card.is_some_and(|(id, _)| id == ready))
+        {
+            break;
+        }
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: decision
+                    .options
+                    .iter()
+                    .map(|option| option.id)
+                    .take(decision.minimum)
+                    .collect(),
+            },
+        )
+        .expect("the offered answer is legal");
+        pass_until_decision(&mut game);
+        decision = game
+            .observe(PlayerId::One)
+            .decision
+            .expect("the lands are asked about");
+    }
+
+    let option = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(id, _)| id == ready))
+        .expect("the untapped Mountain is among the choices")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option],
+        },
+    )
+    .expect("choosing it is legal");
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == ready)
+            .expect("it is there")
+            .tapped,
+        "it was untapped before and is untapped after",
+    );
+    assert_eq!(
+        untapped_of(&game, PlayerId::One),
+        1,
+        "and the tapped Island was not the one chosen",
+    );
+}
+
+/// Two cards off a library with one in it: the draw takes what is there, and
+/// the loss is the state-based check afterwards rather than anything the
+/// spell does.
+#[test]
+fn drawing_past_the_end_of_the_library_loses_the_game() {
+    let (mut game, search) = staged(3, 0);
+    game.players[0].library.truncate(1);
+
+    game.apply(
+        PlayerId::One,
+        cast_action(search, Vec::new(), Vec::new(), 0),
+    )
+    .expect("three mana casts it");
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.players[0].library.is_empty(),
+        "the one card it could draw was drawn",
+    );
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::Two,
+            reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+        }),
+        "and drawing from an empty library is a loss",
+    );
+}
