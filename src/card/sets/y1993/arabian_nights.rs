@@ -2,17 +2,16 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::Format;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::{
-    AbilityCostDef, AbilityCoverageDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    ActivationTimingDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
-    CardArt, CardBehavior, CardChoiceSourceDef, CardRules, CardSet, CardType, ChoiceVisibilityDef,
-    ComparisonDef, ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef,
-    DamageLimitDef, DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef,
-    DiscardSelectionDef, EffectDef, EffectExecutionDef, EffectPaymentCostDef, EffectPaymentDef,
-    EffectRecipientDef, InstalledTriggerDef, KeywordAbility, LikelihoodDef, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayActionMatcherDef,
-    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt,
+    CardChoiceSourceDef, CardRules, CardSet, CardType, ChoiceVisibilityDef, ComparisonDef,
+    ControlDurationDef, CounterKind, DamageEventMatcherDef, DamageKindDef, DamageLimitDef,
+    DamagePreventionDef, DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef,
+    EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef,
+    KeywordAbility, LikelihoodDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
+    PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ResolvedEffectDurationDef, SacrificedAmountDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -1666,12 +1665,13 @@ pub(in crate::card::sets) static ISLAND_OF_WAK_WAK: CardRecord = CardRecord::new
 );
 
 // ARN 76 — Library of Alexandria
-// Audit: custom — Needs a declarative activated-ability restriction that checks for exactly seven cards in its controller's hand.
 pub(in crate::card::sets) static LIBRARY_OF_ALEXANDRIA: CardRecord = CardRecord::new_with_legacy_id(
     79,
     "Library of Alexandria",
     CardArt::new("ee266113-34ce-4189-84e7-ee2c86a2722c", "Mark Poole"),
     CardSet::ArabianNights,
+    // A land that draws a card a turn for as long as the hand it draws into
+    // is exactly the hand it started with.
     CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
         AbilityDef::activated(
@@ -1682,11 +1682,17 @@ pub(in crate::card::sets) static LIBRARY_OF_ALEXANDRIA: CardRecord = CardRecord:
                 amount: ValueDef::Constant(1),
             },
         )
-        .with_effect_execution(EffectExecutionDef::Custom(CardBehavior::LibraryOfAlexandria))
-        .with_coverage(AbilityCoverageDef::explained_complete(
-            "The seven-card activation restriction and card draw are implemented by the card-local activated-action resolver.",
-        ))
-        .with_legacy_procedure(),
+        // "Activate only if": read where the ability is announced and not
+        // again as it resolves, which is what lets two Libraries both be
+        // tapped at seven.
+        .with_activation_condition(&TriggerConditionDef::ValueComparison(&ValueComparisonDef {
+            left: ValueDef::CardsInHandAbove {
+                player: PlayerRelation::You,
+                threshold: 0,
+            },
+            comparison: ComparisonDef::Equal,
+            right: ValueDef::Constant(7),
+        })),
     ]),
 );
 

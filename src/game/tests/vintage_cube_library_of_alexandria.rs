@@ -111,3 +111,71 @@ fn two_libraries_may_both_be_announced_at_seven() {
         "both drew, though the second resolved into a hand of eight",
     );
 }
+
+/// Both halves want the same tap, so the mana is paid for with the card: a
+/// Library tapped for {C} is a Library that drew nothing.
+#[test]
+fn tapping_it_for_mana_spends_the_draw() {
+    let (mut game, libraries) = staged(1, 7);
+    let library = libraries[0];
+    assert!(draw_offered(&game, library), "seven in hand, and untapped");
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: library,
+            ability: mana_ability_for(&game, library, ManaColor::Colorless),
+            color: ManaColor::Colorless,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("it taps for colourless");
+
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.colorless, 1);
+    assert!(
+        !draw_offered(&game, library),
+        "and the tap it wanted is spent",
+    );
+}
+
+/// Nothing on the ability says when: with a hand of exactly seven it draws
+/// on their turn as readily as on yours, which is how the seventh card is
+/// held until their end step.
+#[test]
+fn the_draw_may_be_taken_on_their_turn() {
+    let (mut game, libraries) = staged(1, 7);
+    let library = libraries[0];
+    game.active_player = PlayerId::Two;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    assert!(
+        draw_offered(&game, library),
+        "their end step is as good a time as any",
+    );
+    let action = draw_action(&game, library);
+    game.apply(PlayerId::One, action).expect("it activates");
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        8,
+        "the card is drawn on their turn",
+    );
+    assert!(
+        !draw_offered(&game, library),
+        "and eight is not seven, so it says nothing until one goes",
+    );
+}

@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Library of Alexandria is declarative.** Its audit line asked for an
+  activated-ability restriction that checks for exactly seven cards in hand;
+  activation conditions and a hand-size value both already existed, so the
+  card now states "activate only if" the way every other conditional
+  activation does, and the custom resolver it carried is gone. The
+  restriction is still read where the ability is announced, so two Libraries
+  may both be tapped at seven.
+
 - **Leyline of Sanctity has its hexproof.** Its audit line asked for a static
   player-protection effect, which Witchbane Orb was already using: the
   Leyline now grants it the same way, so a spell that names its controller
