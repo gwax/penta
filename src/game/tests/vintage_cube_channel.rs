@@ -96,3 +96,66 @@ fn the_faucet_closes_at_the_end_of_the_turn() {
 
     assert!(faucet(&game).is_empty(), "and shut once that turn is over");
 }
+
+/// The faucet has no limit but the life total: five points bought five
+/// colourless in one turn, and the pool holds all of them at once.
+#[test]
+fn it_may_be_paid_over_and_over_in_the_same_turn() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    resolve_channel(&mut game);
+    let life = game.players[PlayerId::One.index()].life;
+
+    for _ in 0..5 {
+        let pay = faucet(&game)
+            .into_iter()
+            .next()
+            .expect("the faucet is still open");
+        game.apply(PlayerId::One, pay).expect("a life is payable");
+    }
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life - 5,
+        "five points of life",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.colorless,
+        5,
+        "for five colourless, all in the pool together",
+    );
+}
+
+/// "You may pay 1 life": the permission belongs to the player who cast it.
+/// The other player's life buys them nothing.
+#[test]
+fn their_life_is_not_theirs_to_spend() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    resolve_channel(&mut game);
+    // A land of their own, so what they are offered is a real list rather
+    // than an empty one.
+    game.put_onto_battlefield(PlayerId::Two, cards::FOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::Two;
+
+    let theirs: Vec<ManaColor> = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { color, .. } => Some(color),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        theirs,
+        vec![ManaColor::Green],
+        "their Forest and nothing else: the faucet is the caster's alone",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].mana_pool.colorless,
+        0,
+        "and nothing arrived in their pool",
+    );
+}
