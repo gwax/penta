@@ -265,3 +265,80 @@ fn a_land_played_from_the_graveyard_kills_it_too() {
         "and playing it is playing a land, wherever it came from",
     );
 }
+
+/// What the sacrifice is, from the other side: a land of yours put into the
+/// graveyard from the battlefield, which a Titania standing beside it turns
+/// into a 5/3.
+#[test]
+fn the_sacrifice_feeds_a_titania() {
+    let (mut game, city, held) = staged(&[cards::FOREST]);
+    game.put_onto_battlefield(PlayerId::One, cards::TITANIA_PROTECTOR_OF_ARGOTH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    // Titania's own arrival trigger has an empty graveyard to read, so
+    // nothing is waiting on it.
+    game.priority = PlayerId::One;
+    let elementals = |game: &Game| {
+        game.battlefield
+            .iter()
+            .filter(|permanent| {
+                is_token_with(
+                    permanent,
+                    tokens::creature(&["Elemental"], &[ManaColor::Green], 5, 3),
+                )
+            })
+            .count()
+    };
+    assert_eq!(elementals(&game), 0, "nothing has died yet");
+
+    play_land(&mut game, held[0]);
+
+    assert!(!alive(&game, city), "the City went to its own trigger");
+    assert_eq!(
+        elementals(&game),
+        1,
+        "and a land of yours reaching the graveyard is what Titania reads",
+    );
+}
+
+/// The two it makes are colourless: they pay a generic cost and no coloured
+/// pip, however many of them there are.
+#[test]
+fn its_two_are_colorless_and_pay_no_pips() {
+    let (mut game, city, _held) = staged(&[]);
+    let counter = card(111_000, cards::COUNTERSPELL, PlayerId::One);
+    let counter_id = counter.id;
+    game.players[PlayerId::One.index()].hand.push(counter);
+    let key = card(111_001, cards::MANIFOLD_KEY, PlayerId::One);
+    let key_id = key.id;
+    game.players[PlayerId::One.index()].hand.push(key);
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: city,
+            ability: mana_ability_for(&game, city, ManaColor::Colorless),
+            color: ManaColor::Colorless,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("it taps for colourless");
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.colorless, 2);
+
+    let castable = |game: &Game, id: GameObjectId| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == id))
+    };
+    assert!(
+        castable(&game, key_id),
+        "a one-mana artifact is what colourless pays for",
+    );
+    assert!(
+        !castable(&game, counter_id),
+        "and two of it is no blue at all",
+    );
+}
