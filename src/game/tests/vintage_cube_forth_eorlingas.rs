@@ -230,3 +230,92 @@ fn the_trigger_lasts_only_for_the_turn() {
         "and the turn it belonged to is over",
     );
 }
+
+/// "X 2/2 red Human Knight creature tokens": the half the size and the
+/// keywords do not say. Red matters for a Blood Moon deck's own Pyrokinesis
+/// and the types for anything that answers Humans.
+#[test]
+fn the_riders_are_red_human_knights() {
+    let (mut game, spell) = staged(3);
+
+    cast_for(&mut game, spell, 1);
+
+    let rider = riders(&game).into_iter().next().expect("one Rider");
+    let permanent = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == rider)
+        .expect("still there");
+    assert_eq!(
+        game.effective_colors(permanent, &game.effective_rules(permanent).expect("rules")),
+        [false, false, false, true, false],
+        "red and nothing else",
+    );
+    let subtypes = game.effective_subtypes(permanent);
+    assert!(subtypes.contains(&"Human"), "a Human");
+    assert!(subtypes.contains(&"Knight"), "and a Knight");
+}
+
+/// Trample and the crown together: a Rider held by a 1/1 still sends a point
+/// past it, and a point to a player is combat damage to a player.
+#[test]
+fn a_rider_that_tramples_over_a_blocker_still_claims_the_crown() {
+    let (mut game, spell) = staged(3);
+    let chump = game
+        .put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    cast_for(&mut game, spell, 1);
+    let rider = riders(&game).into_iter().next().expect("one Rider");
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(rider, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    game.declare_blocker(chump, rider);
+    game.step = Step::CombatDamage;
+    game.deal_combat_damage();
+    settle(&mut game);
+
+    assert_eq!(game.players[1].life, 19, "one point trampled over");
+    assert_eq!(
+        game.monarch(),
+        Some(PlayerId::One),
+        "and that point is combat damage to a player",
+    );
+}
+
+/// "Deal combat damage to one or more players." A planeswalker is not a
+/// player, so a Rider that spends the combat killing one takes no crown.
+#[test]
+fn damage_to_a_planeswalker_is_not_damage_to_a_player() {
+    let (mut game, spell) = staged(3);
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::JACE_THE_MIND_SCULPTOR)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    cast_for(&mut game, spell, 1);
+    let rider = riders(&game).into_iter().next().expect("one Rider");
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(rider, AttackDefender::Planeswalker(walker));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+    game.step = Step::CombatDamage;
+    game.deal_combat_damage();
+    settle(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == walker)
+            .expect("he survived")
+            .counters(CounterKind::Loyalty),
+        1,
+        "the Rider did connect, taking two of his three loyalty",
+    );
+    assert_eq!(game.players[1].life, 20, "the player took nothing");
+    assert_eq!(game.monarch(), None, "and the crown stayed where it was");
+}
