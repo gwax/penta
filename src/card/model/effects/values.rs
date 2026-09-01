@@ -2,7 +2,7 @@ use crate::ids::{AdditionalCostIndex, ObjectSetBindingIndex, TargetIndex};
 
 use super::super::{
     BasicLandType, ComparisonDef, CounterKind, ManaColor, ObjectPredicateDef, PlayerRelation,
-    ZoneKind,
+    TriggerConditionDef, ZoneKind,
 };
 use super::{DamageSourceGroupDef, ObjectRefDef, ObjectSetDef, PlayerSetDef};
 
@@ -26,6 +26,16 @@ pub struct SpellCastQueryDef {
 /// The two branches of a conditional value.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ConditionalValueDef {
+    pub then: ValueDef,
+    pub otherwise: ValueDef,
+}
+
+/// A value selected by the same condition vocabulary that can guard an
+/// effect. This keeps an "instead" clause that changes only an amount on the
+/// amount itself rather than duplicating the whole effect around it.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct ConditionValueDef {
+    pub condition: &'static TriggerConditionDef,
     pub then: ValueDef,
     pub otherwise: ValueDef,
 }
@@ -482,6 +492,10 @@ pub enum ValueDef {
     /// total, another otherwise. The fateful-hour "instead" clauses, which
     /// replace an amount rather than adding a second effect beside it.
     IfControllerLifeAtMost(&'static LifeConditionDef),
+    /// One value when a resolution-time condition holds, another otherwise.
+    /// Unlike [`Self::IfControllerLifeAtMost`], this admits the complete
+    /// condition vocabulary used by guarded effects.
+    IfCondition(&'static ConditionValueDef),
     /// One value when the chosen target matches, another when it does not.
     /// Held by reference for the same reason.
     IfTargetMatches(&'static TargetConditionDef),
