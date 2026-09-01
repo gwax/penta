@@ -238,3 +238,89 @@ fn it_reaches_an_enchantment_too() {
         "it is gone"
     );
 }
+
+/// The ability costs a mana and the body, and no tap at all: flashed in on
+/// their turn, the Commando is sacrificed for the artifact the moment it
+/// arrives, summoning sickness and all.
+#[test]
+fn it_shoots_the_turn_it_arrives_on_their_turn() {
+    let (mut game, commando) = staged(&[cards::SOL_RING]);
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let ring = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SOL_RING)
+        .expect("their Ring is there")
+        .card
+        .id;
+
+    let body = resolve_it(&mut game, commando);
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == body)
+            .expect("it is there")
+            .entered_controller_turn,
+        game.turns_started[PlayerId::One.index()],
+        "it arrived this turn",
+    );
+
+    let shot = shots(&game, body, ring)
+        .into_iter()
+        .next()
+        .expect("a mana and itself is the whole cost");
+    game.apply(PlayerId::One, shot).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        !on_battlefield(&game, cards::SOL_RING),
+        "their Ring is gone on their own turn",
+    );
+    assert!(
+        !on_battlefield(&game, cards::CATHAR_COMMANDO),
+        "and the Commando went with it, as the cost",
+    );
+}
+
+/// Destroy is destroy: an indestructible artifact survives, and the Commando
+/// is spent all the same, because the sacrifice was the cost rather than the
+/// effect.
+#[test]
+fn an_indestructible_artifact_survives_and_the_body_is_still_spent() {
+    let (mut game, commando) = staged(&[cards::DARKSTEEL_MYR]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let myr = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::DARKSTEEL_MYR)
+        .expect("their Myr is there")
+        .card
+        .id;
+
+    let body = resolve_it(&mut game, commando);
+    let shot = shots(&game, body, myr)
+        .into_iter()
+        .next()
+        .expect("an artifact creature is an artifact");
+    game.apply(PlayerId::One, shot).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        on_battlefield(&game, cards::DARKSTEEL_MYR),
+        "indestructible answers the destruction",
+    );
+    assert!(
+        !on_battlefield(&game, cards::CATHAR_COMMANDO),
+        "and answers nothing about the cost",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::CATHAR_COMMANDO),
+    );
+}
