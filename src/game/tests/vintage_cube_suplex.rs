@@ -334,3 +334,96 @@ fn a_slammed_creature_destroyed_by_something_else_is_exiled_too() {
         "which is the whole of what the mode buys",
     );
 }
+
+/// Neither mode says whose permanent it has to be. Your own creature is a
+/// legal target, and the replacement rides along with it into your exile.
+#[test]
+fn it_may_be_aimed_at_your_own_board() {
+    let (mut game, suplex) = staged(&[]);
+    game.put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("it is here")
+        .card
+        .id;
+
+    cast_at(&mut game, suplex, SLAM, bears);
+
+    assert!(!on_battlefield(&game, cards::GRIZZLY_BEARS), "it died");
+    assert!(
+        in_zone(&game.players[0].exile, cards::GRIZZLY_BEARS),
+        "into the exile of the player who owned it"
+    );
+}
+
+/// The artifact mode is just as indiscriminate: your own Sol Ring is a legal
+/// target for it.
+#[test]
+fn the_artifact_mode_will_take_your_own_artifact() {
+    let (mut game, suplex) = staged(&[]);
+    game.put_onto_battlefield(PlayerId::One, cards::SOL_RING)
+        .expect("cataloged");
+    let ring = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SOL_RING)
+        .expect("it is here")
+        .card
+        .id;
+
+    cast_at(&mut game, suplex, ARTIFACT, ring);
+
+    assert!(!on_battlefield(&game, cards::SOL_RING), "the Ring is gone");
+    assert!(
+        in_zone(&game.players[0].exile, cards::SOL_RING),
+        "exiled from under its own controller"
+    );
+}
+
+/// The replacement is on the one creature the spell targeted. Everything else
+/// that dies in the same sweeper still dies the ordinary way.
+#[test]
+fn only_the_slammed_creature_is_exiled_by_the_sweeper() {
+    let (mut game, suplex) = staged(&[cards::GIANT_SPIDER, cards::GRIZZLY_BEARS]);
+    let spider = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GIANT_SPIDER)
+        .expect("it is here")
+        .card
+        .id;
+
+    cast_at(&mut game, suplex, SLAM, spider);
+
+    let wrath = game
+        .build_zone(PlayerId::One, &[cards::WRATH_OF_GOD])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let wrath_id = wrath.id;
+    game.players[0].hand.push(wrath);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == wrath_id))
+        .expect("four mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        in_zone(&game.players[1].exile, cards::GIANT_SPIDER),
+        "the target the Suplex marked went to exile"
+    );
+    assert!(
+        in_zone(&game.players[1].graveyard, cards::GRIZZLY_BEARS),
+        "the bystander went to the graveyard"
+    );
+}
