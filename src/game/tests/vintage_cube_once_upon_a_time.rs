@@ -404,3 +404,85 @@ fn a_short_library_is_looked_at_as_far_as_it_goes() {
         "with the other one put underneath",
     );
 }
+
+/// "You may *reveal* a creature or land card from among them." The five are
+/// looked at privately and exactly one of them is shown: the table learns
+/// what you took and nothing about the four that went under.
+#[test]
+fn exactly_the_card_taken_is_revealed() {
+    let (mut game, spell) = staged(&FIVE_CARDS);
+    let cast = casts(&game, spell)
+        .into_iter()
+        .next()
+        .expect("the free cast is on offer");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    game.events.clear();
+
+    settle_taking(&mut game, Some(cards::GRIZZLY_BEARS));
+
+    assert_eq!(
+        hand(&game),
+        vec![cards::GRIZZLY_BEARS],
+        "the Bears was taken",
+    );
+    assert_eq!(
+        game.events
+            .iter()
+            .filter(|event| matches!(event, GameEvent::CardRevealed { .. }))
+            .count(),
+        1,
+        "one card shown, and the other four only looked at",
+    );
+}
+
+/// Declining shows nothing at all: five cards looked at, none revealed, and
+/// the whole look stays private.
+#[test]
+fn declining_reveals_nothing() {
+    let (mut game, spell) = staged(&FIVE_CARDS);
+    let cast = casts(&game, spell)
+        .into_iter()
+        .next()
+        .expect("the free cast is on offer");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    game.events.clear();
+
+    settle_taking(&mut game, None);
+
+    assert!(hand(&game).is_empty(), "nothing was taken");
+    assert!(
+        !game
+            .events
+            .iter()
+            .any(|event| matches!(event, GameEvent::CardRevealed { .. })),
+        "and nothing was shown",
+    );
+}
+
+/// Cast the ordinary way for {1}{G}, the look is the same look: the free
+/// cast is a discount on the mana and nothing else.
+#[test]
+fn the_paid_cast_looks_at_the_same_five() {
+    let (mut game, spell) = staged(&FIVE_CARDS);
+    game.total_spells_cast[PlayerId::One.index()] = 1;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let cast = casts(&game, spell)
+        .into_iter()
+        .next()
+        .expect("two mana buys it the ordinary way");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle_taking(&mut game, Some(cards::FOREST));
+
+    assert_eq!(
+        hand(&game),
+        vec![cards::FOREST],
+        "the same five were looked at and the land came back",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        4,
+        "and the other four went under",
+    );
+}
