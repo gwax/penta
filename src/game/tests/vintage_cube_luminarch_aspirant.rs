@@ -192,3 +192,85 @@ fn it_fires_again_next_turn() {
 
     assert_eq!(counters(&game, aspirant), 2);
 }
+
+/// "At the beginning of combat on *your* turn": their combat is not yours,
+/// however long she has been standing there.
+#[test]
+fn their_combat_does_not_fire_it() {
+    let (mut game, aspirant, others) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = others[0];
+    game.active_player = PlayerId::Two;
+    game.step = Step::Upkeep;
+    game.priority = PlayerId::Two;
+
+    while game.step != Step::BeginningOfCombat {
+        game.advance_step();
+    }
+    drain_pending(&mut game);
+
+    assert!(
+        game.pending_decisions.is_empty(),
+        "nothing was asked, so nothing triggered",
+    );
+    assert_eq!(counters(&game, aspirant), 0, "she grew nothing");
+    assert_eq!(counters(&game, bears), 0, "and neither did the bear");
+}
+
+/// The trigger targets, and a target that is gone when it resolves takes the
+/// whole trigger with it: an Aspirant pointed at herself and answered in
+/// response leaves the counter nowhere to go.
+#[test]
+fn a_target_that_dies_first_counters_the_trigger() {
+    let (mut game, aspirant, others) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = others[0];
+
+    while game.step != Step::BeginningOfCombat {
+        game.advance_step();
+    }
+    // Onto the stack, where its target is named, but not yet resolved.
+    game.finish_rules_procedure();
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the trigger asks what to grow");
+    let herself = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(object, _)| object == aspirant))
+        .expect("she is one of the options")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![herself],
+        },
+    )
+    .expect("naming herself is legal");
+
+    game.move_permanents_to_graveyard(&[aspirant]);
+    game.check_state_based_actions();
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        if game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == aspirant),
+        "she was answered with her trigger on the stack",
+    );
+    assert_eq!(
+        counters(&game, bears),
+        0,
+        "and the counter went nowhere, the bear included",
+    );
+}
