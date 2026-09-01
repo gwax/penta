@@ -213,3 +213,56 @@ fn a_landless_library_still_costs_the_map() {
     );
     assert_eq!(game.players[0].mana_pool.total(), 0, "and so is the mana");
 }
+
+/// "Any land card" reaches the one whose type line says more than land: a
+/// Dryad Arbor is Land Creature -- Forest Dryad, and it comes to hand as a
+/// card like any other rather than arriving as a creature.
+#[test]
+fn it_finds_a_dryad_arbor() {
+    let (mut game, map) = staged(&[cards::DRYAD_ARBOR, cards::LIGHTNING_BOLT]);
+
+    crack(&mut game, map);
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::DRYAD_ARBOR),
+        "a land card that is also a creature card is still a land card",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::DRYAD_ARBOR),
+        "and it went to hand, not to the battlefield",
+    );
+}
+
+/// Nothing on the ability says when: the Map is cracked in their end step as
+/// readily as in your main phase, which is how it is held until the land it
+/// wants is known.
+#[test]
+fn it_may_be_cracked_on_their_turn() {
+    let (mut game, map) = staged(&[cards::MISHRA_S_WORKSHOP]);
+    game.active_player = PlayerId::Two;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    crack(&mut game, map);
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::MISHRA_S_WORKSHOP),
+        "their end step is as good a time as any",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == map),
+        "and the Map paid for it",
+    );
+}
