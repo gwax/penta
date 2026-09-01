@@ -465,3 +465,108 @@ fn an_optional_sacrifice_is_not_an_option_either() {
         }
     }
 }
+
+/// "Return target card from *your* graveyard": the other graveyard is no
+/// part of it, however much is lying in it.
+#[test]
+fn the_minus_three_reaches_only_your_own_graveyard() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let planeswalker = tamiyo(98_100);
+    let tamiyo_id = planeswalker.card.id;
+    game.battlefield.push(planeswalker);
+    game.players[0].graveyard.clear();
+    game.players[1].graveyard.clear();
+    game.players[0]
+        .graveyard
+        .push(card(98_101, cards::BLACK_LOTUS, PlayerId::One));
+    game.players[1]
+        .graveyard
+        .push(card(98_102, cards::SERRA_ANGEL, PlayerId::Two));
+    let mine = game.players[0].graveyard[0].id;
+    let theirs = game.players[1].graveyard[0].id;
+
+    let named: Vec<_> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source,
+                ability,
+                targets,
+                ..
+            } if source == tamiyo_id
+                && game
+                    .ability_for_origin(tamiyo_id, ability)
+                    .is_some_and(|ability| ability.text.starts_with('\u{2212}')) =>
+            {
+                Some(targets)
+            }
+            _ => None,
+        })
+        .flatten()
+        .flat_map(|selection| selection.targets().to_vec())
+        .collect();
+
+    assert!(
+        named.contains(&Target::Card(mine)),
+        "your own Lotus is a target",
+    );
+    assert!(
+        !named.contains(&Target::Card(theirs)),
+        "and their Angel is not",
+    );
+}
+
+/// "Choose a *nonland* card name": the +1 sorts for spells, so no land name
+/// is offered -- a basic, a Tolarian Academy and a Celestial Colonnade
+/// alike. Metadata-only records carry no type line for the filter to read
+/// and so are not excluded, which is a property of those records rather
+/// than of this clause.
+#[test]
+fn the_plus_one_will_not_name_a_land() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let planeswalker = tamiyo(98_200);
+    let tamiyo_id = planeswalker.card.id;
+    game.battlefield.push(planeswalker);
+    game.players[0].hand.clear();
+    game.players[0].library.clear();
+    for id in 98_201..98_205 {
+        game.players[0]
+            .library
+            .push(card(id, cards::MOUNTAIN, PlayerId::One));
+    }
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, ability, .. }
+                if *source == tamiyo_id
+                    && game
+                        .ability_for_origin(tamiyo_id, *ability)
+                        .is_some_and(|ability| ability.text.starts_with("+1")))
+        })
+        .expect("the +1 is available");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    resolve(&mut game);
+
+    let naming = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the name is chosen first");
+    let named = |name: &str| naming.options.iter().any(|option| option.label == name);
+
+    assert!(!named("Mountain"), "a basic land is no nonland card name");
+    assert!(!named("Tolarian Academy"), "and neither is a nonbasic one");
+    assert!(
+        !named("Celestial Colonnade"),
+        "not even one that turns into a creature",
+    );
+    assert!(
+        named("Lightning Bolt"),
+        "while the nonland names are all still there",
+    );
+}
