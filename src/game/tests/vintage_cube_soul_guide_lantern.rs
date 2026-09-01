@@ -336,3 +336,111 @@ fn a_tapped_lantern_offers_neither_sacrifice() {
         "a tapped Lantern has no tap left to give",
     );
 }
+
+/// The enters trigger targets, so a card that leaves the graveyard while it
+/// waits takes the whole trigger with it: nothing else is exiled in its
+/// place.
+#[test]
+fn a_target_that_leaves_first_takes_the_trigger_with_it() {
+    let (mut game, lantern) = staged(&[], &[cards::GRIZZLY_BEARS, cards::SERRA_ANGEL]);
+    let bears = game.players[1]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::GRIZZLY_BEARS)
+        .expect("it is there")
+        .id;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == lantern))
+        .expect("one mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    // Let the artifact resolve so its trigger is the thing on the stack.
+    for _ in 0..8 {
+        if game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SOUL_GUIDE_LANTERN)
+        {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the trigger asks what to eat");
+    let option = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(card, _)| card == bears))
+        .expect("the Bears are on the menu")
+        .id;
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option],
+        },
+    )
+    .expect("naming it is legal");
+
+    // Something else takes the Bears out of the graveyard first.
+    let position = game.players[1]
+        .graveyard
+        .iter()
+        .position(|card| card.id == bears)
+        .expect("still there");
+    let taken = game.players[1].graveyard.remove(position);
+    game.players[1].hand.push(taken);
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the Angel beside it was never the target and is untouched",
+    );
+    assert!(
+        game.players[1].exile.is_empty(),
+        "and nothing was exiled at all",
+    );
+}
+
+/// The sweep names each opponent's graveyard, so the Lantern that paid for
+/// it lands in yours and stays there.
+#[test]
+fn the_lantern_itself_stays_in_your_graveyard() {
+    let (mut game, lantern) = staged(&[cards::LIGHTNING_BOLT], &[cards::GRIZZLY_BEARS]);
+    let bears = game.players[1].graveyard[0].id;
+    cast_lantern(&mut game, lantern, Some(bears));
+    let lantern = on_battlefield(&game);
+
+    activate(&mut game, lantern, 1);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SOUL_GUIDE_LANTERN),
+        "the Lantern was sacrificed into your own graveyard",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "beside the Bolt that was already there",
+    );
+    assert!(
+        game.players[0].exile.is_empty(),
+        "your side was never swept",
+    );
+}
