@@ -191,3 +191,58 @@ fn its_mana_value_is_three_however_it_was_paid() {
         );
     }
 }
+
+/// A toughness of zero is not destruction: an indestructible Myr has no
+/// answer to -5/-5, and neither does a regeneration shield.
+#[test]
+fn indestructible_and_regeneration_are_no_answer() {
+    for definition in [cards::DARKSTEEL_MYR, cards::SEDGE_TROLL] {
+        let (mut game, dismember, victim) = staged(definition);
+        game.players[PlayerId::One.index()].mana_pool.black = 2;
+        game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+        if let Some(permanent) = game
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == victim)
+        {
+            permanent.regeneration_shields = 1;
+        }
+
+        cast_it(&mut game, dismember, victim);
+
+        assert!(
+            size(&game, victim).is_none(),
+            "{definition:?} was put into the graveyard for zero toughness",
+        );
+    }
+}
+
+/// "Target creature" says nothing about whose: your own is on the list,
+/// which is how a Dismember answers something the other player has taken.
+#[test]
+fn it_may_name_your_own_creature() {
+    let (mut game, dismember, theirs) = staged(cards::GRIZZLY_BEARS);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.players[PlayerId::One.index()].mana_pool.black = 2;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    game.priority = PlayerId::One;
+
+    assert!(
+        !casts(&game, dismember, mine).is_empty(),
+        "your own Angel is a creature like any other",
+    );
+    assert!(
+        !casts(&game, dismember, theirs).is_empty(),
+        "and so is their bear",
+    );
+
+    cast_it(&mut game, dismember, mine);
+
+    assert!(
+        size(&game, mine).is_none(),
+        "a 4/4 does not survive -5/-5, whoever controls it",
+    );
+}
