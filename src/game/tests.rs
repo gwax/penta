@@ -630,6 +630,7 @@ mod vintage_cube_pyrogoyf;
 mod vintage_cube_quantum_riddler;
 mod vintage_cube_questing_beast;
 mod vintage_cube_ragavan;
+mod vintage_cube_razorverge_thicket;
 mod vintage_cube_reanimate;
 mod vintage_cube_recurring_nightmare;
 mod vintage_cube_relic;
