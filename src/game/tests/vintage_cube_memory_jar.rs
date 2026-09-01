@@ -265,3 +265,72 @@ fn it_draws_the_other_player_out_of_their_library() {
         "which is a loss for the player who could not finish the draw",
     );
 }
+
+/// "At the beginning of the next end step" is the next one there is, not the
+/// next one of yours: a Jar cracked on their turn is settled at the end of
+/// that turn.
+#[test]
+fn cracked_on_their_turn_it_settles_at_the_end_of_theirs() {
+    let (mut game, jar) = staged(2, 2);
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    crack(&mut game, jar);
+    assert_eq!(game.players[0].hand.len(), 7, "seven for the cracker");
+    assert_eq!(game.players[1].hand.len(), 7, "and seven for them");
+
+    end_step(&mut game);
+
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .filter(|card| card.definition == cards::LIGHTNING_BOLT)
+            .count(),
+        2,
+        "their end step gave the old hand back",
+    );
+    assert_eq!(
+        game.players[1]
+            .hand
+            .iter()
+            .filter(|card| card.definition == cards::GRIZZLY_BEARS)
+            .count(),
+        2,
+        "to both players",
+    );
+    assert_eq!(discarded_islands(&game), 7, "and took the loan back");
+}
+
+/// The delayed trigger is a one-shot: it settles the loan at the next end
+/// step and is not there at the one after.
+#[test]
+fn the_delayed_trigger_fires_once_and_no_more() {
+    let (mut game, jar) = staged(2, 0);
+    crack(&mut game, jar);
+    end_step(&mut game);
+    let hand = game.players[0]
+        .hand
+        .iter()
+        .map(|card| card.definition)
+        .collect::<Vec<_>>();
+    assert_eq!(hand.len(), 2, "the old hand came back");
+    let buried = discarded_islands(&game);
+
+    // A fresh turn, and its end step.
+    game.turns_started[PlayerId::One.index()] += 1;
+    game.step = Step::PrecombatMain;
+    end_step(&mut game);
+
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        hand,
+        "the second end step took nothing and gave nothing",
+    );
+    assert_eq!(discarded_islands(&game), buried, "and buried nothing more");
+}
