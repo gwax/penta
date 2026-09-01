@@ -225,3 +225,100 @@ fn evoking_it_still_buries_the_graveyard() {
         "evoke sacrifices it",
     );
 }
+
+/// "Up to one target player" is any player: naming yourself is the mode
+/// nobody prints on the card, and it is how an Endurance answers something
+/// eating your own graveyard.
+#[test]
+fn it_may_bury_your_own_graveyard() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].graveyard.clear();
+    game.players[PlayerId::One.index()].library.clear();
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        82_000,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::Two.index()].graveyard.clear();
+    game.players[PlayerId::Two.index()].graveyard.push(card(
+        82_001,
+        cards::GRIZZLY_BEARS,
+        PlayerId::Two,
+    ));
+    game.put_onto_battlefield(PlayerId::One, cards::ENDURANCE)
+        .expect("cataloged");
+
+    answer_trigger(&mut game, Some(PlayerId::One));
+
+    assert!(
+        game.players[PlayerId::One.index()].graveyard.is_empty(),
+        "your own graveyard went under your own library",
+    );
+    assert_eq!(
+        library_definitions(&game, PlayerId::One),
+        vec![cards::LIGHTNING_BOLT],
+        "which is where it went",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].graveyard.len(),
+        1,
+        "and theirs was never named",
+    );
+}
+
+/// Its ruling: "the mana value of a spell is determined by only its mana
+/// cost, no matter what the total cost to cast that spell was." Evoked for
+/// nothing, it is still a three-mana spell that a Spell Blast pays three
+/// for.
+#[test]
+fn evoking_it_does_not_change_its_mana_value() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    let endurance = card(82_100, cards::ENDURANCE, PlayerId::One);
+    let endurance_id = endurance.id;
+    game.players[PlayerId::One.index()].hand.push(endurance);
+    game.players[PlayerId::One.index()]
+        .hand
+        .push(card(82_101, cards::GIANT_GROWTH, PlayerId::One));
+    let blast = card(82_102, cards::SPELL_BLAST, PlayerId::Two);
+    let blast_id = blast.id;
+    game.players[PlayerId::Two.index()].hand.push(blast);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 4);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == endurance_id && choices.costs().alternative().is_some())
+        })
+        .expect("evoke costs no mana at all");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    let on_stack = game.stack.last().expect("it is on the stack").id;
+    game.priority = PlayerId::Two;
+
+    let blasts = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. }
+                if card == blast_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(on_stack)) =>
+            {
+                Some(choices.x())
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        blasts,
+        vec![3],
+        "X must be three: what it cost to cast is not what it is worth",
+    );
+}
