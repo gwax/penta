@@ -239,3 +239,83 @@ fn cycling_is_not_offered_without_all_three_colors() {
         "green, green, and blue does not pay {{G}}{{U}}{{R}}",
     );
 }
+
+/// Both abilities want the same tap, so the mana and the land are an either
+/// and never a both: a Landscape tapped for its colourless has nothing left
+/// to fetch with.
+#[test]
+fn it_cannot_both_make_mana_and_fetch() {
+    let (mut game, landscape) = staged(&[cards::FOREST]);
+    let tap = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == landscape
+            )
+        })
+        .expect("it offers its colourless");
+    game.apply(PlayerId::One, tap).expect("it taps");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 1,
+        "the mana is in the pool",
+    );
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::ActivateAbility { source, .. } if *source == landscape
+            )),
+        "and the fetch wanted that same tap",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == landscape),
+        "so the land is still standing, unspent",
+    );
+}
+
+/// The tap and the sacrifice are costs, paid on announcement. A library with
+/// none of the three basics still costs you the land: the search is made and
+/// finds nothing.
+#[test]
+fn a_library_with_nothing_to_find_still_eats_the_land() {
+    let (mut game, landscape) = staged(&[cards::PLAINS, cards::SWAMP]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == landscape)
+        })
+        .expect("the fetch is offered whether or not it can find");
+    game.apply(PlayerId::One, action).expect("it activates");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == landscape),
+        "the sacrifice was paid before anything was searched for",
+    );
+    settle(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition != ObjectKind::Token)
+            .count(),
+        0,
+        "and nothing came back for it",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        2,
+        "the library it looked through is untouched",
+    );
+}
