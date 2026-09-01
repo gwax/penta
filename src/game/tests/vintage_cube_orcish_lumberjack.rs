@@ -223,3 +223,65 @@ fn which_forest_is_spent_is_chosen_when_it_is_activated() {
         "and the one that was not named stayed",
     );
 }
+
+/// You sacrifice what you control: their Forest is no food, however green
+/// it is.
+#[test]
+fn their_forest_is_not_yours_to_eat() {
+    let (mut game, orc) = staged(&[]);
+    game.put_onto_battlefield(PlayerId::Two, cards::FOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert!(
+        offered_splits(&game, orc).is_empty(),
+        "a Forest across the table is nobody's to sacrifice",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::FOREST)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    assert!(
+        !offered_splits(&game, orc).is_empty(),
+        "and one of your own is all it wanted",
+    );
+}
+
+/// "A Forest" is a land type, and Yavimaya hands that type to everything: an
+/// Island of yours is food while the Cradle is standing.
+#[test]
+fn yavimaya_makes_every_land_of_yours_food() {
+    let (mut game, orc) = staged(&[cards::ISLAND]);
+    assert!(
+        offered_splits(&game, orc).is_empty(),
+        "an Island is no Forest on its own",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::YAVIMAYA_CRADLE_OF_GROWTH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert_eq!(
+        offered_splits(&game, orc).len(),
+        4,
+        "every split of three, now that there is something to eat",
+    );
+
+    let action = activation(&game, orc, 3, 0).expect("three red is one of them");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.red,
+        3,
+        "three red off an Island, which Yavimaya made a Forest",
+    );
+    assert_eq!(
+        lands_of(&game, cards::ISLAND),
+        0,
+        "and the Island is what was sacrificed",
+    );
+}
