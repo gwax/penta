@@ -152,3 +152,53 @@ fn the_mana_stays_after_the_hand_is_gone() {
         "and the mana is still there"
     );
 }
+
+/// Its ruling: "the ability is a mana ability, so it is activated and
+/// resolves as a mana ability" -- no stack, no window, and the mana is there
+/// the moment it is asked for.
+#[test]
+fn cracking_it_uses_no_stack() {
+    let (mut game, diamond) = staged(&[cards::LIGHTNING_BOLT]);
+
+    crack(&mut game, diamond, ManaColor::Black);
+
+    assert!(
+        game.stack.is_empty(),
+        "a mana ability resolves where it stands",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.black, 3,
+        "with the mana already in the pool",
+    );
+    assert!(
+        game.battlefield.is_empty(),
+        "and the Diamond already sacrificed for it",
+    );
+}
+
+/// "...but it can only be activated at times when you can cast an instant."
+/// Their turn is one of those times, which is the whole trick: the hand is
+/// spent on their end step and the mana is there for what follows.
+#[test]
+fn it_may_be_cracked_on_their_turn() {
+    let (mut game, diamond) = staged(&[cards::LIGHTNING_BOLT, cards::MOUNTAIN]);
+    game.active_player = PlayerId::Two;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    crack(&mut game, diamond, ManaColor::Green);
+
+    assert_eq!(
+        game.players[0].mana_pool.green, 3,
+        "their end step is a time you could cast an instant",
+    );
+    assert!(
+        game.players[0].hand.is_empty(),
+        "and the whole hand paid for it",
+    );
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        3,
+        "two cards discarded and the Diamond that ate them",
+    );
+}
