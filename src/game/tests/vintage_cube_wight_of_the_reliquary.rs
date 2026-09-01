@@ -377,3 +377,56 @@ fn a_token_she_eats_leaves_no_card_to_count() {
         "so there is no creature card behind her to count",
     );
 }
+
+/// "Sacrifice another creature" is another creature *you control*: the one
+/// across the table is no cost of yours.
+#[test]
+fn she_cannot_eat_their_creature() {
+    let (mut game, wight, _) = staged(&[], &[], &[cards::FOREST]);
+    game.put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert!(
+        fetches(&game, wight).is_empty(),
+        "their bear pays for nothing of hers",
+    );
+
+    // One of your own, and the activation appears.
+    game.put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    assert_eq!(fetches(&game, wight).len(), 1, "and one of yours is a meal");
+}
+
+/// "For each creature card in your graveyard" is read live rather than
+/// remembered: a creature card that leaves the graveyard takes its point
+/// with it.
+#[test]
+fn a_creature_card_leaving_the_graveyard_shrinks_her() {
+    let (mut game, wight, _) = staged(&[], &[cards::GRIZZLY_BEARS, cards::SERRA_ANGEL], &[]);
+    assert_eq!(
+        game.power(permanent(&game, wight)),
+        Some(4),
+        "two creature cards behind her",
+    );
+
+    let angel = game.players[0]
+        .graveyard
+        .iter()
+        .position(|card| card.definition == cards::SERRA_ANGEL)
+        .expect("it is there");
+    let taken = game.players[0].graveyard.remove(angel);
+    game.players[0].hand.push(taken);
+
+    let wight = permanent(&game, wight);
+    assert_eq!(
+        (game.power(wight), game.toughness(wight)),
+        (Some(3), Some(3)),
+        "one card back in hand is one point off her",
+    );
+}
