@@ -447,6 +447,48 @@ impl Game {
         replacement
     }
 
+    /// Puts a card into its owner's graveyard from `from`, honouring a
+    /// replacement the card itself carries about that move. The card has
+    /// already been taken out of `from`, so there was no zone move left to
+    /// consult: a countered spell and a milled card both reach the graveyard
+    /// by paths that go straight to the arrival, which is where "if this
+    /// would be put into a graveyard from anywhere" was going unread.
+    ///
+    /// Audit: partial -- the move is read as a rules move, so a clause that
+    /// asks *whose* effect moved the card ([`ZoneMoveCauseDef::EffectControlledBy`])
+    /// is not answered here. Nothing in the catalog writes one of those about
+    /// a graveyard move it makes from the stack or the library.
+    pub(super) fn put_card_into_graveyard_replacing(
+        &mut self,
+        owner: PlayerId,
+        card: CardInstance,
+        from: ZoneKind,
+    ) {
+        let program = self.zone_move_replacement_program(
+            &card,
+            from,
+            ZoneKind::Graveyard,
+            ZoneMoveCause::Rules,
+        );
+        let Some(destination) = program.and_then(Self::replacement_move_destination) else {
+            self.put_card_into_graveyard(owner, card);
+            return;
+        };
+        match destination {
+            ZoneKind::Library => {
+                self.players[owner.index()].library.push(card);
+                if program.is_some_and(Self::replacement_shuffles_library) {
+                    self.rng.shuffle(&mut self.players[owner.index()].library);
+                }
+            }
+            ZoneKind::Hand => self.players[owner.index()].hand.push(card),
+            ZoneKind::Exile => self.players[owner.index()].exile.push(card),
+            // A replacement that names the graveyard, the battlefield, or a
+            // zone this arrival cannot build is left to the ordinary path.
+            _ => self.put_card_into_graveyard(owner, card),
+        }
+    }
+
     /// The one way a card reaches a graveyard, so a replacement that sends it
     /// somewhere else has a single place to apply.
     pub(super) fn put_card_into_graveyard(&mut self, owner: PlayerId, mut card: CardInstance) {
@@ -553,7 +595,14 @@ impl Game {
             ZoneKind::Graveyard => CharacteristicContext::Graveyard,
             ZoneKind::Exile => CharacteristicContext::Exile,
             ZoneKind::Command => CharacteristicContext::Command,
-            ZoneKind::Battlefield | ZoneKind::Stack => return None,
+            // "From anywhere" includes the stack, where a countered spell is
+            // still the card its own replacement clause is talking about.
+            // The primary part is what carries such a clause; the battlefield
+            // keeps its own exit walk and is answered there.
+            ZoneKind::Stack => CharacteristicContext::Stack {
+                form: crate::card::SpellForm::Part(crate::CardPartId::PRIMARY),
+            },
+            ZoneKind::Battlefield => return None,
         };
         let replacement_controller = card.owner;
         let definition = self.catalog.get(card.definition)?;

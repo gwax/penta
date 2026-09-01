@@ -51,6 +51,18 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **"If this would be put into a graveyard from anywhere" now reads the
+  stack and the mill.** Blightsteel Colossus lists every zone its own
+  replacement watches, but the lookup refused to answer for a card leaving
+  the stack, and the two paths that bury a card without a zone move to
+  consult -- a countered spell and a milled card -- went straight to the
+  graveyard arrival, which only ever asked the battlefield about other
+  people's replacements. So a Colossus answered by a Counterspell sat in the
+  graveyard, and one turned over by a Brain Freeze filled it. Both now go
+  through an arrival that reads the card's own clause and shuffles it back.
+  A clause conditioned on whose effect moved the card is still unanswered
+  from these two paths, and the audit note on the new helper says so.
+
 - **A bestowed spell is an Aura spell and not a creature spell.** Detective's
   Phoenix's ruling: "On the stack, a spell with bestow is either a creature
   spell or an Aura spell. It's never both, although it's an enchantment spell

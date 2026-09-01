@@ -387,7 +387,9 @@ impl Game {
             } else {
                 zone
             } {
-                CounteredSpellZone::Graveyard => self.put_card_into_graveyard(owner, card),
+                CounteredSpellZone::Graveyard => {
+                    self.put_card_into_graveyard_replacing(owner, card, ZoneKind::Stack);
+                }
                 CounteredSpellZone::Exile => self.players[owner.index()].exile.push(card),
                 CounteredSpellZone::Hand => self.players[owner.index()].hand.push(card),
                 CounteredSpellZone::Library(placement) => {

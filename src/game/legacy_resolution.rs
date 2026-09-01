@@ -172,7 +172,7 @@ impl Game {
         for card in cards {
             let (card, _zone_change) = self.zone_change_card(card);
             buried.push(Target::Card(card.id));
-            self.put_card_into_graveyard(player, card);
+            self.put_card_into_graveyard_replacing(player, card, ZoneKind::Library);
         }
         buried
     }

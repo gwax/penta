@@ -820,7 +820,7 @@ impl Game {
                 for card in milled {
                     let (card, _zone_change) = self.zone_change_card(card);
                     buried.push(Target::Card(card.id));
-                    self.put_card_into_graveyard(player, card);
+                    self.put_card_into_graveyard_replacing(player, card, ZoneKind::Library);
                 }
             }
         }
@@ -855,7 +855,7 @@ impl Game {
                 object.source.unwrap_or(object.id),
             );
             let (card, _zone_change) = self.zone_change_card(card);
-            self.put_card_into_graveyard(player, card);
+            self.put_card_into_graveyard_replacing(player, card, ZoneKind::Library);
             if !matches {
                 return;
             }
