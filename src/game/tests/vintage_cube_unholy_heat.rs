@@ -143,3 +143,77 @@ fn it_burns_a_planeswalker_for_the_same_amount() {
         "six damage is more loyalty than he had",
     );
 }
+
+/// Casts one Heat from a graveyard of `graveyard` and reports the damage it
+/// dealt. A Wall of Stone rather than the Angel takes it, so six is a number
+/// to read rather than a creature to bury.
+fn heat_damage(graveyard: &[CardDefinitionId]) -> u16 {
+    let (mut game, heats, _angel) = staged(graveyard, 1);
+    let wall = game
+        .put_onto_battlefield(PlayerId::Two, cards::WALL_OF_STONE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(heats[0], vec![Target::Permanent(wall)], Vec::new(), 0),
+    )
+    .expect("one red casts it");
+    drain_pending(&mut game);
+    damage_on(&game, wall)
+}
+
+/// "Four or more card *types*", not four cards: a graveyard of four
+/// creatures is one type over and over.
+#[test]
+fn four_cards_of_one_type_are_still_one_type() {
+    assert_eq!(
+        heat_damage(&[
+            cards::GRIZZLY_BEARS,
+            cards::SERRA_ANGEL,
+            cards::SAVANNAH_LIONS,
+            cards::ORNITHOPTER,
+        ]),
+        2,
+        "creature and artifact between them, and that is two",
+    );
+}
+
+/// And one card can be two of them: an Ornithopter is an artifact creature,
+/// so three cards carry the four types the spell is counting.
+#[test]
+fn one_card_may_supply_two_of_the_types() {
+    assert_eq!(
+        heat_damage(&[cards::ORNITHOPTER, cards::LIGHTNING_BOLT, cards::FOREST,]),
+        6,
+        "artifact, creature, instant and land out of three cards",
+    );
+}
+
+/// "Legendary, basic, and snow are supertypes, not card types; Kavu and
+/// Equipment are subtypes." A legendary creature, a basic land and an
+/// Equipment are three cards carrying three types between them, and three is
+/// not four.
+#[test]
+fn supertypes_and_subtypes_are_not_card_types() {
+    assert_eq!(
+        heat_damage(&[
+            cards::ADUN_OAKENSHIELD,
+            cards::FOREST,
+            cards::UMEZAWAS_JITTE,
+            cards::GRIZZLY_BEARS,
+        ]),
+        2,
+        "legendary, basic and Equipment add nothing to creature, land and artifact",
+    );
+    assert_eq!(
+        heat_damage(&[
+            cards::ADUN_OAKENSHIELD,
+            cards::FOREST,
+            cards::UMEZAWAS_JITTE,
+            cards::LIGHTNING_BOLT,
+        ]),
+        6,
+        "while a fourth card type is a fourth card type",
+    );
+}
