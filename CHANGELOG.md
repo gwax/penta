@@ -40,6 +40,13 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A spell on the stack has the mana value its X gives it.** CR 202.3b: the
+  X in a spell's cost is the number its caster announced, and the mana value
+  read off the spell counts it. The stack read ignored X entirely, so a Mana
+  Drain that countered a Walking Ballista cast for three paid its controller
+  nothing at all rather than six. Permanents and cards are unaffected: X is
+  zero everywhere except on the stack.
+
 - **Storm survives its own spell being countered, and counts only what came
   before it.** Two faults on one trigger. A copy effect looked for the spell
   it names on the stack and gave up when it had left, so countering a
