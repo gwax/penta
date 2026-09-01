@@ -193,3 +193,78 @@ fn it_cycles_for_three_colors() {
         vec![cards::GIANT_GROWTH],
     );
 }
+
+/// Activates the fetch and stops at the search, returning what it offers.
+fn fetch(game: &mut Game, landscape: GameObjectId) -> DecisionObservation {
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == landscape))
+        .expect("the fetch is offered");
+    game.apply(PlayerId::One, action).expect("it activates");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == landscape),
+        "the sacrifice is a cost, so it is gone before the search resolves",
+    );
+    settle(game);
+    game.observe(PlayerId::One)
+        .decision
+        .expect("the search asks what to find")
+}
+
+/// "A basic Mountain, Forest, or Plains card": a Taiga is a Mountain and a
+/// Forest and is no basic land, so the search passes it over.
+#[test]
+fn a_dual_with_the_right_types_is_not_basic_enough() {
+    let (mut game, landscape) = staged(&[cards::TAIGA, cards::MOUNTAIN]);
+
+    let decision = fetch(&mut game, landscape);
+
+    let offered: Vec<CardDefinitionId> = decision
+        .options
+        .iter()
+        .filter_map(|option| {
+            option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition())
+        })
+        .collect();
+    assert_eq!(
+        offered,
+        vec![cards::MOUNTAIN],
+        "the basic and not the dual beside it",
+    );
+}
+
+/// The search takes up to one: finding nothing is a legal answer, and the
+/// land is spent for it all the same.
+#[test]
+fn finding_nothing_is_an_answer_and_the_land_is_still_gone() {
+    let (mut game, landscape) = staged(&[cards::FOREST, cards::MOUNTAIN]);
+    let library = game.players[0].library.len();
+
+    let decision = fetch(&mut game, landscape);
+    assert_eq!(decision.minimum, 0, "nothing is a legal answer");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("taking none is legal");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        library,
+        "the library kept both of them",
+    );
+    assert!(
+        game.battlefield.is_empty(),
+        "and the Landscape is spent either way",
+    );
+}
