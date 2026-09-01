@@ -248,3 +248,70 @@ fn a_countered_zenith_goes_to_the_graveyard() {
         "nothing was put onto the battlefield",
     );
 }
+
+/// The line the card is famous for: X of nothing finds a Dryad Arbor, whose
+/// type line says Land Creature — Forest Dryad and whose mana value is zero.
+/// It is put onto the battlefield rather than played, so the land drop is
+/// still there afterwards.
+#[test]
+fn zero_finds_a_dryad_arbor_and_spends_no_land_drop() {
+    let (mut game, zenith) = staged(&[cards::DRYAD_ARBOR, cards::GRIZZLY_BEARS], 1);
+    game.players[PlayerId::One.index()].lands_played_this_turn = 0;
+
+    let offered = cast_for(&mut game, zenith, 0);
+    assert_eq!(
+        offered,
+        vec!["Dryad Arbor".to_owned()],
+        "a green creature card of mana value zero, and the only one",
+    );
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::DRYAD_ARBOR),
+        "it arrived on the battlefield",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].lands_played_this_turn,
+        0,
+        "putting a land onto the battlefield is not playing one",
+    );
+}
+
+/// "Search your library": a Wurm in hand and one in the graveyard are not in
+/// it, so a library with nothing green leaves the Zenith with nothing to
+/// find -- and it still shuffles itself back.
+#[test]
+fn it_searches_the_library_and_nowhere_else() {
+    let (mut game, zenith) = staged(&[cards::ISLAND, cards::LIGHTNING_BOLT], 7);
+    game.players[PlayerId::One.index()].hand.push(card(
+        278_500,
+        cards::WORLDSPINE_WURM,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        278_501,
+        cards::GRIZZLY_BEARS,
+        PlayerId::One,
+    ));
+
+    let offered = cast_for(&mut game, zenith, 6);
+    assert!(
+        offered.is_empty() || !offered.iter().any(|name| name == "Worldspine Wurm"),
+        "neither the hand nor the graveyard is searched: {offered:?}",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::WORLDSPINE_WURM),
+        "so nothing arrived",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .library
+            .iter()
+            .any(|card| card.definition == cards::GREEN_SUN_S_ZENITH),
+        "and the Zenith shuffled itself back all the same",
+    );
+}
