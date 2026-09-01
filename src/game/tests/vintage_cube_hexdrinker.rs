@@ -298,3 +298,92 @@ fn a_later_set_power_and_toughness_survives_leveling_up() {
         "eight counters do not move it either",
     );
 }
+
+/// "Protection from everything means ... it can't be blocked." A Serra Angel
+/// that would happily eat a 6/6 is not allowed to stand in front of one.
+#[test]
+fn the_upper_band_cannot_be_blocked() {
+    let (mut game, hexdrinker) = staged(0);
+    set_level(&mut game, hexdrinker, 8);
+    let angel = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.step = Step::DeclareAttackers;
+    game.declare_attacker(hexdrinker, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+
+    assert!(
+        game.legal_actions(PlayerId::Two)
+            .into_iter()
+            .all(|action| !matches!(
+                action,
+                Action::DeclareBlocker { blocker, .. } if blocker == angel
+            )),
+        "nothing may be put in front of it",
+    );
+}
+
+/// "...and all damage that would be dealt to it is prevented." Blocking a
+/// Shivan Dragon with it costs the Snake nothing at all.
+#[test]
+fn the_upper_band_takes_no_damage_at_all() {
+    let (mut game, hexdrinker) = staged(0);
+    set_level(&mut game, hexdrinker, 8);
+    let dragon = game
+        .put_onto_battlefield(PlayerId::Two, cards::SHIVAN_DRAGON)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.declare_attacker(dragon, AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+    game.step = Step::DeclareBlockers;
+    game.declare_blocker(hexdrinker, dragon);
+    game.finish_declaring_blockers();
+    drain_pending(&mut game);
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    let snake = body(&game, hexdrinker);
+    assert_eq!(snake.damage, 0, "the Dragon's five was prevented");
+    assert_eq!(
+        (game.power(snake), game.toughness(snake)),
+        (Some(6), Some(6)),
+        "and it is the 6/6 that blocked",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != dragon),
+        "while the six the Snake dealt back killed the Dragon",
+    );
+}
+
+/// "It always has level up {1}": the top band is a ceiling on what the
+/// counters do, not on how many it may have.
+#[test]
+fn it_still_levels_up_above_the_top_band() {
+    let (mut game, hexdrinker) = staged(1);
+    set_level(&mut game, hexdrinker, 8);
+
+    assert!(
+        !level_ups(&game, hexdrinker).is_empty(),
+        "the ability is still there at eight",
+    );
+    level_up(&mut game, hexdrinker);
+
+    let snake = body(&game, hexdrinker);
+    assert_eq!(snake.counters(CounterKind::named("level")), 9);
+    assert_eq!(
+        (game.power(snake), game.toughness(snake)),
+        (Some(6), Some(6)),
+        "and the ninth counter buys nothing new",
+    );
+}
