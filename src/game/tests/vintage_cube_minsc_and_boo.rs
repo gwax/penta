@@ -335,3 +335,93 @@ fn an_answered_target_costs_the_damage_and_the_cards() {
          so the whole ability is countered and Boo is never thrown",
     );
 }
+
+/// Boo is legendary, so the upkeep's second one is a choice of which to keep
+/// rather than a second hamster. Accepting the offer with Boo already out
+/// leaves exactly one of them standing.
+#[test]
+fn a_second_boo_meets_the_legend_rule() {
+    let (mut game, _) = staged();
+    assert_eq!(boos(&game).len(), 1, "the arrival brought one");
+    let events = game.events.len();
+
+    game.step = Step::Upkeep;
+    game.handle_upkeep_triggers();
+    settle(&mut game, true);
+    assert!(
+        game.events[events..].iter().any(|event| matches!(
+            event,
+            GameEvent::PermanentLeftBattlefield { characteristics, .. }
+                if matches!(
+                    characteristics,
+                    ObjectCharacteristics::Token { token, .. } if token.name() == "Boo"
+                )
+        )),
+        "a second one was made and one of the pair was culled",
+    );
+
+    assert_eq!(
+        boos(&game).len(),
+        1,
+        "two legendary hamsters is one legendary hamster",
+    );
+}
+
+/// "Up to one target": the plus may be activated pointing at nothing, which
+/// is how it is used when the only creature out is one it cannot grow.
+#[test]
+fn the_plus_may_be_activated_with_no_target() {
+    let (mut game, minsc) = staged();
+    let boo = boos(&game)[0].card.id;
+    game.battlefield
+        .retain(|permanent| permanent.card.id != boo);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source,
+                ability: AbilityOrigin::Printed { ability, .. },
+                targets,
+                ..
+            } => {
+                *source == minsc
+                    && *ability == AbilityId(1)
+                    && targets
+                        .iter()
+                        .all(|selection| selection.targets().is_empty())
+            }
+            _ => false,
+        })
+        .expect("an empty board still offers the plus");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    settle(&mut game, true);
+
+    assert_eq!(loyalty(&game, minsc), 4, "three plus one");
+}
+
+/// The minus costs two loyalty, and a Minsc who does not have it cannot pay.
+#[test]
+fn the_minus_needs_the_loyalty_to_pay_for_it() {
+    let (mut game, minsc) = staged();
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == minsc)
+        .expect("he is there")
+        .set_counters(CounterKind::Loyalty, 1);
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .all(|action| !matches!(
+                action,
+                Action::ActivateAbility {
+                    source,
+                    ability: AbilityOrigin::Printed { ability, .. },
+                    ..
+                } if source == minsc && ability == AbilityId(2)
+            )),
+        "one loyalty cannot pay a minus two",
+    );
+}
