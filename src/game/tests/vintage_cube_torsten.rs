@@ -308,3 +308,59 @@ fn an_empty_library_asks_nothing() {
         "while he is standing there regardless",
     );
 }
+
+/// Every Soldier this player controls, which is what the death trigger
+/// leaves behind.
+fn soldiers(game: &Game) -> usize {
+    game.battlefield
+        .iter()
+        .filter(|permanent| {
+            is_token_with(
+                permanent,
+                tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1),
+            )
+        })
+        .count()
+}
+
+/// "When Torsten dies" is the graveyard and nothing else: bouncing him to
+/// hand leaves no Soldiers behind, which is how a blue deck answers him
+/// without paying for it.
+#[test]
+fn bouncing_him_leaves_no_soldiers() {
+    let (mut game, torsten) = staged(&[cards::FOREST]);
+    take(&mut game, &[]);
+
+    game.return_permanent_to_hand(torsten);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(soldiers(&game), 0, "he did not die, so nobody arrived");
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::TORSTEN_FOUNDER_OF_BENALIA),
+        "he is in hand instead",
+    );
+}
+
+/// Exile is the other way of taking him off the board without the payment.
+#[test]
+fn exiling_him_leaves_no_soldiers() {
+    let (mut game, torsten) = staged(&[cards::FOREST]);
+    take(&mut game, &[]);
+
+    game.exile_permanent(torsten);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(soldiers(&game), 0, "exile is not a graveyard");
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::TORSTEN_FOUNDER_OF_BENALIA),
+        "and that is where he is",
+    );
+}
