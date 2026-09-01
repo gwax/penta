@@ -51,6 +51,19 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **What arrives on the battlefield arrives at the size the board gives it.**
+  Sword of the Meek's ruling: "if a creature is entering the battlefield
+  under your control, consider static abilities to determine whether its
+  power and toughness are both 1." The committed entry event was built from
+  the view that deliberately leaves continuous static power and toughness out
+  -- the one used inside the layer walk, where asking for them would re-enter
+  it -- so a trigger reading the arriving permanent's size read the printed
+  numbers. A Crusade made the arriving Mother of Runes a 2/2 and the Sword
+  came back for her anyway; an Engineered Plague made an arriving Grizzly
+  Bears a 1/1 and the Sword stayed buried. The entry is committed by the time
+  the event is captured, so it now reads the widened view like any other
+  question asked from outside that resolution.
+
 - **A divided total of zero divides among no targets.** Fire Covenant's
   ruling: "if X is 0, the number of targets must also be 0." Both target
   enumerations for "X damage divided as you choose" started counting targets

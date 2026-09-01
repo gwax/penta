@@ -842,7 +842,13 @@ impl Game {
             .battlefield
             .last()
             .expect("a committed battlefield entry is present");
-        let entered_event = self.trigger_event_object(entered);
+        // What a trigger asks of an arriving permanent is what it is as it
+        // arrives, static effects and all: "consider static abilities to
+        // determine whether its power and toughness are both 1" is Sword of
+        // the Meek's ruling, and a Crusade already on the battlefield is one
+        // of them. The entry is committed by the time this is read, so the
+        // widened view is safe here where it is not inside the layer walk.
+        let entered_event = self.targeting_event_object(entered);
         let before_event = if prospective == permanent_id {
             None
         } else {

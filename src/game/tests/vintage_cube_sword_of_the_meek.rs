@@ -278,3 +278,82 @@ fn pumping_the_host_after_the_trigger_changes_nothing() {
         "and it is wearing the creature that is no longer a 1/1",
     );
 }
+
+/// Its ruling: "if a creature is entering the battlefield under your
+/// control, consider static abilities to determine whether its power and
+/// toughness are both 1." A Crusade already out makes the arriving Mother a
+/// 2/2, and a 2/2 is not what the Sword is waiting for.
+#[test]
+fn a_static_pump_is_read_as_the_creature_arrives() {
+    for crusade in [false, true] {
+        let mut game = staged();
+        if crusade {
+            game.put_onto_battlefield(PlayerId::One, cards::CRUSADE)
+                .expect("cataloged");
+            drain_pending(&mut game);
+        }
+        let mother = game
+            .put_onto_battlefield(PlayerId::One, cards::MOTHER_OF_RUNES)
+            .expect("cataloged");
+        // Read before the Sword can dress her, which is where the trigger
+        // read it too.
+        assert_eq!(
+            power_toughness(&game, mother),
+            if crusade {
+                (Some(2), Some(2))
+            } else {
+                (Some(1), Some(1))
+            },
+            "the Mother arrived at the size the board made her, crusade={crusade}",
+        );
+        settle(&mut game, true);
+
+        assert_eq!(
+            sword_on_battlefield(&game).is_none(),
+            crusade,
+            "and the Sword read that size rather than the printed one",
+        );
+    }
+}
+
+/// The same rule read the other way, which is the half a Sword deck cares
+/// about: an Engineered Plague naming Bears makes the arriving Grizzly Bears
+/// a 1/1, and a 1/1 is exactly what the Sword is waiting for.
+#[test]
+fn a_static_shrink_makes_a_two_two_into_what_it_wants() {
+    let mut game = staged();
+    game.put_onto_battlefield(PlayerId::One, cards::ENGINEERED_PLAGUE)
+        .expect("cataloged");
+    let choice = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the Plague names a creature type");
+    let bear = choice
+        .options
+        .iter()
+        .find(|option| option.label == "Bear")
+        .expect("Bear is offered")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: choice.id,
+            options: vec![bear],
+        },
+    )
+    .expect("naming it is legal");
+    drain_pending(&mut game);
+
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    assert_eq!(
+        power_toughness(&game, bears),
+        (Some(1), Some(1)),
+        "the Plague shrank it on the way in",
+    );
+    settle(&mut game, true);
+
+    let sword = sword_on_battlefield(&game).expect("a 1/1 is a 1/1 however it got there");
+    assert_eq!(sword.attached_to, Some(bears), "and it dressed the Bears");
+}
