@@ -580,6 +580,7 @@ mod vintage_cube_minsc_and_boo;
 mod vintage_cube_miscalculation;
 mod vintage_cube_mishras_bauble;
 mod vintage_cube_mishras_workshop;
+mod vintage_cube_misty_rainforest;
 mod vintage_cube_monarch;
 mod vintage_cube_monstrous_rage;
 mod vintage_cube_more_spells;
