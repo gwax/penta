@@ -408,3 +408,95 @@ fn the_emblem_leaves_each_card_its_own_timing() {
         "and retrace does not make the sorcery an instant",
     );
 }
+
+/// "Target land card from your graveyard": theirs is not yours, however
+/// many lands they have buried.
+#[test]
+fn the_plus_cannot_reach_their_graveyard() {
+    let (mut game, wrenn) = staged(&[]);
+    game.players[1].graveyard.clear();
+    for definition in [cards::MOUNTAIN, cards::BADLANDS] {
+        game.players[1]
+            .graveyard
+            .push(card(110_800, definition, PlayerId::Two));
+    }
+
+    let targets: Vec<Target> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } if source == wrenn => Some(
+                targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .copied()
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect();
+
+    assert!(
+        targets
+            .iter()
+            .all(|target| !matches!(target, Target::Card(_))),
+        "their buried lands are no targets of hers: {targets:?}",
+    );
+}
+
+/// "Any target" is all three: the minus answers a player and a planeswalker
+/// as readily as a creature.
+#[test]
+fn the_minus_reaches_a_player_and_a_planeswalker() {
+    let (mut game, wrenn) = staged(&[]);
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::TEFERI_TIME_RAVELER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let offered = |game: &Game, wanted: Target| {
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, ref targets, .. }
+                if source == wrenn
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|chosen| *chosen == wanted))
+        })
+    };
+    assert!(
+        offered(&game, Target::Player(PlayerId::Two)),
+        "a player is any target",
+    );
+
+    let ping = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == wrenn
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|chosen| *chosen == Target::Permanent(walker))
+            }
+            _ => false,
+        })
+        .expect("and so is a planeswalker");
+    game.apply(PlayerId::One, ping).expect("it activates");
+    settle(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == walker)
+            .expect("four loyalty survives one")
+            .counters(CounterKind::Loyalty),
+        3,
+        "the damage came off his loyalty",
+    );
+}
