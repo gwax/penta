@@ -16,7 +16,7 @@ use crate::card::{
     TriggerEventDef, TurnKindDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
     ZonePlacement, abilities,
 };
-use crate::ids::{ObjectBindingIndex, TargetIndex};
+use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
 
 use abilities::{ENCHANT_CREATURE_TARGET, aura_spell, enchant_creature, enchant_land};
@@ -483,14 +483,14 @@ pub(in crate::card::sets) static GUARDIAN_ANGEL: CardRecord = CardRecord::new(
             },
             EffectDef::CreateOngoingEffect(OngoingEffectDef::new(
                 EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                ObjectBindingIndex::PRIMARY,
+                Binding!("healing_salve_target"),
                 &AbilityDef::activated(
                     "{1}: Prevent the next 1 damage that would be dealt to the affected permanent or player this turn.",
                     &[AbilityCostDef::Mana(mana_cost!("{1}"))],
                     EffectDef::PreventDamage {
                         prevention: DamagePreventionDef::amount(
                             DamageEventMatcherDef::to(EffectRecipientDef::object(ObjectRefDef::Binding(
-                                ObjectBindingIndex::PRIMARY,
+                                Binding!("healing_salve_target"),
                             ))),
                             ValueDef::Constant(1),
                         ),
@@ -815,9 +815,7 @@ pub(in crate::card::sets) static REVERSE_DAMAGE: CardRecord = CardRecord::new_wi
                         recipient: DamageRecipientMatcherDef::Recipients(
                             EffectRecipientDef::Controller,
                         ),
-                        ..DamageEventMatcherDef::from(ObjectRefDef::Binding(
-                            ObjectBindingIndex::PRIMARY,
-                        ))
+                        ..DamageEventMatcherDef::from(ObjectRefDef::Binding(ParentBinding))
                     },
                     1,
                 )
@@ -4399,7 +4397,7 @@ pub(in crate::card::sets) static KUDZU: CardRecord = CardRecord::new(
                         then: None,
                     },
                     EffectDef::Choose(ChooseDef {
-                        binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+                        binding: ObjectChoiceBindingDef::Object(ParentBinding),
                         unchosen: None,
                         chooser: PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject),
                         candidates: ObjectSetDef::LegalAttachmentHosts(ObjectRefDef::Source),
@@ -4408,7 +4406,7 @@ pub(in crate::card::sets) static KUDZU: CardRecord = CardRecord::new(
                         maximum: 1,
                         visibility: ChoiceVisibilityDef::Public,
                         then: &EffectDef::Attach {
-                            object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+                            object: EffectRecipientDef::object(ObjectRefDef::Binding(ParentBinding)),
                         },
                     }),
                 ]),
@@ -5017,7 +5015,7 @@ pub(in crate::card::sets) static CHAOS_ORB: CardRecord = CardRecord::new_with_le
                     AbilityCostDef::Mana(mana_cost!("{1}")),
                     AbilityCostDef::TapSource,
                 ], EffectDef::Choose(ChooseDef {
-                    binding: ObjectChoiceBindingDef::Object(ObjectBindingIndex::PRIMARY),
+                    binding: ObjectChoiceBindingDef::Object(ParentBinding),
                     unchosen: None,
                     chooser: PlayerRefDef::EffectController,
                     candidates: ObjectSetDef::Query(ObjectQueryDef::new(
@@ -5034,7 +5032,7 @@ pub(in crate::card::sets) static CHAOS_ORB: CardRecord = CardRecord::new_with_le
                             EffectDef::Randomized {
                                 likelihood: LikelihoodDef::new(0.9),
                                 on_success: &EffectDef::Destroy {
-                                    object: EffectRecipientDef::object(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+                                    object: EffectRecipientDef::object(ObjectRefDef::Binding(ParentBinding)),
                                     can_regenerate: true,
                                     then: None,
                                 },

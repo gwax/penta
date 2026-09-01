@@ -11,21 +11,18 @@ use crate::card::{
     ChooseDef, ChooseGroupDef, ClassifyObjectsDef, ColorSet, ComparisonDef, ConditionalValueDef,
     ControlDurationDef, CopyExceptionsDef, CostModificationDef, CostQuantityDef, CounterKind,
     CreatedTokensDef, CreatureTypeSetDef, DamageEventMatcherDef, DestroyFollowUpDef,
-    DiscardSelectionDef, EffectBindingLabelDef, EffectDef, EffectOutputBindingDef,
-    EffectPaymentDef, EffectRecipientDef, GraveyardPlayPermissionDef, HalvedValueDef,
-    IfNoObjectsDef, InstalledTriggerDef, KeywordAbility, ManaColor, MillUntilDef, MoveObjectsDef,
-    ObjectChoiceBindingDef, ObjectCounterValueDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, ObjectValueAggregateDef, ObjectValueDef, PartitionGroupDef,
-    PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerAttachmentQueryDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, QuantifierDef, ReplacementConditionDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, RevealObjectsDef, RoundingDef, SacrificedAmountDef,
-    SimultaneousChooseDef, SpellAdditionalCostDef, TargetChooserDef, TargetConditionDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef,
+    GraveyardPlayPermissionDef, HalvedValueDef, IfNoObjectsDef, InstalledTriggerDef,
+    KeywordAbility, ManaColor, MillUntilDef, MoveObjectsDef, ObjectChoiceBindingDef,
+    ObjectCounterValueDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    ObjectValueAggregateDef, ObjectValueDef, PartitionGroupDef, PayOrDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerAttachmentQueryDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    QuantifierDef, ReplacementConditionDef, ReplacementEffectDef, ResolvedEffectDurationDef,
+    RevealObjectsDef, RoundingDef, SacrificedAmountDef, SimultaneousChooseDef,
+    SpellAdditionalCostDef, TargetChooserDef, TargetConditionDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
-use crate::ids::{
-    AdditionalCostObjectIndex, ObjectBindingIndex, ObjectSetBindingIndex, TargetIndex,
-};
+use crate::ids::{AdditionalCostObjectIndex, Binding, ParentBinding, TargetIndex};
 use crate::mana_cost;
 
 static CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
@@ -59,9 +56,7 @@ static CREATURE_CARDS_IN_YOUR_GRAVEYARD: ObjectQueryDef = ObjectQueryDef::matchi
 /// controller's graveyard. The selection binds the old graveyard object; the
 /// move creates and follows its hand-zone successor.
 static RETURN_RANDOM_GRAVEYARD_CARD_TO_HAND: EffectDef = EffectDef::MoveToZone {
-    object: EffectRecipientDef::objects(ObjectSetDef::NamedBinding(&EffectBindingLabelDef(
-        "random_graveyard_cards",
-    ))),
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("random_graveyard_cards"))),
     zone: ZoneKind::Hand,
     placement: ZonePlacement::Top,
 };
@@ -390,12 +385,12 @@ pub(in crate::card::sets) static DIVINE_RECKONING: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::EachPlayer,
                 candidates: ObjectPredicateDef::HasType(CardType::Creature),
                 one_of_each: &[ObjectPredicateDef::Any],
-                chosen: ObjectSetBindingIndex::PRIMARY,
-                unchosen: ObjectSetBindingIndex::new(1),
+                chosen: Binding!("divine_reckoning_chosen"),
+                unchosen: Binding!("divine_reckoning_destroyed"),
                 then: &EffectDef::Destroy {
-                    object: EffectRecipientDef::objects(ObjectSetDef::Binding(
-                        ObjectSetBindingIndex::new(1),
-                    )),
+                    object: EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!(
+                        "divine_reckoning_destroyed"
+                    ))),
                     can_regenerate: true,
                     then: None,
                 },
@@ -844,10 +839,10 @@ pub(in crate::card::sets) static PARASELENE: CardRecord = CardRecord::new(
             ),
             can_regenerate: true,
             then: Some(DestroyFollowUpDef {
-                binding: ObjectSetBindingIndex::PRIMARY,
+                binding: ParentBinding,
                 effect: &EffectDef::GainLife {
                     recipient: EffectRecipientDef::Controller,
-                    amount: ValueDef::BoundObjectCount(ObjectSetBindingIndex::PRIMARY),
+                    amount: ValueDef::BoundObjectCount(ParentBinding),
                 },
             }),
         },
@@ -1247,7 +1242,7 @@ pub(in crate::card::sets) static BACK_FROM_THE_BRINK: CardRecord = CardRecord::n
         AbilityDef::activated(
             "Exile a creature card from your graveyard and pay its mana cost: Create a token that's a copy of that card. Activate only as a sorcery.",
             &[
-                AbilityCostDef::ManaCostOf(ObjectRefDef::Binding(ObjectBindingIndex::PRIMARY)),
+                AbilityCostDef::ManaCostOf(ObjectRefDef::Binding(Binding!("exiled_creature"))),
                 AbilityCostDef::MoveToZone(
                     crate::card::MoveToZoneCostDef::new(
                         ObjectPredicateDef::HasType(CardType::Creature),
@@ -1255,12 +1250,12 @@ pub(in crate::card::sets) static BACK_FROM_THE_BRINK: CardRecord = CardRecord::n
                         ZoneKind::Exile,
                         1,
                     )
-                    .binding(ObjectBindingIndex::PRIMARY),
+                    .binding(Binding!("exiled_creature")),
                 ),
             ],
             EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
                 object: &EffectRecipientDef::binding_zone_change_successor(
-                    ObjectBindingIndex::PRIMARY,
+                    Binding!("exiled_creature"),
                 ),
                 exceptions: CopyExceptionsDef::NONE,
             }),
@@ -1430,9 +1425,7 @@ pub(in crate::card::sets) static CURSE_OF_THE_BLOODY_TOME: CardRecord = CardReco
 );
 
 // ISD 51 — Delver of Secrets // Insectile Aberration
-const DELVER_INSPECTED: ObjectSetBindingIndex = ObjectSetBindingIndex::new(0);
-const DELVER_REVEALED: ObjectSetBindingIndex = ObjectSetBindingIndex::new(1);
-const DELVER_MATCHING: ObjectSetBindingIndex = ObjectSetBindingIndex::new(2);
+const DELVER_MATCHING: Binding = Binding!("delver_matching");
 
 pub(in crate::card::sets) static DELVER_OF_SECRETS: CardRecord = CardRecord::new_dfc(
     PrintingAnchor::scryfall("11bf83bb-c95b-4b4f-9a56-ce7a1816307a"),
@@ -1453,50 +1446,56 @@ pub(in crate::card::sets) static DELVER_OF_SECRETS: CardRecord = CardRecord::new
                     abilities::bind_top_cards_then(
                         PlayerRefDef::EffectController,
                         ValueDef::Constant(1),
-                        DELVER_INSPECTED,
                         &const { EffectDef::Choose(ChooseDef {
-                            binding: ObjectChoiceBindingDef::Objects(DELVER_REVEALED),
+                            binding: ObjectChoiceBindingDef::Objects(ParentBinding),
                             unchosen: None,
                             chooser: PlayerRefDef::EffectController,
-                            candidates: ObjectSetDef::Binding(DELVER_INSPECTED),
+                            candidates: ObjectSetDef::Binding(ParentBinding),
                             exclude: None,
                             minimum: 0,
                             maximum: 1,
                             visibility: ChoiceVisibilityDef::Private,
                             then: &EffectDef::ClassifyObjects(ClassifyObjectsDef {
-                                input: ObjectSetDef::Binding(DELVER_REVEALED),
+                                input: ObjectSetDef::Binding(ParentBinding),
                                 object: ObjectPredicateDef::AnyOf(&[
                                     ObjectPredicateDef::HasType(CardType::Instant),
                                     ObjectPredicateDef::HasType(CardType::Sorcery),
                                 ]),
                                 matching: DELVER_MATCHING,
-                                remainder: ObjectSetBindingIndex::new(3),
+                                remainder: Binding!("delver_other"),
                                 then: &EffectDef::IfNoObjects(IfNoObjectsDef {
                                     input: ObjectSetDef::Binding(DELVER_MATCHING),
-                                    if_empty: &EffectDef::RevealObjects(RevealObjectsDef {
-                                        input: ObjectSetDef::Binding(DELVER_REVEALED),
-                                        then: &EffectDef::MoveObjects(MoveObjectsDef {
-                                            input: ObjectSetDef::Binding(DELVER_REVEALED),
+                                    if_empty: &EffectDef::Sequence(&[
+                                        EffectDef::RevealObjects(RevealObjectsDef {
+                                            input: ObjectSetDef::Binding(ParentBinding),
+                                            then: &EffectDef::None,
+                                        }),
+                                        EffectDef::MoveObjects(MoveObjectsDef {
+                                            input: ObjectSetDef::Binding(ParentBinding),
                                             from: Some(ZoneKind::Library),
                                             zone: ZoneKind::Library,
                                             placement: ZonePlacement::Top,
                                             moved: None,
                                             then: &EffectDef::None,
                                         }),
-                                    }),
-                                    otherwise: &EffectDef::RevealObjects(RevealObjectsDef {
-                                        input: ObjectSetDef::Binding(DELVER_REVEALED),
-                                        then: &EffectDef::MoveObjects(MoveObjectsDef {
-                                            input: ObjectSetDef::Binding(DELVER_REVEALED),
+                                    ]),
+                                    otherwise: &EffectDef::Sequence(&[
+                                        EffectDef::RevealObjects(RevealObjectsDef {
+                                            input: ObjectSetDef::Binding(ParentBinding),
+                                            then: &EffectDef::None,
+                                        }),
+                                        EffectDef::MoveObjects(MoveObjectsDef {
+                                            input: ObjectSetDef::Binding(ParentBinding),
                                             from: Some(ZoneKind::Library),
                                             zone: ZoneKind::Library,
                                             placement: ZonePlacement::Top,
                                             moved: None,
-                                            then: &EffectDef::Transform {
-                                                object: EffectRecipientDef::Source,
-                                            },
+                                            then: &EffectDef::None,
                                         }),
-                                    }),
+                                        EffectDef::Transform {
+                                                object: EffectRecipientDef::Source,
+                                        },
+                                    ]),
                                 }),
                             }),
                         }) },
@@ -1887,22 +1886,18 @@ pub(in crate::card::sets) static MINDSHRIEKER: CardRecord = CardRecord::new(
                         player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                         amount: ValueDef::Constant(1),
                     },
-                    binding: EffectOutputBindingDef::Objects("milled_card"),
+                    binding: Binding!("milled_card"),
                 },
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
                     effect: AppliedEffectDef::modify_power_toughness(
                         ValueDef::AggregateObjectValues(&ObjectValueAggregateDef {
-                            objects: ObjectSetDef::NamedBinding(&EffectBindingLabelDef(
-                                "milled_card",
-                            )),
+                            objects: ObjectSetDef::Binding(Binding!("milled_card")),
                             select: ObjectValueDef::ManaValue,
                             operation: AggregateOperationDef::Maximum,
                         }),
                         ValueDef::AggregateObjectValues(&ObjectValueAggregateDef {
-                            objects: ObjectSetDef::NamedBinding(&EffectBindingLabelDef(
-                                "milled_card",
-                            )),
+                            objects: ObjectSetDef::Binding(Binding!("milled_card")),
                             select: ObjectValueDef::ManaValue,
                             operation: AggregateOperationDef::Maximum,
                         }),
@@ -2912,7 +2907,7 @@ pub(in crate::card::sets) static GHOULRAISER: CardRecord = CardRecord::new(
                         object: ObjectPredicateDef::Subtype("Zombie"),
                         amount: ValueDef::Constant(1),
                     },
-                    binding: EffectOutputBindingDef::Objects("random_graveyard_cards"),
+                    binding: Binding!("random_graveyard_cards"),
                 },
                 RETURN_RANDOM_GRAVEYARD_CARD_TO_HAND,
             ]),
@@ -2979,9 +2974,9 @@ pub(in crate::card::sets) static HEARTLESS_SUMMONING: CardRecord = CardRecord::n
 );
 
 // ISD 105 — Liliana of the Veil
-const LILIANA_FIRST_PILE: ObjectSetBindingIndex = ObjectSetBindingIndex::new(0);
-const LILIANA_SECOND_PILE: ObjectSetBindingIndex = ObjectSetBindingIndex::new(1);
-const LILIANA_CHOSEN_PILE: ObjectSetBindingIndex = ObjectSetBindingIndex::new(2);
+const LILIANA_FIRST_PILE: Binding = Binding!("liliana_first_pile");
+const LILIANA_SECOND_PILE: Binding = Binding!("liliana_second_pile");
+const LILIANA_CHOSEN_PILE: Binding = Binding!("liliana_chosen_pile");
 
 pub(in crate::card::sets) static LILIANA_OF_THE_VEIL: CardRecord = CardRecord::new_with_legacy_id(
     184,
@@ -3036,7 +3031,7 @@ pub(in crate::card::sets) static LILIANA_OF_THE_VEIL: CardRecord = CardRecord::n
                         first: ObjectSetDef::Binding(LILIANA_FIRST_PILE),
                         second: ObjectSetDef::Binding(LILIANA_SECOND_PILE),
                         chosen: LILIANA_CHOSEN_PILE,
-                        unchosen: ObjectSetBindingIndex::new(3),
+                        unchosen: Binding!("liliana_spared_pile"),
                         visibility: ChoiceVisibilityDef::Public,
                         then: &EffectDef::Sacrifice {
                             object: EffectRecipientDef::objects(ObjectSetDef::Binding(
@@ -3692,7 +3687,7 @@ pub(in crate::card::sets) static CHARMBREAKER_DEVILS: CardRecord = CardRecord::n
                         object: CHARMBREAKER_INSTANT_OR_SORCERY,
                         amount: ValueDef::Constant(1),
                     },
-                    binding: EffectOutputBindingDef::Objects("random_graveyard_cards"),
+                    binding: Binding!("random_graveyard_cards"),
                 },
                 RETURN_RANDOM_GRAVEYARD_CARD_TO_HAND,
             ]),
@@ -4060,12 +4055,12 @@ pub(in crate::card::sets) static HERETIC_S_PUNISHMENT: CardRecord = CardRecord::
                         player: EffectRecipientDef::Controller,
                         amount: ValueDef::Constant(3),
                     },
-                    binding: EffectOutputBindingDef::Objects("milled_cards"),
+                    binding: Binding!("milled_cards"),
                 },
                 EffectDef::DealDamage {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     amount: ValueDef::AggregateObjectValues(&ObjectValueAggregateDef {
-                        objects: ObjectSetDef::NamedBinding(&EffectBindingLabelDef("milled_cards")),
+                        objects: ObjectSetDef::Binding(Binding!("milled_cards")),
                         select: ObjectValueDef::ManaValue,
                         operation: AggregateOperationDef::Maximum,
                     }),
@@ -5376,7 +5371,7 @@ pub(in crate::card::sets) static MAKE_A_WISH: CardRecord = CardRecord::new(
                     object: ObjectPredicateDef::Any,
                     amount: ValueDef::Constant(2),
                 },
-                binding: EffectOutputBindingDef::Objects("random_graveyard_cards"),
+                binding: Binding!("random_graveyard_cards"),
             },
             RETURN_RANDOM_GRAVEYARD_CARD_TO_HAND,
         ]),
@@ -5832,7 +5827,7 @@ pub(in crate::card::sets) static WOODLAND_SLEUTH: CardRecord = CardRecord::new(
                         object: ObjectPredicateDef::HasType(CardType::Creature),
                         amount: ValueDef::Constant(1),
                     },
-                    binding: EffectOutputBindingDef::Objects("random_graveyard_cards"),
+                    binding: Binding!("random_graveyard_cards"),
                 },
                 RETURN_RANDOM_GRAVEYARD_CARD_TO_HAND,
             ]),
@@ -5927,7 +5922,7 @@ pub(in crate::card::sets) static GEIST_OF_SAINT_TRAFT: CardRecord = CardRecord::
                     .entering_tapped()
                     .entering_attacking()
                     .with_created_tokens(CreatedTokensDef {
-                        binding: ObjectSetBindingIndex::PRIMARY,
+                        binding: ParentBinding,
                         then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(
                             &AbilityDef::triggered(
                                 "Exile that token at end of combat.",
@@ -5937,7 +5932,7 @@ pub(in crate::card::sets) static GEIST_OF_SAINT_TRAFT: CardRecord = CardRecord::
                                 },
                                 EffectDef::MoveToZone {
                                     object: EffectRecipientDef::objects(ObjectSetDef::Binding(
-                                        ObjectSetBindingIndex::PRIMARY,
+                                        ParentBinding,
                                     )),
                                     zone: ZoneKind::Exile,
                                     placement: ZonePlacement::Top,
@@ -6254,10 +6249,10 @@ pub(in crate::card::sets) static GRIMOIRE_OF_THE_DEAD: CardRecord = CardRecord::
                             ..crate::card::BattlefieldArrivalDef::DEFAULT
                         },
                     },
-                    binding: ObjectSetBindingIndex::PRIMARY,
+                    binding: ParentBinding,
                     then: &EffectDef::Apply {
                         recipient: EffectRecipientDef::binding_zone_change_successors(
-                            ObjectSetBindingIndex::PRIMARY,
+                            ParentBinding,
                         ),
                         // "In addition to their other colors and types", so
                         // both leaves add rather than set on each successor.
@@ -6543,13 +6538,13 @@ pub(in crate::card::sets) static TREPANATION_BLADE: CardRecord = CardRecord::new
                             object: ObjectPredicateDef::HasType(CardType::Land),
                             matched_zone: ZoneKind::Graveyard,
                         }),
-                        binding: EffectOutputBindingDef::Objects("revealed_cards"),
+                        binding: Binding!("revealed_cards"),
                     },
                     EffectDef::Apply {
                         recipient: EffectRecipientDef::TriggeringObject,
                         effect: AppliedEffectDef::modify_power_toughness(
-                            ValueDef::CountObjects(&ObjectSetDef::NamedBinding(
-                                &EffectBindingLabelDef("revealed_cards"),
+                            ValueDef::CountObjects(&ObjectSetDef::Binding(
+                                Binding!("revealed_cards"),
                             )),
                             ValueDef::Constant(0),
                         ),

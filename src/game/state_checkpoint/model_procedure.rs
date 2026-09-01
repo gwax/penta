@@ -39,8 +39,8 @@ pub(super) enum PendingProcedureSnapshot {
         custom_followup: Option<AbilityLocator>,
     },
     ForEachInBinding {
-        objects: usize,
-        binding: usize,
+        objects: super::model::BindingSnapshot,
+        binding: super::model::BindingSnapshot,
         next: usize,
         continuation: EffectContinuationSnapshot,
     },
