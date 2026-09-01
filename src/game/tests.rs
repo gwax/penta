@@ -498,6 +498,7 @@ mod vintage_cube_grief;
 mod vintage_cube_griselbrand;
 mod vintage_cube_grist_the_hunger_tide;
 mod vintage_cube_guide_of_souls;
+mod vintage_cube_gush;
 mod vintage_cube_gut;
 mod vintage_cube_hand_attack;
 mod vintage_cube_harvester_of_misery;
