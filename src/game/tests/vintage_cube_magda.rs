@@ -396,3 +396,59 @@ fn the_search_may_be_made_on_their_turn() {
         "their end step is as good a time as any",
     );
 }
+
+/// "Magda's triggered ability doesn't allow you to tap any Dwarves. You have
+/// to find some other way to tap them. Attacking is still a great way to
+/// go." Declaring her as an attacker is a tap like any other.
+#[test]
+fn attacking_with_a_dwarf_makes_a_treasure() {
+    let (mut game, magda) = staged(&[]);
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+
+    game.declare_attacker(magda, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+
+    assert!(
+        permanent_of(&game, cards::MAGDA_BRAZEN_OUTLAW).tapped,
+        "attacking tapped her",
+    );
+    assert_eq!(treasures(&game), 1, "and the tap paid for a Treasure");
+}
+
+/// The other way of tapping a Dwarf: spending its own {T} as a cost. The
+/// Treasure comes from the tap that paid for the ability, not from the
+/// ability resolving.
+#[test]
+fn tapping_a_dwarf_to_pay_for_its_own_ability_makes_one() {
+    let (mut game, _magda) = staged(&[cards::DWARVEN_DEMOLITION_TEAM]);
+    game.put_onto_battlefield(PlayerId::Two, cards::WALL_OF_STONE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let team = permanent_of(&game, cards::DWARVEN_DEMOLITION_TEAM).card.id;
+
+    let demolish = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == team))
+        .expect("a Wall is there to point it at");
+    game.apply(PlayerId::One, demolish)
+        .expect("the ability activates");
+
+    assert!(
+        permanent_of(&game, cards::DWARVEN_DEMOLITION_TEAM).tapped,
+        "the tap was paid on announcement",
+    );
+    settle(&mut game);
+
+    assert_eq!(treasures(&game), 1, "which is a Dwarf becoming tapped");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::WALL_OF_STONE),
+        "and the Wall came down as well",
+    );
+}
