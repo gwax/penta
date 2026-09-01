@@ -265,3 +265,83 @@ fn plainscycling_finds_any_card_with_the_plains_type() {
         "and the Forest was never a candidate",
     );
 }
+
+/// Cycles the Eagles out of hand for its plainscycling cost.
+fn plainscycle(game: &mut Game, held: GameObjectId) {
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let cycle = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == held))
+        .expect("plainscycling is offered from hand");
+    game.apply(PlayerId::One, cycle).expect("it activates");
+    drain_pending(game);
+}
+
+/// "Unlike the normal cycling ability, typecycling doesn't allow you to draw
+/// a card." One card left the hand and one came back: the Plains, and
+/// nothing beside it.
+#[test]
+fn plainscycling_draws_nothing_on_top_of_the_land() {
+    let (mut game, held, _) = staged(&[]);
+    let before = game.players[0].hand.len();
+    let library_before = game.players[0].library.len();
+
+    plainscycle(&mut game, held);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        before,
+        "the Eagles left and the Plains arrived, one for one",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library_before - 1,
+        "and only the searched card came out of the library",
+    );
+}
+
+/// "Search your library for a Plains card, *reveal it*, put it into your
+/// hand": the table sees what the search found.
+#[test]
+fn the_searched_plains_is_revealed() {
+    let (mut game, held, _) = staged(&[]);
+    game.events.clear();
+
+    plainscycle(&mut game, held);
+
+    assert_eq!(
+        game.events
+            .iter()
+            .filter(|event| matches!(event, GameEvent::CardRevealed { .. }))
+            .count(),
+        1,
+        "the card found is shown, and the rest of the library is not",
+    );
+}
+
+/// The discard is a cost, so a library with no Plains in it still costs you
+/// the Eagles: the search finds nothing and the card is gone anyway.
+#[test]
+fn a_library_with_no_plains_still_costs_the_card() {
+    let (mut game, held, _) = staged(&[]);
+    game.players[0]
+        .library
+        .retain(|card| card.definition != cards::PLAINS);
+    let before = game.players[0].hand.len();
+
+    plainscycle(&mut game, held);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::EAGLES_OF_THE_NORTH),
+        "the discard was paid before the search was made",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        before - 1,
+        "and nothing came back for it",
+    );
+}
