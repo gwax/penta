@@ -208,3 +208,127 @@ fn casting_the_cutter_itself_is_the_first_spell() {
         "so the one spell after it is already the second",
     );
 }
+
+/// "Your second spell *each turn*": the count is the turn's and it starts
+/// again with the next one. Two spells a turn is a Monk a turn.
+#[test]
+fn the_count_starts_again_next_turn() {
+    let (mut game, bolts) = staged();
+    bolt(&mut game, bolts[0], true);
+    bolt(&mut game, bolts[1], true);
+    assert_eq!(monks(&game).len(), 1, "the first turn's Monk");
+
+    game.spells_cast_this_turn = [0; 2];
+    game.start_next_turn();
+    game.start_next_turn();
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 6);
+
+    let more: Vec<_> = (0..2)
+        .map(|_| {
+            let card = game
+                .build_zone(PlayerId::One, &[cards::LIGHTNING_BOLT])
+                .expect("cataloged")
+                .into_iter()
+                .next()
+                .expect("one card");
+            let id = card.id;
+            game.players[0].hand.push(card);
+            id
+        })
+        .collect();
+    bolt(&mut game, more[0], false);
+    assert_eq!(monks(&game).len(), 1, "one spell is not two, again");
+
+    bolt(&mut game, more[1], false);
+
+    assert_eq!(monks(&game).len(), 2, "and the second one pays out again");
+}
+
+/// "Equipped creature gets +1/+1 and has trample and haste." The Monk it
+/// attaches itself to is a 2/2 that swings the turn it arrives and sends its
+/// spare point past a chump blocker.
+#[test]
+fn the_monk_attacks_at_once_and_tramples() {
+    let (mut game, bolts) = staged();
+    let chump = game
+        .put_onto_battlefield(PlayerId::Two, cards::ORNITHOPTER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    bolt(&mut game, bolts[0], true);
+    bolt(&mut game, bolts[1], true);
+    let monk = monks(&game)[0].card.id;
+    assert_eq!(
+        cutter(&game).attached_to,
+        Some(monk),
+        "the Cutter went onto the Monk",
+    );
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+    game.declare_attacker(monk, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    settle(&mut game, false);
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+    game.declare_blocker(chump, monk);
+    game.finish_declaring_blockers();
+    game.step = Step::CombatDamage;
+    game.deal_combat_damage();
+    settle(&mut game, false);
+
+    assert_eq!(
+        game.players[1].life, 14,
+        "six from the Bolts, and one trampled over the Thopter",
+    );
+}
+
+/// Equip {1}{R} is an ordinary equip: sorcery speed, and it moves the Cutter
+/// off the Monk and onto something else.
+#[test]
+fn the_equip_moves_it_at_sorcery_speed() {
+    let (mut game, bolts) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    bolt(&mut game, bolts[0], true);
+    bolt(&mut game, bolts[1], true);
+    let monk = monks(&game)[0].card.id;
+    assert_eq!(cutter(&game).attached_to, Some(monk));
+
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    let equip = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == cutter(&game).card.id
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(bears))
+            }
+            _ => false,
+        })
+        .expect("two mana equips it to the bear");
+    game.apply(PlayerId::One, equip).expect("it activates");
+    settle(&mut game, false);
+
+    assert_eq!(cutter(&game).attached_to, Some(bears), "the Cutter moved");
+    let bear = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("it is there");
+    assert_eq!(
+        (game.power(bear), game.toughness(bear)),
+        (Some(3), Some(3)),
+        "and the bear it landed on grew",
+    );
+}
