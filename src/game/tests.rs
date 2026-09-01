@@ -403,6 +403,7 @@ mod vintage_cube_chrome_mox;
 mod vintage_cube_city_of_traitors;
 mod vintage_cube_collective_brutality;
 mod vintage_cube_colonnade;
+mod vintage_cube_concealed_courtyard;
 mod vintage_cube_concealing_curtains;
 mod vintage_cube_consider;
 mod vintage_cube_consult_star_charts;
