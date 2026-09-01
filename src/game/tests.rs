@@ -542,6 +542,7 @@ mod vintage_cube_leovold;
 mod vintage_cube_leyline_binding;
 mod vintage_cube_library;
 mod vintage_cube_library_of_alexandria;
+mod vintage_cube_lightning_bolt;
 mod vintage_cube_liliana_of_the_veil;
 mod vintage_cube_lingering_souls;
 mod vintage_cube_lion_sash;
