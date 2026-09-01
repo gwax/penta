@@ -401,3 +401,72 @@ fn what_it_finds_was_never_cast() {
         "the Mountain above it is buried either way",
     );
 }
+
+/// "Until they reveal a creature card" stops at the first one: a second
+/// creature deeper in the library is never reached.
+#[test]
+fn it_stops_at_the_first_creature_it_reveals() {
+    let mut game = staged(&[
+        cards::GRIZZLY_BEARS,
+        cards::SERRA_ANGEL,
+        cards::LIGHTNING_BOLT,
+    ]);
+    game.battlefield
+        .push(creature(200_600, cards::GRIZZLY_BEARS, PlayerId::Two));
+
+    upkeep_of(&mut game, PlayerId::One, true);
+
+    assert!(
+        on_battlefield(&game, cards::SERRA_ANGEL),
+        "the first creature down arrived",
+    );
+    assert_eq!(
+        game.players[0]
+            .library
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::GRIZZLY_BEARS],
+        "and the one beneath it was never revealed",
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::LIGHTNING_BOLT],
+        "only what was above it is buried",
+    );
+}
+
+/// "Controls more creatures" counts creatures, whatever they are made of: a
+/// token is one, and their artifacts are not.
+#[test]
+fn tokens_count_and_noncreatures_do_not() {
+    let mut game = staged(&[cards::SERRA_ANGEL, cards::MOUNTAIN]);
+    for _ in 0..3 {
+        game.put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+
+    upkeep_of(&mut game, PlayerId::One, true);
+    assert!(
+        !on_battlefield(&game, cards::SERRA_ANGEL),
+        "three artifacts are no creatures at all",
+    );
+
+    game.battlefield.push(token_permanent(
+        200_700,
+        tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
+        PlayerId::Two,
+    ));
+    game.turns_started[PlayerId::One.index()] += 1;
+
+    upkeep_of(&mut game, PlayerId::One, true);
+    assert!(
+        on_battlefield(&game, cards::SERRA_ANGEL),
+        "one token is one creature more than none",
+    );
+}
