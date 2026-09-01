@@ -269,3 +269,79 @@ fn damage_it_survived_kills_it_when_delirium_goes() {
         "a 1/1 with two damage on it is dead",
     );
 }
+
+/// Its ruling: "legendary, basic, and snow are supertypes, not card types;
+/// Human and Shaman are subtypes, not card types." Four lands that differ
+/// in every way but their card type are one card type.
+#[test]
+fn supertypes_and_subtypes_are_not_card_types() {
+    let (mut game, channeler) = staged(
+        &[
+            cards::MOUNTAIN,
+            cards::URBORG_TOMB_OF_YAWGMOTH,
+            cards::STRIP_MINE,
+            cards::BADLANDS,
+        ],
+        &[],
+    );
+
+    let body = permanent(&game, channeler);
+    assert_eq!(
+        (game.power(body), game.toughness(body)),
+        (Some(1), Some(1)),
+        "a basic, a legendary, and two more lands are still one card type",
+    );
+
+    // Three more cards, three more card types, and now it is four.
+    for (index, definition) in [
+        cards::LIGHTNING_BOLT,
+        cards::GRIZZLY_BEARS,
+        cards::BLACK_LOTUS,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        game.players[0].graveyard.push(card(
+            109_500 + u32::try_from(index).expect("three cards"),
+            definition,
+            PlayerId::One,
+        ));
+    }
+
+    let body = permanent(&game, channeler);
+    assert_eq!(
+        (game.power(body), game.toughness(body)),
+        (Some(3), Some(3)),
+        "land, instant, creature and artifact are four",
+    );
+}
+
+/// "Among cards in your graveyard": theirs is no part of the count, however
+/// varied it is.
+#[test]
+fn their_graveyard_does_not_feed_the_delirium() {
+    let (mut game, channeler) = staged(&[cards::MOUNTAIN], &[]);
+    for (index, definition) in [
+        cards::LIGHTNING_BOLT,
+        cards::GRIZZLY_BEARS,
+        cards::BLACK_LOTUS,
+        cards::LEYLINE_OF_SANCTITY,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        game.players[1].graveyard.push(card(
+            109_600 + u32::try_from(index).expect("four cards"),
+            definition,
+            PlayerId::Two,
+        ));
+    }
+
+    let body = permanent(&game, channeler);
+    assert_eq!(
+        (game.power(body), game.toughness(body)),
+        (Some(1), Some(1)),
+        "four card types across the table is one card type at home",
+    );
+    assert!(!game.has_flying(body));
+}
