@@ -350,3 +350,60 @@ fn an_artifact_that_animates_stops_being_a_legal_target() {
         "and the Mite has nothing to say to a creature",
     );
 }
+
+/// "When this creature dies" is a graveyard move from the battlefield and
+/// nothing else. A Mite exiled or bounced pays nobody the two life, which is
+/// what separates its trigger from "leaves the battlefield".
+#[test]
+fn only_dying_pays_the_two_life() {
+    for exiled in [true, false] {
+        let (mut game, mite) = staged();
+        let before = game.players[0].life;
+
+        if exiled {
+            game.exile_permanent(mite);
+        } else {
+            game.return_permanent_to_hand(mite);
+        }
+        drain_pending(&mut game);
+        game.check_state_based_actions();
+        drain_pending(&mut game);
+
+        assert!(
+            game.battlefield
+                .iter()
+                .all(|permanent| permanent.card.id != mite),
+            "it left the battlefield, exiled: {exiled}",
+        );
+        assert_eq!(
+            game.players[0].life, before,
+            "and left without dying, so nothing was gained, exiled: {exiled}",
+        );
+    }
+}
+
+/// A land is neither an artifact nor an enchantment, and neither is a
+/// planeswalker: the two halves of the clause are the whole menu.
+#[test]
+fn a_land_and_a_planeswalker_are_no_targets() {
+    let (mut game, mite) = staged();
+    let island = game
+        .put_onto_battlefield(PlayerId::Two, cards::ISLAND)
+        .expect("cataloged");
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::JACE_THE_MIND_SCULPTOR)
+        .expect("cataloged");
+    let lotus = game
+        .put_onto_battlefield(PlayerId::Two, cards::BLACK_LOTUS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let offered = offered_targets(&game, mite);
+    assert!(offered.contains(&lotus), "the artifact is on the menu");
+    assert!(!offered.contains(&island), "the land is not");
+    assert!(
+        !offered.contains(&walker),
+        "and neither is the planeswalker"
+    );
+}
