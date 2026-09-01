@@ -146,3 +146,69 @@ fn it_flashes_in_and_flies() {
 
     assert!(game.permanent_has_executable_keyword(mastermind, KeywordAbility::Flying));
 }
+
+/// Its ruling: "Faerie Mastermind doesn't need to have been under your
+/// control when the first card is drawn for its ability to trigger. As long
+/// as you control it when an opponent draws their second card in a turn,
+/// that ability will trigger." Which is the whole point of the flash.
+#[test]
+fn flashing_it_in_after_their_first_draw_still_catches_the_second() {
+    let mut game = staged();
+    let mastermind = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::FAERIE_MASTERMIND)
+        .expect("staged with one")
+        .card
+        .id;
+    game.battlefield
+        .retain(|permanent| permanent.card.id != mastermind);
+
+    draw(&mut game, PlayerId::Two);
+    let before = game.players[0].hand.len();
+
+    // Only now does it arrive, with their first card already drawn.
+    game.put_onto_battlefield(PlayerId::One, cards::FAERIE_MASTERMIND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    draw(&mut game, PlayerId::Two);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        before + 1,
+        "the second card was drawn under it, which is all the clause asks",
+    );
+}
+
+/// The other half of the same reading: an opponent who has already drawn
+/// their second card is past it, and a Mastermind arriving afterwards
+/// catches nothing that turn.
+#[test]
+fn arriving_after_their_second_draw_catches_nothing() {
+    let mut game = staged();
+    let mastermind = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::FAERIE_MASTERMIND)
+        .expect("staged with one")
+        .card
+        .id;
+    game.battlefield
+        .retain(|permanent| permanent.card.id != mastermind);
+
+    draw(&mut game, PlayerId::Two);
+    draw(&mut game, PlayerId::Two);
+    game.put_onto_battlefield(PlayerId::One, cards::FAERIE_MASTERMIND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let before = game.players[0].hand.len();
+
+    draw(&mut game, PlayerId::Two);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        before,
+        "their third card is not their second",
+    );
+}
