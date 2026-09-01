@@ -490,3 +490,48 @@ fn a_dual_played_from_hand_makes_mana_the_turn_it_lands() {
         );
     }
 }
+
+/// "This card is a Mountain and a Swamp even while in the graveyard,
+/// library, or any other zone." The types are printed on the card rather
+/// than granted to the permanent, which is the whole difference between a
+/// dual and an Urborg: what Urborg says reaches the battlefield only, and
+/// what a Badlands is, it is everywhere.
+#[test]
+fn a_dual_keeps_its_types_in_every_zone() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    let source = game
+        .put_onto_battlefield(PlayerId::One, cards::SAVANNAH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let is = |game: &Game, card: &CardInstance, zone, subtype| {
+        game.card_object_matches(ObjectPredicateDef::Subtype(subtype), card, zone, source)
+    };
+
+    let badlands = game
+        .build_zone(PlayerId::One, &[cards::BADLANDS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    for subtype in ["Mountain", "Swamp"] {
+        assert!(
+            is(&game, &badlands, ZoneKind::Hand, subtype),
+            "a Badlands in hand is a {subtype}",
+        );
+    }
+    game.players[0].graveyard.push(badlands);
+    let buried = game.players[0].graveyard.last().expect("it is there");
+    for subtype in ["Mountain", "Swamp"] {
+        assert!(
+            is(&game, buried, ZoneKind::Graveyard, subtype),
+            "and one in a graveyard is a {subtype} too",
+        );
+    }
+    assert!(
+        !is(&game, buried, ZoneKind::Graveyard, "Island"),
+        "and neither of them is anything else",
+    );
+}
