@@ -267,3 +267,62 @@ fn a_counter_rides_on_top_of_the_new_base() {
     );
     assert_eq!(game.toughness(figure_permanent), Some(3));
 }
+
+/// None of the steps taps it, so nothing about the turn it arrived is in the
+/// way: a Figure played this turn climbs the first rung the same turn.
+#[test]
+fn a_figure_that_just_arrived_can_still_climb() {
+    let (mut game, figure) = staged(1);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == figure)
+        .expect("it is there")
+        .entered_controller_turn = game.turns_started[PlayerId::One.index()];
+
+    assert!(
+        activate(&mut game, figure, "{R/W}:"),
+        "an untapping cost is no cost a fresh creature cannot pay",
+    );
+    settle(&mut game);
+
+    let body = permanent(&game, figure);
+    assert_eq!((game.power(body), game.toughness(body)), (Some(2), Some(2)));
+    assert!(
+        !body.tapped,
+        "and it is still untapped, which is why it could",
+    );
+}
+
+/// The steps are ordinary activated abilities with no timing restriction:
+/// the ladder is climbed on their turn as readily as on yours, which is how
+/// a Figure grows out of range of the removal they just cast.
+#[test]
+fn the_ladder_may_be_climbed_on_their_turn() {
+    let (mut game, figure) = staged(4);
+    game.active_player = PlayerId::Two;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    assert!(
+        activate(&mut game, figure, "{R/W}:"),
+        "the first step is offered in their end step",
+    );
+    settle(&mut game);
+    // Passing priority around the step emptied the pool and handed the seat
+    // back, as it does in any game; the timing claim is what this is about.
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 3);
+    game.priority = PlayerId::One;
+    assert!(
+        activate(&mut game, figure, "{R/W}{R/W}{R/W}:"),
+        "and so is the second",
+    );
+    settle(&mut game);
+
+    let body = permanent(&game, figure);
+    assert_eq!(
+        (game.power(body), game.toughness(body)),
+        (Some(4), Some(4)),
+        "a 4/4 before their turn is over",
+    );
+    assert!(subtypes(&game, figure).iter().any(|kind| kind == "Warrior"));
+}
