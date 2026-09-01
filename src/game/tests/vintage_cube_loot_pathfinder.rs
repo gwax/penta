@@ -172,3 +172,117 @@ fn the_green_exhaust_makes_three_mana() {
         "three mana of one colour, and the green that paid is spent",
     );
 }
+
+/// The red exhaust: three damage to any target, and spent afterwards like
+/// the other two.
+#[test]
+fn the_red_exhaust_burns_once() {
+    let (mut game, loot) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.priority = PlayerId::One;
+
+    let burn = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == loot
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(bears))
+            }
+            _ => false,
+        })
+        .expect("a red mana buys the burn, and a creature is any target");
+    game.apply(PlayerId::One, burn).expect("it activates");
+    resolve(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears),
+        "three damage is enough for a 2/2",
+    );
+
+    // Untapped and with the mana for it, the same half is still spent.
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == loot)
+        .expect("he is there")
+        .tapped = false;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    assert!(
+        !offered(&game, loot)
+            .iter()
+            .any(|action| matches!(action, Action::ActivateAbility { .. })),
+        "each exhaust ability is activated only once",
+    );
+}
+
+/// "If an exhaust ability of a permanent is activated, and then that
+/// permanent leaves the battlefield and returns, it becomes a new object so
+/// its exhaust ability can be activated again." An Ephemerate is exactly
+/// that round trip.
+#[test]
+fn blinking_him_hands_the_exhausts_back() {
+    let (mut game, loot) = staged();
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    let draw = offered(&game, loot)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { .. }))
+        .expect("a blue mana buys the draw");
+    game.apply(PlayerId::One, draw).expect("it activates");
+    resolve(&mut game);
+    let held = game.players[PlayerId::One.index()].hand.len();
+
+    let ephemerate = card(100_500, cards::EPHEMERATE, PlayerId::One);
+    let ephemerate_id = ephemerate.id;
+    game.players[PlayerId::One.index()].hand.push(ephemerate);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.priority = PlayerId::One;
+    let blink = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == ephemerate_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(loot))
+            }
+            _ => false,
+        })
+        .expect("a creature you control is what it names");
+    game.apply(PlayerId::One, blink).expect("it is cast");
+    resolve(&mut game);
+
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::LOOT_THE_PATHFINDER)
+        .expect("he came back")
+        .card
+        .id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    let again = offered(&game, returned)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { .. }))
+        .expect("a new object has spent nothing");
+    game.apply(PlayerId::One, again).expect("it activates");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        held + 3,
+        "three more cards, from an ability that had already been spent once",
+    );
+}
