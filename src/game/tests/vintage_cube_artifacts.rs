@@ -875,3 +875,86 @@ fn the_basalt_monolith_taps_for_three_and_costs_three_to_stand_up() {
         "the second tap is as good as the first",
     );
 }
+
+/// The mana, the tap and the counter are all costs: they are paid as the
+/// ability is announced, with the tutor still on the stack and the artifact
+/// still yours.
+#[test]
+fn the_wishclaw_costs_are_paid_before_the_tutor_resolves() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut talisman = creature(79_040, cards::WISHCLAW_TALISMAN, PlayerId::One);
+    talisman.add_counters(CounterKind::named("wish"), 3);
+    let talisman_id = talisman.card.id;
+    game.battlefield.push(talisman);
+    game.players[0]
+        .library
+        .push(card(79_041, cards::BLACK_LOTUS, PlayerId::One));
+    game.players[0].mana_pool.colorless = 1;
+    let hand = game.players[0].hand.len();
+
+    let action = activation(&game, talisman_id).expect("the ability is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+
+    let talisman = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == talisman_id)
+        .expect("it is still on the battlefield");
+    assert!(talisman.tapped, "the tap was paid");
+    assert_eq!(
+        talisman.counters(CounterKind::named("wish")),
+        2,
+        "and a wish counter came off",
+    );
+    assert_eq!(
+        talisman.controller,
+        PlayerId::One,
+        "while the handover waits with the rest of the ability",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.total(),
+        0,
+        "with the mana spent as well",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        hand,
+        "and nothing tutored yet",
+    );
+}
+
+/// The handover is not payment for a card found: an empty library finds
+/// nothing and the artifact changes hands regardless.
+#[test]
+fn an_empty_library_still_hands_the_talisman_over() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mut talisman = creature(79_050, cards::WISHCLAW_TALISMAN, PlayerId::One);
+    talisman.add_counters(CounterKind::named("wish"), 3);
+    let talisman_id = talisman.card.id;
+    game.battlefield.push(talisman);
+    game.players[PlayerId::One.index()].library.clear();
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+    let hand = game.players[PlayerId::One.index()].hand.len();
+
+    let action = activation(&game, talisman_id).expect("the ability is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    resolve(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        hand,
+        "there was nothing to find",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == talisman_id)
+            .expect("it is still there")
+            .controller,
+        PlayerId::Two,
+        "and it is theirs all the same",
+    );
+}
