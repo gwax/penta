@@ -158,3 +158,72 @@ fn a_land_cannot_be_taken() {
         "\"nonland permanent\" leaves their lands alone",
     );
 }
+
+/// "The tokens copy exactly what was printed on the permanent and nothing
+/// else. They don't copy whether that permanent was tapped, whether it had
+/// any counters on it, or any non-copy effects that changed its power and
+/// toughness." What you get is the printed card.
+#[test]
+fn the_token_copies_the_printed_card_and_nothing_else() {
+    let (mut game, held, theirs) = staged(&[cards::GRIZZLY_BEARS]);
+    let bears = theirs[0];
+    let dressed = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("it is there");
+    dressed.tapped = true;
+    dressed.set_counters(CounterKind::PlusOnePlusOne, 3);
+
+    cast(&mut game, held, bears);
+
+    let copies = controlled_by(&game, PlayerId::One, "Grizzly Bears");
+    assert_eq!(copies.len(), 1, "you got the copy");
+    assert_eq!(
+        copies[0].counters(CounterKind::PlusOnePlusOne),
+        0,
+        "the counters were no part of what it copied",
+    );
+    assert!(!copies[0].tapped, "and neither was the tapping");
+    assert_eq!(
+        (game.power(copies[0]), game.toughness(copies[0])),
+        (Some(2), Some(2)),
+        "so what arrived is the printed 2/2",
+    );
+}
+
+/// "Any enters-the-battlefield abilities of the copied permanent will
+/// trigger when the tokens enter the battlefield." A copied Strix draws for
+/// whoever received it.
+#[test]
+fn the_token_brings_the_copied_enters_trigger_with_it() {
+    let (mut game, held, theirs) = staged(&[cards::BALEFUL_STRIX]);
+    let strix = theirs[0];
+    let mine = game.players[0].hand.len();
+    let library = game.players[0].library.len();
+
+    cast(&mut game, held, strix);
+
+    assert_eq!(
+        controlled_by(&game, PlayerId::One, "Baleful Strix").len(),
+        1,
+        "the copy is yours",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        mine,
+        "the Identity left your hand and the Strix's draw replaced it",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 1,
+        "which is a card off your library, so its trigger fired for you",
+    );
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::BALEFUL_STRIX),
+        "while the original is exiled",
+    );
+}
