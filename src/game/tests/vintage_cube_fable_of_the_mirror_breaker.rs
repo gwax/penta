@@ -472,3 +472,135 @@ fn the_copy_leaves_the_counters_behind() {
         "and the copy is the card, counters and all left behind",
     );
 }
+
+/// Copies `victim` with the Reflection and returns the token that arrived.
+fn copy_with(game: &mut Game, reflection: GameObjectId, victim: GameObjectId) -> GameObjectId {
+    let before = tokens(game);
+    let activation = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == reflection
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Permanent(victim)))
+            }
+            _ => false,
+        })
+        .expect("one mana and a tap copies it");
+    game.apply(PlayerId::One, activation)
+        .expect("it is activated");
+    settle(game);
+    tokens(game)
+        .into_iter()
+        .find(|token| !before.contains(token))
+        .expect("a copy arrived")
+}
+
+/// "If the copied creature has {X} in its mana cost, X is 0." A Walking
+/// Ballista wearing two counters is a 2/2, and the copy of it is a 0/0: the
+/// counters are no part of what is copied and X buys nothing, so what
+/// arrives is buried by state-based actions before it can be used.
+#[test]
+fn a_copied_x_creature_arrives_as_a_nought() {
+    let (mut game, _fable) = staged(&[]);
+    let reflection = reflection_ready(&mut game);
+    let ballista = game
+        .put_onto_battlefield(PlayerId::One, cards::WALKING_BALLISTA)
+        .expect("cataloged");
+    // A Ballista put onto the battlefield arrives with X of nought, so the
+    // counters go on before anything checks whether a 0/0 may stay.
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == ballista)
+        .expect("it is there")
+        .set_counters(CounterKind::PlusOnePlusOne, 2);
+    settle(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    let before = tokens(&game);
+
+    let activation = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == reflection
+                    && targets
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Permanent(ballista)))
+            }
+            _ => false,
+        })
+        .expect("one mana and a tap copies it");
+    game.apply(PlayerId::One, activation)
+        .expect("it is activated");
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        tokens(&game),
+        before,
+        "the copy was a 0/0 and did not survive being made",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == ballista)
+            .expect("the original is untouched")
+            .counters(CounterKind::PlusOnePlusOne),
+        2,
+        "while the one it copied keeps what it was wearing",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == reflection)
+            .is_some_and(|permanent| permanent.tapped),
+        "and the Reflection paid its tap for it all the same",
+    );
+}
+
+/// "Sacrifice it at the beginning of the next end step" is the next one
+/// there is: a copy made on their turn is gone by the end of theirs.
+#[test]
+fn a_copy_made_on_their_turn_dies_at_the_end_of_theirs() {
+    let (mut game, _fable) = staged(&[]);
+    let reflection = reflection_ready(&mut game);
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    settle(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let copy = copy_with(&mut game, reflection, bears);
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == copy),
+        "the copy arrived on their turn",
+    );
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != copy),
+        "and their end step is the next one, so it is sacrificed there",
+    );
+}
