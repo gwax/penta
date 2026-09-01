@@ -227,3 +227,79 @@ fn it_is_a_four_four_with_first_strike_and_trample() {
         "and an artifact creature",
     );
 }
+
+/// "Mana value 1 or less" reaches all the way down: a Mox costs nothing and
+/// is as legal a find as a one-drop.
+#[test]
+fn a_zero_cost_permanent_is_one_or_less() {
+    let (mut game, gearhulk) = staged(&[cards::MOX_PEARL, cards::BLACK_LOTUS, cards::MOUNTAIN]);
+    cast(&mut game, gearhulk, true);
+
+    let mut menu = offered(&game);
+    menu.sort_unstable();
+    let mut expected = vec![cards::MOX_PEARL, cards::BLACK_LOTUS];
+    expected.sort_unstable();
+    assert_eq!(menu, expected, "both nothing-costed artifacts are on it");
+
+    answer(&mut game, &[cards::MOX_PEARL, cards::BLACK_LOTUS]);
+    assert!(in_hand(&game, cards::MOX_PEARL));
+    assert!(in_hand(&game, cards::BLACK_LOTUS));
+}
+
+/// "Search your library": theirs is no part of it, however cheap what they
+/// are holding.
+#[test]
+fn it_searches_your_own_library_only() {
+    let (mut game, gearhulk) = staged(&[cards::SOL_RING]);
+    game.players[1].library.clear();
+    for definition in [cards::MOX_JET, cards::SAVANNAH_LIONS] {
+        let card = game
+            .build_zone(PlayerId::Two, &[definition])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        game.players[1].library.push(card);
+    }
+
+    cast(&mut game, gearhulk, true);
+
+    assert_eq!(
+        offered(&game),
+        vec![cards::SOL_RING],
+        "only what is in your own library",
+    );
+}
+
+/// "Reveal them": what is taken is shown rather than slipped into hand, so
+/// both players learn what the search found.
+#[test]
+fn what_it_finds_is_revealed() {
+    let (mut game, gearhulk) = staged(&[cards::SOL_RING, cards::SAVANNAH_LIONS]);
+    cast(&mut game, gearhulk, true);
+    let before = game.events.len();
+
+    answer(&mut game, &[cards::SOL_RING]);
+
+    assert!(
+        game.events[before..].iter().any(|event| matches!(
+            event,
+            GameEvent::CardRevealed { definition, .. } if *definition == cards::SOL_RING
+        )),
+        "the card it took was revealed: {:?}",
+        &game.events[before..],
+    );
+}
+
+/// The "you may" is a real decline: the search never happens and the library
+/// keeps what it had.
+#[test]
+fn the_search_may_be_declined_outright() {
+    let (mut game, gearhulk) = staged(&[cards::SOL_RING, cards::SAVANNAH_LIONS]);
+
+    cast(&mut game, gearhulk, false);
+
+    assert!(deciding(&game).is_none(), "nothing more was asked");
+    assert_eq!(game.players[0].library.len(), 2, "the library is untouched");
+    assert!(!in_hand(&game, cards::SOL_RING));
+}
