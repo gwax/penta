@@ -335,3 +335,67 @@ fn it_shoots_the_turn_it_arrives() {
         "and summoning sickness has nothing to say to a cost with no tap in it",
     );
 }
+
+/// Neither ability says when: on their turn, with their spell on the stack,
+/// four mana buys a counter and the counter buys a point of damage. That is
+/// the line the card is played for, and the only reason the growth half is
+/// worth its four.
+#[test]
+fn both_halves_work_on_their_turn() {
+    let (mut game, ballista) = staged(1);
+    cast(&mut game, ballista, 1);
+    let ballista = on_battlefield(&game).expect("it resolved").card.id;
+    assert_eq!(counters(&game), 1, "one counter to start with");
+
+    // Their turn, their spell waiting to resolve.
+    game.players[1]
+        .hand
+        .push(card(120_000, cards::LIGHTNING_BOLT, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(
+            CardInstanceId(120_000),
+            vec![Target::Player(PlayerId::One)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("they cast their Bolt");
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+
+    let grow = abilities(&game, ballista)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { targets, .. } if targets.is_empty())
+        })
+        .expect("four mana buys a counter, whoever's turn it is");
+    game.apply(PlayerId::One, grow).expect("it activates");
+    drain_pending(&mut game);
+    assert_eq!(counters(&game), 2, "a second counter, on their turn");
+
+    game.priority = PlayerId::One;
+    let life = game.players[1].life;
+    let shot = abilities(&game, ballista)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility { targets, .. } => targets
+                .iter()
+                .any(|selection| selection.targets().contains(&Target::Player(PlayerId::Two))),
+            _ => false,
+        })
+        .expect("and a counter is still a shot");
+    game.apply(PlayerId::One, shot).expect("it activates");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1].life,
+        life - 1,
+        "the shot went across on their turn",
+    );
+    assert_eq!(counters(&game), 1, "and the counter paid for it");
+}
