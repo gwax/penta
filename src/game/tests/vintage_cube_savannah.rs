@@ -438,3 +438,55 @@ fn a_dual_answers_a_card_that_asks_for_one_of_its_basic_types() {
         "and an Underground Sea is a Swamp for exactly as long as it says so",
     );
 }
+
+/// The whole cycle checked above is put onto the battlefield rather than
+/// played, which skips the one thing a deck actually asks of these lands:
+/// a Scrubland played from hand is an ordinary land drop that spends the
+/// drop and makes mana the same turn, where the modern duals beside it in
+/// the cube arrive tapped and make none.
+#[test]
+fn a_dual_played_from_hand_makes_mana_the_turn_it_lands() {
+    for (definition, untapped) in [(cards::SCRUBLAND, true), (cards::UNDERCITY_SEWERS, false)] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[0].hand.clear();
+        let land = game
+            .build_zone(PlayerId::One, &[definition])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        let id = land.id;
+        game.players[0].hand.push(land);
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        game.players[0].lands_played_this_turn = 0;
+
+        let play = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == id))
+            .unwrap_or_else(|| panic!("{definition:?} is a land drop"));
+        game.apply(PlayerId::One, play).expect("it is played");
+        drain_pending(&mut game);
+
+        assert_eq!(
+            game.players[0].lands_played_this_turn, 1,
+            "{definition:?} spent the drop",
+        );
+        // The card gets a new identity on its way to the battlefield.
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.definition == definition)
+            .unwrap_or_else(|| panic!("{definition:?} arrived"))
+            .card
+            .id;
+        assert_eq!(
+            colors_of(&game, permanent).is_empty(),
+            !untapped,
+            "{definition:?} makes mana the turn it lands: {untapped}",
+        );
+    }
+}
