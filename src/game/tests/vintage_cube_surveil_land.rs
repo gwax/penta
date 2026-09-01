@@ -797,3 +797,44 @@ fn the_turn_it_arrives_it_makes_no_mana_and_the_next_one_it_does() {
     assert!(colors.contains(&ManaColor::Black), "a Swamp");
     assert!(colors.contains(&ManaColor::Green), "and a Forest");
 }
+
+/// A basic land type on the battlefield is read by more than a fetchland's
+/// search: a Flinthoof Boar asks whether you control a Mountain, and a
+/// Commercial District is one while it sits there -- tapped, as it arrived.
+/// The Underground Mortuary beside it is a Swamp Forest and answers nothing,
+/// which is what makes it the type doing the work rather than the land.
+#[test]
+fn the_district_is_a_mountain_for_whatever_asks() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let boar = game
+        .put_onto_battlefield(PlayerId::One, cards::FLINTHOOF_BOAR)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::UNDERGROUND_MORTUARY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let size = |game: &Game| {
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == boar)
+            .expect("the Boar is out");
+        (game.power(permanent), game.toughness(permanent))
+    };
+    assert_eq!(
+        size(&game),
+        (Some(2), Some(2)),
+        "a Swamp Forest is no Mountain",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::COMMERCIAL_DISTRICT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        size(&game),
+        (Some(3), Some(3)),
+        "and the Mountain Forest is",
+    );
+}
