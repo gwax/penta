@@ -384,3 +384,74 @@ fn an_equipment_wearing_nobody_grows_nothing() {
         "and a creature it is not attached to is no business of its clause",
     );
 }
+
+/// "Whenever *you* cast a noncreature spell": the clause belongs to the
+/// creature's controller, so their Bolt is not one of yours.
+#[test]
+fn their_noncreature_spell_grows_nothing() {
+    let (mut game, _planisphere) = staged(&[]);
+    let bolt = game
+        .build_zone(PlayerId::Two, &[cards::LIGHTNING_BOLT])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let bolt_id = bolt.id;
+    game.players[PlayerId::Two.index()].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.priority = PlayerId::Two;
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == bolt_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::One))
+            }
+            _ => false,
+        })
+        .expect("they can aim a Bolt at your face");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        17,
+        "their spell resolved",
+    );
+    assert_eq!(
+        counters_on_hero(&game),
+        0,
+        "and grew nothing of yours doing it",
+    );
+}
+
+/// "Whenever *you* draw your third card each turn" reads the same way: their
+/// draws are counted on their own side of the table.
+#[test]
+fn their_third_draw_grows_nothing() {
+    let (mut game, _planisphere) = staged(&[]);
+    for _ in 0..4 {
+        game.draw_card(PlayerId::Two);
+    }
+    settle(&mut game);
+
+    assert_eq!(
+        counters_on_hero(&game),
+        0,
+        "four of their cards is none of yours",
+    );
+
+    for _ in 0..3 {
+        game.draw_card(PlayerId::One);
+    }
+    settle(&mut game);
+    assert_eq!(
+        counters_on_hero(&game),
+        1,
+        "and your own third is still your own third, counted separately",
+    );
+}
