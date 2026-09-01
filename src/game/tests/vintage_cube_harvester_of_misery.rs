@@ -377,3 +377,105 @@ fn the_card_is_spent_even_when_the_target_is_gone() {
         "and nothing else was shrunk in its place",
     );
 }
+
+/// "Until end of turn": what survived the sweep is its own size again the
+/// next turn, so a 3/3 that stood there as a 1/1 is a 3/3 once cleanup has
+/// been through.
+#[test]
+fn the_sweep_wears_off_with_the_turn() {
+    let (mut game, harvester) = staged(2);
+    let spider = game
+        .put_onto_battlefield(PlayerId::Two, cards::GIANT_SPIDER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == harvester))
+        .expect("five mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    let shrunk = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == spider)
+        .expect("four toughness survived two");
+    assert_eq!(
+        (game.power(shrunk), game.toughness(shrunk)),
+        (Some(0), Some(2)),
+        "a 2/4 shrunk by two",
+    );
+
+    game.cleanup();
+    game.finish_cleanup();
+    drain_pending(&mut game);
+
+    let after = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == spider)
+        .expect("it is still there");
+    assert_eq!(
+        (game.power(after), game.toughness(after)),
+        (Some(2), Some(4)),
+        "and its own size again afterwards",
+    );
+}
+
+/// The shrink modifies rather than sets, so two of them stack: a second
+/// Harvester discarded at the same creature takes another two off it.
+#[test]
+fn two_shrinks_stack_on_one_creature() {
+    let (mut game, first) = staged(2);
+    let second = game
+        .build_zone(PlayerId::One, &[cards::HARVESTER_OF_MISERY])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let second_id = second.id;
+    game.players[0].hand.push(second);
+    let spider = game
+        .put_onto_battlefield(PlayerId::Two, cards::GIANT_SPIDER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    for source in [first, second_id] {
+        let activation = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source: activated,
+                    targets,
+                    ..
+                } => {
+                    *activated == source
+                        && targets
+                            .iter()
+                            .any(|slot| slot.targets().contains(&Target::Permanent(spider)))
+                }
+                _ => false,
+            })
+            .expect("two mana activates it from hand");
+        game.apply(PlayerId::One, activation)
+            .expect("it is activated");
+        settle(&mut game);
+    }
+
+    assert!(
+        !on_battlefield(&game, cards::GIANT_SPIDER),
+        "two and two is four, which a 2/4 does not survive",
+    );
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .filter(|card| card.definition == cards::HARVESTER_OF_MISERY)
+            .count(),
+        2,
+        "and both cards paid for it",
+    );
+}
