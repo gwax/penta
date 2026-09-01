@@ -616,3 +616,89 @@ fn the_look_happens_when_the_trigger_resolves() {
         "the Bolt is still in the library, one card further down",
     );
 }
+
+/// The trigger belongs to whoever played the land: their Falls looks at
+/// their library and asks them, and your own library is no part of it.
+#[test]
+fn their_copy_surveils_their_own_library() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].library.clear();
+    game.players[1].library.clear();
+    game.players[1].hand.clear();
+    game.players[0]
+        .library
+        .push(card(97_000, cards::LIGHTNING_BOLT, PlayerId::One));
+    game.players[1]
+        .library
+        .push(card(97_001, cards::SERRA_ANGEL, PlayerId::Two));
+    let falls = game
+        .build_zone(PlayerId::Two, &[cards::THUNDERING_FALLS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let falls_id = falls.id;
+    game.players[1].hand.push(falls);
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    game.players[1].lands_played_this_turn = 0;
+
+    let play = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == falls_id))
+        .expect("their land drop");
+    game.apply(PlayerId::Two, play).expect("it is played");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the surveil asks somebody");
+    assert_eq!(decision.player, PlayerId::Two, "and it asks them");
+    assert_eq!(
+        decision
+            .options
+            .iter()
+            .filter_map(|option| option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition()))
+            .collect::<Vec<_>>(),
+        vec![cards::SERRA_ANGEL],
+        "about the top of their own library",
+    );
+
+    game.apply(
+        PlayerId::Two,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: decision.options.iter().map(|option| option.id).collect(),
+        },
+    )
+    .expect("binning it is an answer");
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "what they binned is in their graveyard",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        1,
+        "and your library was never touched",
+    );
+}
