@@ -87,3 +87,36 @@ fn four_damage_is_marked_rather_than_lethal() {
         "the turn ends and takes the damage with it",
     );
 }
+
+/// "Target creature": a planeswalker is no more one than a player is, so a
+/// board of Teferi and an Angel offers exactly one thing to burn.
+#[test]
+fn a_planeswalker_is_not_a_creature() {
+    let (mut game, slash, angel) = staged(cards::SERRA_ANGEL);
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::TEFERI_TIME_RAVELER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == slash => {
+                choices.iter_targets().copied().next()
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        offered,
+        vec![Target::Permanent(angel)],
+        "the Angel and nothing else: Teferi is a planeswalker",
+    );
+    assert!(
+        permanent(&game, walker).is_some(),
+        "and he is standing there to prove it",
+    );
+}
