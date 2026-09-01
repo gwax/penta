@@ -303,3 +303,90 @@ fn it_can_be_aimed_at_yourself() {
         "and paid the two life for the privilege",
     );
 }
+
+/// "Target player" is a target, so a player with hexproof is not one: a
+/// Leyline of Sanctity leaves the Thoughtseize with only its own caster to
+/// name.
+#[test]
+fn a_leyline_takes_them_off_the_table() {
+    let (mut game, seize) = staged(&[cards::LIGHTNING_BOLT]);
+    game.put_onto_battlefield(PlayerId::Two, cards::LEYLINE_OF_SANCTITY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let targets: Vec<Target> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == seize => {
+                Some(choices.iter_targets().copied().collect::<Vec<_>>())
+            }
+            _ => None,
+        })
+        .flatten()
+        .collect();
+
+    assert!(
+        !targets.contains(&Target::Player(PlayerId::Two)),
+        "the player behind the Leyline is no target: {targets:?}",
+    );
+    assert!(
+        targets.contains(&Target::Player(PlayerId::One)),
+        "and its caster is still one, hexproof being about opponents",
+    );
+}
+
+/// The life is part of the resolution rather than a cost: a Thoughtseize
+/// countered on the way costs nothing and takes nothing.
+#[test]
+fn a_countered_thoughtseize_costs_no_life() {
+    let (mut game, seize) = staged(&[cards::LIGHTNING_BOLT]);
+    game.players[1]
+        .hand
+        .push(card(97_900, cards::COUNTERSPELL, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+    let life = game.players[0].life;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == seize
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::Two))
+            }
+            _ => false,
+        })
+        .expect("one black casts it at them");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    game.priority = PlayerId::Two;
+    let counter = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(97_900))
+        })
+        .expect("two blue answers it");
+    game.apply(PlayerId::Two, counter).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[0].life, life, "no life was lost");
+    assert!(
+        game.players[1]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and they kept their card",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::THOUGHTSEIZE),
+        "while the spell itself is spent, into its own owner's graveyard",
+    );
+}
