@@ -137,3 +137,73 @@ fn each_counter_buys_a_mana_of_any_colour() {
         "and an empty Prism makes no more mana",
     );
 }
+
+/// No tap symbol anywhere on it: the Prism makes its mana while tapped, and
+/// on the turn it arrives, which is what makes it a ritual that waits rather
+/// than a rock that has to survive a turn cycle.
+#[test]
+fn it_needs_neither_untapping_nor_a_turn_to_settle() {
+    let (mut game, prism) = staged(&[(ManaColor::White, 1), (ManaColor::Blue, 1)]);
+    let id = cast(&mut game, prism).card.id;
+    game.players[PlayerId::One.index()].mana_pool = ManaPool::default();
+    let arrived = game.turns_started[PlayerId::One.index()];
+    let permanent = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == id)
+        .expect("it is there");
+    permanent.tapped = true;
+    permanent.entered_controller_turn = arrived;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateManaAbility { source, color, .. }
+                if *source == id && *color == ManaColor::Red)
+        })
+        .expect("a tapped Prism that arrived this turn still makes mana");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    assert_eq!(game.players[PlayerId::One.index()].mana_pool.red, 1);
+    assert_eq!(charges(&game), 1, "one counter is what it cost");
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .expect("it is still there")
+            .tapped,
+        "and it is as tapped as it was: the cost is the counter, not the tap",
+    );
+}
+
+/// "Once Pentad Prism has run out of charge counters, it remains on the
+/// battlefield." Spent is not sacrificed.
+#[test]
+fn a_spent_prism_stays_where_it_is() {
+    let (mut game, prism) = staged(&[(ManaColor::White, 1), (ManaColor::Blue, 1)]);
+    let id = cast(&mut game, prism).card.id;
+    for _ in 0..2 {
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| {
+                matches!(action, Action::ActivateManaAbility { source, .. } if *source == id)
+            })
+            .expect("a counter is still on it");
+        game.apply(PlayerId::One, action).expect("it activates");
+    }
+    game.check_state_based_actions();
+
+    assert_eq!(charges(&game), 0, "both counters are spent");
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == id),
+        "and the artifact is still an artifact on the battlefield",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].graveyard.is_empty(),
+        "nothing was sacrificed to pay for anything",
+    );
+}
