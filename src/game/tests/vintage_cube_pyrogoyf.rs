@@ -212,3 +212,65 @@ fn a_dead_pyrogoyf_deals_the_power_it_had() {
         "one damage: what it was worth while it was there",
     );
 }
+
+/// "Or another Lhurgoyf creature *you control*": their Nethergoyf arriving
+/// is somebody else's Lhurgoyf, and your Pyrogoyf says nothing about it.
+#[test]
+fn their_lhurgoyf_arriving_triggers_nothing() {
+    let mut game = staged();
+    let life = game.players[PlayerId::Two.index()].life;
+    let mine = game.players[PlayerId::One.index()].life;
+
+    game.put_onto_battlefield(PlayerId::Two, cards::NETHERGOYF)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "nobody is asked where to point anything",
+    );
+    assert!(
+        game.pending_triggers.is_empty() && game.stack.is_empty(),
+        "and nothing is waiting to resolve",
+    );
+    assert_eq!(
+        (
+            game.players[PlayerId::One.index()].life,
+            game.players[PlayerId::Two.index()].life
+        ),
+        (mine, life),
+        "so no damage went anywhere",
+    );
+}
+
+/// "Any target" is a creature as readily as a player: a 2/3 arriving kills a
+/// 2/2 across the table.
+#[test]
+fn it_may_burn_a_creature_instead_of_a_player() {
+    let mut game = staged();
+    game.battlefield
+        .retain(|permanent| permanent.card.definition != ObjectKind::Card(cards::PYROGOYF));
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let life = game.players[PlayerId::Two.index()].life;
+
+    game.put_onto_battlefield(PlayerId::One, cards::PYROGOYF)
+        .expect("cataloged");
+    aim_at(&mut game, "Grizzly Bears");
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears),
+        "two damage from a 2/3 is enough for a 2/2",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life,
+        "and none of it went to their face",
+    );
+}
