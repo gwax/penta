@@ -230,3 +230,96 @@ fn without_three_to_spare_there_is_no_offer() {
         "so it is countered and exiled",
     );
 }
+
+/// "If that spell is countered this way, exile it": a spell that cannot be
+/// countered is not countered this way, so it is not exiled either. It
+/// resolves, and what it leaves behind goes where a resolved spell goes.
+#[test]
+fn a_spell_it_cannot_counter_is_not_exiled_either() {
+    let (mut game, lies, spell) = staged(cards::SUPREME_VERDICT, 5);
+    game.battlefield
+        .push(creature(108_500, cards::GRIZZLY_BEARS, PlayerId::One));
+
+    cast_and_answer(&mut game, lies, spell, "Decline");
+
+    assert!(
+        game.battlefield.is_empty(),
+        "the Verdict resolved and swept the board",
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SUPREME_VERDICT),
+        "into their graveyard rather than into exile",
+    );
+    assert!(
+        game.players[1].exile.is_empty(),
+        "nothing was exiled by an answer that countered nothing",
+    );
+}
+
+/// "Target spell" does not say whose: your own spell is a legal target, and
+/// answering it yourself exiles it like any other.
+#[test]
+fn it_may_name_your_own_spell() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let angel = game
+        .build_zone(PlayerId::One, &[cards::SERRA_ANGEL])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let angel_id = angel.id;
+    game.players[0].hand.push(angel);
+    let lies = game
+        .build_zone(PlayerId::One, &[cards::NO_MORE_LIES])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let lies_id = lies.id;
+    game.players[0].hand.push(lies);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 4);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == angel_id))
+        .expect("five mana casts the Angel");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    let on_stack = game.stack.last().expect("it is on the stack").id;
+
+    let answer = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == lies_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(on_stack))
+            }
+            _ => false,
+        })
+        .expect("your own spell is a legal target");
+    game.apply(PlayerId::One, answer).expect("it is cast");
+    settle(&mut game, "Decline");
+
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "your own Angel is exiled the same way theirs would be",
+    );
+    assert!(game.battlefield.is_empty(), "and it never resolved");
+}
