@@ -106,3 +106,130 @@ fn drawing_two_off_one_card_ends_it_another_way() {
         "the second card was not there to draw",
     );
 }
+
+/// A Sheoldred across from it turns the deal around: two draws are four
+/// life, and the Whisper's own two comes off that.
+#[test]
+fn a_sheoldred_of_yours_turns_the_life_around() {
+    let (mut game, whisper) = staged(6);
+    game.put_onto_battlefield(PlayerId::One, cards::SHEOLDRED_THE_APOCALYPSE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let life = game.players[PlayerId::One.index()].life;
+
+    cast_it(&mut game, whisper);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life + 2,
+        "two life a card, less the two the Whisper takes",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        2,
+        "and both cards are in hand",
+    );
+}
+
+/// Their Orcish Bowmasters reads every draw of yours outside your own draw
+/// step, and a Whisper is two of them: two arrows and an Army two counters
+/// tall.
+#[test]
+fn their_bowmasters_shoots_at_both_of_its_draws() {
+    let (mut game, whisper) = staged(6);
+    game.put_onto_battlefield(PlayerId::Two, cards::ORCISH_BOWMASTERS)
+        .expect("cataloged");
+    // The Bowmasters' own arrival trigger goes first, aimed at whatever it
+    // likes; what this test counts is what the Whisper adds to that.
+    for _ in 0..16 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: decision
+                        .options
+                        .iter()
+                        .find(|option| option.label == "your opponent")
+                        .or_else(|| decision.options.first())
+                        .map(|option| vec![option.id])
+                        .unwrap_or_default(),
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let army = |game: &Game| {
+        game.battlefield
+            .iter()
+            .find(|permanent| {
+                is_token_with(
+                    permanent,
+                    tokens::creature(&["Orc", "Army"], &[ManaColor::Black], 0, 0),
+                )
+            })
+            .map_or(0, |permanent| {
+                permanent.counters(CounterKind::PlusOnePlusOne)
+            })
+    };
+    let counters = army(&game);
+    let life = game.players[PlayerId::One.index()].life;
+    game.priority = PlayerId::One;
+
+    cast_it(&mut game, whisper);
+    for _ in 0..16 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: decision
+                        .options
+                        .iter()
+                        .find(|option| option.label == "your opponent")
+                        .or_else(|| decision.options.first())
+                        .map(|option| vec![option.id])
+                        .unwrap_or_default(),
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert_eq!(
+        army(&game) - counters,
+        2,
+        "one amass for each of the two cards drawn",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life - 4,
+        "two life for the Whisper and an arrow for each draw",
+    );
+}
