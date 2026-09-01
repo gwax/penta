@@ -269,3 +269,97 @@ fn she_is_a_five_three() {
     let body = on_battlefield(&game, cards::TITANIA_PROTECTOR_OF_ARGOTH).expect("she resolved");
     assert_eq!((game.power(body), game.toughness(body)), (Some(5), Some(3)));
 }
+
+/// The line the deck is built on: a fetchland sacrifices itself as a cost,
+/// which is a land you control going to the graveyard, so the crack buys a
+/// land and a 5/3 at once.
+#[test]
+fn a_fetchland_cracked_beneath_her_makes_an_elemental() {
+    let (mut game, titania) = staged(&[], &[cards::WOODED_FOOTHILLS]);
+    cast(&mut game, titania, None);
+    assert_eq!(elementals(&game), 0, "nothing has died yet");
+    game.players[PlayerId::One.index()].library.clear();
+    game.players[PlayerId::One.index()]
+        .library
+        .push(card(104_000, cards::FOREST, PlayerId::One));
+    let fetch = on_battlefield(&game, cards::WOODED_FOOTHILLS)
+        .expect("the fetch is there")
+        .card
+        .id;
+    game.priority = PlayerId::One;
+
+    let crack = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == fetch))
+        .expect("a life and a sacrifice");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    // The search asks which land to find; everything else settles itself.
+    for _ in 0..16 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: decision
+                        .options
+                        .iter()
+                        .map(|option| option.id)
+                        .take(decision.minimum.max(1))
+                        .collect(),
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert!(
+        on_battlefield(&game, cards::FOREST).is_some(),
+        "the Forest it went looking for arrived",
+    );
+    assert_eq!(
+        elementals(&game),
+        1,
+        "and the land it sacrificed to go looking made a 5/3",
+    );
+}
+
+/// "Target land card from *your* graveyard": theirs is not on the list, so a
+/// Titania arriving over an opponent's full graveyard brings back nothing.
+#[test]
+fn their_graveyard_is_not_hers_to_read() {
+    let (mut game, titania) = staged(&[], &[]);
+    game.players[PlayerId::Two.index()].graveyard.clear();
+    game.players[PlayerId::Two.index()]
+        .graveyard
+        .push(card(104_100, cards::FOREST, PlayerId::Two));
+
+    cast(&mut game, titania, None);
+
+    assert!(
+        on_battlefield(&game, cards::TITANIA_PROTECTOR_OF_ARGOTH).is_some(),
+        "she resolved",
+    );
+    assert!(
+        on_battlefield(&game, cards::FOREST).is_none(),
+        "and their land stayed in their graveyard",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].graveyard.len(),
+        1,
+        "exactly where it was",
+    );
+}
