@@ -347,3 +347,95 @@ fn animating_it_twice_is_still_a_four_four() {
         "the second animation sets the same base rather than stacking",
     );
 }
+
+/// Summoning sickness stops attacking and tapping, and nothing else: a
+/// Colonnade that arrived this turn may still be woken up on their turn to
+/// block, which is the mode the card is really held open for.
+#[test]
+fn a_freshly_played_colonnade_may_still_block() {
+    let (mut game, colonnade) = staged();
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == colonnade)
+    {
+        permanent.entered_controller_turn = game.turns_started[0];
+    }
+    let attacker = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == attacker)
+    {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::Two;
+    game.declare_attacker(attacker, AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    resolve(&mut game);
+    game.priority = PlayerId::One;
+
+    animate(&mut game, colonnade);
+    game.step = Step::DeclareBlockers;
+    game.priority = PlayerId::One;
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::DeclareBlocker { blocker, .. } if *blocker == colonnade
+            )),
+        "blocking asks nothing about how long it has been here",
+    );
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::ActivateManaAbility { source, .. } if *source == colonnade
+            )),
+        "while it is summoning sick still, its own tap being the proof",
+    );
+}
+
+/// The price of waking it: it is a creature now, so it dies like one, and
+/// the land dies with it. Four damage is exactly its toughness.
+#[test]
+fn four_damage_kills_it_and_takes_the_land_with_it() {
+    let (mut game, colonnade) = staged();
+
+    animate(&mut game, colonnade);
+    game.damage_target_from_kind(None, Some(Target::Permanent(colonnade)), 3, false);
+    game.check_state_based_actions();
+    assert_eq!(
+        game.power(permanent(&game, colonnade)),
+        Some(4),
+        "three is not enough",
+    );
+
+    game.damage_target_from_kind(None, Some(Target::Permanent(colonnade)), 1, false);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != colonnade),
+        "the fourth point killed the creature",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::CELESTIAL_COLONNADE),
+        "and the land it still was went with it",
+    );
+}
