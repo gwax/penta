@@ -267,3 +267,93 @@ fn a_manifested_noncreature_card_cannot_be_turned_up() {
         "a land is not a creature card, so no mana cost turns it up",
     );
 }
+
+/// "If your library contains only one card when you manifest dread, you'll
+/// look at that card and put it onto the battlefield face down. You won't
+/// have the option to put it into your graveyard instead."
+#[test]
+fn one_card_left_goes_down_with_nothing_to_choose() {
+    let (mut game, oculus) = staged(6, &[cards::SERRA_ANGEL]);
+    assert!(cast(&mut game, oculus), "it casts");
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    game.step = Step::Upkeep;
+    settle(&mut game);
+    assert_eq!(
+        deciding(&game),
+        None,
+        "with one card there is no choice of which half it is",
+    );
+
+    let body = face_down(&game).expect("the one card went down");
+    assert_eq!(body.card.definition, cards::SERRA_ANGEL);
+    assert_eq!(game.power(body), Some(2), "a 2/2 like any other");
+    assert!(game.players[0].library.is_empty(), "it came off the top");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != cards::SERRA_ANGEL),
+        "and there was no graveyard half to send it to",
+    );
+}
+
+/// "If your library contains no cards when you manifest dread, you won't do
+/// anything." The trigger still resolves and nothing comes of it.
+#[test]
+fn an_empty_library_manifests_nothing() {
+    let (mut game, oculus) = staged(6, &[]);
+    assert!(cast(&mut game, oculus), "it casts");
+    let graveyard = game.players[0].graveyard.len();
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    game.step = Step::Upkeep;
+    settle(&mut game);
+
+    assert!(
+        game.events.iter().any(|event| matches!(
+            event,
+            GameEvent::TriggeredAbilityResolved { presentation, .. }
+                if presentation.card_definition() == Some(cards::ABHORRENT_OCULUS)
+        )),
+        "the trigger resolved rather than never firing",
+    );
+    assert!(face_down(&game).is_none(), "nothing went down");
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        graveyard,
+        "and nothing was buried either",
+    );
+    assert_eq!(
+        game.result, None,
+        "an empty library is not a loss until something draws from it",
+    );
+}
+
+/// "Abhorrent Oculus's additional cost must be paid even if it's cast
+/// 'without paying its mana cost' or for any alternative cost." An
+/// Omniscience waives the {2}{U} and not the six cards.
+#[test]
+fn a_free_cast_still_exiles_the_six() {
+    for (buried, castable) in [(5, false), (6, true)] {
+        let (mut game, oculus) = staged(buried, &[cards::MOUNTAIN, cards::SERRA_ANGEL]);
+        game.players[0].mana_pool = ManaPool::default();
+        game.battlefield
+            .push(creature(95_500, cards::OMNISCIENCE, PlayerId::One));
+
+        assert_eq!(
+            game.legal_actions(PlayerId::One)
+                .into_iter()
+                .any(|action| matches!(action, Action::CastSpell { card, .. } if card == oculus)),
+            castable,
+            "with {buried} cards in the graveyard and no mana at all",
+        );
+        if !castable {
+            continue;
+        }
+        assert!(cast(&mut game, oculus), "the free cast goes through");
+        assert!(
+            game.players[0].graveyard.is_empty(),
+            "and the six were exiled to pay for it",
+        );
+        assert_eq!(game.players[0].exile.len(), 6, "into exile, as printed");
+    }
+}
