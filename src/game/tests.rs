@@ -761,6 +761,7 @@ mod vintage_cube_wrenn_and_six;
 mod vintage_cube_xanders_lounge;
 mod vintage_cube_yawgmoths_will;
 mod vintage_cube_zirda;
+mod vintage_cube_zuran_orb;
 mod wards;
 mod while_source_tapped;
 mod word_of_binding;
