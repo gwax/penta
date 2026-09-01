@@ -317,3 +317,70 @@ fn a_goyf_that_dies_again_can_escape_again() {
         "with both sets of four exiled behind it",
     );
 }
+
+/// Its ruling: "Nethergoyf's first ability counts card types, not cards. If
+/// your graveyard consists of ten artifact cards and ten creature cards,
+/// Nethergoyf will still be a 2/3." Six cards of two kinds is still two
+/// power, and supertypes are not kinds at all.
+#[test]
+fn duplicates_and_supertypes_add_nothing() {
+    let (mut game, goyf) = staged(&[
+        cards::MOUNTAIN,
+        cards::FOREST,
+        // A legendary land and a basic one are both just lands.
+        cards::URBORG_TOMB_OF_YAWGMOTH,
+        cards::BADLANDS,
+        cards::GRIZZLY_BEARS,
+        cards::SERRA_ANGEL,
+    ]);
+    let cast = casts_of(&game, goyf)
+        .into_iter()
+        .next()
+        .expect("one black casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    let goyf = body(&game).expect("it resolved");
+    assert_eq!(
+        (game.power(goyf), game.toughness(goyf)),
+        (Some(2), Some(3)),
+        "four lands and two creatures are two card types",
+    );
+}
+
+/// "Among cards in *your* graveyard": theirs is no part of the count,
+/// however deep it is.
+#[test]
+fn their_graveyard_does_not_feed_it() {
+    let (mut game, goyf) = staged(&[cards::MOUNTAIN]);
+    game.players[1].graveyard.clear();
+    for (index, definition) in [
+        cards::LIGHTNING_BOLT,
+        cards::SERRA_ANGEL,
+        cards::BLACK_LOTUS,
+        cards::LEYLINE_OF_SANCTITY,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        game.players[1].graveyard.push(card(
+            122_000 + u32::try_from(index).expect("four cards"),
+            definition,
+            PlayerId::Two,
+        ));
+    }
+
+    let cast = casts_of(&game, goyf)
+        .into_iter()
+        .next()
+        .expect("one black casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    let goyf = body(&game).expect("it resolved");
+    assert_eq!(
+        (game.power(goyf), game.toughness(goyf)),
+        (Some(1), Some(2)),
+        "one land of yours, and four card types of theirs counting for nothing",
+    );
+}
