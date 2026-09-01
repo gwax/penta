@@ -184,3 +184,116 @@ fn an_empty_library_reveals_nothing_and_costs_nothing() {
         "an empty library is not by itself a loss",
     );
 }
+
+/// "Reveal the top card of your library": a reveal, so the table sees what
+/// he turned up before it goes anywhere.
+#[test]
+fn the_card_is_revealed_on_the_way_to_your_hand() {
+    let mut game = staged(&[cards::LIGHTNING_BOLT]);
+    game.events.clear();
+
+    take_upkeep(&mut game, PlayerId::One);
+
+    assert_eq!(
+        game.events
+            .iter()
+            .filter(|event| matches!(event, GameEvent::CardRevealed { .. }))
+            .count(),
+        1,
+        "one card, shown once",
+    );
+    assert_eq!(game.players[0].hand.len(), 1, "and then it is yours");
+}
+
+/// "Put that card into your hand" is not a draw, so nothing that watches
+/// draws sees this one. The draw taken afterwards, off the same library,
+/// is what a draw looks like by comparison.
+#[test]
+fn putting_the_card_into_your_hand_is_not_a_draw() {
+    let mut game = staged(&[cards::LIGHTNING_BOLT, cards::LIGHTNING_BOLT]);
+    game.cards_drawn_this_turn = [0; 2];
+
+    take_upkeep(&mut game, PlayerId::One);
+
+    assert_eq!(game.players[0].hand.len(), 1, "the card arrived");
+    assert_eq!(
+        game.cards_drawn_this_turn[0], 0,
+        "and no draw was taken for it",
+    );
+
+    game.draw_instruction(PlayerId::One, 1);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.cards_drawn_this_turn[0], 1,
+        "which is what the counter does record",
+    );
+}
+
+/// Two Confidants are two triggers: two cards off the top and both their
+/// costs, which is how the card kills the player who overcommitted to it.
+#[test]
+fn a_second_confidant_is_a_second_trigger() {
+    let mut game = staged(&[cards::LIGHTNING_BOLT, cards::LIGHTNING_BOLT]);
+    game.put_onto_battlefield(PlayerId::One, cards::DARK_CONFIDANT)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.players[0].life = 20;
+
+    take_upkeep(&mut game, PlayerId::One);
+
+    assert_eq!(game.players[0].hand.len(), 2, "one card apiece");
+    assert!(game.players[0].library.is_empty(), "both came off the top");
+    assert_eq!(game.players[0].life, 18, "and a life apiece");
+}
+
+/// The trigger is on the stack in its own right: a Confidant answered in
+/// response is a Confidant who still turns the card over and still charges
+/// for it.
+#[test]
+fn killing_him_in_response_does_not_stop_the_trigger() {
+    let mut game = staged(&[cards::SERRA_ANGEL]);
+    let confidant = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::DARK_CONFIDANT)
+        .expect("he is out")
+        .card
+        .id;
+    game.active_player = PlayerId::One;
+    game.step = Step::Upkeep;
+    game.priority = PlayerId::One;
+    game.handle_upkeep_triggers();
+    for _ in 0..8 {
+        if !game.stack.is_empty() {
+            break;
+        }
+        if game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert!(!game.stack.is_empty(), "his trigger is waiting");
+
+    game.destroy_permanent(confidant);
+    game.check_state_based_actions();
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == confidant),
+        "he is gone before it resolves",
+    );
+
+    for _ in 0..16 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        if game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+
+    assert_eq!(game.players[0].hand.len(), 1, "the Angel came over anyway");
+    assert_eq!(game.players[0].life, 15, "and cost her five all the same");
+}
