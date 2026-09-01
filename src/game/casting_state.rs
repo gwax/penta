@@ -5,6 +5,20 @@ use crate::ids::{GameObjectId, PlayerId};
 use super::{Game, ScopedEffect};
 
 impl Game {
+    /// How many spells were cast this turn before `spell` was. Storm counts
+    /// the spells cast before *the spell*, not before its trigger resolves,
+    /// so a counterspell cast in response buys no extra copy. A spell that
+    /// is not in this turn's history -- a copy, which was never cast -- is
+    /// read as having everything before it.
+    pub(super) fn spells_cast_before(&self, spell: GameObjectId) -> u16 {
+        let index = self
+            .spell_cast_history_this_turn
+            .iter()
+            .position(|cast| *cast == spell)
+            .unwrap_or_else(|| self.spell_cast_history_this_turn.len().saturating_sub(1));
+        u16::try_from(index).unwrap_or(u16::MAX)
+    }
+
     pub(super) fn record_spell_cast(&mut self, player: PlayerId, spell: GameObjectId) {
         self.spells_cast_this_turn[player.index()] =
             self.spells_cast_this_turn[player.index()].saturating_add(1);

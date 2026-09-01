@@ -261,3 +261,130 @@ fn stifling_the_storm_trigger_leaves_one_drain() {
     );
     assert_eq!(game.players[0].life, 22);
 }
+
+/// Storm counts every spell cast before it this turn, whoever cast it: a
+/// cantrip of theirs on your turn is one more copy of yours.
+#[test]
+fn their_spell_feeds_your_storm_count() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    let theirs = card(21_000, cards::OPT, PlayerId::Two);
+    let theirs_id = theirs.id;
+    game.players[PlayerId::Two.index()].hand.push(theirs);
+    game.players[PlayerId::Two.index()].mana_pool.blue = 1;
+    game.priority = PlayerId::Two;
+    game.apply(
+        PlayerId::Two,
+        cast_action(theirs_id, Vec::new(), Vec::new(), 0),
+    )
+    .expect("a cantrip of theirs is castable");
+    drain_pending(&mut game);
+    let life = game.players[PlayerId::Two.index()].life;
+
+    cast_tendrils(&mut game);
+    settle(&mut game, true);
+
+    assert_eq!(
+        life - game.players[PlayerId::Two.index()].life,
+        4,
+        "the original and one copy: their cantrip counted for the storm",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        24,
+        "and both drains gained their two",
+    );
+}
+
+/// Countering the spell does not counter its storm trigger: the trigger
+/// copies the spell it was raised by from last known information, so the
+/// copy resolves even though the original never did.
+#[test]
+fn countering_the_original_leaves_the_copies_standing() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    cast_cantrips(&mut game, 1);
+    let counter = card(21_100, cards::COUNTERSPELL, PlayerId::Two);
+    let counter_id = counter.id;
+    game.players[PlayerId::Two.index()].hand.push(counter);
+    game.players[PlayerId::Two.index()].mana_pool.blue = 2;
+    let life = game.players[PlayerId::Two.index()].life;
+
+    cast_tendrils(&mut game);
+    // Answered in response to its own storm trigger, which is the way the
+    // spell is usually answered: the trigger is still waiting above it.
+    for _ in 0..8 {
+        if game.stack.iter().count() >= 2 && game.pending_triggers.is_empty() {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: decision
+                        .options
+                        .iter()
+                        .find(|option| option.label == "Keep original targets")
+                        .map(|option| vec![option.id])
+                        .unwrap_or_default(),
+                },
+            )
+            .expect("the copy keeps its targets");
+            continue;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let original = game
+        .stack
+        .iter()
+        .next()
+        .expect("the Tendrils is under its own trigger")
+        .id;
+
+    game.priority = PlayerId::Two;
+    let answer = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == counter_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(original))
+            }
+            _ => false,
+        })
+        .expect("the original is a spell like any other");
+    game.apply(PlayerId::Two, answer).expect("it is cast");
+    settle(&mut game, true);
+
+    assert_eq!(
+        life - game.players[PlayerId::Two.index()].life,
+        2,
+        "the copy resolved on its own; only the original was answered",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::TENDRILS_OF_AGONY),
+        "and the Tendrils itself was countered into the graveyard",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        22,
+        "and the copy's two life was gained",
+    );
+}

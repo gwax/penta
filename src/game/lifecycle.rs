@@ -378,6 +378,17 @@ impl Game {
             .insert(object.id, RetiredObject::Stack(Box::new(object.clone())));
     }
 
+    /// The stack object itself, as it last existed, once it has left the
+    /// stack. A copy effect reads it there: the storm trigger copies the
+    /// spell that raised it whether or not that spell is still waiting
+    /// underneath (CR 707.10).
+    pub(super) fn retired_stack_object(&self, object: GameObjectId) -> Option<StackObject> {
+        match self.retired_objects.get(&object) {
+            Some(RetiredObject::Stack(stack)) => Some((**stack).clone()),
+            _ => None,
+        }
+    }
+
     /// The source recorded on a stack object that has already left the stack.
     /// A countered ability is retired with its source intact, which is how
     /// "destroy that permanent" finds the permanent afterwards.

@@ -40,6 +40,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Storm survives its own spell being countered, and counts only what came
+  before it.** Two faults on one trigger. A copy effect looked for the spell
+  it names on the stack and gave up when it had left, so countering a
+  Tendrils of Agony in response to its storm trigger took the copies down
+  with it; a spell that has left is now copied from its last known
+  information. And the copy count was the running total of spells cast this
+  turn less one, read as the trigger resolved, so the counterspell that
+  answered it added a copy of its own. The count is read off this turn's cast
+  order instead, which is what "each spell cast before it" means.
+
 - **A pile of free casts is cast in the order its caster chooses.** "You may
   cast any number of spells from among the cards exiled this way" leaves
   several offers standing at once, and its ruling is explicit that the

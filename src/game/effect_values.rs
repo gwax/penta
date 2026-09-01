@@ -469,13 +469,12 @@ impl Game {
                 .card_types_among_targets(&self.effect_objects(*objects, object, context, scoped)),
             // Everybody's spells, minus the one carrying the ability: it was
             // counted as it was cast, and storm copies what came before it.
-            ValueDef::SpellsCastBeforeThisTurn => i32::from(
-                self.spells_cast_this_turn
-                    .iter()
-                    .copied()
-                    .fold(0_u16, u16::saturating_add)
-                    .saturating_sub(1),
-            ),
+            // Read from this turn's cast order rather than from the running
+            // total: the number is about the spells cast before this one, and
+            // a spell cast in response to the trigger came after it.
+            ValueDef::SpellsCastBeforeThisTurn => {
+                i32::from(self.spells_cast_before(object.source.unwrap_or(object.id)))
+            }
             ValueDef::AdditionalCostPayments(cost) => {
                 let source = object.source.unwrap_or(object.id);
                 let paid = self.additional_cost_payment_count(source, cost);

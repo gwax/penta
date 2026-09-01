@@ -710,6 +710,11 @@ impl Game {
                         && let Some(stack_object) = (id == object.id)
                             .then(|| object.clone())
                             .or_else(|| self.stack.iter().find(|item| item.id == id).cloned())
+                            // A spell that has left the stack is copied from
+                            // its last known information: countering a storm
+                            // spell in response to its own trigger does not
+                            // take the copies with it.
+                            .or_else(|| self.retired_stack_object(id))
                         && copies > 0
                     {
                         self.queue_copy_decision_chain(
