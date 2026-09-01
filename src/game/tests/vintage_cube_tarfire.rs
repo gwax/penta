@@ -167,3 +167,52 @@ fn it_is_two_card_types_to_a_lhurgoyf() {
         "and a Kindred Instant is two, off the one card",
     );
 }
+
+/// "Any target" is the third one too: a planeswalker takes its two off the
+/// loyalty rather than the life total beside it.
+#[test]
+fn a_planeswalker_takes_the_two_as_loyalty() {
+    let (mut game, tarfire) = staged();
+    let jace = game
+        .put_onto_battlefield(PlayerId::Two, cards::JACE_THE_MIND_SCULPTOR)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    cast_at(&mut game, tarfire, Target::Permanent(jace));
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == jace)
+            .expect("he is still standing")
+            .counters(CounterKind::Loyalty),
+        1,
+        "two off his three",
+    );
+    assert_eq!(game.players[1].life, 20, "and none off them");
+}
+
+/// Kindred is a card type it carries alongside instant, not instead of it:
+/// it is still an instant, so it answers a creature in their end step.
+#[test]
+fn it_is_still_an_instant_on_their_turn() {
+    let (mut game, tarfire) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.active_player = PlayerId::Two;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    cast_at(&mut game, tarfire, Target::Permanent(bears));
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears),
+        "a Kindred Instant is an instant, whoever's turn it is",
+    );
+}
