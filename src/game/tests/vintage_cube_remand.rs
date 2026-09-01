@@ -322,3 +322,205 @@ fn a_fizzled_remand_draws_nothing() {
         "it was countered by the game rules on the way",
     );
 }
+
+/// "Target spell" names any spell, your own included: a Remand aimed at your
+/// own spell buys it back rather than losing it, which is what you do when
+/// the alternative is losing it to their answer.
+#[test]
+fn it_may_answer_your_own_spell() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(283_500, cards::MOUNTAIN, PlayerId::One));
+    let angel = game
+        .build_zone(PlayerId::One, &[cards::SERRA_ANGEL])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let angel_id = angel.id;
+    game.players[0].hand.push(angel);
+    let remand = game
+        .build_zone(PlayerId::One, &[cards::REMAND])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let remand_id = remand.id;
+    game.players[0].hand.push(remand);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == angel_id))
+        .expect("five mana casts the Angel");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    let on_stack = game.stack.last().expect("it is on the stack").id;
+
+    let answer = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == remand_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(on_stack))
+            }
+            _ => false,
+        })
+        .expect("your own spell is a legal target");
+    game.apply(PlayerId::One, answer).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the Angel came back to your hand",
+    );
+    assert!(game.battlefield.is_empty(), "rather than resolving");
+}
+
+/// Resolves the top of the stack until a copy is sitting on it, answering
+/// whatever is asked on the way, and hands priority to the other seat.
+fn resolve_into_a_copy(game: &mut Game) -> GameObjectId {
+    for _ in 0..12 {
+        if game.stack.iter().any(|object| object.is_copy) {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: vec![decision.options[0].id],
+                },
+            )
+            .expect("the offered answer is legal");
+            continue;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    let copy = game
+        .stack
+        .iter()
+        .find(|object| object.is_copy)
+        .expect("the Fork made a copy")
+        .id;
+    // The active player has priority after their own Fork resolves; the
+    // Remand is answered from the other seat.
+    for _ in 0..4 {
+        if game.priority == PlayerId::One {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    copy
+}
+
+/// A copy on the stack is not a card, so there is no owner's hand to put it
+/// into: countering it makes it cease to exist. The draw happens all the
+/// same.
+#[test]
+fn a_copy_it_counters_ceases_to_exist() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[1].hand.clear();
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(283_600, cards::MOUNTAIN, PlayerId::One));
+    let bolt = card(283_601, cards::LIGHTNING_BOLT, PlayerId::Two);
+    let bolt_id = bolt.id;
+    game.players[1].hand.push(bolt);
+    let fork = card(283_602, cards::FORK, PlayerId::Two);
+    let fork_id = fork.id;
+    game.players[1].hand.push(fork);
+    let remand = game
+        .build_zone(PlayerId::One, &[cards::REMAND])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let remand_id = remand.id;
+    game.players[0].hand.push(remand);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 4);
+
+    game.apply(
+        PlayerId::Two,
+        cast_action(bolt_id, vec![Target::Player(PlayerId::One)], Vec::new(), 0),
+    )
+    .expect("the Bolt is cast");
+    let original = game.stack.last().expect("it is on the stack").id;
+    game.apply(
+        PlayerId::Two,
+        cast_action(fork_id, vec![Target::Spell(original)], Vec::new(), 0),
+    )
+    .expect("the Fork is cast at it");
+    let copy = resolve_into_a_copy(&mut game);
+    let hand = game.players[0].hand.len();
+    let answer = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == remand_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(copy))
+            }
+            _ => false,
+        })
+        .expect("a copy on the stack is a spell it may name");
+    game.apply(PlayerId::One, answer).expect("it is cast");
+    for _ in 0..8 {
+        if !game.stack.iter().any(|object| object.id == copy) {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert!(
+        !game.stack.iter().any(|object| object.id == copy),
+        "the copy was countered",
+    );
+    assert!(
+        game.players[1].hand.is_empty(),
+        "and there was no card to put into anybody's hand",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand,
+        "the Remand left the hand and its draw replaced it",
+    );
+}
