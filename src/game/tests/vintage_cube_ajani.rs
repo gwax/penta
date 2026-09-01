@@ -442,3 +442,64 @@ fn the_ultimate_keeps_one_under_each_heading() {
         "the other two Bears went",
     );
 }
+
+/// Its ruling: "you can activate one of Ajani, Nacatl Avenger's loyalty
+/// abilities the turn he enters the battlefield. However, you may do so only
+/// during one of your main phases when the stack is empty. For example, if
+/// he enters during combat, there will be an opportunity for your opponent
+/// to remove him before you can activate one of his abilities."
+#[test]
+fn the_avenger_waits_for_a_main_phase_with_an_empty_stack() {
+    let (mut game, _ajani) = ajani_on_battlefield();
+    let avenger = avenger(&mut game);
+    let loyalty_abilities = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .filter(
+                |action| matches!(action, Action::ActivateAbility { source, .. } if *source == avenger),
+            )
+            .count()
+    };
+
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    assert!(
+        loyalty_abilities(&game) > 0,
+        "his own main phase is when they are offered, the turn he arrived or not",
+    );
+
+    game.step = Step::DeclareAttackers;
+    assert_eq!(
+        loyalty_abilities(&game),
+        0,
+        "and combat is no time for a loyalty ability",
+    );
+
+    game.step = Step::PrecombatMain;
+    game.active_player = PlayerId::Two;
+    assert_eq!(
+        loyalty_abilities(&game),
+        0,
+        "nor is their main phase, however empty the stack",
+    );
+
+    game.active_player = PlayerId::One;
+    game.players[0]
+        .hand
+        .push(card(112_900, cards::LIGHTNING_BOLT, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    let bolt = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(112_900))
+        })
+        .expect("one red casts it");
+    game.apply(PlayerId::One, bolt).expect("it is cast");
+    assert_eq!(
+        loyalty_abilities(&game),
+        0,
+        "and a spell on the stack closes the window too",
+    );
+}
