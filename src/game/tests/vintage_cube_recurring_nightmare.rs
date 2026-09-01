@@ -280,3 +280,91 @@ fn it_can_be_used_the_turn_it_is_cast() {
         "and the enchantment is back in hand before anybody could answer it",
     );
 }
+
+/// Both halves of the cost are paid as the ability is announced: the
+/// creature is sacrificed and the enchantment is in hand before anybody has
+/// priority, which is what makes the Nightmare so hard to answer.
+#[test]
+fn the_costs_are_paid_before_the_ability_resolves() {
+    let (mut game, nightmare) = staged(&[cards::GRIZZLY_BEARS], &[cards::SERRA_ANGEL]);
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("it is there")
+        .card
+        .id;
+    let angel = game.players[0].graveyard[0].id;
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source,
+                targets,
+                cost_objects,
+                ..
+            } => {
+                *source == nightmare
+                    && cost_objects.contains(&bears)
+                    && targets.iter().any(|selection| {
+                        selection
+                            .targets()
+                            .iter()
+                            .any(|target| matches!(target, Target::Card(id) if *id == angel))
+                    })
+            }
+            _ => false,
+        })
+        .expect("that pairing is offered");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    assert_eq!(game.stack.len(), 1, "the ability is still on the stack");
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::RECURRING_NIGHTMARE),
+        "the enchantment is already in hand, out of reach of an answer",
+    );
+    assert!(
+        game.battlefield.is_empty(),
+        "and the creature it ate is already gone",
+    );
+    assert_eq!(
+        on_battlefield(&game, cards::SERRA_ANGEL),
+        0,
+        "while nothing has come back yet",
+    );
+
+    drain_pending(&mut game);
+    assert_eq!(
+        on_battlefield(&game, cards::SERRA_ANGEL),
+        1,
+        "the Angel arrives when the ability resolves",
+    );
+}
+
+/// "Target creature card from your graveyard": theirs is no part of it,
+/// however good what they have buried is.
+#[test]
+fn it_cannot_reach_into_their_graveyard() {
+    let (mut game, nightmare) = staged(&[cards::GRIZZLY_BEARS], &[]);
+    game.players[1].graveyard.clear();
+    game.players[1]
+        .graveyard
+        .push(card(99_500, cards::SERRA_ANGEL, PlayerId::Two));
+
+    assert!(
+        offers(&game, nightmare).is_empty(),
+        "an Angel across the table is no target at all",
+    );
+
+    // The same card in your own graveyard, to show the rest of the cost was
+    // payable all along.
+    game.players[0]
+        .graveyard
+        .push(card(99_501, cards::SERRA_ANGEL, PlayerId::One));
+    assert_eq!(offers(&game, nightmare).len(), 1, "yours is what it reads");
+}
