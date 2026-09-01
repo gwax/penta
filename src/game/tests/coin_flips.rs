@@ -359,3 +359,70 @@ fn the_crypts_flip_and_its_damage_are_one_resolution() {
     }
     assert!(checked, "some seed loses the flip");
 }
+
+/// "At the beginning of *your* upkeep": the other player's upkeep is not
+/// yours, so no coin is flipped and nobody pays for it.
+#[test]
+fn the_crypt_is_quiet_on_their_upkeep() {
+    for seed in 0..8 {
+        let mut game = ready_game_with_seed(seed);
+        game.battlefield.clear();
+        game.battlefield
+            .push(creature(10_400, cards::MANA_CRYPT, PlayerId::One));
+        game.players[PlayerId::One.index()].life = 20;
+        game.players[PlayerId::Two.index()].life = 20;
+        game.active_player = PlayerId::Two;
+        game.priority = PlayerId::Two;
+        game.step = Step::Upkeep;
+
+        game.handle_upkeep_triggers();
+        assert!(
+            game.pending_triggers.is_empty(),
+            "nothing triggered on their upkeep, seed {seed}",
+        );
+        drain_pending(&mut game);
+
+        assert_eq!(
+            game.players[PlayerId::One.index()].life,
+            20,
+            "and its controller paid nothing, seed {seed}",
+        );
+        assert_eq!(
+            game.players[PlayerId::Two.index()].life,
+            20,
+            "nor did they, seed {seed}",
+        );
+    }
+}
+
+/// It costs nothing at all: a Crypt is castable out of an empty pool, which
+/// is what makes the upkeep flip a price worth paying.
+#[test]
+fn the_crypt_costs_nothing_to_cast() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::One.index()].mana_pool = ManaPool::default();
+    let crypt = card(10_410, cards::MANA_CRYPT, PlayerId::One);
+    let crypt_id = crypt.id;
+    game.players[PlayerId::One.index()].hand.push(crypt);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == crypt_id))
+        .expect("a nought-cost artifact needs no mana");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::MANA_CRYPT),
+        "and it arrived for nothing",
+    );
+}
