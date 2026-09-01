@@ -682,6 +682,7 @@ mod vintage_cube_springheart_nantuko;
 mod vintage_cube_staff_of_the_storyteller;
 mod vintage_cube_starting_town;
 mod vintage_cube_static_prison;
+mod vintage_cube_stern_scolding;
 mod vintage_cube_stock_up;
 mod vintage_cube_stoneforge;
 mod vintage_cube_stormchasers_talent;
