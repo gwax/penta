@@ -370,3 +370,83 @@ fn attacking_goblins_other_than(game: &Game, rabblemaster: GameObjectId) -> Vec<
         .map(|permanent| permanent.card.id)
         .collect()
 }
+
+/// "At the beginning of combat on your turn": their combat is not yours,
+/// and no Goblin comes of it.
+#[test]
+fn their_combat_makes_no_goblin() {
+    let (mut game, _rabblemaster, _friends) = staged(&[], 0);
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+
+    for _ in 0..8 {
+        if game.step == Step::DeclareAttackers {
+            break;
+        }
+        settle(&mut game);
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    settle(&mut game);
+
+    assert_eq!(
+        game.step,
+        Step::DeclareAttackers,
+        "their combat came and went",
+    );
+    assert_eq!(goblin_tokens(&game), 0, "and made nothing");
+}
+
+/// "If, during your declare attackers step, a creature that must attack if
+/// able is tapped ... then it doesn't attack." The requirement stays on it;
+/// being tapped is what excuses it.
+#[test]
+fn a_tapped_goblin_stays_home() {
+    let (mut game, _rabblemaster, friends) = staged(&[], 1);
+    let goblin = friends[0];
+    reach_declare_attackers(&mut game);
+
+    // The token made at the beginning of combat is hasty and owes the
+    // attack too, so send it in and leave only the friend outstanding.
+    let token = game
+        .battlefield
+        .iter()
+        .find(|permanent| {
+            is_token_with(
+                permanent,
+                token_with_haste(tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1)),
+            )
+        })
+        .expect("a token was made")
+        .card
+        .id;
+    game.declare_attacker(token, AttackDefender::Player(PlayerId::Two));
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .contains(&Action::FinishDeclaringAttackers),
+        "an untapped Goblin at home still owes the attack",
+    );
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == goblin)
+        .expect("it is there")
+        .tapped = true;
+
+    assert!(
+        game.permanent_has_executable_keyword(
+            permanent(&game, goblin),
+            KeywordAbility::AttacksEachCombatIfAble
+        ),
+        "the requirement is still on it",
+    );
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .contains(&Action::FinishDeclaringAttackers),
+        "and a tapped Goblin cannot attack, so nothing is left owing",
+    );
+}
