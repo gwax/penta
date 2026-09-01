@@ -661,3 +661,148 @@ fn cursed_scroll_misses_when_the_named_card_is_not_the_revealed_one() {
         "and the other names a card that was not revealed, so it deals nothing",
     );
 }
+
+/// Nothing in the alternative cost asks the Mountains to be untapped, which
+/// is the line the deck actually plays: tap them both for mana, spend that
+/// mana, then sacrifice the same two lands for the last four.
+#[test]
+fn tapped_mountains_still_pay_for_fireblast() {
+    let (mut game, _casts) = fireblast_casts(2, false);
+    for permanent in &mut game.battlefield {
+        permanent.tapped = true;
+    }
+
+    let fireblast = game.players[PlayerId::One.index()]
+        .hand
+        .first()
+        .expect("it is in hand")
+        .id;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == fireblast
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::Two))
+            }
+            _ => false,
+        })
+        .expect("two tapped Mountains are still two Mountains");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        16,
+        "and the four arrived",
+    );
+}
+
+/// "Four damage to any target": the tests above always name the player, and
+/// a creature and a planeswalker are the other two. Four is enough for a
+/// Serra Angel's toughness and for the whole of Jace's loyalty.
+#[test]
+fn fireblast_may_be_pointed_at_a_creature_or_a_planeswalker() {
+    for definition in [cards::SERRA_ANGEL, cards::JACE_THE_MIND_SCULPTOR] {
+        let (mut game, _casts) = fireblast_casts(2, false);
+        let victim = game
+            .put_onto_battlefield(PlayerId::Two, definition)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        game.priority = PlayerId::One;
+        let fireblast = game.players[PlayerId::One.index()]
+            .hand
+            .first()
+            .expect("it is in hand")
+            .id;
+
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == fireblast
+                        && choices
+                            .iter_targets()
+                            .any(|target| *target == Target::Permanent(victim))
+                }
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("{definition:?} is a legal target"));
+        game.apply(PlayerId::One, cast).expect("it is cast");
+        settle(&mut game);
+        game.check_state_based_actions();
+
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == victim),
+            "four damage was enough for {definition:?}",
+        );
+        assert_eq!(
+            game.players[PlayerId::Two.index()].life,
+            20,
+            "and the player took none of it",
+        );
+    }
+}
+
+/// The sacrifice is a cost, paid on announcement. Answering the Fireblast by
+/// removing what it named costs you the spell and costs them nothing -- and
+/// the two Mountains are gone either way.
+#[test]
+fn the_mountains_are_spent_even_when_the_spell_fizzles() {
+    let (mut game, _casts) = fireblast_casts(2, false);
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let fireblast = game.players[PlayerId::One.index()]
+        .hand
+        .first()
+        .expect("it is in hand")
+        .id;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == fireblast
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(bears))
+            }
+            _ => false,
+        })
+        .expect("the Bears is a legal target");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::MOUNTAIN),
+        "both Mountains went on announcement",
+    );
+
+    game.move_permanents_to_graveyard(&[bears]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        20,
+        "the spell had nothing left to resolve against",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::FIREBLAST),
+        "and it went to the graveyard having cost two lands",
+    );
+}
