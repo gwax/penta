@@ -390,3 +390,61 @@ fn cashing_it_in_answers_a_strip_mine() {
         "the Strip Mine paid for itself either way",
     );
 }
+
+/// The two abilities differ in more than their cost: the mana ability is a
+/// mana ability, so it resolves where it stands and nobody may answer it,
+/// while the draw is an ordinary activated ability that waits on the stack.
+#[test]
+fn the_mana_resolves_at_once_and_the_draw_waits_on_the_stack() {
+    let (mut game, canopy) = staged_land(cards::HORIZON_CANOPY);
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: canopy,
+            ability: mana_ability_for(&game, canopy, ManaColor::Green),
+            color: ManaColor::Green,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("a land with a life to spare taps for green");
+
+    assert!(
+        game.stack.is_empty(),
+        "a mana ability uses no stack, so there was never a window",
+    );
+    assert_eq!(game.players[0].mana_pool.green, 1, "the mana is already up");
+
+    // The same land, cashed in: this one is announced and then waits.
+    let (mut game, canopy) = staged_land(cards::HORIZON_CANOPY);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    let hand = game.players[0].hand.len();
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == canopy),
+        )
+        .expect("one mana and a tap buys a card");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    assert_eq!(game.stack.len(), 1, "the draw is on the stack");
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand,
+        "and nothing has been drawn yet",
+    );
+    assert!(
+        game.battlefield.is_empty(),
+        "though the land it cost is already gone",
+    );
+
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand + 1,
+        "the card arrives when the ability resolves",
+    );
+}
