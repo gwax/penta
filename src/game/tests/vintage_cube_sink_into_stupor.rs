@@ -299,3 +299,81 @@ fn the_springs_tap_for_blue() {
 
     assert_eq!(game.players[0].mana_pool.blue, 1);
 }
+
+/// "The spell isn't countered; it just no longer exists. This works even
+/// against a spell that can't be countered." Tifa cast off a Delighted
+/// Halfling's mana walks past a Counterspell, and the front face sends her
+/// home regardless -- and to their hand, because returning is not
+/// countering and the card is still theirs.
+#[test]
+fn the_front_answers_a_spell_that_cannot_be_countered() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[1].hand.clear();
+    let sink = card(96_400, cards::SINK_INTO_STUPOR, PlayerId::One);
+    let sink_id = sink.id;
+    game.players[0].hand.push(sink);
+    let tifa = card(96_401, cards::TIFA_LOCKHART, PlayerId::Two);
+    let tifa_id = tifa.id;
+    game.players[1].hand.push(tifa);
+    let halfling = creature(96_402, cards::DELIGHTED_HALFLING, PlayerId::Two);
+    let halfling_id = halfling.card.id;
+    game.battlefield.push(halfling);
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::Two;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 1);
+    game.apply(
+        PlayerId::Two,
+        Action::ActivateManaAbility {
+            source: halfling_id,
+            ability: mana_ability_for(&game, halfling_id, ManaColor::Green),
+            color: ManaColor::Green,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("the Halfling taps for a colour");
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == tifa_id))
+        .expect("the Halfling's mana casts her");
+    game.apply(PlayerId::Two, cast).expect("she is cast");
+    let on_stack = game.stack.last().expect("she is waiting there").id;
+    game.priority = PlayerId::One;
+
+    let answer = answers(&game, sink_id, Target::Spell(on_stack))
+        .into_iter()
+        .next()
+        .expect("uncounterable is no bar to being returned");
+    game.apply(PlayerId::One, answer).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::TIFA_LOCKHART),
+        "she never arrived",
+    );
+    assert!(
+        game.players[1]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::TIFA_LOCKHART),
+        "and she is back in their hand rather than their graveyard",
+    );
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "nothing was countered here",
+    );
+}
