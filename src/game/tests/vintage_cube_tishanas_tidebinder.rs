@@ -703,3 +703,51 @@ fn a_spell_on_the_stack_is_not_something_it_may_counter() {
         "and the Bolt it could not touch resolved",
     );
 }
+
+/// "The triggered ability checks to see if the source of the ability is an
+/// artifact, creature, or planeswalker as it resolves. If it isn't, it won't
+/// lose all abilities." A Colonnade answered on the way up is a land when
+/// the question is asked -- the animation it was paying for is what got
+/// countered -- so it keeps everything and may try again.
+#[test]
+fn a_land_that_never_finished_standing_up_keeps_its_abilities() {
+    let (mut game, tidebinder, ids) = staged(&[cards::CELESTIAL_COLONNADE]);
+    let colonnade = ids[0];
+    for permanent in &mut game.battlefield {
+        permanent.tapped = false;
+    }
+    for color in ManaColor::COLORS {
+        game.add_unrestricted_mana(PlayerId::Two, color, 5);
+    }
+
+    let animate = activations(&game, PlayerId::Two, colonnade)
+        .into_iter()
+        .next()
+        .expect("the Colonnade may stand up");
+    game.apply(PlayerId::Two, animate).expect("it activates");
+    game.priority = PlayerId::One;
+
+    flash_it_in(&mut game, tidebinder);
+
+    let land = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == colonnade)
+        .expect("it is still there");
+    assert_eq!(
+        (game.power(land), game.toughness(land)),
+        (None, None),
+        "the animation was countered, so nothing stood up",
+    );
+    assert!(
+        !activations(&game, PlayerId::Two, colonnade).is_empty(),
+        "and a land is none of the three types the rider names, so it kept \
+         what it had",
+    );
+    assert!(
+        game.legal_actions(PlayerId::Two).into_iter().any(|action| {
+            matches!(action, Action::ActivateManaAbility { source, .. } if source == colonnade)
+        }),
+        "its mana ability among them",
+    );
+}
