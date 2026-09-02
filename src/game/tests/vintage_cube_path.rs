@@ -386,3 +386,68 @@ fn exile_answers_what_destruction_cannot() {
         "and it is in exile rather than the graveyard",
     );
 }
+
+/// The land is *put onto* the battlefield rather than played, so it costs
+/// them nothing but the shuffle: their land drop is untouched and the Island
+/// in their hand still goes down that turn. It is the half of the drawback
+/// that makes Path a real cost rather than pure profit.
+#[test]
+fn the_land_it_pays_them_does_not_use_their_land_drop() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    game.players[PlayerId::Two.index()].library.clear();
+    let bears = creature(96_400, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    game.players[PlayerId::Two.index()]
+        .library
+        .push(card(96_401, cards::FOREST, PlayerId::Two));
+    let island = card(96_402, cards::ISLAND, PlayerId::Two);
+    let island_id = island.id;
+    game.players[PlayerId::Two.index()].hand.push(island);
+    let path = card(96_403, cards::PATH_TO_EXILE, PlayerId::One);
+    let path_id = path.id;
+    game.players[PlayerId::One.index()].hand.push(path);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.players[PlayerId::Two.index()].lands_played_this_turn = 0;
+
+    cast_path(&mut game, path_id, bears_id);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::FOREST),
+        "the Forest arrived for them",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].lands_played_this_turn,
+        0,
+        "put onto the battlefield is not played, so the drop is unspent",
+    );
+
+    // Their turn, and the Island still goes down on top of the Forest.
+    game.turn += 1;
+    game.active_player = PlayerId::Two;
+    game.turns_started[PlayerId::Two.index()] += 1;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+
+    let play = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == island_id))
+        .expect("their land drop was never spent");
+    game.apply(PlayerId::Two, play)
+        .expect("the Island is played");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == PlayerId::Two)
+            .count(),
+        2,
+        "the Forest they were paid and the Island they played",
+    );
+}
