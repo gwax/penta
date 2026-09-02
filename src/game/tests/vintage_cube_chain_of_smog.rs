@@ -222,3 +222,56 @@ fn a_player_holding_one_card_loses_it_and_is_still_offered_the_chain() {
         "the one card it could take",
     );
 }
+
+/// The state the card is played for: an empty hand discards nothing and is
+/// offered the copy all the same, and the copy offers another. Pointed at
+/// yourself with nothing to lose, the chain runs as long as you keep saying
+/// yes -- which is what turns it into a combo piece rather than a discard
+/// spell.
+#[test]
+fn an_empty_hand_keeps_the_chain_going_for_nothing() {
+    let (mut game, chain) = staged(0);
+    cast_at(&mut game, chain, PlayerId::One);
+
+    // Three links, each taken rather than declined.
+    for link in 1..=3 {
+        let offer = next_decision(&mut game)
+            .unwrap_or_else(|| panic!("link {link} is offered even with nothing to discard"));
+        assert_eq!(
+            offer.player,
+            PlayerId::One,
+            "the chain stays with the player it was pointed at",
+        );
+        answer(&mut game, &offer, Some("Do it"));
+
+        let retarget = next_decision(&mut game)
+            .unwrap_or_else(|| panic!("link {link} asks where the copy points"));
+        answer(&mut game, &retarget, Some("Keep original targets"));
+        assert!(
+            game.players[PlayerId::One.index()].hand.is_empty(),
+            "nothing was lost on link {link}: there was nothing to lose",
+        );
+    }
+
+    // It is still going; declining is the only thing that stops it.
+    let offer = next_decision(&mut game).expect("and it is still offering");
+    answer(&mut game, &offer, Some("Decline"));
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[PlayerId::One.index()].hand.is_empty(),
+        "four resolutions and not a card lost",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::CHAIN_OF_SMOG),
+        "the one real Chain is in the graveyard; the copies were never cards",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].graveyard.len(),
+        1,
+        "and only the one: three copies ceased to exist rather than piling up",
+    );
+}
