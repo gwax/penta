@@ -496,6 +496,7 @@ mod vintage_cube_gitaxian_probe;
 mod vintage_cube_giver_of_runes;
 mod vintage_cube_glimmer_lens;
 mod vintage_cube_glorybringer;
+mod vintage_cube_goblin_bombardment;
 mod vintage_cube_goblin_rabblemaster;
 mod vintage_cube_goldspan_dragon;
 mod vintage_cube_grave_titan;
