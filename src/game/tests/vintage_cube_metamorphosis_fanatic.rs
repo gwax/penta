@@ -310,3 +310,101 @@ fn a_miracle_creature_arrives_on_their_turn() {
     );
     assert_eq!(game.active_player, PlayerId::Two, "which is still theirs");
 }
+
+/// "Multiple card draws are always treated as a sequence of individual card
+/// draws ... Only the first card drawn this way may be revealed and cast
+/// using its miracle ability." A Fanatic that comes off the top second is
+/// just a six-drop in your hand.
+#[test]
+fn only_the_first_draw_of_the_turn_is_a_miracle() {
+    let mut game = staged();
+    game.players[0].library = vec![
+        card(89_050, cards::METAMORPHOSIS_FANATIC, PlayerId::One),
+        card(89_051, cards::ISLAND, PlayerId::One),
+    ];
+    game.turn = 2;
+    game.step = Step::Draw;
+    game.priority = PlayerId::One;
+    game.cards_drawn_this_turn = [0; 2];
+    game.drawn_this_turn = [Vec::new(), Vec::new()];
+
+    // The library reads from the back, so the Island comes first and spends
+    // the turn's one miracle window on itself.
+    let island = game.draw_card(PlayerId::One).expect("the Island is drawn");
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "an Island has no miracle to offer: {island:?}",
+    );
+
+    let fanatic = game.draw_card(PlayerId::One).expect("the Fanatic is drawn");
+
+    assert!(
+        game.observe(PlayerId::One).decision.is_none(),
+        "and the Fanatic was not the first card drawn this turn",
+    );
+    assert!(
+        game.players[0].hand.iter().any(|card| card.id == fanatic),
+        "it is simply in hand",
+    );
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == fanatic)),
+        "and a draw step is no time to cast a six-mana creature",
+    );
+}
+
+/// "You don't have to reveal a drawn card with miracle if you don't wish to
+/// cast it at that time ... it will remain in your hand." Declining costs
+/// nothing and keeps the card, but the window does not come back.
+#[test]
+fn declining_the_miracle_keeps_the_card_in_hand() {
+    let mut game = staged();
+    game.players[0].library = vec![card(89_060, cards::METAMORPHOSIS_FANATIC, PlayerId::One)];
+    game.turn = 2;
+    game.step = Step::Draw;
+    game.priority = PlayerId::One;
+    game.cards_drawn_this_turn = [0; 2];
+    game.drawn_this_turn = [Vec::new(), Vec::new()];
+    let drawn = game.draw_card(PlayerId::One).expect("the Fanatic is drawn");
+    let mana = game.players[0].mana_pool.total();
+
+    let reveal = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("the reveal is offered");
+    // The reveal is the only option and the decision's minimum is zero, so
+    // declining is choosing nothing at all rather than a "no" option.
+    assert_eq!(reveal.minimum, 0, "revealing is optional");
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: reveal.id,
+            options: Vec::new(),
+        },
+    )
+    .expect("declining is legal");
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0].hand.iter().any(|card| card.id == drawn),
+        "the card was drawn either way and stays in hand",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        mana,
+        "and nothing was paid",
+    );
+    assert!(
+        permanent(&game, cards::METAMORPHOSIS_FANATIC).is_none(),
+        "nothing came down",
+    );
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == drawn)),
+        "and the window does not reopen later",
+    );
+}
