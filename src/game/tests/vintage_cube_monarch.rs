@@ -229,13 +229,13 @@ fn a_dead_jailer_neither_frees_the_creature_nor_stops_the_release() {
     game.apply(PlayerId::One, cast).expect("it is cast");
     resolve(&mut game);
     drain_pending(&mut game);
-    let jailed = |game: &Game| {
+    let locked_up = |game: &Game| {
         !game
             .battlefield
             .iter()
             .any(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
     };
-    assert!(jailed(&game), "jailed to begin with");
+    assert!(locked_up(&game), "jailed to begin with");
 
     // They answer the Jailer. The crown stays where it is, and so does the
     // bear.
@@ -255,7 +255,7 @@ fn a_dead_jailer_neither_frees_the_creature_nor_stops_the_release() {
         "killing him takes no crown back",
     );
     assert!(
-        jailed(&game),
+        locked_up(&game),
         "and it takes no creature back either: he was never the lock",
     );
 
@@ -266,7 +266,7 @@ fn a_dead_jailer_neither_frees_the_creature_nor_stops_the_release() {
     drain_pending(&mut game);
 
     assert!(
-        !jailed(&game),
+        !locked_up(&game),
         "the release was still watching, from a graveyard",
     );
 }

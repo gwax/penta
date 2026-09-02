@@ -386,5 +386,5 @@ fn their_graveyard_does_not_pay_for_the_wings() {
         game.players[0].graveyard.is_empty(),
         "on three cards out of your own graveyard",
     );
-    assert_eq!(game.players[1].graveyard.len(), 5, "with theirs untouched",);
+    assert_eq!(game.players[1].graveyard.len(), 5, "with theirs untouched");
 }
