@@ -145,3 +145,41 @@ fn the_adventure_needs_an_artifact_to_point_at() {
         "but the body is always castable",
     );
 }
+
+/// "If an Adventure spell leaves the stack in any way other than resolving
+/// -- most likely by being countered or by failing to resolve because its
+/// targets have all become illegal -- that card won't be exiled and the
+/// spell's controller won't be able to cast it as a permanent later." The
+/// Lotus cracked in response takes the Knight with it: the card goes to the
+/// graveyard, and there is no Knight to cast out of exile.
+#[test]
+fn an_adventure_that_never_resolves_is_not_exiled() {
+    let (mut game, knight, lotus) = staged();
+    let cast = cast_with(&game, knight, PlayOptionId(1)).expect("one red casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    // They sacrifice the artifact it named rather than let it be destroyed.
+    game.move_permanents_to_graveyard(&[lotus]);
+    game.check_state_based_actions();
+    resolve(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0].exile.is_empty(),
+        "nothing was exiled: the Adventure never finished resolving",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::EMBERETH_SHIELDBREAKER),
+        "the card went to the graveyard like any other spell that fizzled",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::EMBERETH_SHIELDBREAKER),
+        "and there is no Knight to be had from it",
+    );
+}
