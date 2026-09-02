@@ -215,3 +215,46 @@ fn dashing_it_still_backs_something_up() {
         "and it went home at the end step",
     );
 }
+
+/// Backup says "target creature" and stops there: no controller is named, so
+/// their creature is as legal a subject as yours. Doing it hands them the
+/// counter and the double strike, which is why the choice is worth having
+/// tested rather than assumed away.
+#[test]
+fn backup_may_be_pointed_at_a_creature_they_control() {
+    let (mut game, champion, _mine) = staged(&[]);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    assert!(
+        !has_double_strike(&game, permanent(&game, theirs)),
+        "a bear does not strike twice on its own",
+    );
+
+    cast_and_back_up(&mut game, champion, Some(theirs));
+
+    let bear = permanent(&game, theirs);
+    assert_eq!(bear.controller, PlayerId::Two, "it is still theirs");
+    assert_eq!(
+        bear.counters(CounterKind::PlusOnePlusOne),
+        1,
+        "and the counter went to them",
+    );
+    assert!(
+        has_double_strike(&game, bear),
+        "along with the loan: backup lends to whoever it named",
+    );
+    assert_eq!(
+        (game.power(bear), game.toughness(bear)),
+        (Some(3), Some(3)),
+        "a 2/2 wearing a counter",
+    );
+    assert!(
+        has_double_strike(&game, champion_on_battlefield(&game)),
+        "and the Champion keeps its own regardless",
+    );
+}
