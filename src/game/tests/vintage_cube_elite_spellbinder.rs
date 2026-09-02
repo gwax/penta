@@ -378,3 +378,42 @@ fn killing_it_in_response_does_not_save_the_card() {
         "and the tax outlived the body that levied it",
     );
 }
+
+/// "If the exiled card is a modal double-faced card and its back face is a
+/// land, its owner may play it as a land." Sink into Stupor is exactly that
+/// card: taking it leaves them a land drop they can still take, because the
+/// permission is to *play* the card and one of its faces is a land. The
+/// front face is still a spell, and still taxed.
+#[test]
+fn a_double_faced_card_taken_this_way_may_still_be_played_as_a_land() {
+    let (mut game, spellbinder) = staged(&[cards::SINK_INTO_STUPOR]);
+    cast(&mut game, spellbinder);
+    take(&mut game, Some(cards::SINK_INTO_STUPOR));
+    let sink = in_their_exile(&game, cards::SINK_INTO_STUPOR).expect("it is exiled");
+
+    // Their own turn, with the land drop still to take.
+    game.active_player = PlayerId::Two;
+    game.turns_started = [1, 2];
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    game.players[1].lands_played_this_turn = 0;
+
+    assert!(
+        game.legal_actions(PlayerId::Two)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == sink)),
+        "the land face is a play, and playing is what the permission grants",
+    );
+
+    // And the spell face is a spell like any other taken this way: three
+    // mana rather than the two it prints.
+    assert!(
+        !they_can_cast(&mut game, sink, 2),
+        "two mana is one short of the front face plus the surcharge",
+    );
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+    assert!(
+        they_can_cast(&mut game, sink, 3),
+        "and five buys the front face at its taxed price",
+    );
+}
