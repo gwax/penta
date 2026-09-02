@@ -345,3 +345,57 @@ fn it_may_be_aimed_at_your_own_creature() {
         "five damage kills your own bear too",
     );
 }
+
+/// "Sacrifice a Mountain" is one you control: theirs is no part of what you
+/// may give up, so a board where the only Mountain is across the table
+/// leaves the Collapse wanting its four mana.
+#[test]
+fn their_mountain_does_not_pay_for_it() {
+    let (mut game, collapse, angel) = staged(&[]);
+    game.put_onto_battlefield(PlayerId::Two, cards::MOUNTAIN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert!(
+        casts(&game, collapse, angel).is_empty(),
+        "a Mountain of theirs pays nothing of yours",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::MOUNTAIN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    assert_eq!(
+        casts(&game, collapse, angel).len(),
+        1,
+        "and one of your own is what the clause was asking for",
+    );
+}
+
+/// Five and no more: a six-toughness blocker takes the whole of it and is
+/// standing afterwards, with the damage marked on it.
+#[test]
+fn six_toughness_survives_the_five() {
+    let (mut game, collapse, _angel) = staged(&[cards::MOUNTAIN]);
+    let titan = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRAVE_TITAN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let action = casts(&game, collapse, titan)
+        .into_iter()
+        .next()
+        .expect("the Titan is a legal target");
+    game.apply(PlayerId::One, action).expect("it casts");
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == titan)
+        .expect("six toughness outlasts five damage");
+    assert_eq!(survivor.damage, 5, "with all five marked on it");
+}
