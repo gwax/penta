@@ -91,3 +91,100 @@ fn pyrokinesis_deals_its_four_damage() {
         "all four went to the lone target, which kills a 4/4",
     );
 }
+
+/// "You may exile a red card from your hand rather than pay this spell's
+/// mana cost." The reason the card sees play at all, and neither test above
+/// touches it: with a red card beside it and no mana anywhere, it is still
+/// castable, and the red card leaves the hand for exile.
+#[test]
+fn a_red_card_out_of_hand_casts_it_for_nothing() {
+    let mut game = ready();
+    game.battlefield
+        .push(creature(10_000, cards::SERRA_ANGEL, PlayerId::Two));
+    let pyro = card(20_000, cards::PYROKINESIS, PlayerId::One);
+    let pyro_id = pyro.id;
+    game.players[PlayerId::One.index()].hand.push(pyro);
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == pyro_id)),
+        "no mana and nothing red to pitch buys nothing",
+    );
+
+    game.players[PlayerId::One.index()].hand.push(card(
+        20_001,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == pyro_id))
+        .expect("a red card in hand is the whole cost");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.total(),
+        0,
+        "and it cost no mana, because there was none to cost",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "the Bolt was exiled rather than discarded",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == CardInstanceId(10_000)),
+        "and the Angel took all four",
+    );
+}
+
+/// "If another effect causes Pyrokinesis to cost more, you must pay that
+/// additional cost even if you pay its alternative cost." A Thalia taxes
+/// noncreature spells, and free is not exempt: the pitch still happens and
+/// one mana has to come from somewhere on top of it.
+#[test]
+fn a_tax_is_paid_on_top_of_the_free_cast() {
+    let mut game = ready();
+    game.battlefield
+        .push(creature(10_000, cards::SERRA_ANGEL, PlayerId::Two));
+    game.battlefield.push(creature(
+        10_001,
+        cards::THALIA_GUARDIAN_OF_THRABEN,
+        PlayerId::Two,
+    ));
+    let pyro = card(20_000, cards::PYROKINESIS, PlayerId::One);
+    let pyro_id = pyro.id;
+    game.players[PlayerId::One.index()].hand.push(pyro);
+    game.players[PlayerId::One.index()].hand.push(card(
+        20_001,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+
+    let castable = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == pyro_id))
+    };
+    assert!(
+        !castable(&game),
+        "a red card alone no longer covers it while she is out",
+    );
+
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+
+    assert!(
+        castable(&game),
+        "the pitch plus her one mana is what it costs now",
+    );
+}
