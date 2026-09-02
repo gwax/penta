@@ -298,3 +298,68 @@ fn an_untapped_staff_with_no_counter_draws_nothing() {
         "and the Staff is buying cards again",
     );
 }
+
+/// Two Staffs both watch the same table, so one Lingering Souls feeds them
+/// both: the trigger belongs to each Staff rather than to the token, and
+/// neither of them takes the other's counter.
+#[test]
+fn a_second_staff_counts_the_same_tokens() {
+    let (mut game, first) = staged();
+    let second = game
+        .put_onto_battlefield(PlayerId::One, cards::STAFF_OF_THE_STORYTELLER)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    // The second Staff's own Spirit is a creature token the first one sees,
+    // so the two are not level before anything else happens.
+    assert_eq!(
+        (story(&game, first), story(&game, second)),
+        (2, 1),
+        "the newcomer's Spirit counted for the Staff already standing",
+    );
+
+    let souls = card(96_700, cards::LINGERING_SOULS, PlayerId::One);
+    let souls_id = souls.id;
+    game.players[0].hand.push(souls);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == souls_id))
+        .expect("three mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        (story(&game, first), story(&game, second)),
+        (3, 2),
+        "one instruction, one counter each, and neither took the other's",
+    );
+
+    // Each Staff still has its own tap and its own counters to spend.
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    let library = game.players[0].library.len();
+    for staff in [first, second] {
+        let draw = draws(&game, staff)
+            .into_iter()
+            .next()
+            .unwrap_or_else(|| panic!("{staff:?} has a counter and a tap to spend"));
+        game.apply(PlayerId::One, draw).expect("it activates");
+        drain_pending(&mut game);
+    }
+
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 2,
+        "two Staffs, two cards",
+    );
+    assert_eq!(
+        (story(&game, first), story(&game, second)),
+        (2, 1),
+        "and each spent one of its own",
+    );
+}
