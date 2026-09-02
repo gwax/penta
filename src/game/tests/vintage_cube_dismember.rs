@@ -246,3 +246,48 @@ fn it_may_name_your_own_creature() {
         "a 4/4 does not survive -5/-5, whoever controls it",
     );
 }
+
+/// The other side of that boundary. CR 118.4 lets you pay life you have,
+/// down to and including your last point: at four life both pips may still
+/// be bought. Life is paid as the spell is cast, though, so the state-based
+/// actions that follow the announcement end the game while the Dismember is
+/// still on the stack -- their Angel outlives the spell that named it.
+#[test]
+fn four_life_pays_for_both_pips_and_ends_the_game() {
+    let (mut game, dismember, victim) = staged(cards::SERRA_ANGEL);
+    game.players[PlayerId::One.index()].life = 4;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 1;
+
+    assert_eq!(
+        casts(&game, dismember, victim).len(),
+        1,
+        "one mana and four life, and no other mixture in reach",
+    );
+
+    cast_it(&mut game, dismember, victim);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        0,
+        "the last four points went on it",
+    );
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::Two,
+            reason: WinReason::OpponentLostAllLife,
+        }),
+        "which was the last of them",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == victim),
+        "and the Angel is standing: the spell never got to resolve",
+    );
+    assert_eq!(
+        size(&game, victim),
+        Some((Some(4), Some(4))),
+        "untouched, at the four toughness it was printed with",
+    );
+}
