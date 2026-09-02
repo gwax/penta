@@ -204,3 +204,42 @@ fn three_squads_leave_four_counters_on_each_token() {
         "the counters go on the tokens, not on what made them",
     );
 }
+
+/// "The tokens created by the squad ability aren't 'cast', so any abilities
+/// that trigger when a spell is cast won't trigger for the copies." A
+/// Forensic Gadgeteer watching artifact spells pays one Clue for the
+/// Squadron itself and nothing at all for the two artifact creatures that
+/// arrive behind it.
+#[test]
+fn the_squad_copies_are_not_cast_and_pay_no_cast_trigger() {
+    let (mut game, card) = staged(7);
+    game.put_onto_battlefield(PlayerId::One, cards::FORENSIC_GADGETEER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+    game.priority = PlayerId::One;
+
+    let squadded = casts(&game, card)
+        .into_iter()
+        .max_by_key(|action| match action {
+            Action::CastSpell { choices, .. } => choices.costs().additional().len(),
+            _ => 0,
+        })
+        .expect("eight mana pays for two squads");
+    game.apply(PlayerId::One, squadded).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        squadrons(&game).len(),
+        3,
+        "the Squadron and the two copies arrived",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| is_token_with(permanent, tokens::clue()))
+            .count(),
+        1,
+        "one Clue for the one artifact spell that was cast",
+    );
+}
