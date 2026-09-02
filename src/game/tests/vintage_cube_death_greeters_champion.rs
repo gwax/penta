@@ -258,3 +258,58 @@ fn backup_may_be_pointed_at_a_creature_they_control() {
         "and the Champion keeps its own regardless",
     );
 }
+
+/// "Backup confers only abilities that are actually printed below it." A
+/// dashed Champion has haste -- printed above the backup line -- and the
+/// creature it backs up does not: it takes the double strike and stays
+/// summoning-sick, while the Champion that lent it swings the turn it
+/// arrived.
+#[test]
+fn the_haste_a_dash_grants_is_not_part_of_what_backup_lends() {
+    let (mut game, champion, _mine) = staged(&[]);
+    // A bear that arrives this turn, so haste is the only thing that could
+    // let it attack.
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let dash = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .rfind(|action| matches!(action, Action::CastSpell { card, .. } if *card == champion))
+        .expect("the dash cost is offered as well");
+    game.apply(PlayerId::One, dash).expect("it is dashed");
+    settle(&mut game, Some(bears));
+
+    let bear = permanent(&game, bears);
+    assert!(
+        has_double_strike(&game, bear),
+        "the printed line below backup was lent",
+    );
+    assert!(
+        !game.permanent_has_executable_keyword(bear, KeywordAbility::Haste),
+        "and the haste the dash gave the Champion was not",
+    );
+
+    // Which is visible where it matters: only one of the two may attack.
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    let attackers: Vec<_> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::DeclareAttacker { attacker, .. } => Some(attacker),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        attackers.contains(&champion_on_battlefield(&game).card.id),
+        "the dashed Champion swings the turn it arrived",
+    );
+    assert!(
+        !attackers.contains(&bears),
+        "and the bear it backed up waits its turn like any other",
+    );
+}
