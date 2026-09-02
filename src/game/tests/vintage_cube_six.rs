@@ -376,3 +376,111 @@ fn the_permission_does_not_reach_their_graveyard() {
         "yours is castable from the same position",
     );
 }
+
+/// "Mill three cards" takes what is there. A library of one still mills it
+/// and still offers it, so a short library does not strand the half of the
+/// trigger that finds the land.
+#[test]
+fn a_short_library_still_offers_what_it_milled() {
+    let (mut game, six) = staged(&[cards::FOREST], &[]);
+
+    attack_with(&mut game, six, Some(cards::FOREST));
+
+    assert!(
+        game.players[PlayerId::One.index()].library.is_empty(),
+        "the one card there was is milled",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::FOREST),
+        "and it was still offered and taken",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].graveyard.is_empty(),
+        "so nothing was left in the graveyard",
+    );
+}
+
+/// An empty library mills nothing and asks nothing, and the attack goes
+/// ahead regardless.
+#[test]
+fn an_empty_library_mills_nothing() {
+    let (mut game, six) = staged(&[], &[]);
+
+    attack_with(&mut game, six, None);
+
+    assert!(game.players[PlayerId::One.index()].hand.is_empty());
+    assert!(game.players[PlayerId::One.index()].graveyard.is_empty());
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == six),
+        "and he is still attacking",
+    );
+}
+
+/// Retrace is paid by discarding a land card. A hand of spells is a hand
+/// that cannot pay it, however many cards are in it.
+#[test]
+fn only_a_land_may_be_discarded_to_retrace() {
+    let (mut game, _six) = staged(&[], &[cards::GRIZZLY_BEARS]);
+    for definition in [cards::LIGHTNING_BOLT, cards::SERRA_ANGEL] {
+        let card = game
+            .build_zone(PlayerId::One, &[definition])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        game.players[PlayerId::One.index()].hand.push(card);
+    }
+    for color in ManaColor::COLORS {
+        game.add_unrestricted_mana(PlayerId::One, color, 4);
+    }
+
+    assert!(
+        !castable(&game, cards::GRIZZLY_BEARS),
+        "two spells in hand pay for nothing: retrace wants a land",
+    );
+
+    let forest = game
+        .build_zone(PlayerId::One, &[cards::FOREST])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[PlayerId::One.index()].hand.push(forest);
+
+    assert!(
+        castable(&game, cards::GRIZZLY_BEARS),
+        "and one land is what it wanted",
+    );
+}
+
+/// The permission is Six's: with him gone the graveyard closes again, even
+/// with a land still in hand to have paid with.
+#[test]
+fn losing_him_closes_the_graveyard() {
+    let (mut game, six) = staged(&[], &[cards::GRIZZLY_BEARS]);
+    let forest = game
+        .build_zone(PlayerId::One, &[cards::FOREST])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[PlayerId::One.index()].hand.push(forest);
+    for color in ManaColor::COLORS {
+        game.add_unrestricted_mana(PlayerId::One, color, 4);
+    }
+    assert!(castable(&game, cards::GRIZZLY_BEARS), "while he stands");
+
+    game.move_permanents_to_graveyard(&[six]);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !castable(&game, cards::GRIZZLY_BEARS),
+        "and not once he is gone",
+    );
+}
