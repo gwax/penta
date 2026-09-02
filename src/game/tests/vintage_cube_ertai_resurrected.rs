@@ -407,3 +407,113 @@ fn the_second_mode_destroys_a_planeswalker() {
         "and her controller drew for her",
     );
 }
+
+/// "If you counter a delayed triggered ability that triggers at the
+/// beginning of the 'next' occurrence of a specified step or phase, that
+/// ability won't trigger again the following time that phase or step
+/// occurs." A Sneak Attack's Dragon is borrowed until the end step; answer
+/// the sacrifice when it goes on the stack and the Dragon is yours for good,
+/// because the delayed trigger was spent in being countered.
+#[test]
+fn a_countered_delayed_trigger_does_not_come_back() {
+    let (mut game, ertai, _angel) = staged();
+    let sneak = game
+        .put_onto_battlefield(PlayerId::Two, cards::SNEAK_ATTACK)
+        .expect("cataloged");
+    game.players[1]
+        .hand
+        .push(card(272_400, cards::SHIVAN_DRAGON, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 4);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+    game.priority = PlayerId::Two;
+
+    let cheat = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == sneak))
+        .expect("one red cheats something in");
+    game.apply(PlayerId::Two, cheat).expect("it activates");
+    for _ in 0..16 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            if game.stack.is_empty() {
+                break;
+            }
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        let options = decision
+            .options
+            .iter()
+            .rev()
+            .take(decision.minimum.max(1))
+            .map(|option| option.id)
+            .collect();
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("taking the Dragon is legal");
+    }
+    let dragon = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SHIVAN_DRAGON)
+        .expect("the Dragon is out")
+        .card
+        .id;
+
+    // Their end step: the delayed sacrifice goes on the stack, and Ertai
+    // answers it there.
+    game.step = Step::End;
+    game.begin_step_triggers();
+    for _ in 0..8 {
+        if !game.stack.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(game.stack.len(), 1, "the sacrifice is waiting");
+    game.priority = PlayerId::One;
+
+    flash_ertai(&mut game, ertai);
+    answer_mode(&mut game, Some("Counter"));
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == dragon),
+        "the sacrifice was countered, so the Dragon stayed",
+    );
+
+    // The next end step is somebody else's, and it takes nothing either.
+    game.turn += 1;
+    game.active_player = PlayerId::One;
+    game.turns_started[PlayerId::One.index()] += 1;
+    game.step = Step::End;
+    game.begin_step_triggers();
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == dragon),
+        "and the trigger it was does not come round again",
+    );
+}
