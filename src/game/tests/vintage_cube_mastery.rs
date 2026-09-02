@@ -384,3 +384,58 @@ fn a_free_cast_is_not_the_cheap_cast() {
         "and the rider rides on the cost that was actually paid",
     );
 }
+
+/// An instant, which is what the four mana is really buying: both halves are
+/// on offer in their combat, and the cheap one answers an attacker that has
+/// already been declared -- the Angel is exiled before it deals its four.
+#[test]
+fn either_half_answers_an_attacker_at_instant_speed() {
+    let (mut game, mastery, victim) = staged();
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    // Their turn, and the Angel is coming across.
+    game.active_player = PlayerId::Two;
+    game.turns_started = [5, 6];
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::Two;
+    game.declare_attacker(victim, AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let life = game.players[0].life;
+
+    let offered: Vec<_> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == mastery => {
+                Some(choices.costs().alternative().is_some())
+            }
+            _ => None,
+        })
+        .collect();
+    assert!(
+        offered.contains(&true) && offered.contains(&false),
+        "both halves are castable on their turn: it is an instant",
+    );
+
+    cast_mastery(&mut game, mastery, true);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == victim),
+        "the attacker was exiled mid-combat",
+    );
+
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+    assert_eq!(
+        game.players[0].life, life,
+        "and dealt none of its four for it",
+    );
+}
