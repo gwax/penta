@@ -526,6 +526,7 @@ mod vintage_cube_ivora;
 mod vintage_cube_jace_the_mind_sculptor;
 mod vintage_cube_jace_vryns_prodigy;
 mod vintage_cube_jacked_rabbit;
+mod vintage_cube_jetmirs_garden;
 mod vintage_cube_jitte;
 mod vintage_cube_kaito;
 mod vintage_cube_kaldra_compleat;
