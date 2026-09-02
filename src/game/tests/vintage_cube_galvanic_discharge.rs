@@ -267,3 +267,74 @@ fn it_offers_every_amount_up_to_the_bank_and_no_more() {
         );
     }
 }
+
+/// "Any effects that interact with counters a player gets, has, or loses can
+/// interact with energy counters." Energy is a counter a player has, not a
+/// resource of its own kind, so a proliferate finds the bank the Discharge
+/// left behind and adds one more.
+#[test]
+fn proliferate_finds_the_energy_it_banked() {
+    let (mut game, held, bears) = staged(cards::GRIZZLY_BEARS, 0);
+    discharge(&mut game, held, bears, 0);
+    assert_eq!(energy(&game), 3, "three banked and nothing spent");
+
+    let progress = game
+        .build_zone(PlayerId::One, &[cards::STEADY_PROGRESS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let progress_id = progress.id;
+    game.players[PlayerId::One.index()].hand.push(progress);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    game.priority = PlayerId::One;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == progress_id))
+        .expect("three mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    // Proliferate offers every counter-holder; take the one that is you.
+    for _ in 0..12 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        // A player who holds counters is offered by name; you are the only
+        // one with energy, so that option is the one to take.
+        let mine = decision
+            .options
+            .iter()
+            .find(|option| option.label == "Player one")
+            .map(|option| vec![option.id])
+            .unwrap_or_default();
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: mine,
+            },
+        )
+        .expect("the offered choice is legal");
+    }
+    game.check_state_based_actions();
+
+    assert_eq!(
+        energy(&game),
+        4,
+        "a player with energy is a player with counters, and proliferate says so",
+    );
+}
