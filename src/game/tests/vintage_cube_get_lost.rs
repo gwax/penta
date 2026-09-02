@@ -664,3 +664,93 @@ fn the_second_map_reveals_the_same_card_left_on_top() {
         "a counter for each explore, since neither revealed a land",
     );
 }
+
+/// "If you reveal a nonland card when a creature explores and leave it on
+/// top of your library, then the creature explores again immediately
+/// afterwards, you'll reveal the same card again." Get Lost hands over two
+/// Maps, so the second look is the same Bolt and the second counter goes on
+/// the same bear.
+#[test]
+fn exploring_twice_reveals_the_same_card_again() {
+    let (mut game, get_lost) = staged(&[cards::SERRA_ANGEL, cards::GRIZZLY_BEARS]);
+    let angel = permanents_of(&game, cards::SERRA_ANGEL)[0].card.id;
+    cast_at(&mut game, get_lost, angel);
+    let bears = permanents_of(&game, cards::GRIZZLY_BEARS)[0].card.id;
+    let both = maps(&game)
+        .iter()
+        .map(|map| map.card.id)
+        .collect::<Vec<_>>();
+    assert_eq!(both.len(), 2, "Get Lost pays two Maps for the one Angel");
+
+    let spell = game
+        .build_zone(PlayerId::Two, &[cards::LIGHTNING_BOLT])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[1].library.push(spell);
+    let library = game.players[1].library.len();
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 2);
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::Two;
+
+    let counters = |game: &Game| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bears)
+            .expect("the bear is still there")
+            .counters(CounterKind::PlusOnePlusOne)
+    };
+
+    for (round, map) in both.into_iter().enumerate() {
+        let action = game
+            .legal_actions(PlayerId::Two)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == map
+                        && targets.iter().any(|selection| {
+                            selection.targets().contains(&Target::Permanent(bears))
+                        })
+                }
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("map {round} is activatable"));
+        game.apply(PlayerId::Two, action).expect("it activates");
+        settle(&mut game);
+
+        let seat = deciding(&game).unwrap_or_else(|| panic!("round {round} asks"));
+        let decision = game.observe(seat).decision.expect("just checked");
+        // Option zero leaves the revealed card where it is, so the next
+        // explore has the same card to find.
+        game.apply(
+            seat,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![0],
+            },
+        )
+        .expect("leaving it on top is legal");
+        settle(&mut game);
+
+        assert_eq!(
+            game.players[1].library.last().map(|card| card.definition),
+            Some(cards::LIGHTNING_BOLT),
+            "the same Bolt is still on top after round {round}",
+        );
+        assert_eq!(
+            counters(&game),
+            u16::try_from(round + 1).expect("two rounds"),
+            "one counter per explore",
+        );
+    }
+
+    assert_eq!(
+        game.players[1].library.len(),
+        library,
+        "two explores and the library never moved",
+    );
+    assert!(maps(&game).is_empty(), "both Maps spent themselves");
+}
