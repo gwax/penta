@@ -224,3 +224,56 @@ fn spending_it_in_response_leaves_their_removal_with_nothing() {
         "their Abrade resolved into nothing and is spent",
     );
 }
+
+/// The two halves keep their own timing: the mana ability uses no stack, so
+/// the colour is in the pool the moment it is announced, while the draw is
+/// an ordinary trigger that waits its turn.
+#[test]
+fn the_mana_is_there_before_the_card_is() {
+    let (mut game, star) = staged();
+
+    let action = mana_action(&game, star, ManaColor::Blue).expect("blue is on offer");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    assert_eq!(
+        game.players[0].mana_pool.blue, 1,
+        "the mana is already spendable",
+    );
+    assert!(
+        !in_hand(&game, cards::LIGHTNING_BOLT),
+        "and the card it owes is still waiting on the stack",
+    );
+    assert!(
+        !game.stack.is_empty() || !game.pending_triggers.is_empty(),
+        "which is where the draw is",
+    );
+
+    settle(&mut game);
+
+    assert!(in_hand(&game, cards::LIGHTNING_BOLT), "and then it arrives");
+}
+
+/// "Put into a graveyard *from the battlefield*": a Star returned to hand
+/// never reaches one, so it draws nothing -- the other half of the boundary
+/// the exile case draws.
+#[test]
+fn bouncing_it_to_hand_draws_nothing() {
+    let (mut game, star) = staged();
+
+    game.return_permanent_to_hand(star);
+    drain_pending(&mut game);
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::CHROMATIC_STAR),
+        "the Star is in hand",
+    );
+    assert!(
+        !in_hand(&game, cards::LIGHTNING_BOLT),
+        "and its card stayed in the library",
+    );
+    assert_eq!(game.players[0].library.len(), 1, "untouched");
+}
