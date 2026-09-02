@@ -464,3 +464,70 @@ fn three_draws_on_their_turn_turn_her_over_too() {
         "and the third turns her over on their turn as well",
     );
 }
+
+/// "In every zone other than the battlefield, consider only the
+/// characteristics of its front face." In the graveyard she is a creature
+/// card, so a Metamorphosis Fanatic looking for a creature to raise finds
+/// her -- and comes back on that front face rather than as a planeswalker
+/// with no loyalty. A graveyard of Bolts is the control: nothing to raise.
+#[test]
+fn in_the_graveyard_she_is_a_creature_card() {
+    let raise_from = |buried: &[CardDefinitionId]| -> Game {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[PlayerId::One.index()].hand.clear();
+        game.players[PlayerId::One.index()].graveyard.clear();
+        for (index, definition) in buried.iter().enumerate() {
+            game.players[PlayerId::One.index()].graveyard.push(card(
+                97_500 + u32::try_from(index).expect("few cards"),
+                *definition,
+                PlayerId::One,
+            ));
+        }
+        game.turns_started = [5, 5];
+        game.turn = 9;
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        game.put_onto_battlefield(PlayerId::One, cards::METAMORPHOSIS_FANATIC)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        game.check_state_based_actions();
+        game
+    };
+
+    // Control: nothing in the graveyard is a creature card, so nothing rises.
+    let game = raise_from(&[cards::LIGHTNING_BOLT]);
+    assert_eq!(
+        game.players[PlayerId::One.index()].graveyard.len(),
+        1,
+        "the Bolt is not a creature card and stays where it is",
+    );
+
+    let game = raise_from(&[cards::TAMIYO_INQUISITIVE_STUDENT, cards::LIGHTNING_BOLT]);
+    let raised = game
+        .battlefield
+        .iter()
+        .find(|permanent| {
+            permanent.card.definition == ObjectKind::Card(cards::TAMIYO_INQUISITIVE_STUDENT)
+        })
+        .expect("a creature card is what the graveyard held, so she came back");
+    assert!(
+        !game
+            .permanent_types(raised)
+            .is_some_and(|types| types.contains(CardType::Planeswalker)),
+        "and she came back on her front face",
+    );
+    assert_eq!(
+        (game.power(raised), game.toughness(raised)),
+        (Some(0), Some(3)),
+        "the 0/3 body rather than a walker with no loyalty",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and the Bolt beside her was never a candidate",
+    );
+}
