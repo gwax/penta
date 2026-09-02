@@ -295,3 +295,62 @@ fn the_sacrifice_leaves_only_one_of_the_two() {
         "and no card was drawn: the other half was never paid for",
     );
 }
+
+/// Neither half says "activate only as a sorcery" and neither costs a tap,
+/// so the Spellbomb answers a creature at instant speed on their turn. An
+/// Angel bounced after it has been declared as an attacker is an Angel that
+/// deals no damage: it is not on the battlefield to deal any.
+#[test]
+fn it_answers_an_attacker_in_the_middle_of_combat() {
+    let (mut game, spellbomb) = staged();
+    let angel = creature(280_400, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    // Their turn, and their Angel is coming across.
+    game.active_player = PlayerId::Two;
+    game.turns_started = [5, 6];
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::Two;
+    game.declare_attacker(angel_id, AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+    // Attackers are in and the defender has priority, which is the window
+    // this card is played for.
+    game.priority = PlayerId::One;
+    let life = game.players[0].life;
+
+    let bounce = activation(&game, spellbomb, 0)
+        .expect("their turn is no bar to it: the ability has no timing of its own");
+    game.apply(PlayerId::One, bounce).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == angel_id),
+        "the attacker was pulled out of the combat it was in",
+    );
+
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+
+    assert_eq!(
+        game.players[0].life, life,
+        "so nothing was left to deal its four",
+    );
+    assert_eq!(
+        game.players[1]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SERRA_ANGEL],
+        "and the Angel is back in the hand it came from",
+    );
+}
