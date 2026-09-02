@@ -867,3 +867,63 @@ fn a_thoughtseize_shaped_sequence_loses_life_after_the_generic_hand_choice() {
 }
 
 include!("removal_and_keywords/card_selection_and_keywords.rs");
+
+/// "Target *opponent*", and a sorcery besides: the two things a Duress will
+/// not do are point at its own caster and be held up. A hand full of things
+/// it would love to take is no help when the hand is yours.
+#[test]
+fn duress_names_an_opponent_and_waits_for_your_own_main_phase() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[1].hand.clear();
+    let duress = card(10_020, cards::DURESS, PlayerId::One);
+    let duress_id = duress.id;
+    game.players[0].hand.push(duress);
+    // Cards of yours worth taking, if the spell could be pointed at you.
+    game.players[0]
+        .hand
+        .push(card(10_021, cards::LIGHTNING_BOLT, PlayerId::One));
+    game.players[1]
+        .hand
+        .push(card(10_022, cards::ANCESTRAL_RECALL, PlayerId::Two));
+    game.players[0].mana_pool.black = 1;
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let names = |game: &Game, player: PlayerId| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    card == duress_id
+                        && choices
+                            .iter_targets()
+                            .any(|target| *target == Target::Player(player))
+                }
+                _ => false,
+            })
+    };
+
+    assert!(names(&game, PlayerId::Two), "the opponent is the target");
+    assert!(
+        !names(&game, PlayerId::One),
+        "and you are never one of your own opponents",
+    );
+
+    game.step = Step::DeclareBlockers;
+    assert!(
+        !names(&game, PlayerId::Two),
+        "a sorcery is no answer held up in combat",
+    );
+
+    game.step = Step::PrecombatMain;
+    game.active_player = PlayerId::Two;
+    game.turns_started = [5, 6];
+    assert!(
+        !names(&game, PlayerId::Two),
+        "nor cast on a main phase of theirs",
+    );
+}
