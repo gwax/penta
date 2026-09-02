@@ -173,3 +173,105 @@ fn it_reaches_across_the_table_and_keeps_what_it_takes() {
         "though it is still their card",
     );
 }
+
+/// "Target *creature* card from a graveyard": a Lightning Bolt lying beside
+/// the body is no target, and neither is a land.
+#[test]
+fn only_a_creature_card_is_a_legal_target() {
+    let (mut game, reanimate, bears) = staged(cards::GRIZZLY_BEARS);
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        77_100,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::One.index()]
+        .graveyard
+        .push(card(77_101, cards::FOREST, PlayerId::One));
+
+    let named: Vec<_> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == reanimate => {
+                Some(choices.iter_targets().copied().collect::<Vec<_>>())
+            }
+            _ => None,
+        })
+        .flatten()
+        .collect();
+
+    assert!(
+        named.contains(&Target::Card(bears)),
+        "the creature card is a target",
+    );
+    assert!(
+        !named.contains(&Target::Card(CardInstanceId(77_100))),
+        "the Bolt is not",
+    );
+    assert!(
+        !named.contains(&Target::Card(CardInstanceId(77_101))),
+        "and neither is the land",
+    );
+}
+
+/// "The amount of life you lose is determined by the mana value of the card
+/// in your graveyard." A transforming card is its front face in a graveyard,
+/// so Cecil is billed at the Dark Knight's one however the back face reads.
+#[test]
+fn a_double_faced_card_is_billed_at_its_front_face() {
+    let (mut game, reanimate, cecil) = staged(cards::CECIL_DARK_KNIGHT);
+    let before = game.players[PlayerId::One.index()].life;
+
+    cast_at(&mut game, reanimate, cecil);
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::CECIL_DARK_KNIGHT),
+        "he is on the battlefield",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        before - 1,
+        "{{B}} is one, which is what the graveyard was reading",
+    );
+}
+
+/// Put onto the battlefield rather than cast, and that hurries nothing: what
+/// is reanimated cannot attack the turn it arrives.
+#[test]
+fn what_it_returns_arrives_summoning_sick() {
+    let (mut game, reanimate, bears) = staged(cards::GRIZZLY_BEARS);
+    game.turns_started = [5, 5];
+    game.turn = 9;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+
+    cast_at(&mut game, reanimate, bears);
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("it came back")
+        .card
+        .id;
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::One;
+
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(
+                action,
+                Action::DeclareAttacker { attacker, .. } if *attacker == returned
+            )),
+        "it has not been here since the turn began",
+    );
+}
