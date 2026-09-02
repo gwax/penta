@@ -188,3 +188,56 @@ fn a_tax_is_paid_on_top_of_the_free_cast() {
         "the pitch plus her one mana is what it costs now",
     );
 }
+
+/// "You divide the damage as you cast Pyrokinesis, not as it resolves. If
+/// any of the targets become illegal, damage is dealt to the other targets
+/// as originally assigned." Two Bears named for two apiece: kill one in
+/// response and the other still takes the two it was assigned, not the four
+/// that is now going nowhere else.
+#[test]
+fn a_target_that_leaves_takes_only_its_own_share_with_it() {
+    let mut game = ready();
+    let doomed = creature(10_100, cards::SERRA_ANGEL, PlayerId::Two);
+    let doomed_id = doomed.card.id;
+    game.battlefield.push(doomed);
+    let survivor = creature(10_101, cards::SERRA_ANGEL, PlayerId::Two);
+    let survivor_id = survivor.card.id;
+    game.battlefield.push(survivor);
+    let pyro = card(20_100, cards::PYROKINESIS, PlayerId::One);
+    let pyro_id = pyro.id;
+    game.players[PlayerId::One.index()].hand.push(pyro);
+    game.players[PlayerId::One.index()].mana_pool.red = 2;
+    game.players[PlayerId::One.index()].mana_pool.colorless = 4;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == pyro_id
+                    && choices.targets().iter().any(|slot| {
+                        slot.amount_for(Target::Permanent(doomed_id)) == Some(2)
+                            && slot.amount_for(Target::Permanent(survivor_id)) == Some(2)
+                    })
+            }
+            _ => false,
+        })
+        .expect("two apiece across the two Angels");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    // One of them is answered while the spell waits.
+    game.move_permanents_to_graveyard(&[doomed_id]);
+    game.check_state_based_actions();
+    resolve(&mut game);
+    game.check_state_based_actions();
+
+    let survivor = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == survivor_id)
+        .expect("a 4/4 that took two is still standing");
+    assert_eq!(
+        survivor.damage, 2,
+        "its own share and no more: the other two went with the Angel that left",
+    );
+}
