@@ -283,3 +283,72 @@ fn flash_lets_it_arrive_on_their_turn() {
         "and amassed an Orc while it was at it"
     );
 }
+
+/// "Some spells and abilities that amass Orcs may require targets. If each
+/// target chosen is an illegal target as that spell or ability tries to
+/// resolve, it won't resolve. You won't amass Orcs." The arrow and the Army
+/// are one trigger, so answering what it points at costs them both.
+#[test]
+fn an_answered_target_costs_the_amass_as_well_as_the_arrow() {
+    let mut game = staged();
+    let bear = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    settle(&mut game);
+    let counters = army_counters(&game);
+    let life = game.players[PlayerId::Two.index()].life;
+    assert_eq!(counters, 1, "the Army the entry trigger made");
+
+    // A draw of theirs puts the arrow on the stack; point it at the bear
+    // rather than at them.
+    game.draw_cards(PlayerId::Two, 1);
+    // The trigger waits off the stack until priority moves; its targets are
+    // chosen as it goes on, which is the moment to name the bear.
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let aimed = decision
+                .options
+                .iter()
+                .find(|option| option.card.is_some_and(|(id, _)| id == bear))
+                .map(|option| vec![option.id])
+                .expect("the bear is one of the offered targets");
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: aimed,
+                },
+            )
+            .expect("naming it is legal");
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert!(
+        !game.stack.is_empty(),
+        "the trigger is waiting with the bear named",
+    );
+
+    // Answer the bear before the trigger resolves.
+    game.move_permanents_to_graveyard(&[bear]);
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life,
+        "no arrow landed: its only target was gone",
+    );
+    assert_eq!(
+        army_counters(&game),
+        counters,
+        "and the amass went with it, being the same trigger",
+    );
+}
