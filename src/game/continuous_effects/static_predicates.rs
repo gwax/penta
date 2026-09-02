@@ -138,6 +138,7 @@ impl Game {
             }
             ObjectPredicateDef::Not(predicate) => nested(*predicate).map(|matches| !matches),
             ObjectPredicateDef::ManaValueAtMost(_)
+            | ObjectPredicateDef::GenericManaCostAtMost(_)
             | ObjectPredicateDef::ManaValueEqualTo(_)
             | ObjectPredicateDef::ManaValueAtMostValue(_)
             | ObjectPredicateDef::PowerAtLeast(_)

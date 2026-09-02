@@ -51,6 +51,26 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A search for "mana cost {0} or {1}" now reads the printed cost, not the
+  mana value.** Urza's Saga's chapter III was authored as `ManaValueAtMost(1)`
+  under a comment claiming that was "the same set of cards" -- it is not, and
+  the card's own ruling says so: "you can find only a card with actual mana
+  cost {0} or {1}, not mana value 0 or 1." Portable Hole costs `{W}` and
+  Walking Ballista costs `{X}{X}`; both have a mana value of at most one and
+  neither is findable. A new `GenericManaCostAtMost` predicate asks the
+  narrower question against `PrintedManaCost`, so a card with no printed cost
+  is not a card whose cost is `{0}` either. Only the zone paths that hold the
+  card's own definition can answer it; the catalog boundary rejects it in
+  trigger and static contexts, where the snapshot carries mana value alone.
+
+- **A Saga that loses its chapters is sacrificed.** The final-chapter number
+  was read off the printed rules, so an effect that took the chapters away
+  left the Saga sitting on the battlefield with nothing to read -- a Blood
+  Moon sets Urza's Saga's land type, strips its printed abilities, and it
+  should be sacrificed on the spot. It is read off the abilities the
+  permanent actually presents now, and a Saga with no chapter abilities has a
+  final chapter of zero, which any lore count already meets.
+
 - **"If this would be put into a graveyard from anywhere" now reads the
   stack and the mill.** Blightsteel Colossus lists every zone its own
   replacement watches, but the lookup refused to answer for a card leaving

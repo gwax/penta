@@ -1208,11 +1208,13 @@ pub(in crate::card::sets) static URZA_S_SAGA: CardRecord = CardRecord::new(
                 EffectDef::SearchZone {
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
-                    // "An artifact card with mana cost {0} or {1}": a mana value of at most
-                    // one, which is the same set of cards and the comparison the engine has.
+                    // "Mana cost {0} or {1}" is the printed cost, not the mana
+                    // value: Portable Hole costs {W} and Walking Ballista costs
+                    // {X}{X}, and neither is findable even though both have a
+                    // mana value of at most one.
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Artifact),
-                        ObjectPredicateDef::ManaValueAtMost(1),
+                        ObjectPredicateDef::GenericManaCostAtMost(1),
                     ]),
                     minimum: 0,
                     maximum: ValueDef::Constant(1),

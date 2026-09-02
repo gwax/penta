@@ -55,10 +55,8 @@ impl Game {
             .iter()
             .filter(|permanent| self.is_saga(permanent))
             .filter(|permanent| {
-                self.saga_final_chapter(permanent)
-                    .is_some_and(|final_chapter| {
-                        permanent.counters(CounterKind::Lore) >= u16::from(final_chapter)
-                    })
+                permanent.counters(CounterKind::Lore)
+                    >= u16::from(self.saga_final_chapter(permanent))
             })
             .map(|permanent| permanent.card.id)
             .filter(|saga| !self.saga_has_a_chapter_waiting(*saga))
@@ -68,15 +66,20 @@ impl Game {
         }
     }
 
-    /// The highest chapter number this Saga prints. Read off the abilities
-    /// rather than stored, because what a permanent is can change.
-    fn saga_final_chapter(&self, permanent: &Permanent) -> Option<u8> {
-        let rules = self.effective_rules(permanent)?;
-        rules
-            .ability_clauses()
+    /// The highest chapter number this Saga currently has. Read off the
+    /// abilities it actually presents rather than the ones it prints,
+    /// because an effect can take chapters away: Blood Moon setting Urza's
+    /// Saga's land type strips its printed abilities, and the Saga is
+    /// sacrificed on the spot with nothing left to read.
+    ///
+    /// A Saga with no chapter abilities has a final chapter of zero, which
+    /// any number of lore counters already meets.
+    fn saga_final_chapter(&self, permanent: &Permanent) -> u8 {
+        self.effective_abilities(permanent)
             .iter()
-            .filter_map(|ability| ability.saga_chapter())
+            .filter_map(|effective| effective.ability.saga_chapter())
             .max()
+            .unwrap_or(0)
     }
 
     /// Whether one of this Saga's chapter abilities is still waiting to

@@ -242,3 +242,90 @@ fn an_expensive_artifact_is_not_fetchable() {
     );
     assert!(!alive(&game, saga), "the Saga still sacrifices itself");
 }
+
+/// "You can find only a card with actual mana cost {0} or {1}, not mana
+/// value 0 or 1. For example, you couldn't find a card with mana cost {U}."
+/// A Portable Hole is one mana and no {1}, so the Sol Ring beside it is what
+/// comes back.
+#[test]
+fn a_coloured_one_drop_is_not_a_mana_cost_of_one() {
+    let (mut game, saga) = staged(&[cards::PORTABLE_HOLE, cards::SOL_RING]);
+    next_turn(&mut game);
+    next_turn(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::SOL_RING),
+        "{{1}} is a mana cost of one",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::PORTABLE_HOLE),
+        "and {{W}} is not, whatever it is worth",
+    );
+    assert!(
+        game.players[0]
+            .library
+            .iter()
+            .any(|card| card.definition == cards::PORTABLE_HOLE),
+        "so the Hole stayed where it was",
+    );
+    assert!(!alive(&game, saga), "and the Saga read its last chapter");
+}
+
+/// "Urza's Saga is a land, so it can only be played as a land. It cannot be
+/// cast as a spell." An Enchantment Land is still a land drop.
+#[test]
+fn it_is_played_as_a_land_and_never_cast() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    let held = card(114_900, cards::URZA_S_SAGA, PlayerId::One);
+    let held_id = held.id;
+    game.players[0].hand.push(held);
+    game.players[0].lands_played_this_turn = 0;
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    // Mana enough for anything it might wrongly be offered as.
+    for color in ManaColor::COLORS {
+        game.add_unrestricted_mana(PlayerId::One, color, 4);
+    }
+
+    assert!(
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if *card == held_id)),
+        "it is a land drop",
+    );
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == held_id)),
+        "and never a spell, however much mana is up",
+    );
+}
+
+/// "If Urza's Saga loses all of its chapter abilities but is still a Saga,
+/// perhaps due to a card like Blood Moon, it will immediately be
+/// sacrificed." The Moon leaves it a Mountain that is still a Saga with
+/// nothing left to read.
+#[test]
+fn a_blood_moon_leaves_it_a_saga_with_nothing_to_read() {
+    let (mut game, saga) = staged(&[]);
+    assert!(alive(&game, saga), "it is on the battlefield to begin with");
+
+    game.put_onto_battlefield(PlayerId::Two, cards::BLOOD_MOON)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !alive(&game, saga),
+        "a Saga with no chapters left is sacrificed where it stands",
+    );
+}

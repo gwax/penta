@@ -308,7 +308,7 @@ fn your_own_spell_targeting_him_pays_out_too() {
     game.apply(PlayerId::One, cast).expect("it is cast");
     settle(&mut game);
 
-    assert_eq!(treasures(&game).len(), 1, "a spell of yours is a spell",);
+    assert_eq!(treasures(&game).len(), 1, "a spell of yours is a spell");
 }
 
 /// "Players can cast spells and activate abilities after the triggered

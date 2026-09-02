@@ -761,6 +761,17 @@ impl Game {
             ObjectPredicateDef::HasAnyCounter => {
                 return !card.counters.is_empty();
             }
+            ObjectPredicateDef::GenericManaCostAtMost(limit) => {
+                // The printed cost, not the mana value: a card with no mana
+                // cost at all is not a card whose mana cost is {0}.
+                return self.catalog.get(card.definition).is_some_and(|definition| {
+                    definition
+                        .rules
+                        .printed_mana_cost()
+                        .as_option()
+                        .is_some_and(|cost| cost.is_generic_at_most(u16::from(limit)))
+                });
+            }
             ObjectPredicateDef::Named(name) => {
                 return self
                     .catalog

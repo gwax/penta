@@ -638,7 +638,14 @@ impl Game {
             | ObjectPredicateDef::Not(_) => {
                 self.composite_matches(predicate, object, source, is_spell, controller)
             }
-            ObjectPredicateDef::HasName(_) | ObjectPredicateDef::Special(_) => false,
+            // A printed cost shape is not in this snapshot, which carries
+            // mana value alone. Only the zone paths in `card_object_matches`
+            // hold the card's own definition and answer it there, and the
+            // catalog boundary keeps the predicate out of trigger and static
+            // contexts.
+            ObjectPredicateDef::GenericManaCostAtMost(_)
+            | ObjectPredicateDef::HasName(_)
+            | ObjectPredicateDef::Special(_) => false,
         }
     }
 

@@ -73,6 +73,9 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::ControlledBy(
             PlayerRelation::ChosenPlayer | PlayerRelation::EventPlayer,
         )
+        // A trigger snapshot carries mana value, not the printed cost, so
+        // the cost-shape reading has nothing to read here.
+        | ObjectPredicateDef::GenericManaCostAtMost(_)
         | ObjectPredicateDef::Special(_) => Err(unsupported_trigger_event(event)),
         ObjectPredicateDef::Any
         | ObjectPredicateDef::Source
@@ -157,6 +160,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::HasChosenName
         | ObjectPredicateDef::ManaValueAtMost(_)
+        | ObjectPredicateDef::GenericManaCostAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)
         | ObjectPredicateDef::PowerAtLeast(_)

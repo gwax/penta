@@ -322,6 +322,24 @@ impl ManaCost {
         value
     }
 
+    /// Whether this is a cost of generic mana alone totalling at most
+    /// `limit`, which is what "with mana cost {0} or {1}" asks and is
+    /// narrower than mana value. A `{W}` has mana value one without being a
+    /// cost of `{1}`, and an `{X}` cost is never one of these however X is
+    /// announced.
+    #[must_use]
+    pub const fn is_generic_at_most(&self, limit: u16) -> bool {
+        !self.variable_x
+            && self.white == 0
+            && self.blue == 0
+            && self.black == 0
+            && self.red == 0
+            && self.green == 0
+            && self.colorless == 0
+            && self.hybrid_total() == 0
+            && self.generic <= limit
+    }
+
     #[must_use]
     pub const fn new(generic: u16, red: u16) -> Self {
         Self {

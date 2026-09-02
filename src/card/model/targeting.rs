@@ -63,6 +63,12 @@ pub enum ObjectPredicateDef {
     ManaValueEqualTo(ValueDef),
     /// Mana value at most a computed amount, for "with mana value X or less".
     ManaValueAtMostValue(ValueDef),
+    /// Printed mana cost made of generic mana alone, totalling at most this
+    /// much: the literal reading of "with mana cost {0} or {1}", which is a
+    /// smaller set than mana value one or less. Only a zone predicate that
+    /// holds the card's own definition can answer it, so the catalog
+    /// boundary keeps it out of static and stack contexts.
+    GenericManaCostAtMost(u8),
     /// Power at least this much, for "power N or greater". Target legality
     /// reads real current power, so a creature a Crusade has pumped qualifies.
     /// Trigger and static matching still read power without continuous

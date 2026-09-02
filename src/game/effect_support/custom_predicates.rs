@@ -55,6 +55,7 @@ impl Game {
             | ObjectPredicateDef::Named(_)
         | ObjectPredicateDef::HasChosenName
             | ObjectPredicateDef::ManaValueAtMost(_)
+            | ObjectPredicateDef::GenericManaCostAtMost(_)
             | ObjectPredicateDef::ManaValueEqualTo(_)
             | ObjectPredicateDef::ManaValueAtMostValue(_)
             | ObjectPredicateDef::PowerAtLeast(_)
