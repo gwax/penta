@@ -186,3 +186,105 @@ fn their_spell_does_nothing() {
     assert_eq!(game.players[0].life, 17, "they pointed it at you");
     assert_eq!(game.players[1].life, 20, "and lost nothing for it");
 }
+
+/// Gives the opponent `definition` in hand with mana for it, and returns its
+/// id. Their side is otherwise untouched.
+fn their_card(game: &mut Game, definition: CardDefinitionId) -> GameObjectId {
+    let card = game
+        .build_zone(PlayerId::Two, &[definition])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let id = card.id;
+    game.players[1].hand.push(card);
+    for color in ManaColor::COLORS {
+        game.add_unrestricted_mana(PlayerId::Two, color, 4);
+    }
+    id
+}
+
+/// Casts `card` from `player`'s hand without settling, so the spell is left
+/// on the stack for something to answer.
+fn cast_holding(game: &mut Game, player: PlayerId, card: GameObjectId) {
+    game.priority = player;
+    let action = game
+        .legal_actions(player)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card: cast, .. } if *cast == card))
+        .expect("they have the mana");
+    game.apply(player, action).expect("it is cast");
+}
+
+/// "Whenever you cast or copy an instant or sorcery spell" -- the spell
+/// copied need not be one of yours. A copy is controlled by whoever created
+/// it (CR 707.10), so Forking their Ancestral Recall makes an instant spell
+/// you control and she reads it.
+#[test]
+fn copying_their_spell_drains() {
+    let (mut game, cards) = staged(&[cards::FORK]);
+    let theirs = their_card(&mut game, cards::ANCESTRAL_RECALL);
+
+    cast_holding(&mut game, PlayerId::Two, theirs);
+    assert!(
+        game.stack
+            .iter()
+            .any(|object| object.controller == PlayerId::Two),
+        "their spell is on the stack to be copied",
+    );
+    cast_holding(&mut game, PlayerId::One, cards[0]);
+    settle(&mut game);
+
+    // One for casting the Fork, and one for the copy it made. Neither
+    // Ancestral Recall touches life, so the drains are all that moved.
+    assert_eq!(game.players[1].life, 18, "two drains, not one");
+    assert_eq!(game.players[0].life, 22);
+}
+
+/// The mirror: they copy your spell, and the copy is theirs. Your own cast
+/// still drains, and their copy adds nothing on top of it.
+#[test]
+fn their_copy_of_your_spell_does_nothing() {
+    let (mut game, cards) = staged(&[cards::ANCESTRAL_RECALL]);
+    let their_fork = their_card(&mut game, cards::FORK);
+    let libraries = |game: &Game| -> usize { game.players.iter().map(|p| p.library.len()).sum() };
+    let before = libraries(&game);
+
+    cast_holding(&mut game, PlayerId::One, cards[0]);
+    cast_holding(&mut game, PlayerId::Two, their_fork);
+    settle(&mut game);
+
+    // Six cards drawn, so the copy was really made and really resolved:
+    // without it this would read three and the drain below would be right
+    // for the wrong reason.
+    assert_eq!(before - libraries(&game), 6, "your Recall and their copy");
+    assert_eq!(
+        game.players[1].life, 19,
+        "your cast drained once and their copy is not yours",
+    );
+    assert_eq!(game.players[0].life, 21);
+}
+
+/// "If an effect creates multiple copies of an instant or sorcery spell,
+/// magecraft abilities trigger once for each copy created by the effect."
+/// Two spells already cast this turn make Brain Freeze's storm put two
+/// copies on the stack.
+#[test]
+fn each_of_several_copies_drains() {
+    let (mut game, cards) = staged(&[
+        cards::LIGHTNING_BOLT,
+        cards::DEMONIC_TUTOR,
+        cards::BRAIN_FREEZE,
+    ]);
+    cast(&mut game, cards[0]);
+    cast(&mut game, cards[1]);
+    let before = game.players[0].life;
+
+    cast(&mut game, cards[2]);
+
+    assert_eq!(
+        game.players[0].life,
+        before + 3,
+        "one for casting it and one for each of the two storm copies",
+    );
+}
