@@ -157,3 +157,89 @@ fn a_library_shorter_than_five_shows_what_it_has() {
         "and the third went back under an empty library",
     );
 }
+
+/// "The rest on the bottom of your library in any order": the order is the
+/// caster's, not the order they were seen in and not a shuffle. Two runs
+/// over the same five cards, ordering the leftovers two different ways,
+/// leave the library two different ways round.
+#[test]
+fn the_leftovers_go_under_in_the_order_you_name() {
+    let bottom_up = |first: CardDefinitionId, second: CardDefinitionId, third: CardDefinitionId| {
+        let (mut game, stock_up) = staged(&[
+            cards::GRIZZLY_BEARS,
+            cards::BLACK_LOTUS,
+            cards::MOUNTAIN,
+            cards::ANCESTRAL_RECALL,
+            cards::SERRA_ANGEL,
+        ]);
+        let look = cast_and_look(&mut game, stock_up);
+        let pick = |decision: &DecisionObservation, definition: CardDefinitionId| {
+            decision
+                .options
+                .iter()
+                .find(|option| {
+                    option
+                        .card
+                        .and_then(|(_, characteristics)| characteristics.card_definition())
+                        == Some(definition)
+                })
+                .unwrap_or_else(|| panic!("{definition:?} is among them"))
+                .id
+        };
+        let taken = vec![
+            pick(&look, cards::BLACK_LOTUS),
+            pick(&look, cards::ANCESTRAL_RECALL),
+        ];
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: look.id,
+                options: taken,
+            },
+        )
+        .expect("taking those two is legal");
+
+        // The three left over are ordered for the bottom.
+        pass_until_decision(&mut game);
+        let order = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+            .expect("the leftovers ask for an order");
+        let sequence = vec![
+            pick(&order, first),
+            pick(&order, second),
+            pick(&order, third),
+        ];
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: order.id,
+                options: sequence,
+            },
+        )
+        .expect("that order is legal");
+        drain_pending(&mut game);
+
+        // The library's last element is its top, so this reads bottom-up.
+        game.players[PlayerId::One.index()]
+            .library
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>()
+    };
+
+    let one = bottom_up(cards::GRIZZLY_BEARS, cards::MOUNTAIN, cards::SERRA_ANGEL);
+    let other = bottom_up(cards::SERRA_ANGEL, cards::MOUNTAIN, cards::GRIZZLY_BEARS);
+
+    assert_eq!(one.len(), 3, "three went under");
+    assert_ne!(
+        one, other,
+        "and naming them the other way round leaves them the other way round",
+    );
+    assert_eq!(
+        one,
+        other.iter().rev().copied().collect::<Vec<_>>(),
+        "exactly reversed: the order asked for is the order taken",
+    );
+}
