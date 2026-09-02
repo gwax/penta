@@ -291,3 +291,61 @@ fn the_exiled_card_still_costs_its_mana() {
         "with no red mana there is nothing to cast it with",
     );
 }
+
+/// "Laelia's last triggered ability doesn't care which player is exiling
+/// cards from the library or graveyard. Cards put into exile from your
+/// library or graveyard for any reason cause the ability to trigger." Their
+/// Soul-Guide Lantern eating your graveyard is a gift: one batch, one
+/// counter each time, and the hate they paid for made her bigger twice.
+#[test]
+fn their_graveyard_hate_aimed_at_you_grows_her() {
+    let (mut game, laelia) = staged(&[]);
+    game.step = Step::PrecombatMain;
+    for (index, definition) in [cards::LIGHTNING_BOLT, cards::GRIZZLY_BEARS, cards::MOUNTAIN]
+        .into_iter()
+        .enumerate()
+    {
+        game.players[0].graveyard.push(card(
+            77_500 + u32::try_from(index).expect("a small graveyard"),
+            definition,
+            PlayerId::One,
+        ));
+    }
+    let lantern = game
+        .put_onto_battlefield(PlayerId::Two, cards::SOUL_GUIDE_LANTERN)
+        .expect("cataloged");
+    resolve_all(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    // The Lantern's own arrival eats a card out of the only graveyard with
+    // anything in it -- yours -- which is already one batch for her.
+    assert_eq!(
+        counters(&game, laelia),
+        1,
+        "their Lantern landing grew her on the way in",
+    );
+    assert_eq!(game.players[0].graveyard.len(), 2, "two cards left");
+    game.priority = PlayerId::Two;
+
+    let sweep = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == lantern),
+        )
+        .expect("they may cash the Lantern in");
+    game.apply(PlayerId::Two, sweep).expect("it activates");
+    resolve_all(&mut game);
+
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "your graveyard is gone, which is what they paid for",
+    );
+    assert_eq!(
+        counters(&game, laelia),
+        2,
+        "and the two that went together are one more batch, not two",
+    );
+}

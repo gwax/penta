@@ -12,6 +12,7 @@ use super::{
 use crate::card::{
     BattlefieldArrivalDef, CounterKind, EffectRecipientDef, PlayerRelation, TokenCountersDef,
 };
+use crate::game::{CardInstance, remove_card};
 
 /// How a permanent this effect moves arrives, when it arrives at all.
 /// "Under your control" and "attach this to it" both belong to the arrival:
@@ -214,6 +215,87 @@ impl Game {
         true
     }
 
+    /// "Whenever one or more cards are put into exile" is one event for the
+    /// whole move, however many cards it took: a clause that sweeps a
+    /// graveyard publishes a single exile event rather than one per card,
+    /// which is the difference between Laelia growing once and growing three
+    /// times. Anything a replacement would divert falls back to the ordinary
+    /// one-at-a-time path below, where each is asked about separately.
+    fn move_simultaneous_card_exile(
+        &mut self,
+        recipients: &[Target],
+        clause: MoveToZoneClause,
+        moved_by: ZoneMoveCause,
+    ) -> bool {
+        if clause.zone != ZoneKind::Exile
+            || clause.controller.is_some()
+            || clause.counters.is_some()
+            || !clause.modifications.is_empty()
+        {
+            return false;
+        }
+        let mut moving = Vec::new();
+        for target in recipients {
+            let Target::Card(id) = target else {
+                return false;
+            };
+            let Some((from, card)) = self
+                .card_in_nonbattlefield_zone(*id)
+                .map(|(zone, card)| (zone, card.clone()))
+            else {
+                return false;
+            };
+            if !matches!(
+                from,
+                ZoneKind::Graveyard | ZoneKind::Library | ZoneKind::Hand
+            ) {
+                return false;
+            }
+            if self
+                .zone_move_replacement_destination(&card, from, ZoneKind::Exile, moved_by)
+                .is_some_and(|destination| destination != ZoneKind::Exile)
+            {
+                return false;
+            }
+            moving.push((from, card));
+        }
+        if moving.len() < 2 {
+            return false;
+        }
+        let mut exiled: Vec<(ZoneKind, Vec<CardInstance>)> = Vec::new();
+        for (from, card) in moving {
+            let owner = card.owner;
+            let zone = match from {
+                ZoneKind::Library => &mut self.players[owner.index()].library,
+                ZoneKind::Hand => &mut self.players[owner.index()].hand,
+                ZoneKind::Graveyard => &mut self.players[owner.index()].graveyard,
+                _ => continue,
+            };
+            let Some(card) = remove_card(zone, card.id) else {
+                continue;
+            };
+            let (card, _zone_change) = self.zone_change_card(card);
+            self.players[owner.index()].exile.push(card.clone());
+            if let Some((_, group)) = exiled.iter_mut().find(|(zone, group)| {
+                *zone == from && group.first().is_some_and(|first| first.owner == owner)
+            }) {
+                group.push(card);
+            } else {
+                exiled.push((from, vec![card]));
+            }
+        }
+        for (from, group) in exiled {
+            let owner = group.first().map(|card| card.owner);
+            self.capture_cards_exiled(&group, from);
+            if from == ZoneKind::Graveyard
+                && let Some(owner) = owner
+            {
+                self.note_card_left_graveyard(owner);
+            }
+        }
+        true
+    }
+
     fn move_simultaneous_library_batch(
         &mut self,
         recipients: &[Target],
@@ -288,6 +370,15 @@ impl Game {
         // replacement effects see the same battlefield and CR 401.4 can ask
         // each owner for the relative order at the instructed position.
         if self.move_simultaneous_library_batch(&recipients, clause, attachment) {
+            return;
+        }
+        if self.move_simultaneous_card_exile(
+            &recipients,
+            clause,
+            ZoneMoveCause::Effect {
+                controller: object.controller,
+            },
+        ) {
             return;
         }
         for target in recipients {

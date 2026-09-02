@@ -25,6 +25,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **A clause that exiles several cards at once is one exile event.** Moving a
+  set of cards out of a graveyard, library, or hand into exile now publishes a
+  single "one or more cards are put into exile" event rather than one per
+  card, so Laelia, the Blade Reforged grows once when a Soul-Guide Lantern
+  eats a three-card graveyard instead of three times. Cards whose move a
+  replacement effect would divert still go one at a time, where each
+  replacement is asked about separately.
+
 - **"You sacrifice it" is a different instruction from "is sacrificed by its
   controller."** `EffectDef::SacrificeYours` asks whether the ability's
   controller still controls each permanent before it sacrifices any of them,
