@@ -269,3 +269,70 @@ fn the_cash_in_is_sorcery_speed() {
 
     assert!(cash_in(&game, vacuum).is_none(), "and nowhere else");
 }
+
+/// "Put *each* creature card exiled with this artifact onto the
+/// battlefield." Every test above feeds it one card, so the plural was never
+/// asked for. Three meals -- a creature from each graveyard and a Bolt --
+/// come back as two Spirits under your control with the Bolt left behind.
+#[test]
+fn it_returns_every_creature_card_it_ate() {
+    let (mut game, vacuum) = staged(
+        &[cards::GRIZZLY_BEARS, cards::LIGHTNING_BOLT],
+        &[cards::SERRA_ANGEL],
+    );
+    for (owner, definition) in [
+        (PlayerId::One, cards::GRIZZLY_BEARS),
+        (PlayerId::Two, cards::SERRA_ANGEL),
+        (PlayerId::One, cards::LIGHTNING_BOLT),
+    ] {
+        untap(&mut game, vacuum);
+        eat(&mut game, vacuum, owner, definition);
+    }
+    assert_eq!(
+        game.players[PlayerId::One.index()].exile.len()
+            + game.players[PlayerId::Two.index()].exile.len(),
+        3,
+        "three cards eaten",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 6);
+    untap(&mut game, vacuum);
+    let action = cash_in(&game, vacuum).expect("six mana and a tap buys the board");
+    game.apply(PlayerId::One, action).expect("it activates");
+    settle(&mut game);
+
+    for definition in [cards::GRIZZLY_BEARS, cards::SERRA_ANGEL] {
+        let returned =
+            on_battlefield(&game, definition).unwrap_or_else(|| panic!("{definition:?} came back"));
+        assert_eq!(
+            returned.controller,
+            PlayerId::One,
+            "{definition:?} is yours whoever owned it",
+        );
+        assert_eq!(
+            (game.power(returned), game.toughness(returned)),
+            (Some(1), Some(1)),
+            "{definition:?} is a 1/1 like the other one",
+        );
+        assert_eq!(
+            returned.counters(CounterKind::Flying),
+            1,
+            "{definition:?} has its own flying counter",
+        );
+    }
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition != ObjectKind::Token)
+            .count(),
+        2,
+        "two bodies and no Vacuum: it sacrificed itself for both of them",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and the Bolt it ate is still exiled, being no creature card",
+    );
+}
