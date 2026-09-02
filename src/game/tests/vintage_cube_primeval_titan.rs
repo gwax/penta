@@ -278,3 +278,60 @@ fn attacking_searches_again() {
         "leaving what it did not take",
     );
 }
+
+/// The Titan *puts* its lands onto the battlefield rather than playing them,
+/// so the land in your hand is still a land you may play this turn -- and it
+/// comes in untapped, which the Titan's two never do.
+#[test]
+fn the_search_leaves_your_land_drop_alone() {
+    let (mut game, _titan) = staged(&[(58_400, cards::TAIGA), (58_401, cards::FOREST)]);
+    let in_hand = card(58_402, cards::MOUNTAIN, PlayerId::One);
+    // Playing it gives the permanent a fresh object id, so the land is
+    // followed by what it is rather than by which card it was.
+    let in_hand_id = in_hand.id;
+    game.players[0].hand.push(in_hand);
+    game.players[0].lands_played_this_turn = 0;
+
+    let search = accept_the_search(&mut game);
+    let both = search
+        .options
+        .iter()
+        .take(2)
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: search.id,
+            options: both,
+        },
+    )
+    .expect("two of two is the whole clause");
+    drain_pending(&mut game);
+    assert_eq!(
+        game.players[0].lands_played_this_turn, 0,
+        "nothing about that was playing a land",
+    );
+
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == in_hand_id))
+        .expect("the drop is still there to make");
+    game.apply(PlayerId::One, play).expect("it is played");
+    drain_pending(&mut game);
+
+    assert_eq!(game.players[0].lands_played_this_turn, 1);
+    let untapped = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition != cards::PRIMEVAL_TITAN)
+        .filter(|permanent| !permanent.tapped)
+        .map(|permanent| permanent.card.definition)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        untapped,
+        vec![cards::MOUNTAIN],
+        "and a land you play yourself comes in ready, unlike the Titan's two",
+    );
+}
