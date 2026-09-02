@@ -299,3 +299,58 @@ fn the_replica_wants_both_halves_without_him() {
         "and the generic it wanted is the second"
     );
 }
+
+/// "Whenever you *cast* an artifact spell": the trigger is paid on the
+/// announcement and what the spell does afterwards is no part of the
+/// condition. A Lotus answered on the stack still leaves the Clue it bought
+/// -- and the Clue outlives the artifact that made it.
+#[test]
+fn a_countered_artifact_still_leaves_its_clue() {
+    let mut game = staged();
+    let lotus = card(85_500, cards::BLACK_LOTUS, PlayerId::One);
+    let lotus_id = lotus.id;
+    game.players[0].hand.push(lotus);
+    game.players[1]
+        .hand
+        .push(card(85_501, cards::COUNTERSPELL, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == lotus_id))
+        .expect("a free artifact is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    game.priority = PlayerId::Two;
+    let counter = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(85_501))
+        })
+        .expect("two blue answers it");
+    game.apply(PlayerId::Two, counter).expect("it is cast");
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::BLACK_LOTUS),
+        "the Lotus never arrived",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::BLACK_LOTUS),
+        "and is on no battlefield",
+    );
+    assert_eq!(
+        clues(&game),
+        1,
+        "but the casting was what the Gadgeteer watched, and the Clue stands",
+    );
+}
