@@ -78,6 +78,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Ninjutsu waits for blockers.** The window was keyed to the attack
+  declaration and shut the moment the step advanced, which is the wrong end of
+  combat on both counts: "the ninjutsu ability can be activated only after
+  blockers have been declared -- before then, attacking creatures are neither
+  blocked nor unblocked", and it stays open through the combat damage and end
+  of combat steps. A Fallen Shinobi could be swapped in before the defender
+  had answered the attack, and could not be swapped in after. The cost
+  already excluded blocked attackers, so only the timing moved.
+
 - **A land in an exiled pile no longer strands the pile's free cast.** The
   offer for each exiled card dropped the whole pile's shared permission when
   that card had nothing to offer, so a land among Crabomination's three cards

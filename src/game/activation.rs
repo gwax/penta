@@ -65,11 +65,15 @@ impl Game {
             // The same window Berserk uses, and read the same way: once
             // combat damage has started it is gone for the rest of the turn,
             // even in a later step.
-            // The priority round the declaration opens, which is the only
-            // window between the two declarations: once the step advances,
-            // blockers are being declared and nothing else has priority.
+            // "The ninjutsu ability can be activated only after blockers
+            // have been declared. Before then, attacking creatures are
+            // neither blocked nor unblocked." It stays open through the
+            // combat damage and end of combat steps, where returning an
+            // attacker is still legal and the Ninja simply arrives too late
+            // to deal any damage.
             ActivationTimingDef::AfterAttackersDeclared => {
-                self.step == Step::DeclareAttackers && self.attackers_declared
+                (self.step == Step::DeclareBlockers && self.blockers_declared)
+                    || matches!(self.step, Step::CombatDamage | Step::EndOfCombat)
             }
             ActivationTimingDef::BeforeCombatDamage => {
                 self.play_timing_allows(player, PlayRestriction::BeforeCombatDamage)

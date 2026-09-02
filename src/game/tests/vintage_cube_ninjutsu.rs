@@ -2,11 +2,12 @@
 
 use super::*;
 
-/// Puts `attacker` into the declare-blockers window, attacking player two
-/// and unblocked, which is where ninjutsu lives.
+/// Puts `attacker` into the window ninjutsu lives in: blockers declared and
+/// none of them on it, attacking player two.
 fn attacking_unblocked(game: &mut Game, attacker: GameObjectId) {
-    game.step = Step::DeclareAttackers;
+    game.step = Step::DeclareBlockers;
     game.attackers_declared = true;
+    game.blockers_declared = true;
     game.priority = PlayerId::One;
     for permanent in &mut game.battlefield {
         if permanent.card.id == attacker {
@@ -67,10 +68,13 @@ fn ninjutsu_swaps_an_unblocked_attacker_for_the_ninja() {
     );
 }
 
-/// The window is exactly between the two declarations: nothing before
-/// attackers are declared, and nothing once blockers are.
+/// "The ninjutsu ability can be activated only after blockers have been
+/// declared. Before then, attacking creatures are neither blocked nor
+/// unblocked." So the window opens with the blocker declaration rather than
+/// the attack one, and it stays open through the end of combat -- where the
+/// swap is still legal and simply too late to deal any damage.
 #[test]
-fn ninjutsu_only_opens_between_the_two_declarations() {
+fn ninjutsu_waits_for_blockers_and_lasts_to_the_end_of_combat() {
     let mut game = ready_game();
     game.battlefield.clear();
     let bears = creature(90_010, cards::GRIZZLY_BEARS, PlayerId::One);
@@ -87,15 +91,41 @@ fn ninjutsu_only_opens_between_the_two_declarations() {
         ninjutsu_action(&game, shinobi_id).is_none(),
         "no attackers yet, so nothing to return",
     );
-    attacking_unblocked(&mut game, bears_id);
-    assert!(
-        ninjutsu_action(&game, shinobi_id).is_some(),
-        "the window is open between the declarations",
-    );
-    game.step = Step::DeclareBlockers;
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = true;
+    game.priority = PlayerId::One;
+    for permanent in &mut game.battlefield {
+        if permanent.card.id == bears_id {
+            permanent.attacking = true;
+            permanent.tapped = true;
+            permanent.attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+        }
+    }
     assert!(
         ninjutsu_action(&game, shinobi_id).is_none(),
-        "and shut once the step advances to blocking",
+        "and an attacker nobody has had the chance to block is neither blocked nor unblocked",
+    );
+
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = true;
+    assert!(
+        ninjutsu_action(&game, shinobi_id).is_some(),
+        "the window opens once the blocks are in",
+    );
+
+    for step in [Step::CombatDamage, Step::EndOfCombat] {
+        game.step = step;
+        assert!(
+            ninjutsu_action(&game, shinobi_id).is_some(),
+            "{step:?} is still inside it",
+        );
+    }
+
+    game.step = Step::PostcombatMain;
+    assert!(
+        ninjutsu_action(&game, shinobi_id).is_none(),
+        "and combat is where it ends",
     );
 }
 

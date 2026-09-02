@@ -229,8 +229,11 @@ fn ninjutsu_brings_him_in_attacking_and_he_connects() {
     game.turns_started = [5, 5];
     game.turn = 9;
     game.active_player = PlayerId::One;
-    game.step = Step::DeclareAttackers;
+    // Blockers are in and none of them are on the bear, which is the window
+    // ninjutsu opens in.
+    game.step = Step::DeclareBlockers;
     game.attackers_declared = true;
+    game.blockers_declared = true;
     game.priority = PlayerId::One;
     for permanent in &mut game.battlefield {
         if permanent.card.id == bears_id {
