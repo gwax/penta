@@ -460,3 +460,42 @@ mod companion {
         assert!(companion_offers(&game).is_empty());
     }
 }
+
+/// "If you cast one permanent spell from your graveyard and then have a new
+/// Lurrus come under your control in the same turn, you may cast another
+/// permanent spell from your graveyard that turn." The permission belongs to
+/// the Lurrus that granted it: a second one brings its own, spent or not.
+#[test]
+fn a_second_lurrus_brings_a_second_permission() {
+    let mut game = staged(&[cards::GRIZZLY_BEARS, cards::MANIFOLD_KEY]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 12);
+    let first = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::LURRUS_OF_THE_DREAM_DEN)
+        .expect("he is out")
+        .card
+        .id;
+
+    let cast = castable_from_graveyard(&game, cards::GRIZZLY_BEARS).expect("the first is on offer");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+    assert!(
+        castable_from_graveyard(&game, cards::MANIFOLD_KEY).is_none(),
+        "his permission is spent for the turn",
+    );
+
+    // He dies and another takes his place, on the same turn.
+    game.move_permanents_to_graveyard(&[first]);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+    game.put_onto_battlefield(PlayerId::One, cards::LURRUS_OF_THE_DREAM_DEN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert!(
+        castable_from_graveyard(&game, cards::MANIFOLD_KEY).is_some(),
+        "the new one grants a permission the old one's spending never touched",
+    );
+}
