@@ -364,3 +364,48 @@ fn exiling_him_leaves_no_soldiers() {
         "and that is where he is",
     );
 }
+
+/// "When Torsten dies" is a battlefield event, and the third way round it is
+/// the cheapest: a Torsten discarded to a Wheel of Fortune reaches the same
+/// graveyard the death trigger watches and leaves nobody behind, because he
+/// was never on the battlefield to die from.
+#[test]
+fn a_torsten_discarded_from_hand_leaves_no_soldiers() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    let torsten = card(84_800, cards::TORSTEN_FOUNDER_OF_BENALIA, PlayerId::One);
+    game.players[0].hand.push(torsten);
+    let wheel = card(84_801, cards::WHEEL_OF_FORTUNE, PlayerId::One);
+    let wheel_id = wheel.id;
+    game.players[0].hand.push(wheel);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 3);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == wheel_id))
+        .expect("three mana casts the Wheel");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::TORSTEN_FOUNDER_OF_BENALIA),
+        "he was discarded into the graveyard",
+    );
+    assert_eq!(
+        soldiers(&game),
+        0,
+        "and nobody arrived: a card in hand cannot die",
+    );
+}
