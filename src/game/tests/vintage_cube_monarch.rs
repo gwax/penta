@@ -204,3 +204,69 @@ fn the_draw_follows_the_crown_rather_than_the_seat_that_had_it() {
         "and the seat that does draws at theirs",
     );
 }
+
+/// "Palace Jailer leaving the battlefield won't cause the exiled creature to
+/// return. The game will continue to watch for the next time an opponent
+/// becomes the monarch." The release listens from outside every zone: a dead
+/// Jailer is no key, and no lock either.
+#[test]
+fn a_dead_jailer_neither_frees_the_creature_nor_stops_the_release() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.battlefield
+        .push(creature(84_030, cards::GRIZZLY_BEARS, PlayerId::Two));
+    let jailer = card(84_031, cards::PALACE_JAILER, PlayerId::One);
+    let jailer_id = jailer.id;
+    game.players[0].hand.push(jailer);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == jailer_id))
+        .expect("four mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    resolve(&mut game);
+    drain_pending(&mut game);
+    let jailed = |game: &Game| {
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+    };
+    assert!(jailed(&game), "jailed to begin with");
+
+    // They answer the Jailer. The crown stays where it is, and so does the
+    // bear.
+    let body = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::PALACE_JAILER)
+        .map(|permanent| permanent.card.id)
+        .expect("the Jailer is on the battlefield");
+    game.move_permanents_to_graveyard(&[body]);
+    resolve(&mut game);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.monarch(),
+        Some(PlayerId::One),
+        "killing him takes no crown back",
+    );
+    assert!(
+        jailed(&game),
+        "and it takes no creature back either: he was never the lock",
+    );
+
+    // The crown changing hands is what frees it, whether or not he is there
+    // to see it.
+    game.set_monarch(PlayerId::Two);
+    resolve(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        !jailed(&game),
+        "the release was still watching, from a graveyard",
+    );
+}
