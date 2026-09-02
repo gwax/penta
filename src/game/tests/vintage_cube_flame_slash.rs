@@ -120,3 +120,31 @@ fn a_planeswalker_is_not_a_creature() {
         "and he is standing there to prove it",
     );
 }
+
+/// Damage, not destruction. Four is far past a Darksteel Myr's one
+/// toughness, and the Myr stands there with the four marked on it, because
+/// lethal damage is a thing indestructible ignores. The same Myr has no
+/// answer at all to a Dismember, which is the difference between the two
+/// pieces of one-mana removal sitting beside each other in this cube.
+#[test]
+fn an_indestructible_creature_takes_the_four_and_stands() {
+    let (mut game, slash, myr) = staged(cards::DARKSTEEL_MYR);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == slash))
+        .expect("one red mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    let hurt = permanent(&game, myr).expect("indestructible shrugs off lethal damage");
+    assert_eq!(hurt.damage, 4, "the four is marked on it all the same");
+    assert_eq!(
+        (game.power(hurt), game.toughness(hurt)),
+        (Some(0), Some(1)),
+        "at the size it always was",
+    );
+}
