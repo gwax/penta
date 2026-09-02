@@ -499,7 +499,7 @@ fn only_lands_are_on_the_menu() {
         .filter_map(|option| option.card.map(|(object, _)| object))
         .collect::<Vec<_>>();
 
-    assert!(!offered.contains(&bears), "a tapped creature is not a land",);
+    assert!(!offered.contains(&bears), "a tapped creature is not a land");
     assert!(
         !offered.contains(&monolith),
         "and neither is the artifact that would most like to be one",
