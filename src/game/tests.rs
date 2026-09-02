@@ -427,6 +427,7 @@ mod vintage_cube_dack;
 mod vintage_cube_damn;
 mod vintage_cube_dark_confidant;
 mod vintage_cube_dark_depths;
+mod vintage_cube_dark_ritual;
 mod vintage_cube_dauthi_voidwalker;
 mod vintage_cube_daze;
 mod vintage_cube_death_greeters_champion;
