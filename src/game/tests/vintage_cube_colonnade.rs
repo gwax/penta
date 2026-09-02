@@ -439,3 +439,54 @@ fn four_damage_kills_it_and_takes_the_land_with_it() {
         "and the land it still was went with it",
     );
 }
+
+/// "{3}{W}{U}": the two pips are real, and five colourless will not wake it.
+/// What can pay one of them is the Colonnade itself -- it taps for white or
+/// blue like any other turn -- and the price of that is a 4/4 that is
+/// already tapped and cannot attack with the body it just bought.
+#[test]
+fn it_can_tap_itself_for_a_pip_and_is_tapped_for_it() {
+    let (mut game, colonnade) = staged();
+    let offered = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| matches!(action, Action::ActivateAbility { source, .. } if source == colonnade))
+    };
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 5);
+    assert!(
+        !offered(&game),
+        "five colourless and a land that makes one pip is still a pip short",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    assert!(
+        offered(&game),
+        "with the white in hand the Colonnade taps for the blue itself",
+    );
+
+    let animate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == colonnade))
+        .expect("just checked");
+    game.apply(PlayerId::One, animate).expect("it activates");
+    resolve(&mut game);
+
+    let woken = permanent(&game, colonnade);
+    assert_eq!(game.power(woken), Some(4), "a 4/4 all the same");
+    assert!(
+        woken.tapped,
+        "and tapped, having paid a pip of its own animation",
+    );
+
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| matches!(action, Action::DeclareAttacker { attacker, .. } if attacker == colonnade)),
+        "so the body it bought stays home this turn",
+    );
+}
