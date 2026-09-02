@@ -516,3 +516,65 @@ fn a_copy_of_a_saddled_bronco_is_not_saddled() {
         "while the original is saddled still",
     );
 }
+
+/// "Creatures with saddle can attack or block as normal even if they aren't
+/// saddled." The attacking half is all over this file; the blocking half is
+/// the point of the ruling -- a Mount is not a Vehicle and needs nobody in
+/// the seat to stand in the way. Its trigger watches attacking, so blocking
+/// reveals nothing and costs nobody a point.
+#[test]
+fn an_unsaddled_bronco_blocks_and_reveals_nothing() {
+    let (mut game, bronco) = staged(&[], &[cards::SERRA_ANGEL]);
+    assert!(!saddled(&game, bronco), "nobody is riding it");
+    let attacker = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    let library = game.players[PlayerId::One.index()].library.len();
+
+    // Their turn, their bear, and the Bronco steps in front of it.
+    game.turns_started[PlayerId::Two.index()] = 5;
+    game.active_player = PlayerId::Two;
+    game.step = Step::DeclareAttackers;
+    game.declare_attacker(attacker, AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    game.step = Step::DeclareBlockers;
+    game.declare_blocker(bronco, attacker);
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        20,
+        "the bear was blocked, and no trigger drained anybody",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        20,
+        "least of all them",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].library.len(),
+        library,
+        "and nothing was revealed: the trigger watches attacking",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].hand.is_empty(),
+        "so the Angel is still on top rather than in hand",
+    );
+
+    // Two power each way: the bear dies and so does the Bronco.
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != attacker),
+        "a 2/2 blocked by a 2/2 trades",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != bronco),
+        "and the Bronco went with it, having blocked like any creature",
+    );
+}
