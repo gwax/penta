@@ -273,3 +273,70 @@ fn counters_on_what_she_takes_do_not_come_back_with_it() {
         "so it is the 2/2 it was printed as",
     );
 }
+
+/// "Auras attached to the exiled permanent will be put into their owners'
+/// graveyards. Equipment attached to the exiled permanent will become
+/// unattached and remain on the battlefield." Two different fates for two
+/// kinds of attachment, and neither had a test.
+#[test]
+fn an_aura_dies_with_what_she_takes_and_an_equipment_does_not() {
+    let (mut game, phelia, ids) = staged(&[(cards::GRIZZLY_BEARS, PlayerId::One)]);
+    let bears = ids[0];
+    // Pacifism rather than Rancor: Rancor returns itself to hand from the
+    // graveyard, which would hide whether it went there at all.
+    let aura = game
+        .put_onto_battlefield(PlayerId::One, cards::PACIFISM)
+        .expect("cataloged");
+    let jitte = game
+        .put_onto_battlefield(PlayerId::One, cards::UMEZAWAS_JITTE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for attachment in [aura, jitte] {
+        game.battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == attachment)
+            .expect("it is there")
+            .attached_to = Some(bears);
+    }
+    game.check_state_based_actions();
+
+    attack_taking(&mut game, phelia, Some(bears));
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears),
+        "the bear is exiled for the turn",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::PACIFISM),
+        "the Aura had nothing left to enchant and went to its owner's graveyard",
+    );
+    let equipment = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == jitte)
+        .expect("the Equipment is still on the battlefield");
+    assert_eq!(
+        equipment.attached_to, None,
+        "unattached, but standing: an Equipment outlives what it was on",
+    );
+
+    end_step(&mut game);
+
+    assert!(
+        on_battlefield(&game, cards::GRIZZLY_BEARS),
+        "and the bear comes back bare",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == jitte)
+            .is_some_and(|permanent| permanent.attached_to.is_none()),
+        "the Jitte does not re-attach itself to what returned",
+    );
+}
