@@ -90,7 +90,8 @@ fn arriving_destroys_an_artifact() {
     );
 }
 
-/// "Up to one": with nothing worth answering it simply arrives.
+/// "Up to one" is a minimum of none: the Mox is a legal target sitting right
+/// there, and declining to name it is an answer the trigger accepts.
 #[test]
 fn it_may_answer_nothing() {
     let (mut game, loran, _) = staged(&[(cards::MOX_JET, PlayerId::Two)]);
