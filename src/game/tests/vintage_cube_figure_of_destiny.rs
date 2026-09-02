@@ -326,3 +326,63 @@ fn the_ladder_may_be_climbed_on_their_turn() {
     );
     assert!(subtypes(&game, figure).iter().any(|kind| kind == "Warrior"));
 }
+
+/// Each hybrid pip is settled on its own, so one activation may be paid with
+/// both halves at once. Every test above spends a single colour; three pips
+/// bought with two reds and a white is the thing hybrid actually allows.
+#[test]
+fn one_step_may_be_paid_with_both_halves() {
+    let (mut game, figure) = staged(0);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    assert!(
+        activate(&mut game, figure, "{R/W}:"),
+        "white buys the first"
+    );
+    assert_eq!(
+        game.power(permanent(&game, figure)),
+        Some(2),
+        "a 2/2 Spirit"
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+
+    assert!(
+        activate(&mut game, figure, "{R/W}{R/W}{R/W}:"),
+        "two red and a white pay three hybrid pips between them",
+    );
+    assert_eq!(
+        game.power(permanent(&game, figure)),
+        Some(4),
+        "and the Spirit is a 4/4 Warrior for it",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana.len(),
+        0,
+        "all three were spent, whichever colour each one was",
+    );
+}
+
+/// A hybrid pip is one of two colours and never a generic one: a pool of
+/// colorless climbs no rungs at all.
+#[test]
+fn colorless_mana_pays_no_hybrid_pip() {
+    let (mut game, figure) = staged(0);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 6);
+
+    assert!(
+        !activate(&mut game, figure, "{R/W}:"),
+        "six colorless is not one red or white",
+    );
+    assert_eq!(
+        game.power(permanent(&game, figure)),
+        Some(1),
+        "so it is the 1/1 it was printed as",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    assert!(
+        activate(&mut game, figure, "{R/W}:"),
+        "and one red is what it wanted all along",
+    );
+}
