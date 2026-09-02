@@ -234,3 +234,42 @@ fn she_is_a_two_two_outside_the_battlefield() {
         "her printed two, with the three lands counting for nothing",
     );
 }
+
+/// "Each land card in your graveyard": the yard across the table is no part
+/// of it, however many fetches they have cracked. A Knight with one land
+/// behind her is a 3/3 beside an opponent's four.
+#[test]
+fn their_graveyard_does_not_grow_her() {
+    let (mut game, knight, _) = staged(&[], &[cards::FOREST], &[]);
+    for (index, definition) in [
+        cards::PLAINS,
+        cards::WASTELAND,
+        cards::TAIGA,
+        cards::VOLCANIC_ISLAND,
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        game.players[1].graveyard.push(card(
+            92_000 + u32::try_from(index).expect("a small graveyard"),
+            definition,
+            PlayerId::Two,
+        ));
+    }
+
+    let she = permanent(&game, knight);
+    assert_eq!(
+        game.power(she),
+        Some(3),
+        "her own one land, and not their four",
+    );
+    assert_eq!(game.toughness(she), Some(3));
+
+    // And the count is live: a land of yours reaching the graveyard is worth
+    // a counter's worth of size the moment it lands there.
+    game.players[0]
+        .graveyard
+        .push(card(92_100, cards::PLAINS, PlayerId::One));
+    let she = permanent(&game, knight);
+    assert_eq!(game.power(she), Some(4), "the second of yours does count");
+}
