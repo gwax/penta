@@ -278,3 +278,118 @@ fn a_reprieve_with_nothing_left_to_return_draws_nothing() {
         "it is in the graveyard, countered for want of a target",
     );
 }
+
+/// A copy of a spell is not a card, so there is no hand for it to go back
+/// to: removed from the stack it simply ceases to exist. Reprieve answers a
+/// storm copy as cleanly as it answers the spell, and gets nothing back for
+/// either of them.
+#[test]
+fn a_copy_it_returns_ceases_to_exist() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[1].hand.clear();
+    for (index, definition) in [cards::LIGHTNING_BOLT, cards::BRAIN_FREEZE]
+        .into_iter()
+        .enumerate()
+    {
+        game.players[0].hand.push(card(
+            83_000 + u32::try_from(index).expect("two cards"),
+            definition,
+            PlayerId::One,
+        ));
+    }
+    let reprieve = card(83_010, cards::REPRIEVE, PlayerId::Two);
+    let reprieve_id = reprieve.id;
+    game.players[1].hand.push(reprieve);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 2);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::White, 2);
+
+    // One spell already cast this turn, so Brain Freeze's storm makes exactly
+    // one copy and the stack holds the spell and its copy together.
+    let bolt = game.players[0].hand[0].id;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == bolt))
+        .expect("the Bolt is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    let freeze = game.players[0].hand[0].id;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == freeze))
+        .expect("Brain Freeze is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    // The spell and its storm trigger are both on the stack; the copy is
+    // whatever is there that was not there before the trigger resolved.
+    let before_copy = game
+        .stack
+        .iter()
+        .map(|object| object.id)
+        .collect::<Vec<_>>();
+    pass_until_decision(&mut game);
+    // The storm trigger asks where its copy points before the copy exists.
+    let targeting = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the copy is being pointed somewhere");
+    game.apply(
+        targeting.player,
+        Action::ChooseDecision {
+            decision: targeting.id,
+            options: vec![targeting.options[0].id],
+        },
+    )
+    .expect("the offered choice is legal");
+    assert_eq!(game.stack.len(), 2, "the spell and its one storm copy");
+
+    let copy = game
+        .stack
+        .iter()
+        .find(|object| !before_copy.contains(&object.id))
+        .expect("the storm trigger added a copy")
+        .id;
+    // Reprieve is an instant in the other seat, so priority has to reach it.
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("passing with the copy on the stack");
+    let hand_before = game.players[0].hand.len();
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == reprieve_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(copy))
+            }
+            _ => false,
+        })
+        .expect("a copy is a spell and Reprieve may point at one");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        !game.stack.iter().any(|object| object.id == copy),
+        "the copy is off the stack",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand_before,
+        "and nowhere else: a copy is not a card and got no hand back",
+    );
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .all(|card| card.definition != cards::BRAIN_FREEZE),
+        "the card itself was never the thing returned",
+    );
+}
