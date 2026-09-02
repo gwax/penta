@@ -408,3 +408,84 @@ fn their_draw_step_costs_nothing() {
         "their draw step is not yours, however tapped it is",
     );
 }
+
+/// "Doesn't untap during your untap step" is a rule about one step, not about
+/// the Vault: anything else that untaps it may. A Manifold Key does it for
+/// {1} in your main phase, which is six colourless out of one artifact in a
+/// turn and the {4} never asked for.
+#[test]
+fn another_effect_may_untap_it_outside_the_untap_step() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let vault = game
+        .put_onto_battlefield(PlayerId::One, cards::MANA_VAULT)
+        .expect("cataloged");
+    let key = game
+        .put_onto_battlefield(PlayerId::One, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let tap_for_three = |game: &mut Game| {
+        game.apply(
+            PlayerId::One,
+            Action::ActivateManaAbility {
+                source: vault,
+                ability: mana_ability_for(game, vault, ManaColor::Colorless),
+                color: ManaColor::Colorless,
+                counters_removed: None,
+                cost_object: None,
+                combination: None,
+                triggered_mana: None,
+            },
+        )
+        .expect("it taps for mana");
+    };
+
+    tap_for_three(&mut game);
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 3,
+        "three from the first"
+    );
+
+    let untap =
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == key
+                        && targets.iter().any(|selection| {
+                            selection.targets().iter().any(
+                                |target| matches!(target, Target::Permanent(id) if *id == vault),
+                            )
+                        })
+                }
+                _ => false,
+            })
+            .expect("one of the three pays the Key, which names the Vault");
+    game.apply(PlayerId::One, untap).expect("it activates");
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == vault)
+            .expect("still there")
+            .tapped,
+        "the Vault is untapped in the middle of a main phase",
+    );
+
+    tap_for_three(&mut game);
+    assert_eq!(
+        game.players[0].mana_pool.colorless, 5,
+        "three, less the one the Key cost, and three again",
+    );
+}
