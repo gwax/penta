@@ -453,3 +453,44 @@ fn their_spell_aimed_at_your_creature_sets_it_off_too() {
         "and the bear still died to the Bolt",
     );
 }
+
+/// "If Nadu leaves the battlefield and returns in the same turn, or if Nadu
+/// leaves and another Nadu appears, the triggered ability granted by the new
+/// one is different than the one granted by the old one. The one granted by
+/// the new Nadu may trigger twice for each creature you control, even if the
+/// ability granted by the old Nadu already triggered twice for those
+/// creatures that turn."
+#[test]
+fn a_second_nadu_hands_the_bear_two_more() {
+    let (mut game, nadu, bears) = staged(&[
+        cards::LIGHTNING_BOLT,
+        cards::LIGHTNING_BOLT,
+        cards::LIGHTNING_BOLT,
+        cards::LIGHTNING_BOLT,
+        cards::LIGHTNING_BOLT,
+        cards::LIGHTNING_BOLT,
+    ]);
+
+    pump(&mut game, bears);
+    pump(&mut game, bears);
+    pump(&mut game, bears);
+    assert_eq!(game.players[0].hand.len(), 2, "the bear's two are spent");
+
+    game.move_permanents_to_graveyard(&[nadu]);
+    game.check_state_based_actions();
+    drain_pending(&mut game);
+    game.put_onto_battlefield(PlayerId::One, cards::NADU_WINGED_WISDOM)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    pump(&mut game, bears);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        3,
+        "a new Nadu grants a new ability, and the count it kept was the old one's",
+    );
+}
