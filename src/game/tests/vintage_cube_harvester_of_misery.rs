@@ -479,3 +479,49 @@ fn two_shrinks_stack_on_one_creature() {
         "and both cards paid for it",
     );
 }
+
+/// The other half of the ruling: "noncreature permanents that become
+/// creatures later in the turn won't get -2/-2." The sweep read the
+/// battlefield once, and a Colonnade that was a land at the time is a whole
+/// 4/4 when it stands up afterwards.
+#[test]
+fn a_land_animated_afterwards_is_untouched() {
+    let (mut game, harvester) = staged(9);
+    let colonnade = game
+        .put_onto_battlefield(PlayerId::One, cards::CELESTIAL_COLONNADE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == harvester))
+        .expect("five mana casts it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    let animate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == colonnade)
+        })
+        .expect("the Colonnade may stand up");
+    game.apply(PlayerId::One, animate).expect("it activates");
+    settle(&mut game);
+
+    let land = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == colonnade)
+        .expect("it is still there");
+    assert_eq!(
+        (game.power(land), game.toughness(land)),
+        (Some(4), Some(4)),
+        "it was a land when the sweep looked, so the sweep never saw it",
+    );
+}
