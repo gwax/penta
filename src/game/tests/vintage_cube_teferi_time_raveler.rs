@@ -398,3 +398,84 @@ fn the_plus_one_expires_when_your_next_turn_comes() {
         "and the flash it lent is spent: a sorcery waits for a main phase",
     );
 }
+
+/// "You may cast sorcery spells as though they had flash" says sorceries and
+/// means it: a creature in the same hand is still a creature, and their turn
+/// is still no time to cast one.
+#[test]
+fn the_plus_one_lends_flash_to_sorceries_and_nothing_else() {
+    let (mut game, teferi, _mine, ponder, _theirs) = staged();
+    let bears = game
+        .build_zone(PlayerId::One, &[cards::GRIZZLY_BEARS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let bears_id = bears.id;
+    game.players[0].hand.push(bears);
+    assert!(
+        can_cast(&game, PlayerId::One, bears_id),
+        "your own main phase casts it without any help",
+    );
+
+    activate(&mut game, teferi, 1, None);
+    game.active_player = PlayerId::Two;
+    game.priority = PlayerId::One;
+
+    assert!(
+        can_cast(&game, PlayerId::One, ponder),
+        "the sorcery has flash now",
+    );
+    assert!(
+        !can_cast(&game, PlayerId::One, bears_id),
+        "and the creature beside it does not",
+    );
+}
+
+/// "Target artifact, creature, or enchantment": a land is none of the three,
+/// and neither is a planeswalker -- Teferi cannot even bounce himself.
+#[test]
+fn the_minus_three_reaches_only_three_kinds_of_permanent() {
+    let (mut game, teferi, _mine, _ponder, _theirs) = staged();
+    let forest = game
+        .put_onto_battlefield(PlayerId::Two, cards::FOREST)
+        .expect("cataloged");
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source,
+                ability: AbilityOrigin::Printed { ability, .. },
+                targets,
+                ..
+            } if source == teferi && ability == AbilityId(2) => Some(
+                targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .copied()
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert!(
+        offered.contains(&Target::Permanent(bears)),
+        "a creature is one of the three",
+    );
+    assert!(
+        !offered.contains(&Target::Permanent(forest)),
+        "a land is not",
+    );
+    assert!(
+        !offered.contains(&Target::Permanent(teferi)),
+        "and neither is a planeswalker, his own included",
+    );
+}
