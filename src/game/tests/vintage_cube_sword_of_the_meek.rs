@@ -443,3 +443,68 @@ fn two_swords_in_the_graveyard_both_come_back_to_the_same_creature() {
         "a 1/1 wearing two of them",
     );
 }
+
+/// The engine the card is drafted for. A Thopter Foundry eats the Sword off
+/// the battlefield for a 1/1 Thopter and a life -- and that Thopter, being a
+/// 1/1 creature entering under your control, is exactly what pulls the Sword
+/// straight back out of the graveyard onto it. One mana a turn for a flier,
+/// a life, and the Sword back where it started.
+#[test]
+fn the_thopter_foundry_feeds_the_sword_back_to_itself() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let foundry = game
+        .put_onto_battlefield(PlayerId::One, cards::THOPTER_FOUNDRY)
+        .expect("cataloged");
+    let sword = game
+        .put_onto_battlefield(PlayerId::One, cards::SWORD_OF_THE_MEEK)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    game.priority = PlayerId::One;
+    let life = game.players[0].life;
+
+    let melt = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source,
+                cost_objects,
+                ..
+            } => *source == foundry && cost_objects.contains(&sword),
+            _ => false,
+        })
+        .expect("the Sword is a nontoken artifact to feed it");
+    game.apply(PlayerId::One, melt).expect("it activates");
+    settle(&mut game, true);
+
+    let thopter = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Token)
+        .expect("a Thopter was made");
+    assert_eq!(
+        (game.power(thopter), game.toughness(thopter)),
+        (Some(2), Some(3)),
+        "a 1/1 flier wearing the Sword that paid for it",
+    );
+    assert_eq!(game.players[0].life, life + 1, "and a life for the trouble");
+
+    let returned = sword_on_battlefield(&game).expect("the Sword came back");
+    assert_eq!(
+        returned.attached_to,
+        Some(thopter.card.id),
+        "attached to the creature whose arrival called it",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != cards::SWORD_OF_THE_MEEK),
+        "with nothing of it left in the graveyard",
+    );
+}
