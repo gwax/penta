@@ -243,3 +243,61 @@ fn a_worn_sash_is_no_longer_a_cat() {
     assert!(is_a_creature(&game), "taken off, it is a creature again");
     assert_eq!(subtypes(&game), vec!["Cat", "Equipment"], "and a Cat again");
 }
+
+/// "Reconfigure {cost} means '[Cost]: Attach this permanent to another
+/// target creature you control. Activate only as a sorcery.'" Three words
+/// there do work nothing above tests: *another* (an Equipment creature can
+/// never be attached to itself), *you control*, and the sorcery timing.
+#[test]
+fn reconfigure_names_another_creature_of_yours_at_sorcery_speed() {
+    let (mut game, sash) = staged(&[]);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    let attaches_to = |game: &Game, wanted: GameObjectId| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    source == sash
+                        && targets.iter().any(|selection| {
+                            selection.targets().contains(&Target::Permanent(wanted))
+                        })
+                }
+                _ => false,
+            })
+    };
+
+    assert!(attaches_to(&game, mine), "your own bear may wear it");
+    assert!(
+        !attaches_to(&game, sash),
+        "and it is never strapped to itself, Cat though it is",
+    );
+    assert!(
+        !attaches_to(&game, theirs),
+        "nor to an Angel across the table",
+    );
+
+    // "Activate only as a sorcery": their turn is not a window for it.
+    game.active_player = PlayerId::Two;
+    game.turns_started = [5, 6];
+    assert!(
+        !attaches_to(&game, mine),
+        "and reconfigure waits for a turn of yours",
+    );
+}
