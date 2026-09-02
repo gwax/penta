@@ -569,3 +569,53 @@ fn off_the_battlefield_he_is_the_front_face_only() {
         "and the back face is no part of him there",
     );
 }
+
+/// "In some rare cases, a spell or ability may cause Ajani, Nacatl Pariah to
+/// transform while it's a creature on the battlefield. If this happens,
+/// Ajani, Nacatl Avenger won't have any loyalty counters on him and will
+/// subsequently be put into his owner's graveyard." Turning him over in
+/// place is not the same as the exile-and-return his own trigger does: no
+/// new object arrives, so nothing puts the printed loyalty on him.
+#[test]
+fn turned_over_in_place_he_arrives_with_no_loyalty_and_dies() {
+    let (mut game, ajani) = ajani_on_battlefield();
+    assert!(
+        permanent_named(&game, "Ajani, Nacatl Pariah").is_some(),
+        "he starts as the creature",
+    );
+
+    game.transform_permanent(ajani);
+
+    let avenger = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == ajani)
+        .expect("he is still there for the moment");
+    assert_eq!(
+        game.effective_permanent_name(avenger).as_deref(),
+        Some("Ajani, Nacatl Avenger"),
+        "the other face is up",
+    );
+    assert_eq!(
+        avenger.counters(CounterKind::Loyalty),
+        0,
+        "and no loyalty came with it",
+    );
+
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == ajani),
+        "a planeswalker on zero loyalty does not stay",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::AJANI_NACATL_PARIAH),
+        "he is in his owner's graveyard, front face up like any card there",
+    );
+}
