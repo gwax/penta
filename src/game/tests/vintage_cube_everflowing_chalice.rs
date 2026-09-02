@@ -212,3 +212,51 @@ fn kicking_it_does_not_change_what_it_costs_on_paper() {
         );
     }
 }
+
+/// "Add {C}", and colourless is not a wild card: three counters buy another
+/// Chalice's {2} kick and will not buy a Dark Ritual's single black pip,
+/// which is the whole difference between this and a Talisman.
+#[test]
+fn the_mana_it_makes_is_colourless_and_pays_no_coloured_pip() {
+    let (mut game, chalice) = staged(6);
+    cast_chalice(&mut game, chalice, 3);
+    assert_eq!(charges(&game), 3, "kicked three times");
+
+    let second = game
+        .build_zone(PlayerId::One, &[cards::EVERFLOWING_CHALICE])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let second_id = second.id;
+    game.players[0].hand.push(second);
+    game.players[0]
+        .hand
+        .push(card(86_600, cards::DARK_RITUAL, PlayerId::One));
+
+    let tap = mana_abilities(&game)
+        .into_iter()
+        .next()
+        .expect("the mana ability is offered");
+    game.apply(PlayerId::One, tap).expect("it taps");
+    assert_eq!(
+        (
+            game.players[0].mana_pool.colorless,
+            game.players[0].mana_pool.total()
+        ),
+        (3, 3),
+        "three colourless and nothing else in the pool",
+    );
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(86_600))
+        }),
+        "three colourless is no black mana, so the Ritual stays in hand",
+    );
+    assert_eq!(
+        kick_counts(&game, second_id),
+        vec![0, 1],
+        "and the same three buy a second Chalice with one kick on it",
+    );
+}
