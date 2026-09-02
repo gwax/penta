@@ -338,3 +338,110 @@ fn it_drains_what_it_bites() {
         "and lifelink pays for the trade",
     );
 }
+
+/// "Legendary, basic, and snow are supertypes, not card types; Lhurgoyf,
+/// Forest, and Siege are subtypes." A legendary creature, a basic land and
+/// an Equipment carry three card types between them and not a word more.
+#[test]
+fn supertypes_and_subtypes_do_not_feed_it() {
+    let (mut game, goyf) = staged(
+        &[
+            cards::ADUN_OAKENSHIELD,
+            cards::FOREST,
+            cards::UMEZAWAS_JITTE,
+        ],
+        &[],
+    );
+    assert_eq!(
+        stats(&game, goyf),
+        (Some(3), Some(4)),
+        "creature, land and artifact: the legendary and the Equipment add nothing",
+    );
+
+    game.players[0]
+        .graveyard
+        .push(card(80_400, cards::GRIZZLY_BEARS, PlayerId::One));
+    assert_eq!(
+        stats(&game, goyf),
+        (Some(3), Some(4)),
+        "and a second creature is a type already counted",
+    );
+
+    game.players[0]
+        .graveyard
+        .push(card(80_401, cards::LIGHTNING_BOLT, PlayerId::One));
+    assert_eq!(
+        stats(&game, goyf),
+        (Some(4), Some(5)),
+        "while an instant is a fourth card type",
+    );
+}
+
+/// Two separate "may"s: the mill is taken and the creature from among the
+/// milled cards is declined, which leaves the pile in the graveyard and the
+/// hand empty.
+#[test]
+fn the_mill_may_be_taken_and_the_creature_declined() {
+    let (mut game, goyf) = staged(
+        &[cards::MOUNTAIN, cards::LIGHTNING_BOLT, cards::BLACK_LOTUS],
+        &[cards::SERRA_ANGEL, cards::ISLAND, cards::MOUNTAIN],
+    );
+
+    game.damage_target_from_kind(Some(goyf), Some(Target::Player(PlayerId::Two)), 3, true);
+
+    // Yes to the mill, then no to what it turned up.
+    let mut answered_first = false;
+    for _ in 0..16 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            if game.apply(game.priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        let wanted = if answered_first {
+            decision
+                .options
+                .iter()
+                .find(|option| option.label == "Decline")
+        } else {
+            decision
+                .options
+                .iter()
+                .find(|option| option.label != "Decline")
+        };
+        answered_first = true;
+        let options = wanted.map(|option| vec![option.id]).unwrap_or_default();
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("the decision accepts what it offered");
+    }
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0].library.is_empty(),
+        "three cards were milled",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the Angel is lying in the graveyard with the rest",
+    );
+    assert!(
+        game.players[0].hand.is_empty(),
+        "and declining the second may leaves it there",
+    );
+}
