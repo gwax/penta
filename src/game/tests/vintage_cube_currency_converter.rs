@@ -322,3 +322,64 @@ fn an_empty_bank_cashes_out_for_nothing() {
         "and there was nothing in exile to pay for anything",
     );
 }
+
+/// "Put a card exiled with *this artifact*": the bank is its own, not every
+/// card in exile. A Serra Angel that some other effect put there is not on
+/// the menu, and cashing out spends the one card the Converter actually
+/// banked -- leaving the Angel exactly where it was.
+#[test]
+fn it_cashes_out_only_what_it_banked_itself() {
+    let (mut game, converter) = staged(&[]);
+    bank(&mut game, converter, cards::MOUNTAIN);
+    bank(&mut game, converter, cards::LIGHTNING_BOLT);
+    // Exiled by something else entirely: no link to the Converter.
+    let stranger = game
+        .build_zone(PlayerId::One, &[cards::SERRA_ANGEL])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let stranger_id = stranger.id;
+    game.players[0].exile.push(stranger);
+
+    activate(&mut game, converter, 2);
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("it asks which banked card to cash");
+    let offered = decision
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(object, _)| object))
+        .collect::<Vec<_>>();
+    assert!(
+        !offered.contains(&stranger_id),
+        "a card it never banked is no part of its bank",
+    );
+    answer(&mut game, Some("Mountain"));
+
+    assert_eq!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::MOUNTAIN],
+        "its own card is what it cashed",
+    );
+    assert_eq!(
+        game.players[0]
+            .exile
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::LIGHTNING_BOLT, cards::SERRA_ANGEL],
+        "its other banked card stays banked, and the Angel is untouched",
+    );
+    assert_eq!(
+        subtyped(&game, "Treasure").len(),
+        1,
+        "a land paid a Treasure"
+    );
+}
