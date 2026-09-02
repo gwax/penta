@@ -244,3 +244,35 @@ fn the_kicker_wants_black_that_the_spell_itself_does_not() {
         "one black is what the kicker was waiting for",
     );
 }
+
+/// "Target artifact or enchantment" reads types, not roles: a Darksteel Myr
+/// is an artifact whatever else it is, so the unkicked half answers it for
+/// two while the bear standing beside it needs the full four. Which is the
+/// one case where the cheap mode is removal for a creature.
+#[test]
+fn unkicked_it_still_answers_an_artifact_creature() {
+    let (mut game, spell, theirs) = staged(&[cards::DARKSTEEL_MYR, cards::GRIZZLY_BEARS]);
+    let (myr, bears) = (theirs[0], theirs[1]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+
+    assert!(
+        casts_at(&game, spell, bears).is_empty(),
+        "the plain creature is out of reach for two",
+    );
+    let cast = casts_at(&game, spell, myr)
+        .into_iter()
+        .next()
+        .expect("the artifact creature is an artifact, and two mana names it");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert!(!on_battlefield(&game, myr), "the Myr is gone");
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::DARKSTEEL_MYR),
+        "exiled, which is the answer indestructible has none for",
+    );
+    assert!(on_battlefield(&game, bears), "and the bear is untouched");
+}
