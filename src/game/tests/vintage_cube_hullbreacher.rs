@@ -189,3 +189,48 @@ fn a_second_hullbreacher_adds_no_treasure() {
     );
     assert!(game.players[1].hand.is_empty(), "they drew nothing at all");
 }
+
+/// "This card is put directly into your hand. It is not drawn." The
+/// Hullbreacher replaces draws and nothing else, so a Demonic Tutor across
+/// the table finds its card and keeps it: no Treasure, and the card is in
+/// their hand rather than back in their library.
+#[test]
+fn a_tutor_is_not_a_draw_and_makes_no_treasure() {
+    let (mut game, _) = staged();
+    let tutor = card(118_400, cards::DEMONIC_TUTOR, PlayerId::Two);
+    let tutor_id = tutor.id;
+    game.players[1].hand.push(tutor);
+    for color in ManaColor::COLORS {
+        game.add_unrestricted_mana(PlayerId::Two, color, 2);
+    }
+    game.turn += 1;
+    game.active_player = PlayerId::Two;
+    game.turns_started[PlayerId::Two.index()] += 1;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::Two;
+    let library = game.players[1].library.len();
+
+    let cast = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == tutor_id))
+        .expect("two mana casts it");
+    game.apply(PlayerId::Two, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1].hand.len(),
+        1,
+        "the card they searched for is in their hand",
+    );
+    assert_eq!(
+        game.players[1].library.len(),
+        library - 1,
+        "and it came out of their library",
+    );
+    assert_eq!(
+        treasures(&game, PlayerId::One),
+        0,
+        "a search is not a draw, so the Hullbreacher never saw it",
+    );
+}
