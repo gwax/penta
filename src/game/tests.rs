@@ -370,6 +370,7 @@ mod vintage_cube_balance;
 mod vintage_cube_baleful_strix;
 mod vintage_cube_baloth_prime;
 mod vintage_cube_barrowgoyf;
+mod vintage_cube_basalt_monolith;
 mod vintage_cube_berserk;
 mod vintage_cube_bitter_triumph;
 mod vintage_cube_bloodbraid_challenger;
