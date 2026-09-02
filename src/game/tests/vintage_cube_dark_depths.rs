@@ -290,3 +290,97 @@ fn a_stifled_state_trigger_fires_again() {
         "the land was sacrificed the second time around",
     );
 }
+
+/// Activates `source`'s targeted ability at `target`, then settles.
+fn activate_at(game: &mut Game, source: GameObjectId, target: GameObjectId) {
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source: actual,
+                targets,
+                ..
+            } => {
+                *actual == source
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|selected| *selected == Target::Permanent(target))
+            }
+            _ => false,
+        })
+        .expect("the ability is offered for that permanent");
+    game.apply(PlayerId::One, action)
+        .expect("the ability activates");
+    settle(game);
+}
+
+/// The state trigger asks what the counters are, not how they left. A
+/// Vampire Hexmage takes all ten off at once and the land pays out the same
+/// as it would after thirty mana.
+#[test]
+fn a_hexmage_takes_all_ten_at_once() {
+    let (mut game, depths) = staged(0);
+    let hexmage = game
+        .put_onto_battlefield(PlayerId::One, cards::VAMPIRE_HEXMAGE)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+    assert_eq!(ice(&game, depths), 10, "it is still counting down");
+
+    activate_at(&mut game, hexmage, depths);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == depths),
+        "no counters left, so it sacrificed itself",
+    );
+    let token = marit_lage(&game).expect("Marit Lage is here for two mana");
+    assert_eq!(
+        (game.power(token), game.toughness(token)),
+        (Some(20), Some(20)),
+    );
+}
+
+/// A copy carries no counters, so a Thespian's Stage that becomes a Dark
+/// Depths is one with nothing to count down and the state trigger fires on
+/// the spot. Copying the opponent's keeps both lands on the table: two of
+/// your own would be a legend-rule choice, which is a separate question.
+#[test]
+fn a_stage_copying_one_arrives_already_empty() {
+    let (mut game, _) = staged(2);
+    game.battlefield.clear();
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::DARK_DEPTHS)
+        .expect("cataloged");
+    let stage = game
+        .put_onto_battlefield(PlayerId::One, cards::THESPIANS_STAGE)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+    assert_eq!(ice(&game, theirs), 10, "theirs is counting down as normal");
+
+    activate_at(&mut game, stage, theirs);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == stage),
+        "the Stage copied a Depths with no counters and sacrificed itself",
+    );
+    assert_eq!(ice(&game, theirs), 10, "and theirs never lost one");
+    let token = marit_lage(&game).expect("Marit Lage for two mana and a land");
+    assert_eq!(
+        (game.power(token), game.toughness(token)),
+        (Some(20), Some(20)),
+    );
+    assert_eq!(token.controller, PlayerId::One, "and it is yours");
+}

@@ -371,10 +371,17 @@ impl Game {
 
     /// The legend rule as a state-based action: a player controlling two or
     /// more legendary permanents with the same name keeps one and puts the
-    /// rest into the graveyard. The rules let the controller choose; with
-    /// identical names the copies differ only in tap and damage state, so the
-    /// strictly best one — untapped over tapped, then newest — is kept
-    /// without asking.
+    /// rest into the graveyard.
+    ///
+    /// The rules let the controller choose (CR 704.5j) and this does not ask:
+    /// it keeps the strictly better body — untapped over tapped, then newest.
+    /// Audit: same-named permanents are not interchangeable, so the choice is
+    /// sometimes a real one and this sometimes takes the wrong side of it. A
+    /// Thespian's Stage that copies its controller's own Dark Depths is the
+    /// clearest case — the copy carries no ice counters and is the one worth
+    /// keeping, but it is tapped for the ability's cost, so the untapped
+    /// original is kept and the 20/20 never arrives. Counters, attachments,
+    /// and damage all separate two permanents of one name.
     pub(super) fn apply_legend_rule(&mut self) {
         loop {
             let mut extra: Option<GameObjectId> = None;
