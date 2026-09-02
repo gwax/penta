@@ -307,3 +307,49 @@ fn the_emblem_does_not_stop_a_sacrifice_or_a_shrink() {
         "and a toughness of zero is a state-based action, not a destroy",
     );
 }
+
+/// "Artifacts, creatures, enchantments, and lands you control" -- four
+/// types, and a planeswalker is none of them, so the Elspeth who follows the
+/// one that made the emblem is as fragile as ever. Everything here arrives
+/// after the emblem does, which is the point of a continuous effect that
+/// belongs to no permanent.
+#[test]
+fn the_emblem_covers_four_types_and_not_a_planeswalker() {
+    let (mut game, elspeth, _) = staged();
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == elspeth)
+    {
+        permanent.set_counters(CounterKind::Loyalty, 8);
+    }
+    let ultimate = activations(&game, elspeth)
+        .into_iter()
+        .last()
+        .expect("eight loyalty pays for it");
+    game.apply(PlayerId::One, ultimate).expect("it activates");
+    drain_pending(&mut game);
+    assert_eq!(game.emblems.len(), 1, "the emblem is out");
+
+    for (definition, covered) in [
+        (cards::GUARDIAN_IDOL, true),
+        (cards::SNEAK_ATTACK, true),
+        (cards::FOREST, true),
+        (cards::KARN_SCION_OF_URZA, false),
+    ] {
+        let id = game
+            .put_onto_battlefield(PlayerId::One, definition)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        let permanent = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == id)
+            .expect("it arrived");
+        assert_eq!(
+            game.permanent_has_executable_keyword(permanent, KeywordAbility::Indestructible),
+            covered,
+            "{definition:?} is covered by the emblem: {covered}",
+        );
+    }
+}
