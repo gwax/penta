@@ -189,3 +189,66 @@ fn the_balance_itself_is_no_longer_in_the_hand_it_counts() {
         "which cost them nothing here: three was already three",
     );
 }
+
+/// "Cards in hand are counted after lands have been sacrificed, and
+/// creatures on the battlefield are counted after cards have been discarded.
+/// Thus, a land creature sacrificed to the first part of the spell would not
+/// be counted when determining how many creatures are on the battlefield for
+/// the last part."
+///
+/// The control comes first. Against a Forest and a bear, the lands step takes
+/// their Forest and the creature step finds one body each, so both bears
+/// live.
+#[test]
+fn a_land_creature_taken_by_the_first_step_is_gone_before_the_last() {
+    let (mut game, balance) = staged(
+        &[cards::GRIZZLY_BEARS],
+        &[cards::FOREST, cards::GRIZZLY_BEARS],
+        (0, 0),
+    );
+
+    cast_and_settle(&mut game, balance);
+
+    assert_eq!(
+        lands(&game, PlayerId::Two),
+        0,
+        "you had none, so they keep none"
+    );
+    assert_eq!(
+        (
+            creatures(&game, PlayerId::One),
+            creatures(&game, PlayerId::Two)
+        ),
+        (1, 1),
+        "one body each, so the creature step takes nothing",
+    );
+
+    // Now the same board with their bear replaced by a Dryad Arbor, which is
+    // the land as well as the creature. It is sacrificed to the lands step,
+    // so by the time creatures are counted they have none -- and the fewest
+    // being zero takes your own bear with it.
+    let (mut game, balance) = staged(&[cards::GRIZZLY_BEARS], &[cards::DRYAD_ARBOR], (0, 0));
+    assert_eq!(
+        (lands(&game, PlayerId::Two), creatures(&game, PlayerId::Two)),
+        (1, 1),
+        "the Arbor is both at once before anything resolves",
+    );
+
+    cast_and_settle(&mut game, balance);
+
+    assert_eq!(
+        lands(&game, PlayerId::Two),
+        0,
+        "the Arbor went to the lands step"
+    );
+    assert_eq!(
+        creatures(&game, PlayerId::One),
+        0,
+        "and having already died it was not a creature to count, so the \
+         fewest was none and your own bear went too",
+    );
+    assert!(
+        game.battlefield.is_empty(),
+        "nothing is left on either side",
+    );
+}
