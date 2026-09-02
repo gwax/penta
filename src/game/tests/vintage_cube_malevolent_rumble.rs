@@ -187,3 +187,117 @@ fn the_spawn_pays_for_a_spell() {
     assert_eq!(game.players[0].mana_pool.colorless, 1);
     assert!(spawn(&game).is_none(), "and the token is gone");
 }
+
+/// "A permanent card" is every kind of permanent, and it is one of them.
+/// A land, an artifact, an enchantment and a creature are all four on offer,
+/// the pick is the caster's, and the three passed over are buried the same
+/// as spells would have been.
+#[test]
+fn every_permanent_type_is_on_offer_and_only_one_is_taken() {
+    let (mut game, held) = staged(&[
+        cards::GRIZZLY_BEARS,
+        cards::REST_IN_PEACE,
+        cards::BLACK_LOTUS,
+        cards::ISLAND,
+    ]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == held))
+        .expect("two mana casts it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    for _ in 0..8 {
+        if !game.pending_decisions.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the four are offered");
+    let mut offered: Vec<_> = decision
+        .options
+        .iter()
+        .filter_map(|option| {
+            option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition())
+        })
+        .collect();
+    offered.sort_unstable();
+    let mut wanted = vec![
+        cards::GRIZZLY_BEARS,
+        cards::REST_IN_PEACE,
+        cards::BLACK_LOTUS,
+        cards::ISLAND,
+    ];
+    wanted.sort_unstable();
+    assert_eq!(
+        offered, wanted,
+        "a creature, an enchantment, an artifact and a land"
+    );
+    assert_eq!(decision.maximum, 1, "and one of them is all you get");
+
+    // Take the land, which is the one an ordinary "search for a creature"
+    // would have walked past.
+    let island = decision
+        .options
+        .iter()
+        .find(|option| {
+            option
+                .card
+                .and_then(|(_, characteristics)| characteristics.card_definition())
+                == Some(cards::ISLAND)
+        })
+        .expect("the Island is one of them")
+        .id;
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![island],
+        },
+    )
+    .expect("taking the land is a legal answer");
+    for _ in 0..8 {
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::ISLAND],
+        "the land the caster named, and nothing else",
+    );
+    for definition in [
+        cards::GRIZZLY_BEARS,
+        cards::REST_IN_PEACE,
+        cards::BLACK_LOTUS,
+    ] {
+        assert!(
+            game.players[0]
+                .graveyard
+                .iter()
+                .any(|card| card.definition == definition),
+            "{definition:?} was buried with the rest",
+        );
+    }
+    assert!(spawn(&game).is_some(), "and the Spawn arrives as always");
+}
