@@ -398,3 +398,41 @@ fn the_card_is_both_halves_outside_the_battlefield() {
 
     assert_eq!(parts, vec![CLOSET, CELLAR], "the doors, and only the doors");
 }
+
+/// "Walk-In Closet's ability doesn't allow you to activate abilities (such
+/// as cycling) of land cards in your graveyard." The permission is to play a
+/// land, and a Triome in the graveyard is a land to play and not a card to
+/// cycle -- its cycling is a hand ability and stays one.
+#[test]
+fn the_closet_opens_the_land_drop_and_not_the_cycling() {
+    let (mut game, room) = staged();
+    let triome = card(88_100, cards::RAUGRIN_TRIOME, PlayerId::One);
+    let triome_id = triome.id;
+    game.players[0].graveyard.push(triome);
+    game.players[0].lands_played_this_turn = 0;
+
+    cast_door(&mut game, room, PlayOptionId::DEFAULT);
+
+    assert!(
+        land_plays(&game).contains(&triome_id),
+        "the Triome is a land the closet lets you play",
+    );
+    assert!(
+        !game.legal_actions(PlayerId::One).into_iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if source == triome_id)
+        ),
+        "and its cycling is not an ability the closet reaches",
+    );
+
+    // The same card in hand cycles as it always did, so what is shut is the
+    // graveyard rather than the clause.
+    let held = card(88_101, cards::RAUGRIN_TRIOME, PlayerId::One);
+    let held_id = held.id;
+    game.players[0].hand.push(held);
+    assert!(
+        game.legal_actions(PlayerId::One).into_iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if source == held_id)
+        ),
+        "a Triome in hand cycles for its three all the same",
+    );
+}
