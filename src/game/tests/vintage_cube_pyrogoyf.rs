@@ -274,3 +274,53 @@ fn it_may_burn_a_creature_instead_of_a_player() {
         "and none of it went to their face",
     );
 }
+
+/// The other half of the same ruling: "if Pyrogoyf *or the relevant Lhurgoyf
+/// creature* leaves the battlefield while the ability is on the stack, use
+/// its power as it last existed on the battlefield." The Nethergoyf that
+/// arrived is the creature dealing the damage, so answering it in response
+/// does not change the number -- and it does not save the two life, either.
+#[test]
+fn a_dead_arrival_deals_the_power_it_had() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].graveyard.clear();
+    game.players[PlayerId::Two.index()].graveyard.clear();
+    // One card type in your pile and no creature in it, so a Nethergoyf
+    // arriving is a 1/2 -- and dying would make it a live 2.
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        63_700,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+    game.put_onto_battlefield(PlayerId::One, cards::PYROGOYF)
+        .expect("cataloged");
+    settle_declining(&mut game);
+    let life = game.players[PlayerId::Two.index()].life;
+
+    let nethergoyf = game
+        .put_onto_battlefield(PlayerId::One, cards::NETHERGOYF)
+        .expect("cataloged");
+    assert_eq!(
+        game.power(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == nethergoyf)
+                .expect("it is on the battlefield"),
+        ),
+        Some(1),
+        "one card type in your graveyard, so a 1/2",
+    );
+
+    // It dies with Pyrogoyf's trigger still on the stack, which puts a
+    // creature card in your graveyard: a live recount would say two.
+    game.move_permanents_to_graveyard(&[nethergoyf]);
+    game.check_state_based_actions();
+    aim_at(&mut game, "your opponent");
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life - 1,
+        "one damage: what the arrival was worth while it stood",
+    );
+}
