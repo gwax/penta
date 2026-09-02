@@ -230,3 +230,81 @@ fn every_noncreature_spell_grows_it_again() {
         "two triggers and two Bolts",
     );
 }
+
+/// "Activate only during your turn." Their turn is not yours, however much
+/// power is standing there, so the mana it would make is not available to
+/// answer anything with.
+#[test]
+fn the_mana_waits_for_your_own_turn() {
+    let (mut game, vivi) = staged(2);
+    let offers = |game: &Game| {
+        game.legal_actions(PlayerId::One).into_iter().any(
+            |action| matches!(action, Action::ActivateManaAbility { source, .. } if source == vivi),
+        )
+    };
+    assert!(offers(&game), "on your own turn two power is two mana");
+
+    game.turn += 1;
+    game.active_player = PlayerId::Two;
+    game.turns_started[PlayerId::Two.index()] += 1;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    assert!(
+        !offers(&game),
+        "and on theirs it is a 2/5 that makes nothing",
+    );
+}
+
+/// "And only once each turn." The second activation is not on offer however
+/// much power is left to convert.
+#[test]
+fn it_makes_its_mana_once_a_turn() {
+    let (mut game, vivi) = staged(2);
+    let offer = |game: &Game| {
+        game.legal_actions(PlayerId::One).into_iter().find(|action| {
+            matches!(action, Action::ActivateManaAbility { source, .. } if *source == vivi)
+        })
+    };
+
+    let first = offer(&game).expect("the first one is there");
+    game.apply(PlayerId::One, first).expect("it activates");
+    assert!(
+        game.players[PlayerId::One.index()].mana_pool.total() >= 1,
+        "and it made something",
+    );
+
+    assert!(
+        offer(&game).is_none(),
+        "once each turn, so there is no second helping",
+    );
+}
+
+/// "Add X mana in any combination of {U} and/or {R}": two power is two mana
+/// and both colours are on the menu, so the pair may be split rather than
+/// taken all of one.
+#[test]
+fn the_two_mana_may_be_split_between_the_colours() {
+    let (game, vivi) = staged(2);
+
+    let colors = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateManaAbility { source, color, .. } if source == vivi => Some(color),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    assert!(
+        colors.contains(&ManaColor::Blue) && colors.contains(&ManaColor::Red),
+        "both halves of the combination are offered: {colors:?}",
+    );
+    assert!(
+        !colors.contains(&ManaColor::Green)
+            && !colors.contains(&ManaColor::White)
+            && !colors.contains(&ManaColor::Black)
+            && !colors.contains(&ManaColor::Colorless),
+        "and nothing outside the two it names",
+    );
+}
