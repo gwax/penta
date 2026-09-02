@@ -433,3 +433,120 @@ fn the_unblockable_clause_may_name_their_creature() {
         "their land is neither a creature nor an artifact: {named:?}",
     );
 }
+
+/// "This turn" and no longer. The Angel that could not block last turn
+/// blocks the same bear the next one, because the restriction went with the
+/// turn that bought it.
+#[test]
+fn the_unblockable_clause_wears_off_with_the_turn() {
+    let (mut game, key) = staged();
+    let mine = creature(84_200, cards::GRIZZLY_BEARS, PlayerId::One);
+    let mine_id = mine.card.id;
+    game.battlefield.push(mine);
+    let theirs = creature(84_201, cards::SERRA_ANGEL, PlayerId::Two);
+    let theirs_id = theirs.card.id;
+    game.battlefield.push(theirs);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    activate_at(&mut game, key, mine_id);
+
+    let blocks = |game: &Game| {
+        game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::DeclareBlocker { blocker, .. } if *blocker == theirs_id),
+        )
+    };
+    let attack = |game: &mut Game| {
+        game.step = Step::DeclareAttackers;
+        game.attackers_declared = false;
+        game.apply(
+            PlayerId::One,
+            Action::DeclareAttacker {
+                attacker: mine_id,
+                defender: AttackDefender::Player(PlayerId::Two),
+            },
+        )
+        .expect("it attacks");
+        game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+            .expect("the declaration finishes");
+        drain_pending(game);
+        game.step = Step::DeclareBlockers;
+        game.blockers_declared = false;
+    };
+
+    game.turns_started = [2, 1];
+    attack(&mut game);
+    assert!(!blocks(&game), "this turn the Angel is shut out");
+
+    // Walking the steps rather than jumping the turn: the cleanup step is
+    // where an until-end-of-turn effect is let go of, and it takes two turn
+    // boundaries to come back round to an attack of ours.
+    let turn = game.turn;
+    for _ in 0..200 {
+        if game.turn > turn + 1 {
+            break;
+        }
+        game.advance_step();
+        drain_pending(&mut game);
+    }
+    assert!(game.turn > turn + 1, "the game came back round to our turn");
+    attack(&mut game);
+
+    assert!(
+        blocks(&game),
+        "and next turn it blocks the same bear: the clause was rented",
+    );
+}
+
+/// Both abilities print a mana cost and neither had a test for it: the untap
+/// wants one, the unblockable clause wants three, and an empty pool buys
+/// neither. The Sol Ring is tapped so that it cannot quietly pay for its own
+/// untap -- casting plans its own mana, and an untapped one would.
+#[test]
+fn each_ability_wants_the_mana_it_prints() {
+    let (mut game, key) = staged();
+    let artifact = game
+        .put_onto_battlefield(PlayerId::One, cards::SOL_RING)
+        .expect("cataloged");
+    let mine = creature(84_300, cards::GRIZZLY_BEARS, PlayerId::One);
+    let mine_id = mine.card.id;
+    game.battlefield.push(mine);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        if permanent.card.id == artifact {
+            permanent.tapped = true;
+        }
+    }
+    drain_pending(&mut game);
+
+    let offered_at = |game: &Game, target: GameObjectId| {
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, targets, .. }
+                if source == key
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|chosen| *chosen == Target::Permanent(target)))
+        })
+    };
+
+    assert!(
+        !offered_at(&game, artifact),
+        "an empty pool unlocks nothing"
+    );
+    assert!(!offered_at(&game, mine_id), "and shuts nobody out either");
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(offered_at(&game, artifact), "one mana buys the untap");
+    assert!(
+        !offered_at(&game, mine_id),
+        "but is two short of the other clause",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    assert!(
+        offered_at(&game, mine_id),
+        "and three is what that one wanted",
+    );
+}
