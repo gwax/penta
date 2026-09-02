@@ -277,3 +277,78 @@ fn bouncing_it_to_hand_draws_nothing() {
     );
     assert_eq!(game.players[0].library.len(), 1, "untouched");
 }
+
+/// The line the card is played for, start to finish: an artifact has no
+/// summoning sickness, so the Star may be cast and cracked on the same turn,
+/// and the colour it makes is the pip the spell in your hand was missing.
+/// The card it draws comes after the spell it paid for is already cast.
+#[test]
+fn it_is_cast_cracked_and_spent_on_one_turn() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].graveyard.clear();
+    game.players[0].library.clear();
+    game.players[0]
+        .library
+        .push(card(92_402, cards::GRIZZLY_BEARS, PlayerId::One));
+    game.turns_started = [2, 1];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let star = card(92_400, cards::CHROMATIC_STAR, PlayerId::One);
+    let star_id = star.id;
+    game.players[0].hand.push(star);
+    let bolt = card(92_401, cards::LIGHTNING_BOLT, PlayerId::One);
+    let bolt_id = bolt.id;
+    game.players[0].hand.push(bolt);
+    // One colourless for the Star, one for its ability, and no red at all.
+    game.players[0].mana_pool = ManaPool::default();
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    let cast_star = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == star_id))
+        .expect("one mana casts it");
+    game.apply(PlayerId::One, cast_star).expect("it is cast");
+    settle(&mut game);
+    let star = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::CHROMATIC_STAR)
+        .expect("it arrived")
+        .card
+        .id;
+    assert!(
+        !game
+            .legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == bolt_id)),
+        "with no red up the Bolt is not castable yet",
+    );
+
+    let crack = mana_action(&game, star, ManaColor::Red).expect("the Star makes red on arrival");
+    game.apply(PlayerId::One, crack).expect("it is spent");
+
+    let cast_bolt = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == bolt_id))
+        .expect("and the red it made pays for the Bolt");
+    game.apply(PlayerId::One, cast_bolt).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::CHROMATIC_STAR),
+        "the Star was the cost and is in the graveyard",
+    );
+    assert!(
+        in_hand(&game, cards::GRIZZLY_BEARS),
+        "and the card it drew arrived after the spell it paid for",
+    );
+}
