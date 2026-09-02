@@ -196,3 +196,47 @@ fn the_shroud_is_bought_by_the_land_and_lasts_the_turn() {
         "until end of turn is over",
     );
 }
+
+/// Shroud is not protection: it shuts out every targeted spell, yours as
+/// readily as theirs. A bear he has just covered is a bear your own Rancor
+/// can no longer name -- and the Safekeeper cannot even name it again to
+/// cover it twice.
+#[test]
+fn the_shroud_he_grants_shuts_your_own_spells_out_too() {
+    let (mut game, safekeeper, ids) = staged(2, &[cards::GRIZZLY_BEARS]);
+    let bears = ids[0];
+    let rancor = card(99_600, cards::RANCOR, PlayerId::One);
+    let rancor_id = rancor.id;
+    game.players[PlayerId::One.index()].hand.push(rancor);
+    game.players[PlayerId::One.index()].mana_pool.green = 1;
+
+    let aims_at_the_bear = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    card == rancor_id
+                        && choices
+                            .iter_targets()
+                            .any(|target| *target == Target::Permanent(bears))
+                }
+                _ => false,
+            })
+    };
+    assert!(
+        aims_at_the_bear(&game),
+        "an unguarded bear may be enchanted"
+    );
+
+    protect(&mut game, safekeeper, bears);
+    assert!(has_shroud(&game, bears), "the bear is covered");
+
+    assert!(
+        !aims_at_the_bear(&game),
+        "and your own Aura is a targeted spell like any other",
+    );
+    assert!(
+        !targets(&game, safekeeper).contains(&bears),
+        "so is his own ability: a covered creature cannot be covered again",
+    );
+}
