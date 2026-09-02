@@ -853,6 +853,9 @@ fn the_legend_rule_keeps_one_pendelhaven_per_player() {
         },
     )
     .unwrap();
+    // The rule asks which Pendelhaven to keep, and the answer taken here is
+    // the one it offers first: the untapped body over the tapped one.
+    drain_pending(&mut game);
 
     let mine: Vec<_> = game
         .battlefield

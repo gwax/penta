@@ -372,6 +372,9 @@ fn surviving_ugins_nexus_skips_the_extra_turn_created_by_the_legend_rule() {
         .expect("a second Ugin's Nexus is cataloged");
 
     game.check_state_based_actions();
+    // The legend rule asks which one stays; either answer leaves one Nexus
+    // and sends the other through its own replacement.
+    drain_pending(&mut game);
 
     assert_eq!(
         game.battlefield

@@ -54,54 +54,7 @@ use super::{
     parse_zone_kind, seat_value, str_field, u32_field, usize_field, zone_kind_snapshot,
 };
 
-pub(super) fn decision_snapshot(
-    game: &Game,
-    viewer: PlayerId,
-    pending: &PendingDecision,
-) -> Option<DecisionStateSnapshot> {
-    // A private decision is absent from this viewer's ordinary observation.
-    // Serializing its continuation anyway would expose raw candidate ids and
-    // effect-local bindings through the checkpoint, so fail reconstruction
-    // closed for the non-choosing seat instead.
-    if pending.observation.visibility == DecisionVisibility::Private
-        && pending.observation.player != viewer
-    {
-        return None;
-    }
-    let card_origins = visible_decision_card_origins(game, viewer, pending);
-    if decision_referenced_object_ids(&pending.continuation)
-        .into_iter()
-        .any(|object| {
-            object_reference_requires_hidden_rebinding(game, viewer, object)
-                && !card_origins
-                    .iter()
-                    .any(|origin| origin.object_id == object.0)
-        })
-    {
-        return None;
-    }
-    let visible_rebindings = card_origins
-        .iter()
-        .map(|origin| GameObjectId(origin.object_id))
-        .collect::<Vec<_>>();
-    let options = pending
-        .observation
-        .options
-        .iter()
-        .map(|option| decision_option_snapshot(&game.catalog, option))
-        .collect::<Option<Vec<_>>>()?;
-    Some(DecisionStateSnapshot {
-        preference: preference_snapshot(pending.observation.preference),
-        options,
-        card_origins,
-        continuation: continuation_snapshot(
-            game,
-            viewer,
-            &pending.continuation,
-            &visible_rebindings,
-        )?,
-    })
-}
+include!("decision/observation.rs");
 
 include!("decision/card_origins.rs");
 
@@ -135,6 +88,12 @@ fn continuation_snapshot(
             defending: defending.index(),
             attackers: attackers.iter().map(|attacker| attacker.0).collect(),
         },
+        DecisionContinuation::LegendRule { player, candidates } => {
+            DecisionContinuationSnapshot::LegendRule {
+                player: player.index(),
+                candidates: candidates.iter().map(|candidate| candidate.0).collect(),
+            }
+        }
         DecisionContinuation::ScryBottom { player, revealed } => {
             DecisionContinuationSnapshot::ScryBottom {
                 player: player.index(),

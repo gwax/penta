@@ -17,6 +17,28 @@ fn setup_nexus_and_rest_in_peace() -> (Game, GameObjectId, GameObjectId) {
     (game, nexus, rest)
 }
 
+/// Answers the legend rule by keeping `keep`.
+fn keep_legend(game: &mut Game, player: PlayerId, keep: GameObjectId) {
+    let decision = game
+        .observe(player)
+        .decision
+        .expect("the legend rule asks which one stays");
+    let option = decision
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(object, _)| object == keep))
+        .expect("the permanent to keep is offered")
+        .id;
+    game.apply(
+        player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option],
+        },
+    )
+    .expect("keeping one of them is legal");
+}
+
 fn choose_replacement_from(game: &mut Game, player: PlayerId, source: GameObjectId) {
     let decision = game
         .observe(player)
@@ -157,6 +179,9 @@ fn legend_rule_resumes_after_a_zone_move_replacement_choice() {
     } else {
         first_nexus
     };
+    // The legend rule asks first: keeping the second Nexus is what sends the
+    // first one on the zone move whose replacement is then chosen.
+    keep_legend(&mut game, PlayerId::One, second_nexus);
     choose_replacement_from(&mut game, PlayerId::One, doomed);
 
     assert!(game.pending_decisions.is_empty());

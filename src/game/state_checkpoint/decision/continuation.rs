@@ -25,6 +25,13 @@ fn parse_continuation(
             defending: player(*defending)?,
             attackers: attackers.iter().copied().map(GameObjectId).collect(),
         },
+        DecisionContinuationSnapshot::LegendRule {
+            player: chooser,
+            candidates,
+        } => DecisionContinuation::LegendRule {
+            player: player(*chooser)?,
+            candidates: candidates.iter().copied().map(GameObjectId).collect(),
+        },
         DecisionContinuationSnapshot::BeginTurn {
             player: prospective_player,
             turn_kind,

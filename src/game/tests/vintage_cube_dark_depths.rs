@@ -384,3 +384,148 @@ fn a_stage_copying_one_arrives_already_empty() {
     );
     assert_eq!(token.controller, PlayerId::One, "and it is yours");
 }
+
+/// Copying your own Depths puts two of one legendary name under you, and the
+/// legend rule (CR 704.5j) lets you say which one stays. The copy is the one
+/// worth keeping: it has no ice counters, so keeping it means the original
+/// goes and the state trigger pays out at once.
+#[test]
+fn the_legend_rule_lets_you_keep_the_empty_copy() {
+    let (mut game, depths) = staged(2);
+    let stage = game
+        .put_onto_battlefield(PlayerId::One, cards::THESPIANS_STAGE)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source: actual,
+                targets,
+                ..
+            } => {
+                *actual == stage
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|selected| *selected == Target::Permanent(depths))
+            }
+            _ => false,
+        })
+        .expect("the Stage may copy your own Depths");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    let choice = loop {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            break decision;
+        }
+        let priority = game.priority;
+        game.apply(priority, Action::PassPriority)
+            .expect("the copy is resolving");
+    };
+    let offered = choice
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(object, _)| object))
+        .collect::<Vec<_>>();
+    assert!(
+        offered.contains(&stage) && offered.contains(&depths),
+        "both Depths are yours, and the rule asks which one stays",
+    );
+
+    let keep_the_copy = choice
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(object, _)| object == stage))
+        .expect("the copy is one of the answers")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: choice.id,
+            options: vec![keep_the_copy],
+        },
+    )
+    .expect("keeping the copy is legal");
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::DARK_DEPTHS),
+        "the original went, counters and all",
+    );
+    let token = marit_lage(&game).expect("and the copy had none to count down");
+    assert_eq!(
+        (game.power(token), game.toughness(token)),
+        (Some(20), Some(20)),
+    );
+}
+
+/// The other side of the same question: keeping the original keeps its ten
+/// counters, and the copy that would have paid out goes to the graveyard
+/// with nothing to show for it.
+#[test]
+fn keeping_the_original_pays_nothing_out() {
+    let (mut game, depths) = staged(2);
+    let stage = game
+        .put_onto_battlefield(PlayerId::One, cards::THESPIANS_STAGE)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source: actual,
+                targets,
+                ..
+            } => {
+                *actual == stage
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|selected| *selected == Target::Permanent(depths))
+            }
+            _ => false,
+        })
+        .expect("the Stage may copy your own Depths");
+    game.apply(PlayerId::One, action).expect("it activates");
+
+    let choice = loop {
+        if let Some(decision) = game.observe(PlayerId::One).decision {
+            break decision;
+        }
+        let priority = game.priority;
+        game.apply(priority, Action::PassPriority)
+            .expect("the copy is resolving");
+    };
+    let keep_the_original = choice
+        .options
+        .iter()
+        .find(|option| option.card.is_some_and(|(object, _)| object == depths))
+        .expect("the original is one of the answers")
+        .id;
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: choice.id,
+            options: vec![keep_the_original],
+        },
+    )
+    .expect("keeping the original is legal");
+    settle(&mut game);
+
+    assert_eq!(ice(&game, depths), 10, "the original still counts down");
+    assert!(marit_lage(&game).is_none(), "and nothing was paid out");
+}

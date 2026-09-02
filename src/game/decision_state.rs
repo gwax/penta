@@ -190,6 +190,13 @@ pub(super) enum DecisionContinuation {
         defending: PlayerId,
         attackers: Vec<GameObjectId>,
     },
+    /// CR 704.5j: the controller of two or more same-named legendary
+    /// permanents chooses which one to keep. The rest go to the graveyard
+    /// when this is answered.
+    LegendRule {
+        player: PlayerId,
+        candidates: Vec<GameObjectId>,
+    },
     ScryTop {
         player: PlayerId,
         top: Vec<CardInstance>,

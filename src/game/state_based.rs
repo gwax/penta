@@ -373,52 +373,60 @@ impl Game {
     /// more legendary permanents with the same name keeps one and puts the
     /// rest into the graveyard.
     ///
-    /// The rules let the controller choose (CR 704.5j) and this does not ask:
-    /// it keeps the strictly better body — untapped over tapped, then newest.
-    /// Audit: same-named permanents are not interchangeable, so the choice is
-    /// sometimes a real one and this sometimes takes the wrong side of it. A
-    /// Thespian's Stage that copies its controller's own Dark Depths is the
-    /// clearest case — the copy carries no ice counters and is the one worth
-    /// keeping, but it is tapped for the ability's cost, so the untapped
-    /// original is kept and the 20/20 never arrives. Counters, attachments,
-    /// and damage all separate two permanents of one name.
+    /// The controller chooses which one stays (CR 704.5j), and the choice is
+    /// a real one: counters, attachments, damage, and tapped status all
+    /// separate two permanents of one name. A Thespian's Stage that has
+    /// copied its controller's own Dark Depths is the case the rule is played
+    /// for — the copy carries no ice counters and is worth keeping even
+    /// though paying for the ability left it tapped. The options are ordered
+    /// so the first is the strictly better body, untapped over tapped and
+    /// then newest, which is what an automated policy takes by preference.
     pub(super) fn apply_legend_rule(&mut self) {
-        loop {
-            let mut extra: Option<GameObjectId> = None;
-            'search: for permanent in &self.battlefield {
-                if !self
-                    .effective_rules(permanent)
-                    .is_some_and(|rules| rules.has_supertype(CardSupertype::Legendary))
-                {
-                    continue;
-                }
-                let name_source = Self::effective_rules_source(permanent);
-                for other in &self.battlefield {
-                    if other.card.id == permanent.card.id
-                        || other.controller != permanent.controller
-                        || Self::effective_rules_source(other) != name_source
-                    {
-                        continue;
-                    }
-                    let permanent_wins = (!permanent.tapped && other.tapped)
-                        || (permanent.tapped == other.tapped
-                            && permanent.card.id.0 > other.card.id.0);
-                    extra = Some(if permanent_wins {
-                        other.card.id
-                    } else {
-                        permanent.card.id
-                    });
-                    break 'search;
-                }
-            }
-            let Some(extra) = extra else {
-                return;
+        let Some((controller, mut candidates)) = self.legend_rule_group() else {
+            return;
+        };
+        candidates.sort_by(|left, right| {
+            let body = |id: GameObjectId| {
+                self.battlefield
+                    .iter()
+                    .find(|permanent| permanent.card.id == id)
+                    .map_or((true, 0), |permanent| {
+                        (permanent.tapped, permanent.card.id.0)
+                    })
             };
-            self.move_permanents_to_graveyard(&[extra]);
-            if !self.pending_decisions.is_empty() || !self.pending_events.is_empty() {
-                return;
+            let (left_tapped, left_id) = body(*left);
+            let (right_tapped, right_id) = body(*right);
+            left_tapped.cmp(&right_tapped).then(right_id.cmp(&left_id))
+        });
+        self.queue_legend_rule_choice(controller, &candidates);
+    }
+
+    /// One controller's same-named legendary permanents, when they have more
+    /// than one of them. The first group found is enough: answering it runs
+    /// state-based actions again, which finds the next.
+    fn legend_rule_group(&self) -> Option<(PlayerId, Vec<GameObjectId>)> {
+        for permanent in &self.battlefield {
+            if !self
+                .effective_rules(permanent)
+                .is_some_and(|rules| rules.has_supertype(CardSupertype::Legendary))
+            {
+                continue;
+            }
+            let name_source = Self::effective_rules_source(permanent);
+            let group = self
+                .battlefield
+                .iter()
+                .filter(|other| {
+                    other.controller == permanent.controller
+                        && Self::effective_rules_source(other) == name_source
+                })
+                .map(|other| other.card.id)
+                .collect::<Vec<_>>();
+            if group.len() > 1 {
+                return Some((permanent.controller, group));
             }
         }
+        None
     }
     /// "For as long as you control this creature" ends when that stops being
     /// true: the holder leaving the battlefield, or passing to someone else,

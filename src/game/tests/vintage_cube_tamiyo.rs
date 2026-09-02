@@ -327,6 +327,7 @@ fn she_stops_sacrifices_and_nothing_else() {
     // And a second copy of her is the legend rule, not a sacrifice.
     game.battlefield.push(tamiyo(98_063));
     game.check_state_based_actions();
+    drain_pending(&mut game);
     assert_eq!(
         game.battlefield
             .iter()

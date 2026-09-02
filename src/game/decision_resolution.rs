@@ -43,6 +43,14 @@ impl Game {
                     self.queue_arriving_attacker_defender(player, defending, &attackers);
                 }
             }
+            DecisionContinuation::LegendRule { candidates, .. } => {
+                let chosen = options.first().copied().unwrap_or(0);
+                let kept = pending_options
+                    .iter()
+                    .find(|option| option.id == chosen)
+                    .and_then(|option| option.card.map(|(permanent, _)| permanent));
+                self.finish_legend_rule_choice(kept, &candidates);
+            }
             continuation @ (DecisionContinuation::ScryBottom { .. }
             | DecisionContinuation::ScryTop { .. }) => {
                 self.resolve_scry_decision(continuation, &pending_options, options);

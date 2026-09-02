@@ -25,6 +25,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **The legend rule asks which one to keep.** A player controlling two or more
+  same-named legendary permanents now chooses which stays (CR 704.5j) instead
+  of the engine keeping the untapped, newest body. Same-named permanents are
+  not interchangeable — counters, attachments, damage, and tapped status all
+  separate them — and a Thespian's Stage that has copied its controller's own
+  Dark Depths is the case the rule is played for: the copy carries no ice
+  counters and is worth keeping even though paying for the ability left it
+  tapped. The options are ordered so the first is the old keeper, which is
+  what `preferOption` steers an automated policy to, and the new
+  `legendRule` decision continuation is additive in checkpoint format 11.
+
 - **Effect bindings are unified and checkpoint format 11 preserves their
   lexical shape.** Declarative effects now use `Binding!("label")` for every
   durable singular or object-set value and `ParentBinding` only when a producer

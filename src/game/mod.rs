@@ -76,6 +76,7 @@ mod damage;
 mod decision;
 mod decision_arriving_attacker;
 mod decision_doomsday;
+mod decision_legend_rule;
 mod decision_object_collections;
 mod decision_offers;
 mod decision_permanent_choice;
