@@ -601,7 +601,7 @@ impl Game {
         scoped: ScopedEffect,
     ) {
         let Some((_, instance)) = self.card_in_nonbattlefield_zone(card) else {
-            self.consume_exile_play_permission(card);
+            self.drop_exile_play_permission(card);
             return;
         };
         let printed = instance.definition;
@@ -625,7 +625,7 @@ impl Game {
         // the stack is not empty and no land could otherwise be played.
         let lands = self.offered_land_actions(player, card);
         if playable.is_empty() && lands.is_empty() {
-            self.consume_exile_play_permission(card);
+            self.drop_exile_play_permission(card);
             return;
         }
         self.queue_decision(

@@ -78,6 +78,14 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **A land in an exiled pile no longer strands the pile's free cast.** The
+  offer for each exiled card dropped the whole pile's shared permission when
+  that card had nothing to offer, so a land among Crabomination's three cards
+  spent the permission the rulings give to the nonland cards beside it: with
+  two lands in front of it, the castable card was not castable at all. An
+  unusable card now drops only its own permission, and the group is spent only
+  when a spell is actually cast off it.
+
 - **Expressive Iteration empties a short library in the printed order.** All
   three of its moves hung off the second question, so a library holding one
   card asked nothing and did nothing -- the card never reached the hand, though

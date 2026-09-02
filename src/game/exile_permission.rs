@@ -697,6 +697,16 @@ impl Game {
         }
     }
 
+    /// Drops just this card's permission, leaving the rest of its pile
+    /// alone. A card the offer could not use -- a land, where the permission
+    /// is to cast, or one that has already left the zone -- was never the
+    /// spell the pile's one permission was spent on, so the cards beside it
+    /// keep theirs.
+    pub(super) fn drop_exile_play_permission(&mut self, card: GameObjectId) {
+        self.exile_play_permissions
+            .retain(|permission| permission.card != card);
+    }
+
     pub(super) fn consume_exile_play_permission(&mut self, card: GameObjectId) {
         // A permission over a pile is one permission however many cards it
         // covers, so using it takes the whole pile's with it.

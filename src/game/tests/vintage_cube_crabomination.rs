@@ -391,3 +391,69 @@ fn casting_one_spends_the_permission() {
         "the rest of the pile is no longer castable",
     );
 }
+
+/// "The mana value of a creature spell with emerge isn't affected by whether
+/// its emerge cost is paid. If you sacrifice an artifact whose mana value is
+/// 3, Crabomination's mana value remains 6." What is paid is not what is
+/// printed, and mana value reads the print.
+#[test]
+fn emerging_does_not_change_its_mana_value() {
+    let (mut game, held, _) = staged(&[cards::LIGHTNING_GREAVES]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    let offered = emerges(&game, held);
+    assert_eq!(offered.len(), 1, "the Greaves are the one way in");
+    game.apply(PlayerId::One, offered[0].0.clone())
+        .expect("five mana and the Greaves pay for it");
+
+    let object = game.stack.last().expect("it is waiting on the stack");
+    assert_eq!(
+        game.stack_spell_mana_value(object),
+        6,
+        "six, whatever the emerge cost was reduced to",
+    );
+}
+
+/// "Crabomination's triggered ability doesn't allow you to play land cards,
+/// and any land cards exiled this way will remain in exile." The permission
+/// is to cast, and a land is played rather than cast, so a pile whose only
+/// card is a land is a pile that buys nothing.
+#[test]
+fn a_land_in_the_pile_is_not_castable() {
+    let (mut game, held, _) = staged(&[]);
+    game.players[1].hand.clear();
+    game.players[1].graveyard.clear();
+    game.players[1].library.clear();
+    game.players[1]
+        .library
+        .push(card(107_100, cards::TUNDRA, PlayerId::Two));
+    game.players[1]
+        .graveyard
+        .push(card(107_101, cards::MOUNTAIN, PlayerId::Two));
+    game.players[1]
+        .hand
+        .push(card(107_102, cards::LIGHTNING_BOLT, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+
+    hard_cast_holding_offer(&mut game, held);
+    game.players[0].mana_pool = ManaPool::default();
+
+    let free = free_casts(&game);
+    assert_eq!(free.len(), 1, "the two lands are no part of the offer");
+    let bolt = game.players[1]
+        .exile
+        .iter()
+        .find(|exiled| exiled.definition == cards::LIGHTNING_BOLT)
+        .expect("the Bolt is in the pile");
+    assert_eq!(free[0], bolt.id, "and the Bolt is the one that may be cast");
+
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[1].exile.len(),
+        3,
+        "with the ability resolved, the whole pile is left in exile",
+    );
+}
