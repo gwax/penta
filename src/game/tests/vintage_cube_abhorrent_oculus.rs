@@ -357,3 +357,89 @@ fn a_free_cast_still_exiles_the_six() {
         assert_eq!(game.players[0].exile.len(), 6, "into exile, as printed");
     }
 }
+
+/// "Because the permanent is on the battlefield both before and after it's
+/// turned face up, turning a permanent face up doesn't cause any
+/// enters-the-battlefield abilities to trigger." A Grave Titan manifested
+/// and then turned up is a 6/6 with no Zombies beside it: what entered was a
+/// nameless 2/2, and that was the only entering there was.
+#[test]
+fn turning_one_face_up_is_not_a_creature_entering() {
+    let (mut game, oculus) = staged(6, &[cards::MOUNTAIN, cards::GRAVE_TITAN]);
+    assert!(cast(&mut game, oculus), "it casts");
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    game.step = Step::Upkeep;
+    settle(&mut game);
+    manifest(&mut game, cards::GRAVE_TITAN);
+    let body = face_down(&game).expect("it is face down").card.id;
+    let tokens = |game: &Game| {
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == ObjectKind::Token)
+            .count()
+    };
+    assert_eq!(tokens(&game), 0, "a face-down body brings nothing with it");
+
+    game.priority = PlayerId::One;
+    for color in ManaColor::COLORS {
+        game.add_unrestricted_mana(PlayerId::One, color, 4);
+    }
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::TurnFaceUp { permanent } if *permanent == body))
+        .expect("six mana turns it up");
+    game.apply(PlayerId::One, action).expect("it turns up");
+    settle(&mut game);
+
+    let titan = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == body)
+        .expect("it is still there");
+    assert!(titan.face_down.is_none(), "face up now");
+    assert_eq!(game.power(titan), Some(6), "and a 6/6");
+    assert_eq!(
+        tokens(&game),
+        0,
+        "but it never entered, so its arrival trigger never fired",
+    );
+}
+
+/// "Turning a permanent face up or face down doesn't change whether that
+/// permanent is tapped or untapped." A body tapped while it was a nameless
+/// 2/2 is still tapped once it is an Angel.
+#[test]
+fn turning_face_up_leaves_it_tapped() {
+    let (mut game, oculus) = staged(6, &[cards::MOUNTAIN, cards::SERRA_ANGEL]);
+    assert!(cast(&mut game, oculus), "it casts");
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    game.step = Step::Upkeep;
+    settle(&mut game);
+    manifest(&mut game, cards::SERRA_ANGEL);
+    let body = face_down(&game).expect("it is face down").card.id;
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == body)
+        .expect("it is there")
+        .tapped = true;
+
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 2);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::TurnFaceUp { permanent } if *permanent == body))
+        .expect("a tapped body may still be turned up");
+    game.apply(PlayerId::One, action).expect("it turns up");
+    settle(&mut game);
+
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == body)
+        .expect("it is still there");
+    assert!(angel.face_down.is_none(), "face up now");
+    assert!(angel.tapped, "and tapped exactly as it was before");
+}
