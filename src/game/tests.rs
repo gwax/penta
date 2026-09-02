@@ -777,6 +777,7 @@ mod vintage_cube_walk_in_closet;
 mod vintage_cube_walking_ballista;
 mod vintage_cube_wandering_emperor;
 mod vintage_cube_wasteland;
+mod vintage_cube_watery_grave;
 mod vintage_cube_wight_of_the_reliquary;
 mod vintage_cube_witch_enchanter;
 mod vintage_cube_witherbloom_apprentice;
