@@ -296,3 +296,40 @@ fn aimed_at_yourself_it_reveals_your_own_hand() {
         "and you discard what you chose out of your own hand",
     );
 }
+
+/// X counts as zero anywhere but the stack (CR 202.3b), so a Fireball in
+/// hand is worth one and a Walking Ballista nothing at all: the two cards
+/// that would cost the most on the way down are the two the Inquisition
+/// takes most easily. A Serra Angel beside them is still out of reach.
+#[test]
+fn an_x_spell_in_hand_is_as_cheap_as_its_pips() {
+    let (mut game, inquisition) =
+        staged(&[cards::FIREBALL, cards::WALKING_BALLISTA, cards::SERRA_ANGEL]);
+
+    let mut choices = offered(&mut game, inquisition);
+    choices.sort_unstable();
+    let mut expected = vec![cards::FIREBALL, cards::WALKING_BALLISTA];
+    expected.sort_unstable();
+    assert_eq!(
+        choices, expected,
+        "both X spells are on offer and the five-drop is not",
+    );
+}
+
+/// And taking one is taking it: the Fireball goes to the graveyard like any
+/// other three-or-less card.
+#[test]
+fn the_x_spell_it_takes_is_discarded() {
+    let (mut game, inquisition) = staged(&[cards::FIREBALL, cards::SERRA_ANGEL]);
+
+    inquire(&mut game, inquisition, Some(cards::FIREBALL));
+
+    assert!(in_graveyard(&game, cards::FIREBALL), "the Fireball went");
+    assert!(
+        game.players[1]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "and the Angel stayed where it was",
+    );
+}
