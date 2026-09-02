@@ -329,3 +329,31 @@ fn the_life_is_gone_even_when_the_growth_fizzles() {
         "the Growth went to the graveyard having done nothing",
     );
 }
+
+/// "Phyrexian mana is not a new colour": {G/P} takes green mana or two life
+/// and nothing else. A pool of black at one life is a pool that cannot cast
+/// it, however much of it there is, and one green beside the black is what
+/// buys the spell.
+#[test]
+fn only_green_mana_pays_the_pip() {
+    let (mut game, growth, bears) = staged();
+    game.players[0].life = 1;
+    for color in [ManaColor::Black, ManaColor::Red, ManaColor::White] {
+        game.add_unrestricted_mana(PlayerId::One, color, 3);
+    }
+
+    assert!(
+        cast_at(&game, growth, bears, false).is_none(),
+        "nine mana of the wrong three colours pays no green pip",
+    );
+    assert!(
+        cast_at(&game, growth, bears, true).is_none(),
+        "and one life is still not two",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    assert!(
+        cast_at(&game, growth, bears, false).is_some(),
+        "the one green among them is the whole of what it wanted",
+    );
+}
