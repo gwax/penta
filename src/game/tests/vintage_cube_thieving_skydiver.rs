@@ -572,3 +572,40 @@ fn a_copy_of_him_was_never_kicked_itself() {
         "and the copy, never having been kicked, took nothing",
     );
 }
+
+/// "Mana value X or less" is the mana value of the artifact standing there,
+/// and an {X} in a printed cost is nought everywhere but the stack. So an
+/// Engineered Explosives that cost its controller a fistful of mana is a
+/// nought-drop on the battlefield, and a Skydiver kicked for one takes it.
+#[test]
+fn an_x_cost_artifact_is_a_nought_drop_to_steal() {
+    let (mut game, skydiver) = staged(3);
+    let explosives = game
+        .put_onto_battlefield(PlayerId::Two, cards::ENGINEERED_EXPLOSIVES)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+    game.priority = PlayerId::One;
+    assert_eq!(
+        game.permanent_mana_value(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == explosives)
+                .expect("it is there"),
+        ),
+        0,
+        "a printed X is nought on the battlefield, whatever it was cast for",
+    );
+
+    cast_kicked_for(&mut game, skydiver, 1, explosives);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == explosives)
+            .expect("it is still on the battlefield")
+            .controller,
+        PlayerId::One,
+        "one point of kicker was enough to take it",
+    );
+}
