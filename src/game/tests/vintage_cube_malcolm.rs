@@ -406,3 +406,72 @@ fn a_declined_offer_does_not_keep_until_later_in_the_turn() {
         "the permission ended with the ability that gave it",
     );
 }
+
+/// "If you cast a card 'without paying its mana cost' ... if the card has
+/// any mandatory additional costs, you must pay those to cast the card."
+/// Bone Shards wants a creature sacrificed or a card discarded whatever else
+/// is paying for it. Free covers the mana and nothing more, and the only
+/// creature on your side is Malcolm -- so the spell eats its own enabler and
+/// is left pointing at nothing.
+#[test]
+fn a_free_cast_still_pays_a_mandatory_additional_cost() {
+    let (mut game, malcolm) = staged(
+        &[cards::ISLAND],
+        &[
+            cards::BONE_SHARDS,
+            cards::MOX_JET,
+            cards::MOX_JET,
+            cards::MOX_JET,
+        ],
+    );
+    let bear = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for connection in 1..=3 {
+        connect(&mut game, malcolm, cards::MOX_JET, false);
+        assert_eq!(chorus(&game, malcolm), connection);
+    }
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == malcolm),
+        "he is still here to be spent",
+    );
+
+    connect(&mut game, malcolm, cards::BONE_SHARDS, true);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != malcolm),
+        "the free cast still demanded a sacrifice and Malcolm was it",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MALCOLM_ALLURING_SCOUNDREL),
+        "sacrificed rather than merely gone",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::ISLAND],
+        "the Island was never the price: a creature was",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.total(),
+        0,
+        "and no mana was spent, which is what free means",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bear),
+        "the bear outlives it: the spell paid for itself with its own target",
+    );
+}
