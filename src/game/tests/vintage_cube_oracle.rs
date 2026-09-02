@@ -384,3 +384,37 @@ fn zero_devotion_looks_at_nothing_at_all() {
         "nothing was looked at, so nothing moved",
     );
 }
+
+/// Devotion counts "permanents *you control*", so a Lord of Atlantis across
+/// the table is two blue pips that do you no good at all -- the mirror of
+/// the Aura above, where what mattered was who controlled the permanent
+/// rather than who it was pointed at.
+#[test]
+fn their_blue_permanents_are_no_devotion_of_yours() {
+    let mut game = staged(4, &[]);
+    game.put_onto_battlefield(PlayerId::Two, cards::LORD_OF_ATLANTIS)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::Two, cards::THASSAS_ORACLE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+
+    play_oracle(&mut game);
+
+    assert_eq!(
+        game.result, None,
+        "four blue pips on their side leave you at the two of your own",
+    );
+
+    // And the same four pips brought to your side of the table do win it.
+    let mut mine = staged(4, &[cards::LORD_OF_ATLANTIS]);
+    play_oracle(&mut mine);
+    assert_eq!(
+        mine.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::WonByAnEffect,
+        }),
+        "which is what the same two pips are worth under your own control",
+    );
+}
