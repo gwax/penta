@@ -280,3 +280,34 @@ fn the_bonus_wears_off_with_the_turn() {
         "and a plain 2/2 once the turn it belonged to is over",
     );
 }
+
+/// "Whenever a creature *you control* attacks alone." Their lone attacker is
+/// nobody's dividend: the Hierarch sits there through a turn of theirs and
+/// the bear that swings at you is the 2/2 it was printed as.
+#[test]
+fn their_lone_attacker_is_exalted_by_nobody() {
+    let (mut game, _hierarch, _others) = staged(&[]);
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    // Their turn, and their bear comes across on its own.
+    game.active_player = PlayerId::Two;
+    game.turns_started = [5, 6];
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.priority = PlayerId::Two;
+    game.declare_attacker(theirs, AttackDefender::Player(PlayerId::One));
+    game.finish_declaring_attackers();
+    settle(&mut game);
+
+    assert_eq!(
+        stats(&game, theirs),
+        (Some(2), Some(2)),
+        "your Hierarch exalts creatures of yours and nobody else's",
+    );
+}
