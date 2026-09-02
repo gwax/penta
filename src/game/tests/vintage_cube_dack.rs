@@ -304,3 +304,62 @@ fn the_stolen_artifact_stays_when_dack_dies() {
         "owned by them and controlled by you, which is what a theft is",
     );
 }
+
+/// Dack arrives with three loyalty, and what that buys is the whole of his
+/// place in a cube: the draw-two and the theft are affordable the turn he
+/// lands, the emblem is three turns of plussing away, and whichever one you
+/// take is the only loyalty ability he offers that turn.
+#[test]
+fn three_loyalty_buys_two_of_his_three_abilities() {
+    let (mut game, dack) = staged();
+    // The theft wants something to point at before it is offered at all.
+    game.put_onto_battlefield(PlayerId::Two, cards::MOX_SAPPHIRE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    let offers = |game: &Game, index: usize| {
+        let wanted = activated_ability_for(game, dack, index);
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, ability, .. }
+                    if source == dack && ability == wanted)
+        })
+    };
+
+    let loyalty = |game: &Game| {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == dack)
+            .expect("he is there")
+            .counters(CounterKind::Loyalty)
+    };
+    assert_eq!(loyalty(&game), 3, "he arrives at three");
+    assert!(offers(&game, 0), "which pays the plus one");
+    assert!(offers(&game, 1), "and the minus two");
+    assert!(!offers(&game, 2), "but is three short of the emblem");
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == dack)
+        .expect("he is there")
+        .set_counters(CounterKind::Loyalty, 6);
+    assert!(offers(&game, 2), "six is what the emblem wanted");
+
+    activate(
+        &mut game,
+        dack,
+        0,
+        vec![TargetSelection::single(
+            TargetSlotId(0),
+            Target::Player(PlayerId::One),
+        )],
+    );
+    settle(&mut game);
+
+    assert!(
+        !offers(&game, 0) && !offers(&game, 1) && !offers(&game, 2),
+        "and one loyalty ability a turn is all he has, however much he holds",
+    );
+}
