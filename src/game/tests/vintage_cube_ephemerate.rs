@@ -477,3 +477,55 @@ fn declining_the_rebound_strands_it_in_exile_for_good() {
         "and it is not offered again on a later turn",
     );
 }
+
+/// The other half of the same ruling: "Auras attached to the exiled creature
+/// will be put into their owners' graveyards." An Aura has nowhere to go
+/// when its host stops existing, where an Equipment simply comes loose --
+/// which is why blinking your own creature answers their Pacifism for good
+/// and costs you your own Aura all the same.
+#[test]
+fn an_aura_on_what_it_blinks_goes_to_the_graveyard() {
+    let (mut game, spell, _snapcaster) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+
+    // Their Aura, already on it: Pacifism is sorcery-speed and this is not
+    // their turn, so it is attached rather than cast.
+    let mut pacifism = creature(94_500, cards::PACIFISM, PlayerId::Two);
+    pacifism.attached_to = Some(bears);
+    let pacifism_id = pacifism.card.id;
+    game.battlefield.push(pacifism);
+    game.check_state_based_actions();
+    assert_eq!(
+        game.attached_host(pacifism_id),
+        Some(bears),
+        "the Aura is on the Bears",
+    );
+
+    game.priority = PlayerId::One;
+    cast(&mut game, spell, bears);
+
+    let returned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == ObjectKind::Card(cards::GRIZZLY_BEARS))
+        .expect("the Bears came back");
+    assert_ne!(returned.card.id, bears, "a new object came back");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::PACIFISM),
+        "and the Aura had nowhere to be",
+    );
+    assert!(
+        game.players[1]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::PACIFISM),
+        "so it went to its owner's graveyard",
+    );
+}
