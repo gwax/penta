@@ -148,3 +148,44 @@ fn he_has_flash() {
 
     assert!(game.permanent_has_executable_keyword(body, KeywordAbility::Flash));
 }
+
+/// "If you control multiple Hullbreachers while an opponent would draw a
+/// card, you'll create only one Treasure." The first replacement eats the
+/// draw, and what the second one would replace is no longer happening: three
+/// of him make three Treasures over three draws, not nine.
+#[test]
+fn a_second_hullbreacher_adds_no_treasure() {
+    let (mut game, _) = staged();
+    for _ in 0..2 {
+        game.put_onto_battlefield(PlayerId::One, cards::HULLBREACHER)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::HULLBREACHER)
+            .count(),
+        3,
+        "three of him, and nothing about him is legendary",
+    );
+
+    game.draw_cards(PlayerId::Two, 1);
+    // Three applicable replacements is a question for the player drawing
+    // (they pick the order), and every answer to it ends the same way.
+    drain_pending(&mut game);
+    assert_eq!(
+        treasures(&game, PlayerId::One),
+        1,
+        "one draw replaced is one Treasure, however many of him watched it",
+    );
+
+    game.draw_cards(PlayerId::Two, 2);
+    drain_pending(&mut game);
+    assert_eq!(
+        treasures(&game, PlayerId::One),
+        3,
+        "and one per draw after that",
+    );
+    assert!(game.players[1].hand.is_empty(), "they drew nothing at all");
+}
