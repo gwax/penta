@@ -345,3 +345,54 @@ fn in_the_graveyard_it_is_an_enchantment_card() {
         "and the adventurer card is an enchantment card wherever it is not the stack",
     );
 }
+
+/// "When casting a spell as an Adventure, use the alternative
+/// characteristics and ignore all of the card's normal characteristics."
+/// A Dispel counters instant spells, so the Fealty on the stack is one --
+/// and the enchantment half of the same card is not.
+#[test]
+fn on_the_stack_the_adventure_is_an_instant_and_the_virtue_is_not() {
+    /// Puts a Dispel in the other hand and returns whether it may point at
+    /// whatever Player One has just put on the stack.
+    fn dispel_reaches_the_stack(game: &mut Game) -> bool {
+        let dispel = game
+            .build_zone(PlayerId::Two, &[cards::DISPEL])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        let dispel_id = dispel.id;
+        game.players[1].hand.push(dispel);
+        game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+        game.priority = PlayerId::Two;
+        let spell = game.stack.last().expect("something is on the stack").id;
+        game.legal_actions(PlayerId::Two)
+            .into_iter()
+            .any(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    card == dispel_id
+                        && choices
+                            .iter_targets()
+                            .any(|target| *target == Target::Spell(spell))
+                }
+                _ => false,
+            })
+    }
+
+    let (mut game, card) = staged(5);
+    let adventure = cast_with(&game, card, PlayOptionId(1)).expect("the Adventure is castable");
+    game.apply(PlayerId::One, adventure).expect("it is cast");
+    assert!(
+        dispel_reaches_the_stack(&mut game),
+        "cast as an Adventure it is an instant spell, whatever the card is",
+    );
+
+    let (mut game, card) = staged(5);
+    let enchantment =
+        cast_with(&game, card, PlayOptionId::DEFAULT).expect("the enchantment is castable");
+    game.apply(PlayerId::One, enchantment).expect("it is cast");
+    assert!(
+        !dispel_reaches_the_stack(&mut game),
+        "and cast as itself it is an enchantment spell, which Dispel cannot touch",
+    );
+}
