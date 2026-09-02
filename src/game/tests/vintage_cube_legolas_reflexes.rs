@@ -259,3 +259,91 @@ fn a_trigger_still_fires_under_split_second() {
         "and magecraft triggered and resolved all the same",
     );
 }
+
+/// The other half of the keyword: "players can't cast spells *or activate
+/// abilities* that aren't mana abilities". A Clue is spendable before the
+/// Reflexes goes up and not while it is there.
+#[test]
+fn an_activated_ability_is_shut_off_too() {
+    let (mut game, reflexes, bears) = staged();
+    game.create_token(PlayerId::One, tokens::clue());
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    let clue = game
+        .battlefield
+        .iter()
+        .find(|permanent| is_token_with(permanent, tokens::clue()))
+        .expect("the Clue is out")
+        .card
+        .id;
+    let cashable = |game: &Game| {
+        game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(
+                action,
+                Action::ActivateAbility { source, .. } if *source == clue
+            )
+        })
+    };
+    assert!(cashable(&game), "two mana cashes it in before the spell");
+
+    cast_at(&mut game, reflexes, bears);
+
+    assert!(
+        !cashable(&game),
+        "and a Clue is no mana ability, so it waits",
+    );
+
+    resolve(&mut game);
+    assert!(cashable(&game), "once it has resolved the window reopens");
+}
+
+/// "Casting a spell with split second won't affect spells and abilities that
+/// are already on the stack." Their Bolt was cast first, so it resolves
+/// after the Reflexes and still deals its three.
+#[test]
+fn a_spell_already_on_the_stack_resolves_as_normal() {
+    let (mut game, reflexes, bears) = staged();
+    game.players[PlayerId::Two.index()].hand.clear();
+    game.players[PlayerId::Two.index()].hand.push(card(
+        93_400,
+        cards::LIGHTNING_BOLT,
+        PlayerId::Two,
+    ));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    game.priority = PlayerId::Two;
+
+    // Aimed at the face, so the hexproof the Reflexes hands out changes
+    // nothing about whether it may resolve.
+    let bolt = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == CardInstanceId(93_400)
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::One))
+            }
+            _ => false,
+        })
+        .expect("their Bolt may name your face");
+    game.apply(PlayerId::Two, bolt).expect("it is cast");
+    let life = game.players[PlayerId::One.index()].life;
+
+    game.priority = PlayerId::One;
+    cast_at(&mut game, reflexes, bears);
+    assert_eq!(game.stack.len(), 2, "both are waiting, the Reflexes on top");
+
+    resolve(&mut game);
+
+    assert!(
+        game.permanent_has_executable_keyword(permanent(&game, bears), KeywordAbility::Hexproof),
+        "the Reflexes resolved first",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life - 3,
+        "and the Bolt beneath it was never touched by the split second",
+    );
+}
