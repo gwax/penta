@@ -361,3 +361,42 @@ fn a_played_otawara_has_no_channel_left() {
         "on the battlefield it is a land and nothing else",
     );
 }
+
+/// Channel is an activated ability with no timing clause on it, and "target
+/// artifact, creature, enchantment, or planeswalker" says nothing about
+/// whose. Both together are what the land is worth: on their end step it
+/// picks up your own creature, which is how a land answers their removal.
+#[test]
+fn it_channels_on_their_turn_at_your_own_permanent() {
+    let (mut game, otawara, ids) = staged(&[cards::GRIZZLY_BEARS]);
+    let mine = ids[0];
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    game.turn += 1;
+    game.active_player = PlayerId::Two;
+    game.turns_started[PlayerId::Two.index()] += 1;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    channel_at(&mut game, otawara, mine);
+
+    assert!(
+        !on_battlefield(&game, cards::GRIZZLY_BEARS),
+        "your own creature is a legal thing to name",
+    );
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::GRIZZLY_BEARS),
+        "and it went back to its owner's hand -- yours",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::OTAWARA_SOARING_CITY),
+        "with the land discarded for it, on a turn that was never yours",
+    );
+}
