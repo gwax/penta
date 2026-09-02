@@ -108,3 +108,131 @@ fn killing_it_in_response_exiles_the_card_for_good() {
         "with nothing returned to the hand it came from",
     );
 }
+
+/// Resolves whatever is waiting, taking the first thing offered.
+fn settle(game: &mut Game) {
+    for _ in 0..16 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options = decision
+                .options
+                .iter()
+                .map(|option| option.id)
+                .take(decision.minimum.max(1).min(decision.maximum))
+                .collect::<Vec<_>>();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.check_state_based_actions();
+}
+
+/// "Target opponent reveals their hand": a hand of nothing but lands is
+/// revealed and holds nothing the Sculler may take, so it stands there with
+/// its hands empty and gives nothing back when it goes.
+#[test]
+fn a_hand_of_lands_leaves_it_holding_nothing() {
+    let mut game = staged(&[cards::FOREST, cards::MOUNTAIN]);
+    let sculler = game
+        .put_onto_battlefield(PlayerId::One, cards::TIDEHOLLOW_SCULLER)
+        .expect("cataloged");
+    settle(&mut game);
+
+    assert!(
+        game.players[PlayerId::Two.index()].exile.is_empty(),
+        "there was no nonland card to take",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        2,
+        "and the hand it read is untouched",
+    );
+
+    game.move_permanents_to_graveyard(&[sculler]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        2,
+        "with nothing held, its leave trigger returns nothing",
+    );
+}
+
+/// An empty hand is the same story with nothing even to reveal.
+#[test]
+fn an_empty_hand_is_read_and_leaves_it_empty_handed() {
+    let mut game = staged(&[]);
+    game.put_onto_battlefield(PlayerId::One, cards::TIDEHOLLOW_SCULLER)
+        .expect("cataloged");
+    settle(&mut game);
+
+    assert!(
+        game.players[PlayerId::Two.index()].exile.is_empty(),
+        "nothing to take from a hand with nothing in it",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::TIDEHOLLOW_SCULLER),
+        "and the body arrives all the same",
+    );
+}
+
+/// "Reveals their hand" is a reveal, so the table sees what it read even
+/// when it takes nothing away.
+#[test]
+fn the_hand_it_reads_is_revealed() {
+    let mut game = staged(&[cards::LIGHTNING_BOLT, cards::SERRA_ANGEL]);
+    game.put_onto_battlefield(PlayerId::One, cards::TIDEHOLLOW_SCULLER)
+        .expect("cataloged");
+    game.events.clear();
+
+    settle(&mut game);
+
+    assert!(
+        game.events
+            .iter()
+            .any(|event| matches!(event, GameEvent::CardRevealed { .. })),
+        "the hand was shown before anything was chosen from it",
+    );
+}
+
+/// It is an artifact creature, which is what makes it answerable by the
+/// removal a two-drop body would otherwise dodge.
+#[test]
+fn it_is_an_artifact_as_well_as_a_creature() {
+    let mut game = staged(&[cards::LIGHTNING_BOLT]);
+    let sculler = game
+        .put_onto_battlefield(PlayerId::One, cards::TIDEHOLLOW_SCULLER)
+        .expect("cataloged");
+    settle(&mut game);
+
+    let types = game
+        .permanent_types(
+            game.battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == sculler)
+                .expect("it is there"),
+        )
+        .expect("it has types");
+    assert!(types.contains(CardType::Artifact), "an artifact");
+    assert!(types.contains(CardType::Creature), "and a creature");
+}
