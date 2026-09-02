@@ -399,3 +399,49 @@ fn six_toughness_survives_the_five() {
         .expect("six toughness outlasts five damage");
     assert_eq!(survivor.damage, 5, "with all five marked on it");
 }
+
+/// The other half of "a Mountain is a land type": one granted by a
+/// continuous effect counts, because the cost reads the type the land has
+/// now rather than the one it was printed with. A Tundra is an Island
+/// Plains and pays nothing; under a Blood Moon it is a Mountain and pays
+/// the whole spell.
+#[test]
+fn a_land_made_a_mountain_by_blood_moon_pays_it() {
+    let (mut game, collapse, angel) = staged(&[cards::TUNDRA]);
+    assert!(
+        casts(&game, collapse, angel).is_empty(),
+        "an Island Plains is no Mountain, and one land is not four mana",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::BLOOD_MOON)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    let offers = casts(&game, collapse, angel);
+    assert_eq!(offers.len(), 1, "the Moon makes the Tundra pay");
+
+    game.apply(PlayerId::One, offers[0].clone())
+        .expect("the Collapse is cast");
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::TUNDRA),
+        "the land the Moon renamed is the land that was sacrificed",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::TUNDRA),
+        "and it is off the battlefield",
+    );
+    assert!(
+        !game.battlefield.iter().any(|p| p.card.id == angel),
+        "and the Angel took its five",
+    );
+}
