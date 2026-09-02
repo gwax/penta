@@ -347,3 +347,66 @@ fn the_land_is_spent_even_when_it_finds_nothing() {
         "the library it searched is the size it was",
     );
 }
+
+/// A land has no summoning sickness, so the Landscape can be cashed in the
+/// turn it is played -- and the two uses share one untap: spending the tap
+/// on mana is spending it on the fetch as well.
+#[test]
+fn the_turn_it_lands_it_may_tap_for_either_but_only_once() {
+    let (mut game, _spare) = staged(&[cards::SWAMP]);
+    game.battlefield.clear();
+    let fresh = game
+        .build_zone(PlayerId::One, &[cards::TWISTED_LANDSCAPE])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let in_hand = fresh.id;
+    game.players[0].hand.push(fresh);
+    game.players[0].lands_played_this_turn = 0;
+
+    let play = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == in_hand))
+        .expect("the land drop is there");
+    game.apply(PlayerId::One, play).expect("it is played");
+    drain_pending(&mut game);
+    let landscape = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::TWISTED_LANDSCAPE)
+        .expect("it arrived")
+        .card
+        .id;
+
+    let mana = |game: &Game| {
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::ActivateManaAbility { source, .. } if source == landscape)
+        })
+    };
+    let fetch = |game: &Game| {
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if source == landscape)
+        })
+    };
+    assert!(
+        mana(&game) && fetch(&game),
+        "a land is usable the moment it arrives",
+    );
+
+    let tap = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateManaAbility { source, .. } if *source == landscape)
+        })
+        .expect("the mana ability is offered");
+    game.apply(PlayerId::One, tap).expect("it taps");
+
+    assert_eq!(game.players[0].mana_pool.colorless, 1);
+    assert!(
+        !fetch(&game),
+        "and the tap that bought the mana is not there to buy a basic",
+    );
+}
