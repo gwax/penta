@@ -259,3 +259,75 @@ fn attacking_mills_again_and_buys_back_a_planeswalker() {
         "and a planeswalker is as returnable as a creature",
     );
 }
+
+/// "Then you *may* return": the mill is not optional and the buy-back is.
+/// Declining leaves the four where they fell, the card it could have taken
+/// among them, and nothing added to your hand.
+#[test]
+fn the_return_may_be_declined() {
+    let (mut game, overlord) = staged();
+    let bears = game
+        .build_zone(PlayerId::One, &[cards::GRIZZLY_BEARS])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].graveyard.push(bears);
+    let hand = game.players[0].hand.len() - 1;
+    let library = game.players[0].library.len();
+    let yard = game.players[0].graveyard.len();
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == overlord))
+        .expect("it is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    for _ in 0..16 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            let player = game.priority;
+            if game.apply(player, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        // Take nothing wherever taking nothing is allowed.
+        let options = if decision.minimum == 0 {
+            Vec::new()
+        } else {
+            decision
+                .options
+                .iter()
+                .take(decision.minimum)
+                .map(|option| option.id)
+                .collect()
+        };
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .expect("declining is an answer");
+    }
+
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 4,
+        "the mill happened whatever you said next",
+    );
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        yard + 4,
+        "and all four stayed there with the Bears",
+    );
+    assert_eq!(game.players[0].hand.len(), hand, "nothing came back");
+}

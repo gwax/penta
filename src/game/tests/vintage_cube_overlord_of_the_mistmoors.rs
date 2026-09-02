@@ -243,6 +243,14 @@ fn the_impending_price_is_still_a_creature_spell() {
     game.step = Step::PrecombatMain;
     game.active_player = PlayerId::Two;
     assert!(!impending(&game), "and neither is their turn");
+
+    game.active_player = PlayerId::One;
+    game.stack
+        .push(spell(88_400, cards::LIGHTNING_BOLT, PlayerId::Two, 0));
+    assert!(
+        !impending(&game),
+        "nor is a main phase with something already on the stack",
+    );
 }
 
 /// What suppresses the body is a type-layer effect, so it is not only the
