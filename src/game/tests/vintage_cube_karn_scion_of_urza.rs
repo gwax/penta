@@ -201,3 +201,59 @@ fn the_construct_counts_your_artifacts() {
         .expect("still there");
     assert_eq!(game.power(construct), Some(2), "and every other artifact");
 }
+
+/// "For each artifact you control": the pile across the table is no part of
+/// it, however many rocks they have. Two Constructs, though, are two
+/// artifacts, and each one counts the other as well as itself.
+#[test]
+fn the_construct_counts_your_side_only() {
+    let (mut game, karn) = staged(&[]);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == karn)
+        .expect("he is there")
+        .set_counters(CounterKind::Loyalty, 9);
+
+    activate(&mut game, karn, 2);
+    settle(&mut game, None);
+    let constructs = |game: &Game| {
+        game.battlefield
+            .iter()
+            .filter(|permanent| game.effective_subtypes(permanent).contains(&"Construct"))
+            .map(|permanent| game.power(permanent))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        constructs(&game),
+        vec![Some(1)],
+        "one Construct beside a Karn who is no artifact himself",
+    );
+
+    for _ in 0..3 {
+        game.put_onto_battlefield(PlayerId::Two, cards::GUARDIAN_IDOL)
+            .expect("cataloged");
+    }
+    drain_pending(&mut game);
+    assert_eq!(
+        constructs(&game),
+        vec![Some(1)],
+        "and three of theirs are three artifacts you do not control",
+    );
+
+    // One loyalty ability per turn (CR 606.3), so the second Construct is
+    // next turn's: what matters here is what the two of them count.
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == karn)
+    {
+        permanent.activated_loyalty_this_turn = false;
+    }
+    activate(&mut game, karn, 2);
+    settle(&mut game, None);
+    assert_eq!(
+        constructs(&game),
+        vec![Some(2), Some(2)],
+        "a second Construct is an artifact for the first one to count, and back",
+    );
+}
