@@ -156,3 +156,28 @@ fn an_x_of_zero_makes_no_spirits() {
 
     assert_eq!(spirits(&game), 0);
 }
+
+/// "Legendary, basic, and snow are supertypes, not card types. Human,
+/// Equipment, and Aura are subtypes, not card types." Four cards carrying
+/// six words between them are still four types: a basic Island, a legendary
+/// creature, a legendary Equipment, and an Aura make four Spirits.
+#[test]
+fn supertypes_and_subtypes_are_not_card_types() {
+    let staged_hand = [
+        cards::ISLAND,
+        cards::NADU_WINGED_WISDOM,
+        cards::UMEZAWAS_JITTE,
+        cards::RANCOR,
+    ];
+    let (mut game, epiphany) = staged(4, &staged_hand);
+    let pitched = ids(&game, &staged_hand);
+
+    cast_and_discard(&mut game, epiphany, 4, &pitched);
+
+    assert_eq!(
+        spirits(&game),
+        4,
+        "land, creature, artifact, enchantment -- and nothing for basic, \
+         legendary, Equipment or Aura",
+    );
+}
