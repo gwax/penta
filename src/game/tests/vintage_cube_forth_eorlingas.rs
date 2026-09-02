@@ -319,3 +319,26 @@ fn damage_to_a_planeswalker_is_not_damage_to_a_player() {
     assert_eq!(game.players[1].life, 20, "the player took nothing");
     assert_eq!(game.monarch(), None, "and the crown stayed where it was");
 }
+
+/// "As a player becomes the monarch, the current monarch ceases being the
+/// monarch." The card is usually cast into a crown somebody else is wearing,
+/// and connecting takes it off them -- twice over, since a creature dealing
+/// combat damage to the monarch does the same thing on its own. The crown is
+/// still one crown, and it ends up on one head.
+#[test]
+fn it_takes_the_crown_off_the_player_wearing_it() {
+    let (mut game, spell) = staged(3);
+    game.set_monarch(PlayerId::Two);
+    drain_pending(&mut game);
+    assert_eq!(game.monarch(), Some(PlayerId::Two), "they start wearing it");
+
+    cast_for(&mut game, spell, 1);
+    attack_with_everything(&mut game);
+
+    assert_eq!(game.players[1].life, 18, "one Rider got through");
+    assert_eq!(
+        game.monarch(),
+        Some(PlayerId::One),
+        "and the crown changed heads",
+    );
+}
