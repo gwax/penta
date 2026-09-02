@@ -138,3 +138,57 @@ fn it_reaches_both_sides_and_may_be_cast_for_nothing() {
         );
     }
 }
+
+/// "If you cast Toxic Deluge without paying its mana cost, you'll still
+/// choose a value for X and pay X life. This is because it doesn't have {X}
+/// in its mana cost." Off an Omniscience with an empty pool the mana is
+/// waived and the life is not: the choice is still there, the life is still
+/// spent, and the board still shrinks by what was paid.
+#[test]
+fn a_free_cast_still_chooses_x_and_still_pays_the_life() {
+    let (mut game, deluge) = staged();
+    game.players[PlayerId::One.index()].mana_pool = ManaPool::default();
+    game.battlefield
+        .push(creature(98_400, cards::OMNISCIENCE, PlayerId::One));
+    let bears = creature(98_401, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    let angel = creature(98_402, cards::SERRA_ANGEL, PlayerId::Two);
+    let angel_id = angel.card.id;
+    game.battlefield.push(angel);
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let life = game.players[PlayerId::One.index()].life;
+
+    // With no mana at all, every cast on offer is the free one -- and there
+    // is still one per value of X.
+    let mut offered: Vec<_> = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == deluge => Some(choices.x()),
+            _ => None,
+        })
+        .collect();
+    offered.sort_unstable();
+    assert!(
+        offered.len() > 1 && offered.contains(&3),
+        "X is still a choice on a spell that is otherwise free: {offered:?}",
+    );
+
+    cast_for(&mut game, deluge, 3);
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        life - 3,
+        "the three life was paid though no mana was",
+    );
+    assert!(
+        !on_battlefield(&game, bears_id),
+        "and a 2/2 is three smaller than it needs to be",
+    );
+    assert!(
+        on_battlefield(&game, angel_id),
+        "while the 4/4 lives on one toughness",
+    );
+}
