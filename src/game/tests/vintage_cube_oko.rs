@@ -267,3 +267,71 @@ fn counters_still_apply_over_the_elk() {
         "and one put on afterwards counts the same",
     );
 }
+
+/// "Oko's second ability may target a permanent that is only temporarily an
+/// artifact or a creature. If this happens, the effect causes that permanent
+/// to remain a green Elk creature even after the temporary effect expires."
+/// A Colonnade that stood up for one turn is an Elk for the rest of the
+/// game: the animation wears off, and the Elk does not.
+#[test]
+fn a_land_that_stood_up_for_a_turn_stays_an_elk() {
+    let (mut game, oko, _) = staged(&[]);
+    let colonnade = game
+        .put_onto_battlefield(PlayerId::One, cards::CELESTIAL_COLONNADE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+    for color in ManaColor::COLORS {
+        game.add_unrestricted_mana(PlayerId::One, color, 5);
+    }
+    let animate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, .. } if *source == colonnade)
+        })
+        .expect("the Colonnade may stand up");
+    game.apply(PlayerId::One, animate).expect("it activates");
+    drain_pending(&mut game);
+    assert_eq!(
+        (
+            game.power(permanent(&game, colonnade)),
+            game.toughness(permanent(&game, colonnade))
+        ),
+        (Some(4), Some(4)),
+        "a 4/4 for the turn",
+    );
+
+    let elkify = loyalty_action(&game, oko, &[colonnade]).expect("+1 names the animated land");
+    game.apply(PlayerId::One, elkify).expect("it activates");
+    drain_pending(&mut game);
+
+    // Round the turn, which is where the animation stops and the Elk does not.
+    let turn = game.turn;
+    for _ in 0..80 {
+        if game.turn > turn + 1 {
+            break;
+        }
+        game.advance_step();
+        drain_pending(&mut game);
+    }
+
+    let elk = permanent(&game, colonnade);
+    assert_eq!(
+        (game.power(elk), game.toughness(elk)),
+        (Some(3), Some(3)),
+        "still the 3/3 Oko made of it",
+    );
+    let types = game.permanent_types(elk).expect("it has types");
+    assert!(
+        types.contains(CardType::Creature),
+        "and still a creature, with nothing left to animate it",
+    );
+    assert!(
+        game.effective_subtypes(elk).contains(&"Elk"),
+        "an Elk for good",
+    );
+}
