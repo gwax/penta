@@ -419,3 +419,56 @@ fn drawing_past_the_end_of_the_library_loses_the_game() {
         "and drawing from an empty library is a loss",
     );
 }
+
+/// "Up to three" is a ceiling as well as a licence. Six tapped lands are all
+/// offered and any three of them may come back, but the fourth is not on the
+/// table: a board wider than the clause does not untap itself.
+#[test]
+fn three_is_as_many_as_it_untaps() {
+    let (mut game, search) = staged(4, 2);
+
+    let decision = cast(&mut game, search);
+    assert_eq!(decision.options.len(), 6, "every land is a candidate");
+    assert_eq!(decision.maximum, 3, "and three of them is the most");
+    assert_eq!(decision.minimum, 0, "with none of them allowed too");
+
+    let four = decision
+        .options
+        .iter()
+        .take(4)
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    assert!(
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: four,
+            },
+        )
+        .is_err(),
+        "a fourth land is not something the clause offers",
+    );
+
+    let three = decision
+        .options
+        .iter()
+        .take(3)
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: three,
+        },
+    )
+    .expect("three is the number");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        untapped_of(&game, PlayerId::One) + untapped_of(&game, PlayerId::Two),
+        3,
+        "three came up and the other three stayed down",
+    );
+}
