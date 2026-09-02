@@ -724,6 +724,7 @@ mod vintage_cube_thalia;
 mod vintage_cube_the_endstone;
 mod vintage_cube_the_mightstone_and_weakstone;
 mod vintage_cube_the_one_ring;
+mod vintage_cube_thespians_stage;
 mod vintage_cube_thieving_skydiver;
 mod vintage_cube_third_path_iconoclast;
 mod vintage_cube_thopter_foundry;
