@@ -255,3 +255,89 @@ fn a_target_answered_in_response_costs_its_own_card() {
         "and one card drawn: the dead Mox pays nothing",
     );
 }
+
+/// It is an instant: their end step is as good a window as your own main
+/// phase, which is how the rocks are picked up with their spell waiting.
+#[test]
+fn it_may_be_cast_on_their_turn() {
+    let (mut game, spell) = staged();
+    let lotus = game
+        .put_onto_battlefield(PlayerId::One, cards::BLACK_LOTUS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.active_player = PlayerId::Two;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    outcome(&mut game, spell, &[lotus]);
+
+    assert!(!on_battlefield(&game, lotus), "the Lotus came back");
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::BLACK_LOTUS),
+        "into your hand, on their turn",
+    );
+}
+
+/// Returning a permanent is a permanent leaving, so what watches for that
+/// fires: a Tidehollow Sculler picked up hands back the card it was holding.
+#[test]
+fn what_it_returns_leaves_the_battlefield_for_every_purpose() {
+    let (mut game, spell) = staged();
+    game.players[1].hand.clear();
+    game.players[1]
+        .hand
+        .push(card(101_900, cards::LIGHTNING_BOLT, PlayerId::Two));
+    let sculler = game
+        .put_onto_battlefield(PlayerId::One, cards::TIDEHOLLOW_SCULLER)
+        .expect("cataloged");
+    for _ in 0..12 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: vec![decision.options[0].id],
+                },
+            )
+            .expect("the offered choice is legal");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        if game.apply(game.priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    game.priority = PlayerId::One;
+    assert_eq!(
+        game.players[1].exile.len(),
+        1,
+        "the Sculler is holding their Bolt",
+    );
+
+    outcome(&mut game, spell, &[sculler]);
+
+    assert!(!on_battlefield(&game, sculler), "the Sculler came back");
+    assert!(
+        game.players[1]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and its leave trigger gave the Bolt back",
+    );
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::TIDEHOLLOW_SCULLER),
+        "while the Sculler itself is a card you drew nothing for beyond its own",
+    );
+}
