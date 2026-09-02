@@ -160,3 +160,38 @@ fn it_pays_for_its_own_untap_and_gains_nothing() {
     assert!(!permanent(&game, monolith).tapped, "which then untaps it");
     assert_eq!(pool(&game), 0, "and the pool is where it started");
 }
+
+/// "If you believe you've found a way to generate an unbounded amount of
+/// mana with it, you're probably right." A Zirda takes two off the untap, so
+/// the treadmill above becomes an engine: three in, one out, and two mana a
+/// lap for as many laps as you care to take.
+#[test]
+fn a_zirda_turns_the_treadmill_into_an_engine() {
+    let (mut game, monolith) = staged();
+    game.put_onto_battlefield(PlayerId::One, cards::ZIRDA_THE_DAWNWAKER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    for lap in 1..=3 {
+        let tap = tap_action(&game, monolith)
+            .unwrap_or_else(|| panic!("it is untapped at the top of lap {lap}"));
+        game.apply(PlayerId::One, tap).expect("it activates");
+        let untap = untap_action(&game, monolith)
+            .unwrap_or_else(|| panic!("one of its three pays the untap on lap {lap}"));
+        game.apply(PlayerId::One, untap).expect("it activates");
+        drain_pending(&mut game);
+
+        assert!(
+            !permanent(&game, monolith).tapped,
+            "back up at the end of lap {lap}",
+        );
+        assert_eq!(
+            pool(&game),
+            lap * 2,
+            "two mana a lap, and lap {lap} is no different",
+        );
+    }
+}
