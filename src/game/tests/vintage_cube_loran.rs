@@ -375,3 +375,53 @@ fn the_shared_draw_can_be_the_thing_that_kills_you() {
         "they drew theirs and she could not draw hers",
     );
 }
+
+/// Her draw is a creature's tap ability, so it waits a turn like any other.
+/// Vigilance is about not tapping to attack and does nothing for summoning
+/// sickness: the turn she lands she neither attacks nor draws.
+#[test]
+fn the_draw_waits_a_turn_like_any_tap_ability() {
+    fn her(game: &Game, loran: GameObjectId) -> &Permanent {
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == loran)
+            .expect("she is there")
+    }
+
+    let (mut game, loran, _) = staged(&[]);
+    settle(&mut game, None);
+    let arrived = game.turns_started[PlayerId::One.index()];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == loran)
+        .expect("she is there")
+        .entered_controller_turn = arrived;
+
+    let taps = |game: &Game| {
+        game.legal_actions(PlayerId::One).into_iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if source == loran),
+        )
+    };
+
+    assert!(
+        game.permanent_has_executable_keyword(her(&game, loran), KeywordAbility::Vigilance),
+        "she has vigilance the turn she lands",
+    );
+    assert!(
+        !taps(&game),
+        "and still cannot tap for the draw, which vigilance was never about",
+    );
+    assert!(
+        !game.can_attack(her(&game, loran)),
+        "nor attack, for the same reason",
+    );
+
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == loran)
+        .expect("she is there")
+        .entered_controller_turn = arrived - 1;
+
+    assert!(taps(&game), "a turn later the draw is hers to take");
+    assert!(game.can_attack(her(&game, loran)), "and so is the attack");
+}
