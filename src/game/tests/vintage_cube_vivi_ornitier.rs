@@ -308,3 +308,56 @@ fn the_two_mana_may_be_split_between_the_colours() {
         "and nothing outside the two it names",
     );
 }
+
+/// Only the mana half waits for your turn. "Whenever you cast a noncreature
+/// spell" names no turn at all, so an instant on their turn grows Vivi and
+/// burns them just the same -- and the mana that growth is worth still has
+/// to wait until the turn comes round.
+#[test]
+fn the_trigger_does_not_wait_for_your_turn() {
+    let (mut game, vivi) = staged(0);
+    game.players[0]
+        .hand
+        .push(card(116_400, cards::LIGHTNING_BOLT, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+
+    game.turn += 1;
+    game.active_player = PlayerId::Two;
+    game.turns_started[PlayerId::Two.index()] += 1;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+    let life = game.players[1].life;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == CardInstanceId(116_400)
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Player(PlayerId::Two))
+            }
+            _ => false,
+        })
+        .expect("an instant is castable in their end step");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        counters_on(&game, vivi),
+        1,
+        "the counter came on their turn"
+    );
+    assert_eq!(
+        game.players[1].life,
+        life - 1 - 3,
+        "the trigger's point and the Bolt's three",
+    );
+    assert!(
+        !game.legal_actions(PlayerId::One).into_iter().any(
+            |action| matches!(action, Action::ActivateManaAbility { source, .. } if source == vivi)
+        ),
+        "and the mana the counter is worth is still a turn away",
+    );
+}
