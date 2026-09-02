@@ -399,3 +399,66 @@ fn both_halves_work_on_their_turn() {
     );
     assert_eq!(counters(&game), 1, "and the counter paid for it");
 }
+
+/// "Remove a +1/+1 counter from this creature" is a cost, paid on
+/// activation. Answer the shot by taking the target off the battlefield and
+/// the counter is gone anyway: the ability has nothing left to name, the
+/// point of damage never happens, and the Ballista is one smaller for it.
+/// Which is how a Ballista is blown out by an instant.
+#[test]
+fn the_counter_is_spent_even_when_the_shot_finds_nothing() {
+    let (mut game, ballista) = staged(3);
+    cast(&mut game, ballista, 3);
+    let ballista = on_battlefield(&game).expect("it resolved").card.id;
+    game.put_onto_battlefield(PlayerId::Two, cards::SAVANNAH_LIONS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let lions = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SAVANNAH_LIONS)
+        .expect("the Lions are there")
+        .card
+        .id;
+    assert_eq!(counters(&game), 3, "three counters to spend");
+
+    let shot = abilities(&game, ballista)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility { targets, .. } => targets
+                .iter()
+                .any(|selection| selection.targets().contains(&Target::Permanent(lions))),
+            _ => false,
+        })
+        .expect("the Lions are a legal thing to shoot");
+    game.apply(PlayerId::One, shot).expect("it activates");
+
+    assert_eq!(
+        counters(&game),
+        2,
+        "the counter came off as the ability went on the stack",
+    );
+
+    // They answer it by taking the Lions away before it resolves.
+    game.return_permanent_to_hand(lions);
+    game.check_state_based_actions();
+    resolve(&mut game);
+
+    assert_eq!(
+        counters(&game),
+        2,
+        "and it stays off: the cost was paid, whatever became of the target",
+    );
+    assert_eq!(
+        game.players[1].life, 20,
+        "the point went nowhere -- it was never aimed at them",
+    );
+    assert!(
+        game.players[1]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SAVANNAH_LIONS),
+        "and the Lions are safe in hand",
+    );
+}
