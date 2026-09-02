@@ -374,6 +374,7 @@ pub(in super::super) fn shared_static_effect(source_zones: &[ZoneKind], effect: 
         | EffectDef::Endure { .. }
         | EffectDef::Destroy { .. }
         | EffectDef::Sacrifice { .. }
+        | EffectDef::SacrificeYours { .. }
         | EffectDef::SacrificeOfChoice { .. }
         | EffectDef::ExileTopOfLibraryToPlay { .. }
         | EffectDef::ExileTopAndMayCast { .. }

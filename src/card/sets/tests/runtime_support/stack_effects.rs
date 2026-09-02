@@ -575,6 +575,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::Untap { object }
         | EffectDef::Saddle { object }
         | EffectDef::Sacrifice { object }
+        | EffectDef::SacrificeYours { object }
         | EffectDef::DiscardCards { object }
         | EffectDef::ExileLinkedToSource { object, .. }
         | EffectDef::ExileGrantingOwnerPlay { object, .. }

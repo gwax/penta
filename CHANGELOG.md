@@ -25,6 +25,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"You sacrifice it" is a different instruction from "is sacrificed by its
+  controller."** `EffectDef::SacrificeYours` asks whether the ability's
+  controller still controls each permanent before it sacrifices any of them,
+  because CR 701.17a lets a player sacrifice only what they control. Sneak
+  Attack's delayed sacrifice and Goblin Kites' lost coin flip now use it, so a
+  creature an opponent takes before the end step is one you no longer have to
+  give up -- "you sacrifice the creature only if you still control it".
+  `EffectDef::Sacrifice` keeps its board-wide reading for cards like
+  Golgothian Sylex.
+
 - **The legend rule asks which one to keep.** A player controlling two or more
   same-named legendary permanents now chooses which stays (CR 704.5j) instead
   of the engine keeping the untapped, newest body. Same-named permanents are

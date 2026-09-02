@@ -332,14 +332,10 @@ impl Game {
                 self.destroy_permanents_then(&permanents, can_regenerate, completion);
             }
             // Audit: whoever controls a named permanent is treated as the
-            // player sacrificing it, which is right for "each player
-            // sacrifices" and wrong for "sacrifice it". CR 701.17a says a
-            // player cannot sacrifice what they do not control, so a Sneak
-            // Attack creature an opponent has taken should survive the end
-            // step -- "you sacrifice the creature only if you still control
-            // it" -- and here it does not. Fixing it needs the effect to
-            // carry whose sacrifice it is; the recipient shape alone cannot
-            // tell a delayed "sacrifice it" from a board-wide one.
+            // "Is sacrificed by its controller": whoever controls the
+            // permanent gives it up, whoever caused it. An instruction that
+            // says "you sacrifice it" is `SacrificeYours` below, because CR
+            // 701.17a lets a player sacrifice only what they control.
             EffectDef::Sacrifice { object: recipient } => {
                 let permanents = self
                     .effect_recipients(recipient, object, &context, scoped)
@@ -353,6 +349,24 @@ impl Game {
                             .is_none_or(|controller| {
                                 self.can_be_forced_to_sacrifice(controller, object.controller)
                             })
+                    })
+                    .collect::<Vec<_>>();
+                self.sacrifice_permanents(&permanents);
+            }
+            // "You sacrifice it." The ability's controller is the one being
+            // told to, so a permanent that has left their side is no longer
+            // theirs to give up: Sneak Attack's Dragon, stolen before the end
+            // step, stays where it went.
+            EffectDef::SacrificeYours { object: recipient } => {
+                let permanents = self
+                    .effect_recipients(recipient, object, &context, scoped)
+                    .into_iter()
+                    .filter_map(|target| match target {
+                        Target::Permanent(permanent) => Some(permanent),
+                        Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
+                    })
+                    .filter(|permanent| {
+                        self.permanent_controller(*permanent) == Some(object.controller)
                     })
                     .collect::<Vec<_>>();
                 self.sacrifice_permanents(&permanents);

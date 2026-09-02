@@ -1439,7 +1439,7 @@ pub(in crate::card::sets) static GOBLIN_KITES: CardRecord = CardRecord::new_with
                     EffectDef::Randomized {
                         likelihood: LikelihoodDef::new(0.5),
                         on_success: &EffectDef::None,
-                        on_failure: &EffectDef::Sacrifice {
+                        on_failure: &EffectDef::SacrificeYours {
                             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                         },
                     },

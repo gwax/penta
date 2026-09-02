@@ -852,6 +852,12 @@ pub enum EffectDef {
     Sacrifice {
         object: EffectRecipientDef,
     },
+    /// "You sacrifice it": CR 701.17a lets a player sacrifice only what they
+    /// control, so a permanent the ability's controller has lost is left
+    /// alone, where [`Self::Sacrifice`] is "sacrificed by its controller".
+    SacrificeYours {
+        object: EffectRecipientDef,
+    },
     /// Several players make non-targeting permanent choices before the
     /// resulting partition is exposed to an ordinary nested effect.
     ChooseForEachPlayer(super::ChooseForEachPlayerDef),

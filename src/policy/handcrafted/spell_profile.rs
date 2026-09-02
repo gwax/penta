@@ -553,6 +553,7 @@ impl HandcraftedPolicy {
             | EffectDef::LoseLife { .. }
             | EffectDef::Regenerate { .. }
             | EffectDef::Sacrifice { .. }
+            | EffectDef::SacrificeYours { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }

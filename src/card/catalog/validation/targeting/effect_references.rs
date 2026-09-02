@@ -637,6 +637,7 @@ fn validate_effect_references(
             object, then: None, ..
         }
         | EffectDef::Sacrifice { object }
+        | EffectDef::SacrificeYours { object }
         | EffectDef::PermitCastFromGraveyardThisTurn { object }
         | EffectDef::DiscardCards { object }
         | EffectDef::ChangeTextBasicLandType { object }

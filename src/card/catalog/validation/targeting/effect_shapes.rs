@@ -421,6 +421,7 @@ fn validate_effect_target_shapes(
         | EffectDef::RemoveAllCounters { object, .. }
         | EffectDef::SkipNextUntapSteps { object, .. }
         | EffectDef::Sacrifice { object }
+        | EffectDef::SacrificeYours { object }
         | EffectDef::ChangeTextBasicLandType { object }
         | EffectDef::ChooseColor { object, .. }
         | EffectDef::BecomeCopyOf { object, .. }

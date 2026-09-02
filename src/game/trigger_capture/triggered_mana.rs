@@ -83,7 +83,7 @@ EffectDef::Regenerate { .. } | EffectDef::Tap { .. } |
 EffectDef::RemoveFromCombat { .. } | EffectDef::SkipNextUntapSteps { .. } |
 EffectDef::DoubleCounters { .. } | EffectDef::RemoveAllCounters { .. } |
 EffectDef::Untap { .. } | EffectDef::Saddle { .. } | EffectDef::Destroy { .. }
-| EffectDef::Sacrifice { .. } | EffectDef::SacrificeOfChoice { .. } |
+| EffectDef::Sacrifice { .. } | EffectDef::SacrificeYours { .. } | EffectDef::SacrificeOfChoice { .. } |
 EffectDef::ExileTopOfLibraryToPlay { .. } | EffectDef::ExileTopAndMayCast { ..
 } | EffectDef::MayCastTargetWithoutPaying { .. } | EffectDef::Mill { .. } |
 EffectDef::SearchZonesAndExileRest { .. } | EffectDef::MillUntil { .. } |

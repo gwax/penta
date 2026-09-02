@@ -339,3 +339,41 @@ fn one_sneaked_in_during_an_end_step_lives_until_the_next_one() {
         "sacrificed by its own controller, wherever the turn belongs",
     );
 }
+
+/// The other half of the ruling: "you sacrifice the creature only if you
+/// still control it." A Dragon taken away before the end step is a Dragon
+/// its new controller keeps -- the delayed sacrifice belongs to you, and you
+/// cannot sacrifice what is no longer yours.
+#[test]
+fn a_creature_stolen_before_the_end_step_is_not_sacrificed() {
+    let (mut game, sneak, _) = staged(1);
+    sneak_in(&mut game, sneak, Some(cards::SHIVAN_DRAGON));
+    let dragon = dragon_on_battlefield(&game).expect("it arrived").card.id;
+
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == dragon)
+    {
+        permanent.controller = PlayerId::Two;
+    }
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    let dragon = dragon_on_battlefield(&game).expect("it is still on the battlefield");
+    assert_eq!(
+        dragon.controller,
+        PlayerId::Two,
+        "the borrowed Dragon stayed borrowed by somebody else",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .all(|card| card.definition != cards::SHIVAN_DRAGON),
+        "and nothing of yours went to the graveyard for it",
+    );
+}

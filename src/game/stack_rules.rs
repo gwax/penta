@@ -180,6 +180,7 @@ impl Game {
             | EffectDef::PhaseOut { .. }
             | EffectDef::Destroy { then: None, .. }
             | EffectDef::Sacrifice { .. }
+            | EffectDef::SacrificeYours { .. }
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }
             | EffectDef::ExileTopAndMayCast { .. }

@@ -2383,7 +2383,7 @@ pub(in crate::card::sets) static SNEAK_ATTACK: CardRecord = CardRecord::new(
                                             step: TurnStepDef::End,
                                             player: PlayerRelation::Any,
                                         },
-                                        EffectDef::Sacrifice {
+                                        EffectDef::SacrificeYours {
                                             object: EffectRecipientDef::objects(
                                                 ObjectSetDef::Binding(ParentBinding),
                                             ),
