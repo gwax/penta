@@ -227,3 +227,82 @@ fn the_token_brings_the_copied_enters_trigger_with_it() {
         "while the original is exiled",
     );
 }
+
+/// "If the copied permanent is a token, the tokens created copy the original
+/// characteristics of that token as stated by the effect that put it onto
+/// the battlefield." A token is a nonland permanent like any other: it is
+/// exiled, ceases to exist, and you are handed the same 3/3 Beast.
+#[test]
+fn a_token_is_taken_and_copied_like_anything_else() {
+    let (mut game, held, _) = staged(&[]);
+    let token = token_permanent(
+        86_100,
+        tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+        PlayerId::Two,
+    );
+    let token_id = token.card.id;
+    game.battlefield.push(token);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    cast(&mut game, held, token_id);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == token_id),
+        "the original was exiled, and a token in exile ceases to exist",
+    );
+    assert!(
+        controlled_by(&game, PlayerId::Two, "Beast").is_empty(),
+        "so they are left with nothing",
+    );
+    let copies = controlled_by(&game, PlayerId::One, "Beast");
+    assert_eq!(copies.len(), 1, "and you have a Beast of your own");
+    assert_eq!(
+        (game.power(copies[0]), game.toughness(copies[0])),
+        (Some(3), Some(3)),
+        "with the characteristics the effect gave the one it copied",
+    );
+}
+
+/// "If the copied permanent had {X} in its mana cost, X is 0." A Ballista
+/// standing as a 2/2 is copied as the 0/0 it was printed as -- X is nothing
+/// and the counters are no part of a copy either -- so the token dies to
+/// state-based actions before you ever get to use it, and the whole spell
+/// buys you an exile.
+#[test]
+fn a_copied_ballista_arrives_as_a_nothing() {
+    let (mut game, held, theirs) = staged(&[cards::WALKING_BALLISTA]);
+    let ballista = theirs[0];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == ballista)
+        .expect("it is there")
+        .set_counters(CounterKind::PlusOnePlusOne, 2);
+    game.check_state_based_actions();
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == ballista),
+        "a 2/2 for as long as it holds its counters",
+    );
+
+    cast(&mut game, held, ballista);
+    game.check_state_based_actions();
+
+    assert!(
+        game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::WALKING_BALLISTA),
+        "the original is exiled",
+    );
+    assert!(
+        controlled_by(&game, PlayerId::One, "Walking Ballista").is_empty(),
+        "and the copy was a 0/0 that did not survive being made",
+    );
+}
