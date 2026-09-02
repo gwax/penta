@@ -273,3 +273,77 @@ fn the_flying_wears_off_and_the_counter_does_not() {
         "and the counter is still a counter",
     );
 }
+
+/// The play the card is built around: neither ability costs mana or a tap,
+/// so both are available in the middle of combat. A 1/2 Frog blocked by a
+/// 2/2 is dead and kills nothing; two cards out of hand after blockers are
+/// declared make it a 3/4 that eats the blocker and walks away.
+#[test]
+fn discarding_after_blockers_wins_the_fight() {
+    let (mut game, frog) = staged(&[cards::MOUNTAIN, cards::ISLAND], &[]);
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert_eq!(
+        (game.power(the_frog(&game)), game.toughness(the_frog(&game))),
+        (Some(1), Some(2)),
+        "a 1/2 walks into a 2/2 and loses",
+    );
+
+    // Attack, and let them block before anything is spent.
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == frog)
+        .expect("it is there")
+        .attacking = true;
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == frog)
+        .expect("it is there")
+        .attack_defender = Some(AttackDefender::Player(PlayerId::Two));
+    game.step = Step::DeclareBlockers;
+    game.declare_blocker(bears, frog);
+    game.finish_declaring_blockers();
+
+    // Blockers are in and the Frog is still a 1/2. Two discards fix that.
+    for round in 0..2 {
+        // Settling the first activation hands priority on; the attacking
+        // player takes it back to spend the second card.
+        game.priority = PlayerId::One;
+        let action = activation(&game, frog, 1)
+            .unwrap_or_else(|| panic!("a card in hand pays for round {round}"));
+        game.apply(PlayerId::One, action).expect("it activates");
+        settle(&mut game);
+    }
+    assert_eq!(
+        (game.power(the_frog(&game)), game.toughness(the_frog(&game))),
+        (Some(3), Some(4)),
+        "two counters, mid-combat, for two cards",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].hand.is_empty(),
+        "which is the whole hand",
+    );
+
+    game.deal_combat_damage();
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != bears),
+        "three damage is more than a bear can take",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == frog),
+        "and two is less than the Frog now has",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        20,
+        "it was blocked, so nothing got through to draw a card for",
+    );
+}
