@@ -195,3 +195,115 @@ fn the_two_targets_must_differ() {
         "one artifact alone cannot copy another",
     );
 }
+
+/// "Saheeli's first ability resolves before the spell that caused it to
+/// trigger." The Servo is already on the battlefield while the Bolt is still
+/// waiting, which is what makes her a blocker against the deck that is
+/// killing her.
+#[test]
+fn the_servo_arrives_before_the_spell_resolves() {
+    let (mut game, _saheeli) = staged();
+    let bolt = game
+        .build_zone(PlayerId::One, &[cards::LIGHTNING_BOLT])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let bolt_id = bolt.id;
+    game.players[0].hand.push(bolt);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == bolt_id))
+        .expect("one red casts it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+
+    // Let the trigger resolve and stop there, with the Bolt still underneath.
+    for _ in 0..8 {
+        if servos(&game) == 1 {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert_eq!(servos(&game), 1, "the Servo is here");
+    assert!(!game.stack.is_empty(), "and the stack is not empty");
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        20,
+        "because the Bolt underneath it has not resolved yet",
+    );
+}
+
+/// "It resolves even if that spell is countered." The trigger is not part of
+/// the spell: answering the Bolt leaves the Servo standing.
+#[test]
+fn the_servo_stays_when_the_spell_is_countered() {
+    let (mut game, _saheeli) = staged();
+    let bolt = game
+        .build_zone(PlayerId::One, &[cards::LIGHTNING_BOLT])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let bolt_id = bolt.id;
+    game.players[0].hand.push(bolt);
+    let counter = game
+        .build_zone(PlayerId::Two, &[cards::COUNTERSPELL])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let counter_id = counter.id;
+    game.players[1].hand.push(counter);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == bolt_id))
+        .expect("one red casts it");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    let spell = game
+        .stack
+        .iter()
+        .find(|object| object.controller == PlayerId::One)
+        .expect("the Bolt is on the stack")
+        .id;
+
+    game.priority = PlayerId::Two;
+    let answer = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == counter_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(spell))
+            }
+            _ => false,
+        })
+        .expect("Counterspell may point at it");
+    game.apply(PlayerId::Two, answer).expect("it is cast");
+    resolve(&mut game);
+
+    assert_eq!(
+        servos(&game),
+        1,
+        "the trigger is not part of the spell it watched",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::LIGHTNING_BOLT),
+        "and the Bolt was really countered",
+    );
+    assert_eq!(game.players[1].life, 20, "so nothing was dealt");
+}
