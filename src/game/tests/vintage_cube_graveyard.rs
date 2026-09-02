@@ -245,3 +245,67 @@ fn jaces_plus_mills_before_it_draws() {
         }
     }
 }
+
+/// "If your library has fewer than seven cards in it while resolving Jace's
+/// last ability, and Jace has already left the battlefield, you'll draw as
+/// many cards as you can and then win the game before state-based actions
+/// would cause you to lose for trying to draw from an empty library." Which
+/// is always the case: paying eight loyalty out of eight kills him, so the
+/// static that turns the empty draw into a win is gone by the time the
+/// draws happen. The ability's own check is what saves it.
+#[test]
+fn jaces_ultimate_wins_off_a_short_library_with_him_already_gone() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::One.index()].library.clear();
+    for index in 0..3 {
+        game.players[PlayerId::One.index()].library.push(card(
+            81_300 + index,
+            cards::GRIZZLY_BEARS,
+            PlayerId::One,
+        ));
+    }
+    let jace = game
+        .put_onto_battlefield(PlayerId::One, cards::JACE_WIELDER_OF_MYSTERIES)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == jace)
+        .expect("he entered")
+        .add_counters(CounterKind::Loyalty, 4);
+
+    let wanted = activated_ability_for(&game, jace, 1);
+    let ultimate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateAbility { source, ability, .. }
+                if *source == jace && *ability == wanted)
+        })
+        .expect("eight loyalty pays for the ultimate");
+    game.apply(PlayerId::One, ultimate).expect("it activates");
+    drain_pending(&mut game);
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == jace),
+        "eight loyalty out of eight leaves nothing behind",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].hand.len(),
+        3,
+        "three cards is as many as could be drawn",
+    );
+    assert_eq!(
+        game.result(),
+        Some(GameResult::Winner {
+            winner: PlayerId::One,
+            reason: WinReason::WonByAnEffect,
+        }),
+        "and the win lands before the empty library can take it",
+    );
+}
