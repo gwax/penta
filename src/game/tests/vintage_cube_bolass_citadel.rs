@@ -448,3 +448,57 @@ fn an_x_spell_from_the_top_is_cast_for_nought() {
         "buried by state-based actions",
     );
 }
+
+/// "You can, however, pay additional costs. If the card has any mandatory
+/// additional costs, those must be paid to cast the card." A Bitter Triumph
+/// off the top is two life for the mana value and three more for the cost it
+/// prints -- five life for a removal spell that cost two mana yesterday, and
+/// no mana at all.
+#[test]
+fn a_mandatory_additional_cost_is_paid_on_top_of_the_life() {
+    let (mut game, _citadel) = staged(&[cards::MOUNTAIN, cards::BITTER_TRIUMPH]);
+    let triumph = top(&game);
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let life = game.players[0].life;
+
+    // With an empty hand the discard half is unavailable, so the only way to
+    // pay the additional cost is the three life beside the two.
+    assert!(game.players[0].hand.is_empty(), "nothing to discard");
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == triumph
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(bears))
+            }
+            _ => false,
+        })
+        .expect("the Triumph is castable off the top");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        0,
+        "no mana was there and none was spent",
+    );
+    assert_eq!(
+        game.players[0].life,
+        life - 5,
+        "two for the mana value and three for the cost it prints",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == bears),
+        "and the bear is destroyed, which is what the five bought",
+    );
+}
