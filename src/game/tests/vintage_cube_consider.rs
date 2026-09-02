@@ -175,3 +175,31 @@ fn it_may_be_cast_on_their_turn() {
         "the card was drawn on their end step",
     );
 }
+
+/// One resolution does two things to the library, and only one of them is a
+/// draw: a Sheoldred watching the table pays for the card drawn and nothing
+/// for the card surveilled, whichever answer the surveil takes.
+#[test]
+fn the_surveil_is_no_draw_and_only_the_draw_is_paid_for() {
+    for bin in [true, false] {
+        let (mut game, consider) = staged(&[cards::FOREST, cards::MOUNTAIN, cards::ISLAND]);
+        game.put_onto_battlefield(PlayerId::One, cards::SHEOLDRED_THE_APOCALYPSE)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        game.priority = PlayerId::One;
+        let life = game.players[0].life;
+
+        cast_surveilling(&mut game, consider, bin);
+
+        assert_eq!(
+            game.players[0].life,
+            life + 2,
+            "bin={bin}: two life for the one card drawn, and nothing for the look",
+        );
+        assert_eq!(
+            game.players[0].hand.len(),
+            1,
+            "bin={bin}: one card in hand, which is what was paid for",
+        );
+    }
+}
