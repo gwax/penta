@@ -216,3 +216,43 @@ fn it_is_still_an_instant_on_their_turn() {
         "a Kindred Instant is an instant, whoever's turn it is",
     );
 }
+
+/// "Kindred is a card type that allows noncreature cards to have creature
+/// types." The types are all it grants: a Tarfire in the graveyard is a
+/// Goblin card and not a creature card, so an Animate Dead looking for
+/// something to bring back reads straight past it to the Bears.
+#[test]
+fn a_goblin_card_is_still_not_a_creature_card() {
+    let (mut game, _) = staged();
+    game.players[0].graveyard.clear();
+    game.players[0]
+        .graveyard
+        .push(card(76_100, cards::TARFIRE, PlayerId::One));
+    game.players[0]
+        .graveyard
+        .push(card(76_101, cards::GRIZZLY_BEARS, PlayerId::One));
+    let bears = game.players[0].graveyard[1].id;
+    let animate = card(76_102, cards::ANIMATE_DEAD, PlayerId::One);
+    let animate_id = animate.id;
+    game.players[0].hand.push(animate);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let named = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::CastSpell { card, choices, .. } if card == animate_id => {
+                Some(choices.iter_targets().copied().collect::<Vec<_>>())
+            }
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        named,
+        vec![Target::Card(bears)],
+        "the Bears are the only creature card in that graveyard",
+    );
+}
