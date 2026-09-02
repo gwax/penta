@@ -218,3 +218,34 @@ fn a_short_library_is_looked_at_as_far_as_it_goes() {
         "with the other one left behind",
     );
 }
+
+/// The bottom of the same slope: an empty library is looked at as far as it
+/// goes, which is nowhere, and the draw that follows is a draw from nothing.
+/// The card is a cantrip and a cantrip is what kills you.
+#[test]
+fn pondering_an_empty_library_is_what_finishes_you() {
+    let (mut game, spell) = staged_with(0, &[]);
+    assert!(game.players[0].library.is_empty(), "nothing to look at");
+
+    ponder(&mut game, spell, cards::LIGHTNING_BOLT, false);
+    game.check_state_based_actions();
+
+    assert!(
+        matches!(
+            game.result,
+            Some(GameResult::Winner {
+                winner: PlayerId::Two,
+                reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+            })
+        ),
+        "the draw had nowhere to come from: {:?}",
+        game.result,
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::PONDER),
+        "and the Ponder resolved on its way there",
+    );
+}
