@@ -301,3 +301,36 @@ fn the_hand_and_the_graveyard_share_one_land_drop() {
         );
     }
 }
+
+/// The other half of whose graveyard it opens. The permission belongs to
+/// the Crucible's controller, so one across the table is worth nothing to
+/// you: your own Mountain stays where it is, while theirs is a land drop
+/// they may take.
+#[test]
+fn their_crucible_does_not_open_your_graveyard() {
+    let mut game = staged(false);
+    game.put_onto_battlefield(PlayerId::Two, cards::CRUCIBLE_OF_WORLDS)
+        .expect("cataloged");
+    game.players[1].graveyard.clear();
+    game.players[1]
+        .graveyard
+        .push(card(87_020, cards::FOREST, PlayerId::Two));
+    drain_pending(&mut game);
+
+    assert!(
+        land_plays(&game).is_empty(),
+        "their artifact is no permission of yours",
+    );
+    // Their own turn, where a land drop of theirs is a thing they could take
+    // at all: the artifact is working, just not for you.
+    game.active_player = PlayerId::Two;
+    game.turns_started = [5, 6];
+    game.priority = PlayerId::Two;
+    game.players[1].lands_played_this_turn = 0;
+    assert!(
+        game.legal_actions(PlayerId::Two).into_iter().any(
+            |action| matches!(action, Action::PlayLand { card, .. } if card == GameObjectId(87_020))
+        ),
+        "and it is doing its work on the side that controls it",
+    );
+}
