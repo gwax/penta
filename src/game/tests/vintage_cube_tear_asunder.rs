@@ -192,3 +192,55 @@ fn the_kicked_spell_names_one_thing() {
         "and the kicked cast can still name an artifact",
     );
 }
+
+/// "Artifact or enchantment" has two halves and only the artifact one is
+/// exercised above. An unkicked Tear Asunder answers an enchantment for the
+/// same two mana, and exiles it just the same.
+#[test]
+fn unkicked_it_answers_an_enchantment_too() {
+    let (mut game, spell, theirs) = staged(&[cards::PHYREXIAN_ARENA]);
+    let arena = theirs[0];
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 2);
+
+    let cast = casts_at(&game, spell, arena)
+        .into_iter()
+        .next()
+        .expect("an enchantment is the other half of the clause");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert!(!on_battlefield(&game, arena), "the enchantment is gone");
+    assert!(
+        game.players[PlayerId::Two.index()]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::PHYREXIAN_ARENA),
+        "exiled like the artifact was",
+    );
+}
+
+/// The kicker is {1}{B} on a {1}{G} spell, so kicking wants a colour the
+/// spell itself never asks for. Four green casts it at an artifact and
+/// cannot reach a creature; one of those swapped for black opens the kicker.
+#[test]
+fn the_kicker_wants_black_that_the_spell_itself_does_not() {
+    let (mut game, spell, theirs) = staged(&[cards::GRIZZLY_BEARS, cards::MANIFOLD_KEY]);
+    let (bears, key) = (theirs[0], theirs[1]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 4);
+
+    assert!(
+        !casts_at(&game, spell, key).is_empty(),
+        "green alone casts the spell",
+    );
+    assert!(
+        casts_at(&game, spell, bears).is_empty(),
+        "but four green is no closer to the kicker than two was",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+
+    assert!(
+        !casts_at(&game, spell, bears).is_empty(),
+        "one black is what the kicker was waiting for",
+    );
+}
