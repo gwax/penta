@@ -332,6 +332,15 @@ impl Game {
                 });
                 self.destroy_permanents_then(&permanents, can_regenerate, completion);
             }
+            // Audit: whoever controls a named permanent is treated as the
+            // player sacrificing it, which is right for "each player
+            // sacrifices" and wrong for "sacrifice it". CR 701.17a says a
+            // player cannot sacrifice what they do not control, so a Sneak
+            // Attack creature an opponent has taken should survive the end
+            // step -- "you sacrifice the creature only if you still control
+            // it" -- and here it does not. Fixing it needs the effect to
+            // carry whose sacrifice it is; the recipient shape alone cannot
+            // tell a delayed "sacrifice it" from a board-wide one.
             EffectDef::Sacrifice { object: recipient } => {
                 let permanents = self
                     .effect_recipients(recipient, object, &context, scoped)

@@ -281,3 +281,61 @@ fn a_creature_that_left_and_returned_is_not_sacrificed() {
         "the Dragon is not in the graveyard: it was never sacrificed",
     );
 }
+
+/// "At the beginning of the next end step" is read from where the ability
+/// resolved. Sneaking a creature in during an end step that has already
+/// begun means the next such beginning is a turn away, so the Dragon lives
+/// through the opponent's whole turn and is sacrificed at their end step.
+#[test]
+fn one_sneaked_in_during_an_end_step_lives_until_the_next_one() {
+    let (mut game, sneak, _) = staged(1);
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+
+    sneak_in(&mut game, sneak, Some(cards::SHIVAN_DRAGON));
+    assert!(
+        dragon_on_battlefield(&game).is_some(),
+        "it arrived after this end step had already begun",
+    );
+
+    // Finishing the end step it arrived in takes nothing: that beginning
+    // came and went before the delayed trigger existed.
+    game.check_state_based_actions();
+    assert!(
+        dragon_on_battlefield(&game).is_some(),
+        "so this end step is not the one that claims it",
+    );
+
+    // The opponent's turn, all the way to their end step.
+    game.turn += 1;
+    game.active_player = PlayerId::Two;
+    game.turns_started[PlayerId::Two.index()] += 1;
+    for step in [Step::Upkeep, Step::Draw, Step::PrecombatMain] {
+        game.step = step;
+        game.begin_step_triggers();
+        drain_pending(&mut game);
+        game.check_state_based_actions();
+        assert!(
+            dragon_on_battlefield(&game).is_some(),
+            "it is still borrowed at {step:?}",
+        );
+    }
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        dragon_on_battlefield(&game).is_none(),
+        "and the next end step is the one that takes it",
+    );
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SHIVAN_DRAGON),
+        "sacrificed by its own controller, wherever the turn belongs",
+    );
+}
