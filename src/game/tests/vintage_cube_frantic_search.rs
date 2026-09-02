@@ -472,3 +472,44 @@ fn three_is_as_many_as_it_untaps() {
         "three came up and the other three stayed down",
     );
 }
+
+/// "Untap up to three *lands*": a tapped creature is not one of them, and
+/// neither is a tapped artifact. The Monolith beside the Island is exactly
+/// the permanent a player would most like this to reach, and the clause does
+/// not reach it.
+#[test]
+fn only_lands_are_on_the_menu() {
+    let (mut game, search) = staged(1, 0);
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let monolith = game
+        .put_onto_battlefield(PlayerId::One, cards::BASALT_MONOLITH)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.tapped = true;
+    }
+    game.priority = PlayerId::One;
+
+    let decision = cast(&mut game, search);
+    let offered = decision
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(object, _)| object))
+        .collect::<Vec<_>>();
+
+    assert!(!offered.contains(&bears), "a tapped creature is not a land",);
+    assert!(
+        !offered.contains(&monolith),
+        "and neither is the artifact that would most like to be one",
+    );
+    assert!(
+        offered.iter().all(|object| game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == *object)
+            .is_some_and(|permanent| permanent.card.definition == cards::ISLAND)),
+        "the Island is the whole of the offer: {offered:?}",
+    );
+}
