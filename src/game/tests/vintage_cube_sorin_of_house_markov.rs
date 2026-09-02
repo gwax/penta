@@ -381,3 +381,47 @@ fn his_lifelink_turns_him_over_by_itself() {
         "four is three or more, so he turns over in his own postcombat main",
     );
 }
+
+/// "If you haven't gained life so far this turn as your postcombat main
+/// phase begins, the ability won't trigger at all. It's not possible to gain
+/// life during your postcombat main phase in time for the ability to
+/// trigger." The clause is read as the step opens: five life gained a moment
+/// later is five life too late, and he stays a Noble for the rest of the
+/// turn.
+#[test]
+fn life_gained_after_the_step_opens_is_too_late() {
+    let (mut game, sorin) = staged();
+
+    // The step begins with nothing gained, so nothing triggers.
+    postcombat_main(&mut game);
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == sorin),
+        "no life, no trigger",
+    );
+
+    game.gain_life(PlayerId::One, 5);
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == sorin),
+        "and the gaining afterwards has no step left to be read in",
+    );
+
+    // Even walking the rest of the turn out finds no second chance: the
+    // trigger is the beginning of that step and there is only one of them.
+    for _ in 0..40 {
+        if game.step == Step::Cleanup {
+            break;
+        }
+        game.advance_step();
+        drain_pending(&mut game);
+    }
+    assert!(
+        permanent_named(&game, "Sorin, Ravenous Neonate").is_none(),
+        "he is a Noble to the end of it",
+    );
+}
