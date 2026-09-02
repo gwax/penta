@@ -806,3 +806,40 @@ fn the_mountains_are_spent_even_when_the_spell_fizzles() {
         "and it went to the graveyard having cost two lands",
     );
 }
+
+/// Sacrificing two Mountains is what was paid, not what the spell is worth:
+/// on the stack a free Fireblast is still a six, which is what a Chalice of
+/// the Void or a Counterbalance flip reads when it looks at it.
+#[test]
+fn a_free_fireblast_is_still_worth_six() {
+    let (mut game, casts) = fireblast_casts(2, false);
+    let cast = casts
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { choices, .. } => choices
+                .targets()
+                .iter()
+                .any(|slot| slot.targets().contains(&Target::Player(PlayerId::Two))),
+            _ => false,
+        })
+        .expect("the opponent can be named");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    let fireblast = game
+        .stack
+        .iter()
+        .find(|object| object.card.definition.card_definition() == Some(cards::FIREBLAST))
+        .expect("it is on the stack");
+    assert_eq!(
+        game.stack_spell_mana_value(fireblast),
+        6,
+        "six is printed on it however it was paid for",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::MOUNTAIN),
+        "and the lands that paid for it are already gone",
+    );
+}
