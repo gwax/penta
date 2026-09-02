@@ -152,3 +152,92 @@ fn the_upkeep_reanimates_from_any_graveyard() {
     );
     assert!(game.effective_subtypes(angel).contains(&"Angel"));
 }
+
+/// "*Each opponent sacrifices*": a sacrifice is not a destruction, so
+/// indestructible is no protection from it. A Darksteel Myr goes with the
+/// rest.
+#[test]
+fn indestructible_creatures_are_sacrificed_like_any_other() {
+    let mut game = staged(&[cards::DARKSTEEL_MYR, cards::DARKSTEEL_MYR]);
+    game.put_onto_battlefield(PlayerId::One, cards::PORTAL_TO_PHYREXIA)
+        .expect("cataloged");
+
+    settle(&mut game);
+
+    assert_eq!(
+        their_creatures(&game),
+        0,
+        "what cannot be destroyed can still be given up",
+    );
+}
+
+/// "At the beginning of *your* upkeep": theirs comes and goes with the
+/// graveyard untouched.
+#[test]
+fn their_upkeep_reanimates_nothing() {
+    let mut game = staged(&[]);
+    game.players[PlayerId::Two.index()].graveyard.push(card(
+        89_600,
+        cards::SERRA_ANGEL,
+        PlayerId::Two,
+    ));
+    game.put_onto_battlefield(PlayerId::One, cards::PORTAL_TO_PHYREXIA)
+        .expect("cataloged");
+    settle(&mut game);
+
+    game.active_player = PlayerId::Two;
+    game.step = Step::Upkeep;
+    game.priority = PlayerId::Two;
+    game.handle_upkeep_triggers();
+    settle(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.definition != cards::SERRA_ANGEL),
+        "the Angel stayed where it was lying",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].graveyard.len(),
+        1,
+        "their graveyard is as it was",
+    );
+}
+
+/// "Target creature card from a graveyard": with none in either graveyard
+/// the upkeep trigger has nothing to name and does nothing at all.
+#[test]
+fn an_upkeep_with_no_creature_card_anywhere_does_nothing() {
+    let mut game = staged(&[]);
+    game.players[PlayerId::One.index()].graveyard.push(card(
+        89_700,
+        cards::LIGHTNING_BOLT,
+        PlayerId::One,
+    ));
+    game.players[PlayerId::Two.index()]
+        .graveyard
+        .push(card(89_701, cards::FOREST, PlayerId::Two));
+    let portal = game
+        .put_onto_battlefield(PlayerId::One, cards::PORTAL_TO_PHYREXIA)
+        .expect("cataloged");
+    settle(&mut game);
+
+    game.step = Step::Upkeep;
+    game.handle_upkeep_triggers();
+    settle(&mut game);
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.id != portal)
+            .count(),
+        0,
+        "a Bolt and a land are no creature cards, so nothing came back",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].graveyard.len()
+            + game.players[PlayerId::Two.index()].graveyard.len(),
+        2,
+        "and both graveyards are untouched",
+    );
+}
