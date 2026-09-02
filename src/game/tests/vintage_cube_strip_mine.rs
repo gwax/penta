@@ -229,3 +229,88 @@ fn what_it_destroys_may_be_regenerated() {
         "and the shield was spent doing it",
     );
 }
+
+/// One tap between the two halves: the mana and the destruction are the same
+/// cost, so a Strip Mine that has paid for a spell is a land like any other
+/// for the rest of the turn.
+#[test]
+fn tapping_it_for_mana_costs_the_destruction() {
+    let (mut game, mine) = staged();
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::ISLAND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    assert!(targets(&game, mine).contains(&theirs), "it may be named");
+
+    let tap = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateManaAbility { source, .. } if *source == mine)
+        })
+        .expect("the mana half is offered");
+    game.apply(PlayerId::One, tap).expect("it taps");
+
+    assert_eq!(game.players[0].mana_pool.colorless, 1);
+    assert!(
+        targets(&game, mine).is_empty(),
+        "and the tap it wanted is spent",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == theirs),
+        "so their land is still standing",
+    );
+}
+
+/// The Strip Mine is sacrificed to pay for the ability, not by it. A land
+/// that gets away in response -- a fetch cracked, most often -- takes the
+/// ability with it and leaves you a land down all the same.
+#[test]
+fn the_mine_is_spent_even_when_the_target_gets_away() {
+    let (mut game, mine) = staged();
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::ISLAND)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == mine
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(theirs))
+            }
+            _ => false,
+        })
+        .expect("their Island is on offer");
+    game.apply(PlayerId::One, action).expect("it activates");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == mine),
+        "the Mine went as the cost was paid",
+    );
+
+    // They answer by getting the land out of the way themselves.
+    game.move_permanents_to_graveyard(&[theirs]);
+    pass_priority_pair(&mut game);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::STRIP_MINE),
+        "and stayed gone with nothing to show for it",
+    );
+}
