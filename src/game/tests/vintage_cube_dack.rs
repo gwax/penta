@@ -254,3 +254,53 @@ fn the_emblem_ignores_a_spell_that_targets_a_player() {
         "no permanent was targeted, so nothing triggered",
     );
 }
+
+/// "The effect of Dack's second ability ... lasts indefinitely. You won't
+/// lose control of the permanents if Dack leaves the battlefield." A control
+/// change with no stated duration is not held by its source, so answering
+/// Dack afterwards does not buy the Mox back.
+#[test]
+fn the_stolen_artifact_stays_when_dack_dies() {
+    let (mut game, dack) = staged();
+    let mox = game
+        .put_onto_battlefield(PlayerId::Two, cards::MOX_SAPPHIRE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    activate(
+        &mut game,
+        dack,
+        1,
+        vec![TargetSelection::single(
+            TargetSlotId(0),
+            Target::Permanent(mox),
+        )],
+    );
+    settle(&mut game);
+    assert_eq!(controller_of(&game, mox), Some(PlayerId::One), "stolen");
+
+    game.move_permanents_to_graveyard(&[dack]);
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == dack),
+        "Dack is gone",
+    );
+    assert_eq!(
+        controller_of(&game, mox),
+        Some(PlayerId::One),
+        "and the Mox is still yours",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == mox)
+            .map(|permanent| permanent.card.owner),
+        Some(PlayerId::Two),
+        "owned by them and controlled by you, which is what a theft is",
+    );
+}
