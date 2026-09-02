@@ -502,3 +502,51 @@ fn the_minus_three_names_any_nonland_permanent() {
         "the lands are not: {named:?}",
     );
 }
+
+/// "You don't decide which two lands to untap until the next end step." The
+/// choice is made over the board as it stands then, so a land that was not
+/// even out when the plus resolved is on the list -- which is how the land
+/// you played after him pays for the counterspell.
+#[test]
+fn the_lands_are_named_at_the_end_step_not_at_activation() {
+    let (mut game, teferi) = staged(4, 1);
+    activate(&mut game, teferi, 0, &[]);
+
+    let latecomer = game
+        .put_onto_battlefield(PlayerId::One, cards::ISLAND)
+        .expect("cataloged");
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == latecomer)
+        .expect("it is there")
+        .tapped = true;
+    assert_eq!(tapped_lands(&game), 2, "both are down going into the step");
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    advance_to_decision(&mut game);
+    let offered = game
+        .pending_decisions
+        .first()
+        .expect("the delayed trigger is asking")
+        .observation
+        .options
+        .iter()
+        .filter_map(|option| option.card.map(|(object, _)| object))
+        .collect::<Vec<_>>();
+    assert!(
+        offered.contains(&latecomer),
+        "a land that arrived after the plus is still one to choose",
+    );
+
+    settle_choosing(&mut game, &[latecomer]);
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == latecomer)
+            .expect("still there")
+            .tapped,
+        "and untapping it is a legal way to spend the trigger",
+    );
+}
