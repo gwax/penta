@@ -135,3 +135,58 @@ fn losing_it_closes_the_second_drop() {
 
     assert_eq!(land_plays(&game), 0, "the permission went with it");
 }
+
+/// The allowance is read as the land is played rather than fixed at the
+/// start of the turn: an Exploration that arrives after your land drop is
+/// spent still hands you the second one.
+#[test]
+fn arriving_after_the_land_drop_still_opens_a_second() {
+    let mut game = staged(0);
+    play_a_land(&mut game);
+    assert_eq!(land_plays(&game), 0, "the turn's one land is spent");
+
+    game.put_onto_battlefield(PlayerId::One, cards::EXPLORATION)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert!(
+        land_plays(&game) > 0,
+        "and the permission is counted where it stands, not where the turn began",
+    );
+    play_a_land(&mut game);
+    assert_eq!(
+        game.players[0].lands_played_this_turn, 2,
+        "two lands off a permission that arrived between them",
+    );
+}
+
+/// Read the same way going the other direction: two lands played and then
+/// the Exploration answered leaves nothing owing, and no third drop.
+#[test]
+fn losing_it_after_both_drops_takes_no_land_back() {
+    let mut game = staged(1);
+    let exploration = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::EXPLORATION)
+        .map(|permanent| permanent.card.id)
+        .expect("it is there");
+    play_a_land(&mut game);
+    play_a_land(&mut game);
+    assert_eq!(game.players[0].lands_played_this_turn, 2, "both are down");
+
+    game.move_permanents_to_graveyard(&[exploration]);
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.card.definition == cards::FOREST)
+            .count(),
+        2,
+        "the lands it allowed stay where they are",
+    );
+    assert_eq!(land_plays(&game), 0, "and there is no third");
+}
