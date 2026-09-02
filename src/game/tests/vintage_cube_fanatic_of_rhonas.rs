@@ -287,3 +287,78 @@ fn the_card_is_exiled_paying_for_it() {
         "and is in exile",
     );
 }
+
+/// The ferocious half of her mana, which the file's other tests identify by
+/// its ability index.
+fn ferocious_action(game: &Game, fanatic: GameObjectId) -> Option<Action> {
+    game.legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateManaAbility {
+                source,
+                ability: AbilityOrigin::Printed { ability, .. },
+                color: ManaColor::Green,
+                ..
+            } => *source == fanatic && *ability == AbilityId(1),
+            _ => false,
+        })
+}
+
+/// "If *you control* a creature with power 4 or greater": a Serra Angel
+/// across the table is four power that is no use to her.
+#[test]
+fn their_big_creature_does_not_turn_ferocious_on() {
+    let (mut game, fanatic) = staged(&[]);
+    game.put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    assert_eq!(
+        mana_amounts(&game, fanatic).len(),
+        1,
+        "their four power is not yours to be ferocious about",
+    );
+    assert!(ferocious_action(&game, fanatic).is_none());
+
+    game.put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.priority = PlayerId::One;
+
+    assert_eq!(
+        mana_amounts(&game, fanatic).len(),
+        2,
+        "and one of your own puts the bigger half on offer",
+    );
+}
+
+/// The condition is read as the ability is announced and not again: with the
+/// four already in the pool, the Angel dying afterwards takes nothing back.
+#[test]
+fn the_ferocious_mana_survives_the_creature_that_allowed_it() {
+    let (mut game, fanatic) = staged(&[cards::SERRA_ANGEL]);
+    let angel = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::SERRA_ANGEL)
+        .expect("she is out")
+        .card
+        .id;
+
+    let ferocious = ferocious_action(&game, fanatic).expect("the ferocious half is on offer");
+    game.apply(PlayerId::One, ferocious).expect("it taps");
+    drain_pending(&mut game);
+    assert_eq!(game.players[0].mana_pool.green, 4, "four green in the pool");
+
+    game.move_permanents_to_graveyard(&[angel]);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.players[0].mana_pool.green, 4,
+        "and the mana stays once the condition has been read",
+    );
+}
