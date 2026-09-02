@@ -268,3 +268,33 @@ fn every_colour_is_on_offer() {
 
     assert_eq!(labels, expected, "five colours and no colourless");
 }
+
+/// The mana she makes is mana like any other and empties with the step it
+/// was made in (CR 500.4), so the ritual is only good for the phase the land
+/// arrived in. Which is the whole of how the card is sequenced: lands before
+/// spells, not after.
+#[test]
+fn the_mana_does_not_survive_the_step_it_was_made_in() {
+    let (mut game, _cobra) = staged();
+
+    play_land(&mut game, cards::FOREST);
+    settle_choosing(&mut game, "Black");
+    assert_eq!(pool(&game, ManaColor::Black), 1, "a black mana in hand");
+
+    game.advance_step();
+
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        0,
+        "and gone by the next step, unspent",
+    );
+
+    // The Forest is still standing, so what was lost was the ritual and not
+    // the land that paid for it.
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::FOREST),
+        "the land itself is untouched",
+    );
+}
