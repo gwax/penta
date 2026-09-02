@@ -241,3 +241,47 @@ fn a_graveyard_goes_back_too() {
         "and the Angel is somewhere in their library",
     );
 }
+
+/// "Each player ... draws seven cards" is a draw like any other, out of
+/// whatever the shuffle left. A player holding two cards over a library of
+/// one is a player asked for seven out of three: the wheel is what kills
+/// them.
+#[test]
+fn a_player_with_fewer_than_seven_cards_dies_to_the_wheel() {
+    let (mut game, spiral) = staged(2, 0);
+    game.players[1].library.clear();
+    game.players[1]
+        .library
+        .push(card(94_600, cards::ISLAND, PlayerId::Two));
+    for (index, definition) in [cards::GRIZZLY_BEARS, cards::MOUNTAIN]
+        .into_iter()
+        .enumerate()
+    {
+        game.players[1].hand.push(card(
+            94_601 + u32::try_from(index).expect("two cards"),
+            definition,
+            PlayerId::Two,
+        ));
+    }
+
+    cast(&mut game, spiral);
+    untap(&mut game, 0);
+    game.check_state_based_actions();
+
+    assert!(
+        matches!(
+            game.result,
+            Some(GameResult::Winner {
+                winner: PlayerId::One,
+                reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+            })
+        ),
+        "three cards is not seven: {:?}",
+        game.result,
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        7,
+        "and the caster, with a library to draw from, got their seven",
+    );
+}
