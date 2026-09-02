@@ -396,3 +396,44 @@ fn on_the_stack_the_adventure_is_an_instant_and_the_virtue_is_not() {
         "and cast as itself it is an enchantment spell, which Dispel cannot touch",
     );
 }
+
+/// The card played the way it is drafted: the Adventure first for a body,
+/// the enchantment later out of exile, and the Knight that arrived on turn
+/// two is the creature the enchantment grows. One card, two halves, and the
+/// second one finds the first one waiting.
+#[test]
+fn the_knight_it_made_is_a_creature_it_later_grows() {
+    let (mut game, card) = staged(2);
+    let fealty = cast_with(&game, card, PlayOptionId(1)).expect("two mana casts it");
+    game.apply(PlayerId::One, fealty).expect("it is cast");
+    settle(&mut game);
+    let knight = *tokens(&game).first().expect("the Knight arrived");
+
+    let exiled = game.players[0]
+        .exile
+        .first()
+        .map(|card| card.id)
+        .expect("the card is in exile");
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 5);
+    let virtue = cast_with(&game, exiled, PlayOptionId::DEFAULT)
+        .expect("the enchantment may be cast from exile");
+    game.apply(PlayerId::One, virtue).expect("it is cast");
+    settle(&mut game);
+    game.tap_permanent(knight);
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    settle(&mut game);
+
+    let grown = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == knight)
+        .expect("the Knight is still there");
+    assert_eq!(
+        (game.power(grown), game.toughness(grown)),
+        (Some(3), Some(3)),
+        "the 2/2 the Adventure made is a 3/3 by its own other half",
+    );
+    assert!(!grown.tapped, "and the untap caught it too");
+}
