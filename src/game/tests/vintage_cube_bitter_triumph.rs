@@ -240,3 +240,58 @@ fn the_additional_cost_is_spent_even_when_it_is_countered() {
     );
     assert_eq!(game.players[0].life, 20, "the life was never the cost here");
 }
+
+/// "Destroy", and nothing more: the card prints no "can't be regenerated",
+/// so a Darksteel Myr shrugs it off and a regeneration shield spends itself
+/// to save a Troll. Which is where the Dismember beside it in the cube gets
+/// there and this does not -- lethal toughness is a thing indestructible
+/// answers, and destruction is not.
+#[test]
+fn indestructible_and_regeneration_both_beat_it() {
+    for definition in [cards::DARKSTEEL_MYR, cards::SEDGE_TROLL] {
+        let (mut game, triumph, _bears) = staged(2, 20);
+        let survivor = game
+            .put_onto_battlefield(PlayerId::Two, definition)
+            .expect("cataloged");
+        if let Some(permanent) = game
+            .battlefield
+            .iter_mut()
+            .find(|permanent| permanent.card.id == survivor)
+        {
+            permanent.regeneration_shields = 1;
+        }
+        drain_pending(&mut game);
+        game.priority = PlayerId::One;
+
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == triumph
+                        && choices
+                            .iter_targets()
+                            .any(|target| *target == Target::Permanent(survivor))
+                }
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("the Triumph can point at {definition:?}"));
+        game.apply(PlayerId::One, action).expect("it is cast");
+        drain_pending(&mut game);
+        game.check_state_based_actions();
+
+        assert!(
+            game.battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == survivor),
+            "{definition:?} is still standing",
+        );
+        assert!(
+            game.players[1]
+                .graveyard
+                .iter()
+                .all(|card| card.definition != definition),
+            "{definition:?} never reached a graveyard",
+        );
+    }
+}
