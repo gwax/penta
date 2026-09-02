@@ -185,3 +185,112 @@ fn escalating_discards_the_card_and_both_modes_resolve() {
         "and the escalate cost was really discarded",
     );
 }
+
+/// "If one target of an escalate spell becomes illegal, the other targets
+/// will still be affected." Killing the creature in response costs the
+/// Brutality its shrink and nothing else: the drain resolves as printed.
+#[test]
+fn a_dead_target_does_not_take_the_other_mode_with_it() {
+    let (mut game, brutality) = staged(1);
+    let shrink = ModeId::from_index(1).expect("the second mode");
+    let drain = ModeId::from_index(2).expect("the third mode");
+    let bears = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::GRIZZLY_BEARS)
+        .expect("staged")
+        .card
+        .id;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == brutality && choices.modes() == [shrink, drain]
+            }
+            _ => false,
+        })
+        .expect("shrink and drain together");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+    assert_eq!(game.stack.len(), 1, "it is waiting to resolve");
+
+    // The bear is answered while the Brutality is still on the stack, so one
+    // of its two targets is gone by the time it resolves.
+    game.move_permanents_to_graveyard(&[bears]);
+    resolve(&mut game);
+    game.check_state_based_actions();
+
+    assert_eq!(game.players[1].life, 18, "the drain still happened");
+    assert_eq!(game.players[0].life, 22);
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::MOUNTAIN),
+        "and the escalate cost was paid either way",
+    );
+}
+
+/// "You choose an instant or sorcery card from it." The rest of their hand
+/// is safe: a creature sitting beside the Bolt is never one of the options.
+#[test]
+fn only_an_instant_or_sorcery_may_be_taken() {
+    let (mut game, brutality) = staged(0);
+    // Two spells so the choice is a real one -- with a single candidate the
+    // engine takes it without asking and there is no list to inspect.
+    for definition in [cards::DEMONIC_TUTOR, cards::GRIZZLY_BEARS, cards::MOUNTAIN] {
+        let card = game
+            .build_zone(PlayerId::Two, &[definition])
+            .expect("cataloged")
+            .into_iter()
+            .next()
+            .expect("one card");
+        game.players[1].hand.push(card);
+    }
+    let strip = ModeId::from_index(0).expect("the first mode");
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == brutality && choices.modes() == [strip]
+            }
+            _ => false,
+        })
+        .expect("the strip mode alone is free");
+    game.apply(PlayerId::One, cast).expect("it is castable");
+    pass_until_decision(&mut game);
+
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("you are choosing what to take");
+    let mut offered = decision
+        .options
+        .iter()
+        .filter_map(|option| option.card.and_then(|(_, card)| card.card_definition()))
+        .collect::<Vec<_>>();
+    offered.sort_unstable();
+    let mut spells = vec![cards::LIGHTNING_BOLT, cards::DEMONIC_TUTOR];
+    spells.sort_unstable();
+    assert_eq!(
+        offered, spells,
+        "the instant and the sorcery: the bear and the land are not yours to take",
+    );
+
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[1].graveyard.len(),
+        1,
+        "exactly one card was taken",
+    );
+    let taken = game.players[1].graveyard[0].definition;
+    assert!(
+        spells.contains(&taken),
+        "and it was one of the two spells, not the bear or the land",
+    );
+    assert_eq!(game.players[1].hand.len(), 3, "the other three stayed put");
+}
