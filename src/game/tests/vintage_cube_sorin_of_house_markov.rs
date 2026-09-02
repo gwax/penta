@@ -425,3 +425,62 @@ fn life_gained_after_the_step_opens_is_too_late() {
         "he is a Noble to the end of it",
     );
 }
+
+/// "The control effect created by Sorin, Ravenous Neonate's last ability
+/// lasts indefinitely. It doesn't wear off during the cleanup step or if
+/// Sorin, Ravenous Neonate leaves the battlefield." What he takes is taken:
+/// answering him afterwards buys the creature back for nobody.
+#[test]
+fn what_the_ultimate_takes_outlives_him() {
+    let (mut game, sorin) = as_planeswalker(6);
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    game.put_onto_battlefield(PlayerId::One, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    activate(&mut game, sorin, 3, Some(bears));
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == bears)
+            .expect("it is on the battlefield")
+            .controller,
+        PlayerId::One,
+        "taken",
+    );
+
+    game.move_permanents_to_graveyard(&[sorin]);
+    game.check_state_based_actions();
+    settle(&mut game);
+    assert!(
+        permanent_named(&game, "Sorin, Ravenous Neonate").is_none(),
+        "and then he is answered",
+    );
+
+    // Round the turn, which is where a lesser control effect would end.
+    let turn = game.turn;
+    for _ in 0..80 {
+        if game.turn > turn + 1 {
+            break;
+        }
+        game.advance_step();
+        drain_pending(&mut game);
+    }
+
+    let stolen = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("the Bears are still on the battlefield");
+    assert_eq!(
+        stolen.controller,
+        PlayerId::One,
+        "the creature he took is still yours, with him in the graveyard",
+    );
+    assert!(
+        game.effective_subtypes(stolen).contains(&"Vampire"),
+        "and still the Vampire he made of it",
+    );
+}
