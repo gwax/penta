@@ -178,3 +178,65 @@ fn the_role_dies_with_its_host() {
         "an Aura with no host does not stay",
     );
 }
+
+/// "A permanent can have multiple Roles attached to it if each one is
+/// controlled by a different player." The state-based action that trims them
+/// is per controller, so their Rage on your Bears sits beside yours: two
+/// Roles on one creature, and the +1/+1 of each.
+#[test]
+fn roles_from_two_players_share_one_creature() {
+    let (mut game, spells, bears) = staged(1);
+    cast(&mut game, spells[0]);
+    assert_eq!(roles(&game).len(), 1, "yours is on it");
+
+    let theirs = game
+        .build_zone(PlayerId::Two, &[cards::MONSTROUS_RAGE])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    let theirs_id = theirs.id;
+    game.players[1].hand.push(theirs);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    // An instant, so they answer on your own turn and both pumps are live.
+    game.priority = PlayerId::Two;
+
+    let cast_theirs = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == theirs_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(bears))
+            }
+            _ => false,
+        })
+        .expect("nothing says whose creature it names");
+    game.apply(PlayerId::Two, cast_theirs).expect("it is cast");
+    settle(&mut game);
+
+    let roles = roles(&game);
+    assert_eq!(roles.len(), 2, "one Role each is two Roles on one Bears");
+    assert!(
+        roles.iter().all(|role| game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == *role)
+            .expect("it is there")
+            .attached_to
+            == Some(bears)),
+        "both of them on the same creature",
+    );
+    let creature = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == bears)
+        .expect("the Bears are there");
+    assert_eq!(
+        (game.power(creature), game.toughness(creature)),
+        (Some(8), Some(4)),
+        "two pumps of +2/+0 this turn, and a +1/+1 from each Role",
+    );
+}
