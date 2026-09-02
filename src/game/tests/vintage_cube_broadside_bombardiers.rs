@@ -395,3 +395,42 @@ fn a_token_thrown_is_worth_exactly_two() {
         "and the Cat was the cost",
     );
 }
+
+/// "The back face of a double-faced card doesn't have a mana cost. A
+/// double-faced permanent with its back face up has a mana value equal to
+/// the mana value of its front face." A transformed Delver is an Insectile
+/// Aberration with nothing printed in its corner, and the throw still reads
+/// the {U} on the other side: two plus one.
+#[test]
+fn a_transformed_delver_is_thrown_for_its_front_faces_value() {
+    let (mut game, bombardiers, ids) = staged(&[cards::DELVER_OF_SECRETS]);
+    let delver = ids[0];
+    game.transform_permanent(delver);
+    drain_pending(&mut game);
+    let aberration = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == delver)
+        .expect("it is still there");
+    assert_eq!(
+        game.permanent_mana_value(aberration),
+        1,
+        "the back face is worth what the front one costs",
+    );
+
+    attack(&mut game, bombardiers);
+    boast_throwing(&mut game, bombardiers, delver);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        17,
+        "two plus the Delver's one",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == delver),
+        "and the Aberration was the cost",
+    );
+}
