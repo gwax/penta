@@ -315,3 +315,117 @@ fn the_shuffle_waits_on_the_stack_with_the_wurm_in_the_graveyard() {
     );
     assert!(game.players[0].graveyard.is_empty());
 }
+
+/// The ruling's own example, taken up: "players can respond to this ability,
+/// for example, by trying to exile Worldspine Wurm from the graveyard before
+/// it's shuffled into a library." A Ghost Vacuum does exactly that, and the
+/// shuffle then resolves onto nothing. The three Wurms still arrive -- that
+/// trigger belongs to the permanent that died and asks nothing of the card.
+#[test]
+fn a_wurm_exiled_before_the_shuffle_never_goes_home() {
+    let mut game = staged();
+    let vacuum = game
+        .put_onto_battlefield(PlayerId::Two, cards::GHOST_VACUUM)
+        .expect("cataloged");
+    let wurm = game
+        .put_onto_battlefield(PlayerId::One, cards::WORLDSPINE_WURM)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+    }
+
+    game.move_permanents_to_graveyard(&[wurm]);
+    let buried = game.players[PlayerId::One.index()]
+        .graveyard
+        .iter()
+        .find(|card| card.definition == cards::WORLDSPINE_WURM)
+        .expect("it is in the graveyard while the trigger waits")
+        .id;
+
+    // The triggers are pending rather than on the stack; the active player
+    // passing is what puts them there, and only then is there something to
+    // respond to.
+    game.priority = PlayerId::One;
+    for _ in 0..8 {
+        if !game.stack.is_empty() {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            // The two triggers are ordered rather than chosen between, and
+            // that decision wants every option.
+            let options = decision.options.iter().map(|option| option.id).collect();
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("ordering them is legal");
+            continue;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert!(
+        !game.stack.is_empty(),
+        "both triggers are on the stack now, the shuffle among them",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::WORLDSPINE_WURM),
+        "and the Wurm is still sitting in the graveyard",
+    );
+
+    // Their Vacuum answers it in the window the trigger leaves open.
+    game.priority = PlayerId::Two;
+    let action = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == vacuum
+                    && targets
+                        .iter()
+                        .any(|selection| selection.targets().contains(&Target::Card(buried)))
+            }
+            _ => false,
+        })
+        .expect("the Vacuum can point at a card in a graveyard");
+    game.apply(PlayerId::Two, action).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        game.players[PlayerId::One.index()].library.is_empty(),
+        "the shuffle resolved onto a card that was no longer there",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].graveyard.is_empty(),
+        "and it did not come back to the graveyard either",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::WORLDSPINE_WURM),
+        "it is where the Vacuum put it",
+    );
+    assert_eq!(
+        tokens(&game),
+        3,
+        "and the three Wurms arrived regardless: that trigger asks nothing \
+         of the card it came from",
+    );
+}
