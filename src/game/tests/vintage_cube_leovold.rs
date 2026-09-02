@@ -418,3 +418,58 @@ fn he_counts_the_cards_drawn_before_he_arrived() {
         "he cannot take back what was drawn, and he allows nothing more",
     );
 }
+
+/// "The target of a spell *or ability* an opponent controls." Every test
+/// above uses a spell; an ability of theirs pays the same card. A Manifold
+/// Key across the table naming your creature to make it unblockable is a
+/// targeted activation, and Leovold reads it exactly as he reads a removal
+/// spell.
+#[test]
+fn an_ability_of_theirs_pays_him_too() {
+    let (mut game, _leovold) = staged();
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let key = game
+        .put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 3);
+    game.priority = PlayerId::Two;
+    let hand = game.players[0].hand.len();
+    let library = game.players[0].library.len();
+
+    let action =
+        game.legal_actions(PlayerId::Two)
+            .into_iter()
+            .find(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    *source == key
+                        && targets.iter().any(|selection| {
+                            selection.targets().iter().any(
+                                |target| matches!(target, Target::Permanent(id) if *id == mine),
+                            )
+                        })
+                }
+                _ => false,
+            })
+            .expect("their Key names your bear");
+    game.apply(PlayerId::Two, action).expect("it activates");
+    settle(&mut game, true);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand + 1,
+        "the ability naming your creature bought you a card",
+    );
+    assert_eq!(
+        game.players[0].library.len(),
+        library - 1,
+        "off the top of your own library",
+    );
+}
