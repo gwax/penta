@@ -228,3 +228,36 @@ fn a_card_held_from_before_may_go_back() {
         "and it is no longer in hand",
     );
 }
+
+/// Four is four whatever the library holds: a three-card library gives up
+/// the three it has and the fourth draw is the one that ends the game.
+#[test]
+fn drawing_four_off_a_three_card_library_loses_the_game() {
+    let (mut game, brainsurge) = staged(&[cards::MOUNTAIN, cards::PLAINS, cards::SWAMP]);
+
+    cast(&mut game, brainsurge);
+    game.check_state_based_actions();
+
+    assert_eq!(
+        game.events
+            .iter()
+            .filter(|event| matches!(
+                event,
+                GameEvent::CardDrawn {
+                    player: PlayerId::One,
+                    ..
+                }
+            ))
+            .count(),
+        3,
+        "it drew every card there was to draw",
+    );
+    assert_eq!(
+        game.result,
+        Some(GameResult::Winner {
+            winner: PlayerId::Two,
+            reason: WinReason::OpponentTriedToDrawFromEmptyLibrary,
+        }),
+        "and the fourth draw is what ended it",
+    );
+}
