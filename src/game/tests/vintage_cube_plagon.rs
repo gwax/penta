@@ -277,3 +277,75 @@ fn it_reaches_only_your_own_creatures() {
         "and nobody across the table",
     );
 }
+
+/// "It doesn't actually change the target creature's power. All other rules
+/// and effects that check power or toughness use the real values." A Swords
+/// to Plowshares on the Plagon he just pointed at himself gains its
+/// controller his power, which is nought -- the three he would have hit for
+/// is combat damage and nothing else.
+#[test]
+fn other_effects_still_read_the_real_power() {
+    let mut game = staged();
+    let plagon = game
+        .put_onto_battlefield(PlayerId::One, cards::PLAGON_LORD_OF_THE_BEACH)
+        .expect("cataloged");
+    settle(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == plagon
+                    && targets
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(plagon))
+            }
+            _ => false,
+        })
+        .expect("he may name himself");
+    game.apply(PlayerId::One, activate).expect("it activates");
+    settle(&mut game);
+
+    let swords = card(126_400, cards::SWORDS_TO_PLOWSHARES, PlayerId::One);
+    let swords_id = swords.id;
+    game.players[0].hand.push(swords);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    let life = game.players[0].life;
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == swords_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Permanent(plagon))
+            }
+            _ => false,
+        })
+        .expect("one white names him");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].life, life,
+        "his power is nought, so the life gained is nothing -- the toughness \
+         he was assigning is for combat damage alone",
+    );
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::PLAGON_LORD_OF_THE_BEACH),
+        "and he went to exile all the same",
+    );
+}
