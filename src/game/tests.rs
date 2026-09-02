@@ -374,6 +374,7 @@ mod vintage_cube_basalt_monolith;
 mod vintage_cube_berserk;
 mod vintage_cube_bitter_triumph;
 mod vintage_cube_bloodbraid_challenger;
+mod vintage_cube_bloodstained_mire;
 mod vintage_cube_bloodtithe_harvester;
 mod vintage_cube_bolass_citadel;
 mod vintage_cube_bone_shards;
