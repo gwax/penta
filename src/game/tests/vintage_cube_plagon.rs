@@ -201,3 +201,79 @@ fn it_wears_off_with_the_turn() {
 
     assert_eq!(game.players[1].life, 20, "the swap ended with the turn");
 }
+
+/// The cost is one hybrid pip, so either half pays it and generic mana pays
+/// none of it. Every test above spends blue, which leaves the "W" in
+/// "{W/U}" doing no work.
+#[test]
+fn either_half_of_the_hybrid_pays_for_it() {
+    let offers = |color: Option<ManaColor>| -> bool {
+        let mut game = staged();
+        let plagon = game
+            .put_onto_battlefield(PlayerId::One, cards::PLAGON_LORD_OF_THE_BEACH)
+            .expect("cataloged");
+        settle(&mut game);
+        for permanent in &mut game.battlefield {
+            permanent.entered_controller_turn = 0;
+        }
+        if let Some(color) = color {
+            game.add_unrestricted_mana(PlayerId::One, color, 1);
+        }
+        game.legal_actions(PlayerId::One).into_iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if source == plagon),
+        )
+    };
+
+    assert!(offers(Some(ManaColor::Blue)), "blue is one of the two");
+    assert!(offers(Some(ManaColor::White)), "and so is white");
+    assert!(
+        !offers(Some(ManaColor::Colorless)),
+        "a hybrid pip is one of two colours, never a generic one",
+    );
+    assert!(!offers(None), "and nothing pays for nothing");
+}
+
+/// "Target creature you control": theirs is not on the list, however much
+/// their 0/4 would like to start hitting for four.
+#[test]
+fn it_reaches_only_your_own_creatures() {
+    let mut game = staged();
+    let plagon = game
+        .put_onto_battlefield(PlayerId::One, cards::PLAGON_LORD_OF_THE_BEACH)
+        .expect("cataloged");
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    settle(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+
+    let offered = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .filter_map(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } if source == plagon => Some(
+                targets
+                    .iter()
+                    .flat_map(crate::casting::TargetSelection::targets)
+                    .copied()
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        })
+        .flatten()
+        .collect::<Vec<_>>();
+
+    assert!(
+        offered.contains(&Target::Permanent(plagon)),
+        "he may name himself",
+    );
+    assert!(
+        !offered.contains(&Target::Permanent(theirs)),
+        "and nobody across the table",
+    );
+}
