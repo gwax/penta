@@ -272,3 +272,64 @@ fn what_was_already_on_it_stays_on_it() {
     );
     assert!(permanent.tapped, "and it is still tapped");
 }
+
+/// "Unless you control a Forest" is the subtype and not the name. A Taiga is
+/// a Forest Mountain, so it turns the check on exactly as a basic would --
+/// which is the whole reason the clause is worth having in a cube full of
+/// duals.
+#[test]
+fn a_dual_with_the_forest_type_lets_it_enter_untapped() {
+    for (definition, forest) in [
+        (cards::TAIGA, true),
+        (cards::STOMPING_GROUND, true),
+        (cards::ISLAND, false),
+    ] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.put_onto_battlefield(PlayerId::One, definition)
+            .expect("cataloged");
+        game.put_onto_battlefield(PlayerId::One, cards::SHIFTING_WOODLAND)
+            .expect("cataloged");
+        drain_pending(&mut game);
+
+        assert_eq!(
+            woodland_on_battlefield(&game).tapped,
+            !forest,
+            "{definition:?} carries the Forest type: {forest}",
+        );
+    }
+}
+
+/// "If a card in your graveyard has {X} in its mana cost, X is considered to
+/// be 0." A Walking Ballista is printed as a 0/0 that arrives with counters
+/// bought by X, and copying the card buys none: the Woodland turns into a
+/// 0/0 and the rules bury it.
+#[test]
+fn copying_an_x_card_reads_x_as_zero() {
+    let (mut game, woodland) = staged(&[
+        cards::WALKING_BALLISTA,
+        cards::LIGHTNING_BOLT,
+        cards::FOREST,
+        cards::PHYREXIAN_ARENA,
+    ]);
+    let ballista = graveyard_card(&game, cards::WALKING_BALLISTA);
+
+    let action = copy_action(&game, woodland, ballista).expect("delirium is on");
+    game.apply(PlayerId::One, action).expect("it activates");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != woodland),
+        "a 0/0 with no counters is buried by the first check",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::SHIFTING_WOODLAND),
+        "and what dies is the Woodland, which is what it still is underneath",
+    );
+}
