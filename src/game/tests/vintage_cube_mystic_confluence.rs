@@ -341,3 +341,40 @@ fn one_target_surviving_carries_the_rest_of_the_spell() {
         "and the draw happened: one card out for the Confluence, one in",
     );
 }
+
+/// Two bounces may name one creature. The first return takes it, and the
+/// second finds a card in hand rather than the permanent it named, so it
+/// does nothing -- but the spell still resolves, and the draw that came with
+/// it still happens.
+#[test]
+fn two_bounces_may_name_the_same_creature() {
+    let (mut game, confluence) = staged();
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+    let hand = game.players[0].hand.len();
+
+    let bounce = ModeId::from_index(1).expect("the second mode");
+    let draw = ModeId::from_index(2).expect("the third mode");
+    cast_with(
+        &mut game,
+        confluence,
+        &[bounce, bounce, draw],
+        &[Target::Permanent(bears), Target::Permanent(bears)],
+    );
+    settle(&mut game);
+
+    assert!(game.battlefield.is_empty(), "the Bears went back");
+    assert_eq!(
+        game.players[1].hand.len(),
+        1,
+        "once, not twice: there is only one of them",
+    );
+    assert_eq!(
+        game.players[0].hand.len(),
+        hand,
+        "and the draw made up for the Confluence leaving your hand",
+    );
+}
