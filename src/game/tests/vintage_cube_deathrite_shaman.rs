@@ -277,3 +277,73 @@ fn a_countered_activation_pays_out_neither_half() {
         "though the tap and the mana are spent all the same",
     );
 }
+
+/// Three abilities and one untap between them: whichever she is pointed at
+/// first is the only one she does this turn, however much mana is left over
+/// and however full the graveyards still are.
+#[test]
+fn one_tap_is_all_three_abilities_get() {
+    let (mut game, shaman) = staged(
+        &[cards::FOREST, cards::LIGHTNING_BOLT, cards::GRIZZLY_BEARS],
+        &[],
+    );
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    for index in 0..3 {
+        assert!(
+            !activations(&game, shaman, index).is_empty(),
+            "all three are on offer to start with",
+        );
+    }
+
+    let eat_the_land = land_activations(&game, shaman)
+        .into_iter()
+        .next()
+        .expect("the land half is offered");
+    game.apply(PlayerId::One, eat_the_land)
+        .expect("she taps for it");
+    settle(&mut game);
+
+    for index in 0..3 {
+        assert!(
+            activations(&game, shaman, index).is_empty(),
+            "and the tap that ate the land is not there to eat anything else",
+        );
+    }
+    assert_eq!(
+        game.players[0].graveyard.len(),
+        2,
+        "the Bolt and the Bears are still sitting there",
+    );
+}
+
+/// Her cost is one hybrid pip: black or green pays it, and a colour that is
+/// neither pays nothing. It is what puts her in decks that are only half of
+/// what she asks for.
+#[test]
+fn either_colour_of_her_hybrid_pip_casts_her() {
+    for (color, castable) in [
+        (ManaColor::Black, true),
+        (ManaColor::Green, true),
+        (ManaColor::Blue, false),
+    ] {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        game.players[0].hand.clear();
+        let shaman = card(275_500, cards::DEATHRITE_SHAMAN, PlayerId::One);
+        let shaman_id = shaman.id;
+        game.players[0].hand.push(shaman);
+        game.add_unrestricted_mana(PlayerId::One, color, 1);
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+
+        assert_eq!(
+            game.legal_actions(PlayerId::One).iter().any(
+                |action| matches!(action, Action::CastSpell { card, .. } if *card == shaman_id)
+            ),
+            castable,
+            "{color:?} pays for her: {castable}",
+        );
+    }
+}
