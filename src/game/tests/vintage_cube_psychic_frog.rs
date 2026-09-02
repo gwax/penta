@@ -347,3 +347,44 @@ fn discarding_after_blockers_wins_the_fight() {
         "it was blocked, so nothing got through to draw a card for",
     );
 }
+
+/// "Exile three cards from *your* graveyard": a graveyard across the table
+/// is no fuel, however full it is. Five of their cards buy nothing, and the
+/// third of your own is what buys the wings.
+#[test]
+fn their_graveyard_does_not_pay_for_the_wings() {
+    let (mut game, frog) = staged(&[], &[cards::MOUNTAIN, cards::ISLAND]);
+    game.players[1].graveyard.clear();
+    for index in 0..5u32 {
+        game.players[1]
+            .graveyard
+            .push(card(105_400 + index, cards::GRIZZLY_BEARS, PlayerId::Two));
+    }
+
+    assert!(
+        activation(&game, frog, 2).is_none(),
+        "two of yours and five of theirs is still two",
+    );
+
+    game.players[0]
+        .graveyard
+        .push(card(105_500, cards::FOREST, PlayerId::One));
+    assert!(
+        activation(&game, frog, 2).is_some(),
+        "and the third of your own is what pays",
+    );
+
+    let fly = activation(&game, frog, 2).expect("just checked");
+    game.apply(PlayerId::One, fly).expect("it activates");
+    settle(&mut game);
+
+    assert!(
+        game.permanent_has_executable_keyword(the_frog(&game), KeywordAbility::Flying),
+        "the Frog is flying",
+    );
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "on three cards out of your own graveyard",
+    );
+    assert_eq!(game.players[1].graveyard.len(), 5, "with theirs untouched",);
+}
