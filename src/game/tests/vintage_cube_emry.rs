@@ -521,3 +521,54 @@ fn the_turn_she_arrives_she_only_mills() {
         "which the next turn gives her",
     );
 }
+
+/// "You may cast that card *this turn*." A card named and left in the
+/// graveyard is a card the permission has finished with: the turn ends and
+/// it is an ordinary graveyard card again, waiting for her to name it a
+/// second time.
+#[test]
+fn the_permission_lapses_with_the_turn_it_was_given_in() {
+    let (mut game, emry, mine) = ready_to_tap(cards::HOWLING_MINE);
+    name_it(&mut game, emry, mine);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+    let castable = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .iter()
+            .any(|action| matches!(action, Action::CastSpell { card, .. } if *card == mine))
+    };
+    assert!(castable(&game), "named, and castable while the turn lasts");
+
+    // Walking the steps round to a turn of yours again rather than jumping
+    // there: the permission is keyed to the turn it was given in.
+    let started = game.turns_started[PlayerId::One.index()];
+    for _ in 0..160 {
+        if game.turns_started[PlayerId::One.index()] > started {
+            break;
+        }
+        game.advance_step();
+        drain_pending(&mut game);
+    }
+    assert!(
+        game.turns_started[PlayerId::One.index()] > started,
+        "a turn of theirs and back round to one of yours",
+    );
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    assert!(
+        !castable(&game),
+        "and on a later main phase of yours it is not castable at all",
+    );
+    assert!(
+        game.players[0].graveyard.iter().any(|card| card.id == mine),
+        "the card is where it always was",
+    );
+
+    // She may simply name it again, which is what the tap is for.
+    for permanent in &mut game.battlefield {
+        permanent.tapped = false;
+    }
+    name_it(&mut game, emry, mine);
+    assert!(castable(&game), "a second naming buys the same turn again");
+}
