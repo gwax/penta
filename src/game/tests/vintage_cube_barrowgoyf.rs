@@ -445,3 +445,48 @@ fn the_mill_may_be_taken_and_the_creature_declined() {
         "and declining the second may leaves it there",
     );
 }
+
+/// "You may mill that many cards": the damage goes to them and the milling
+/// comes out of your own library. Which is worth pinning, because the
+/// Fallen Shinobi in the same cube reads the other way and takes the cards
+/// off the top of the deck it just hit.
+#[test]
+fn the_mill_comes_out_of_your_own_library_and_not_theirs() {
+    let (mut game, goyf) = staged(
+        &[cards::MOUNTAIN, cards::LIGHTNING_BOLT, cards::BLACK_LOTUS],
+        &[cards::ISLAND, cards::SERRA_ANGEL, cards::GIANT_GROWTH],
+    );
+    game.players[1].library.clear();
+    for offset in 0..5u32 {
+        game.players[1]
+            .library
+            .push(card(80_400 + offset, cards::GRIZZLY_BEARS, PlayerId::Two));
+    }
+    let mine = game.players[0].library.len();
+
+    game.damage_target_from_kind(Some(goyf), Some(Target::Player(PlayerId::Two)), 3, true);
+    settle(&mut game, true);
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[0].library.len(),
+        mine - 3,
+        "three off the top of your own library",
+    );
+    assert_eq!(
+        game.players[1].library.len(),
+        5,
+        "and not one card off theirs, whoever took the damage",
+    );
+    assert!(
+        game.players[0]
+            .hand
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "the creature taken came out of your own three",
+    );
+    assert!(
+        game.players[1].graveyard.is_empty(),
+        "with nothing of theirs milled anywhere",
+    );
+}
