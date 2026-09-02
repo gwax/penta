@@ -172,3 +172,69 @@ fn its_mana_will_not_pay_an_artifacts_activated_ability() {
         "one mana with no strings attached is what it wanted",
     );
 }
+
+/// Every test above spends the Workshop's three on a spell that costs
+/// exactly three, so nothing said restricted and ordinary mana go into the
+/// same spell. A Wurmcoil Engine costs six: three from the Workshop and
+/// three from anywhere else, and neither half pays for it alone.
+#[test]
+fn its_mana_joins_ordinary_mana_on_one_artifact_spell() {
+    let mut game = staged(&[cards::WURMCOIL_ENGINE]);
+    assert!(
+        !castable(&game, cards::WURMCOIL_ENGINE),
+        "the Workshop's three does not reach six on its own",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);
+
+    assert!(
+        castable(&game, cards::WURMCOIL_ENGINE),
+        "three restricted and three ordinary pay for it between them",
+    );
+
+    let engine = game.players[PlayerId::One.index()]
+        .hand
+        .iter()
+        .find(|card| card.definition == cards::WURMCOIL_ENGINE)
+        .expect("it is in hand")
+        .id;
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == engine))
+        .expect("just checked it is castable");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::WURMCOIL_ENGINE),
+        "and it really arrived",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana.len(),
+        0,
+        "with all six spent, restricted and ordinary alike",
+    );
+}
+
+/// The other side of the same board: three ordinary mana beside the
+/// Workshop's three still will not buy a six-drop that is not an artifact,
+/// because the restriction rides the mana rather than the total.
+#[test]
+fn ordinary_mana_beside_it_does_not_launder_the_restriction() {
+    let mut game = staged(&[cards::WURMCOIL_ENGINE, cards::WORLDSPINE_WURM]);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 3);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 5);
+
+    assert!(
+        castable(&game, cards::WURMCOIL_ENGINE),
+        "the artifact is within reach",
+    );
+    assert!(
+        !castable(&game, cards::WORLDSPINE_WURM),
+        "and the eleven-drop Wurm is not, though the pool would otherwise \
+         hold enough: three of it is the Workshop's and no Wurm may have it",
+    );
+}
