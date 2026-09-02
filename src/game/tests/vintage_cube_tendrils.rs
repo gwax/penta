@@ -388,3 +388,68 @@ fn countering_the_original_leaves_the_copies_standing() {
         "and the copy's two life was gained",
     );
 }
+
+/// "You may choose new targets for any of the copies. You can make different
+/// choices for each copy." The helper above answers every offer the same
+/// way, so the word "each" was never asked for: with two copies, one is
+/// pointed home and one is left where it was.
+#[test]
+fn each_copy_is_aimed_on_its_own() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    cast_cantrips(&mut game, 2);
+    cast_tendrils(&mut game);
+
+    // Two copies and two offers; take a different answer for each.
+    let mut answered = 0;
+    for _ in 0..24 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let wanted = if answered == 0 {
+                "Copy with targets you"
+            } else {
+                "Keep original targets"
+            };
+            let option = decision
+                .options
+                .iter()
+                .find(|option| option.label == wanted)
+                .unwrap_or_else(|| panic!("{wanted:?} is on offer: {:?}", decision.options));
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: vec![option.id],
+                },
+            )
+            .expect("the decision accepts what it offered");
+            answered += 1;
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+    assert_eq!(answered, 2, "one offer per copy, answered differently");
+
+    // Three drains resolved: two at them, one at you. You gain two from
+    // every one of them whoever it was pointed at.
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        16,
+        "the original and the copy that kept its target",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        24,
+        "six gained across three drains, less the two the redirected copy took",
+    );
+}
