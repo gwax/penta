@@ -159,6 +159,11 @@ pub(in crate::card::sets) static EXPRESSIVE_ITERATION: CardRecord = CardRecord::
         "Look at the top three cards of your library. Put one of them into your hand, put one of \
          them on the bottom of your library, and exile one of them. You may play the exiled card \
          this turn.",
+        // Each instruction moves its own card as soon as that card is
+        // named. Chaining all three moves behind the last question would
+        // strand them when a short library leaves that question nothing to
+        // ask: with one card left you still "put one of them into your
+        // hand" and simply never reach the other two.
         abilities::bind_top_cards_then(
             PlayerRefDef::EffectController,
             ValueDef::Constant(3),
@@ -174,22 +179,22 @@ pub(in crate::card::sets) static EXPRESSIVE_ITERATION: CardRecord = CardRecord::
                     maximum: 1,
                     visibility: ChoiceVisibilityDef::Private,
                     then: &const {
-                        EffectDef::Choose(ChooseDef {
-                            binding: ObjectChoiceBindingDef::Objects(ITERATION_BOTTOM),
-                            unchosen: Some(ITERATION_EXILE),
-                            chooser: PlayerRefDef::EffectController,
-                            candidates: ObjectSetDef::Binding(ITERATION_AFTER_HAND),
-                            exclude: None,
-                            minimum: 1,
-                            maximum: 1,
-                            visibility: ChoiceVisibilityDef::Private,
+                        EffectDef::MoveObjects(MoveObjectsDef {
+                            input: ObjectSetDef::Binding(ITERATION_HAND),
+                            from: Some(ZoneKind::Library),
+                            zone: ZoneKind::Hand,
+                            placement: ZonePlacement::Top,
+                            moved: None,
                             then: &const {
-                                EffectDef::MoveObjects(MoveObjectsDef {
-                                    input: ObjectSetDef::Binding(ITERATION_HAND),
-                                    from: Some(ZoneKind::Library),
-                                    zone: ZoneKind::Hand,
-                                    placement: ZonePlacement::Top,
-                                    moved: None,
+                                EffectDef::Choose(ChooseDef {
+                                    binding: ObjectChoiceBindingDef::Objects(ITERATION_BOTTOM),
+                                    unchosen: Some(ITERATION_EXILE),
+                                    chooser: PlayerRefDef::EffectController,
+                                    candidates: ObjectSetDef::Binding(ITERATION_AFTER_HAND),
+                                    exclude: None,
+                                    minimum: 1,
+                                    maximum: 1,
+                                    visibility: ChoiceVisibilityDef::Private,
                                     then: &const {
                                         EffectDef::MoveObjects(MoveObjectsDef {
                                             input: ObjectSetDef::Binding(ITERATION_BOTTOM),

@@ -51,6 +51,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Fixed
 
+- **Expressive Iteration empties a short library in the printed order.** All
+  three of its moves hung off the second question, so a library holding one
+  card asked nothing and did nothing -- the card never reached the hand, though
+  the ruling says to "follow the instructions in the order given for any cards
+  that are there." Each instruction now moves its own card as soon as that card
+  is named. The engine's rule that a required choice with no candidates
+  abandons what follows it is deliberate and unchanged; Currency Converter
+  depends on it.
+
 - **A search for "mana cost {0} or {1}" now reads the printed cost, not the
   mana value.** Urza's Saga's chapter III was authored as `ManaValueAtMost(1)`
   under a comment claiming that was "the same set of cards" -- it is not, and

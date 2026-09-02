@@ -317,3 +317,36 @@ fn an_exiled_spell_still_costs_what_it_costs() {
         "one red mana is what it was waiting for",
     );
 }
+
+/// One card is enough for the first instruction and nothing after it. The
+/// two later destinations have no card to take, and the one card still
+/// reaches the hand: the moves are chained behind the second question, so a
+/// question with nothing to ask must not strand them.
+#[test]
+fn a_single_card_still_reaches_the_hand() {
+    let (mut game, iteration) = staged(&[cards::LIGHTNING_BOLT]);
+    game.players[0]
+        .library
+        .retain(|card| card.definition == cards::LIGHTNING_BOLT);
+
+    cast_iteration(&mut game, iteration, |_, _| 0);
+
+    assert_eq!(hand(&game), vec![cards::LIGHTNING_BOLT], "it went to hand");
+    assert!(game.players[0].library.is_empty(), "and nothing is left");
+    assert!(exile(&game).is_empty(), "with nothing to exile");
+}
+
+/// An empty library asks nothing and does nothing, and the Iteration still
+/// resolves rather than hanging on a question it cannot pose.
+#[test]
+fn an_empty_library_asks_nothing() {
+    let (mut game, iteration) = staged(&[]);
+    game.players[0].library.clear();
+
+    let asked = cast_iteration(&mut game, iteration, |_, _| 0);
+
+    assert!(asked.is_empty(), "there was nothing to look at");
+    assert!(hand(&game).is_empty());
+    assert!(exile(&game).is_empty());
+    assert!(game.stack.is_empty(), "and the spell finished resolving");
+}
