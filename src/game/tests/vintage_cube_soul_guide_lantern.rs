@@ -444,3 +444,57 @@ fn the_lantern_itself_stays_in_your_graveyard() {
         "your side was never swept",
     );
 }
+
+/// The trigger says exile, not "you may exile": with your own graveyard the
+/// only one holding anything, the Lantern eats your card and the choice is
+/// no choice at all. It is what a turn-one Lantern costs a deck that has
+/// already cracked a fetch.
+#[test]
+fn with_only_your_graveyard_it_eats_your_own_card() {
+    let (mut game, lantern) = staged(&[cards::MOUNTAIN], &[]);
+    let mine = game.players[0].graveyard[0].id;
+
+    cast_lantern(&mut game, lantern, None);
+    let decision = game
+        .pending_decisions
+        .first()
+        .expect("the trigger is asking")
+        .observation
+        .clone();
+    assert_eq!(
+        decision
+            .options
+            .iter()
+            .filter_map(|option| option.card.map(|(card, _)| card))
+            .collect::<Vec<_>>(),
+        vec![mine],
+        "your own card is the whole of the offer",
+    );
+    assert_eq!(
+        (decision.minimum, decision.maximum),
+        (1, 1),
+        "and one of it must be chosen",
+    );
+
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decision.options[0].id],
+        },
+    )
+    .expect("there is nothing else to say");
+    drain_pending(&mut game);
+
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "the Mountain left your graveyard",
+    );
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::MOUNTAIN),
+        "and it is in exile, eaten by your own Lantern",
+    );
+}
