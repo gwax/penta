@@ -118,3 +118,44 @@ fn a_kept_copy_mills_the_same_player_again() {
     assert_eq!(theirs_before - theirs_after, 6, "three twice over");
     assert_eq!(mine_before, mine_after, "and none of your own");
 }
+
+/// "The copies are put directly onto the stack. They aren't cast and won't
+/// be counted by other spells with storm cast later in the turn." One
+/// cantrip and a first Freeze make two spells cast; the second Freeze copies
+/// itself twice for them and not a third time for the copy the first one
+/// made.
+#[test]
+fn the_copies_do_not_feed_a_later_storm_count() {
+    let mut game = ready_game();
+    cast_freeze(&mut game, 1, Target::Player(PlayerId::Two));
+    settle_choosing(&mut game, "Keep original targets");
+    let (_, after_first) = library_sizes(&game);
+
+    // A second Freeze, later the same turn. Two spells were cast before it:
+    // the cantrip and the first Freeze. The copy was not cast.
+    let second = card(82_200, cards::BRAIN_FREEZE, PlayerId::One);
+    let second_id = second.id;
+    game.players[0].hand.push(second);
+    let pool = &mut game.players[0].mana_pool;
+    pool.blue = 1;
+    pool.colorless = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        cast_action(
+            second_id,
+            vec![Target::Player(PlayerId::Two)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("two mana buys the second Freeze");
+    settle_choosing(&mut game, "Keep original targets");
+
+    let (_, after_second) = library_sizes(&game);
+    assert_eq!(
+        after_first - after_second,
+        9,
+        "three objects at three cards each: the original and two copies",
+    );
+}
