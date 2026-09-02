@@ -101,6 +101,29 @@ fn crew(game: &mut Game, copter: GameObjectId) {
     settle(game);
 }
 
+/// Answers the pending decision with the one option whose label contains
+/// `needle`, which the blanket `settle` would not pick for itself.
+fn answer_containing(game: &mut Game, needle: &str) {
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("a decision is waiting");
+    let option = decision
+        .options
+        .iter()
+        .find(|option| option.label.contains(needle))
+        .unwrap_or_else(|| panic!("no option named {needle:?} in {:?}", decision.options));
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![option.id],
+        },
+    )
+    .expect("the offered choice is legal");
+}
+
 /// Uncrewed it is an artifact and nothing else: no power, no toughness, and
 /// nothing to attack with.
 #[test]
@@ -448,5 +471,110 @@ fn more_crew_than_needed_may_be_tapped() {
             .iter()
             .all(|crewer| permanent(&game, *crewer).tapped),
         "and both of them paid for it",
+    );
+}
+
+/// "Once a Vehicle becomes a creature, it behaves exactly like any other
+/// artifact creature. It can't attack unless you've controlled it
+/// continuously since your turn began." Crewing is not haste: a Copter cast
+/// this turn flies nowhere, though it still blocks and still crews.
+#[test]
+fn a_copter_that_arrived_this_turn_cannot_attack() {
+    let (mut game, copter, _) = staged(&[cards::GRIZZLY_BEARS]);
+    let arrived = game.turns_started[PlayerId::One.index()];
+    game.battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == copter)
+        .expect("it is there")
+        .entered_controller_turn = arrived;
+
+    crew(&mut game, copter);
+
+    assert!(is_creature(&game, copter), "it crewed regardless");
+    assert!(
+        !game.can_attack(permanent(&game, copter)),
+        "but it has not been here since the turn began",
+    );
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(|action| {
+            matches!(action, Action::DeclareAttacker { attacker, .. } if *attacker == copter)
+        }),
+        "so it is never offered as an attacker",
+    );
+}
+
+/// "You may activate a crew ability of a Vehicle even if it's already an
+/// artifact creature. Doing so has no effect on the Vehicle. It doesn't
+/// change its power and toughness." The second crew costs a second creature
+/// and buys nothing.
+#[test]
+fn crewing_a_crewed_copter_changes_nothing() {
+    let (mut game, copter, crewers) = staged(&[cards::GRIZZLY_BEARS, cards::SAVANNAH_LIONS]);
+    crew(&mut game, copter);
+    let after_first = (
+        game.power(permanent(&game, copter)),
+        game.toughness(permanent(&game, copter)),
+    );
+    assert_eq!(after_first, (Some(3), Some(3)));
+    let untapped = crewers
+        .iter()
+        .copied()
+        .find(|id| !permanent(&game, *id).tapped)
+        .expect("only one of the two paid for the first crew");
+
+    crew(&mut game, copter);
+
+    assert!(
+        permanent(&game, untapped).tapped,
+        "the second crew really was paid for",
+    );
+    assert!(is_creature(&game, copter), "and it is still a creature");
+    assert_eq!(
+        (
+            game.power(permanent(&game, copter)),
+            game.toughness(permanent(&game, copter))
+        ),
+        after_first,
+        "still the printed 3/3, not a 6/6",
+    );
+}
+
+/// "If a permanent becomes a copy of a Vehicle, the copy won't be a
+/// creature, even if the Vehicle it's copying has become an artifact
+/// creature." Crewing is an effect on that permanent, not part of what a
+/// copy reads: the Copy Artifact arrives as a Vehicle waiting for a crew of
+/// its own.
+#[test]
+fn a_copy_of_a_crewed_copter_is_not_a_creature() {
+    let (mut game, copter, _) = staged(&[cards::GRIZZLY_BEARS]);
+    crew(&mut game, copter);
+    assert!(is_creature(&game, copter), "the original is crewed");
+
+    let copy = game
+        .put_onto_battlefield(PlayerId::One, cards::COPY_ARTIFACT)
+        .expect("cataloged");
+    answer_containing(&mut game, "copy of");
+    settle(&mut game);
+
+    assert_ne!(copy, copter, "a second permanent, not the same one");
+    let types = game
+        .permanent_types(permanent(&game, copy))
+        .expect("it is on the battlefield");
+    assert!(
+        types.contains(CardType::Artifact),
+        "it copied the Copter: {types:?}",
+    );
+    assert!(
+        game.effective_subtypes(permanent(&game, copy))
+            .contains(&"Vehicle"),
+        "a Vehicle like the one it copied",
+    );
+    assert!(
+        !is_creature(&game, copy),
+        "but the crewing did not come with it",
+    );
+    assert!(
+        is_creature(&game, copter),
+        "and the original is still crewed"
     );
 }
