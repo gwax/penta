@@ -604,3 +604,66 @@ fn a_copy_made_on_their_turn_dies_at_the_end_of_theirs() {
         "and their end step is the next one, so it is sacrificed there",
     );
 }
+
+/// "Sacrifice it at the beginning of the next end step" is read from where
+/// the ability resolved. Copying during an end step that has already begun
+/// puts the next such beginning on the other side of the table, so the token
+/// survives your own end step and stands through the opponent's whole turn
+/// -- which is a blocker, and the reason to spend the Reflection late.
+#[test]
+fn a_copy_made_in_an_end_step_lives_until_the_next_one() {
+    let (mut game, _saga) = staged(&[]);
+    let reflection = reflection_ready(&mut game);
+    let bears = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+
+    // Your own end step is under way before anything is copied.
+    game.step = Step::End;
+    game.begin_step_triggers();
+    settle(&mut game);
+    let copy = copy_with(&mut game, reflection, bears);
+
+    let alive = |game: &Game| {
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == copy)
+    };
+
+    // That beginning came and went before the delayed sacrifice existed, so
+    // finishing the step it arrived in takes nothing.
+    game.check_state_based_actions();
+    assert!(alive(&game), "this end step is not the one that claims it");
+
+    // Their whole turn, stepped through by hand: `next_turn` would carry
+    // past their end step and the token would already be gone.
+    game.turn += 1;
+    game.active_player = PlayerId::Two;
+    game.turns_started[PlayerId::Two.index()] += 1;
+    for step in [
+        Step::Upkeep,
+        Step::Draw,
+        Step::PrecombatMain,
+        Step::DeclareAttackers,
+    ] {
+        game.step = step;
+        game.begin_step_triggers();
+        settle(&mut game);
+        game.check_state_based_actions();
+        assert!(alive(&game), "still standing at {step:?}, ready to block");
+    }
+
+    game.step = Step::End;
+    game.begin_step_triggers();
+    settle(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !alive(&game),
+        "and their end step is the next one, which takes it",
+    );
+}
