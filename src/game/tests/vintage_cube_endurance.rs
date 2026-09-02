@@ -322,3 +322,98 @@ fn evoking_it_does_not_change_its_mana_value() {
         "X must be three: what it cost to cast is not what it is worth",
     );
 }
+
+/// "If you pay the evoke cost, you can have the creature's own triggered
+/// ability resolve before the evoke triggered ability. You can cast spells
+/// after that ability resolves but before you have to sacrifice the
+/// creature." Two triggers, ordered, and a real window between them: the
+/// graveyard is already buried while a 3/4 with reach is still standing.
+#[test]
+fn the_evoke_sacrifice_can_be_left_until_after_the_trigger() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::Two.index()].graveyard.clear();
+    game.players[PlayerId::Two.index()].graveyard.push(card(
+        81_400,
+        cards::LIGHTNING_BOLT,
+        PlayerId::Two,
+    ));
+    let endurance = card(81_401, cards::ENDURANCE, PlayerId::One);
+    let endurance_id = endurance.id;
+    game.players[PlayerId::One.index()].hand.push(endurance);
+    game.players[PlayerId::One.index()]
+        .hand
+        .push(card(81_402, cards::GIANT_GROWTH, PlayerId::One));
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == endurance_id && choices.costs().alternative().is_some())
+        })
+        .expect("evoke is offered with a green card in hand and no mana");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    let on_battlefield = |game: &Game| {
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::ENDURANCE)
+    };
+
+    // Answer everything the two triggers ask, stopping the moment the
+    // graveyard has been buried: that is the window the ruling describes.
+    for _ in 0..16 {
+        if game.players[PlayerId::Two.index()].graveyard.is_empty() {
+            break;
+        }
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            // The ordering decision wants every option; the trigger's own
+            // question wants the opponent.
+            let options = decision
+                .options
+                .iter()
+                .find(|option| option.label == "your opponent")
+                .map_or_else(
+                    || decision.options.iter().map(|option| option.id).collect(),
+                    |option| vec![option.id],
+                );
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the decision accepts what it offered");
+            continue;
+        }
+        let priority = game.priority;
+        if game.apply(priority, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    assert!(
+        game.players[PlayerId::Two.index()].graveyard.is_empty(),
+        "the graveyard went under the library",
+    );
+    assert!(
+        on_battlefield(&game),
+        "and the body is still here: the sacrifice is a separate trigger \
+         that has not resolved yet",
+    );
+
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        !on_battlefield(&game),
+        "once it does resolve, evoke takes the body after all",
+    );
+}
