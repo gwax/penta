@@ -197,3 +197,91 @@ fn the_third_land_is_a_counter_and_not_a_doubling() {
         "and the third adds one rather than doubling again",
     );
 }
+
+/// "Whenever a land you control enters, each landfall ability of the
+/// permanents you control will trigger." Two Cubs are two abilities, and
+/// "this ability has resolved this turn" is counted by each of them for
+/// itself: one land is two first resolutions and so two ordinary counters,
+/// and the second land is two doublings, two to four to eight.
+#[test]
+fn two_cubs_are_two_abilities_counting_separately() {
+    let (mut game, cub) = staged();
+    game.put_onto_battlefield(PlayerId::One, cards::SCYTHECAT_CUB)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    // Both triggers want answering, and the ordering question between them
+    // takes an option that names no card at all.
+    let settle = |game: &mut Game| {
+        for _ in 0..24 {
+            if let Some(decision) = game
+                .pending_decisions
+                .first()
+                .map(|pending| pending.observation.clone())
+            {
+                // A question wanting more than one answer is the ordering of
+                // the two triggers, and either order does the same thing
+                // here; anything else is a target, and the target is her.
+                let named: Vec<_> = if decision.minimum > 1 {
+                    Vec::new()
+                } else {
+                    decision
+                        .options
+                        .iter()
+                        .filter(|option| option.card.is_some_and(|(object, _)| object == cub))
+                        .map(|option| option.id)
+                        .take(1)
+                        .collect()
+                };
+                let options = if named.is_empty() {
+                    decision
+                        .options
+                        .iter()
+                        .map(|option| option.id)
+                        .take(decision.minimum.max(1))
+                        .collect()
+                } else {
+                    named
+                };
+                game.apply(
+                    decision.player,
+                    Action::ChooseDecision {
+                        decision: decision.id,
+                        options,
+                    },
+                )
+                .expect("the offered choice is legal");
+                continue;
+            }
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+        }
+        game.check_state_based_actions();
+    };
+
+    game.put_onto_battlefield(PlayerId::One, cards::MOUNTAIN)
+        .expect("cataloged");
+    settle(&mut game);
+    assert_eq!(
+        counters(&game, cub),
+        2,
+        "two abilities, each resolving for the first time, is a counter each",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::MOUNTAIN)
+        .expect("cataloged");
+    settle(&mut game);
+    assert_eq!(
+        counters(&game, cub),
+        8,
+        "and on the second land each of them doubles: two, four, eight",
+    );
+}
