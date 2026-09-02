@@ -404,3 +404,104 @@ fn three_burns_are_three_separate_damage_events() {
     );
     assert_eq!(game.players[1].life, 14, "and six life all the same");
 }
+
+/// "If a Confluence is copied, the effect that creates the copy will usually
+/// allow you to choose new targets, but you can't choose new modes." A Fork
+/// takes the two burns and the shatter as they were chosen -- and the burns
+/// read "each opponent" from the copy's own controller, so they turn around
+/// and point at the player who cast the Confluence.
+#[test]
+fn a_forked_confluence_keeps_its_modes_and_may_move_its_target() {
+    let (mut game, confluence) = staged();
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::MIND_STONE)
+        .expect("cataloged");
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::MIND_STONE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == confluence
+                    && choices.modes() == [BURN, BURN, SHATTER]
+                    && choices.iter_targets().copied().collect::<Vec<_>>()
+                        == [Target::Permanent(theirs)]
+            }
+            _ => false,
+        })
+        .expect("two burns and a shatter at their artifact");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+    let original = game.stack.last().expect("it is on the stack").id;
+    game.apply(PlayerId::One, Action::PassPriority)
+        .expect("the other player gets a window before it resolves");
+
+    let fork = card(96_100, cards::FORK, PlayerId::Two);
+    let fork_id = fork.id;
+    game.players[1].hand.push(fork);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 2);
+    let cast_fork = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == fork_id
+                    && choices
+                        .iter_targets()
+                        .any(|target| *target == Target::Spell(original))
+            }
+            _ => false,
+        })
+        .expect("Fork copies a spell on the stack");
+    game.apply(PlayerId::Two, cast_fork).expect("it is cast");
+
+    // The copy's targets are the Fork controller's to move; its modes are not
+    // theirs to touch, so the one question asked is where the shatter points.
+    let retarget = loop {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            break decision;
+        }
+        let priority = game.priority;
+        game.apply(priority, Action::PassPriority)
+            .expect("the Fork is resolving");
+    };
+    assert_eq!(retarget.prompt, "Choose targets for the copy");
+    let moved = retarget
+        .options
+        .iter()
+        .find(|option| option.label != "Keep original targets")
+        .expect("moving it is one of the answers")
+        .id;
+    game.apply(
+        retarget.player,
+        Action::ChooseDecision {
+            decision: retarget.id,
+            options: vec![moved],
+        },
+    )
+    .expect("the copy may be pointed somewhere else");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].life, 16,
+        "the copy's two burns came back at the Confluence's caster",
+    );
+    assert_eq!(
+        game.players[1].life, 16,
+        "and the original's two hit the Fork's caster",
+    );
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == theirs || permanent.card.id == mine),
+        "one shatter each, and the copy's was moved to the other artifact",
+    );
+}
