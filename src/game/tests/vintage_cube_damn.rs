@@ -158,3 +158,47 @@ fn overload_reaches_a_creature_nothing_may_target() {
         }
     }
 }
+
+/// "The mana value of the spell remains unchanged, no matter what the total
+/// cost to cast it was." Overload is an alternative cost, not a different
+/// card: four mana of a different colour buys the Wrath and the spell on the
+/// stack is still the two-mana Damn its cost line prints.
+#[test]
+fn overloading_it_does_not_change_its_mana_value() {
+    let mana_value_on_the_stack = |overloaded: bool| -> u16 {
+        let (mut game, damn) = staged(overloaded);
+        game.battlefield.clear();
+        game.battlefield
+            .push(creature(95_600, cards::GRIZZLY_BEARS, PlayerId::Two));
+        let spent = game.players[PlayerId::One.index()].mana.len();
+        let cast = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == damn && choices.costs().alternative().is_some() == overloaded
+                }
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("a cast with overloaded={overloaded} is offered"));
+        game.apply(PlayerId::One, cast).expect("it is cast");
+        assert_eq!(
+            spent - game.players[PlayerId::One.index()].mana.len(),
+            if overloaded { 4 } else { 2 },
+            "overloaded={overloaded} really paid its own price",
+        );
+        let object = game.stack.last().expect("it is waiting on the stack");
+        game.stack_spell_mana_value(object)
+    };
+
+    assert_eq!(
+        mana_value_on_the_stack(false),
+        2,
+        "two black is a mana value of two",
+    );
+    assert_eq!(
+        mana_value_on_the_stack(true),
+        2,
+        "and so is four mana of white and generic: the cost line never moved",
+    );
+}
