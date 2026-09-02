@@ -85,7 +85,8 @@ fn colorless_is_free() {
 }
 
 /// Each Talisman makes its own two colours for a life each, and no colour it
-/// does not print.
+/// does not print. What lands in the pool is checked as well as what was
+/// offered: the two are only the same if the ability makes what it says.
 #[test]
 fn each_one_makes_its_own_two_colors_and_no_others() {
     for (definition, colors) in CUBE_TALISMANS {
@@ -106,7 +107,16 @@ fn each_one_makes_its_own_two_colors_and_no_others() {
             game.apply(PlayerId::One, action).expect("it activates");
             game.check_state_based_actions();
 
-            assert_eq!(game.players[0].mana.len(), 1, "{definition:?} {color:?}");
+            assert_eq!(
+                game.players[0]
+                    .mana
+                    .iter()
+                    .map(|mana| mana.color)
+                    .collect::<Vec<_>>(),
+                vec![color],
+                "{definition:?} made one {color:?} and nothing else: \
+                 \"add {{U}} or {{B}}\" is one mana of your choosing, not both",
+            );
             assert_eq!(
                 game.players[0].life, 19,
                 "{definition:?} takes a life for {color:?}",
