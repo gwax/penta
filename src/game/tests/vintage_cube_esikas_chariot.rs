@@ -446,3 +446,136 @@ fn their_tokens_are_not_on_the_menu() {
         "their Cats are nobody's to copy but theirs",
     );
 }
+
+/// Attacks with an already-crewed Chariot, answering the copy trigger by
+/// naming `wanted` rather than whatever is listed first.
+fn attack_copying(game: &mut Game, chariot: GameObjectId, wanted: GameObjectId) {
+    game.step = Step::DeclareAttackers;
+    game.attackers_declared = false;
+    game.apply(
+        PlayerId::One,
+        Action::DeclareAttacker {
+            attacker: chariot,
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+    )
+    .expect("a crewed Chariot may attack");
+    game.apply(PlayerId::One, Action::FinishDeclaringAttackers)
+        .expect("the declaration is complete");
+    for _ in 0..24 {
+        let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        else {
+            if game.stack.is_empty() && game.pending_triggers.is_empty() {
+                break;
+            }
+            let priority = game.priority;
+            if game.apply(priority, Action::PassPriority).is_err() {
+                break;
+            }
+            continue;
+        };
+        let chosen = decision
+            .options
+            .iter()
+            .find(|option| option.card.is_some_and(|(id, _)| id == wanted))
+            .map_or_else(
+                || {
+                    decision
+                        .options
+                        .iter()
+                        .map(|option| option.id)
+                        .take(decision.minimum.max(1))
+                        .collect::<Vec<_>>()
+                },
+                |option| vec![option.id],
+            );
+        game.apply(
+            decision.player,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: chosen,
+            },
+        )
+        .expect("the offered choice is legal");
+    }
+    game.check_state_based_actions();
+}
+
+/// "If the original token is copying something else, the token you create
+/// will use the copiable values of the original token." The Chariot makes
+/// copy tokens itself, so the second attack can point at the one the first
+/// attack made -- and what comes back is another 2/2 green Cat rather than
+/// anything degraded.
+#[test]
+fn copying_a_copy_makes_another_cat() {
+    let (mut game, chariot) = staged();
+    let originals = cats(&game)
+        .iter()
+        .map(|cat| cat.card.id)
+        .collect::<Vec<_>>();
+    assert_eq!(originals.len(), 2, "the two it came with");
+
+    let crew = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == chariot),
+        )
+        .expect("four power is on the battlefield");
+    game.apply(PlayerId::One, crew).expect("it crews");
+    settle(&mut game);
+    attack_copying(&mut game, chariot, originals[0]);
+
+    let copy = cats(&game)
+        .iter()
+        .map(|cat| cat.card.id)
+        .find(|id| !originals.contains(id))
+        .expect("the first attack made a third Cat");
+
+    // A fresh turn so the Chariot may attack again, crewed by the two Cats
+    // that did not just come into being. The combat it was in has to be
+    // cleared too, or it is still an attacker and cannot be declared twice.
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+        permanent.tapped = false;
+        permanent.attacking = false;
+    }
+    game.turns_started = [5, 5];
+    game.step = Step::PrecombatMain;
+    game.attackers_declared = false;
+    let crew = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == chariot),
+        )
+        .expect("there is plenty of power now");
+    game.apply(PlayerId::One, crew).expect("it crews again");
+    settle(&mut game);
+
+    attack_copying(&mut game, chariot, copy);
+
+    assert_eq!(cats(&game).len(), 4, "a copy of a copy is still a Cat");
+    let newest = cats(&game)
+        .iter()
+        .map(|cat| cat.card.id)
+        .find(|id| !originals.contains(id) && *id != copy)
+        .expect("the second attack made a fourth");
+    let cat = permanent(&game, newest);
+    assert_eq!(
+        (game.power(cat), game.toughness(cat)),
+        (Some(2), Some(2)),
+        "the copiable values it read were the Cat's own",
+    );
+    assert!(
+        game.effective_subtypes(cat).contains(&"Cat"),
+        "and it is a Cat like the rest of them",
+    );
+    assert!(
+        !cat.tapped,
+        "arriving untapped and at home, as any copy does",
+    );
+}
