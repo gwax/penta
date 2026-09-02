@@ -527,3 +527,59 @@ fn a_hand_of_creatures_and_lands_gives_the_freebooter_nothing() {
         "and the body is on the battlefield either way",
     );
 }
+
+/// The body the Bat's clause is stapled to: a 1/1 with flying and lifelink,
+/// which is why a two-mana hand attack is one you are happy to leave on the
+/// board. A ground bear cannot block it, and the point it gets in comes back
+/// as a point of life.
+#[test]
+fn the_bat_flies_over_and_drinks_what_it_deals() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+
+    let bat = game
+        .put_onto_battlefield(PlayerId::One, cards::DEEP_CAVERN_BAT)
+        .expect("cataloged");
+    let bears = creature(82_400, cards::GRIZZLY_BEARS, PlayerId::Two);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    game.active_player = PlayerId::One;
+    game.turns_started = [6, 5];
+    game.step = Step::DeclareAttackers;
+    game.priority = PlayerId::One;
+    let mine = game.players[PlayerId::One.index()].life;
+    let theirs = game.players[PlayerId::Two.index()].life;
+
+    game.declare_attacker(bat, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    drain_pending(&mut game);
+    game.step = Step::DeclareBlockers;
+    game.blockers_declared = false;
+
+    assert!(
+        !game.legal_actions(PlayerId::Two).iter().any(
+            |action| matches!(action, Action::DeclareBlocker { blocker, .. } if *blocker == bears_id),
+        ),
+        "a bear on the ground is no answer to a flier",
+    );
+
+    game.finish_declaring_blockers();
+    game.deal_combat_damage();
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        theirs - 1,
+        "the one point got there",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        mine + 1,
+        "and lifelink handed it straight back",
+    );
+}
