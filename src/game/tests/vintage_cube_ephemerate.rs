@@ -360,3 +360,120 @@ fn a_token_it_blinks_never_comes_back() {
         "and it is not sitting in exile either",
     );
 }
+
+/// "If a spell with rebound that you cast from your hand is countered, none
+/// of its effects will happen, including rebound. The spell will be put into
+/// its owner's graveyard and you won't get to cast it again on your next
+/// turn." Rebound is a replacement on the spell finishing resolution, and a
+/// countered spell never finishes resolving.
+#[test]
+fn a_countered_ephemerate_goes_to_the_graveyard_and_never_rebounds() {
+    let (mut game, spell, blinked) = staged();
+    game.players[1]
+        .hand
+        .push(card(98_400, cards::COUNTERSPELL, PlayerId::Two));
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Blue, 2);
+
+    let cast = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| match action {
+            Action::CastSpell { card, choices, .. } => {
+                *card == spell
+                    && choices
+                        .targets()
+                        .iter()
+                        .any(|slot| slot.targets().contains(&Target::Permanent(blinked)))
+            }
+            _ => false,
+        })
+        .expect("one white mana casts it at the creature");
+    game.apply(PlayerId::One, cast).expect("it is cast");
+
+    game.priority = PlayerId::Two;
+    let counter = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, .. } if *card == CardInstanceId(98_400))
+        })
+        .expect("two blue answers it");
+    game.apply(PlayerId::Two, counter).expect("it is cast");
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::EPHEMERATE),
+        "buried rather than exiled: rebound never happened",
+    );
+    assert!(
+        game.players[0].exile.is_empty(),
+        "nothing of it is waiting in exile",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == blinked),
+        "and the creature was never blinked: it is the object it always was",
+    );
+
+    to_the_rebound_offer(&mut game);
+    assert!(
+        game.pending_decisions.is_empty(),
+        "and no upkeep offers it back",
+    );
+}
+
+/// "Casting the card again due to rebound is optional. If you choose not to
+/// cast it, the card will stay exiled. You won't get another chance to cast
+/// it on a future turn."
+#[test]
+fn declining_the_rebound_strands_it_in_exile_for_good() {
+    let (mut game, spell, blinked) = staged();
+    cast(&mut game, spell, blinked);
+    to_the_rebound_offer(&mut game);
+
+    let decision = game
+        .pending_decisions
+        .first()
+        .map(|pending| pending.observation.clone())
+        .expect("the offer is waiting");
+    // The offer carries the refusal as its one option; taking it is how the
+    // permission is given back.
+    let decline = decision
+        .options
+        .iter()
+        .find(|option| option.label == "Decline")
+        .expect("declining is one of the answers")
+        .id;
+    game.apply(
+        decision.player,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![decline],
+        },
+    )
+    .expect("declining is a legal answer");
+    settle(&mut game);
+
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::EPHEMERATE),
+        "the card it declined stays in exile",
+    );
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "and never reaches a graveyard",
+    );
+
+    // A whole turn of theirs and back round to another upkeep of ours.
+    to_the_rebound_offer(&mut game);
+    assert!(
+        game.pending_decisions.is_empty(),
+        "and it is not offered again on a later turn",
+    );
+}
