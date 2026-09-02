@@ -67,3 +67,40 @@ fn a_land_creature_counts_as_a_land() {
         "and a third is a third, creature or not",
     );
 }
+
+/// The count is of lands you control, not lands you can use: three tapped
+/// lands are three lands, so a Courtyard played after a turn of spending
+/// everything comes in tapped all the same. Which is the case the clause is
+/// usually met in -- nobody plays their fourth land with three untapped.
+#[test]
+fn tapped_lands_count_as_readily_as_untapped_ones() {
+    let tapped_board_taps_it = |count: usize| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        for _ in 0..count {
+            game.put_onto_battlefield(PlayerId::One, cards::SWAMP)
+                .expect("cataloged");
+        }
+        drain_pending(&mut game);
+        for permanent in &mut game.battlefield {
+            permanent.tapped = true;
+        }
+        let courtyard = game
+            .put_onto_battlefield(PlayerId::One, cards::CONCEALED_COURTYARD)
+            .expect("cataloged");
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == courtyard)
+            .expect("it entered")
+            .tapped
+    };
+
+    assert!(
+        !tapped_board_taps_it(2),
+        "two spent lands are still two lands, and two is under the line",
+    );
+    assert!(
+        tapped_board_taps_it(3),
+        "and the third taps it whether or not any of them can make mana",
+    );
+}
