@@ -124,3 +124,91 @@ fn with_no_life_only_the_colourless_half_remains() {
 
     assert_eq!(mana, vec![ManaColor::Colorless], "only the free half");
 }
+
+/// A life you have is a life you may pay, and the Town does not ask whether
+/// it was your last one: the colour comes, and the state-based actions that
+/// follow end the game.
+#[test]
+fn the_last_life_is_still_a_price_you_may_pay() {
+    let (mut game, town) = staged(1);
+    let id = play(&mut game, town).card.id;
+    game.players[0].life = 1;
+
+    let colored = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::ActivateManaAbility { source, color, .. }
+                if *source == id && *color == ManaColor::Blue)
+        })
+        .expect("one life is enough to pay one life");
+    game.apply(PlayerId::One, colored).expect("it activates");
+
+    assert_eq!(game.players[0].mana_pool.blue, 1, "the mana is yours");
+    assert_eq!(game.players[0].life, 0);
+
+    game.check_state_based_actions();
+    assert!(
+        matches!(
+            game.result,
+            Some(GameResult::Winner {
+                winner: PlayerId::Two,
+                ..
+            })
+        ),
+        "and then you lose with the mana still in your pool",
+    );
+}
+
+/// "Town is a land type with no special meaning." It is the only subtype the
+/// land has, it is not one of the five that carry a mana ability, and every
+/// drop of mana the Town makes comes from its own printed lines.
+#[test]
+fn the_town_type_grants_nothing_by_itself() {
+    let (mut game, town) = staged(1);
+    let id = play(&mut game, town).card.id;
+    let forest = game
+        .put_onto_battlefield(PlayerId::One, cards::FOREST)
+        .expect("cataloged");
+
+    let permanent = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == id)
+        .expect("it is there");
+    let subtypes = game.effective_subtypes(permanent);
+    assert!(subtypes.contains(&"Town"), "it is a Town");
+    assert!(
+        !["Forest", "Island", "Swamp", "Mountain", "Plains"]
+            .iter()
+            .any(|basic| subtypes.contains(basic)),
+        "and nothing else: a card hunting basic land types passes it by",
+    );
+
+    let colors = |source: GameObjectId, game: &Game| {
+        let mut colors = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .filter_map(|action| match action {
+                Action::ActivateManaAbility {
+                    source: from,
+                    color,
+                    ..
+                } if from == source => Some(color),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        colors.sort_by_key(|color| format!("{color:?}"));
+        colors
+    };
+    assert_eq!(
+        colors(id, &game).len(),
+        6,
+        "the two printed abilities and no third one from the type",
+    );
+    assert_eq!(
+        colors(forest, &game),
+        vec![ManaColor::Green],
+        "which is what a type that does mean something looks like",
+    );
+}
