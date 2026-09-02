@@ -317,3 +317,54 @@ fn a_card_it_took_may_only_be_played_once() {
         "and there is nothing left to cast a second time",
     );
 }
+
+/// "The creature with ninjutsu enters the battlefield attacking the same
+/// player *or planeswalker* that the returned creature was attacking. This
+/// is a rule specific to ninjutsu; in other cases, when a creature is put
+/// onto the battlefield attacking, that creature's controller chooses which
+/// player or planeswalker it's attacking." Nobody is asked here: the Shinobi
+/// inherits the walker the Bears were pointed at.
+#[test]
+fn the_ninja_inherits_the_planeswalker_being_attacked() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let walker = game
+        .put_onto_battlefield(PlayerId::Two, cards::JACE_THE_MIND_SCULPTOR)
+        .expect("cataloged");
+    let bears = creature(90_400, cards::GRIZZLY_BEARS, PlayerId::One);
+    let bears_id = bears.card.id;
+    game.battlefield.push(bears);
+    drain_pending(&mut game);
+    let shinobi = card(90_401, cards::FALLEN_SHINOBI, PlayerId::One);
+    let shinobi_id = shinobi.id;
+    game.players[0].hand.push(shinobi);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Blue, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Black, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+
+    attacking_unblocked(&mut game, bears_id);
+    if let Some(permanent) = game
+        .battlefield
+        .iter_mut()
+        .find(|permanent| permanent.card.id == bears_id)
+    {
+        permanent.attack_defender = Some(AttackDefender::Planeswalker(walker));
+    }
+
+    let action = ninjutsu_action(&game, shinobi_id).expect("ninjutsu is offered");
+    game.apply(PlayerId::One, action).expect("it is activated");
+    pass_until_decision(&mut game);
+    drain_pending(&mut game);
+
+    let ninja = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::FALLEN_SHINOBI)
+        .expect("the ninja arrived");
+    assert_eq!(
+        ninja.attack_defender,
+        Some(AttackDefender::Planeswalker(walker)),
+        "it took over the attack on the walker rather than the player",
+    );
+    assert!(ninja.attacking && ninja.tapped, "tapped and attacking");
+}
