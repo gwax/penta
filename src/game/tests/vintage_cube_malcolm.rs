@@ -475,3 +475,58 @@ fn a_free_cast_still_pays_a_mandatory_additional_cost() {
         "the bear outlives it: the spell paid for itself with its own target",
     );
 }
+
+/// "If you cast a card 'without paying its mana cost', you can't choose to
+/// cast it for any alternative costs." Mine Collapse has one of its own --
+/// sacrifice a Mountain, on your turn, which this is -- and free is already
+/// the alternative being used. So the Mountain is still standing when the
+/// Collapse has resolved.
+#[test]
+fn a_free_cast_does_not_take_the_cards_own_alternative_cost() {
+    let (mut game, malcolm) = staged(
+        &[],
+        &[
+            cards::MINE_COLLAPSE,
+            cards::MINE_COLLAPSE,
+            cards::MINE_COLLAPSE,
+            cards::MINE_COLLAPSE,
+        ],
+    );
+    game.put_onto_battlefield(PlayerId::One, cards::MOUNTAIN)
+        .expect("cataloged");
+    // Something for the five damage to land on, since a Collapse with no
+    // legal target is never offered at all.
+    game.put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+
+    let creatures = |game: &Game| {
+        game.battlefield
+            .iter()
+            .filter(|permanent| {
+                game.permanent_types(permanent)
+                    .is_some_and(|types| types.contains(CardType::Creature))
+            })
+            .count()
+    };
+    assert_eq!(creatures(&game), 2, "Malcolm and a bear to point at");
+
+    for connection in 1..=4 {
+        connect(&mut game, malcolm, cards::MINE_COLLAPSE, connection == 4);
+    }
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::MOUNTAIN),
+        "the Mountain was never offered up: free is the alternative already",
+    );
+    assert_eq!(
+        creatures(&game),
+        1,
+        "and the Collapse resolved all the same, for its five",
+    );
+}
