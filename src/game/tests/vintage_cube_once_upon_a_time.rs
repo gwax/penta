@@ -486,3 +486,49 @@ fn the_paid_cast_looks_at_the_same_five() {
         "and the other four went under",
     );
 }
+
+/// "You may cast it without paying its mana cost." With the window open and
+/// the mana up, both ways of casting it are on the table -- the free cast is
+/// a permission rather than a replacement, and paying is still allowed.
+#[test]
+fn the_free_cast_is_offered_alongside_the_paid_one() {
+    let (mut game, spell) = staged(&FIVE_CARDS);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Green, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    let offered = casts(&game, spell);
+    assert_eq!(
+        offered.len(),
+        2,
+        "the free one and the paid one, which are not the same offer",
+    );
+
+    // Take the one that spends the mana, which is the half that would not
+    // exist if the free cast had replaced the ordinary one.
+    let before = game.players[PlayerId::One.index()].mana_pool.total();
+    let mut spent = None;
+    for candidate in offered {
+        let mut probe = game.clone();
+        probe
+            .apply(PlayerId::One, candidate.clone())
+            .expect("it is castable");
+        if probe.players[PlayerId::One.index()].mana_pool.total() < before {
+            spent = Some(candidate);
+            break;
+        }
+    }
+    let paid = spent.expect("one of the two costs mana");
+    game.apply(PlayerId::One, paid).expect("it is cast");
+    settle_taking(&mut game, Some(cards::GRIZZLY_BEARS));
+
+    assert_eq!(
+        game.players[PlayerId::One.index()].mana_pool.total(),
+        before - 2,
+        "two mana was really spent",
+    );
+    assert_eq!(
+        hand(&game),
+        vec![cards::GRIZZLY_BEARS],
+        "and it still looks"
+    );
+}
