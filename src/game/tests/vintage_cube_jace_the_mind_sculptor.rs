@@ -433,3 +433,62 @@ fn the_minus_one_can_take_back_your_own_and_unmakes_a_token() {
         "and nothing arrived in their hand for it",
     );
 }
+
+/// "Put two cards from your hand on top of your library in any order": the
+/// order is yours, so the card you name second is the one you draw next. A
+/// library of three known cards makes the choice legible -- draw all three,
+/// send two back, and see which one is on top.
+#[test]
+fn the_two_put_back_go_in_the_order_you_name() {
+    let (mut game, jace) = staged(&[
+        cards::SERRA_ANGEL,
+        cards::GRIZZLY_BEARS,
+        cards::LIGHTNING_BOLT,
+    ]);
+
+    activate(&mut game, jace, 1, None);
+    let seat = deciding(&game).expect("it asks which two go back");
+    let decision = game.observe(seat).decision.expect("just checked");
+    let option_for = |definition: CardDefinitionId| {
+        decision
+            .options
+            .iter()
+            .find(|option| {
+                option
+                    .card
+                    .is_some_and(|(_, found)| found.card_definition() == Some(definition))
+            })
+            .unwrap_or_else(|| panic!("{definition:?} is in hand to put back"))
+            .id
+    };
+    // The Bears first and the Angel second: the Angel is the one that goes
+    // on top of the Bears, and so the one drawn next.
+    game.apply(
+        seat,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options: vec![
+                option_for(cards::GRIZZLY_BEARS),
+                option_for(cards::SERRA_ANGEL),
+            ],
+        },
+    )
+    .expect("the answer is legal");
+    settle(&mut game);
+
+    assert_eq!(
+        game.players[0].hand.len(),
+        1,
+        "the Bolt is what you kept hold of",
+    );
+    assert_eq!(
+        game.players[0]
+            .library
+            .iter()
+            .rev()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SERRA_ANGEL, cards::GRIZZLY_BEARS],
+        "and the two went back in the order you named them",
+    );
+}
