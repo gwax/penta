@@ -412,3 +412,53 @@ fn the_equipped_creature_dying_revs_it_and_leaves_it_bare() {
         "with nothing left to be attached to",
     );
 }
+
+/// A token that dies is a creature that died: it reaches the graveyard
+/// before it ceases to exist, and the Chainsaw revs off it like anything
+/// else -- which is most of what the boards it is played against are made
+/// of. A token and a card dying together are still one batch.
+#[test]
+fn a_dying_token_revs_it_too() {
+    let (mut game, saw, _) = staged(&[]);
+    let saw = cast(&mut game, saw, None);
+    assert_eq!(rev_counters(&game, saw), 0, "nothing has died yet");
+
+    let token = token_permanent(
+        276_000,
+        tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+        PlayerId::Two,
+    );
+    let token_id = token.card.id;
+    game.battlefield.push(token);
+    game.move_permanents_to_graveyard(&[token_id]);
+    settle(&mut game);
+
+    assert_eq!(rev_counters(&game, saw), 1, "the token dying revs it");
+    assert!(
+        !game
+            .battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == token_id),
+        "and the token itself is gone for good",
+    );
+
+    let bears = game
+        .put_onto_battlefield(PlayerId::Two, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let second = token_permanent(
+        276_001,
+        tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+        PlayerId::Two,
+    );
+    let second_id = second.card.id;
+    game.battlefield.push(second);
+    drain_pending(&mut game);
+    game.move_permanents_to_graveyard(&[bears, second_id]);
+    settle(&mut game);
+
+    assert_eq!(
+        rev_counters(&game, saw),
+        2,
+        "a token and a card dying together are one 'one or more'",
+    );
+}
