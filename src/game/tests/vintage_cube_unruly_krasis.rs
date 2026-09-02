@@ -260,3 +260,50 @@ fn the_trigger_may_be_declined() {
         "the Lions is the 2/1 it was printed as",
     );
 }
+
+/// X is the Krasis's power as the trigger resolves, counters and all, not
+/// the four it was printed with. Adapt first and the Lions is handed the
+/// seven the Krasis has grown to -- which is the order this card is played
+/// in when there is mana for both.
+#[test]
+fn adapting_before_the_attack_hands_the_lions_a_seven() {
+    let (mut game, krasis, lions) = staged(&[]);
+    adapt(&mut game, krasis);
+    assert_eq!(size(&game, krasis), (Some(7), Some(7)), "three counters on");
+
+    attack_and_accept(&mut game, krasis);
+
+    assert_eq!(
+        size(&game, lions),
+        (Some(7), Some(7)),
+        "and X was read off the Krasis standing there, not off its printing",
+    );
+}
+
+/// "Until end of turn." The base it set is rented, so the Lions the Krasis
+/// made a 4/4 is the 2/1 it was printed as on the turn after.
+#[test]
+fn the_base_it_sets_wears_off_with_the_turn() {
+    let (mut game, krasis, lions) = staged(&[]);
+
+    attack_and_accept(&mut game, krasis);
+    assert_eq!(size(&game, lions), (Some(4), Some(4)), "a 4/4 this turn");
+
+    // Walking the steps rather than jumping the turn: the cleanup step is
+    // where an until-end-of-turn effect is let go of.
+    let turn = game.turn;
+    for _ in 0..80 {
+        if game.turn > turn {
+            break;
+        }
+        game.advance_step();
+        drain_pending(&mut game);
+    }
+    assert!(game.turn > turn, "the turn ended");
+
+    assert_eq!(
+        size(&game, lions),
+        (Some(2), Some(1)),
+        "and a Savannah Lions again afterwards",
+    );
+}
