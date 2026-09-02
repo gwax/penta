@@ -426,3 +426,48 @@ fn the_crypt_costs_nothing_to_cast() {
         "and it arrived for nothing",
     );
 }
+
+/// The Crypt's own famous ending: three damage is three damage, and a player
+/// on three or less who loses the flip loses the game. Nothing is offered in
+/// between -- the flip, the damage and the state-based check that follows
+/// leave no window to gain the life back.
+#[test]
+fn the_crypt_can_kill_the_player_who_plays_it() {
+    let (survived, killed) = outcomes(|seed| {
+        let mut game = ready_game_with_seed(seed);
+        game.battlefield.clear();
+        game.battlefield
+            .push(creature(10_500, cards::MANA_CRYPT, PlayerId::One));
+        game.players[PlayerId::One.index()].life = 3;
+        game.active_player = PlayerId::One;
+        game.priority = PlayerId::One;
+        game.step = Step::Upkeep;
+        game.handle_upkeep_triggers();
+        drain_pending(&mut game);
+        game.check_state_based_actions();
+
+        match game.result {
+            None => {
+                assert_eq!(
+                    game.players[PlayerId::One.index()].life,
+                    3,
+                    "a won flip costs nothing",
+                );
+                true
+            }
+            Some(GameResult::Winner { winner, .. }) => {
+                assert_eq!(winner, PlayerId::Two, "the other player is left standing");
+                assert_eq!(
+                    game.players[PlayerId::One.index()].life,
+                    0,
+                    "three damage on three life is the whole of it",
+                );
+                false
+            }
+            Some(other) => panic!("the flip does not end in {other:?}"),
+        }
+    });
+
+    assert!(survived > 0, "the flip can be won and the game goes on");
+    assert!(killed > 0, "and losing it at three life ends the game");
+}
