@@ -130,3 +130,55 @@ fn its_mana_is_colorless_and_pays_no_pips() {
         "with the artifact closed out by the stack, as sorcery speed asks",
     );
 }
+
+/// One tap is one activation: the Ring is spent until it untaps, and unlike
+/// the Monoliths beside it in the cube it untaps in the ordinary way. Two
+/// mana a turn, every turn, for one.
+#[test]
+fn it_taps_once_and_comes_back_next_turn() {
+    let (mut game, ring) = staged(1);
+    let permanent = resolve_it(&mut game, ring);
+    let taps = |game: &Game| {
+        game.legal_actions(PlayerId::One).into_iter().any(|action| {
+            matches!(action, Action::ActivateManaAbility { source, .. } if source == permanent)
+        })
+    };
+    assert!(taps(&game), "it is untapped and offering its two");
+
+    game.apply(
+        PlayerId::One,
+        Action::ActivateManaAbility {
+            source: permanent,
+            ability: mana_ability_for(&game, permanent, ManaColor::Colorless),
+            color: ManaColor::Colorless,
+            counters_removed: None,
+            cost_object: None,
+            combination: None,
+            triggered_mana: None,
+        },
+    )
+    .expect("it taps");
+    assert!(
+        !taps(&game),
+        "and the same tap cannot be sold twice in one turn",
+    );
+
+    // Round to this player's next untap step.
+    let turn = game.turn;
+    for _ in 0..80 {
+        if game.turn > turn + 1 && game.step == Step::PrecombatMain {
+            break;
+        }
+        game.advance_step();
+        drain_pending(&mut game);
+    }
+
+    assert!(
+        game.battlefield
+            .iter()
+            .find(|found| found.card.id == permanent)
+            .is_some_and(|found| !found.tapped),
+        "the untap step stands it back up, which the Monoliths never get",
+    );
+    assert!(taps(&game), "so its two are on offer again");
+}
