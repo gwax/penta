@@ -213,3 +213,38 @@ fn a_lost_target_takes_the_copy_with_it() {
     );
     assert!(game.stack.is_empty(), "with no copy left behind");
 }
+
+/// "That player ... *may* pay {R}{R}." The three damage is already dealt by
+/// the time the question is asked -- the payment buys the copy and nothing
+/// else -- so declining leaves them at seventeen with nothing coming back.
+#[test]
+fn declining_the_payment_ends_the_chain() {
+    let mut game = staged(&[]);
+    let life = game.players[PlayerId::Two.index()].life;
+    assert_eq!(life, 17, "the damage happened before the offer");
+
+    choose_decision_by_label(&mut game, PlayerId::Two, "Decline");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        life,
+        "declining costs them nothing further",
+    );
+    assert!(game.stack.is_empty(), "and nothing came back the other way");
+    assert!(
+        game.players[0]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::CHAIN_LIGHTNING),
+        "the Chain is in its owner's graveyard, done with",
+    );
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.controller == PlayerId::Two && permanent.tapped)
+            .count(),
+        0,
+        "and their Mountains are untapped: nothing was paid",
+    );
+}
