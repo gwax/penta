@@ -205,3 +205,48 @@ fn she_taxes_neither_lands_nor_abilities() {
         "and a one-mana ability still costs one mana",
     );
 }
+
+/// A free artifact is not free with her out. The Moxen are the cube's
+/// noncreature spells that cost nothing at all, and one more than nothing is
+/// a mana they have to find from somewhere.
+#[test]
+fn she_taxes_a_spell_that_costs_nothing() {
+    let (mut game, _thalia, _bolt, _bears) = staged(PlayerId::One);
+    let mox = card(131_200, cards::MOX_SAPPHIRE, PlayerId::One);
+    let mox_id = mox.id;
+    game.players[0].hand.push(mox);
+
+    assert!(
+        !castable(&game, mox_id),
+        "an empty pool no longer casts a nothing-cost artifact",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(castable(&game, mox_id), "and one mana is what she wants");
+}
+
+/// She taxes both seats, so two of her are two taxes -- which needs one on
+/// each side, because a second under one controller would not survive the
+/// legend rule. Nothing about the increase is once-only.
+#[test]
+fn two_of_her_tax_twice() {
+    let (mut game, _thalia, bolt, _bears) = staged(PlayerId::One);
+    let theirs = creature(131_300, cards::THALIA_GUARDIAN_OF_THRABEN, PlayerId::Two);
+    game.battlefield.push(theirs);
+    game.check_state_based_actions();
+    assert_eq!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| { permanent.card.definition == cards::THALIA_GUARDIAN_OF_THRABEN })
+            .count(),
+        2,
+        "one each, so the legend rule leaves both standing",
+    );
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Red, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(!castable(&game, bolt), "two mana pays only one of them");
+
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+    assert!(castable(&game, bolt), "and three pays both");
+}
