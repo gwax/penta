@@ -121,3 +121,57 @@ fn the_upheaval_itself_is_not_swept_up() {
         "lands included",
     );
 }
+
+/// "All permanents" across a real board. Every existing test sweeps a single
+/// permanent, so nothing said the word "all" covers each type and both sides
+/// at once: lands, artifacts, enchantments, creatures and planeswalkers all
+/// go, and each goes to the hand of whoever owns it.
+#[test]
+fn it_sweeps_every_kind_of_permanent_on_both_sides() {
+    let (mut game, upheaval) = staged();
+    let mine = [cards::FOREST, cards::MOX_JET, cards::PHYREXIAN_ARENA];
+    let theirs = [cards::ISLAND, cards::GRIZZLY_BEARS, cards::DACK_FAYDEN];
+    for (player, definitions) in [(PlayerId::One, mine), (PlayerId::Two, theirs)] {
+        for definition in definitions {
+            game.put_onto_battlefield(player, definition)
+                .expect("cataloged");
+        }
+    }
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+    assert_eq!(game.battlefield.len(), 6, "six permanents to sweep");
+
+    cast(&mut game, upheaval);
+
+    assert!(game.battlefield.is_empty(), "and none of them survives it");
+    let held = |game: &Game, player: PlayerId| {
+        let mut definitions = game.players[player.index()]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>();
+        definitions.sort_unstable();
+        definitions
+    };
+    let mut expected_mine = mine.to_vec();
+    expected_mine.sort_unstable();
+    let mut expected_theirs = theirs.to_vec();
+    expected_theirs.sort_unstable();
+    assert_eq!(
+        held(&game, PlayerId::One),
+        expected_mine,
+        "your three came back to you, the planeswalker's owner included",
+    );
+    assert_eq!(
+        held(&game, PlayerId::Two),
+        expected_theirs,
+        "and theirs to them",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::UPHEAVAL),
+        "with the Upheaval itself in the graveyard, having swept nothing of its own",
+    );
+}
