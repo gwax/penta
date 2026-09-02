@@ -368,3 +368,78 @@ fn the_exile_may_resolve_before_the_sacrifice_that_follows_it() {
         "the sacrifice still comes",
     );
 }
+
+/// "That creature's controller gains life equal to its power." Every test
+/// above exiles across the table, so the clause only ever paid the opponent.
+/// Pointed at one of yours -- which "up to one other target creature"
+/// allows -- the life comes to you instead.
+#[test]
+fn exiling_your_own_creature_pays_you_the_life() {
+    let (mut game, solitude) = staged(&[cards::SWORDS_TO_PLOWSHARES], &[]);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRAVE_TITAN)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    cast(&mut game, solitude, true, Some(mine));
+
+    assert!(
+        game.battlefield
+            .iter()
+            .all(|permanent| permanent.card.id != mine),
+        "your own 6/6 is exiled the same as theirs would be",
+    );
+    assert_eq!(
+        game.players[PlayerId::One.index()].life,
+        26,
+        "and its controller is you, so the six life is yours",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].life,
+        20,
+        "they were never part of it",
+    );
+}
+
+/// "The mana value of the spell is determined by only its mana cost, no
+/// matter what the total cost to cast that spell was." Evoked she costs a
+/// card and no mana at all, and is still a five-mana spell on the stack.
+#[test]
+fn evoking_her_does_not_change_her_mana_value() {
+    let mana_value_on_the_stack = |evoked: bool| -> u16 {
+        let (mut game, solitude) = staged(&[cards::SWORDS_TO_PLOWSHARES], &[]);
+        if !evoked {
+            game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 5);
+        }
+        let spent = game.players[PlayerId::One.index()].mana.len();
+        let action = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| match action {
+                Action::CastSpell { card, choices, .. } => {
+                    *card == solitude && choices.costs().alternative().is_some() == evoked
+                }
+                _ => false,
+            })
+            .unwrap_or_else(|| panic!("a cast with evoked={evoked} is offered"));
+        game.apply(PlayerId::One, action).expect("it is castable");
+        assert_eq!(
+            spent - game.players[PlayerId::One.index()].mana.len(),
+            if evoked { 0 } else { 5 },
+            "evoked={evoked} really paid its own price",
+        );
+        let object = game.stack.last().expect("she is waiting on the stack");
+        game.stack_spell_mana_value(object)
+    };
+
+    assert_eq!(
+        mana_value_on_the_stack(false),
+        5,
+        "five mana is a mana value of five",
+    );
+    assert_eq!(
+        mana_value_on_the_stack(true),
+        5,
+        "and so is a white card out of hand: the cost line never moved",
+    );
+}
