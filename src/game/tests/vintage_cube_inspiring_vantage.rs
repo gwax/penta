@@ -84,3 +84,49 @@ fn it_taps_for_red_and_white() {
         "red or white, and nothing colourless",
     );
 }
+
+/// "Two or fewer other lands *you control*", which is not the same as the
+/// lands you own. Three Mountains of yours with two of them taken across the
+/// table leaves you controlling one, and the Vantage arrives untapped;
+/// handing them back is what taps it.
+#[test]
+fn it_counts_the_lands_you_control_rather_than_the_ones_you_own() {
+    let arrives_tapped = |taken: usize| {
+        let mut game = ready_game();
+        game.battlefield.clear();
+        for index in 0..3usize {
+            let mut mountain = creature(
+                101_600 + u32::try_from(index).expect("a small board"),
+                cards::MOUNTAIN,
+                PlayerId::One,
+            );
+            // Owned by you either way; controlled by them for the first
+            // `taken` of them.
+            if index < taken {
+                mountain.controller = PlayerId::Two;
+            }
+            game.battlefield.push(mountain);
+        }
+        game.turns_started = [5, 5];
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        let vantage = game
+            .put_onto_battlefield(PlayerId::One, cards::INSPIRING_VANTAGE)
+            .expect("cataloged");
+        drain_pending(&mut game);
+        game.battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == vantage)
+            .expect("it entered")
+            .tapped
+    };
+
+    assert!(
+        !arrives_tapped(2),
+        "three lands of yours, two of them theirs to control, is one of yours",
+    );
+    assert!(
+        arrives_tapped(0),
+        "and the same three under your own control taps it",
+    );
+}
