@@ -76,12 +76,36 @@ impl Game {
         affected: &Permanent,
         prospective: Option<&Permanent>,
         kind: StaticEffectKind,
+        land_type_sources: &[(&Permanent, crate::game::ContinuousEffectTimestamp)],
         visitor: &mut impl FnMut(StaticAppliedEffect) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         let source = input.permanent;
         let Some(rules) = self.effective_rules(source) else {
             return ControlFlow::Continue(());
         };
+        // Whether this source has anything to say, decided from the rules
+        // already in hand. Asking costs nothing, and it stands ahead of the
+        // rules-text check below because that one walks the land-type layer,
+        // the most expensive question the engine asks. #116 lost this
+        // ordering, so every permanent and emblem began paying that walk to
+        // discover it had no static ability at all.
+        let supplies_static_effect = rules.indexed_abilities().any(|attached| {
+            let ability = attached.definition;
+            matches!(
+                ability.definition,
+                DeclarativeAbilityDef::Static(definition)
+                    if definition.source_zones.contains(&input.zone)
+            ) && ability.is_executable()
+                && ability.declarative_effect().is_some()
+        });
+        if !supplies_static_effect {
+            return ControlFlow::Continue(());
+        }
+        if input.zone == ZoneKind::Battlefield
+            && self.rules_text_abilities_removed_from_sources(source, land_type_sources)
+        {
+            return ControlFlow::Continue(());
+        }
         let source_presentation = Self::effective_rules_source(source);
         for attached in rules.indexed_abilities() {
             let ability = attached.definition;

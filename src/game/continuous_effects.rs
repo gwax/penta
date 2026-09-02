@@ -234,15 +234,13 @@ impl Game {
         // are walked alongside the battlefield and nowhere else.
         let land_type_sources = self.land_type_effect_sources(None);
         for source in self.battlefield.iter().chain(self.emblems.iter()) {
-            if self.rules_text_abilities_removed_from_sources(source, &land_type_sources) {
-                continue;
-            }
             if self
                 .visit_static_source_effects(
                     StaticEffectSource::battlefield(source, source.timestamp),
                     affected,
                     None,
                     kind,
+                    &land_type_sources,
                     &mut visitor,
                 )
                 .is_break()
@@ -257,6 +255,7 @@ impl Game {
                     affected,
                     None,
                     kind,
+                    &land_type_sources,
                     &mut visitor,
                 )
                 .is_break()
@@ -277,11 +276,6 @@ impl Game {
         let prospective_source = (prospective.card.id == affected.card.id).then_some(prospective);
         let land_type_sources = self.land_type_effect_sources(prospective_source);
         for source in self.battlefield.iter().chain(prospective_source) {
-            let rules_text_removed =
-                self.rules_text_abilities_removed_from_sources(source, &land_type_sources);
-            if rules_text_removed {
-                continue;
-            }
             let timestamp = if prospective_source
                 .is_some_and(|prospective| std::ptr::eq(source, prospective))
             {
@@ -295,6 +289,7 @@ impl Game {
                     affected,
                     prospective_source,
                     kind,
+                    &land_type_sources,
                     &mut visitor,
                 )
                 .is_break()
@@ -309,6 +304,7 @@ impl Game {
                     affected,
                     prospective_source,
                     kind,
+                    &land_type_sources,
                     &mut visitor,
                 )
                 .is_break()
