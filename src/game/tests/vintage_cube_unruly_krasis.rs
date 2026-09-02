@@ -307,3 +307,47 @@ fn the_base_it_sets_wears_off_with_the_turn() {
         "and a Savannah Lions again afterwards",
     );
 }
+
+/// Trample is what the size is for: a 4/4 held by a 2/2 sends two past it,
+/// and a Krasis that has adapted to a 7/7 first sends five. Nothing else on
+/// the card would care how big it is once a chump blocker is on it.
+#[test]
+fn it_tramples_the_excess_past_a_chump_blocker() {
+    for (adapt_first, expected) in [(false, 2), (true, 5)] {
+        let (mut game, krasis, _) = staged(&[cards::GRIZZLY_BEARS]);
+        let chump = game
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.controller == PlayerId::Two)
+            .expect("they have a blocker")
+            .card
+            .id;
+        if adapt_first {
+            adapt(&mut game, krasis);
+        }
+        let life = game.players[PlayerId::Two.index()].life;
+
+        game.step = Step::DeclareAttackers;
+        game.declare_attacker(krasis, AttackDefender::Player(PlayerId::Two));
+        game.finish_declaring_attackers();
+        drain_pending(&mut game);
+        game.step = Step::DeclareBlockers;
+        game.declare_blocker(chump, krasis);
+        game.step = Step::CombatDamage;
+        game.deal_combat_damage();
+        game.check_state_based_actions();
+
+        assert_eq!(
+            game.players[PlayerId::Two.index()].life,
+            life - expected,
+            "a blocked Krasis sends what the blocker cannot eat through",
+        );
+        assert!(
+            !game
+                .battlefield
+                .iter()
+                .any(|permanent| permanent.card.id == chump),
+            "and the blocker took the rest of it",
+        );
+    }
+}
