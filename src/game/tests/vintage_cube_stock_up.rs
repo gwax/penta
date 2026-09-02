@@ -243,3 +243,42 @@ fn the_leftovers_go_under_in_the_order_you_name() {
         "exactly reversed: the order asked for is the order taken",
     );
 }
+
+/// One card is fewer than the two it asks for, so one card is what it takes:
+/// the choice is lowered to what exists rather than left unanswerable, and
+/// nothing is left to go underneath.
+#[test]
+fn a_library_of_one_gives_up_its_only_card() {
+    let (mut game, stock_up) = staged(&[cards::BLACK_LOTUS]);
+
+    let look = cast_and_look(&mut game, stock_up);
+    assert_eq!(look.options.len(), 1, "one card is all there is to see");
+    assert_eq!(
+        (look.minimum, look.maximum),
+        (1, 1),
+        "and one of it is all that can be asked",
+    );
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: look.id,
+            options: vec![look.options[0].id],
+        },
+    )
+    .expect("taking the only card is legal");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        hand(&game),
+        vec![cards::BLACK_LOTUS],
+        "the Lotus came to hand",
+    );
+    assert!(
+        game.players[PlayerId::One.index()].library.is_empty(),
+        "with nothing behind it to put underneath",
+    );
+    assert!(
+        game.result.is_none(),
+        "and looking at a library is not drawing from one",
+    );
+}
