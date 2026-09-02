@@ -511,3 +511,44 @@ fn a_countered_copy_leaves_nothing_behind() {
         "one Bolt card, which is all there ever was",
     );
 }
+
+/// "Memory Lapse has a self-replacement effect that replaces the spell going
+/// to the graveyard before any other effect can replace that event." A Rest
+/// in Peace turning every trip to a graveyard into exile never gets a look:
+/// the countered card was never going to a graveyard, so it goes to the top
+/// of the library all the same. The Lapse itself, which finishes resolving
+/// like an ordinary spell, is the one that gets exiled.
+#[test]
+fn a_rest_in_peace_does_not_take_the_stacked_card() {
+    let (mut game, lapse, spell) = staged(cards::SERRA_ANGEL);
+    game.put_onto_battlefield(PlayerId::One, cards::REST_IN_PEACE)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.priority = PlayerId::Two;
+
+    cast_and_answer(&mut game, lapse, spell);
+
+    assert_eq!(
+        game.players[1].library.last().map(|card| card.definition),
+        Some(cards::SERRA_ANGEL),
+        "the Lapse's replacement went first, and the library is where it said",
+    );
+    assert!(
+        !game.players[1]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::SERRA_ANGEL),
+        "so the Rest in Peace never saw it",
+    );
+    assert!(
+        game.players[0]
+            .exile
+            .iter()
+            .any(|card| card.definition == cards::MEMORY_LAPSE),
+        "while the Lapse, which really did head for a graveyard, was exiled",
+    );
+    assert!(
+        game.players[0].graveyard.is_empty() && game.players[1].graveyard.is_empty(),
+        "and no graveyard has anything in it at all",
+    );
+}
