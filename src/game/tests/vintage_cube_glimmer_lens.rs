@@ -322,3 +322,63 @@ fn the_lens_cannot_be_moved_mid_combat() {
         "so it spent the combat on the creature it started on",
     );
 }
+
+/// "If the ability causes two Rebel tokens to be created, the Equipment
+/// becomes attached to only one of them." An Elspeth doubling the For
+/// Mirrodin! token makes a pair of 2/2s and the Lens picks a side: the other
+/// Rebel is a body with nothing on it, and attacking beside its twin is what
+/// draws the card.
+#[test]
+fn a_doubled_rebel_leaves_one_of_them_bare() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.turns_started[PlayerId::One.index()] = 5;
+    game.put_onto_battlefield(PlayerId::One, cards::ELSPETH_STORM_SLAYER)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    let lens = game
+        .put_onto_battlefield(PlayerId::One, cards::GLIMMER_LENS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    let rebels = game
+        .battlefield
+        .iter()
+        .filter(|permanent| {
+            is_token_with(
+                permanent,
+                tokens::creature(&["Rebel"], &[ManaColor::Red], 2, 2),
+            )
+        })
+        .map(|permanent| permanent.card.id)
+        .collect::<Vec<_>>();
+    assert_eq!(rebels.len(), 2, "one Rebel doubled is two Rebels");
+    let host = host_of(&game, lens).expect("the Lens found a host");
+    assert!(rebels.contains(&host), "which is one of the two");
+    let bare = rebels
+        .iter()
+        .copied()
+        .find(|rebel| *rebel != host)
+        .expect("and the other one is bare");
+    assert!(
+        game.battlefield
+            .iter()
+            .filter(|permanent| permanent.attached_to == Some(bare))
+            .count()
+            == 0,
+        "with nothing attached to it at all",
+    );
+
+    game.active_player = PlayerId::One;
+    game.priority = PlayerId::One;
+    let before = hand_size(&game);
+    attack_with(&mut game, &[host, bare]);
+
+    assert_eq!(
+        hand_size(&game),
+        before + 1,
+        "the equipped one and its twin are the two the Lens asks for",
+    );
+}
