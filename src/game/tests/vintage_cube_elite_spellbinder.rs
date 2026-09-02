@@ -308,3 +308,73 @@ fn a_sorcery_taken_this_way_still_waits_for_their_main_phase() {
         "and then the same three mana casts it",
     );
 }
+
+/// Nothing about the exile is held by the body. Answer the Spellbinder while
+/// its trigger is still on the stack and the trigger asks its question and
+/// takes the card anyway, taxed as always -- which is where this parts
+/// company with the Bat beside it in the cube, whose clause cannot exile
+/// anything once its creature is gone.
+#[test]
+fn killing_it_in_response_does_not_save_the_card() {
+    let (mut game, spellbinder) = staged(&[cards::LIGHTNING_BOLT, cards::SERRA_ANGEL]);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::CastSpell { card, .. } if *card == spellbinder))
+        .expect("three mana casts it");
+    game.apply(PlayerId::One, action).expect("it casts");
+    settle(&mut game);
+    // The one opponent is named as the trigger goes on the stack.
+    if let Some(seat) = deciding(&game) {
+        let decision = game.observe(seat).decision.expect("just checked");
+        let option = decision.options.first().expect("the one opponent").id;
+        game.apply(
+            seat,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: vec![option],
+            },
+        )
+        .expect("the only answer is legal");
+    }
+
+    // The trigger is on the stack and the 3/1 is on the battlefield: this is
+    // the window an opponent gets, and it buys them nothing.
+    let body = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.definition == cards::ELITE_SPELLBINDER)
+        .map(|permanent| permanent.card.id)
+        .expect("the creature resolved before its trigger");
+    game.move_permanents_to_graveyard(&[body]);
+    game.check_state_based_actions();
+    settle(&mut game);
+
+    take(&mut game, Some(cards::LIGHTNING_BOLT));
+
+    assert!(
+        game.battlefield.is_empty(),
+        "the Spellbinder is dead and gone",
+    );
+    let bolt = in_their_exile(&game, cards::LIGHTNING_BOLT)
+        .expect("and the trigger still picked the Bolt out of the two");
+    assert_eq!(
+        game.players[1]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![cards::SERRA_ANGEL],
+        "leaving the card it did not name",
+    );
+    assert!(
+        !they_can_cast(&mut game, bolt, 2),
+        "two mana is one short of the red one plus the surcharge",
+    );
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Red, 1);
+    assert!(
+        they_can_cast(&mut game, bolt, 2),
+        "and the tax outlived the body that levied it",
+    );
+}
