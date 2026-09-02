@@ -357,3 +357,89 @@ fn a_static_shrink_makes_a_two_two_into_what_it_wants() {
     let sword = sword_on_battlefield(&game).expect("a 1/1 is a 1/1 however it got there");
     assert_eq!(sword.attached_to, Some(bears), "and it dressed the Bears");
 }
+
+/// The shape the card is actually played in: more than one Sword waiting.
+/// Each is its own trigger, each is offered separately, and a creature may
+/// wear both -- one Merfolk arriving empties a graveyard of two Swords and
+/// stands there as a 3/5.
+#[test]
+fn two_swords_in_the_graveyard_both_come_back_to_the_same_creature() {
+    let mut game = staged();
+    let second = game
+        .build_zone(PlayerId::One, &[cards::SWORD_OF_THE_MEEK])
+        .expect("cataloged")
+        .into_iter()
+        .next()
+        .expect("one card");
+    game.players[0].graveyard.push(second);
+    assert_eq!(game.players[0].graveyard.len(), 2, "two of them waiting");
+
+    let servant = game
+        .put_onto_battlefield(PlayerId::One, cards::MERFOLK_OF_THE_PEARL_TRIDENT)
+        .expect("cataloged");
+
+    // Two triggers means an ordering question before the two offers, and
+    // that one wants both answers rather than one.
+    for _ in 0..24 {
+        if let Some(decision) = game
+            .pending_decisions
+            .first()
+            .map(|pending| pending.observation.clone())
+        {
+            let options: Vec<_> = if decision.minimum > 1 {
+                decision
+                    .options
+                    .iter()
+                    .map(|option| option.id)
+                    .take(decision.minimum)
+                    .collect()
+            } else {
+                decision
+                    .options
+                    .iter()
+                    .find(|option| option.label != "Decline")
+                    .or_else(|| decision.options.first())
+                    .map(|option| vec![option.id])
+                    .unwrap_or_default()
+            };
+            game.apply(
+                decision.player,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options,
+                },
+            )
+            .expect("the decision accepts what it offered");
+            continue;
+        }
+        if game.stack.is_empty() && game.pending_triggers.is_empty() {
+            break;
+        }
+        let player = game.priority;
+        if game.apply(player, Action::PassPriority).is_err() {
+            break;
+        }
+    }
+
+    let swords: Vec<_> = game
+        .battlefield
+        .iter()
+        .filter(|permanent| permanent.card.definition == cards::SWORD_OF_THE_MEEK)
+        .collect();
+    assert_eq!(swords.len(), 2, "both Swords came back");
+    assert!(
+        swords
+            .iter()
+            .all(|sword| sword.attached_to == Some(servant)),
+        "and both went onto the creature that called them",
+    );
+    assert!(
+        game.players[0].graveyard.is_empty(),
+        "with nothing left in the graveyard",
+    );
+    assert_eq!(
+        power_toughness(&game, servant),
+        (Some(3), Some(5)),
+        "a 1/1 wearing two of them",
+    );
+}
