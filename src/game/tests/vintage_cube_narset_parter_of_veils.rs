@@ -192,3 +192,99 @@ fn she_may_take_nothing() {
     assert!(game.players[0].hand.is_empty(), "she declined the card");
     assert_eq!(game.players[0].library.len(), 4);
 }
+
+/// "If a spell or ability instructs that player to draw multiple cards, that
+/// player will just draw one card." A single instruction to draw three is
+/// not blocked outright: the first card lands and the other two do not.
+#[test]
+fn a_multiple_draw_becomes_a_single_one() {
+    let (mut game, _) = staged(&[]);
+    let library = game.players[PlayerId::Two.index()].library.len();
+
+    game.draw_cards(PlayerId::Two, 3);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        1,
+        "one of the three arrived",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()].library.len(),
+        library - 1,
+        "and the other two never left the library",
+    );
+}
+
+/// "Your opponents can each draw a maximum of one card each on each player's
+/// turn." It is a limit per turn rather than a limit for the game, so the
+/// next turn hands them another one.
+#[test]
+fn the_limit_starts_over_each_turn() {
+    let (mut game, _) = staged(&[]);
+    game.draw_cards(PlayerId::Two, 2);
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        1,
+        "one this turn",
+    );
+
+    game.commit_next_turn(PlayerId::Two, Vec::new());
+    drain_pending(&mut game);
+
+    let held = game.players[PlayerId::Two.index()].hand.len();
+    game.draw_cards(PlayerId::Two, 2);
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        held + 1,
+        "and one more on the next turn, no more and no fewer",
+    );
+}
+
+/// "Narset will 'see' cards drawn by opponents earlier in the turn she
+/// entered the battlefield." Two cards already drawn is already over the
+/// limit, so she shuts the door behind them without taking anything back.
+#[test]
+fn she_counts_draws_from_before_she_arrived() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[PlayerId::One.index()].hand.clear();
+    game.players[PlayerId::Two.index()].hand.clear();
+    game.players[PlayerId::Two.index()].library.clear();
+    for index in 0..6 {
+        game.players[PlayerId::Two.index()].library.push(card(
+            115_300 + index,
+            cards::ISLAND,
+            PlayerId::Two,
+        ));
+    }
+    game.turns_started = [5, 5];
+    game.active_player = PlayerId::One;
+    game.step = Step::PrecombatMain;
+    game.priority = PlayerId::One;
+
+    // Two cards drawn before she is anywhere near the battlefield.
+    game.draw_cards(PlayerId::Two, 2);
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        2,
+        "both land while nothing is stopping them",
+    );
+
+    game.put_onto_battlefield(PlayerId::One, cards::NARSET_PARTER_OF_VEILS)
+        .expect("cataloged");
+    drain_pending(&mut game);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        2,
+        "the two already drawn are not taken back",
+    );
+
+    game.draw_cards(PlayerId::Two, 1);
+
+    assert_eq!(
+        game.players[PlayerId::Two.index()].hand.len(),
+        2,
+        "but the turn's one is long spent, so nothing more arrives",
+    );
+}
