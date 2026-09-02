@@ -315,3 +315,53 @@ fn it_leaves_the_noncreatures_where_they_stand() {
         "one creature was all there was to exile",
     );
 }
+
+/// What it turns into, in full: a Phyrexian artifact creature whose printed
+/// body is 0/0 and whose size is entirely the counters it was incubated
+/// with. And the transform ability is printed on the front face alone, so
+/// once it is over there is nothing left to activate -- it does not turn
+/// back.
+#[test]
+fn the_back_face_is_a_phyrexian_artifact_that_cannot_turn_back() {
+    let (mut game, sunfall) = staged(&[cards::SAVANNAH_LIONS], &[cards::SERRA_ANGEL]);
+    cast(&mut game, sunfall);
+    let token = incubator(&game).card.id;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 4);
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == token))
+        .expect("two mana transforms it");
+    game.apply(PlayerId::One, action).expect("it activates");
+    settle(&mut game);
+
+    let turned = game
+        .battlefield
+        .iter()
+        .find(|permanent| permanent.card.id == token)
+        .expect("the token is still there");
+    let types = game
+        .permanent_types(turned)
+        .expect("it is on the battlefield");
+    assert!(
+        types.contains(CardType::Artifact) && types.is_creature(),
+        "an artifact creature, not merely a creature: {types:?}",
+    );
+    assert!(
+        game.effective_subtypes(turned).contains(&"Phyrexian"),
+        "and a Phyrexian",
+    );
+    assert_eq!(
+        (game.power(turned), game.toughness(turned)),
+        (Some(2), Some(2)),
+        "a 0/0 body carrying the two counters it was incubated with",
+    );
+
+    assert!(
+        !game.legal_actions(PlayerId::One).iter().any(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == token)
+        ),
+        "the {{2}} belongs to the front face, so there is no turning back",
+    );
+}
