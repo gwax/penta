@@ -249,3 +249,55 @@ fn a_fetchland_replayed_from_the_graveyard_sacrifices_itself_back_into_it() {
         "and next turn's drop is the same Heath again, new object though it is",
     );
 }
+
+/// The graveyard and the hand draw on one land drop between them, and it
+/// does not matter which is spent first. A permission to play lands from a
+/// second place is not a second land to play.
+#[test]
+fn the_hand_and_the_graveyard_share_one_land_drop() {
+    for from_hand_first in [true, false] {
+        let mut game = staged(true);
+        game.turns_started = [5, 5];
+        game.active_player = PlayerId::One;
+        game.step = Step::PrecombatMain;
+        game.priority = PlayerId::One;
+        let island = card(87_100, cards::ISLAND, PlayerId::One);
+        let island_id = island.id;
+        game.players[0].hand.push(island);
+        let buried = game.players[0]
+            .graveyard
+            .iter()
+            .find(|card| card.definition == cards::MOUNTAIN)
+            .expect("it is buried")
+            .id;
+
+        let offered = land_plays(&game);
+        assert!(
+            offered.contains(&island_id) && offered.contains(&buried),
+            "both are on offer before either is played (hand first: {from_hand_first})",
+        );
+
+        let first = if from_hand_first { island_id } else { buried };
+        let second = if from_hand_first { buried } else { island_id };
+        let play = game
+            .legal_actions(PlayerId::One)
+            .into_iter()
+            .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == first))
+            .expect("it is offered");
+        game.apply(PlayerId::One, play).expect("it is played");
+        drain_pending(&mut game);
+
+        assert!(
+            land_plays(&game).is_empty(),
+            "the other one is closed off too (hand first: {from_hand_first})",
+        );
+        assert!(
+            !land_plays(&game).contains(&second),
+            "and specifically the one still waiting",
+        );
+        assert_eq!(
+            game.players[0].lands_played_this_turn, 1,
+            "one drop was spent, not two",
+        );
+    }
+}
