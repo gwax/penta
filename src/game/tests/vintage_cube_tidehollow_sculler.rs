@@ -236,3 +236,76 @@ fn it_is_an_artifact_as_well_as_a_creature() {
     assert!(types.contains(CardType::Artifact), "an artifact");
     assert!(types.contains(CardType::Creature), "and a creature");
 }
+
+/// Two Scullers hold two different cards, and each gives back only its own.
+/// What the second ability returns is the card the first one took, not
+/// whatever is sitting in exile when the body dies.
+#[test]
+fn two_scullers_each_give_back_only_what_they_took() {
+    let mut game = staged(&[cards::LIGHTNING_BOLT, cards::SERRA_ANGEL]);
+
+    let first = game
+        .put_onto_battlefield(PlayerId::One, cards::TIDEHOLLOW_SCULLER)
+        .expect("cataloged");
+    settle(&mut game);
+    let taken_by_first = game.players[PlayerId::Two.index()]
+        .exile
+        .first()
+        .expect("the first one took a card")
+        .definition;
+
+    let second = game
+        .put_onto_battlefield(PlayerId::One, cards::TIDEHOLLOW_SCULLER)
+        .expect("cataloged");
+    settle(&mut game);
+    let taken_by_second = game.players[PlayerId::Two.index()]
+        .exile
+        .iter()
+        .map(|card| card.definition)
+        .find(|definition| *definition != taken_by_first)
+        .expect("the second one took the other card");
+    assert_eq!(
+        game.players[PlayerId::Two.index()].exile.len(),
+        2,
+        "both cards are held",
+    );
+    assert!(
+        game.players[PlayerId::Two.index()].hand.is_empty(),
+        "and their hand is empty",
+    );
+
+    game.move_permanents_to_graveyard(&[first]);
+    settle(&mut game);
+
+    let hand = |game: &Game| {
+        game.players[PlayerId::Two.index()]
+            .hand
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        hand(&game),
+        vec![taken_by_first],
+        "the one that died gave back its own card",
+    );
+    assert_eq!(
+        game.players[PlayerId::Two.index()]
+            .exile
+            .iter()
+            .map(|card| card.definition)
+            .collect::<Vec<_>>(),
+        vec![taken_by_second],
+        "and the other Sculler is still holding the other card",
+    );
+
+    game.move_permanents_to_graveyard(&[second]);
+    settle(&mut game);
+
+    let mut back = hand(&game);
+    back.sort_unstable();
+    let mut both = vec![taken_by_first, taken_by_second];
+    both.sort_unstable();
+    assert_eq!(back, both, "and now both are home");
+    assert!(game.players[PlayerId::Two.index()].exile.is_empty());
+}
