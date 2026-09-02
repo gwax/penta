@@ -190,3 +190,53 @@ fn losing_it_after_both_drops_takes_no_land_back() {
     );
     assert_eq!(land_plays(&game), 0, "and there is no third");
 }
+
+/// The allowance is a land play and says nothing about where the land comes
+/// from: with a Crucible of Worlds beside it, the two drops may be spent one
+/// out of hand and one out of the graveyard. Which is the pair the card is
+/// actually played with.
+#[test]
+fn the_second_drop_may_be_spent_out_of_the_graveyard() {
+    let mut game = staged(1);
+    game.put_onto_battlefield(PlayerId::One, cards::CRUCIBLE_OF_WORLDS)
+        .expect("cataloged");
+    game.players[0].graveyard.clear();
+    game.players[0]
+        .graveyard
+        .push(card(92_500, cards::MOUNTAIN, PlayerId::One));
+    drain_pending(&mut game);
+    game.priority = PlayerId::One;
+
+    let from_graveyard = |game: &Game| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| matches!(action, Action::PlayLand { card, .. } if card == GameObjectId(92_500)))
+    };
+    assert!(
+        from_graveyard(&game),
+        "the Mountain is playable to begin with"
+    );
+
+    // The first drop goes on a Forest out of hand.
+    play_a_land(&mut game);
+    assert!(
+        from_graveyard(&game),
+        "and the Exploration's second drop is still there for the graveyard",
+    );
+
+    let replay = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| matches!(action, Action::PlayLand { card, .. } if *card == GameObjectId(92_500)))
+        .expect("just checked");
+    game.apply(PlayerId::One, replay).expect("it is played");
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::MOUNTAIN),
+        "the graveyard land came back onto the battlefield",
+    );
+    assert_eq!(land_plays(&game), 0, "and two drops is all there were");
+}
