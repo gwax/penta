@@ -407,3 +407,57 @@ fn the_burn_lands_before_the_spell_and_outlives_a_counter() {
         .expect("the Giant is untouched");
     assert_eq!(survivor.damage, 0, "and took no damage of his own");
 }
+
+/// "Becomes the target of a *spell*", and an ability is not one. A Manifold
+/// Key naming the Giant to make it unblockable is a targeted activation and
+/// costs its controller nothing, where the same words on a card would have
+/// cost them two. Which is what makes an ability the way to answer it.
+#[test]
+fn an_ability_that_targets_the_giant_burns_nobody() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let giant = creature(80_060, cards::BONECRUSHER_GIANT, PlayerId::One);
+    let giant_id = giant.card.id;
+    game.battlefield.push(giant);
+    let key = game
+        .put_onto_battlefield(PlayerId::Two, cards::MANIFOLD_KEY)
+        .expect("cataloged");
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    drain_pending(&mut game);
+    game.add_unrestricted_mana(PlayerId::Two, ManaColor::Colorless, 3);
+    game.priority = PlayerId::Two;
+    let before = game.players[1].life;
+
+    let action = game
+        .legal_actions(PlayerId::Two)
+        .into_iter()
+        .find(|action| match action {
+            Action::ActivateAbility {
+                source, targets, ..
+            } => {
+                *source == key
+                    && targets.iter().any(|selection| {
+                        selection.targets().iter().any(
+                            |target| matches!(target, Target::Permanent(id) if *id == giant_id),
+                        )
+                    })
+            }
+            _ => false,
+        })
+        .expect("the Key's unblockable clause names any creature");
+    game.apply(PlayerId::Two, action).expect("it activates");
+    resolve(&mut game);
+
+    assert_eq!(
+        game.players[1].life, before,
+        "an ability naming it is no spell naming it",
+    );
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == giant_id),
+        "and the Giant is standing there untouched",
+    );
+}
