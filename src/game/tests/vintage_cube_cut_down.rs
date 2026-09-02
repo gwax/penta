@@ -179,3 +179,60 @@ fn your_own_creature_is_a_legal_target() {
         "a 2/2 of your own is in range like any other",
     );
 }
+
+/// The other side of the boundary. Five is in and six is out, so a 2/2
+/// pumped to a 3/3 is exactly one point too big.
+#[test]
+fn six_is_one_too_many() {
+    let (mut game, cut, victim) = staged(cards::GRIZZLY_BEARS);
+
+    pump(&mut game, victim, 1, 1);
+
+    assert!(
+        !offered_at(&game, cut, victim),
+        "three and three is six, and six is not five or less",
+    );
+}
+
+/// "Destroy" is destruction and nothing more. A Darksteel Myr totals one and
+/// is a perfectly legal target -- the spell resolves, does what it says, and
+/// the Myr shrugs it off.
+#[test]
+fn an_indestructible_creature_is_targeted_and_survives() {
+    let (mut game, cut, victim) = staged(cards::DARKSTEEL_MYR);
+    assert!(
+        offered_at(&game, cut, victim),
+        "nothing about the target condition asks whether it can be destroyed",
+    );
+
+    let action = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(|action| {
+            matches!(action, Action::CastSpell { card, choices, .. }
+                if *card == cut
+                    && choices
+                        .targets()
+                        .iter()
+                        .flat_map(crate::casting::TargetSelection::targets)
+                        .any(|target| *target == Target::Permanent(victim)))
+        })
+        .expect("just checked it is offered");
+    game.apply(PlayerId::One, action).expect("it is cast");
+    drain_pending(&mut game);
+    game.check_state_based_actions();
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.id == victim),
+        "and destruction is what it is immune to",
+    );
+    assert!(
+        game.players[PlayerId::One.index()]
+            .graveyard
+            .iter()
+            .any(|card| card.definition == cards::CUT_DOWN),
+        "the spell resolved rather than fizzling: it had a legal target",
+    );
+}
