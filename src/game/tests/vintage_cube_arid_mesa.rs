@@ -125,3 +125,48 @@ fn whichever_is_named_is_the_one_that_comes() {
         );
     }
 }
+
+/// What the Mesa is, as against what it finds: a land with no mana ability
+/// of its own, whose one ability names no timing. It taps for nothing on
+/// anybody's turn, and the crack is offered in their end step -- which is
+/// when a fetchland is usually spent, so the shuffle is behind you before
+/// your draw.
+#[test]
+fn it_makes_no_mana_and_cracks_on_their_turn_too() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    let mesa = game
+        .put_onto_battlefield(PlayerId::One, cards::ARID_MESA)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    game.players[PlayerId::One.index()].library.clear();
+    game.players[PlayerId::One.index()]
+        .library
+        .push(card(97_500, cards::MOUNTAIN, PlayerId::One));
+
+    // Their turn, their end step, and the Mesa still under you.
+    game.active_player = PlayerId::Two;
+    game.turns_started = [5, 6];
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    let actions = game.legal_actions(PlayerId::One);
+    assert!(
+        !actions.iter().any(
+            |action| matches!(action, Action::ActivateManaAbility { source, .. } if *source == mesa)
+        ),
+        "it prints no mana ability at all",
+    );
+    let crack = actions
+        .into_iter()
+        .find(|action| matches!(action, Action::ActivateAbility { source, .. } if *source == mesa))
+        .expect("and the one ability it does print is offered on their turn");
+    game.apply(PlayerId::One, crack).expect("it activates");
+    pass_priority_pair(&mut game);
+
+    assert_eq!(
+        offered(&game),
+        vec![cards::MOUNTAIN],
+        "the search is under way in their end step",
+    );
+}
