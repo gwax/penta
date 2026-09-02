@@ -455,3 +455,54 @@ fn their_third_draw_grows_nothing() {
         "and your own third is still your own third, counted separately",
     );
 }
+
+/// Equip is an ordinary equip ability under the flavour name, and carries
+/// the ordinary two restrictions with it: "target creature you control", and
+/// only when you could cast a sorcery. Their bear is never a legal wearer,
+/// and on their turn nobody is.
+#[test]
+fn equip_names_only_your_own_creatures_and_only_on_your_turn() {
+    let (mut game, planisphere) = staged(&[]);
+    let mine = game
+        .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+        .expect("cataloged");
+    let theirs = game
+        .put_onto_battlefield(PlayerId::Two, cards::SERRA_ANGEL)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    settle(&mut game);
+
+    let equips_at = |game: &Game, wanted: GameObjectId| {
+        game.legal_actions(PlayerId::One)
+            .into_iter()
+            .any(|action| match action {
+                Action::ActivateAbility {
+                    source, targets, ..
+                } => {
+                    source == planisphere
+                        && targets.iter().any(|selection| {
+                            selection.targets().iter().any(
+                                |target| matches!(target, Target::Permanent(id) if *id == wanted),
+                            )
+                        })
+                }
+                _ => false,
+            })
+    };
+
+    assert!(equips_at(&game, mine), "your own bear may wear it");
+    assert!(
+        !equips_at(&game, theirs),
+        "and their Angel never may, however much mana is up",
+    );
+
+    // Their turn, same board and the same five mana.
+    game.active_player = PlayerId::Two;
+    game.turns_started = [5, 6];
+    game.priority = PlayerId::One;
+
+    assert!(
+        !equips_at(&game, mine),
+        "equip waits for a turn of yours, like the sorcery it is timed as",
+    );
+}
