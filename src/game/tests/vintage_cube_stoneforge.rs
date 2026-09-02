@@ -284,3 +284,58 @@ fn she_cannot_put_anything_down_the_turn_she_arrives() {
         "the tap in the cost is what she has not got yet",
     );
 }
+
+/// Nothing on the ability says when: two mana and a tap at the end of their
+/// turn puts a five-mana Batterskull down for good, which is the play the
+/// card is banned for. What it costs is what she asks, not what the
+/// Equipment costs.
+#[test]
+fn she_puts_a_batterskull_down_on_their_end_step() {
+    let mut game = ready_game();
+    game.battlefield.clear();
+    game.players[0].hand.clear();
+    game.players[0].library.clear();
+    let mystic = game
+        .put_onto_battlefield(PlayerId::One, cards::STONEFORGE_MYSTIC)
+        .expect("cataloged");
+    drain_pending(&mut game);
+    for permanent in &mut game.battlefield {
+        permanent.entered_controller_turn = 0;
+    }
+    game.players[0]
+        .hand
+        .push(card(98_300, cards::BATTERSKULL, PlayerId::One));
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::White, 1);
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 1);
+
+    // Their turn, their end step, and she is still holding priority's half
+    // of it: an activated ability waits for nothing but priority.
+    game.turns_started = [5, 6];
+    game.active_player = PlayerId::Two;
+    game.step = Step::End;
+    game.priority = PlayerId::One;
+
+    let activate = game
+        .legal_actions(PlayerId::One)
+        .into_iter()
+        .find(
+            |action| matches!(action, Action::ActivateAbility { source, .. } if *source == mystic),
+        )
+        .expect("their end step is as good a time as any");
+    game.apply(PlayerId::One, activate)
+        .expect("the ability activates");
+    settle(&mut game);
+    drain_pending(&mut game);
+
+    assert!(
+        game.battlefield
+            .iter()
+            .any(|permanent| permanent.card.definition == cards::BATTERSKULL),
+        "five mana of Equipment for two mana and a tap",
+    );
+    assert_eq!(
+        game.players[0].mana_pool.total(),
+        0,
+        "and what it cost is what she asks",
+    );
+}
