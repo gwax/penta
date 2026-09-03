@@ -36,6 +36,7 @@ use crate::ids::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, GameObjectId,
     GrantId, ModeId, PhysicalCardId, PlayOptionId, PlayerId, TargetIndex, TargetSlotId,
 };
+use crate::prepared_engine::{PreparedEffect, PreparedEngine};
 use crate::rng::ReplayRng;
 #[cfg(test)]
 use crate::rules;
@@ -114,6 +115,7 @@ mod phasing;
 mod play_permissions;
 mod plot;
 mod pregame;
+mod prepared_host;
 mod prevention_state;
 mod procedure_state;
 mod proliferate;
@@ -556,6 +558,9 @@ pub struct Game {
     seed: u64,
     rng: ReplayRng,
     catalog: CardCatalog,
+    /// Derived execution programs and catalog summaries. This is process-local
+    /// configuration, not deterministic game state, and is rebuilt on restore.
+    prepared_engine: PreparedEngine,
     #[allow(dead_code)] // Reserved for backing validation and future meld actions.
     physical_cards: Vec<PhysicalCard>,
     players: [PlayerState; 2],

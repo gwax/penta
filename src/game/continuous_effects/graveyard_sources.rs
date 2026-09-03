@@ -40,6 +40,11 @@ impl Game {
                     .graveyard
                     .iter()
                     .filter(|card| {
+                        if let Some(supplies) =
+                            self.prepared_supplies_graveyard_static(card.definition)
+                        {
+                            return supplies;
+                        }
                         let mut supplies_graveyard_static = false;
                         self.for_each_printed_card_ability(
                             card,
@@ -70,6 +75,7 @@ impl Game {
             .collect()
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn visit_static_source_effects(
         &self,
         input: StaticEffectSource<'_>,
@@ -77,9 +83,27 @@ impl Game {
         prospective: Option<&Permanent>,
         kind: StaticEffectKind,
         land_type_sources: &[(&Permanent, crate::game::ContinuousEffectTimestamp)],
+        prepared: Option<&crate::prepared_engine::PreparedStaticProgram>,
         visitor: &mut impl FnMut(StaticAppliedEffect) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         let source = input.permanent;
+        let source_presentation = Self::effective_rules_source(source);
+        if let Some(program) = prepared {
+            if input.zone == ZoneKind::Battlefield
+                && self.rules_text_abilities_removed_from_sources(source, land_type_sources)
+            {
+                return ControlFlow::Continue(());
+            }
+            return self.visit_prepared_static_source_effects(
+                input,
+                source_presentation,
+                affected,
+                prospective,
+                kind,
+                program,
+                visitor,
+            );
+        }
         let Some(rules) = self.effective_rules(source) else {
             return ControlFlow::Continue(());
         };
@@ -106,7 +130,6 @@ impl Game {
         {
             return ControlFlow::Continue(());
         }
-        let source_presentation = Self::effective_rules_source(source);
         for attached in rules.indexed_abilities() {
             let ability = attached.definition;
             let DeclarativeAbilityDef::Static(definition) = ability.definition else {
@@ -139,6 +162,99 @@ impl Game {
                 .is_break()
             {
                 return ControlFlow::Break(());
+            }
+        }
+        ControlFlow::Continue(())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn visit_prepared_static_source_effects(
+        &self,
+        input: StaticEffectSource<'_>,
+        source_presentation: ObjectCharacteristics,
+        affected: &Permanent,
+        prospective: Option<&Permanent>,
+        kind: StaticEffectKind,
+        program: &crate::prepared_engine::PreparedStaticProgram,
+        visitor: &mut impl FnMut(StaticAppliedEffect) -> ControlFlow<()>,
+    ) -> ControlFlow<()> {
+        let source = input.permanent;
+        let lane = kind.prepared_lane();
+        for ability in program.abilities() {
+            if !ability.source_zones.contains(&input.zone) {
+                continue;
+            }
+            let origin = Self::authored_ability_origin(source_presentation, ability.id);
+            if input.check_layer_survival
+                && !self.ability_survives_resolved_operations(source, origin)
+            {
+                continue;
+            }
+            let Some(applications) = &ability.applications else {
+                let mut traversal = StaticEffectTraversal {
+                    source,
+                    source_timestamp: input.timestamp,
+                    source_presentation,
+                    source_origin: origin,
+                    affected,
+                    prospective,
+                    next_grant: 0,
+                    next_component_order: 0,
+                };
+                if self
+                    .visit_static_effect(
+                        ability.reference_effect,
+                        &mut traversal,
+                        kind,
+                        visitor,
+                    )
+                    .is_break()
+                {
+                    return ControlFlow::Break(());
+                }
+                continue;
+            };
+            for application in applications {
+                if !application.supplies(lane) {
+                    continue;
+                }
+                let _type_layer_selection = application
+                    .starts_in_type_layer
+                    .then(StaticSetCharacteristicLayerGuard::enter)
+                    .flatten();
+                if !self.static_recipient_matches(
+                    application.recipient,
+                    source,
+                    affected,
+                    prospective,
+                ) || !application.trigger_conditions.iter().all(|(condition, expected)| {
+                    self.trigger_condition_holds(
+                        condition,
+                        source.card.id,
+                        source.controller,
+                        TriggerContext::empty(),
+                        None,
+                        None,
+                    ) == *expected
+                }) {
+                    continue;
+                }
+                for component in &application.components {
+                    if component.supplies(lane)
+                        && visitor(StaticAppliedEffect {
+                            source: source.card.id,
+                            timestamp: input.timestamp,
+                            source_presentation,
+                            source_origin: origin,
+                            grant: component.grant,
+                            component_order: component.component_order,
+                            effect: component.effect,
+                        })
+                        .is_break()
+                    {
+                        return ControlFlow::Break(());
+                    }
+                }
             }
         }
         ControlFlow::Continue(())

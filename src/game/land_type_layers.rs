@@ -143,6 +143,9 @@ impl Game {
     }
 
     fn supplies_land_type_effect_uncached(&self, source: &Permanent) -> bool {
+        if let Some(supplies) = self.prepared_supplies_land_type_effect(source) {
+            return supplies;
+        }
         self.with_effective_rules(source, |rules| {
             rules
                 .ability_clauses()
@@ -979,4 +982,5 @@ impl Game {
 }
 
 include!("land_type_layers/effect_inspection.rs");
+include!("land_type_layers/prepared.rs");
 include!("land_type_layers/query_memo.rs");

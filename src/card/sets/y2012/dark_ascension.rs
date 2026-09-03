@@ -826,10 +826,7 @@ pub(in crate::card::sets) static DIVINATION: CardRecord = CardRecord::new_with_l
     CardSet::DarkAscension,
     CardRules::new_sorcery(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
         "Draw two cards.",
-        EffectDef::DrawCards {
-            recipient: EffectRecipientDef::Controller,
-            amount: ValueDef::Constant(2),
-        },
+        abilities::draw_cards(ValueDef::Constant(2)),
     )),
 );
 

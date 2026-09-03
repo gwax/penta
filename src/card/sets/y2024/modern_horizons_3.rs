@@ -1354,10 +1354,7 @@ pub(in crate::card::sets) static PSYCHIC_FROG: CardRecord = CardRecord::new_with
         AbilityDef::triggered(
             "Whenever this creature deals combat damage to a player or planeswalker, draw a card.",
             TriggerEventDef::combat_damage_to_player_or_planeswalker(ObjectPredicateDef::Source),
-            EffectDef::DrawCards {
-                recipient: EffectRecipientDef::Controller,
-                amount: ValueDef::Constant(1),
-            },
+            abilities::draw_cards(ValueDef::Constant(1)),
         ),
         // No mana in either cost, and no tap: the Frog grows as often as the hand
         // allows and flies as often as the graveyard does.

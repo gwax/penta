@@ -1,21 +1,23 @@
 mod player_rules;
+mod source_visitation;
 mod untap_limits;
 
 use std::cell::Cell;
 
 #[cfg(test)]
-use super::{AbilityId, AbilityOrigin, ObjectCharacteristics};
+use super::{AbilityId, AbilityOrigin};
 use super::{
     AbilityOperationDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
     AppliedRuleEffect, CardDefinitionId, CardPartId, CardRules, CardSet, CardType, CardTypeSet,
     CharacteristicContext, CharacteristicOperationDef, ColorSet, ContinuousEffectExpiration,
     ControlFlow, DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EffectRecipientSetDef, Game,
-    GameObjectId, GrantId, KeywordAbility, ManaColor, ObjectPredicateDef, ObjectRefDef,
-    ObjectSetDef, Permanent, PlayerId, PlayerRelation, ResolvedContinuousEffect,
+    GameObjectId, GrantId, KeywordAbility, ManaColor, ObjectCharacteristics, ObjectPredicateDef,
+    ObjectRefDef, ObjectSetDef, Permanent, PlayerId, PlayerRelation, ResolvedContinuousEffect,
     ResolvedContinuousEffectKind, RetiredObject, SetOperationDef, StackAbilityResolver,
     StackObject, StaticAppliedEffect, StaticEffectTraversal, Target, TargetIndex,
     TriggerConditionDef, TriggerContext, TriggerEventObject, ZoneKind,
 };
+use crate::prepared_engine::PreparedStaticLane;
 
 thread_local! {
     /// Guards the live set-characteristic walk when a static recipient query
@@ -84,6 +86,18 @@ impl StaticEffectKind {
                     AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(_)),
                 )
         )
+    }
+
+    const fn prepared_lane(self) -> PreparedStaticLane {
+        match self {
+            Self::Any => PreparedStaticLane::Any,
+            Self::Rules => PreparedStaticLane::Rules,
+            Self::CardTypes => PreparedStaticLane::CardTypes,
+            Self::Colors => PreparedStaticLane::Colors,
+            Self::Abilities => PreparedStaticLane::Abilities,
+            Self::Subtypes => PreparedStaticLane::Subtypes,
+            Self::PowerToughness => PreparedStaticLane::PowerToughness,
+        }
     }
 }
 
@@ -222,97 +236,6 @@ impl Game {
             }
         })
         .is_break()
-    }
-
-    pub(super) fn visit_static_applied_effects(
-        &self,
-        affected: &Permanent,
-        kind: StaticEffectKind,
-        mut visitor: impl FnMut(StaticAppliedEffect) -> ControlFlow<()>,
-    ) -> ControlFlow<()> {
-        // Emblems sit outside every zone but their abilities apply, so they
-        // are walked alongside the battlefield and nowhere else.
-        let land_type_sources = self.land_type_effect_sources(None);
-        for source in self.battlefield.iter().chain(self.emblems.iter()) {
-            if self
-                .visit_static_source_effects(
-                    StaticEffectSource::battlefield(source, source.timestamp),
-                    affected,
-                    None,
-                    kind,
-                    &land_type_sources,
-                    &mut visitor,
-                )
-                .is_break()
-            {
-                return ControlFlow::Break(());
-            }
-        }
-        for source in self.graveyard_static_sources() {
-            if self
-                .visit_static_source_effects(
-                    StaticEffectSource::graveyard(&source),
-                    affected,
-                    None,
-                    kind,
-                    &land_type_sources,
-                    &mut visitor,
-                )
-                .is_break()
-            {
-                return ControlFlow::Break(());
-            }
-        }
-        ControlFlow::Continue(())
-    }
-
-    pub(super) fn visit_static_applied_effects_with_prospective(
-        &self,
-        affected: &Permanent,
-        prospective: &Permanent,
-        kind: StaticEffectKind,
-        mut visitor: impl FnMut(StaticAppliedEffect) -> ControlFlow<()>,
-    ) -> ControlFlow<()> {
-        let prospective_source = (prospective.card.id == affected.card.id).then_some(prospective);
-        let land_type_sources = self.land_type_effect_sources(prospective_source);
-        for source in self.battlefield.iter().chain(prospective_source) {
-            let timestamp = if prospective_source
-                .is_some_and(|prospective| std::ptr::eq(source, prospective))
-            {
-                self.prospective_continuous_effect_timestamp()
-            } else {
-                source.timestamp
-            };
-            if self
-                .visit_static_source_effects(
-                    StaticEffectSource::battlefield(source, timestamp),
-                    affected,
-                    prospective_source,
-                    kind,
-                    &land_type_sources,
-                    &mut visitor,
-                )
-                .is_break()
-            {
-                return ControlFlow::Break(());
-            }
-        }
-        for source in self.graveyard_static_sources() {
-            if self
-                .visit_static_source_effects(
-                    StaticEffectSource::graveyard(&source),
-                    affected,
-                    prospective_source,
-                    kind,
-                    &land_type_sources,
-                    &mut visitor,
-                )
-                .is_break()
-            {
-                return ControlFlow::Break(());
-            }
-        }
-        ControlFlow::Continue(())
     }
 
     pub(super) fn visit_static_effect(
@@ -871,6 +794,7 @@ impl Game {
         let primary = match ability.resolver {
             StackAbilityResolver::Declarative(effect)
             | StackAbilityResolver::DeclarativeIgnoringTargetFizzle(effect) => Some(effect),
+            StackAbilityResolver::Prepared { reference, .. } => Some(reference),
             StackAbilityResolver::CastOffer(_) => None,
         };
         primary

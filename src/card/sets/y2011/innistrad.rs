@@ -2354,13 +2354,7 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new_with_
     CardArt::new("53e44060-a9a2-4095-9f5b-f60297525315", "Anthony Francisco"),
     CardSet::Innistrad,
     CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
-        AbilityDef::spell(
-            "Draw a card.",
-            EffectDef::DrawCards {
-                recipient: EffectRecipientDef::Controller,
-                amount: ValueDef::Constant(1),
-            },
-        ),
+        AbilityDef::spell("Draw a card.", abilities::draw_cards(ValueDef::Constant(1))),
         abilities::flashback(mana_cost!("{2}{U}")),
     ]),
 );

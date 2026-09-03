@@ -1381,10 +1381,7 @@ pub(in crate::card::sets) static SCROLL_THIEF: CardRecord = CardRecord::new_with
         AbilityDef::triggered(
             "Whenever this creature deals combat damage to a player, draw a card.",
             TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
-            EffectDef::DrawCards {
-                recipient: EffectRecipientDef::Controller,
-                amount: ValueDef::Constant(1),
-            },
+            abilities::draw_cards(ValueDef::Constant(1)),
         ),
     ),
 );

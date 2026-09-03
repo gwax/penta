@@ -29,6 +29,7 @@ pub mod game;
 pub mod ids;
 pub mod poc;
 pub mod policy;
+mod prepared_engine;
 pub mod protocol;
 mod rng;
 pub mod rules;

@@ -3,7 +3,7 @@ mod name;
 mod validation;
 
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use self::name::normalize_name;
 use self::validation::validate_composition;
@@ -28,6 +28,7 @@ use self::validation::{
 #[derive(Clone, Debug, Default)]
 pub struct CardCatalog {
     entries: Arc<CatalogEntries>,
+    process_cache_identity: Arc<u8>,
 }
 
 #[derive(Debug, Default)]
@@ -175,7 +176,6 @@ impl CardCatalog {
             }
             entries.insert_definition(definition);
         }
-
         for (definition, printing) in definition_printings {
             if printing.id.definition != definition {
                 return Err(CatalogError::MismatchedPrintingDefinition {
@@ -191,7 +191,17 @@ impl CardCatalog {
         entries.sort_definitions_by_id();
         Ok(Self {
             entries: Arc::new(entries),
+            process_cache_identity: Arc::new(0),
         })
+    }
+
+    /// Stable process-local identity for caches derived from this immutable
+    /// catalog. The card model does not own or name those derived artifacts.
+    pub(crate) fn process_cache_identity(&self) -> (usize, Weak<u8>) {
+        (
+            Arc::as_ptr(&self.process_cache_identity) as usize,
+            Arc::downgrade(&self.process_cache_identity),
+        )
     }
 
     #[must_use]
@@ -204,6 +214,22 @@ impl CardCatalog {
     #[must_use]
     pub fn definitions(&self) -> Vec<&CardDefinition> {
         self.entries.definitions.iter().collect()
+    }
+
+    /// Definitions in stable ID order without allocating a temporary listing.
+    pub(crate) fn ordered_definitions(
+        &self,
+    ) -> impl ExactSizeIterator<Item = &CardDefinition> + '_ {
+        self.entries.definitions.iter()
+    }
+
+    /// Definitions in storage order for internal consumers that do not expose
+    /// iteration order. Public catalog views continue to use [`Self::definitions`]
+    /// so their stable ID ordering remains part of the interface.
+    pub(crate) fn unordered_definitions(
+        &self,
+    ) -> impl ExactSizeIterator<Item = &CardDefinition> + '_ {
+        self.entries.definitions.iter()
     }
 
     /// Looks up a card definition ID by its case-insensitive canonical name.

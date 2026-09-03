@@ -554,6 +554,15 @@ pub const fn connive() -> EffectDef {
 
 include!("abilities/object_collections.rs");
 
+/// "Draw N cards" as one semantic effect.
+#[must_use]
+pub const fn draw_cards(amount: ValueDef) -> EffectDef {
+    EffectDef::DrawCards {
+        recipient: EffectRecipientDef::Controller,
+        amount,
+    }
+}
+
 static CONNIVE_STEPS: [EffectDef; 2] = [
     EffectDef::DrawCards {
         recipient: EffectRecipientDef::Controller,
