@@ -3,11 +3,11 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AggregateOperationDef, AppliedEffectDef,
-    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef,
-    ChooseDef, CounterKind, EffectDef, EffectRecipientDef, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, ObjectValueAggregateDef,
-    ObjectValueDef, PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    BasicLandType, CardArt, CardNameDef, CardRules, CardSet, CardSupertype, CardType,
+    ChoiceVisibilityDef, ChooseDef, CounterKind, EffectDef, EffectRecipientDef,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    ObjectSetFilterDef, ObjectValueAggregateDef, ObjectValueDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -93,8 +93,7 @@ pub(in crate::card::sets) static EXTIRPATE: CardRecord = CardRecord::new(
                         )),
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
-                        candidates: ObjectSetDef::SharingNameWithIn {
-                            reference: ObjectRefDef::Binding(Binding!("extirpate_target")),
+                        candidates: ObjectSetDef::Matching {
                             objects: &ObjectSetDef::Query(ObjectQueryDef::owned_by(
                                 ObjectPredicateDef::Any,
                                 &[ZoneKind::Graveyard],
@@ -102,6 +101,11 @@ pub(in crate::card::sets) static EXTIRPATE: CardRecord = CardRecord::new(
                                     Binding!("extirpate_target"),
                                 ))),
                             )),
+                            object: ObjectSetFilterDef::Predicate(
+                                &ObjectPredicateDef::NameEquals(CardNameDef::Object(
+                                    ObjectRefDef::Binding(Binding!("extirpate_target")),
+                                )),
+                            ),
                         },
                         exclude: None,
                         minimum: 0,
@@ -119,8 +123,7 @@ pub(in crate::card::sets) static EXTIRPATE: CardRecord = CardRecord::new(
                         binding: ObjectChoiceBindingDef::Objects(Binding!("extirpate_hand")),
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
-                        candidates: ObjectSetDef::SharingNameWithIn {
-                            reference: ObjectRefDef::Binding(Binding!("extirpate_target")),
+                        candidates: ObjectSetDef::Matching {
                             objects: &ObjectSetDef::Query(ObjectQueryDef::owned_by(
                                 ObjectPredicateDef::Any,
                                 &[ZoneKind::Hand],
@@ -128,6 +131,11 @@ pub(in crate::card::sets) static EXTIRPATE: CardRecord = CardRecord::new(
                                     Binding!("extirpate_target"),
                                 ))),
                             )),
+                            object: ObjectSetFilterDef::Predicate(
+                                &ObjectPredicateDef::NameEquals(CardNameDef::Object(
+                                    ObjectRefDef::Binding(Binding!("extirpate_target")),
+                                )),
+                            ),
                         },
                         exclude: None,
                         minimum: 0,
@@ -145,8 +153,7 @@ pub(in crate::card::sets) static EXTIRPATE: CardRecord = CardRecord::new(
                         binding: ObjectChoiceBindingDef::Objects(Binding!("extirpate_library")),
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
-                        candidates: ObjectSetDef::SharingNameWithIn {
-                            reference: ObjectRefDef::Binding(Binding!("extirpate_target")),
+                        candidates: ObjectSetDef::Matching {
                             objects: &ObjectSetDef::Query(ObjectQueryDef::owned_by(
                                 ObjectPredicateDef::Any,
                                 &[ZoneKind::Library],
@@ -154,6 +161,11 @@ pub(in crate::card::sets) static EXTIRPATE: CardRecord = CardRecord::new(
                                     Binding!("extirpate_target"),
                                 ))),
                             )),
+                            object: ObjectSetFilterDef::Predicate(
+                                &ObjectPredicateDef::NameEquals(CardNameDef::Object(
+                                    ObjectRefDef::Binding(Binding!("extirpate_target")),
+                                )),
+                            ),
                         },
                         exclude: None,
                         minimum: 0,

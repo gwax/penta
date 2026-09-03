@@ -4,10 +4,11 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind, DeckConstructionDef,
-    EffectDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, PlayerRelation,
-    SacrificedAmountDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, abilities,
+    CardArt, CardNameDef, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef,
+    CounterKind, DeckConstructionDef, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
+    ObjectSetFilterDef, PlayerRefDef, PlayerRelation, SacrificedAmountDef, TokenCharacteristics,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -28,12 +29,14 @@ pub(in crate::card::sets) static BANISHMENT: CardRecord = CardRecord::new(
                 owner: None,
             })],
             abilities::exile_until_source_leaves(EffectRecipientDef::objects(
-                ObjectSetDef::SharingNameWithIn {
-                    reference: ObjectRefDef::Target(TargetIndex::PRIMARY),
+                ObjectSetDef::Matching {
                     objects: &ObjectSetDef::Query(ObjectQueryDef::matching(
                         ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::Opponent,
+                    )),
+                    object: ObjectSetFilterDef::Predicate(&ObjectPredicateDef::NameEquals(
+                        CardNameDef::Object(ObjectRefDef::Target(TargetIndex::PRIMARY)),
                     )),
                 },
             )),
