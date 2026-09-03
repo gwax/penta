@@ -607,6 +607,29 @@ fn long_lived_composite_ability_changes_accept_shared_activated_grants() {
 }
 
 #[test]
+fn supertype_changes_are_static_until_checkpoints_can_store_resolved_ones() {
+    let effect = AppliedEffectDef::add_supertype(CardSupertype::Legendary);
+    let static_effect = EffectDef::StaticApply {
+        recipient: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Any,
+        ),
+        effect,
+    };
+
+    assert!(shared_static_effect(
+        &[ZoneKind::Battlefield],
+        static_effect,
+    ));
+    assert!(!shared_resolving_apply(
+        EffectRecipientDef::Target(TargetIndex::PRIMARY),
+        effect,
+        ResolvedEffectDurationDef::UntilEndOfTurn,
+    ));
+}
+
+#[test]
 fn source_tapped_duration_accepts_only_supported_recursive_leaves() {
     static SUPPORTED: [AppliedEffectDef; 2] = [
         AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),

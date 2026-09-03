@@ -415,6 +415,10 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
         AppliedEffectDef::Composite(effects) => {
             !effects.is_empty() && effects.iter().copied().all(shared_resolving_applied_effect)
         }
+        // Resolved supertype changes have no checkpoint representation yet;
+        // stack-object rules use `AppliedStackEffect` instead of this path.
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Supertypes(_))
+        | AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) => false,
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
             AbilityOperationDef::Add(ability),
         )) => match ability.definition {
@@ -437,9 +441,6 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
             | DeclarativeAbilityDef::SpecialAction(_)
             | DeclarativeAbilityDef::DeckConstruction(_) => false,
         },
-        // Stack-object rules use `AppliedStackEffect`; every other typed rule
-        // is stored on a permanent with this Apply's timestamp and duration.
-        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) => false,
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => true,
     }
 }

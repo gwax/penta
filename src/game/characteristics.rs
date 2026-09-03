@@ -324,6 +324,7 @@ impl Game {
         let rules = self
             .effective_rules(permanent)
             .expect("a battlefield object has effective rules");
+        let supertypes = self.permanent_supertypes(permanent).unwrap_or_default();
         TriggerEventObject {
             id: permanent.card.id,
             token: permanent.card.definition.is_token(),
@@ -338,13 +339,7 @@ impl Game {
             power: self.power_ignoring_static_effects(permanent),
             toughness: self.toughness_ignoring_static_effects(permanent),
             keywords: self.keyword_mask(permanent, None),
-            supertypes: {
-                let mut supertypes = [false; CardSupertype::COUNT];
-                for supertype in CardSupertype::ALL {
-                    supertypes[supertype.index()] = rules.has_supertype(supertype);
-                }
-                supertypes
-            },
+            supertypes: CardSupertype::ALL.map(|supertype| supertypes.contains(supertype)),
             attacking: permanent.attacking,
             tapped: permanent.tapped,
             attacked_this_turn: permanent.attacked_this_turn,
@@ -383,6 +378,9 @@ impl Game {
         let rules = self
             .effective_rules(permanent)
             .expect("a battlefield object has effective rules");
+        let supertypes = self
+            .permanent_supertypes_with_prospective(permanent, prospective)
+            .unwrap_or_default();
         TriggerEventObject {
             id: permanent.card.id,
             token: permanent.card.definition.is_token(),
@@ -397,13 +395,7 @@ impl Game {
             power: self.power_ignoring_static_effects(permanent),
             toughness: self.toughness_ignoring_static_effects(permanent),
             keywords: self.keyword_mask(permanent, Some(prospective)),
-            supertypes: {
-                let mut supertypes = [false; CardSupertype::COUNT];
-                for supertype in CardSupertype::ALL {
-                    supertypes[supertype.index()] = rules.has_supertype(supertype);
-                }
-                supertypes
-            },
+            supertypes: CardSupertype::ALL.map(|supertype| supertypes.contains(supertype)),
             attacking: permanent.attacking,
             tapped: permanent.tapped,
             attacked_this_turn: permanent.attacked_this_turn,

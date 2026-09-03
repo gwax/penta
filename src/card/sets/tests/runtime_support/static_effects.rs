@@ -575,6 +575,14 @@ pub(in super::super) fn shared_static_applied_effect(
             | CharacteristicOperationDef::Colors(_)
             | CharacteristicOperationDef::Subtypes(_),
         ) => shared_static_animation_query(recipient),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Supertypes(operation)) => {
+            let supertypes = match operation {
+                SetOperationDef::Add(supertypes)
+                | SetOperationDef::Remove(supertypes)
+                | SetOperationDef::Set(supertypes) => supertypes,
+            };
+            !supertypes.is_empty() && shared_static_animation_query(recipient)
+        }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::CreatureTypes(_)) => {
             shared_direct_characteristic_recipient(recipient)
         }

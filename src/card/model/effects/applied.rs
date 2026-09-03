@@ -119,6 +119,9 @@ pub enum CharacteristicOperationDef {
     /// could have written down.
     ChosenBasicLandType,
     CardTypes(SetOperationDef<CardTypeSet>),
+    /// Supertype operations in layer 4. A set value preserves combinations
+    /// such as Basic Snow rather than treating the type line as one choice.
+    Supertypes(SetOperationDef<CardSupertypeSet>),
     Colors(SetOperationDef<ColorSet>),
     /// A color operation whose value is read from the source permanent.
     Color(SetOperationDef<ManaTypeDef>),
@@ -807,6 +810,13 @@ impl AppliedEffectDef {
     pub const fn add_card_types(types: CardTypeSet) -> Self {
         Self::Characteristic(CharacteristicOperationDef::CardTypes(SetOperationDef::Add(
             types,
+        )))
+    }
+
+    #[must_use]
+    pub const fn add_supertype(supertype: CardSupertype) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::Supertypes(SetOperationDef::Add(
+            CardSupertypeSet::single(supertype),
         )))
     }
 

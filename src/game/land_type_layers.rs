@@ -493,8 +493,8 @@ impl Game {
                 .permanent_types(affected)
                 .is_some_and(|types| types.contains(card_type)),
             ObjectPredicateDef::Supertype(supertype) => self
-                .effective_rules(affected)
-                .is_some_and(|rules| rules.has_supertype(supertype)),
+                .permanent_supertypes(affected)
+                .is_some_and(|supertypes| supertypes.contains(supertype)),
             ObjectPredicateDef::All(predicates) => predicates.iter().all(|predicate| {
                 self.land_type_object_predicate_matches(*predicate, source, affected)
             }),

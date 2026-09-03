@@ -342,8 +342,8 @@ impl Game {
             .battlefield
             .iter()
             .filter(|permanent| {
-                self.effective_rules(permanent)
-                    .is_some_and(|rules| rules.has_supertype(CardSupertype::World))
+                self.permanent_supertypes(permanent)
+                    .is_some_and(|supertypes| supertypes.contains(CardSupertype::World))
             })
             .map(|permanent| (permanent.card.id, permanent.timestamp))
             .collect::<Vec<_>>();
@@ -407,18 +407,23 @@ impl Game {
     fn legend_rule_group(&self) -> Option<(PlayerId, Vec<GameObjectId>)> {
         for permanent in &self.battlefield {
             if !self
-                .effective_rules(permanent)
-                .is_some_and(|rules| rules.has_supertype(CardSupertype::Legendary))
+                .permanent_supertypes(permanent)
+                .is_some_and(|supertypes| supertypes.contains(CardSupertype::Legendary))
             {
                 continue;
             }
-            let name_source = Self::effective_rules_source(permanent);
+            let Some(name) = self.effective_permanent_name(permanent) else {
+                continue;
+            };
             let group = self
                 .battlefield
                 .iter()
                 .filter(|other| {
                     other.controller == permanent.controller
-                        && Self::effective_rules_source(other) == name_source
+                        && self
+                            .permanent_supertypes(other)
+                            .is_some_and(|supertypes| supertypes.contains(CardSupertype::Legendary))
+                        && self.effective_permanent_name(other).as_deref() == Some(name.as_ref())
                 })
                 .map(|other| other.card.id)
                 .collect::<Vec<_>>();

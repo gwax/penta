@@ -145,12 +145,17 @@ fn prepared_static_program_matches_reference_lanes_and_component_identity() {
     let plague_id = plague.card.id;
     game.battlefield.push(plague);
 
+    let leyline = creature(98_203, cards::LEYLINE_OF_SINGULARITY, PlayerId::One);
+    let leyline_id = leyline.card.id;
+    game.battlefield.push(leyline);
+
     game.active_player = PlayerId::One;
-    for affected in [kaito_id, opalescence_id, plague_id] {
+    for affected in [kaito_id, opalescence_id, plague_id, leyline_id] {
         for kind in [
             StaticEffectKind::Any,
             StaticEffectKind::Rules,
             StaticEffectKind::CardTypes,
+            StaticEffectKind::Supertypes,
             StaticEffectKind::Colors,
             StaticEffectKind::Abilities,
             StaticEffectKind::Subtypes,

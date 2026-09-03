@@ -11,6 +11,7 @@ impl Game {
                 CharacteristicOperationDef::ChosenBasicLandType
                 | CharacteristicOperationDef::BasicLandTypes(_)
                 | CharacteristicOperationDef::CardTypes(_)
+                | CharacteristicOperationDef::Supertypes(_)
                 | CharacteristicOperationDef::CreatureTypes(_)
                 | CharacteristicOperationDef::Subtypes(_),
             ) => true,

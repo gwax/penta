@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ReplacementEffectDef,
-    ReplacementEventDef, ValueDef, ZoneKind, abilities,
+    AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype,
+    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    ReplacementEffectDef, ReplacementEventDef, ValueDef, ZoneKind, abilities,
 };
 use crate::mana_cost;
 
@@ -37,7 +37,6 @@ pub(in crate::card::sets) static LEYLINE_OF_THE_MEEK: CardRecord = CardRecord::n
 );
 
 // GPT 29 — Leyline of Singularity
-// Audit: unsupported — Needs a global supertype-changing continuous effect.
 pub(in crate::card::sets) static LEYLINE_OF_SINGULARITY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d40d7e5c-3b6d-4e42-b495-b3cd7ae0d808"),
     "Leyline of Singularity",
@@ -46,7 +45,20 @@ pub(in crate::card::sets) static LEYLINE_OF_SINGULARITY: CardRecord = CardRecord
         "Zoltan Boros & Gabor Szikszai",
     ),
     CardSet::Guildpact,
-    CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{2}{U}{U}")).with_abilities(&[
+        abilities::begin_game_on_battlefield("If this card is in your opening hand, you may begin the game with it on the battlefield."),
+        AbilityDef::static_ability(
+            "All nonland permanents are legendary.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                effect: AppliedEffectDef::add_supertype(CardSupertype::Legendary),
+            },
+        ),
+    ]),
 );
 
 // GPT 52 — Leyline of the Void

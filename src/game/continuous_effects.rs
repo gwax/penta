@@ -8,14 +8,15 @@ use std::cell::Cell;
 use super::{AbilityId, AbilityOrigin};
 use super::{
     AbilityOperationDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
-    AppliedRuleEffect, CardDefinitionId, CardPartId, CardRules, CardSet, CardType, CardTypeSet,
-    CharacteristicContext, CharacteristicOperationDef, ColorSet, ContinuousEffectExpiration,
-    ControlFlow, DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EffectRecipientSetDef, Game,
-    GameObjectId, GrantId, KeywordAbility, ManaColor, ObjectCharacteristics, ObjectPredicateDef,
-    ObjectRefDef, ObjectSetDef, Permanent, PlayerId, PlayerRelation, ResolvedContinuousEffect,
-    ResolvedContinuousEffectKind, RetiredObject, SetOperationDef, StackAbilityResolver,
-    StackObject, StaticAppliedEffect, StaticEffectTraversal, Target, TargetIndex,
-    TriggerConditionDef, TriggerContext, TriggerEventObject, ZoneKind,
+    AppliedRuleEffect, CardDefinitionId, CardPartId, CardRules, CardSet, CardSupertype,
+    CardSupertypeSet, CardType, CardTypeSet, CharacteristicContext, CharacteristicOperationDef,
+    ColorSet, ContinuousEffectExpiration, ControlFlow, DeclarativeAbilityDef, EffectDef,
+    EffectRecipientDef, EffectRecipientSetDef, Game, GameObjectId, GrantId, KeywordAbility,
+    ManaColor, ObjectCharacteristics, ObjectPredicateDef, ObjectRefDef, ObjectSetDef, Permanent,
+    PlayerId, PlayerRelation, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
+    RetiredObject, SetOperationDef, StackAbilityResolver, StackObject, StaticAppliedEffect,
+    StaticEffectTraversal, Target, TargetIndex, TriggerConditionDef, TriggerContext,
+    TriggerEventObject, ZoneKind,
 };
 use crate::prepared_engine::PreparedStaticLane;
 
@@ -45,6 +46,7 @@ pub(super) enum StaticEffectKind {
     Any,
     Rules,
     CardTypes,
+    Supertypes,
     Colors,
     Abilities,
     Subtypes,
@@ -62,6 +64,10 @@ impl StaticEffectKind {
                 | (
                     Self::CardTypes,
                     AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(_)),
+                )
+                | (
+                    Self::Supertypes,
+                    AppliedEffectDef::Characteristic(CharacteristicOperationDef::Supertypes(_)),
                 )
                 | (
                     Self::Colors,
@@ -93,6 +99,7 @@ impl StaticEffectKind {
             Self::Any => PreparedStaticLane::Any,
             Self::Rules => PreparedStaticLane::Rules,
             Self::CardTypes => PreparedStaticLane::CardTypes,
+            Self::Supertypes => PreparedStaticLane::Supertypes,
             Self::Colors => PreparedStaticLane::Colors,
             Self::Abilities => PreparedStaticLane::Abilities,
             Self::Subtypes => PreparedStaticLane::Subtypes,

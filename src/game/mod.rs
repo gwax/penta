@@ -13,7 +13,7 @@ use crate::card::{
     AlternativeCastAbilityDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef,
     BandingQuality, BasicLandType, BattlefieldEntryModificationDef, CREATURE_TYPES, CardCatalog,
     CardChoiceSourceDef, CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet,
-    CardStructure, CardSupertype, CardType, CardTypeSet, CharacteristicContext,
+    CardStructure, CardSupertype, CardSupertypeSet, CardType, CardTypeSet, CharacteristicContext,
     CharacteristicOperationDef, ColorChoiceOperationDef, ColorSet, ComparisonDef, ConditionDef,
     ControlDurationDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,
     DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DeclarativeAbilityDef,
