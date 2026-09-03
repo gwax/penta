@@ -66,7 +66,6 @@ fn continuation_snapshot(
     visible_rebindings: &[GameObjectId],
 ) -> Option<DecisionContinuationSnapshot> {
     let value = match continuation {
-        DecisionContinuation::LifeGainReplacement { .. } => return None,
         DecisionContinuation::PregameActions { player, actions } => {
             DecisionContinuationSnapshot::PregameActions {
                 player: player.index(),
@@ -922,7 +921,8 @@ fn continuation_snapshot(
         },
         // The pair is not yet chosen, so what a land substitution would do to
         // the board is not writable down either.
-        DecisionContinuation::BasicLandTypeSubstitution { .. }
+        DecisionContinuation::LifeGainReplacement { .. }
+        | DecisionContinuation::BasicLandTypeSubstitution { .. }
         // An entry paused mid-flight carries a prospective permanent that
         // this format has no place for yet.
         | DecisionContinuation::BattlefieldEntryExile { .. }

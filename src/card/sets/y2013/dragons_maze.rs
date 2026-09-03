@@ -13,12 +13,12 @@ use crate::card::{
     EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, KeywordAbility,
     LikelihoodDef, ManaColor, ManaTypeSetDef, MoveObjectsDef, ObjectChoiceBindingDef,
     ObjectCollectionSourceDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetCountConditionDef, ObjectSetDef, ObjectSetFilterDef, ObjectValueAggregateDef,
-    ObjectValueDef, PayOrDef, PerPlayerSelectionDef, PlayActionMatcherDef, PlayRestrictionDef,
-    PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, ScaledValueDef,
-    TopOfLibraryCostDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    ObjectSetCountConditionDef, ObjectSetDef, ObjectSetFilterDef, ObjectSetPredicateDef,
+    ObjectValueAggregateDef, ObjectValueDef, PayOrDef, PerPlayerSelectionDef, PlayActionMatcherDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementAbilityDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    ScaledValueDef, TopOfLibraryCostDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
@@ -1464,11 +1464,13 @@ pub(in crate::card::sets) static DEADBRIDGE_CHANT: CardRecord = CardRecord::new(
                     condition: &TriggerConditionDef::ObjectSetCount(
                         &ObjectSetCountConditionDef {
                             objects: &ObjectSetDef::Binding(Binding!("random_graveyard_card")),
-                            filter: Some(ObjectSetFilterDef::Predicate(
-                                &ObjectPredicateDef::HasType(CardType::Creature),
-                            )),
-                            comparison: ComparisonDef::GreaterOrEqual,
-                            amount: 1,
+                            predicate: ObjectSetPredicateDef {
+                                filter: Some(ObjectSetFilterDef::Predicate(
+                                    &ObjectPredicateDef::HasType(CardType::Creature),
+                                )),
+                                comparison: ComparisonDef::GreaterOrEqual,
+                                amount: 1,
+                            },
                         },
                     ),
                     then: &EffectDef::WithBattlefieldArrival {

@@ -89,10 +89,7 @@ impl Game {
                 Some(DecisionOption {
                     id: u32::try_from(index).ok()?,
                     label: replacement.text.to_owned(),
-                    card: Some((
-                        replacement.context.source.object,
-                        replacement.presentation.clone(),
-                    )),
+                    card: Some((replacement.context.source.object, replacement.presentation)),
                     members: Vec::new(),
                     ability_text: Some(replacement.text.to_owned()),
                     zone: DecisionZone::Battlefield,

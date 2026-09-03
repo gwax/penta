@@ -5,14 +5,29 @@ use crate::card::CostQuantityDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y1993::beta as catalog_leb;
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
-    DividedTotal, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
-    ObjectPredicateDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef,
-    SpellAdditionalCostDef, TargetChooserDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet,
+    CardSupertype, CardType, ComparisonDef, ConditionalStaticEffectDef, ControlDurationDef,
+    CounterKind, DividedTotal, EffectChoiceDef, EffectDef, EffectRecipientDef, InstalledTriggerDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetCountConditionDef,
+    ObjectSetDef, ObjectSetPredicateDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef,
+    SpellAdditionalCostDef, StaticApplyDef, TargetChooserDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
+
+const DRAW_AT_NEXT_UPKEEP: EffectDef =
+    EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+        "At the beginning of the next turn's upkeep, draw a card.",
+        TriggerEventDef::StepBegins {
+            step: TurnStepDef::Upkeep,
+            player: PlayerRelation::Any,
+        },
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    )));
 
 // ICE 1 — Adarkar Unicorn
 // Audit: unsupported — Card rules have not been implemented.
@@ -45,13 +60,38 @@ pub(in crate::card::sets) static ARENSON_S_AURA: CardRecord = CardRecord::new(
 );
 
 // ICE 4 — Armor of Faith
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARMOR_OF_FAITH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("fccbbc47-99c6-4ba9-95c2-992d5d2a67b2"),
     "Armor of Faith",
     crate::card::CardArt::new("fccbbc47-99c6-4ba9-95c2-992d5d2a67b2", "Anson Maddocks"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +1/+1.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(1),
+                    ),
+                },
+            ),
+            AbilityDef::activated(
+                "{W}: Enchanted creature gets +0/+1 until end of turn.",
+                &[AbilityCostDef::Mana(mana_cost!("{W}"))],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(0),
+                        ValueDef::Constant(1),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
 );
 
 // ICE 5 — Battle Cry
@@ -75,23 +115,40 @@ pub(in crate::card::sets) static BLACK_SCARAB: CardRecord = CardRecord::new(
 );
 
 // ICE 7 — Blessed Wine
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLESSED_WINE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6b9a92f9-9bbc-4887-9fbc-0f7212fd5e66"),
     "Blessed Wine",
     crate::card::CardArt::new("6b9a92f9-9bbc-4887-9fbc-0f7212fd5e66", "Kaja Foglio"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell(
+        "You gain 1 life.\nDraw a card at the beginning of the next turn's upkeep.",
+        EffectDef::Sequence(&[
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 8 — Blinking Spirit
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLINKING_SPIRIT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("14fc0683-9cfa-4439-a533-8773e7747ec4"),
     "Blinking Spirit",
     crate::card::CardArt::new("14fc0683-9cfa-4439-a533-8773e7747ec4", "Allen Williams"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Spirit"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "{0}: Return this creature to its owner's hand.",
+            &[],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Source,
+                zone: ZoneKind::Hand,
+                placement: crate::card::ZonePlacement::Top,
+            },
+        ),
+    ),
 );
 
 // ICE 9 — Blue Scarab
@@ -242,13 +299,35 @@ pub(in crate::card::sets) static GREEN_SCARAB: CardRecord = CardRecord::new(
 );
 
 // ICE 29 — Hallowed Ground
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HALLOWED_GROUND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4b35c0f4-5633-4ea9-9bda-daaf787aebdd"),
     "Hallowed Ground",
     crate::card::CardArt::new("4b35c0f4-5633-4ea9-9bda-daaf787aebdd", "Douglas Shuler"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "{W}{W}: Return target nonsnow land you control to its owner's hand.",
+            &[AbilityCostDef::Mana(mana_cost!("{W}{W}"))],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(
+                            CardSupertype::Snow,
+                        )),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::You),
+                    owner: None,
+                },
+            )],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                placement: crate::card::ZonePlacement::Top,
+            },
+        ),
+    ),
 );
 
 // ICE 30 — Heal
@@ -282,13 +361,28 @@ pub(in crate::card::sets) static JUSTICE: CardRecord = CardRecord::new(
 );
 
 // ICE 33 — Kelsinko Ranger
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KELSINKO_RANGER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8402543e-5406-404f-95c4-800a1dce35f1"),
     "Kelsinko Ranger",
     crate::card::CardArt::new("8402543e-5406-404f-95c4-800a1dce35f1", "Mark Poole"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Ranger"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{1}{W}: Target green creature gains first strike until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{W}"))],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Color(ManaColor::Green),
+                ]),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // ICE 34 — Kjeldoran Elite Guard
@@ -375,13 +469,27 @@ pub(in crate::card::sets) static KJELDORAN_WARRIOR: CardRecord = CardRecord::new
 );
 
 // ICE 42 — Lightning Blow
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIGHTNING_BLOW: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d1a4ed99-f38c-4e0f-9ff2-2e1e9126e6ef"),
     "Lightning Blow",
     crate::card::CardArt::new("d1a4ed99-f38c-4e0f-9ff2-2e1e9126e6ef", "Harold McNeill"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(
+        AbilityDef::spell_with_targets(
+            "Target creature gains first strike until end of turn.\nDraw a card at the beginning of the next turn's upkeep.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+                DRAW_AT_NEXT_UPKEEP,
+            ]),
+        ),
+    ),
 );
 
 // ICE 43 — Lost Order of Jarkeld
@@ -415,13 +523,35 @@ pub(in crate::card::sets) static ORDER_OF_THE_SACRED_TORCH: CardRecord = CardRec
 );
 
 // ICE 46 — Order of the White Shield
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ORDER_OF_THE_WHITE_SHIELD: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("92e55b10-375f-4b4f-b676-3b9b8085fdd2"),
     "Order of the White Shield",
     crate::card::CardArt::new("92e55b10-375f-4b4f-b676-3b9b8085fdd2", "Ruth Thompson"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{W}{W}"), &["Human", "Knight"], 2, 1).with_abilities(&[
+        abilities::protection_from_color(ManaColor::Black),
+        AbilityDef::activated(
+            "{W}: This creature gains first strike until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{W}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::activated(
+            "{W}{W}: This creature gets +1/+0 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{W}{W}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 // ICE 47 — Prismatic Ward
@@ -435,13 +565,26 @@ pub(in crate::card::sets) static PRISMATIC_WARD: CardRecord = CardRecord::new(
 );
 
 // ICE 48 — Rally
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RALLY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("e1e9f80e-5d75-45b7-9c66-c0f30996f4dc"),
     "Rally",
     crate::card::CardArt::new("e1e9f80e-5d75-45b7-9c66-c0f30996f4dc", "Heather Hudson"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{W}{W}")).with_ability(AbilityDef::spell(
+        "Blocking creatures get +1/+1 until end of turn.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Blocking,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(1),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ICE 49 — Red Scarab
@@ -583,13 +726,23 @@ pub(in crate::card::sets) static BREATH_OF_DREAMS: CardRecord = CardRecord::new(
 );
 
 // ICE 63 — Clairvoyance
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CLAIRVOYANCE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("46740353-e2ba-4d80-a97d-1368bc67bf30"),
     "Clairvoyance",
     crate::card::CardArt::new("46740353-e2ba-4d80-a97d-1368bc67bf30", "Ken Meyer, Jr."),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Look at target player's hand.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::LookAtHand {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 64 — Counterspell (reprint)
@@ -638,13 +791,27 @@ pub(in crate::card::sets) static DREAMS_OF_THE_DEAD: CardRecord = CardRecord::ne
 );
 
 // ICE 67 — Enervate
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ENERVATE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c4fdfc5b-c2ab-4c4d-b120-301e17f3d9c6"),
     "Enervate",
     crate::card::CardArt::new("c4fdfc5b-c2ab-4c4d-b120-301e17f3d9c6", "Allen Williams"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Tap target artifact, creature, or land.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::HasType(CardType::Land),
+            ]),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Tap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 68 — Errant Minion
@@ -671,23 +838,34 @@ pub(in crate::card::sets) static ESSENCE_FLARE: CardRecord = CardRecord::new(
 );
 
 // ICE 70 — Force Void
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FORCE_VOID: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("226555ba-22af-45f1-a3f4-d265f8685dd5"),
     "Force Void",
     crate::card::CardArt::new("226555ba-22af-45f1-a3f4-d265f8685dd5", "Mark Tedin"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target spell unless its controller pays {1}.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::Spell,
+            zones: &[ZoneKind::Stack],
+            controller: None,
+            owner: None,
+        })],
+        EffectDef::Sequence(&[
+            abilities::counter_target_unless_paid(ValueDef::Constant(1)),
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 71 — Glacial Wall
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GLACIAL_WALL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("07b71bc1-d9a2-4e99-a8fa-cd696925328d"),
     "Glacial Wall",
     crate::card::CardArt::new("07b71bc1-d9a2-4e99-a8fa-cd696925328d", "Dameon Willich"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Wall"], 0, 7)
+        .with_ability(abilities::defender()),
 );
 
 // ICE 72 — Hydroblast
@@ -791,13 +969,27 @@ pub(in crate::card::sets) static ILLUSIONS_OF_GRANDEUR: CardRecord = CardRecord:
 );
 
 // ICE 80 — Infuse
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INFUSE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("223287b6-224c-4e00-946c-e7ac5539bd45"),
     "Infuse",
     crate::card::CardArt::new("223287b6-224c-4e00-946c-e7ac5539bd45", "Randy Gallegos"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Untap target artifact, creature, or land.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::HasType(CardType::Land),
+            ]),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 81 — Krovikan Sorcerer
@@ -940,13 +1132,24 @@ pub(in crate::card::sets) static RAY_OF_COMMAND: CardRecord = CardRecord::new(
 );
 
 // ICE 93 — Ray of Erasure
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAY_OF_ERASURE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5a09fc0b-7b9c-4283-8336-f2607f5ffaf5"),
     "Ray of Erasure",
     crate::card::CardArt::new("5a09fc0b-7b9c-4283-8336-f2607f5ffaf5", "Mike Raabe"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player mills a card.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Mill {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 94 — Reality Twist
@@ -960,13 +1163,25 @@ pub(in crate::card::sets) static REALITY_TWIST: CardRecord = CardRecord::new(
 );
 
 // ICE 95 — Sea Spirit
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SEA_SPIRIT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f2d93d05-98bc-4504-9045-dedb925895ae"),
     "Sea Spirit",
     crate::card::CardArt::new("f2d93d05-98bc-4504-9045-dedb925895ae", "Rob Alexander"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{4}{U}"), &["Elemental", "Spirit"], 2, 3).with_ability(
+        AbilityDef::activated(
+            "{U}: This creature gets +1/+0 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{U}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // ICE 96 — Shyft
@@ -980,23 +1195,35 @@ pub(in crate::card::sets) static SHYFT: CardRecord = CardRecord::new(
 );
 
 // ICE 97 — Sibilant Spirit
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SIBILANT_SPIRIT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("47364ad2-5ce9-4b19-a9d2-f6a33188b882"),
     "Sibilant Spirit",
     crate::card::CardArt::new("47364ad2-5ce9-4b19-a9d2-f6a33188b882", "Ron Spencer"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{5}{U}"), &["Spirit"], 5, 6).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "Whenever this creature attacks, defending player may draw a card.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            EffectDef::May {
+                player: EffectRecipientDef::Opponent,
+                effect: &EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Opponent,
+                    amount: ValueDef::Constant(1),
+                },
+            },
+        ),
+    ]),
 );
 
 // ICE 98 — Silver Erne
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SILVER_ERNE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("685076cc-098c-4f98-918c-0ad825eda10f"),
     "Silver Erne",
     crate::card::CardArt::new("685076cc-098c-4f98-918c-0ad825eda10f", "Melissa A. Benson"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Bird"], 2, 2)
+        .with_abilities(&[abilities::flying(), abilities::trample()]),
 );
 
 // ICE 99 — Sleight of Mind (reprint)
@@ -1042,33 +1269,59 @@ pub(in crate::card::sets) static SOUL_BARRIER: CardRecord = CardRecord::new(
 );
 
 // ICE 104 — Thunder Wall
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THUNDER_WALL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4fc5d510-c4f7-4a09-bf86-83c3fa3f8928"),
     "Thunder Wall",
     crate::card::CardArt::new("4fc5d510-c4f7-4a09-bf86-83c3fa3f8928", "Richard Thomas"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Wall"], 0, 2).with_abilities(&[
+        abilities::defender(),
+        abilities::flying(),
+        AbilityDef::activated(
+            "{U}: This creature gets +1/+1 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{U}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 // ICE 105 — Updraft
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UPDRAFT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d1bd4e16-27fe-4c7b-ae25-78ed77d8e8e7"),
     "Updraft",
     crate::card::CardArt::new("d1bd4e16-27fe-4c7b-ae25-78ed77d8e8e7", "Allen Williams"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature gains flying until end of turn.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::add_ability(&abilities::flying()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 106 — Wind Spirit
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WIND_SPIRIT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4d882447-9594-4aab-b1a7-8bb275f250cf"),
     "Wind Spirit",
     crate::card::CardArt::new("4d882447-9594-4aab-b1a7-8bb275f250cf", "Kaja Foglio"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{4}{U}"), &["Elemental", "Spirit"], 3, 2)
+        .with_abilities(&[abilities::flying(), abilities::menace()]),
 );
 
 // ICE 107 — Winter's Chill
@@ -1115,17 +1368,33 @@ pub(in crate::card::sets) static ZUR_S_WEIRDING: CardRecord = CardRecord::new(
 );
 
 // ICE 111 — Zuran Enchanter
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ZURAN_ENCHANTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("721edcef-f40a-4d43-9d80-26161dc425cb"),
     "Zuran Enchanter",
     crate::card::CardArt::new("721edcef-f40a-4d43-9d80-26161dc425cb", "Douglas Shuler"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Human", "Wizard"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{2}{B}, {T}: Target player discards a card. Activate only during your turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}{B}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            EffectDef::Discard {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+                selection: crate::card::DiscardSelectionDef::RecipientChooses,
+                then: None,
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::YourTurn),
+    ),
 );
 
 // ICE 112 — Zuran Spellcaster
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ZURAN_SPELLCASTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("152a72b1-a7b7-4e5c-8558-fab97465f549"),
     "Zuran Spellcaster",
@@ -1134,17 +1403,40 @@ pub(in crate::card::sets) static ZURAN_SPELLCASTER: CardRecord = CardRecord::new
         "Edward P. Beard, Jr.",
     ),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Human", "Wizard"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: This creature deals 1 damage to any target.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
 );
 
 // ICE 113 — Abyssal Specter
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ABYSSAL_SPECTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("fc26f19c-bcf7-4bd8-af42-4757dbe47fb1"),
     "Abyssal Specter",
     crate::card::CardArt::new("fc26f19c-bcf7-4bd8-af42-4757dbe47fb1", "Ruth Thompson"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Specter"], 2, 3).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "Whenever this creature deals damage to a player, that player discards a card.",
+            TriggerEventDef::damage_to_player(ObjectPredicateDef::Source, PlayerRelation::Any),
+            EffectDef::Discard {
+                recipient: EffectRecipientDef::EventPlayer,
+                amount: ValueDef::Constant(1),
+                selection: crate::card::DiscardSelectionDef::RecipientChooses,
+                then: None,
+            },
+        ),
+    ]),
 );
 
 // ICE 114 — Ashen Ghoul
@@ -1201,13 +1493,19 @@ pub(in crate::card::sets) static DANCE_OF_THE_DEAD: CardRecord = CardRecord::new
 );
 
 // ICE 119 — Dark Banishing
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DARK_BANISHING: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f7dc2716-ed62-4797-ad2b-227eca5408d0"),
     "Dark Banishing",
     crate::card::CardArt::new("f7dc2716-ed62-4797-ad2b-227eca5408d0", "Drew Tucker"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{2}{B}")).with_ability(AbilityDef::destroy_target(
+        "Destroy target nonblack creature. It can't be regenerated.",
+        &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Color(ManaColor::Black)),
+        ])),
+        false,
+    )),
 );
 
 // ICE 120 — Dark Ritual (reprint)
@@ -1255,13 +1553,32 @@ pub(in crate::card::sets) static FLOW_OF_MAGGOTS: CardRecord = CardRecord::new(
 );
 
 // ICE 126 — Foul Familiar
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FOUL_FAMILIAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8bad3541-8e40-4a2f-ac9d-f7b61f3d75a1"),
     "Foul Familiar",
     crate::card::CardArt::new("8bad3541-8e40-4a2f-ac9d-f7b61f3d75a1", "Anson Maddocks"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Spirit"], 3, 1).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't block.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BLOCK),
+            },
+        ),
+        AbilityDef::activated(
+            "{B}, Pay 1 life: Return this creature to its owner's hand.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{B}")),
+                AbilityCostDef::PayLife(1),
+            ],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Source,
+                zone: ZoneKind::Hand,
+                placement: crate::card::ZonePlacement::Top,
+            },
+        ),
+    ]),
 );
 
 // ICE 127 — Gangrenous Zombies
@@ -1285,13 +1602,25 @@ pub(in crate::card::sets) static GAZE_OF_PAIN: CardRecord = CardRecord::new(
 );
 
 // ICE 129 — Gravebind
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRAVEBIND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4782fd4f-2474-4d0d-8301-e0b52af93746"),
     "Gravebind",
     crate::card::CardArt::new("4782fd4f-2474-4d0d-8301-e0b52af93746", "Drew Tucker"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature can't be regenerated this turn.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotRegenerate),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 130 — Hecatomb
@@ -1305,25 +1634,52 @@ pub(in crate::card::sets) static HECATOMB: CardRecord = CardRecord::new(
 );
 
 // ICE 131 — Hoar Shade
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HOAR_SHADE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("72242dff-15ca-4da0-b3ae-9984d037b31f"),
     "Hoar Shade",
     crate::card::CardArt::new("72242dff-15ca-4da0-b3ae-9984d037b31f", "Richard Thomas"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Shade"], 1, 2).with_ability(
+        AbilityDef::activated(
+            "{B}: This creature gets +1/+1 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // ICE 132 — Howl from Beyond (reprint)
 
 // ICE 133 — Hyalopterous Lemure
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HYALOPTEROUS_LEMURE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d2c9e037-f4d5-46fd-b439-56bee6fb2ad3"),
     "Hyalopterous Lemure",
     crate::card::CardArt::new("d2c9e037-f4d5-46fd-b439-56bee6fb2ad3", "Richard Thomas"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{4}{B}"), &["Spirit"], 4, 3).with_ability(
+        AbilityDef::activated(
+            "{0}: This creature gets -1/-0 and gains flying until end of turn.",
+            &[],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(-1),
+                        ValueDef::Constant(0),
+                    ),
+                    AppliedEffectDef::add_ability(&abilities::flying()),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // ICE 134 — Icequake
@@ -1370,13 +1726,35 @@ pub(in crate::card::sets) static KJELDORAN_DEAD: CardRecord = CardRecord::new(
 );
 
 // ICE 138 — Knight of Stromgald
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KNIGHT_OF_STROMGALD: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("2b87069b-ebaf-4705-b5da-446932af9b73"),
     "Knight of Stromgald",
     crate::card::CardArt::new("2b87069b-ebaf-4705-b5da-446932af9b73", "Mark Poole"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{B}{B}"), &["Human", "Knight"], 2, 1).with_abilities(&[
+        abilities::protection_from_color(ManaColor::White),
+        AbilityDef::activated(
+            "{B}: This creature gains first strike until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::activated(
+            "{B}{B}: This creature gets +1/+0 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 // ICE 139 — Krovikan Elementalist
@@ -1390,13 +1768,30 @@ pub(in crate::card::sets) static KROVIKAN_ELEMENTALIST: CardRecord = CardRecord:
 );
 
 // ICE 140 — Krovikan Fetish
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KROVIKAN_FETISH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("844e73e6-b201-4b2e-b46a-b719484fba0e"),
     "Krovikan Fetish",
     crate::card::CardArt::new("844e73e6-b201-4b2e-b46a-b719484fba0e", "Heather Hudson"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{2}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            abilities::enters_trigger(
+                "When this Aura enters, draw a card at the beginning of the next turn's upkeep.",
+                DRAW_AT_NEXT_UPKEEP,
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +1/+1.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(1),
+                    ),
+                },
+            ),
+        ]),
 );
 
 // ICE 141 — Krovikan Vampire
@@ -1420,13 +1815,25 @@ pub(in crate::card::sets) static LEGIONS_OF_LIM_DUL: CardRecord = CardRecord::ne
 );
 
 // ICE 143 — Leshrac's Rite
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LESHRAC_S_RITE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4e0a6b4e-95b4-40f6-bb19-568dbd908a2b"),
     "Leshrac's Rite",
     crate::card::CardArt::new("4e0a6b4e-95b4-40f6-bb19-568dbd908a2b", "Richard Thomas"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            AbilityDef::static_ability(
+                "Enchanted creature has swampwalk.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&abilities::landwalk(
+                        BasicLandType::Swamp,
+                    )),
+                },
+            ),
+        ]),
 );
 
 // ICE 144 — Leshrac's Sigil
@@ -1460,13 +1867,26 @@ pub(in crate::card::sets) static LIM_DUL_S_HEX: CardRecord = CardRecord::new(
 );
 
 // ICE 147 — Mind Ravel
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MIND_RAVEL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("61cf3ac5-985d-4b48-b230-d5ae4ab1ace8"),
     "Mind Ravel",
     crate::card::CardArt::new("61cf3ac5-985d-4b48-b230-d5ae4ab1ace8", "Mark Tedin"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{2}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player discards a card.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Discard {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+                selection: crate::card::DiscardSelectionDef::RecipientChooses,
+                then: None,
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 148 — Mind Warp
@@ -1520,13 +1940,13 @@ pub(in crate::card::sets) static MOLE_WORMS: CardRecord = CardRecord::new(
 );
 
 // ICE 153 — Moor Fiend
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOOR_FIEND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("57089dd4-e30d-498d-9341-43c104c6f3f9"),
     "Moor Fiend",
     crate::card::CardArt::new("57089dd4-e30d-498d-9341-43c104c6f3f9", "Anson Maddocks"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Horror"], 3, 3)
+        .with_ability(abilities::landwalk(BasicLandType::Swamp)),
 );
 
 // ICE 154 — Necropotence
@@ -1650,23 +2070,54 @@ pub(in crate::card::sets) static STENCH_OF_EVIL: CardRecord = CardRecord::new(
 );
 
 // ICE 166 — Stromgald Cabal
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STROMGALD_CABAL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6ac6fa0c-753e-4fbc-8a70-0f956503cf4e"),
     "Stromgald Cabal",
     crate::card::CardArt::new("6ac6fa0c-753e-4fbc-8a70-0f956503cf4e", "Anson Maddocks"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Human", "Knight"], 2, 2).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}, Pay 1 life: Counter target white spell.",
+            &[AbilityCostDef::TapSource, AbilityCostDef::PayLife(1)],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::Spell,
+                        ObjectPredicateDef::Color(ManaColor::White),
+                    ]),
+                    zones: &[ZoneKind::Stack],
+                    controller: None,
+                    owner: None,
+                },
+            )],
+            EffectDef::counter_target(TargetIndex::PRIMARY),
+        ),
+    ),
 );
 
 // ICE 167 — Touch of Death
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TOUCH_OF_DEATH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a49c658f-e657-490b-af1f-e67e48d0046e"),
     "Touch of Death",
     crate::card::CardArt::new("a49c658f-e657-490b-af1f-e67e48d0046e", "Melissa A. Benson"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{2}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "This spell deals 1 damage to target player or planeswalker. You gain 1 life.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 168 — Withering Wisps
@@ -1690,13 +2141,23 @@ pub(in crate::card::sets) static AGGRESSION: CardRecord = CardRecord::new(
 );
 
 // ICE 170 — Anarchy
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANARCHY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("28d941da-b5cb-4b7e-84f2-ece883f89af3"),
     "Anarchy",
     crate::card::CardArt::new("28d941da-b5cb-4b7e-84f2-ece883f89af3", "Phil Foglio"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{2}{R}{R}")).with_ability(AbilityDef::spell(
+        "Destroy all white permanents.",
+        EffectDef::Destroy {
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Color(ManaColor::White),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            can_regenerate: true,
+            then: None,
+        },
+    )),
 );
 
 // ICE 171 — Avalanche
@@ -1710,13 +2171,12 @@ pub(in crate::card::sets) static AVALANCHE: CardRecord = CardRecord::new(
 );
 
 // ICE 172 — Balduvian Barbarians
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BALDUVIAN_BARBARIANS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("efeabe8e-8107-4d19-8a43-362aa79cdd92"),
     "Balduvian Barbarians",
     crate::card::CardArt::new("efeabe8e-8107-4d19-8a43-362aa79cdd92", "Mark Poole"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Human", "Barbarian"], 3, 2),
 );
 
 // ICE 173 — Balduvian Hydra
@@ -1740,13 +2200,46 @@ pub(in crate::card::sets) static BARBARIAN_GUIDES: CardRecord = CardRecord::new(
 );
 
 // ICE 175 — Battle Frenzy
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BATTLE_FRENZY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a85ae675-56ca-4a00-83d2-ee035f33d6d1"),
     "Battle Frenzy",
     crate::card::CardArt::new("a85ae675-56ca-4a00-83d2-ee035f33d6d1", "Brian Snõddy"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{2}{R}")).with_ability(AbilityDef::spell(
+        "Green creatures you control get +1/+1 until end of turn.\nNongreen creatures you control get +1/+0 until end of turn.",
+        EffectDef::Sequence(&[
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Color(ManaColor::Green),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Color(ManaColor::Green)),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ]),
+    )),
 );
 
 // ICE 176 — Bone Shaman
@@ -1790,23 +2283,57 @@ pub(in crate::card::sets) static CHAOS_MOON: CardRecord = CardRecord::new(
 );
 
 // ICE 180 — Conquer
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CONQUER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ae610e66-7bcb-40ec-bed5-86dcfd098654"),
     "Conquer",
     crate::card::CardArt::new("ae610e66-7bcb-40ec-bed5-86dcfd098654", "Randy Gallegos"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{3}{R}{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_land(),
+            AbilityDef::static_ability(
+                "You control enchanted land.",
+                EffectDef::GainControl {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    duration: ControlDurationDef::WhileSourceRemains {
+                        while_tapped: false,
+                    },
+                    controller: PlayerRefDef::EffectController,
+                },
+            ),
+        ]),
 );
 
 // ICE 181 — Curse of Marit Lage
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CURSE_OF_MARIT_LAGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("69b381c1-aa71-4d40-a320-70f58a440d51"),
     "Curse of Marit Lage",
     crate::card::CardArt::new("69b381c1-aa71-4d40-a320-70f58a440d51", "Amy Weber"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{3}{R}{R}")).with_abilities(&[
+        abilities::enters_trigger(
+            "When this enchantment enters, tap all Islands.",
+            EffectDef::Tap {
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+            },
+        ),
+        AbilityDef::static_ability(
+            "Islands don't untap during their controllers' untap steps.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+            },
+        ),
+    ]),
 );
 
 // ICE 182 — Dwarven Armory
@@ -1830,23 +2357,44 @@ pub(in crate::card::sets) static ERRANTRY: CardRecord = CardRecord::new(
 );
 
 // ICE 184 — Flame Spirit
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLAME_SPIRIT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("add2b82a-9aa5-4d5c-a1c2-e313541f12c8"),
     "Flame Spirit",
     crate::card::CardArt::new("add2b82a-9aa5-4d5c-a1c2-e313541f12c8", "Justin Hampton"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{4}{R}"), &["Elemental", "Spirit"], 2, 3).with_ability(
+        AbilityDef::activated(
+            "{R}: This creature gets +1/+0 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // ICE 185 — Flare
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLARE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d5350236-7bd2-462d-9768-50087626c764"),
     "Flare",
     crate::card::CardArt::new("d5350236-7bd2-462d-9768-50087626c764", "Drew Tucker"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{2}{R}")).with_ability(AbilityDef::spell_with_targets(
+        "This spell deals 1 damage to any target.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)],
+        EffectDef::Sequence(&[
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 186 — Game of Chaos
@@ -1920,13 +2468,23 @@ pub(in crate::card::sets) static GRIZZLED_WOLVERINE: CardRecord = CardRecord::ne
 );
 
 // ICE 193 — Imposing Visage
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static IMPOSING_VISAGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("cca42b74-9b42-482b-b12a-79cafdcd087e"),
     "Imposing Visage",
     crate::card::CardArt::new("cca42b74-9b42-482b-b12a-79cafdcd087e", "Phil Foglio"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            AbilityDef::static_ability(
+                "Enchanted creature has menace.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&abilities::menace()),
+                },
+            ),
+        ]),
 );
 
 // ICE 194 — Incinerate
@@ -1972,13 +2530,25 @@ pub(in crate::card::sets) static KARPLUSAN_GIANT: CardRecord = CardRecord::new(
 );
 
 // ICE 197 — Karplusan Yeti
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KARPLUSAN_YETI: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7dd9b214-d9fe-4c2e-b45b-7145ad98c408"),
     "Karplusan Yeti",
     crate::card::CardArt::new("7dd9b214-d9fe-4c2e-b45b-7145ad98c408", "Quinton Hoover"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Yeti"], 3, 3).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: This creature deals damage equal to its power to target creature. That creature deals damage equal to its power to this creature.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Fight {
+                first: ObjectRefDef::Source,
+                second: ObjectRefDef::Target(TargetIndex::PRIMARY),
+                excess: None,
+            },
+        ),
+    ),
 );
 
 // ICE 198 — Lava Burst
@@ -2032,13 +2602,13 @@ pub(in crate::card::sets) static METEOR_SHOWER: CardRecord = CardRecord::new(
 );
 
 // ICE 203 — Mountain Goat
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOUNTAIN_GOAT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ccf70276-a40c-4d25-b584-4c8a07a00602"),
     "Mountain Goat",
     crate::card::CardArt::new("ccf70276-a40c-4d25-b584-4c8a07a00602", "Cornelius Brudi"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{R}"), &["Goat"], 1, 1)
+        .with_ability(abilities::landwalk(BasicLandType::Mountain)),
 );
 
 // ICE 204 — Mudslide
@@ -2052,13 +2622,30 @@ pub(in crate::card::sets) static MUDSLIDE: CardRecord = CardRecord::new(
 );
 
 // ICE 205 — Orcish Cannoneers
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ORCISH_CANNONEERS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a4309a2f-27f5-4652-b0b4-6a6119436f75"),
     "Orcish Cannoneers",
     crate::card::CardArt::new("a4309a2f-27f5-4652-b0b4-6a6119436f75", "Dan Frazier"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Orc", "Warrior"], 1, 3).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: This creature deals 2 damage to any target and 3 damage to you.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(2),
+                },
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(3),
+                },
+            ]),
+        ),
+    ),
 );
 
 // ICE 206 — Orcish Conscripts
@@ -2145,13 +2732,27 @@ pub(in crate::card::sets) static ORCISH_SQUATTERS: CardRecord = CardRecord::new(
 );
 
 // ICE 212 — Panic
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PANIC: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a9ab85ac-311c-4e36-943a-817e43a3c8a8"),
     "Panic",
     crate::card::CardArt::new("a9ab85ac-311c-4e36-943a-817e43a3c8a8", "Mike Kimble"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{R}"))
+        .cast_only_before_blockers_declared()
+        .with_ability(AbilityDef::spell_with_targets(
+            "Target creature can't block this turn.\nDraw a card at the beginning of the next turn's upkeep.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BLOCK),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+                DRAW_AT_NEXT_UPKEEP,
+            ]),
+        )),
 );
 
 // ICE 213 — Pyroblast
@@ -2187,23 +2788,32 @@ pub(in crate::card::sets) static PYROBLAST: CardRecord = CardRecord::new_with_le
 );
 
 // ICE 214 — Pyroclasm
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PYROCLASM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("88040748-ad76-4b9a-bd4e-87e5980e9816"),
     "Pyroclasm",
     crate::card::CardArt::new("88040748-ad76-4b9a-bd4e-87e5980e9816", "Pat Lewis"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell(
+        "This spell deals 2 damage to each creature.",
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            amount: ValueDef::Constant(2),
+        },
+    )),
 );
 
 // ICE 215 — Sabretooth Tiger
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SABRETOOTH_TIGER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6914c5a8-2114-41c5-a471-ca97524d622f"),
     "Sabretooth Tiger",
     crate::card::CardArt::new("6914c5a8-2114-41c5-a471-ca97524d622f", "Melissa A. Benson"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Cat"], 2, 1)
+        .with_ability(abilities::first_strike()),
 );
 
 // ICE 216 — Shatter (reprint)
@@ -2221,23 +2831,47 @@ pub(in crate::card::sets) static STONE_SPIRIT: CardRecord = CardRecord::new(
 );
 
 // ICE 219 — Stonehands
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STONEHANDS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d23fa1af-78e5-4d23-bbf6-cd62bc54b4e9"),
     "Stonehands",
     crate::card::CardArt::new("d23fa1af-78e5-4d23-bbf6-cd62bc54b4e9", "Dan Frazier"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{2}{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +0/+2.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(0),
+                        ValueDef::Constant(2),
+                    ),
+                },
+            ),
+            AbilityDef::activated(
+                "{R}: Enchanted creature gets +1/+0 until end of turn.",
+                &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(0),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
 );
 
 // ICE 220 — Tor Giant
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TOR_GIANT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7ef8f279-1a10-4685-99d6-bc971a7f922b"),
     "Tor Giant",
     crate::card::CardArt::new("7ef8f279-1a10-4685-99d6-bc971a7f922b", "Douglas Shuler"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Giant"], 3, 3),
 );
 
 // ICE 221 — Total War
@@ -2261,13 +2895,26 @@ pub(in crate::card::sets) static VERTIGO: CardRecord = CardRecord::new(
 );
 
 // ICE 223 — Wall of Lava
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WALL_OF_LAVA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b99d6d11-b3f7-4d73-967c-3049af82a9d8"),
     "Wall of Lava",
     crate::card::CardArt::new("b99d6d11-b3f7-4d73-967c-3049af82a9d8", "Pete Venters"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Wall"], 1, 3).with_abilities(&[
+        abilities::defender(),
+        AbilityDef::activated(
+            "{R}: This creature gets +1/+1 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 // ICE 224 — Word of Blasting
@@ -2291,13 +2938,12 @@ pub(in crate::card::sets) static AUROCHS: CardRecord = CardRecord::new(
 );
 
 // ICE 226 — Balduvian Bears
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BALDUVIAN_BEARS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ef5297cb-e763-4871-9cd3-0e2dbcc52095"),
     "Balduvian Bears",
     crate::card::CardArt::new("ef5297cb-e763-4871-9cd3-0e2dbcc52095", "Quinton Hoover"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Bear"], 2, 2),
 );
 
 // ICE 227 — Blizzard
@@ -2321,13 +2967,28 @@ pub(in crate::card::sets) static BROWN_OUPHE: CardRecord = CardRecord::new(
 );
 
 // ICE 229 — Chub Toad
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHUB_TOAD: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b6ebcc1d-0c5c-4bc2-ade7-41944f69162e"),
     "Chub Toad",
     crate::card::CardArt::new("b6ebcc1d-0c5c-4bc2-ade7-41944f69162e", "Daniel Gelon"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Frog"], 1, 1).with_ability(
+        AbilityDef::triggered(
+            "Whenever this creature blocks or becomes blocked, it gets +2/+2 until end of turn.",
+            TriggerEventDef::BlocksOrBecomesBlockedBy {
+                creature: ObjectPredicateDef::Source,
+                other: ObjectPredicateDef::Any,
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // ICE 230 — Dire Wolves
@@ -2377,27 +3038,76 @@ pub(in crate::card::sets) static ELDER_DRUID: CardRecord = CardRecord::new(
 );
 
 // ICE 233 — Essence Filter
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ESSENCE_FILTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9b610103-dafd-4248-9d79-ce57f84b9e03"),
     "Essence Filter",
     crate::card::CardArt::new("9b610103-dafd-4248-9d79-ce57f84b9e03", "Rick Emond"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{1}{G}{G}")).with_ability(AbilityDef::spell(
+        "Destroy all enchantments or all nonwhite enchantments.",
+        EffectDef::ChooseEffect {
+            player: EffectRecipientDef::Controller,
+            choices: &[
+                EffectChoiceDef {
+                    label: "Destroy all enchantments",
+                    effect: EffectDef::Destroy {
+                        object: EffectRecipientDef::matching_objects(
+                            ObjectPredicateDef::HasType(CardType::Enchantment),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::Any,
+                        ),
+                        can_regenerate: true,
+                        then: None,
+                    },
+                },
+                EffectChoiceDef {
+                    label: "Destroy all nonwhite enchantments",
+                    effect: EffectDef::Destroy {
+                        object: EffectRecipientDef::matching_objects(
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::HasType(CardType::Enchantment),
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::Color(
+                                    ManaColor::White,
+                                )),
+                            ]),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::Any,
+                        ),
+                        can_regenerate: true,
+                        then: None,
+                    },
+                },
+            ],
+        },
+    )),
 );
 
 // ICE 234 — Fanatical Fever
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FANATICAL_FEVER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("2abba7f1-5d07-4137-88a2-5967396a3e42"),
     "Fanatical Fever",
     crate::card::CardArt::new("2abba7f1-5d07-4137-88a2-5967396a3e42", "Julie Baroh"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{2}{G}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature gets +3/+0 and gains trample until end of turn.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Composite(&[
+                AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(3),
+                    ValueDef::Constant(0),
+                ),
+                AppliedEffectDef::add_ability(&abilities::trample()),
+            ]),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ICE 235 — Folk of the Pines
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FOLK_OF_THE_PINES: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0c13311d-db83-483f-ba2b-4f54ceb8b026"),
     "Folk of the Pines",
@@ -2406,7 +3116,20 @@ pub(in crate::card::sets) static FOLK_OF_THE_PINES: CardRecord = CardRecord::new
         "NéNé Thomas & Catherine Buck",
     ),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{4}{G}"), &["Dryad"], 2, 5).with_ability(
+        AbilityDef::activated(
+            "{1}{G}: This creature gets +1/+0 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{G}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // ICE 236 — Forbidden Lore
@@ -2430,7 +3153,6 @@ pub(in crate::card::sets) static FORGOTTEN_LORE: CardRecord = CardRecord::new(
 );
 
 // ICE 238 — Foxfire
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FOXFIRE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("88db9685-6a2f-4548-b6c4-669918d653b4"),
     "Foxfire",
@@ -2439,7 +3161,37 @@ pub(in crate::card::sets) static FOXFIRE: CardRecord = CardRecord::new(
         "Margaret Organ-Kean",
     ),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{2}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Untap target attacking creature. Prevent all combat damage that would be dealt to and dealt by that creature this turn.\nDraw a card at the beginning of the next turn's upkeep.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::Attacking,
+            ]),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            EffectDef::PreventDamage {
+                prevention: crate::card::DamagePreventionDef::unlimited(
+                    crate::card::DamageEventMatcherDef::combat_to(
+                        EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    ),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            EffectDef::PreventDamage {
+                prevention: crate::card::DamagePreventionDef::unlimited(
+                    crate::card::DamageEventMatcherDef::combat_from(ObjectRefDef::Target(
+                        TargetIndex::PRIMARY,
+                    )),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            DRAW_AT_NEXT_UPKEEP,
+        ]),
+    )),
 );
 
 // ICE 239 — Freyalise Supplicant
@@ -2479,33 +3231,56 @@ pub(in crate::card::sets) static FREYALISE_S_WINDS: CardRecord = CardRecord::new
 );
 
 // ICE 242 — Fyndhorn Brownie
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FYNDHORN_BROWNIE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("06204e82-9dfd-4334-a23a-f8240fc37772"),
     "Fyndhorn Brownie",
     crate::card::CardArt::new("06204e82-9dfd-4334-a23a-f8240fc37772", "Richard Thomas"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Ouphe"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{2}{G}, {T}: Untap target creature.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}{G}")),
+                AbilityCostDef::TapSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ),
 );
 
 // ICE 243 — Fyndhorn Elder
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FYNDHORN_ELDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("fca8aa11-f7cb-4f88-a041-30098579f1d2"),
     "Fyndhorn Elder",
     crate::card::CardArt::new("fca8aa11-f7cb-4f88-a041-30098579f1d2", "Christopher Rush"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Elf", "Druid"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{T}: Add {G}{G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::combination(&[ManaColor::Green], 2)),
+        ),
+    ),
 );
 
 // ICE 244 — Fyndhorn Elves
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FYNDHORN_ELVES: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3ba95ffa-990a-4013-98b7-5d8c0b34e9c4"),
     "Fyndhorn Elves",
     crate::card::CardArt::new("3ba95ffa-990a-4013-98b7-5d8c0b34e9c4", "Justin Hampton"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Druid"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{T}: Add {G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+        ),
+    ),
 );
 
 // ICE 245 — Fyndhorn Pollen
@@ -2553,13 +3328,22 @@ pub(in crate::card::sets) static JOHTULL_WURM: CardRecord = CardRecord::new(
 );
 
 // ICE 251 — Juniper Order Druid
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JUNIPER_ORDER_DRUID: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("cb211704-ff8e-498b-b7bb-f8384f198ffd"),
     "Juniper Order Druid",
     crate::card::CardArt::new("cb211704-ff8e-498b-b7bb-f8384f198ffd", "Jeff A. Menges"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Human", "Cleric", "Druid"], 1, 1)
+        .with_ability(AbilityDef::activated_with_targets(
+            "{T}: Untap target land.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Land),
+            )],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        )),
 );
 
 // ICE 252 — Lhurgoyf
@@ -2585,37 +3369,52 @@ pub(in crate::card::sets) static MADDENING_WIND: CardRecord = CardRecord::new(
 );
 
 // ICE 255 — Nature's Lore
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NATURE_S_LORE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("668d2969-b6b7-4507-bdd4-20bbaa68035a"),
     "Nature's Lore",
     crate::card::CardArt::new("668d2969-b6b7-4507-bdd4-20bbaa68035a", "Rick Emond"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell(
+        "Search your library for a Forest card, put that card onto the battlefield, then shuffle.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: false,
+            destination: ZoneKind::Battlefield,
+            placement: crate::card::ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    )),
 );
 
 // ICE 256 — Pale Bears
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PALE_BEARS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7f19c2a3-6403-4a78-bf45-6e339578d673"),
     "Pale Bears",
     crate::card::CardArt::new("7f19c2a3-6403-4a78-bf45-6e339578d673", "Anthony S. Waters"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Bear"], 2, 2)
+        .with_ability(abilities::landwalk(BasicLandType::Island)),
 );
 
 // ICE 257 — Pygmy Allosaurus
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PYGMY_ALLOSAURUS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("88a68767-9822-4f15-895e-32164e2159be"),
     "Pygmy Allosaurus",
     crate::card::CardArt::new("88a68767-9822-4f15-895e-32164e2159be", "Anson Maddocks"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Dinosaur"], 2, 2)
+        .with_ability(abilities::landwalk(BasicLandType::Swamp)),
 );
 
 // ICE 258 — Pyknite
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PYKNITE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6ffc64e4-ae3c-49f9-8ed6-518dd497bfe6"),
     "Pyknite",
@@ -2624,7 +3423,12 @@ pub(in crate::card::sets) static PYKNITE: CardRecord = CardRecord::new(
         "Edward P. Beard, Jr.",
     ),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Ouphe"], 1, 1).with_ability(
+        abilities::enters_trigger(
+            "When this creature enters, draw a card at the beginning of the next turn's upkeep.",
+            DRAW_AT_NEXT_UPKEEP,
+        ),
+    ),
 );
 
 // ICE 259 — Regeneration (reprint)
@@ -2650,23 +3454,34 @@ pub(in crate::card::sets) static RITUAL_OF_SUBDUAL: CardRecord = CardRecord::new
 );
 
 // ICE 262 — Scaled Wurm
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCALED_WURM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("499cd7fa-c86c-4a5f-b36d-8160e8a6af1f"),
     "Scaled Wurm",
     crate::card::CardArt::new("499cd7fa-c86c-4a5f-b36d-8160e8a6af1f", "Daniel Gelon"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{7}{G}"), &["Wurm"], 7, 6),
 );
 
 // ICE 263 — Shambling Strider
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHAMBLING_STRIDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8886ba2d-b25a-4b74-9299-911c509ae864"),
     "Shambling Strider",
     crate::card::CardArt::new("8886ba2d-b25a-4b74-9299-911c509ae864", "Douglas Shuler"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{4}{G}{G}"), &["Yeti"], 5, 5).with_ability(
+        AbilityDef::activated(
+            "{R}{G}: This creature gets +1/-1 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{R}{G}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(-1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // ICE 264 — Snowblind
@@ -2680,13 +3495,29 @@ pub(in crate::card::sets) static SNOWBLIND: CardRecord = CardRecord::new(
 );
 
 // ICE 265 — Stampede
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STAMPEDE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("bc8265a1-4621-4d25-8f7f-f0179951a694"),
     "Stampede",
     crate::card::CardArt::new("bc8265a1-4621-4d25-8f7f-f0179951a694", "Jeff A. Menges"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{1}{G}{G}")).with_ability(AbilityDef::spell(
+        "Attacking creatures get +1/+0 and gain trample until end of turn.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Attacking,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::Composite(&[
+                AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                AppliedEffectDef::add_ability(&abilities::trample()),
+            ]),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ICE 266 — Stunted Growth
@@ -2700,7 +3531,6 @@ pub(in crate::card::sets) static STUNTED_GROWTH: CardRecord = CardRecord::new(
 );
 
 // ICE 267 — Tarpan
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TARPAN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b1420ec5-367c-4514-86c5-3993bf339e37"),
     "Tarpan",
@@ -2709,7 +3539,15 @@ pub(in crate::card::sets) static TARPAN: CardRecord = CardRecord::new(
         "Margaret Organ-Kean",
     ),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{G}"), &["Horse"], 1, 1).with_ability(
+        abilities::dies_trigger(
+            "When this creature dies, you gain 1 life.",
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
 );
 
 // ICE 268 — Thermokarst
@@ -2723,13 +3561,25 @@ pub(in crate::card::sets) static THERMOKARST: CardRecord = CardRecord::new(
 );
 
 // ICE 269 — Thoughtleech
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THOUGHTLEECH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d8fe7f9d-644f-48d0-93fa-d9a536f1f755"),
     "Thoughtleech",
     crate::card::CardArt::new("d8fe7f9d-644f-48d0-93fa-d9a536f1f755", "Mark Tedin"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{G}{G}")).with_ability(AbilityDef::triggered(
+        "Whenever an Island an opponent controls becomes tapped, you may gain 1 life.",
+        TriggerEventDef::tapped(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+        ])),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        },
+    )),
 );
 
 // ICE 270 — Tinder Wall
@@ -2753,13 +3603,22 @@ pub(in crate::card::sets) static TOUCH_OF_VITAE: CardRecord = CardRecord::new(
 );
 
 // ICE 272 — Trailblazer
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRAILBLAZER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9194c69d-c849-4c4a-976c-d1382bd5cf32"),
     "Trailblazer",
     crate::card::CardArt::new("9194c69d-c849-4c4a-976c-d1382bd5cf32", "Julie Baroh"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{2}{G}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature can't be blocked this turn.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BE_BLOCKED),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ICE 273 — Venomous Breath
@@ -2773,13 +3632,21 @@ pub(in crate::card::sets) static VENOMOUS_BREATH: CardRecord = CardRecord::new(
 );
 
 // ICE 274 — Wall of Pine Needles
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WALL_OF_PINE_NEEDLES: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5d879923-55fc-46ab-9306-5e1f10441c89"),
     "Wall of Pine Needles",
     crate::card::CardArt::new("5d879923-55fc-46ab-9306-5e1f10441c89", "Brian Snõddy"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Plant", "Wall"], 3, 3).with_abilities(&[
+        abilities::defender(),
+        AbilityDef::activated(
+            "{G}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{G}"))],
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
 );
 
 // ICE 275 — Whiteout
@@ -2805,53 +3672,137 @@ pub(in crate::card::sets) static WIITIGO: CardRecord = CardRecord::new(
 // ICE 277 — Wild Growth (reprint)
 
 // ICE 278 — Woolly Mammoths
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WOOLLY_MAMMOTHS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("eaca1216-99c8-4ad5-a51a-3c4ff3b82097"),
     "Woolly Mammoths",
     crate::card::CardArt::new("eaca1216-99c8-4ad5-a51a-3c4ff3b82097", "Dan Frazier"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Elephant"], 3, 2).with_ability(
+        AbilityDef::static_ability(
+            "This creature has trample as long as you control a snow land.",
+            EffectDef::ConditionalStatic(ConditionalStaticEffectDef {
+                condition: ObjectSetCountConditionDef {
+                    objects: &ObjectSetDef::Query(ObjectQueryDef::matching(
+                        ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Land),
+                            ObjectPredicateDef::Supertype(CardSupertype::Snow),
+                        ]),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    )),
+                    predicate: ObjectSetPredicateDef {
+                        filter: None,
+                        comparison: ComparisonDef::GreaterOrEqual,
+                        amount: 1,
+                    },
+                },
+                then: StaticApplyDef {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::add_ability(&abilities::trample()),
+                },
+            }),
+        ),
+    ),
 );
 
 // ICE 279 — Woolly Spider
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WOOLLY_SPIDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("e10520b2-b5a7-4328-84c8-20443b6f588a"),
     "Woolly Spider",
     crate::card::CardArt::new("e10520b2-b5a7-4328-84c8-20443b6f588a", "Daniel Gelon"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Spider"], 2, 3).with_abilities(&[
+        abilities::reach(),
+        AbilityDef::triggered(
+            "Whenever this creature blocks a creature with flying, this creature gets +0/+2 until end of turn.",
+            TriggerEventDef::Blocks {
+                blocked: ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 // ICE 280 — Yavimaya Gnats
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static YAVIMAYA_GNATS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9d8b7020-ca8f-4867-bc51-13d824daf154"),
     "Yavimaya Gnats",
     crate::card::CardArt::new("9d8b7020-ca8f-4867-bc51-13d824daf154", "Dan Frazier"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Insect"], 0, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::activated(
+            "{G}: Regenerate this creature.",
+            &[AbilityCostDef::Mana(mana_cost!("{G}"))],
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+    ]),
 );
 
 // ICE 281 — Altar of Bone
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ALTAR_OF_BONE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("75d5b014-8675-4d91-a539-ac5c31d44b35"),
     "Altar of Bone",
     crate::card::CardArt::new("75d5b014-8675-4d91-a539-ac5c31d44b35", "Melissa A. Benson"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{G}{W}"))
+        .with_ability(
+            AbilityDef::spell(
+                "Search your library for a creature card, reveal it, put it into your hand, then shuffle.",
+                EffectDef::SearchZone {
+                    player: EffectRecipientDef::Controller,
+                    source: ZoneKind::Library,
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    minimum: 0,
+                    maximum: ValueDef::Constant(1),
+                    reveal: true,
+                    destination: ZoneKind::Hand,
+                    placement: crate::card::ZonePlacement::Top,
+                    shuffle: true,
+                    enters_tapped: false,
+                    attachment: None,
+                    binding: None,
+                    then: None,
+                },
+            )
+            .with_spell_additional_cost(&SpellAdditionalCostDef::sacrifice(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                CostQuantityDef::Fixed(1),
+            )),
+        ),
 );
 
 // ICE 282 — Centaur Archer
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CENTAUR_ARCHER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("e275c295-72da-4a86-82c6-cfd75b38b19c"),
     "Centaur Archer",
     crate::card::CardArt::new("e275c295-72da-4a86-82c6-cfd75b38b19c", "Melissa A. Benson"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{R}{G}"), &["Centaur", "Archer"], 3, 2).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: This creature deals 1 damage to target creature with flying.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
+                ]),
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
 );
 
 // ICE 283 — Chromatic Armor
@@ -2888,13 +3839,24 @@ pub(in crate::card::sets) static EARTHLINK: CardRecord = CardRecord::new(
 );
 
 // ICE 286 — Elemental Augury
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ELEMENTAL_AUGURY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("62bbff2a-5109-400a-961b-eacffb9aed67"),
     "Elemental Augury",
     crate::card::CardArt::new("62bbff2a-5109-400a-961b-eacffb9aed67", "Anthony S. Waters"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{U}{B}{R}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "{3}: Look at the top three cards of target player's library, then put them back in any order.",
+            &[AbilityCostDef::Mana(mana_cost!("{3}"))],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            abilities::look_at_top_cards_and_reorder(
+                PlayerRefDef::Target(TargetIndex::PRIMARY),
+                ValueDef::Constant(3),
+            ),
+        ),
+    ),
 );
 
 // ICE 287 — Essence Vortex
@@ -3011,7 +3973,6 @@ pub(in crate::card::sets) static GLACIERS: CardRecord = CardRecord::new(
 );
 
 // ICE 295 — Hymn of Rebirth
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HYMN_OF_REBIRTH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("61d0f2f2-f6e2-4b8a-8418-10b17c5e0ea9"),
     "Hymn of Rebirth",
@@ -3020,7 +3981,28 @@ pub(in crate::card::sets) static HYMN_OF_REBIRTH: CardRecord = CardRecord::new(
         "Richard Kane Ferguson",
     ),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{3}{G}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Put target creature card from a graveyard onto the battlefield under your control.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: None,
+            },
+        )],
+        EffectDef::WithBattlefieldArrival {
+            effect: &EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Battlefield,
+                placement: crate::card::ZonePlacement::Top,
+            },
+            arrival: crate::card::BattlefieldArrivalDef {
+                controller: Some(PlayerRelation::You),
+                ..crate::card::BattlefieldArrivalDef::DEFAULT
+            },
+        },
+    )),
 );
 
 // ICE 296 — Kjeldoran Frostbeast
@@ -3100,17 +4082,29 @@ pub(in crate::card::sets) static SPECTRAL_SHIELD: CardRecord = CardRecord::new(
 );
 
 // ICE 303 — Storm Spirit
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STORM_SPIRIT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7a383a5f-4814-4b92-aa80-2a6440a719bc"),
     "Storm Spirit",
     crate::card::CardArt::new("7a383a5f-4814-4b92-aa80-2a6440a719bc", "Pete Venters"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{3}{G}{W}{U}"), &["Elemental", "Spirit"], 3, 3)
+        .with_abilities(&[
+            abilities::flying(),
+            AbilityDef::activated_with_targets(
+                "{T}: This creature deals 2 damage to target creature.",
+                &[AbilityCostDef::TapSource],
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )],
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(2),
+                },
+            ),
+        ]),
 );
 
 // ICE 304 — Stormbind
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STORMBIND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c2d5d91b-aeb4-4d7e-b748-77f9960da55f"),
     "Stormbind",
@@ -3119,11 +4113,25 @@ pub(in crate::card::sets) static STORMBIND: CardRecord = CardRecord::new(
         "NéNé Thomas & Phillip Mosness",
     ),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{1}{R}{G}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "{2}, Discard a card at random: This enchantment deals 2 damage to any target.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}")),
+                AbilityCostDef::DiscardCardsAtRandom(1),
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(2),
+            },
+        ),
+    ),
 );
 
 // ICE 305 — Wings of Aesthir
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WINGS_OF_AESTHIR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("eeb0282d-ccec-4556-8b70-b6f665077afe"),
     "Wings of Aesthir",
@@ -3132,27 +4140,77 @@ pub(in crate::card::sets) static WINGS_OF_AESTHIR: CardRecord = CardRecord::new(
         "Edward P. Beard, Jr.",
     ),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{W}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +1/+0 and has flying and first strike.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(1),
+                            ValueDef::Constant(0),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::flying()),
+                        AppliedEffectDef::add_ability(&abilities::first_strike()),
+                    ]),
+                },
+            ),
+        ]),
 );
 
 // ICE 306 — Adarkar Sentinel
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ADARKAR_SENTINEL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ff62754b-f4f0-4731-8dd7-327a820f60a8"),
     "Adarkar Sentinel",
     crate::card::CardArt::new("ff62754b-f4f0-4731-8dd7-327a820f60a8", "Melissa A. Benson"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact_creature(mana_cost!("{5}"), &["Soldier"], 3, 3).with_ability(
+        AbilityDef::activated(
+            "{1}: This creature gets +0/+1 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // ICE 307 — Aegis of the Meek
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AEGIS_OF_THE_MEEK: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5d272051-f442-4f6e-8c64-df28b398d2e8"),
     "Aegis of the Meek",
     crate::card::CardArt::new("5d272051-f442-4f6e-8c64-df28b398d2e8", "Allen Williams"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{3}")).with_ability(AbilityDef::activated_with_targets(
+        "{1}, {T}: Target 1/1 creature gets +1/+2 until end of turn.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{1}")),
+            AbilityCostDef::TapSource,
+        ],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::PowerExactly(1),
+                ObjectPredicateDef::ToughnessExactly(1),
+            ]),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(2),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ICE 308 — Amulet of Quoz
@@ -3196,13 +4254,14 @@ pub(in crate::card::sets) static ARCUM_S_WHISTLE: CardRecord = CardRecord::new(
 );
 
 // ICE 312 — Barbed Sextant
-// Audit: unsupported — Card rules have not been implemented.
+// Audit: unsupported — Activated mana abilities cannot yet install the delayed draw trigger
+// while remaining inside the shared mana-ability runtime boundary.
 pub(in crate::card::sets) static BARBED_SEXTANT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("edb82654-de12-4dce-8c6b-f28d68f0fbe1"),
     "Barbed Sextant",
     crate::card::CardArt::new("edb82654-de12-4dce-8c6b-f28d68f0fbe1", "Amy Weber"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::unsupported(),
 );
 
 // ICE 313 — Baton of Morale
@@ -3236,13 +4295,24 @@ pub(in crate::card::sets) static CROWN_OF_THE_AGES: CardRecord = CardRecord::new
 );
 
 // ICE 316 — Despotic Scepter
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DESPOTIC_SCEPTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("53e381a4-810e-4b75-aed3-c16cf0eb06fa"),
     "Despotic Scepter",
     crate::card::CardArt::new("53e381a4-810e-4b75-aed3-c16cf0eb06fa", "Richard Thomas"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated_with_targets(
+        "{T}: Destroy target permanent you own. It can't be regenerated.",
+        &[AbilityCostDef::TapSource],
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Any,
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: Some(PlayerRelation::You),
+            },
+        )],
+        EffectDef::destroy_target(TargetIndex::PRIMARY, false),
+    )),
 );
 
 // ICE 317 — Elkin Bottle
@@ -3256,13 +4326,26 @@ pub(in crate::card::sets) static ELKIN_BOTTLE: CardRecord = CardRecord::new(
 );
 
 // ICE 318 — Fyndhorn Bow
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FYNDHORN_BOW: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("65dd0a41-cc51-4728-b597-fdb2510accd8"),
     "Fyndhorn Bow",
     crate::card::CardArt::new("65dd0a41-cc51-4728-b597-fdb2510accd8", "Rob Alexander"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::activated_with_targets(
+        "{3}, {T}: Target creature gains first strike until end of turn.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{3}")),
+            AbilityCostDef::TapSource,
+        ],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ICE 319 — Goblin Lyre
@@ -3398,13 +4481,31 @@ pub(in crate::card::sets) static PENTAGRAM_OF_THE_AGES: CardRecord = CardRecord:
 );
 
 // ICE 333 — Pit Trap
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PIT_TRAP: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c588fe7f-945d-4459-904c-67442f88b4e1"),
     "Pit Trap",
     crate::card::CardArt::new("c588fe7f-945d-4459-904c-67442f88b4e1", "Anson Maddocks"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "{2}, {T}, Sacrifice this artifact: Destroy target attacking creature without flying. It can't be regenerated.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}")),
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificeSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Attacking,
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasKeyword(
+                        crate::card::KeywordAbility::Flying,
+                    )),
+                ]),
+            )],
+            EffectDef::destroy_target(TargetIndex::PRIMARY, false),
+        ),
+    ),
 );
 
 // ICE 334 — Runed Arch
@@ -3428,23 +4529,40 @@ pub(in crate::card::sets) static SHIELD_OF_THE_AGES: CardRecord = CardRecord::ne
 );
 
 // ICE 336 — Skull Catapult
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SKULL_CATAPULT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("eb92a3e6-dc30-4a08-baba-e125290cadc5"),
     "Skull Catapult",
     crate::card::CardArt::new("eb92a3e6-dc30-4a08-baba-e125290cadc5", "Bryon Wackwitz"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::activated_with_targets(
+        "{1}, {T}, Sacrifice a creature: This artifact deals 2 damage to any target.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{1}")),
+            AbilityCostDef::TapSource,
+            AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                controller: PlayerRelation::You,
+            },
+        ],
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::AnyTarget,
+        )],
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(2),
+        },
+    )),
 );
 
 // ICE 337 — Snow Fortress
-// Audit: unsupported — Card rules have not been implemented.
+// Audit: unsupported — Targeting can identify an attacking creature, but cannot yet distinguish
+// one attacking you from one attacking a planeswalker you protect.
 pub(in crate::card::sets) static SNOW_FORTRESS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1c480e07-fb26-4760-865f-47985f7447bb"),
     "Snow Fortress",
     crate::card::CardArt::new("1c480e07-fb26-4760-865f-47985f7447bb", "Jeff A. Menges"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::unsupported(),
 );
 
 // ICE 338 — Soldevi Golem
@@ -3478,23 +4596,74 @@ pub(in crate::card::sets) static STAFF_OF_THE_AGES: CardRecord = CardRecord::new
 );
 
 // ICE 341 — Sunstone
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUNSTONE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3c1c67fa-ff88-4a61-b8a5-8a872b3dc44f"),
     "Sunstone",
     crate::card::CardArt::new("3c1c67fa-ff88-4a61-b8a5-8a872b3dc44f", "Phil Foglio"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{3}")).with_ability(AbilityDef::activated(
+        "{2}, Sacrifice a snow land: Prevent all combat damage that would be dealt this turn.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{2}")),
+            AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    ObjectPredicateDef::Supertype(CardSupertype::Snow),
+                ]),
+                controller: PlayerRelation::You,
+            },
+        ],
+        EffectDef::PreventDamage {
+            prevention: crate::card::DamagePreventionDef::unlimited(
+                crate::card::DamageEventMatcherDef::COMBAT,
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ICE 342 — Time Bomb
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TIME_BOMB: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("092ec691-4729-46d3-a4e2-0cfc5df42a31"),
     "Time Bomb",
     crate::card::CardArt::new("092ec691-4729-46d3-a4e2-0cfc5df42a31", "Amy Weber"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, put a time counter on this artifact.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::named("time"),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated(
+            "{1}, {T}, Sacrifice this artifact: This artifact deals damage equal to the number of time counters on it to each creature and each player.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}")),
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificeSource,
+            ],
+            EffectDef::Sequence(&[
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::Any,
+                    ),
+                    amount: ValueDef::CountersOnSource(CounterKind::named("time")),
+                },
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::EachPlayer,
+                    amount: ValueDef::CountersOnSource(CounterKind::named("time")),
+                },
+            ]),
+        ),
+    ]),
 );
 
 // ICE 343 — Urza's Bauble
@@ -3576,23 +4745,52 @@ pub(in crate::card::sets) static WALL_OF_SHIELDS: CardRecord = CardRecord::new(
 );
 
 // ICE 348 — War Chariot
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WAR_CHARIOT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d0ea0c6c-aa76-4b16-bc99-2ff46dc56d4e"),
     "War Chariot",
     crate::card::CardArt::new("d0ea0c6c-aa76-4b16-bc99-2ff46dc56d4e", "Dameon Willich"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{3}")).with_ability(AbilityDef::activated_with_targets(
+        "{3}, {T}: Target creature gains trample until end of turn.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{3}")),
+            AbilityCostDef::TapSource,
+        ],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::add_ability(&abilities::trample()),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ICE 349 — Whalebone Glider
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WHALEBONE_GLIDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4b75adf0-9501-4776-a213-456c2b821070"),
     "Whalebone Glider",
     crate::card::CardArt::new("4b75adf0-9501-4776-a213-456c2b821070", "Amy Weber"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::activated_with_targets(
+        "{2}, {T}: Target creature with power 3 or less gains flying until end of turn.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{2}")),
+            AbilityCostDef::TapSource,
+        ],
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::PowerLessThan(ValueDef::Constant(4)),
+            ]),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::add_ability(&abilities::flying()),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ICE 350 — Zuran Orb
@@ -3627,13 +4825,15 @@ pub(in crate::card::sets) static ADARKAR_WASTES: CardRecord = CardRecord::new_wi
 );
 
 // ICE 352 — Brushland
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BRUSHLAND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("170e5ccd-54bf-4c6d-86b4-0359ca8f36e8"),
     "Brushland",
     crate::card::CardArt::new("170e5ccd-54bf-4c6d-86b4-0359ca8f36e8", "Bryon Wackwitz"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_land(&[]).with_abilities(&abilities::pain_land(
+        "{T}: Add {G} or {W}. This land deals 1 damage to you.",
+        &[ManaColor::Green, ManaColor::White],
+    )),
 );
 
 // ICE 353 — Glacial Chasm
@@ -3709,13 +4909,15 @@ pub(in crate::card::sets) static RIVER_DELTA: CardRecord = CardRecord::new(
 );
 
 // ICE 360 — Sulfurous Springs
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SULFUROUS_SPRINGS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("2fdeab50-b45f-412b-85a3-c6cf009ce567"),
     "Sulfurous Springs",
     crate::card::CardArt::new("2fdeab50-b45f-412b-85a3-c6cf009ce567", "Phil Foglio"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_land(&[]).with_abilities(&abilities::pain_land(
+        "{T}: Add {B} or {R}. This land deals 1 damage to you.",
+        &[ManaColor::Black, ManaColor::Red],
+    )),
 );
 
 // ICE 361 — Timberline Ridge
@@ -3757,13 +4959,14 @@ pub(in crate::card::sets) static VELDT: CardRecord = CardRecord::new(
 // ICE 366 — Plains (alternate printing)
 
 // ICE 367 — Snow-Covered Plains
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SNOW_COVERED_PLAINS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("cb3ac778-fb45-4fd3-a9af-8a0791f833e8"),
     "Snow-Covered Plains",
     crate::card::CardArt::new("cb3ac778-fb45-4fd3-a9af-8a0791f833e8", "Christopher Rush"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_land(&["Plains"])
+        .with_supertype(CardSupertype::Basic)
+        .with_supertype(CardSupertype::Snow),
 );
 
 // ICE 368 — Island (reprint)
@@ -3773,23 +4976,25 @@ pub(in crate::card::sets) static SNOW_COVERED_PLAINS: CardRecord = CardRecord::n
 // ICE 370 — Island (alternate printing)
 
 // ICE 371 — Snow-Covered Island
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SNOW_COVERED_ISLAND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ad8b77cf-b53e-4da3-9c27-3851b7b25a98"),
     "Snow-Covered Island",
     crate::card::CardArt::new("ad8b77cf-b53e-4da3-9c27-3851b7b25a98", "Anson Maddocks"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_land(&["Island"])
+        .with_supertype(CardSupertype::Basic)
+        .with_supertype(CardSupertype::Snow),
 );
 
 // ICE 372 — Snow-Covered Swamp
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SNOW_COVERED_SWAMP: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("65a3c27f-6b15-49b6-ac89-36cfb79b3b54"),
     "Snow-Covered Swamp",
     crate::card::CardArt::new("65a3c27f-6b15-49b6-ac89-36cfb79b3b54", "Douglas Shuler"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_land(&["Swamp"])
+        .with_supertype(CardSupertype::Basic)
+        .with_supertype(CardSupertype::Snow),
 );
 
 // ICE 373 — Swamp (reprint)
@@ -3805,13 +5010,14 @@ pub(in crate::card::sets) static SNOW_COVERED_SWAMP: CardRecord = CardRecord::ne
 // ICE 378 — Mountain (alternate printing)
 
 // ICE 379 — Snow-Covered Mountain
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SNOW_COVERED_MOUNTAIN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ccd3afb3-5574-4f2d-adbe-969a428f1c63"),
     "Snow-Covered Mountain",
     crate::card::CardArt::new("ccd3afb3-5574-4f2d-adbe-969a428f1c63", "Tom Wänerstrand"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_land(&["Mountain"])
+        .with_supertype(CardSupertype::Basic)
+        .with_supertype(CardSupertype::Snow),
 );
 
 // ICE 380 — Forest (reprint)
@@ -3821,13 +5027,14 @@ pub(in crate::card::sets) static SNOW_COVERED_MOUNTAIN: CardRecord = CardRecord:
 // ICE 382 — Forest (alternate printing)
 
 // ICE 383 — Snow-Covered Forest
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SNOW_COVERED_FOREST: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4c0ad95c-d62c-4138-ada0-fa39a63a449e"),
     "Snow-Covered Forest",
     crate::card::CardArt::new("4c0ad95c-d62c-4138-ada0-fa39a63a449e", "Pat Lewis"),
     crate::card::CardSet::IceAge,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_land(&["Forest"])
+        .with_supertype(CardSupertype::Basic)
+        .with_supertype(CardSupertype::Snow),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
