@@ -2,12 +2,48 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCoverageDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef, CardArt,
-    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef,
+    CardArt, CardRules, CardSet, CardType, CopyStackObjectDef, CostQuantityDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    OptionalAdditionalCostAbilityDef, OptionalAdditionalCostKindDef, PlayerRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, SpellAdditionalCostDef, SpellResolutionDestinationDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
-use crate::{TargetIndex, mana_cost};
+use crate::{AdditionalCostIndex, TargetIndex, mana_cost};
+
+/// Conspire is one optional creature-tapping cast cost plus the cast trigger
+/// that copies the spell when that cost was paid. Each card supplies the
+/// creature predicate that shares one of its colors.
+const fn conspire(
+    spell: &'static AbilityDef,
+    additional_cost: SpellAdditionalCostDef,
+) -> [AbilityDef; 3] {
+    [
+        *spell,
+        AbilityDef::optional_additional_cost(
+            "Conspire (As you cast this spell, you may tap two untapped creatures you control that share a color with it.)",
+            OptionalAdditionalCostAbilityDef {
+                kind: OptionalAdditionalCostKindDef::Conspire,
+                label: "Conspire",
+                mana_cost: None,
+                additional_cost: Some(additional_cost),
+                resolution_destination: SpellResolutionDestinationDef::Graveyard,
+            },
+        ),
+        AbilityDef::triggered_if(
+            "When you conspire, copy this spell. You may choose new targets for the copy.",
+            TriggerEventDef::spell_cast(ObjectPredicateDef::Source),
+            &TriggerConditionDef::SourcePaidAdditionalCost(AdditionalCostIndex::PRIMARY),
+            EffectDef::CopyStackObject(&CopyStackObjectDef {
+                object: EffectRecipientDef::TriggeringObject,
+                controller: PlayerRefDef::EffectController,
+                count: ValueDef::Constant(1),
+                retarget: true,
+                colors: None,
+            }),
+        ),
+    ]
+}
 
 // SHM 57 — Beseech the Queen
 pub(in crate::card::sets) static BESEECH_THE_QUEEN: CardRecord = CardRecord::new(
@@ -38,6 +74,33 @@ pub(in crate::card::sets) static BESEECH_THE_QUEEN: CardRecord = CardRecord::new
             attachment: None,
             binding: None,
             then: None,
+        },
+    )),
+);
+
+// SHM 86 — Burn Trail
+pub(in crate::card::sets) static BURN_TRAIL: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("7f01f9a0-f1d0-4241-a270-df4ed673d1fd"),
+    "Burn Trail",
+    CardArt::new("7f01f9a0-f1d0-4241-a270-df4ed673d1fd", "Nils Hamm"),
+    CardSet::Shadowmoor,
+    CardRules::new_sorcery(mana_cost!("{3}{R}")).with_abilities(&conspire(
+        &AbilityDef::spell_with_targets(
+            "Burn Trail deals 3 damage to any target.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(3),
+            },
+        ),
+        SpellAdditionalCostDef::Tap {
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::Color(ManaColor::Red),
+            ]),
+            quantity: CostQuantityDef::Fixed(2),
         },
     )),
 );
@@ -102,15 +165,14 @@ pub(in crate::card::sets) static MANAMORPHOSE: CardRecord = CardRecord::new_with
 );
 
 // SHM 224 — Barkshell Blessing
-// Audit: partial — Conspire's creature-tapping cost and spell-copy trigger are not modeled; the targeted +2/+2 effect is executable.
 pub(in crate::card::sets) static BARKSHELL_BLESSING: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("cd273ef2-4aed-4c7e-8c97-fe8b1af9ce69"),
     "Barkshell Blessing",
     CardArt::new("cd273ef2-4aed-4c7e-8c97-fe8b1af9ce69", "Steven Belledin"),
     CardSet::Shadowmoor,
-    CardRules::new_instant(mana_cost!("{G/W}")).with_ability(
-        AbilityDef::spell_with_targets(
-            "Target creature gets +2/+2 until end of turn.\nConspire (As you cast this spell, you may tap two untapped creatures you control that share a color with it. When you do, copy it and you may choose a new target for the copy.)",
+    CardRules::new_instant(mana_cost!("{G/W}")).with_abilities(&conspire(
+        &AbilityDef::spell_with_targets(
+            "Target creature gets +2/+2 until end of turn.",
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
@@ -122,15 +184,23 @@ pub(in crate::card::sets) static BARKSHELL_BLESSING: CardRecord = CardRecord::ne
                 ),
                 duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
-        )
-        .with_coverage(AbilityCoverageDef::partial(
-            "The targeted +2/+2 effect is executable. Conspire's creature-tapping cast cost and spell-copy trigger are not modeled.",
-        )),
-    ),
+        ),
+        SpellAdditionalCostDef::Tap {
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::Color(ManaColor::Green),
+                    ObjectPredicateDef::Color(ManaColor::White),
+                ]),
+            ]),
+            quantity: CostQuantityDef::Fixed(2),
+        },
+    )),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BESEECH_THE_QUEEN,
+    &BURN_TRAIL,
     &WOODFALL_PRIMUS,
     &MANAMORPHOSE,
     &BARKSHELL_BLESSING,

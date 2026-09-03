@@ -18,7 +18,10 @@ fn static_source_value_supported(value: ValueDef) -> bool {
 fn static_object_value_aggregate_supported(aggregate: ObjectValueAggregateDef) -> bool {
     matches!(
         aggregate.select,
-        ObjectValueDef::ManaValue | ObjectValueDef::Power | ObjectValueDef::Toughness
+        ObjectValueDef::ManaValue
+            | ObjectValueDef::Power
+            | ObjectValueDef::Toughness
+            | ObjectValueDef::Counters(_)
     ) && static_object_set_supported(aggregate.objects)
 }
 
@@ -89,6 +92,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness
         | ValueDef::TriggerEventAmount
+        | ValueDef::DamageEventAmount
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::Negate(_)
         | ValueDef::IfCreatureDiedThisTurn(_)
@@ -156,6 +160,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness
         | ValueDef::TriggerEventAmount
+        | ValueDef::DamageEventAmount
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::AnyMatchingObject(_)

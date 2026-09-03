@@ -488,6 +488,15 @@ fn composite_uncounterability_stays_within_the_shared_runtime_boundary() {
     static MIXED_RIDERS: [ManaSpendEffectDef; 1] = [ManaSpendEffectDef::ApplyToPaidSpell(
         AppliedEffectDef::Composite(&MIXED),
     )];
+    static BATTLEFIELD_TO_STACK: EffectDef = EffectDef::StaticApply {
+        recipient: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            &[ZoneKind::Stack],
+            PlayerRelation::Any,
+        ),
+        effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
+    };
+    static WRAPPED_BATTLEFIELD_TO_STACK: [EffectDef; 1] = [BATTLEFIELD_TO_STACK];
 
     let stack_effect = |effect| EffectDef::StaticApply {
         recipient: EffectRecipientDef::Source,
@@ -504,6 +513,14 @@ fn composite_uncounterability_stays_within_the_shared_runtime_boundary() {
     assert!(!shared_static_effect(
         &[ZoneKind::Stack],
         stack_effect(AppliedEffectDef::Composite(&[])),
+    ));
+    assert!(shared_static_effect(
+        &[ZoneKind::Battlefield],
+        BATTLEFIELD_TO_STACK,
+    ));
+    assert!(!shared_static_effect(
+        &[ZoneKind::Battlefield],
+        EffectDef::Sequence(&WRAPPED_BATTLEFIELD_TO_STACK),
     ));
 
     assert!(shared_mana_effect(
@@ -529,14 +546,6 @@ fn fully_declarative_clauses_stay_within_the_shared_runtime_boundary() {
             for attached in part.rules.indexed_abilities() {
                 let ability_id = attached.id;
                 let ability = attached.definition;
-                assert!(
-                    !matches!(ability.definition, DeclarativeAbilityDef::Unimplemented)
-                        || !ability.is_executable(),
-                    "{} {:?} ability {:?} has unimplemented structure but claims executable coverage: {ability:?}",
-                    definition.name,
-                    part.id,
-                    ability_id,
-                );
                 if ability.declarative_effect().is_some()
                     || ability.declarative_replacement().is_some()
                 {

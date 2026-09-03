@@ -2,10 +2,10 @@ use crate::ids::{Binding, ModeId, TargetIndex};
 
 use super::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, BasicLandType, CardSupertype,
-    CardType, ConditionDef, CostQuantityDef, CounterKind, EffectDef, ImplementationStatus,
-    ManaCost, ObjectPredicateDef, ObjectQueryDef, ObjectSetCountConditionDef, ObjectSetDef,
-    PlayerRelation, ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef,
-    TriggerEventDef, ValueDef, ZoneKind,
+    CardType, ConditionDef, CostQuantityDef, CounterKind, EffectDef, ManaCost, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetCountConditionDef, ObjectSetDef, PlayerRelation,
+    ReplacementConditionDef, ReplacementEffectDef, ReplacementEventDef, TriggerEventDef, ValueDef,
+    ZoneKind,
 };
 
 mod alternative_casts;
@@ -873,10 +873,9 @@ impl Default for StaticAbilityDef {
     }
 }
 
-/// The rules category and structural procedure of an ability. Text and
-/// implementation coverage live on [`AbilityDef`] so every printed clause has
-/// one canonical text string regardless of how it executes. Identity is
-/// supplied only when a definition is attached.
+/// The rules category and structural procedure of an ability. Printed text
+/// lives on [`AbilityDef`] so every clause has one canonical text string.
+/// Identity is supplied only when a definition is attached.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum DeclarativeAbilityDef {
     Spell(SpellAbilityDef),
@@ -894,8 +893,6 @@ pub enum DeclarativeAbilityDef {
     /// A permission the card grants the deck it is built into. It is read
     /// while a deck is assembled and is silent during play.
     DeckConstruction(DeckConstructionDef),
-    /// A printed clause whose behavior is not implemented yet.
-    Unimplemented,
 }
 
 /// The structured program of an ability.
@@ -947,7 +944,6 @@ impl AbilityEffectDef {
     }
 }
 
-include!("ability_kinds/coverage.rs");
 include!("ability_kinds/deck_construction.rs");
 include!("ability_kinds/conditions.rs");
 include!("ability_kinds/keywords.rs");

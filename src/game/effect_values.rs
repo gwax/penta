@@ -301,15 +301,10 @@ impl Game {
                 .ability
                 .as_ref()
                 .map_or(0, |ability| i32::from(ability.sacrificed_mana_value)),
-            // Resolved per target by the divided-damage path; anything else
-            // reading it has no target in hand and so no share.
-            // Neither has an answer while an effect resolves: nothing is
-            // being divided, and only the static power-and-toughness layer
-            // has an affected object whose cost it could read.
-            // None of these has an answer while an effect resolves: nothing
-            // is being divided, and only the static power-and-toughness
-            // layer has an affected object or a source pile to read.
-            ValueDef::DistinctTargets
+            // These inputs belong to other evaluation contexts: a pending
+            // damage modification, per-target division, or a static layer.
+            ValueDef::DamageEventAmount
+            | ValueDef::DistinctTargets
             | ValueDef::DividedAmongTargets
             | ValueDef::ResolvedRecipientCount
             | ValueDef::AffectedManaValue
@@ -334,8 +329,10 @@ impl Game {
             ValueDef::TargetPower(target) => {
                 Self::chosen_targets(object, scoped.target_slot(target))
                     .find_map(|target| match target {
-                        Target::Permanent(id) => self.current_or_last_known_power(id),
-                        Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
+                        Target::Permanent(id) | Target::Card(id) | Target::Spell(id) => {
+                            self.current_or_last_known_power(id)
+                        }
+                        Target::Player(_) => None,
                     })
                     .map_or(0, i32::from)
             }
@@ -609,6 +606,9 @@ impl Game {
                             }
                             crate::card::ObjectValueDef::Toughness => {
                                 self.current_or_last_known_toughness(id).map(i32::from)
+                            }
+                            crate::card::ObjectValueDef::Counters(kind) => {
+                                Some(i32::from(self.current_or_last_known_counters(id, kind)))
                             }
                         }
                     });

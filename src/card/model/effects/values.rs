@@ -126,6 +126,7 @@ pub enum ObjectValueDef {
     ManaValue,
     Power,
     Toughness,
+    Counters(CounterKind),
 }
 
 /// How a projected collection of object values becomes one effect value.
@@ -331,6 +332,10 @@ pub enum ValueDef {
     SourcePower,
     SourceToughness,
     TriggerEventAmount,
+    /// The amount of damage still being dealt when a deferred prevention
+    /// modification is applied. Each prevention reads the event after every
+    /// earlier replacement or prevention has changed it.
+    DamageEventAmount,
     CardsInHandAbove {
         player: PlayerRelation,
         threshold: u8,

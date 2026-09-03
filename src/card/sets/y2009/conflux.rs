@@ -5,20 +5,11 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef,
     BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
     EffectRecipientDef, ManaColor, ManaTypeSetDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    ObjectSetDef, PlayerRelation, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
-use crate::ids::TargetIndex;
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 // CON 15 — Path to Exile
-// Audit: partial — "The controller of the exiled creature isn't required to
-// search their library for a basic land. If that player doesn't, the player
-// won't shuffle their library." A declined search shuffles here all the same,
-// because a search that may be declined and a mandatory search that fails to
-// find are both `minimum: 0` with an empty answer, and only the second one
-// shuffles. Telling them apart needs an authored flag on `SearchZone`, which
-// every one of its ninety-odd construction sites would have to name.
 pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new_with_legacy_id(
     2189,
     "Path to Exile",
@@ -26,8 +17,6 @@ pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new_wit
     CardSet::Conflux,
     CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
         "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
-        // Any creature, including one of your own: the compensation is what keeps
-        // the printed cost at one mana, not a restriction on whom it may hit.
         &[AbilityTargetDef::exactly_one_permanent(
             ObjectPredicateDef::HasType(CardType::Creature),
         )],
@@ -37,30 +26,26 @@ pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new_wit
                 zone: ZoneKind::Exile,
                 placement: ZonePlacement::Top,
             },
-            // The searcher is the creature's controller, read from the announced
-            // target: by now the creature is in exile and cannot be asked. A minimum
-            // of zero is the printed "may" -- declining to search and searching
-            // without finding are the same answer here, which is what the audit
-            // note above is about.
-            EffectDef::SearchZone {
-                player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
-                    TargetIndex::PRIMARY,
-                ))),
-                source: ZoneKind::Library,
-                object: ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Land),
-                    ObjectPredicateDef::Supertype(CardSupertype::Basic),
-                ]),
-                minimum: 0,
-                maximum: ValueDef::Constant(1),
-                reveal: false,
-                destination: ZoneKind::Battlefield,
-                placement: ZonePlacement::Top,
-                shuffle: true,
-                enters_tapped: true,
-                attachment: None,
-                binding: None,
-                then: None,
+            EffectDef::May {
+                player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
+                effect: &EffectDef::SearchZone {
+                    player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
+                    source: ZoneKind::Library,
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                    ]),
+                    minimum: 0,
+                    maximum: ValueDef::Constant(1),
+                    reveal: false,
+                    destination: ZoneKind::Battlefield,
+                    placement: ZonePlacement::Top,
+                    shuffle: true,
+                    enters_tapped: true,
+                    attachment: None,
+                    binding: None,
+                    then: None,
+                },
             },
         ]),
     )),

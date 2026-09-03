@@ -211,7 +211,7 @@ fn validate_effect_target_shapes(
             if let DamagePreventionCapacityDef::Amount(amount) = prevention.capacity {
                 validate_value_shape(amount, targets)?;
             }
-            Ok(())
+            validate_value_shape(prevention.amount, targets)
         }
         EffectDef::DealDamage { recipient, amount }
         | EffectDef::DealDamageAndApply {
@@ -554,8 +554,7 @@ fn validate_effect_target_shapes(
                 | DeclarativeAbilityDef::SpecialAction(_)
                 | DeclarativeAbilityDef::Pregame(_)
                 | DeclarativeAbilityDef::Keyword(_)
-                | DeclarativeAbilityDef::DeckConstruction(_)
-                | DeclarativeAbilityDef::Unimplemented => None,
+                | DeclarativeAbilityDef::DeckConstruction(_) => None,
             };
             validate_program_target_shapes(
                 trigger.ability.effect.definition,

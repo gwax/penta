@@ -473,13 +473,16 @@ impl HandcraftedPolicy {
                 .ability
                 .declarative_effect()
                 .and_then(Self::target_condition_in),
-            EffectDef::PreventDamage { prevention, .. } => match prevention.capacity {
-                crate::card::DamagePreventionCapacityDef::Amount(amount) => {
-                    Self::target_condition_in_value(amount)
-                }
-                crate::card::DamagePreventionCapacityDef::Events(_)
-                | crate::card::DamagePreventionCapacityDef::Unlimited => None,
-            },
+            EffectDef::PreventDamage { prevention, .. } => {
+                let capacity = match prevention.capacity {
+                    crate::card::DamagePreventionCapacityDef::Amount(amount) => {
+                        Self::target_condition_in_value(amount)
+                    }
+                    crate::card::DamagePreventionCapacityDef::Events(_)
+                    | crate::card::DamagePreventionCapacityDef::Unlimited => None,
+                };
+                capacity.or_else(|| Self::target_condition_in_value(prevention.amount))
+            }
             EffectDef::AddCounters { amount, .. } | EffectDef::GainLife { amount, .. } => {
                 Self::target_condition_in_value(amount)
             }
@@ -622,9 +625,7 @@ impl HandcraftedPolicy {
             ) if presented == part => *token.part(part)?.rules.ability(ability)?,
             _ => return None,
         };
-        if !ability.is_executable()
-            || !matches!(ability.definition, DeclarativeAbilityDef::Activated(_))
-        {
+        if !matches!(ability.definition, DeclarativeAbilityDef::Activated(_)) {
             return None;
         }
         let mut profile = DeclarativeSpellProfile::default();

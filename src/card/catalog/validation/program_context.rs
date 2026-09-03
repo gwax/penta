@@ -35,16 +35,14 @@ pub(super) fn validate_ability_effect_context(
         return Ok(());
     };
     match ability.definition {
-        DeclarativeAbilityDef::Static(definition) => validate_static_effect(
-            effect,
-            definition.source_zones,
-            StaticPosition::Root,
-            ability.coverage.explanation.is_some(),
-        )
-        .map_err(|operation| EffectProgramContextError {
-            context: "static",
-            operation,
-        }),
+        DeclarativeAbilityDef::Static(definition) => {
+            validate_static_effect(effect, definition.source_zones, StaticPosition::Root).map_err(
+                |operation| EffectProgramContextError {
+                    context: "static",
+                    operation,
+                },
+            )
+        }
         DeclarativeAbilityDef::Replacement(_) => Ok(()),
         DeclarativeAbilityDef::Spell(_)
         | DeclarativeAbilityDef::ActivatedMana(_)
@@ -56,8 +54,7 @@ pub(super) fn validate_ability_effect_context(
         | DeclarativeAbilityDef::SpecialAction(_)
         | DeclarativeAbilityDef::Pregame(_)
         | DeclarativeAbilityDef::Keyword(_)
-        | DeclarativeAbilityDef::DeckConstruction(_)
-        | DeclarativeAbilityDef::Unimplemented => {
+        | DeclarativeAbilityDef::DeckConstruction(_) => {
             validate_resolving_effect(effect, resolving_source_zones(ability)).map_err(
                 |operation| EffectProgramContextError {
                     context: "resolving",
@@ -80,8 +77,7 @@ fn resolving_source_zones(ability: &AbilityDef) -> &'static [ZoneKind] {
         | DeclarativeAbilityDef::AlternativeCast(_)
         | DeclarativeAbilityDef::OptionalAdditionalCost(_)
         | DeclarativeAbilityDef::Keyword(_)
-        | DeclarativeAbilityDef::DeckConstruction(_)
-        | DeclarativeAbilityDef::Unimplemented => &[ZoneKind::Stack],
+        | DeclarativeAbilityDef::DeckConstruction(_) => &[ZoneKind::Stack],
         DeclarativeAbilityDef::Static(_) | DeclarativeAbilityDef::Replacement(_) => &[],
     }
 }
@@ -91,25 +87,15 @@ fn validate_static_effect(
     effect: EffectDef,
     source_zones: &[ZoneKind],
     position: StaticPosition,
-    has_external_enforcement_explanation: bool,
 ) -> Result<(), &'static str> {
     match effect {
-        EffectDef::None
-            if position == StaticPosition::Root && has_external_enforcement_explanation =>
-        {
-            Ok(())
-        }
+        EffectDef::None if position == StaticPosition::Root => Ok(()),
         EffectDef::Sequence(effects) => {
             if effects.is_empty() {
                 return Err("empty Sequence");
             }
             for effect in effects {
-                validate_static_effect(
-                    *effect,
-                    source_zones,
-                    StaticPosition::Traversed,
-                    has_external_enforcement_explanation,
-                )?;
+                validate_static_effect(*effect, source_zones, StaticPosition::Traversed)?;
             }
             Ok(())
         }
@@ -122,19 +108,9 @@ fn validate_static_effect(
             if !static_trigger_condition_supported(*conditional.condition) {
                 return Err(effect_operation_name(effect));
             }
-            validate_static_effect(
-                *conditional.then,
-                source_zones,
-                StaticPosition::Traversed,
-                has_external_enforcement_explanation,
-            )?;
+            validate_static_effect(*conditional.then, source_zones, StaticPosition::Traversed)?;
             conditional.otherwise.map_or(Ok(()), |otherwise| {
-                validate_static_effect(
-                    *otherwise,
-                    source_zones,
-                    StaticPosition::Traversed,
-                    has_external_enforcement_explanation,
-                )
+                validate_static_effect(*otherwise, source_zones, StaticPosition::Traversed)
             })
         }
         EffectDef::ConditionalStatic(conditional)
@@ -149,10 +125,11 @@ fn validate_static_effect(
                 source_zones,
                 conditional.then.recipient,
                 conditional.then.effect,
+                StaticPosition::Traversed,
             )
         }
         EffectDef::StaticApply { recipient, effect } => {
-            validate_static_apply(source_zones, recipient, effect)
+            validate_static_apply(source_zones, recipient, effect, position)
         }
         EffectDef::GainControl {
             object: EffectRecipientDef::AttachedPermanent,
@@ -267,6 +244,7 @@ fn validate_static_apply(
     source_zones: &[ZoneKind],
     recipient: EffectRecipientDef,
     effect: AppliedEffectDef,
+    position: StaticPosition,
 ) -> Result<(), &'static str> {
     if source_zones == [ZoneKind::Stack] {
         return if recipient == EffectRecipientDef::Source
@@ -297,6 +275,15 @@ fn validate_static_apply(
     }
     if !matches!(source_zones, [ZoneKind::Battlefield | ZoneKind::Graveyard]) {
         return Err("StaticApply from unsupported source zones");
+    }
+    if position == StaticPosition::Root
+        && source_zones == [ZoneKind::Battlefield]
+        && recipient
+            .object_query()
+            .is_some_and(|query| query.zones == [ZoneKind::Stack] && static_query_supported(query))
+        && stack_static_applied_effect_supported(effect)
+    {
+        return Ok(());
     }
     match recipient.0 {
         // A static clause names one kind of thing or the other; the mixed
@@ -415,8 +402,8 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             | AppliedRuleDef::MayPlayAdditionalLands(_)
             | AppliedRuleDef::MayPlayAnyNumberOfLands
             | AppliedRuleDef::CannotDrawMoreThanEachTurn(_)
-            | AppliedRuleDef::NoMaximumHandSize
-            | AppliedRuleDef::RevealsDrawnCards | AppliedRuleDef::PlayerRule(_)
+            | AppliedRuleDef::RevealsDrawnCards | AppliedRuleDef::CannotGainLife
+            | AppliedRuleDef::PlayerRule(_)
             | AppliedRuleDef::DoublesTokensCreated,
         ) => true,
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
@@ -554,7 +541,6 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         | AppliedRuleDef::MayPlayAdditionalLands(_)
         | AppliedRuleDef::MayPlayAnyNumberOfLands
         | AppliedRuleDef::CannotDrawMoreThanEachTurn(_)
-        | AppliedRuleDef::NoMaximumHandSize
         | AppliedRuleDef::RevealsDrawnCards
         | AppliedRuleDef::DoublesTokensCreated
         | AppliedRuleDef::CannotPlay(_)

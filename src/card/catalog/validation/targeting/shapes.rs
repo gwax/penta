@@ -384,6 +384,7 @@ fn validate_value_shape(
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness
         | ValueDef::TriggerEventAmount
+        | ValueDef::DamageEventAmount
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
@@ -600,8 +601,7 @@ fn nonbattlefield_ability_grants_are_flashback(effect: AppliedEffectDef) -> bool
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
             AbilityOperationDef::Add(ability),
         )) => {
-            ability.is_executable()
-                && matches!(
+            matches!(
                     ability.definition,
                     DeclarativeAbilityDef::AlternativeCast(definition)
                         if definition.kind == AlternativeCastKindDef::Flashback
@@ -620,8 +620,7 @@ fn nonbattlefield_ability_grants_are_suspend(effect: AppliedEffectDef) -> bool {
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
             AbilityOperationDef::Add(ability),
         )) => {
-            ability.is_executable()
-                && matches!(
+            matches!(
                     ability.definition,
                     DeclarativeAbilityDef::Keyword(crate::card::KeywordAbility::Suspend(
                         crate::card::SuspendAbilityDef::Granted
@@ -858,8 +857,8 @@ fn validate_applied_effect_shapes(
             | AppliedRuleDef::MayPlayAdditionalLands(_)
             | AppliedRuleDef::MayPlayAnyNumberOfLands
             | AppliedRuleDef::CannotDrawMoreThanEachTurn(_)
-            | AppliedRuleDef::NoMaximumHandSize
             | AppliedRuleDef::RevealsDrawnCards
+            | AppliedRuleDef::CannotGainLife
             | AppliedRuleDef::PlayerRule(_)
             | AppliedRuleDef::DoublesTokensCreated,
         ) => validate_recipient_shape(recipient, targets, RecipientExpectation::Player),

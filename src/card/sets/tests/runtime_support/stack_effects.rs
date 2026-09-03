@@ -58,6 +58,20 @@ fn shared_choose(choice: ChooseDef) -> bool {
 }
 
 fn shared_damage_prevention(prevention: crate::card::DamagePreventionDef) -> bool {
+    fn shared_amount(value: ValueDef) -> bool {
+        match value {
+            ValueDef::Constant(_) | ValueDef::DamageEventAmount => true,
+            ValueDef::Negate(value) => shared_amount(*value),
+            ValueDef::Scaled(value) => shared_amount(value.value),
+            ValueDef::Sum(value) => shared_amount(value.left) && shared_amount(value.right),
+            ValueDef::Halved(value) => shared_amount(value.value),
+            ValueDef::Quotient(value) => {
+                shared_amount(value.numerator) && shared_amount(value.denominator)
+            }
+            _ => false,
+        }
+    }
+
     let source_is_shared = match prevention.matcher.source {
         DamageSourceMatcherDef::Any | DamageSourceMatcherDef::Group(_) => true,
         DamageSourceMatcherDef::Object(source) | DamageSourceMatcherDef::Except(source) => {
@@ -90,7 +104,11 @@ fn shared_damage_prevention(prevention: crate::card::DamagePreventionDef) -> boo
                 shared_effect_recipient(EffectRecipientDef::player(player))
             }
         });
-    source_is_shared && recipient_is_shared && capacity_is_shared && follow_up_is_shared
+    source_is_shared
+        && recipient_is_shared
+        && capacity_is_shared
+        && shared_amount(prevention.amount)
+        && follow_up_is_shared
 }
 
 /// Resolving sequences preserve their unprocessed tail, so a queued decision
@@ -300,7 +318,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                     .if_paid
                     .iter()
                     .chain(payment.otherwise.iter())
-                    .all(|effect| shared_stack_effect_at_position(**effect, true))
+                    .all(|effect| {
+                        matches!(**effect, EffectDef::None)
+                            || shared_stack_effect_at_position(**effect, true)
+                    })
         }
         // A spell copying itself asks its chooser for targets, which is a
         // decision window like any other. Proliferate asks over permanents
