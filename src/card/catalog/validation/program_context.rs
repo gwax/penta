@@ -485,6 +485,14 @@ fn static_object_characteristic_supported(
         CharacteristicOperationDef::Color(_)
         | CharacteristicOperationDef::Colors(_)
         | CharacteristicOperationDef::Subtypes(_) => static_animation_query_supported(recipient),
+        CharacteristicOperationDef::Supertypes(operation) => {
+            let supertypes = match operation {
+                SetOperationDef::Add(supertypes)
+                | SetOperationDef::Remove(supertypes)
+                | SetOperationDef::Set(supertypes) => supertypes,
+            };
+            !supertypes.is_empty() && static_animation_query_supported(recipient)
+        }
         CharacteristicOperationDef::CreatureTypes(_) => {
             static_direct_characteristic_recipient(recipient)
         }

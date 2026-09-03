@@ -145,6 +145,89 @@ impl Game {
         }
     }
 
+    /// The supertypes a permanent has after layer-4 operations.
+    ///
+    /// The layer guard gives recipient predicates a below-static view when a
+    /// supertype operation itself is selecting its affected objects. Card-type
+    /// predicates such as "nonland permanent" still see effective types on the
+    /// outer walk.
+    pub(super) fn permanent_supertypes(
+        &self,
+        permanent: &Permanent,
+    ) -> Option<CardSupertypeSet> {
+        self.permanent_supertypes_with_optional_prospective(permanent, None)
+    }
+
+    pub(super) fn permanent_supertypes_with_prospective(
+        &self,
+        permanent: &Permanent,
+        prospective: &Permanent,
+    ) -> Option<CardSupertypeSet> {
+        self.permanent_supertypes_with_optional_prospective(permanent, Some(prospective))
+    }
+
+    fn permanent_supertypes_with_optional_prospective(
+        &self,
+        permanent: &Permanent,
+        prospective: Option<&Permanent>,
+    ) -> Option<CardSupertypeSet> {
+        let rules = self.effective_rules(permanent)?;
+        let mut supertypes = CardSupertype::ALL
+            .into_iter()
+            .filter(|supertype| rules.has_supertype(*supertype))
+            .fold(CardSupertypeSet::empty(), CardSupertypeSet::with);
+        let mut operations = Vec::new();
+        let mut collect = |applied: super::StaticAppliedEffect| {
+            let AppliedEffectDef::Characteristic(CharacteristicOperationDef::Supertypes(
+                operation,
+            )) = applied.effect
+            else {
+                unreachable!("the supertype filter admits only supertype operations");
+            };
+            operations.push((applied.timestamp, applied.component_order, operation));
+            ControlFlow::Continue(())
+        };
+        if let Some(_pass) = StaticSetCharacteristicLayerGuard::enter() {
+            let result = if let Some(prospective) = prospective {
+                self.visit_static_applied_effects_with_prospective(
+                    permanent,
+                    prospective,
+                    StaticEffectKind::Supertypes,
+                    &mut collect,
+                )
+            } else {
+                self.visit_static_applied_effects(
+                    permanent,
+                    StaticEffectKind::Supertypes,
+                    &mut collect,
+                )
+            };
+            debug_assert!(result.is_continue());
+        }
+        operations.sort_by_key(|(timestamp, order, _)| (*timestamp, *order));
+        for (_, _, operation) in operations {
+            supertypes = Self::apply_supertype_operation(supertypes, operation);
+        }
+        Some(supertypes)
+    }
+
+    fn apply_supertype_operation(
+        current: CardSupertypeSet,
+        operation: SetOperationDef<CardSupertypeSet>,
+    ) -> CardSupertypeSet {
+        match operation {
+            SetOperationDef::Add(added) => CardSupertype::ALL
+                .into_iter()
+                .filter(|supertype| current.contains(*supertype) || added.contains(*supertype))
+                .fold(CardSupertypeSet::empty(), CardSupertypeSet::with),
+            SetOperationDef::Remove(removed) => CardSupertype::ALL
+                .into_iter()
+                .filter(|supertype| current.contains(*supertype) && !removed.contains(*supertype))
+                .fold(CardSupertypeSet::empty(), CardSupertypeSet::with),
+            SetOperationDef::Set(set) => set,
+        }
+    }
+
     /// The colours a permanent actually is after layer-5 operations.
     pub(super) fn effective_colors(&self, permanent: &Permanent, rules: &CardRules) -> [bool; 5] {
         // A copy exception replaces the colours it copied rather than adding

@@ -92,6 +92,7 @@ pub(crate) enum PreparedStaticLane {
     Other,
     Rules,
     CardTypes,
+    Supertypes,
     Colors,
     Abilities,
     Subtypes,
@@ -105,10 +106,11 @@ impl PreparedStaticLane {
             Self::Other => 0,
             Self::Rules => 1 << 0,
             Self::CardTypes => 1 << 1,
-            Self::Colors => 1 << 2,
-            Self::Abilities => 1 << 3,
-            Self::Subtypes => 1 << 4,
-            Self::PowerToughness => 1 << 5,
+            Self::Supertypes => 1 << 2,
+            Self::Colors => 1 << 3,
+            Self::Abilities => 1 << 4,
+            Self::Subtypes => 1 << 5,
+            Self::PowerToughness => 1 << 6,
         }
     }
 }

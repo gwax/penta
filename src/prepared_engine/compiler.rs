@@ -260,6 +260,9 @@ fn static_lane(effect: AppliedEffectDef) -> PreparedStaticLane {
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(_)) => {
             PreparedStaticLane::CardTypes
         }
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Supertypes(_)) => {
+            PreparedStaticLane::Supertypes
+        }
         AppliedEffectDef::Characteristic(
             CharacteristicOperationDef::Colors(_) | CharacteristicOperationDef::Color(_),
         ) => PreparedStaticLane::Colors,
@@ -289,6 +292,7 @@ fn applied_effect_starts_in_type_layer(effect: AppliedEffectDef) -> bool {
             CharacteristicOperationDef::ChosenBasicLandType
             | CharacteristicOperationDef::BasicLandTypes(_)
             | CharacteristicOperationDef::CardTypes(_)
+            | CharacteristicOperationDef::Supertypes(_)
             | CharacteristicOperationDef::CreatureTypes(_)
             | CharacteristicOperationDef::Subtypes(_),
         ) => true,

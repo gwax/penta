@@ -124,10 +124,9 @@ impl Game {
                 );
                 Some(subtypes.contains(&subtype))
             }
-            // Supertypes use the same copied/printed rules as triggers.
-            ObjectPredicateDef::Supertype(supertype) => self
-                .effective_rules(affected)
-                .map(|rules| rules.has_supertype(supertype)),
+            ObjectPredicateDef::Supertype(supertype) => {
+                self.static_supertype_matches(supertype, affected, prospective)
+            }
             predicate @ (ObjectPredicateDef::All(_) | ObjectPredicateDef::AnyOf(_)) => {
                 self.static_composite_predicate_match_lazily(
                     predicate,
@@ -198,6 +197,22 @@ impl Game {
             | ObjectPredicateDef::HasDeclaredPlayerTarget(_)
             | ObjectPredicateDef::Special(_) => None,
         }
+    }
+
+    fn static_supertype_matches(
+        &self,
+        supertype: CardSupertype,
+        affected: &Permanent,
+        prospective: Option<&Permanent>,
+    ) -> Option<bool> {
+        prospective
+            .map_or_else(
+                || self.permanent_supertypes(affected),
+                |prospective| {
+                    self.permanent_supertypes_with_prospective(affected, prospective)
+                },
+            )
+            .map(|supertypes| supertypes.contains(supertype))
     }
 
     fn static_composite_predicate_match_lazily(
