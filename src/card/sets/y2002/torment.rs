@@ -1,9 +1,10 @@
 //! Torment cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::AppliedEffectDef;
+use crate::BasicLandType;
+use crate::ResolvedEffectDurationDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2016::eternal_masters as catalog_ema;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
@@ -383,7 +384,15 @@ pub(in crate::card::sets) static CORAL_NET: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TOR 36 — Deep Analysis (reprint)
+// TOR 36 — Deep Analysis
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static DEEP_ANALYSIS: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("01e3c2e9-d8df-4a7a-be86-7be8c6254fa2"),
+    "Deep Analysis",
+    crate::card::CardArt::new("821cc8b6-eb2e-4441-8d88-c54cb44ab024", "Jesper Ejsing"),
+    crate::card::CardSet::Torment,
+    crate::card::CardRules::unsupported(),
+);
 
 // TOR 37 — False Memories
 // Audit: unsupported — Card rules have not been implemented.
@@ -839,7 +848,37 @@ pub(in crate::card::sets) static MORTIPHOBIA: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TOR 73 — Mutilate (reprint)
+// TOR 73 — Mutilate
+/// The live number of Swamps controlled by the resolving effect's controller.
+/// Mutilate reads the same value for both halves of its power/toughness change.
+static MUTILATE_SWAMPS_YOU_CONTROL: ValueDef =
+    ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+        ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
+        &[ZoneKind::Battlefield],
+        PlayerRelation::You,
+    ));
+
+pub(in crate::card::sets) static MUTILATE: CardRecord = CardRecord::new_with_legacy_id(
+    190,
+    "Mutilate",
+    CardArt::new("c48bc86b-df0a-4a9c-8aad-c3ffb742a5ff", "Tyler Jacobson"),
+    CardSet::Torment,
+    CardRules::new_sorcery(mana_cost!("{2}{B}{B}")).with_abilities(&[AbilityDef::spell(
+        "All creatures get -1/-1 until end of turn for each Swamp you control.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Negate(&MUTILATE_SWAMPS_YOU_CONTROL),
+                ValueDef::Negate(&MUTILATE_SWAMPS_YOU_CONTROL),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )]),
+);
 
 // TOR 74 — Nantuko Shade
 // Audit: unsupported — Card rules have not been implemented.
@@ -905,6 +944,9 @@ pub(in crate::card::sets) static RESTLESS_DREAMS: CardRecord = CardRecord::new(
 );
 
 // TOR 80 — Sengir Vampire (reprint)
+const SENGIR_VAMPIRE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::SENGIR_VAMPIRE)
+        .with_art("2308c0c4-7a78-4da8-8dd8-5b35b49a1896", "Kev Walker");
 
 // TOR 81 — Shade's Form
 // Audit: unsupported — Card rules have not been implemented.
@@ -1606,6 +1648,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CIRCULAR_LOGIC,
     &COMPULSION,
     &CORAL_NET,
+    &DEEP_ANALYSIS,
     &FALSE_MEMORIES,
     &GHOSTLY_WINGS,
     &HYDROMORPH_GUARDIAN,
@@ -1642,6 +1685,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MIND_SLUDGE,
     &MORTAL_COMBAT,
     &MORTIPHOBIA,
+    &MUTILATE,
     &NANTUKO_SHADE,
     &ORGAN_GRINDER,
     &PSYCHOTIC_HAZE,
@@ -1713,8 +1757,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TAINTED_WOOD,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_ema::DEEP_ANALYSIS), // TOR 36
-    PrintingRecord::reprint(&catalog_m13::MUTILATE),      // TOR 73
-    PrintingRecord::reprint(&catalog_lea::SENGIR_VAMPIRE), // TOR 80
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[SENGIR_VAMPIRE_REPRINT];

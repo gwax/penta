@@ -1,6 +1,10 @@
 //! Planar Chaos cards cataloged as cross-format rules-engine test cases.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::ControlDurationDef;
+use crate::ObjectRefDef;
+use crate::PlayerRefDef;
+use crate::TurnStepDef;
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AggregateOperationDef, AppliedEffectDef,
     BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind, EffectDef,
@@ -29,6 +33,16 @@ pub(in crate::card::sets) static MANA_TITHE: CardRecord = CardRecord::new_with_l
     )),
 );
 
+// PLC 26 — Mesa Enchantress
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static MESA_ENCHANTRESS: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("4037d6de-f30b-483c-83a8-9a4e2978f7fc"),
+    "Mesa Enchantress",
+    crate::card::CardArt::new("691dcce5-ac3d-4970-b3ff-3db485f9f5c3", "Randy Gallegos"),
+    crate::card::CardSet::PlanarChaos,
+    crate::card::CardRules::unsupported(),
+);
+
 // PLC 31 — Sunlance
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUNLANCE: CardRecord = CardRecord::new(
@@ -37,6 +51,43 @@ pub(in crate::card::sets) static SUNLANCE: CardRecord = CardRecord::new(
     crate::card::CardArt::new("46144ca5-aa81-4314-a1e5-1716f8565d70", "Volkan Baǵa"),
     crate::card::CardSet::PlanarChaos,
     crate::card::CardRules::unsupported(),
+);
+
+// PLC 70 — Enslave
+pub(in crate::card::sets) static ENSLAVE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("6c6283e1-e4f1-4ff6-be01-b66ab623e0ac"),
+    "Enslave",
+    crate::card::CardArt::new("17c2f5f0-1f37-4f51-9c10-c02e2ef7d4ee", "Chris Rahn"),
+    crate::card::CardSet::PlanarChaos,
+    CardRules::new_enchantment(mana_cost!("{4}{B}{B}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
+            AbilityDef::static_ability(
+                "You control enchanted creature.",
+                EffectDef::GainControl {
+                    object: EffectRecipientDef::AttachedPermanent,
+                    controller: PlayerRefDef::EffectController,
+                    duration: ControlDurationDef::WhileSourceRemains {
+                        while_tapped: false,
+                    },
+                },
+            ),
+            AbilityDef::triggered(
+                "At the beginning of your upkeep, enchanted creature deals 1 damage to its owner.",
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::Upkeep,
+                    player: PlayerRelation::You,
+                },
+                EffectDef::DealDamageFrom {
+                    source: ObjectRefDef::AttachedToSource,
+                    recipient: EffectRecipientDef::player(PlayerRefDef::OwnerOf(
+                        ObjectRefDef::AttachedToSource,
+                    )),
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
 );
 
 // PLC 128 — Fungal Behemoth
@@ -123,7 +174,9 @@ pub(in crate::card::sets) static URBORG_TOMB_OF_YAWGMOTH: CardRecord =
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MANA_TITHE,
+    &MESA_ENCHANTRESS,
     &SUNLANCE,
+    &ENSLAVE,
     &FUNGAL_BEHEMOTH,
     &URBORG_TOMB_OF_YAWGMOTH,
 ];

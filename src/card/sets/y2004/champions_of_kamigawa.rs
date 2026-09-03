@@ -10,6 +10,16 @@ use crate::card::{
 use crate::ids::ParentBinding;
 use crate::mana_cost;
 
+// CHK 111 — Distress
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static DISTRESS: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("8130a902-3a03-4473-a64f-84cf3590f4c6"),
+    "Distress",
+    crate::card::CardArt::new("630d4080-8183-41fb-8091-740719083765", "Michael C. Hayes"),
+    crate::card::CardSet::ChampionsOfKamigawa,
+    crate::card::CardRules::unsupported(),
+);
+
 // CHK 193 — Through the Breach
 pub(in crate::card::sets) static THROUGH_THE_BREACH: CardRecord = CardRecord::new_with_legacy_id(
     2190,
@@ -130,6 +140,7 @@ pub(in crate::card::sets) static SENSEIS_DIVINING_TOP: CardRecord = CardRecord::
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &DISTRESS,
     &THROUGH_THE_BREACH,
     &SAKURA_TRIBE_ELDER,
     &SENSEIS_DIVINING_TOP,

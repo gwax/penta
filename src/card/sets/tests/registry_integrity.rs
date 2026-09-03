@@ -370,7 +370,7 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
         }
     );
 
-    let seek = y2012::return_to_ravnica::SEEK_THE_HORIZON
+    let seek = y2005::saviors_of_kamigawa::SEEK_THE_HORIZON
         .rules
         .ability_clauses()[0];
     assert_eq!(
@@ -395,7 +395,9 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
         })
     );
 
-    let farseek = y2012::magic_2013::FARSEEK.rules.ability_clauses()[0];
+    let farseek = y2005::ravnica_city_of_guilds::FARSEEK
+        .rules
+        .ability_clauses()[0];
     assert_eq!(
         farseek.declarative_effect(),
         Some(EffectDef::SearchZone {

@@ -198,6 +198,9 @@ pub(in crate::card::sets) static ZAGOTH_TRIOME: CardRecord = CardRecord::new_wit
 );
 
 // IKO 355 — Lurrus of the Dream-Den (alternate printing)
+const LURRUS_OF_THE_DREAM_DEN_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&LURRUS_OF_THE_DREAM_DEN, 1)
+        .with_art("2c89beb2-3467-4be0-a066-919f54331942", "Slawomir Maniak");
 
 // IKO 356 — Lutri, the Spellchaser
 pub(in crate::card::sets) static LUTRI_THE_SPELLCHASER: CardRecord = CardRecord::new(
@@ -272,6 +275,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LUTRI_THE_SPELLCHASER,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&LURRUS_OF_THE_DREAM_DEN, 1), // IKO 355
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[LURRUS_OF_THE_DREAM_DEN_ALTERNATE_1];

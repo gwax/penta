@@ -768,6 +768,9 @@ pub(in crate::card::sets) static STRAFE: CardRecord = CardRecord::new(
 );
 
 // PLS 74 — Tahngarth, Talruum Hero (alternate printing)
+const TAHNGARTH_TALRUUM_HERO_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&TAHNGARTH_TALRUUM_HERO, 1)
+        .with_art("c1778f37-af01-4f8c-ab9d-a4c60abf7e78", "Dave Dorman");
 
 // PLS 74★ — Tahngarth, Talruum Hero
 // Audit: unsupported — Card rules have not been implemented.
@@ -1127,6 +1130,9 @@ pub(in crate::card::sets) static ERTAI_THE_CORRUPTED: CardRecord = CardRecord::n
 );
 
 // PLS 107★ — Ertai, the Corrupted (alternate printing)
+const ERTAI_THE_CORRUPTED_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&ERTAI_THE_CORRUPTED, 1)
+        .with_art("fbbfeb32-1654-4bf6-9a38-891f1a03e02b", "Kev Walker");
 
 // PLS 108 — Fleetfoot Panther
 // Audit: unsupported — Card rules have not been implemented.
@@ -1401,6 +1407,9 @@ pub(in crate::card::sets) static SKYSHIP_WEATHERLIGHT: CardRecord = CardRecord::
 );
 
 // PLS 133★ — Skyship Weatherlight (alternate printing)
+const SKYSHIP_WEATHERLIGHT_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&SKYSHIP_WEATHERLIGHT, 1)
+        .with_art("99791ef7-ff51-4982-b0ef-55560f9577ff", "Kev Walker");
 
 // PLS 134 — Star Compass
 // Audit: unsupported — Card rules have not been implemented.
@@ -1735,7 +1744,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&TAHNGARTH_TALRUUM_HERO, 1), // PLS 74
-    PrintingRecord::alternate(&ERTAI_THE_CORRUPTED, 1),    // PLS 107★
-    PrintingRecord::alternate(&SKYSHIP_WEATHERLIGHT, 1),   // PLS 133★
+    TAHNGARTH_TALRUUM_HERO_ALTERNATE_1,
+    ERTAI_THE_CORRUPTED_ALTERNATE_1,
+    SKYSHIP_WEATHERLIGHT_ALTERNATE_1,
 ];

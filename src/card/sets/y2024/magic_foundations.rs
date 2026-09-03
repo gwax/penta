@@ -55,15 +55,10 @@ pub(in crate::card::sets) static LEYLINE_AXE: CardRecord = CardRecord::new(
         ]),
 );
 
-// FDN 195 — Fanatical Firebrand
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static FANATICAL_FIREBRAND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5e5565de-028c-4799-a9f6-4dcd685639eb"),
-    "Fanatical Firebrand",
-    crate::card::CardArt::new("d1296316-7781-4e98-95e6-7020648be6a5", "Wayne Reynolds"),
-    crate::card::CardSet::MagicFoundations,
-    crate::card::CardRules::unsupported(),
-);
+// FDN 195 — Fanatical Firebrand (reprint)
+const FANATICAL_FIREBRAND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2018::rivals_of_ixalan::FANATICAL_FIREBRAND)
+        .with_art("d1296316-7781-4e98-95e6-7020648be6a5", "Wayne Reynolds");
 
 // FDN 200 — Goblin Surprise
 // Audit: unsupported — Card rules have not been implemented.
@@ -158,35 +153,26 @@ pub(in crate::card::sets) static KELLAN_PLANAR_TRAILBLAZER: CardRecord = CardRec
         ]),
 );
 
-// FDN 528 — Undying Malice
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static UNDYING_MALICE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8eb38041-043a-4b18-9d9a-f1283684e8f1"),
-    "Undying Malice",
-    crate::card::CardArt::new("97b3cf11-e352-4ee1-8c03-13898f576ef9", "Igor Kieryluk"),
-    crate::card::CardSet::MagicFoundations,
-    crate::card::CardRules::unsupported(),
-);
+// FDN 528 — Undying Malice (reprint)
+const UNDYING_MALICE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2021::innistrad_crimson_vow::UNDYING_MALICE)
+        .with_art("97b3cf11-e352-4ee1-8c03-13898f576ef9", "Igor Kieryluk");
 
-// FDN 596 — Shipwreck Dowser
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static SHIPWRECK_DOWSER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("59d38ef7-5017-4ea3-b97f-a8fe12d03e98"),
-    "Shipwreck Dowser",
-    crate::card::CardArt::new("1f20fe3d-792a-4030-a25c-e81b48b2bcb4", "Caroline Gariba"),
-    crate::card::CardSet::MagicFoundations,
-    crate::card::CardRules::unsupported(),
-);
+// FDN 596 — Shipwreck Dowser (reprint)
+const SHIPWRECK_DOWSER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2020::core_set_2021::SHIPWRECK_DOWSER)
+        .with_art("1f20fe3d-792a-4030-a25c-e81b48b2bcb4", "Caroline Gariba");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &INSPIRING_PALADIN,
     &TREETOP_SNARESPINNER,
     &LEYLINE_AXE,
-    &FANATICAL_FIREBRAND,
     &GOBLIN_SURPRISE,
     &KELLAN_PLANAR_TRAILBLAZER,
-    &UNDYING_MALICE,
-    &SHIPWRECK_DOWSER,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
+    FANATICAL_FIREBRAND_REPRINT,
+    UNDYING_MALICE_REPRINT,
+    SHIPWRECK_DOWSER_REPRINT,
+];

@@ -1,16 +1,13 @@
 //! Tempest cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::ResolvedEffectDurationDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y1993::beta as catalog_leb;
 use crate::card::sets::y1994::legends as catalog_leg;
 use crate::card::sets::y1995::ice_age as catalog_ice;
 use crate::card::sets::y1996::mirage as catalog_mir;
 use crate::card::sets::y1997::visions as catalog_vis;
-use crate::card::sets::y2011::magic_2012 as catalog_m12;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2013::magic_2014 as catalog_m14;
-use crate::card::sets::y2022::commander_legends_baldurs_gate as catalog_clb;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt,
@@ -67,15 +64,10 @@ pub(in crate::card::sets) static ARMOR_SLIVER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 5 — Armored Pegasus
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static ARMORED_PEGASUS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3f021a79-a182-4914-9ff4-d6fcba7c1d22"),
-    "Armored Pegasus",
-    crate::card::CardArt::new("012049f8-0936-49ed-948d-0d34af28550f", "Una Fricker"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
-);
+// TMP 5 — Armored Pegasus (reprint)
+const ARMORED_PEGASUS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::ARMORED_PEGASUS)
+        .with_art("012049f8-0936-49ed-948d-0d34af28550f", "Una Fricker");
 
 // TMP 6 — Auratog
 // Audit: unsupported — Card rules have not been implemented.
@@ -98,12 +90,24 @@ pub(in crate::card::sets) static AVENGING_ANGEL: CardRecord = CardRecord::new(
 );
 
 // TMP 8 — Circle of Protection: Black (reprint)
+const CIRCLE_OF_PROTECTION_BLACK_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_leb::CIRCLE_OF_PROTECTION_BLACK)
+        .with_art("da6dda88-fc2a-4404-8a82-40c5d77860da", "Harold McNeill");
 
 // TMP 9 — Circle of Protection: Blue (reprint)
+const CIRCLE_OF_PROTECTION_BLUE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_BLUE)
+        .with_art("0430fb60-78f6-4577-9ec5-a93d6662ef76", "Harold McNeill");
 
 // TMP 10 — Circle of Protection: Green (reprint)
+const CIRCLE_OF_PROTECTION_GREEN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_GREEN)
+        .with_art("88c76e49-ddd2-4967-a81a-86405260b4bc", "Harold McNeill");
 
 // TMP 11 — Circle of Protection: Red (reprint)
+const CIRCLE_OF_PROTECTION_RED_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_RED)
+        .with_art("cc38872d-f389-43aa-b6f7-97b2c90e5a1f", "Harold McNeill");
 
 // TMP 12 — Circle of Protection: Shadow
 // Audit: unsupported — Card rules have not been implemented.
@@ -116,6 +120,9 @@ pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_SHADOW: CardRecord = CardR
 );
 
 // TMP 13 — Circle of Protection: White (reprint)
+const CIRCLE_OF_PROTECTION_WHITE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_WHITE)
+        .with_art("6eff4351-5501-4061-a409-49f518ba9628", "Harold McNeill");
 
 // TMP 14 — Clergy en-Vec
 // Audit: unsupported — Card rules have not been implemented.
@@ -138,6 +145,8 @@ pub(in crate::card::sets) static CLOUDCHASER_EAGLE: CardRecord = CardRecord::new
 );
 
 // TMP 16 — Disenchant (reprint)
+const DISENCHANT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DISENCHANT)
+    .with_art("8a65e678-dcb9-4c6c-9a30-8332030dead6", "Allen Williams");
 
 // TMP 17 — Elite Javelineer
 // Audit: unsupported — Card rules have not been implemented.
@@ -333,6 +342,9 @@ pub(in crate::card::sets) static ORIM_SAMITE_HEALER: CardRecord = CardRecord::ne
 );
 
 // TMP 34 — Pacifism (reprint)
+const PACIFISM_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1996::mirage::PACIFISM)
+        .with_art("6492bf53-ad49-4cd5-83df-0005a5b77811", "Adam Rex");
 
 // TMP 35 — Pegasus Refuge
 // Audit: unsupported — Card rules have not been implemented.
@@ -575,6 +587,8 @@ pub(in crate::card::sets) static CHILL: CardRecord = CardRecord::new_with_legacy
 );
 
 // TMP 57 — Counterspell (reprint)
+const COUNTERSPELL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::COUNTERSPELL)
+    .with_art("dacdd380-71cf-4832-bd02-3697501325f3", "Stephen Daniele");
 
 // TMP 58 — Dismiss
 // Audit: unsupported — Card rules have not been implemented.
@@ -587,6 +601,8 @@ pub(in crate::card::sets) static DISMISS: CardRecord = CardRecord::new(
 );
 
 // TMP 59 — Dream Cache (reprint)
+const DREAM_CACHE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_mir::DREAM_CACHE)
+    .with_art("875f81cf-5f27-451e-9248-746fad1e43d7", "Phil Foglio");
 
 // TMP 60 — Duplicity
 // Audit: unsupported — Card rules have not been implemented.
@@ -639,6 +655,8 @@ pub(in crate::card::sets) static FYLAMARID: CardRecord = CardRecord::new(
 );
 
 // TMP 65 — Gaseous Form (reprint)
+const GASEOUS_FORM_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_leg::GASEOUS_FORM)
+    .with_art("ce8402d6-b509-4771-ba80-128db343880d", "Roger Raupp");
 
 // TMP 66 — Giant Crab
 // Audit: unsupported — Card rules have not been implemented.
@@ -650,15 +668,10 @@ pub(in crate::card::sets) static GIANT_CRAB: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 67 — Horned Turtle
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static HORNED_TURTLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a7d25497-36b4-48b9-ba01-f24f6222d6be"),
-    "Horned Turtle",
-    crate::card::CardArt::new("b2348ce1-6305-42a7-8061-64275f6dc5c6", "DiTerlizzi"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
-);
+// TMP 67 — Horned Turtle (reprint)
+const HORNED_TURTLE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::HORNED_TURTLE)
+        .with_art("b2348ce1-6305-42a7-8061-64275f6dc5c6", "DiTerlizzi");
 
 // TMP 68 — Insight
 // Audit: unsupported — Card rules have not been implemented.
@@ -819,6 +832,8 @@ pub(in crate::card::sets) static MNEMONIC_SLIVER: CardRecord = CardRecord::new(
 );
 
 // TMP 78 — Power Sink (reprint)
+const POWER_SINK_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::POWER_SINK)
+    .with_art("abc58c34-c3de-47f8-a42f-3a974dcb9c47", "Jeff Miracola");
 
 // TMP 79 — Precognition
 // Audit: unsupported — Card rules have not been implemented.
@@ -921,6 +936,8 @@ pub(in crate::card::sets) static SKYSHROUD_CONDOR: CardRecord = CardRecord::new(
 );
 
 // TMP 89 — Spell Blast (reprint)
+const SPELL_BLAST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SPELL_BLAST)
+    .with_art("5fe58a24-f6a6-4858-82a5-0ca1d524efe1", "Steve Luke");
 
 // TMP 90 — Steal Enchantment
 // Audit: unsupported — Card rules have not been implemented.
@@ -986,6 +1003,9 @@ pub(in crate::card::sets) static THALAKOS_SENTRY: CardRecord = CardRecord::new(
 );
 
 // TMP 96 — Time Ebb (reprint)
+const TIME_EBB_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::TIME_EBB)
+        .with_art("69e63f0c-a09f-493d-a8a9-ddcc0a0ca383", "Thomas M. Baxa");
 
 // TMP 97 — Time Warp
 pub(in crate::card::sets) static TIME_WARP: CardRecord = CardRecord::new_with_legacy_id(
@@ -1075,6 +1095,9 @@ pub(in crate::card::sets) static WIND_DANCER: CardRecord = CardRecord::new(
 );
 
 // TMP 105 — Wind Drake (reprint)
+const WIND_DRAKE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::WIND_DRAKE)
+        .with_art("91e0c9e2-a45d-44d1-b73e-73c0a22d0752", "Greg Simanson");
 
 // TMP 106 — Winged Sliver
 // Audit: unsupported — Card rules have not been implemented.
@@ -1147,6 +1170,8 @@ pub(in crate::card::sets) static CLOT_SLIVER: CardRecord = CardRecord::new(
 );
 
 // TMP 113 — Coercion (reprint)
+const COERCION_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_vis::COERCION)
+    .with_art("2df7b947-bdb2-4204-8eb0-92fe66411613", "Pete Venters");
 
 // TMP 114 — Coffin Queen
 // Audit: unsupported — Card rules have not been implemented.
@@ -1228,8 +1253,13 @@ pub(in crate::card::sets) static CORPSE_DANCE: CardRecord = CardRecord::new_with
 );
 
 // TMP 117 — Dark Banishing (reprint)
+const DARK_BANISHING_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_ice::DARK_BANISHING)
+        .with_art("922d6c8b-70ae-4db4-bf26-1904e4906211", "John Matson");
 
 // TMP 118 — Dark Ritual (reprint)
+const DARK_RITUAL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DARK_RITUAL)
+    .with_art("bf4708e8-2149-4990-987c-2ea55fc6c508", "Ken Meyer, Jr.");
 
 // TMP 119 — Darkling Stalker
 // Audit: unsupported — Card rules have not been implemented.
@@ -1261,7 +1291,15 @@ pub(in crate::card::sets) static DAUTHI_GHOUL: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 122 — Dauthi Horror (reprint)
+// TMP 122 — Dauthi Horror
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static DAUTHI_HORROR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("c5a8bb3a-3a84-442f-8e31-8af2f04408ab"),
+    "Dauthi Horror",
+    crate::card::CardArt::new("7c41afe6-7eed-4cf5-9bbb-ccc9f82cb4fa", "Jeff Laubenstein"),
+    crate::card::CardSet::Tempest,
+    crate::card::CardRules::unsupported(),
+);
 
 // TMP 123 — Dauthi Marauder
 // Audit: unsupported — Card rules have not been implemented.
@@ -1364,6 +1402,11 @@ pub(in crate::card::sets) static ENDLESS_SCREAM: CardRecord = CardRecord::new(
 );
 
 // TMP 133 — Enfeeblement (reprint)
+const ENFEEBLEMENT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_mir::ENFEEBLEMENT)
+    .with_art(
+        "71705205-0165-4774-8209-90ce800b9450",
+        "D. Alexander Gregory",
+    );
 
 // TMP 134 — Evincar's Justice
 // Audit: unsupported — Card rules have not been implemented.
@@ -1396,6 +1439,9 @@ pub(in crate::card::sets) static FEVERED_CONVULSIONS: CardRecord = CardRecord::n
 );
 
 // TMP 137 — Gravedigger (reprint)
+const GRAVEDIGGER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::GRAVEDIGGER)
+        .with_art("872f3328-c65d-49eb-a1bb-ca40e9c05627", "Dermot Power");
 
 // TMP 138 — Imps' Taunt
 // Audit: unsupported — Card rules have not been implemented.
@@ -1507,15 +1553,10 @@ pub(in crate::card::sets) static PIT_IMP: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 149 — Rain of Tears
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static RAIN_OF_TEARS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("803ba4ef-24ed-4f45-aed8-f9442322e31e"),
-    "Rain of Tears",
-    crate::card::CardArt::new("cad93919-273f-4a26-8ebd-13503dd6b220", "Charles Gillespie"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
-);
+// TMP 149 — Rain of Tears (reprint)
+const RAIN_OF_TEARS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::RAIN_OF_TEARS)
+        .with_art("cad93919-273f-4a26-8ebd-13503dd6b220", "Charles Gillespie");
 
 // TMP 150 — Rats of Rath
 // Audit: unsupported — Card rules have not been implemented.
@@ -1825,6 +1866,9 @@ pub(in crate::card::sets) static FURNACE_OF_RATH: CardRecord = CardRecord::new(
 );
 
 // TMP 178 — Giant Strength (reprint)
+const GIANT_STRENGTH_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_leg::GIANT_STRENGTH)
+        .with_art("bfb43289-35dc-4983-9c49-22b1b3a7d85a", "Pete Venters");
 
 // TMP 179 — Goblin Bombardment
 pub(in crate::card::sets) static GOBLIN_BOMBARDMENT: CardRecord = CardRecord::new_with_legacy_id(
@@ -1918,7 +1962,15 @@ pub(in crate::card::sets) static LIGHTNING_BLAST: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 186 — Lightning Elemental (reprint)
+// TMP 186 — Lightning Elemental
+pub(in crate::card::sets) static LIGHTNING_ELEMENTAL: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("11f6d2a4-cc97-43f3-a8b2-f96262c27371"),
+    "Lightning Elemental",
+    crate::card::CardArt::new("e106b6af-a13c-42be-9368-9109795de517", "Kev Walker"),
+    crate::card::CardSet::Tempest,
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Elemental"], 4, 1)
+        .with_abilities(&[abilities::haste()]),
+);
 
 // TMP 187 — Lowland Giant
 // Audit: unsupported — Card rules have not been implemented.
@@ -2095,6 +2147,10 @@ pub(in crate::card::sets) static SHADOWSTORM: CardRecord = CardRecord::new(
 );
 
 // TMP 203 — Shatter (reprint)
+const SHATTER_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SHATTER).with_art(
+    "5fa05258-2ce3-4604-938c-e8c3fb8cf142",
+    "Jason Alexander Behnke",
+);
 
 // TMP 204 — Shocker
 // Audit: unsupported — Card rules have not been implemented.
@@ -2117,6 +2173,8 @@ pub(in crate::card::sets) static STARKE_OF_RATH: CardRecord = CardRecord::new(
 );
 
 // TMP 206 — Stone Rain (reprint)
+const STONE_RAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::STONE_RAIN)
+    .with_art("f92548d9-cba6-495f-bef1-73e4519fe336", "Christopher Rush");
 
 // TMP 207 — Stun
 // Audit: unsupported — Card rules have not been implemented.
@@ -2228,15 +2286,10 @@ pub(in crate::card::sets) static CANOPY_SPIDER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 218 — Charging Rhino
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static CHARGING_RHINO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("49e47248-051c-4ee6-aad2-352ebd1f38ca"),
-    "Charging Rhino",
-    crate::card::CardArt::new("651f89e5-9ce2-4713-aca9-6581005f6ca2", "Daren Bader"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
-);
+// TMP 218 — Charging Rhino (reprint)
+const CHARGING_RHINO_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::CHARGING_RHINO)
+        .with_art("651f89e5-9ce2-4713-aca9-6581005f6ca2", "Daren Bader");
 
 // TMP 219 — Choke
 // Audit: unsupported — Card rules have not been implemented.
@@ -2447,15 +2500,10 @@ pub(in crate::card::sets) static MUSCLE_SLIVER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 239 — Natural Spring
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static NATURAL_SPRING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8ddfc1cc-5c13-443c-a0ae-0bcc931923e7"),
-    "Natural Spring",
-    crate::card::CardArt::new("1ff5d12a-8634-468b-86ca-4ba0f7c013ca", "Susan Van Camp"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
-);
+// TMP 239 — Natural Spring (reprint)
+const NATURAL_SPRING_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::NATURAL_SPRING)
+        .with_art("1ff5d12a-8634-468b-86ca-4ba0f7c013ca", "Susan Van Camp");
 
 // TMP 240 — Nature's Revolt
 // Audit: unsupported — Card rules have not been implemented.
@@ -2467,15 +2515,10 @@ pub(in crate::card::sets) static NATURE_S_REVOLT: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 241 — Needle Storm
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static NEEDLE_STORM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("29a44e44-94b1-4bd2-8e00-6bd2ec07ee4c"),
-    "Needle Storm",
-    crate::card::CardArt::new("be80dd2d-f595-4d80-84ae-66d3d18e7399", "Val Mayerik"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
-);
+// TMP 241 — Needle Storm (reprint)
+const NEEDLE_STORM_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::NEEDLE_STORM)
+        .with_art("be80dd2d-f595-4d80-84ae-66d3d18e7399", "Val Mayerik");
 
 // TMP 242 — Nurturing Licid
 // Audit: unsupported — Card rules have not been implemented.
@@ -2487,7 +2530,15 @@ pub(in crate::card::sets) static NURTURING_LICID: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 243 — Overrun (reprint)
+// TMP 243 — Overrun
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static OVERRUN: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("0ad7a961-d3a1-471a-8472-8407d1057de0"),
+    "Overrun",
+    crate::card::CardArt::new("ae0559d4-0015-44e4-8ec4-08bb1c54eec5", "Carl Critchlow"),
+    crate::card::CardSet::Tempest,
+    crate::card::CardRules::unsupported(),
+);
 
 // TMP 244 — Pincher Beetles
 // Audit: unsupported — Card rules have not been implemented.
@@ -2500,6 +2551,9 @@ pub(in crate::card::sets) static PINCHER_BEETLES: CardRecord = CardRecord::new(
 );
 
 // TMP 245 — Rampant Growth (reprint)
+const RAMPANT_GROWTH_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1996::mirage::RAMPANT_GROWTH)
+        .with_art("3ffbf716-9c3a-45aa-8fdb-632128cc97e2", "Tom Kyffin");
 
 // TMP 246 — Reality Anchor
 // Audit: unsupported — Card rules have not been implemented.
@@ -2574,7 +2628,30 @@ pub(in crate::card::sets) static ROOTBREAKER_WURM: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 252 — Rootwalla (reprint)
+// TMP 252 — Rootwalla
+pub(in crate::card::sets) static ROOTWALLA: CardRecord = CardRecord::new_with_legacy_id(
+    1902,
+    "Rootwalla",
+    CardArt::new("2b84b6dc-d78d-4d6a-9e9a-2b40854a102b", "Roger Raupp"),
+    CardSet::Tempest,
+    // The quota is per turn and per permanent, so a second Rootwalla still
+    // has its own.
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Lizard"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "{1}{G}: This creature gets +2/+2 until end of turn. Activate only once each turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{G}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .once_each_turn(),
+    ),
+);
 
 // TMP 253 — Scragnoth
 // Audit: unsupported — Card rules have not been implemented.
@@ -2657,6 +2734,11 @@ pub(in crate::card::sets) static TRAINED_ARMODON: CardRecord = CardRecord::new(
 );
 
 // TMP 261 — Tranquility (reprint)
+const TRANQUILITY_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::TRANQUILITY)
+    .with_art(
+        "160b8060-e755-4a96-9193-b76550d4a6ba",
+        "Margaret Organ-Kean",
+    );
 
 // TMP 262 — Trumpeting Armodon
 // Audit: unsupported — Card rules have not been implemented.
@@ -2688,15 +2770,10 @@ pub(in crate::card::sets) static VERDIGRIS: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 265 — Winter's Grasp
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static WINTER_S_GRASP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b2215de4-da49-4270-aec7-5e16a938bae4"),
-    "Winter's Grasp",
-    crate::card::CardArt::new("7af28a5d-45dc-4e31-9009-5c0bd25a9032", "Tom Wänerstrand"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
-);
+// TMP 265 — Winter's Grasp (reprint)
+const WINTER_S_GRASP_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::WINTER_S_GRASP)
+        .with_art("7af28a5d-45dc-4e31-9009-5c0bd25a9032", "Tom Wänerstrand");
 
 // TMP 266 — Dracoplasm
 // Audit: unsupported — Card rules have not been implemented.
@@ -3157,7 +3234,14 @@ pub(in crate::card::sets) static PHYREXIAN_GRIMOIRE: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
-// TMP 302 — Phyrexian Hulk (reprint)
+// TMP 302 — Phyrexian Hulk
+pub(in crate::card::sets) static PHYREXIAN_HULK: CardRecord = CardRecord::new_with_legacy_id(
+    1047,
+    "Phyrexian Hulk",
+    CardArt::new("a761426e-2138-438e-8f3b-024486165260", "Steven Belledin"),
+    CardSet::Tempest,
+    CardRules::new_artifact_creature(mana_cost!("{6}"), &["Phyrexian", "Golem"], 5, 4),
+);
 
 // TMP 303 — Phyrexian Splicer
 // Audit: unsupported — Card rules have not been implemented.
@@ -3487,51 +3571,90 @@ pub(in crate::card::sets) static WASTELAND: CardRecord = CardRecord::new_with_le
 );
 
 // TMP 331 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::PLAINS)
+    .with_art("62e339a9-3f9b-401e-a459-dc3affc9a114", "Terese Nielsen");
 
 // TMP 332 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("da37f78a-a0a6-4ca3-921c-4bc2c17ccda6", "Terese Nielsen");
 
 // TMP 333 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 2)
+    .with_art("3bd35bef-1702-4b3d-b149-8761c5cc5ed9", "Terese Nielsen");
 
 // TMP 334 — Plains (alternate printing)
+const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 3)
+    .with_art("c7f7baf6-de14-40f8-871f-dda889672608", "Terese Nielsen");
 
 // TMP 335 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::ISLAND)
+    .with_art("22578bc8-10c6-4598-82bc-70e970a8f518", "Randy Gallegos");
 
 // TMP 336 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("3f891c3f-82e2-4f9d-ae4b-443fce0bdd71", "Randy Gallegos");
 
 // TMP 337 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 2)
+    .with_art("b38e48ff-17c8-470c-ba8b-966da1777e77", "Randy Gallegos");
 
 // TMP 338 — Island (alternate printing)
+const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 3)
+    .with_art("5e6e59d7-5038-46b4-9f60-3d9d0cbf0a4e", "Randy Gallegos");
 
 // TMP 339 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SWAMP)
+    .with_art("5912d2aa-fe91-4cea-9c7a-6dca745f8560", "Brom");
 
 // TMP 340 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("000366c8-7a43-49d7-a103-ac5bd7efd9aa", "Brom");
 
 // TMP 341 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 2)
+    .with_art("c96dbfea-3b79-4e5b-a356-3c04d1e78e83", "Brom");
 
 // TMP 342 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 3)
+    .with_art("9330376c-0242-4e28-b535-26c84b43c3e6", "Brom");
 
 // TMP 343 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
+    .with_art("9d6dc341-89dc-4e99-baa2-ad0ae59f0e94", "Mark Poole");
 
 // TMP 344 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("676fb0ed-5a19-4fde-b2c4-f46c7e0915f8", "Mark Poole");
 
 // TMP 345 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2)
+    .with_art("9515ced4-b679-48f0-bf62-8b7baef5e1c2", "Mark Poole");
 
 // TMP 346 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3)
+    .with_art("23e043bf-a6d7-4778-8460-13bdf38b7d39", "Mark Poole");
 
 // TMP 347 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FOREST)
+    .with_art("36b3ffbd-3f3e-4fca-80c2-94f9fdc198a5", "Douglas Shuler");
 
 // TMP 348 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("72bac71a-c326-4640-bdf8-43682f59060b", "Douglas Shuler");
 
 // TMP 349 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 2)
+    .with_art("6b667225-a808-43e9-955e-6c4e7ecd53f2", "Douglas Shuler");
 
 // TMP 350 — Forest (alternate printing)
+const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 3)
+    .with_art("32411c3a-da2b-4316-9848-971e90951303", "Douglas Shuler");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ADVANCE_SCOUT,
     &ANGELIC_PROTECTOR,
     &ANOINT,
     &ARMOR_SLIVER,
-    &ARMORED_PEGASUS,
     &AURATOG,
     &AVENGING_ANGEL,
     &CIRCLE_OF_PROTECTION_SHADOW,
@@ -3583,7 +3706,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FIGHTING_DRAKE,
     &FYLAMARID,
     &GIANT_CRAB,
-    &HORNED_TURTLE,
     &INSIGHT,
     &INTERDICT,
     &INTUITION,
@@ -3631,6 +3753,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DARKLING_STALKER,
     &DAUTHI_EMBRACE,
     &DAUTHI_GHOUL,
+    &DAUTHI_HORROR,
     &DAUTHI_MARAUDER,
     &DAUTHI_MERCENARY,
     &DAUTHI_MINDRIPPER,
@@ -3655,7 +3778,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MINION_OF_THE_WASTES,
     &PERISH,
     &PIT_IMP,
-    &RAIN_OF_TEARS,
     &RATS_OF_RATH,
     &REANIMATE,
     &RECKLESS_SPITE,
@@ -3691,6 +3813,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JACKAL_PUP,
     &KINDLE,
     &LIGHTNING_BLAST,
+    &LIGHTNING_ELEMENTAL,
     &LOWLAND_GIANT,
     &MAGMASAUR,
     &MOGG_CONSCRIPTS,
@@ -3720,7 +3843,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BAYOU_DRAGONFLY,
     &BROKEN_FALL,
     &CANOPY_SPIDER,
-    &CHARGING_RHINO,
     &CHOKE,
     &CRAZED_ARMODON,
     &DIRTCOWL_WURM,
@@ -3741,10 +3863,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MIRRI_S_GUILE,
     &MONGREL_PACK,
     &MUSCLE_SLIVER,
-    &NATURAL_SPRING,
     &NATURE_S_REVOLT,
-    &NEEDLE_STORM,
     &NURTURING_LICID,
+    &OVERRUN,
     &PINCHER_BEETLES,
     &REALITY_ANCHOR,
     &REAP,
@@ -3752,6 +3873,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RESPITE,
     &ROOT_MAZE,
     &ROOTBREAKER_WURM,
+    &ROOTWALLA,
     &SCRAGNOTH,
     &SEEKER_OF_SKYBREAK,
     &SKYSHROUD_ELF,
@@ -3763,7 +3885,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TRUMPETING_ARMODON,
     &VERDANT_FORCE,
     &VERDIGRIS,
-    &WINTER_S_GRASP,
     &DRACOPLASM,
     &LOBOTOMY,
     &RANGER_EN_VEC,
@@ -3800,6 +3921,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PATCHWORK_GNOMES,
     &PEARL_MEDALLION,
     &PHYREXIAN_GRIMOIRE,
+    &PHYREXIAN_HULK,
     &PHYREXIAN_SPLICER,
     &PUPPET_STRINGS,
     &RUBY_MEDALLION,
@@ -3831,53 +3953,55 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_leb::CIRCLE_OF_PROTECTION_BLACK), // TMP 8
-    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_BLUE),  // TMP 9
-    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_GREEN), // TMP 10
-    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_RED),   // TMP 11
-    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_WHITE), // TMP 13
-    PrintingRecord::reprint(&catalog_lea::DISENCHANT),                 // TMP 16
-    PrintingRecord::reprint(&catalog_m13::PACIFISM),                   // TMP 34
-    PrintingRecord::reprint(&catalog_lea::COUNTERSPELL),               // TMP 57
-    PrintingRecord::reprint(&catalog_mir::DREAM_CACHE),                // TMP 59
-    PrintingRecord::reprint(&catalog_leg::GASEOUS_FORM),               // TMP 65
-    PrintingRecord::reprint(&catalog_lea::POWER_SINK),                 // TMP 78
-    PrintingRecord::reprint(&catalog_lea::SPELL_BLAST),                // TMP 89
-    PrintingRecord::reprint(&catalog_m14::TIME_EBB),                   // TMP 96
-    PrintingRecord::reprint(&catalog_m13::WIND_DRAKE),                 // TMP 105
-    PrintingRecord::reprint(&catalog_vis::COERCION),                   // TMP 113
-    PrintingRecord::reprint(&catalog_ice::DARK_BANISHING),             // TMP 117
-    PrintingRecord::reprint(&catalog_lea::DARK_RITUAL),                // TMP 118
-    PrintingRecord::reprint(&catalog_clb::DAUTHI_HORROR),              // TMP 122
-    PrintingRecord::reprint(&catalog_mir::ENFEEBLEMENT),               // TMP 133
-    PrintingRecord::reprint(&catalog_m12::GRAVEDIGGER),                // TMP 137
-    PrintingRecord::reprint(&catalog_leg::GIANT_STRENGTH),             // TMP 178
-    PrintingRecord::reprint(&catalog_m12::LIGHTNING_ELEMENTAL),        // TMP 186
-    PrintingRecord::reprint(&catalog_lea::SHATTER),                    // TMP 203
-    PrintingRecord::reprint(&catalog_lea::STONE_RAIN),                 // TMP 206
-    PrintingRecord::reprint(&catalog_m12::OVERRUN),                    // TMP 243
-    PrintingRecord::reprint(&catalog_m12::RAMPANT_GROWTH),             // TMP 245
-    PrintingRecord::reprint(&catalog_m14::ROOTWALLA),                  // TMP 252
-    PrintingRecord::reprint(&catalog_lea::TRANQUILITY),                // TMP 261
-    PrintingRecord::reprint(&catalog_m13::PHYREXIAN_HULK),             // TMP 302
-    PrintingRecord::reprint(&catalog_lea::PLAINS),                     // TMP 331
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1),                // TMP 332
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 2),                // TMP 333
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 3),                // TMP 334
-    PrintingRecord::reprint(&catalog_lea::ISLAND),                     // TMP 335
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1),                // TMP 336
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 2),                // TMP 337
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 3),                // TMP 338
-    PrintingRecord::reprint(&catalog_lea::SWAMP),                      // TMP 339
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1),                 // TMP 340
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 2),                 // TMP 341
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 3),                 // TMP 342
-    PrintingRecord::reprint(&catalog_lea::MOUNTAIN),                   // TMP 343
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1),              // TMP 344
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2),              // TMP 345
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3),              // TMP 346
-    PrintingRecord::reprint(&catalog_lea::FOREST),                     // TMP 347
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1),                // TMP 348
-    PrintingRecord::alternate(&catalog_lea::FOREST, 2),                // TMP 349
-    PrintingRecord::alternate(&catalog_lea::FOREST, 3),                // TMP 350
+    ARMORED_PEGASUS_REPRINT,
+    CIRCLE_OF_PROTECTION_BLACK_REPRINT,
+    CIRCLE_OF_PROTECTION_BLUE_REPRINT,
+    CIRCLE_OF_PROTECTION_GREEN_REPRINT,
+    CIRCLE_OF_PROTECTION_RED_REPRINT,
+    CIRCLE_OF_PROTECTION_WHITE_REPRINT,
+    DISENCHANT_REPRINT,
+    PACIFISM_REPRINT,
+    COUNTERSPELL_REPRINT,
+    DREAM_CACHE_REPRINT,
+    GASEOUS_FORM_REPRINT,
+    HORNED_TURTLE_REPRINT,
+    POWER_SINK_REPRINT,
+    SPELL_BLAST_REPRINT,
+    TIME_EBB_REPRINT,
+    WIND_DRAKE_REPRINT,
+    COERCION_REPRINT,
+    DARK_BANISHING_REPRINT,
+    DARK_RITUAL_REPRINT,
+    ENFEEBLEMENT_REPRINT,
+    GRAVEDIGGER_REPRINT,
+    RAIN_OF_TEARS_REPRINT,
+    GIANT_STRENGTH_REPRINT,
+    SHATTER_REPRINT,
+    STONE_RAIN_REPRINT,
+    CHARGING_RHINO_REPRINT,
+    NATURAL_SPRING_REPRINT,
+    NEEDLE_STORM_REPRINT,
+    RAMPANT_GROWTH_REPRINT,
+    TRANQUILITY_REPRINT,
+    WINTER_S_GRASP_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    PLAINS_ALTERNATE_3,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    ISLAND_ALTERNATE_3,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    SWAMP_ALTERNATE_3,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    MOUNTAIN_ALTERNATE_3,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
+    FOREST_ALTERNATE_3,
 ];

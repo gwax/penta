@@ -96,6 +96,16 @@ pub(in crate::card::sets) static SCRAPWORK_MUTT: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+// BRO 174 — Bushwhack
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static BUSHWHACK: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("712a0640-d9c8-46fc-b38b-bf20a40fa902"),
+    "Bushwhack",
+    crate::card::CardArt::new("f6b92766-1ab8-462d-bd45-ccd6f55cbe14", "Artur Nakhodkin"),
+    crate::card::CardSet::TheBrothersWar,
+    crate::card::CardRules::unsupported(),
+);
+
 // BRO 199 — Haywire Mite
 pub(in crate::card::sets) static HAYWIRE_MITE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("847a175e-ead1-4596-baf3-5f7f57859e0b"),
@@ -320,6 +330,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WEAKSTONE_S_SUBJUGATION,
     &GIXIAN_INFILTRATOR,
     &SCRAPWORK_MUTT,
+    &BUSHWHACK,
     &HAYWIRE_MITE,
     &THIRD_PATH_ICONOCLAST,
     &THE_MIGHTSTONE_AND_WEAKSTONE,

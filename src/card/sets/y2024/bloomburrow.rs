@@ -295,6 +295,9 @@ pub(in crate::card::sets) static HIDDEN_GROTTO: CardRecord = CardRecord::new(
 );
 
 // BLB 307 — Thundertrap Trainer (alternate printing)
+const THUNDERTRAP_TRAINER_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&THUNDERTRAP_TRAINER, 1)
+        .with_art("54ec3510-c168-4acc-aee8-65529d0f5ad7", "Iain McCaig");
 
 // BLB 322 — Keen-Eyed Curator
 pub(in crate::card::sets) static KEEN_EYED_CURATOR: CardRecord = CardRecord::new(
@@ -369,6 +372,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KEEN_EYED_CURATOR,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&THUNDERTRAP_TRAINER, 1), // BLB 307
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[THUNDERTRAP_TRAINER_ALTERNATE_1];

@@ -1,7 +1,6 @@
 //! Avacyn Restored card records used by the built-in ISD–M14 Standard deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
-use crate::card::CostQuantityDef;
 use crate::card::sets::y1993::alpha;
 use crate::card::sets::y2003::mirrodin as catalog_mrd;
 use crate::card::{
@@ -16,9 +15,8 @@ use crate::card::{
     ObjectChoiceBindingDef, ObjectCollectionSourceDef, ObjectPredicateDef, ObjectQueryDef,
     ObjectRefDef, ObjectSetDef, ObjectSetFilterDef, PayOrDef, PlayerRefDef, PlayerRelation,
     PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef, ResolvedEffectDurationDef,
-    SacrificedAmountDef, ScaledValueDef, SpellAdditionalCostDef, TargetChooserDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef,
-    ZoneKind, ZonePlacement, abilities,
+    SacrificedAmountDef, ScaledValueDef, TargetChooserDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneChangeEventMatcherDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{ParentBinding, TargetIndex, mana_cost};
 
@@ -126,40 +124,20 @@ pub(in crate::card::sets) static ANGEL_OF_JUBILATION: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
-// AVR 3 — Angel's Mercy
-pub(in crate::card::sets) static ANGELS_MERCY: CardRecord = CardRecord::new_with_legacy_id(
-    750,
-    "Angel's Mercy",
-    CardArt::new("7a437999-26ae-49fa-8647-c8c2b4640702", "Greg Staples"),
-    CardSet::AvacynRestored,
-    CardRules::new_instant(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::spell(
-        "You gain 7 life.",
-        EffectDef::GainLife {
-            recipient: EffectRecipientDef::Controller,
-            amount: ValueDef::Constant(7),
-        },
-    )),
-);
+// AVR 3 — Angel's Mercy (reprint)
+const ANGELS_MERCY_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2009::magic_2010::ANGELS_MERCY)
+        .with_art("7a437999-26ae-49fa-8647-c8c2b4640702", "Greg Staples");
 
-// AVR 4 — Angelic Wall
-pub(in crate::card::sets) static ANGELIC_WALL: CardRecord = CardRecord::new_with_legacy_id(
-    751,
-    "Angelic Wall",
-    CardArt::new("d7b2450d-87a7-46dc-b43a-2db2abeca44f", "Allen Williams"),
-    CardSet::AvacynRestored,
-    CardRules::new_creature(mana_cost!("{1}{W}"), &["Wall"], 0, 4)
-        .with_abilities(&[abilities::defender(), abilities::flying()]),
-);
+// AVR 4 — Angelic Wall (reprint)
+const ANGELIC_WALL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::portal_second_age::ANGELIC_WALL)
+        .with_art("d7b2450d-87a7-46dc-b43a-2db2abeca44f", "Allen Williams");
 
-// AVR 5 — Archangel
-pub(in crate::card::sets) static ARCHANGEL: CardRecord = CardRecord::new_with_legacy_id(
-    752,
-    "Archangel",
-    CardArt::new("3741b2a7-7bda-481a-b8f8-9b04c96035b0", "Cynthia Sheppard"),
-    CardSet::AvacynRestored,
-    CardRules::new_creature(mana_cost!("{5}{W}{W}"), &["Angel"], 5, 5)
-        .with_abilities(&[abilities::flying(), abilities::vigilance()]),
-);
+// AVR 5 — Archangel (reprint)
+const ARCHANGEL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::visions::ARCHANGEL)
+        .with_art("3741b2a7-7bda-481a-b8f8-9b04c96035b0", "Cynthia Sheppard");
 
 // AVR 6 — Avacyn, Angel of Hope
 pub(in crate::card::sets) static AVACYN_ANGEL_OF_HOPE: CardRecord = CardRecord::new_with_legacy_id(
@@ -1390,33 +1368,10 @@ pub(in crate::card::sets) static FETTERGEIST: CardRecord = CardRecord::new_with_
     ]),
 );
 
-// AVR 53 — Fleeting Distraction
-pub(in crate::card::sets) static FLEETING_DISTRACTION: CardRecord = CardRecord::new_with_legacy_id(
-    771,
-    "Fleeting Distraction",
-    CardArt::new("1ba49d16-e3e4-470a-8ca2-a93a5b358f6e", "Ryan Yee"),
-    CardSet::AvacynRestored,
-    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
-        "Target creature gets -1/-0 until end of turn. Draw a card.",
-        &[AbilityTargetDef::exactly_one_permanent(
-            ObjectPredicateDef::HasType(CardType::Creature),
-        )],
-        EffectDef::Sequence(&[
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::modify_power_toughness(
-                    ValueDef::Constant(-1),
-                    ValueDef::Constant(0),
-                ),
-                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-            },
-            EffectDef::DrawCards {
-                recipient: EffectRecipientDef::Controller,
-                amount: ValueDef::Constant(1),
-            },
-        ]),
-    )),
-);
+// AVR 53 — Fleeting Distraction (reprint)
+const FLEETING_DISTRACTION_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2010::rise_of_the_eldrazi::FLEETING_DISTRACTION)
+        .with_art("1ba49d16-e3e4-470a-8ca2-a93a5b358f6e", "Ryan Yee");
 
 // AVR 54 — Galvanic Alchemist
 pub(in crate::card::sets) static GALVANIC_ALCHEMIST: CardRecord = CardRecord::new_with_legacy_id(
@@ -1869,44 +1824,10 @@ pub(in crate::card::sets) static OUTWIT: CardRecord = CardRecord::new(
     )),
 );
 
-// AVR 71 — Peel from Reality
-pub(in crate::card::sets) static PEEL_FROM_REALITY: CardRecord = CardRecord::new_with_legacy_id(
-    780,
-    "Peel from Reality",
-    CardArt::new("7f41285b-5961-4653-96a0-fb6d27111390", "Jason Felix"),
-    CardSet::AvacynRestored,
-    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(
-        AbilityDef::spell_with_targets(
-            "Return target creature you control and target creature you don't control to their owners' hands.",
-            &[
-                AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: Some(PlayerRelation::You),
-                    owner: None,
-                }),
-                AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: Some(PlayerRelation::Opponent),
-                    owner: None,
-                }),
-            ],
-            EffectDef::Sequence(&[
-                EffectDef::MoveToZone {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    zone: ZoneKind::Hand,
-                    placement: ZonePlacement::Top,
-},
-                EffectDef::MoveToZone {
-                    object: EffectRecipientDef::Target(TargetIndex(1)),
-                    zone: ZoneKind::Hand,
-                    placement: ZonePlacement::Top,
-},
-            ]),
-        ),
-    ),
-);
+// AVR 71 — Peel from Reality (reprint)
+const PEEL_FROM_REALITY_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::PEEL_FROM_REALITY)
+        .with_art("7f41285b-5961-4653-96a0-fb6d27111390", "Jason Felix");
 
 // AVR 72 — Rotcrown Ghoul
 pub(in crate::card::sets) static ROTCROWN_GHOUL: CardRecord = CardRecord::new_with_legacy_id(
@@ -2203,6 +2124,9 @@ pub(in crate::card::sets) static APPETITE_FOR_BRAINS: CardRecord = CardRecord::n
 );
 
 // AVR 85 — Barter in Blood (reprint)
+const BARTER_IN_BLOOD_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_mrd::BARTER_IN_BLOOD)
+        .with_art("39b4fab6-73ce-4a56-a305-4d2e93dbb4ee", "Eric Deschamps");
 
 // AVR 86 — Blood Artist
 pub(in crate::card::sets) static BLOOD_ARTIST: CardRecord = CardRecord::new_with_legacy_id(
@@ -2253,32 +2177,10 @@ pub(in crate::card::sets) static BLOODFLOW_CONNOISSEUR: CardRecord = CardRecord:
     ),
 );
 
-// AVR 88 — Bone Splinters
-pub(in crate::card::sets) static BONE_SPLINTERS: CardRecord = CardRecord::new_with_legacy_id(
-    1962,
-    "Bone Splinters",
-    CardArt::new("387eda28-f35b-48b0-ba59-773d82902327", "Nils Hamm"),
-    CardSet::AvacynRestored,
-    // The sacrifice is paid on the way to the stack, so the creature it eats
-    // is gone before the target is destroyed -- and the spell can eat the
-    // very creature it is aimed at only if something else is left to target.
-    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_additional_cost(
-        "As an additional cost to cast this spell, sacrifice a creature.\nDestroy target \
-             creature.",
-        &[AbilityTargetDef::exactly_one_permanent(
-            ObjectPredicateDef::HasType(CardType::Creature),
-        )],
-        SpellAdditionalCostDef::sacrifice(
-            ObjectPredicateDef::HasType(CardType::Creature),
-            CostQuantityDef::Fixed(1),
-        ),
-        EffectDef::Destroy {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            can_regenerate: true,
-            then: None,
-        },
-    )),
-);
+// AVR 88 — Bone Splinters (reprint)
+const BONE_SPLINTERS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2008::shards_of_alara::BONE_SPLINTERS)
+        .with_art("387eda28-f35b-48b0-ba59-773d82902327", "Nils Hamm");
 
 // AVR 89 — Butcher Ghoul
 pub(in crate::card::sets) static BUTCHER_GHOUL: CardRecord = CardRecord::new_with_legacy_id(
@@ -2336,32 +2238,10 @@ pub(in crate::card::sets) static CORPSE_TRADERS: CardRecord = CardRecord::new(
     ),
 );
 
-// AVR 91 — Crypt Creeper
-pub(in crate::card::sets) static CRYPT_CREEPER: CardRecord = CardRecord::new_with_legacy_id(
-    786,
-    "Crypt Creeper",
-    CardArt::new("0382cb94-0836-4e23-99b7-034faa363203", "Scott Chou"),
-    CardSet::AvacynRestored,
-    CardRules::new_creature(mana_cost!("{1}{B}"), &["Zombie"], 2, 1).with_ability(
-        AbilityDef::activated_with_targets(
-            "Sacrifice this creature: Exile target card from a graveyard.",
-            &[AbilityCostDef::SacrificeSource],
-            &[AbilityTargetDef::exactly_one(
-                AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Any,
-                    zones: &[ZoneKind::Graveyard],
-                    controller: None,
-                    owner: None,
-                },
-            )],
-            EffectDef::MoveToZone {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                zone: ZoneKind::Exile,
-                placement: ZonePlacement::Top,
-            },
-        ),
-    ),
-);
+// AVR 91 — Crypt Creeper (reprint)
+const CRYPT_CREEPER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2001::odyssey::CRYPT_CREEPER)
+        .with_art("0382cb94-0836-4e23-99b7-034faa363203", "Scott Chou");
 
 // AVR 92 — Dark Impostor
 pub(in crate::card::sets) static DARK_IMPOSTOR: CardRecord = CardRecord::new(
@@ -3340,21 +3220,10 @@ pub(in crate::card::sets) static DANGEROUS_WAGER: CardRecord = CardRecord::new(
     )),
 );
 
-// AVR 132 — Demolish
-pub(in crate::card::sets) static DEMOLISH: CardRecord = CardRecord::new_with_legacy_id(
-    802,
-    "Demolish",
-    CardArt::new("4657aa15-8274-4bd7-afe4-504693064373", "Raymond Swanland"),
-    CardSet::AvacynRestored,
-    CardRules::new_sorcery(mana_cost!("{3}{R}")).with_ability(AbilityDef::destroy_target(
-        "Destroy target artifact or land.",
-        &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::AnyOf(&[
-            ObjectPredicateDef::HasType(CardType::Artifact),
-            ObjectPredicateDef::HasType(CardType::Land),
-        ])),
-        true,
-    )),
-);
+// AVR 132 — Demolish (reprint)
+const DEMOLISH_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2001::odyssey::DEMOLISH)
+        .with_art("4657aa15-8274-4bd7-afe4-504693064373", "Raymond Swanland");
 
 // AVR 133 — Dual Casting
 pub(in crate::card::sets) static DUAL_CASTING: CardRecord = CardRecord::new(
@@ -3988,41 +3857,10 @@ pub(in crate::card::sets) static THATCHER_REVOLT: CardRecord = CardRecord::new(
     )),
 );
 
-// AVR 159 — Thunderbolt
-pub(in crate::card::sets) static THUNDERBOLT: CardRecord = CardRecord::new_with_legacy_id(
-    1640,
-    "Thunderbolt",
-    CardArt::new("5845a5bc-6b7d-4bbb-80b3-a0f877b95553", "Anthony Francisco"),
-    CardSet::AvacynRestored,
-    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(AbilityDef::modal_spell(
-        "Choose one —",
-        &[
-            AbilityDef::spell_with_targets(
-                "Thunderbolt deals 3 damage to target player or planeswalker.",
-                &[AbilityTargetDef::exactly_one(
-                    AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
-                )],
-                EffectDef::DealDamage {
-                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    amount: ValueDef::Constant(3),
-                },
-            ),
-            AbilityDef::spell_with_targets(
-                "Thunderbolt deals 4 damage to target creature with flying.",
-                &[AbilityTargetDef::exactly_one_permanent(
-                    ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
-                    ]),
-                )],
-                EffectDef::DealDamage {
-                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    amount: ValueDef::Constant(4),
-                },
-            ),
-        ],
-    )),
-);
+// AVR 159 — Thunderbolt (reprint)
+const THUNDERBOLT_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::weatherlight::THUNDERBOLT)
+        .with_art("5845a5bc-6b7d-4bbb-80b3-a0f877b95553", "Anthony Francisco");
 
 // AVR 160 — Thunderous Wrath
 pub(in crate::card::sets) static THUNDEROUS_WRATH: CardRecord = CardRecord::new_with_legacy_id(
@@ -4215,40 +4053,10 @@ pub(in crate::card::sets) static BLESSINGS_OF_NATURE: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
-// AVR 169 — Borderland Ranger
-pub(in crate::card::sets) static BORDERLAND_RANGER: CardRecord = CardRecord::new_with_legacy_id(
-    820,
-    "Borderland Ranger",
-    CardArt::new("8f067c26-c51d-44d0-a0af-106b5778f06a", "Zoltan Boros"),
-    CardSet::AvacynRestored,
-    CardRules::new_creature(
-        mana_cost!("{2}{G}"),
-        &["Human", "Scout", "Ranger"],
-        2,
-        2,
-    )
-    .with_ability(abilities::enters_trigger("When this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.", EffectDef::May {
-            player: EffectRecipientDef::Controller,
-            effect: &EffectDef::SearchZone {
-                player: EffectRecipientDef::Controller,
-                source: ZoneKind::Library,
-                object: ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Land),
-                    ObjectPredicateDef::Supertype(CardSupertype::Basic),
-                ]),
-                minimum: 0,
-                maximum: ValueDef::Constant(1),
-                reveal: true,
-                destination: ZoneKind::Hand,
-                placement: ZonePlacement::Top,
-                shuffle: true,
-                enters_tapped: false,
-                attachment: None,
-                binding: None,
-                then: None,
-            },
-        })),
-);
+// AVR 169 — Borderland Ranger (reprint)
+const BORDERLAND_RANGER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2009::magic_2010::BORDERLAND_RANGER)
+        .with_art("8f067c26-c51d-44d0-a0af-106b5778f06a", "Zoltan Boros");
 
 // AVR 170 — Bower Passage
 pub(in crate::card::sets) static BOWER_PASSAGE: CardRecord = CardRecord::new_with_legacy_id(
@@ -4496,20 +4304,10 @@ pub(in crate::card::sets) static GEIST_TRAPPERS: CardRecord = CardRecord::new_wi
     ]),
 );
 
-// AVR 180 — Gloomwidow
-pub(in crate::card::sets) static GLOOMWIDOW: CardRecord = CardRecord::new_with_legacy_id(
-    1600,
-    "Gloomwidow",
-    CardArt::new("a016c872-09bd-42e1-94da-f587e8252492", "Svetlin Velinov"),
-    CardSet::AvacynRestored,
-    CardRules::new_creature(mana_cost!("{2}{G}"), &["Spider"], 3, 3).with_abilities(&[
-        abilities::reach(),
-        AbilityDef::static_ability(
-            "This creature can block only creatures with flying.",
-            BLOCKS_ONLY_FLYERS,
-        ),
-    ]),
-);
+// AVR 180 — Gloomwidow (reprint)
+const GLOOMWIDOW_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2008::shadowmoor::GLOOMWIDOW)
+        .with_art("a016c872-09bd-42e1-94da-f587e8252492", "Svetlin Velinov");
 
 // AVR 181 — Grounded
 pub(in crate::card::sets) static GROUNDED: CardRecord = CardRecord::new_with_legacy_id(
@@ -5756,41 +5554,68 @@ pub(in crate::card::sets) static SLAYERS_STRONGHOLD: CardRecord = CardRecord::ne
 );
 
 // AVR 230 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::PLAINS)
+    .with_art("f090db87-b7a9-4c88-a211-495b27ae37c9", "Adam Paquette");
 
 // AVR 231 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::PLAINS, 1)
+    .with_art("91348123-e2d0-4acb-ab4e-ec17652b7853", "Jung Park");
 
 // AVR 232 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::PLAINS, 2)
+    .with_art("9ca16bd5-e261-4229-a92d-7cd55654dd11", "Eytan Zana");
 
 // AVR 233 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::ISLAND)
+    .with_art("25934479-a47e-45b8-bc35-fc4b659b0d68", "James Paick");
 
 // AVR 234 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::ISLAND, 1)
+    .with_art("22f920a5-74ea-4b94-8822-5867e6d5017a", "Adam Paquette");
 
 // AVR 235 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::ISLAND, 2)
+    .with_art("5cf3685e-0ed3-4dc3-9033-8faa10b17c27", "Jung Park");
 
 // AVR 236 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::SWAMP)
+    .with_art("339c3f05-444c-4e0a-a556-fc09417ee984", "James Paick");
 
 // AVR 237 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::SWAMP, 1)
+    .with_art("26c57bee-2810-467c-8ed7-6cecb5cbc379", "Adam Paquette");
 
 // AVR 238 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::SWAMP, 2)
+    .with_art("06a570b2-bcab-4500-b790-252baaf1f6d8", "Jung Park");
 
 // AVR 239 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::MOUNTAIN)
+    .with_art("f53b7e7e-494b-4346-b18e-0e879bba7cec", "James Paick");
 
 // AVR 240 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::MOUNTAIN, 1)
+    .with_art("94b728a4-c3a9-408e-8333-8266a02c64fa", "Adam Paquette");
 
 // AVR 241 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::MOUNTAIN, 2)
+    .with_art("0e468809-d639-43f0-8834-16e921547dee", "Eytan Zana");
 
 // AVR 242 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::FOREST)
+    .with_art("8097c9ce-8fe9-4150-9810-52f6c92c6099", "James Paick");
 
 // AVR 243 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::FOREST, 1)
+    .with_art("9f104987-f678-4ba4-b7f5-69ae7fdc01a3", "Jung Park");
 
 // AVR 244 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::FOREST, 2)
+    .with_art("990f4974-fcef-46d1-8baa-6a215f7f3292", "Eytan Zana");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANGEL_OF_GLORY_S_RISE,
     &ANGEL_OF_JUBILATION,
-    &ANGELS_MERCY,
-    &ANGELIC_WALL,
-    &ARCHANGEL,
     &AVACYN_ANGEL_OF_HOPE,
     &BANISHING_STROKE,
     &BUILDERS_BLESSING,
@@ -5838,7 +5663,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELGAUD_SHIELDMATE,
     &FAVORABLE_WINDS,
     &FETTERGEIST,
-    &FLEETING_DISTRACTION,
     &GALVANIC_ALCHEMIST,
     &GEIST_SNATCH,
     &GHOSTFORM,
@@ -5856,7 +5680,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MISTHOLLOW_GRIFFIN,
     &NEPHALIA_SMUGGLER,
     &OUTWIT,
-    &PEEL_FROM_REALITY,
     &ROTCROWN_GHOUL,
     &SCRAPSKIN_DRAKE,
     &SECOND_GUESS,
@@ -5872,10 +5695,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &APPETITE_FOR_BRAINS,
     &BLOOD_ARTIST,
     &BLOODFLOW_CONNOISSEUR,
-    &BONE_SPLINTERS,
     &BUTCHER_GHOUL,
     &CORPSE_TRADERS,
-    &CRYPT_CREEPER,
     &DARK_IMPOSTOR,
     &DEATH_WIND,
     &DEMONIC_RISING,
@@ -5916,7 +5737,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BONFIRE_OF_THE_DAMNED,
     &BURN_AT_THE_STAKE,
     &DANGEROUS_WAGER,
-    &DEMOLISH,
     &DUAL_CASTING,
     &FALKENRATH_EXTERMINATOR,
     &FERVENT_CATHAR,
@@ -5943,7 +5763,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SOMBERWALD_VIGILANTE,
     &STONEWRIGHT,
     &THATCHER_REVOLT,
-    &THUNDERBOLT,
     &THUNDEROUS_WRATH,
     &TIBALT_THE_FIEND_BLOODED,
     &TYRANT_OF_DISCORD,
@@ -5953,7 +5772,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ZEALOUS_CONSCRIPTS,
     &ABUNDANT_GROWTH,
     &BLESSINGS_OF_NATURE,
-    &BORDERLAND_RANGER,
     &BOWER_PASSAGE,
     &CHAMPION_OF_LAMBHOLT,
     &CRATERHOOF_BEHEMOTH,
@@ -5964,7 +5782,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &EATEN_BY_SPIDERS,
     &FLOWERING_LUMBERKNOT,
     &GEIST_TRAPPERS,
-    &GLOOMWIDOW,
     &GROUNDED,
     &HOWLGEIST,
     &JOINT_ASSAULT,
@@ -6017,20 +5834,31 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_mrd::BARTER_IN_BLOOD), // AVR 85
-    PrintingRecord::reprint(&alpha::PLAINS),                // AVR 230
-    PrintingRecord::alternate(&alpha::PLAINS, 1),           // AVR 231
-    PrintingRecord::alternate(&alpha::PLAINS, 2),           // AVR 232
-    PrintingRecord::reprint(&alpha::ISLAND),                // AVR 233
-    PrintingRecord::alternate(&alpha::ISLAND, 1),           // AVR 234
-    PrintingRecord::alternate(&alpha::ISLAND, 2),           // AVR 235
-    PrintingRecord::reprint(&alpha::SWAMP),                 // AVR 236
-    PrintingRecord::alternate(&alpha::SWAMP, 1),            // AVR 237
-    PrintingRecord::alternate(&alpha::SWAMP, 2),            // AVR 238
-    PrintingRecord::reprint(&alpha::MOUNTAIN),              // AVR 239
-    PrintingRecord::alternate(&alpha::MOUNTAIN, 1),         // AVR 240
-    PrintingRecord::alternate(&alpha::MOUNTAIN, 2),         // AVR 241
-    PrintingRecord::reprint(&alpha::FOREST),                // AVR 242
-    PrintingRecord::alternate(&alpha::FOREST, 1),           // AVR 243
-    PrintingRecord::alternate(&alpha::FOREST, 2),           // AVR 244
+    ANGELS_MERCY_REPRINT,
+    ANGELIC_WALL_REPRINT,
+    ARCHANGEL_REPRINT,
+    FLEETING_DISTRACTION_REPRINT,
+    PEEL_FROM_REALITY_REPRINT,
+    BARTER_IN_BLOOD_REPRINT,
+    BONE_SPLINTERS_REPRINT,
+    CRYPT_CREEPER_REPRINT,
+    DEMOLISH_REPRINT,
+    THUNDERBOLT_REPRINT,
+    BORDERLAND_RANGER_REPRINT,
+    GLOOMWIDOW_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
 ];

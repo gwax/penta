@@ -80,9 +80,7 @@ impl CardRecord {
 
     /// Preserves an existing numeric ID while recording an anchor printing.
     ///
-    /// Existing records default their anchor to the chosen art printing. A
-    /// record whose presentation intentionally comes from another printing
-    /// can override that with [`Self::with_identity_anchor`].
+    /// Existing records default their anchor to the supplied debut artwork.
     #[allow(clippy::large_types_passed_by_value)]
     pub(super) const fn new_with_legacy_id(
         legacy_id: u64,
@@ -262,10 +260,11 @@ impl CardRecord {
         record
     }
 
-    /// Uses an identity printing distinct from the chosen presentation art.
+    /// Moves a legacy definition to its exact debut artwork and identity.
     #[must_use]
-    pub(super) const fn with_identity_anchor(mut self, anchor: PrintingAnchor) -> Self {
-        self.identity_anchor = anchor;
+    pub(super) const fn with_debut_art(mut self, art: CardArt) -> Self {
+        self.identity_anchor = PrintingAnchor::scryfall(art.scryfall_id);
+        self.art = art;
         self
     }
 
@@ -316,7 +315,7 @@ impl CardRecord {
             name: self.name.into(),
             art: Some(self.art),
             debut_set: self.debut_set,
-            printings: vec![CardPrinting::new(id, self.debut_set)],
+            printings: vec![CardPrinting::with_art(id, self.debut_set, self.art)],
             rules: self.rules,
             parts: composition.parts,
             structure: composition.structure,
@@ -329,22 +328,45 @@ impl CardRecord {
 pub(super) struct PrintingRecord {
     pub(super) card: &'static CardRecord,
     pub(super) variant: u16,
+    pub(super) art: Option<CardArt>,
 }
 
 impl PrintingRecord {
     /// Adds the default variant of `card` to another set.
     pub(super) const fn reprint(card: &'static CardRecord) -> Self {
-        Self { card, variant: 0 }
+        Self {
+            card,
+            variant: 0,
+            art: None,
+        }
     }
 
     /// Adds another distinguishable printing of `card` within the same set.
     pub(super) const fn alternate(card: &'static CardRecord, variant: u16) -> Self {
         assert!(variant > 0, "alternate printing variants start at one");
-        Self { card, variant }
+        Self {
+            card,
+            variant,
+            art: None,
+        }
+    }
+
+    /// Records the artwork printed on this exact reprint or variant.
+    #[must_use]
+    pub(super) const fn with_art(
+        mut self,
+        scryfall_id: &'static str,
+        artist: &'static str,
+    ) -> Self {
+        self.art = Some(CardArt::new(scryfall_id, artist));
+        self
     }
 
     pub(super) fn printing(&self, set: CardSet) -> CardPrinting {
-        CardPrinting::with_variant(self.card.id(), set, self.variant)
+        self.art.map_or_else(
+            || CardPrinting::with_variant(self.card.id(), set, self.variant),
+            |art| CardPrinting::with_variant_and_art(self.card.id(), set, self.variant, art),
+        )
     }
 }
 

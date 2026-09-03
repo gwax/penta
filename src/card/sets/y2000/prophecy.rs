@@ -673,6 +673,8 @@ pub(in crate::card::sets) static COFFIN_PUPPETS: CardRecord = CardRecord::new(
 );
 
 // PCY 60s — Coffin Puppets (alternate printing)
+const COFFIN_PUPPETS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&COFFIN_PUPPETS, 1)
+    .with_art("c34019cb-5d87-4451-a102-b751ea3a97f8", "Glen Angus");
 
 // PCY 61 — Death Charmer
 // Audit: unsupported — Card rules have not been implemented.
@@ -1661,6 +1663,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RHYSTIC_CAVE,
     &WINTERMOON_MESA,
 ];
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&COFFIN_PUPPETS, 1), // PCY 60s
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[COFFIN_PUPPETS_ALTERNATE_1];

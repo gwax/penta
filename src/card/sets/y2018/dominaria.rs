@@ -135,6 +135,16 @@ pub(in crate::card::sets) static KARN_SCION_OF_URZA: CardRecord = CardRecord::ne
         ]),
 );
 
+// DOM 81 — Cast Down
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static CAST_DOWN: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("116ce944-6871-4f51-a889-d9c4a5d7cff2"),
+    "Cast Down",
+    crate::card::CardArt::new("aba79021-39af-4e74-beb5-f2f508c865b2", "Tyler Walpole"),
+    crate::card::CardSet::Dominaria,
+    crate::card::CardRules::unsupported(),
+);
+
 // DOM 207 — Teferi, Hero of Dominaria
 pub(in crate::card::sets) static TEFERI_HERO_OF_DOMINARIA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5d10b752-d9cb-419d-a5c4-d4ee1acb655e"),
@@ -236,6 +246,7 @@ pub(in crate::card::sets) static DAMPING_SPHERE: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KARN_SCION_OF_URZA,
+    &CAST_DOWN,
     &TEFERI_HERO_OF_DOMINARIA,
     &DAMPING_SPHERE,
 ];

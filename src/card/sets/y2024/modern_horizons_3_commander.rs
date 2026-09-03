@@ -1,6 +1,7 @@
 //! Modern Horizons 3 Commander cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::sets::y2022::commander_legends_baldurs_gate as catalog_clb;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
@@ -217,15 +218,9 @@ pub(in crate::card::sets) static TALON_GATES_OF_MADARA: CardRecord = CardRecord:
     ]),
 );
 
-// M3C 320 — Basilisk Gate
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static BASILISK_GATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4a306025-d429-4006-b7ed-bdb287e83f57"),
-    "Basilisk Gate",
-    crate::card::CardArt::new("935f3dfa-7d8d-459a-8ac2-37892cb9545f", "Jorge Jacinto"),
-    crate::card::CardSet::ModernHorizons3Commander,
-    crate::card::CardRules::unsupported(),
-);
+// M3C 320 — Basilisk Gate (reprint)
+const BASILISK_GATE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_clb::BASILISK_GATE)
+    .with_art("935f3dfa-7d8d-459a-8ac2-37892cb9545f", "Jorge Jacinto");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ULALEK_FUSED_ATROCITY,
@@ -233,7 +228,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PYROGOYF,
     &BLOODBRAID_CHALLENGER,
     &TALON_GATES_OF_MADARA,
-    &BASILISK_GATE,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[BASILISK_GATE_REPRINT];

@@ -40,10 +40,16 @@ pub(in crate::card::sets) static COMBAT_MEDIC: CardRecord = CardRecord::new_with
 );
 
 // FEM 1b — Combat Medic (alternate printing)
+const COMBAT_MEDIC_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&COMBAT_MEDIC, 1)
+    .with_art("2a324a98-31c2-470a-b792-96b6b098a58c", "Susan Van Camp");
 
 // FEM 1c — Combat Medic (alternate printing)
+const COMBAT_MEDIC_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&COMBAT_MEDIC, 2)
+    .with_art("ee9d1eac-3ac2-4881-a984-e40d87f60784", "Anson Maddocks");
 
 // FEM 1d — Combat Medic (alternate printing)
+const COMBAT_MEDIC_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&COMBAT_MEDIC, 3)
+    .with_art("8f26c079-61ea-436d-89ae-2f1c6f863e91", "Liz Danforth");
 
 // FEM 2 — Farrel's Mantle
 // Audit: unsupported — Needs a combat declaration or damage-assignment constraint for “Whenever enchanted creature attacks and isn't blocked, its controller may have it deal damage equal to its power plus 2 to another target creature. If that player does, the attacking…”.
@@ -95,8 +101,18 @@ pub(in crate::card::sets) static FARRELS_ZEALOT: CardRecord = CardRecord::new_wi
 );
 
 // FEM 3b — Farrel's Zealot (alternate printing)
+const FARRELS_ZEALOT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&FARRELS_ZEALOT, 1)
+    .with_art(
+        "9e3aeee7-975c-419a-bfb3-45bb48ba6918",
+        "Richard Kane Ferguson",
+    );
 
 // FEM 3c — Farrel's Zealot (alternate printing)
+const FARRELS_ZEALOT_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&FARRELS_ZEALOT, 2)
+    .with_art(
+        "54252fd2-21a6-40d1-8515-697f18c78a06",
+        "Edward P. Beard, Jr.",
+    );
 
 // FEM 4 — Farrelite Priest
 // Audit: unsupported — Needs the mana-ability runtime to pay this ability's mana activation cost for “{1}: Add {W}. If this ability has been activated four or more times this turn, sacrifice this creature at the beginning of the next end step”.
@@ -160,10 +176,19 @@ pub(in crate::card::sets) static ICATIAN_INFANTRY: CardRecord = CardRecord::new_
 );
 
 // FEM 7b — Icatian Infantry (alternate printing)
+const ICATIAN_INFANTRY_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&ICATIAN_INFANTRY, 1)
+        .with_art("e0e4a9d2-ea43-46ac-8b8b-00496a478103", "Christopher Rush");
 
 // FEM 7c — Icatian Infantry (alternate printing)
+const ICATIAN_INFANTRY_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&ICATIAN_INFANTRY, 2)
+        .with_art("efac583d-a492-45ee-8c52-60a6422b2168", "Douglas Shuler");
 
 // FEM 7d — Icatian Infantry (alternate printing)
+const ICATIAN_INFANTRY_ALTERNATE_3: PrintingRecord =
+    PrintingRecord::alternate(&ICATIAN_INFANTRY, 3)
+        .with_art("96b2a8d4-7c06-454c-9923-553294aada4f", "Drew Tucker");
 
 // FEM 8a — Icatian Javelineers
 pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::new_with_legacy_id(
@@ -202,8 +227,16 @@ pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::n
 );
 
 // FEM 8b — Icatian Javelineers (alternate printing)
+const ICATIAN_JAVELINEERS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&ICATIAN_JAVELINEERS, 1).with_art(
+        "c70f8f50-866a-4889-b986-48636225638a",
+        "Edward P. Beard, Jr.",
+    );
 
 // FEM 8c — Icatian Javelineers (alternate printing)
+const ICATIAN_JAVELINEERS_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&ICATIAN_JAVELINEERS, 2)
+        .with_art("2be5ab7a-e7db-4c09-8df2-6fe55fa4a116", "Scott Kirschner");
 
 // FEM 9 — Icatian Lieutenant
 pub(in crate::card::sets) static ICATIAN_LIEUTENANT: CardRecord = CardRecord::new_with_legacy_id(
@@ -282,8 +315,16 @@ pub(in crate::card::sets) static ICATIAN_MONEYCHANGER: CardRecord = CardRecord::
 );
 
 // FEM 10b — Icatian Moneychanger (alternate printing)
+const ICATIAN_MONEYCHANGER_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&ICATIAN_MONEYCHANGER, 1).with_art(
+        "cbf9194c-8e50-4f50-9a87-3b339a5bc279",
+        "Edward P. Beard, Jr.",
+    );
 
 // FEM 10c — Icatian Moneychanger (alternate printing)
+const ICATIAN_MONEYCHANGER_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&ICATIAN_MONEYCHANGER, 2)
+        .with_art("cf9521ae-6fac-4d86-9c60-adecaae5687d", "Melissa A. Benson");
 
 // FEM 11 — Icatian Phalanx
 pub(in crate::card::sets) static ICATIAN_PHALANX: CardRecord = CardRecord::new_with_legacy_id(
@@ -348,10 +389,16 @@ pub(in crate::card::sets) static ICATIAN_SCOUT: CardRecord = CardRecord::new_wit
 );
 
 // FEM 13b — Icatian Scout (alternate printing)
+const ICATIAN_SCOUT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ICATIAN_SCOUT, 1)
+    .with_art("e9db3442-01cb-4db2-ac33-8eca6880c315", "Douglas Shuler");
 
 // FEM 13c — Icatian Scout (alternate printing)
+const ICATIAN_SCOUT_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ICATIAN_SCOUT, 2)
+    .with_art("6c461655-a05d-4eed-85b2-04d554f5ec50", "Rob Alexander");
 
 // FEM 13d — Icatian Scout (alternate printing)
+const ICATIAN_SCOUT_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&ICATIAN_SCOUT, 3)
+    .with_art("db63ad7f-6dc4-4249-b360-46ec5569a5a9", "Phil Foglio");
 
 // FEM 14 — Icatian Skirmishers
 pub(in crate::card::sets) static ICATIAN_SKIRMISHERS: CardRecord = CardRecord::new_with_legacy_id(
@@ -430,8 +477,16 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new_
 );
 
 // FEM 16b — Order of Leitbur (alternate printing)
+const ORDER_OF_LEITBUR_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&ORDER_OF_LEITBUR, 1)
+        .with_art("fb537b5a-d725-420d-bc15-0d54ba23331c", "Bryon Wackwitz");
 
 // FEM 16c — Order of Leitbur (alternate printing)
+const ORDER_OF_LEITBUR_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&ORDER_OF_LEITBUR, 2).with_art(
+        "1373dea4-3565-4612-8505-ab8fba3ddb67",
+        "Randy Asplund-Faith",
+    );
 
 // FEM 17 — Deep Spawn
 pub(in crate::card::sets) static DEEP_SPAWN: CardRecord = CardRecord::new_with_legacy_id(
@@ -497,8 +552,12 @@ pub(in crate::card::sets) static HIGH_TIDE: CardRecord = CardRecord::new(
 );
 
 // FEM 18b — High Tide (alternate printing)
+const HIGH_TIDE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HIGH_TIDE, 1)
+    .with_art("c2813677-91cc-4c8b-a8ea-403fa776c9f0", "Anson Maddocks");
 
 // FEM 18c — High Tide (alternate printing)
+const HIGH_TIDE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&HIGH_TIDE, 2)
+    .with_art("4af611e3-45d6-4aee-bf48-56598b14a242", "Amy Weber");
 
 // FEM 19a — Homarid
 pub(in crate::card::sets) static HOMARID: CardRecord = CardRecord::new_with_legacy_id(
@@ -580,10 +639,16 @@ pub(in crate::card::sets) static HOMARID: CardRecord = CardRecord::new_with_lega
 );
 
 // FEM 19b — Homarid (alternate printing)
+const HOMARID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HOMARID, 1)
+    .with_art("cbb6c13f-6019-4ad5-9de6-07844c361b41", "Heather Hudson");
 
 // FEM 19c — Homarid (alternate printing)
+const HOMARID_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&HOMARID, 2)
+    .with_art("33536b0a-1cff-481f-b695-eadaf6897bf0", "Mark Tedin");
 
 // FEM 19d — Homarid (alternate printing)
+const HOMARID_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&HOMARID, 3)
+    .with_art("18f1cc24-a5fc-43cc-b558-ac7901c48b81", "Bryon Wackwitz");
 
 // FEM 20 — Homarid Shaman
 pub(in crate::card::sets) static HOMARID_SHAMAN: CardRecord = CardRecord::new_with_legacy_id(
@@ -648,12 +713,25 @@ pub(in crate::card::sets) static HOMARID_WARRIOR: CardRecord = CardRecord::new_w
 );
 
 // FEM 22b — Homarid Warrior (alternate printing)
+const HOMARID_WARRIOR_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HOMARID_WARRIOR, 1)
+    .with_art(
+        "c9a9bdcf-543b-4140-b836-9e222a4a9233",
+        "Randy Asplund-Faith",
+    );
 
 // FEM 22c — Homarid Warrior (alternate printing)
+const HOMARID_WARRIOR_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&HOMARID_WARRIOR, 2)
+    .with_art("fb1cccdc-9c4d-4ef3-807b-278e6fd23230", "Douglas Shuler");
 
 // FEM 23a — Merseine (alternate printing)
+const MERSEINE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&MERSEINE, 1)
+    .with_art("b1e96895-ef1d-44fa-b263-bce833fc3109", "Heather Hudson");
 
 // FEM 23b — Merseine (alternate printing)
+const MERSEINE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&MERSEINE, 2).with_art(
+    "5c7fb804-65ba-477e-93e8-eea101c1521e",
+    "Margaret Organ-Kean",
+);
 
 // FEM 23c — Merseine
 // Audit: unsupported — Card rules have not been implemented.
@@ -666,6 +744,8 @@ pub(in crate::card::sets) static MERSEINE: CardRecord = CardRecord::new(
 );
 
 // FEM 23d — Merseine (alternate printing)
+const MERSEINE_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&MERSEINE, 3)
+    .with_art("ae7a9e9a-d1f8-44c5-9f79-a1201acfb5fc", "Pete Venters");
 
 // FEM 24 — River Merfolk
 pub(in crate::card::sets) static RIVER_MERFOLK: CardRecord = CardRecord::new_with_legacy_id(
@@ -734,8 +814,12 @@ pub(in crate::card::sets) static TIDAL_FLATS: CardRecord = CardRecord::new(
 );
 
 // FEM 27b — Tidal Flats (alternate printing)
+const TIDAL_FLATS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&TIDAL_FLATS, 1)
+    .with_art("50e7d376-3e22-44aa-9c96-a3b8eb1568fe", "Rob Alexander");
 
 // FEM 27c — Tidal Flats (alternate printing)
+const TIDAL_FLATS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&TIDAL_FLATS, 2)
+    .with_art("445c4767-6261-449c-bb57-713e2a2bb0bf", "Sandra Everingham");
 
 // FEM 28 — Tidal Influence
 // Audit: unsupported — Needs card-specific counter state and counter-consuming effects for “As long as there are exactly three tide counters on this enchantment, all blue creatures get +2/+0”.
@@ -811,8 +895,12 @@ pub(in crate::card::sets) static VODALIAN_MAGE: CardRecord = CardRecord::new_wit
 );
 
 // FEM 30b — Vodalian Mage (alternate printing)
+const VODALIAN_MAGE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&VODALIAN_MAGE, 1)
+    .with_art("a47beac4-161d-4f8e-9778-78293ff9b383", "Mark Poole");
 
 // FEM 30c — Vodalian Mage (alternate printing)
+const VODALIAN_MAGE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&VODALIAN_MAGE, 2)
+    .with_art("2b3cc91d-6f87-4f2e-b3c7-8181d19a1f0b", "Quinton Hoover");
 
 // FEM 31a — Vodalian Soldiers
 pub(in crate::card::sets) static VODALIAN_SOLDIERS: CardRecord = CardRecord::new_with_legacy_id(
@@ -824,10 +912,21 @@ pub(in crate::card::sets) static VODALIAN_SOLDIERS: CardRecord = CardRecord::new
 );
 
 // FEM 31b — Vodalian Soldiers (alternate printing)
+const VODALIAN_SOLDIERS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&VODALIAN_SOLDIERS, 1)
+        .with_art("bc85a68c-14d6-4447-a894-0e48d1662bc3", "Jeff A. Menges");
 
 // FEM 31c — Vodalian Soldiers (alternate printing)
+const VODALIAN_SOLDIERS_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&VODALIAN_SOLDIERS, 2).with_art(
+        "d8d1ceac-bb75-4c46-9ab4-1ef623ed3027",
+        "Richard Kane Ferguson",
+    );
 
 // FEM 31d — Vodalian Soldiers (alternate printing)
+const VODALIAN_SOLDIERS_ALTERNATE_3: PrintingRecord =
+    PrintingRecord::alternate(&VODALIAN_SOLDIERS, 3)
+        .with_art("99d22f83-1171-4b5c-8a72-956db26d7c60", "Susan Van Camp");
 
 // FEM 32 — Vodalian War Machine
 // Audit: unsupported — Needs the permanents tapped to pay this card's own costs recorded for the turn, for “When this creature dies, destroy all Merfolk tapped this turn to pay for its abilities”. Tapping another creature as a cost and attacking despite defender are both available.
@@ -862,10 +961,16 @@ pub(in crate::card::sets) static ARMOR_THRULL: CardRecord = CardRecord::new_with
 );
 
 // FEM 33b — Armor Thrull (alternate printing)
+const ARMOR_THRULL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ARMOR_THRULL, 1)
+    .with_art("9c6120e6-ceb8-4eab-86b0-18d38ed97d8f", "Ron Spencer");
 
 // FEM 33c — Armor Thrull (alternate printing)
+const ARMOR_THRULL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ARMOR_THRULL, 2)
+    .with_art("18a91ed4-131e-455b-a3bd-0bd42aa754e5", "Jeff A. Menges");
 
 // FEM 33d — Armor Thrull (alternate printing)
+const ARMOR_THRULL_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&ARMOR_THRULL, 3)
+    .with_art("3d653ca4-c21f-4594-b900-2526a912001b", "Scott Kirschner");
 
 // FEM 34a — Basal Thrull
 pub(in crate::card::sets) static BASAL_THRULL: CardRecord = CardRecord::new_with_legacy_id(
@@ -883,10 +988,19 @@ pub(in crate::card::sets) static BASAL_THRULL: CardRecord = CardRecord::new_with
 );
 
 // FEM 34b — Basal Thrull (alternate printing)
+const BASAL_THRULL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&BASAL_THRULL, 1)
+    .with_art("fcf60db5-4f69-4db4-9dc2-1a6fbdec0429", "Phil Foglio");
 
 // FEM 34c — Basal Thrull (alternate printing)
+const BASAL_THRULL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&BASAL_THRULL, 2)
+    .with_art(
+        "a86d9647-3a87-4620-aa07-26f996fc6fa3",
+        "Richard Kane Ferguson",
+    );
 
 // FEM 34d — Basal Thrull (alternate printing)
+const BASAL_THRULL_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&BASAL_THRULL, 3)
+    .with_art("b6908e4c-f94d-4b0d-b9a5-64c04751f108", "Christopher Rush");
 
 // FEM 35 — Breeding Pit
 pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new_with_legacy_id(
@@ -976,12 +1090,21 @@ pub(in crate::card::sets) static HYMN_TO_TOURACH: CardRecord = CardRecord::new_w
 );
 
 // FEM 38b — Hymn to Tourach (alternate printing)
+const HYMN_TO_TOURACH_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HYMN_TO_TOURACH, 1)
+    .with_art("8601f082-7e43-44ef-97d0-dead272b7eb4", "Liz Danforth");
 
 // FEM 38c — Hymn to Tourach (alternate printing)
+const HYMN_TO_TOURACH_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&HYMN_TO_TOURACH, 2)
+    .with_art("58e125c6-81dc-4907-aad2-2ccd1cb166f0", "Quinton Hoover");
 
 // FEM 38d — Hymn to Tourach (alternate printing)
+const HYMN_TO_TOURACH_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&HYMN_TO_TOURACH, 3)
+    .with_art("5bc50e08-dd6f-4ea7-87f8-cce72bafb928", "Scott Kirschner");
 
 // FEM 39a — Initiates of the Ebon Hand (alternate printing)
+const INITIATES_OF_THE_EBON_HAND_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&INITIATES_OF_THE_EBON_HAND, 1)
+        .with_art("5be87527-3b8f-4529-afdb-a61ad4e787e1", "Heather Hudson");
 
 // FEM 39b — Initiates of the Ebon Hand
 // Audit: unsupported — Card rules have not been implemented.
@@ -994,6 +1117,9 @@ pub(in crate::card::sets) static INITIATES_OF_THE_EBON_HAND: CardRecord = CardRe
 );
 
 // FEM 39c — Initiates of the Ebon Hand (alternate printing)
+const INITIATES_OF_THE_EBON_HAND_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&INITIATES_OF_THE_EBON_HAND, 2)
+        .with_art("62982970-e8b8-4659-bcf0-21aab662d89d", "Kaja Foglio");
 
 // FEM 40a — Mindstab Thrull
 pub(in crate::card::sets) static MINDSTAB_THRULL: CardRecord = CardRecord::new_with_legacy_id(
@@ -1030,8 +1156,12 @@ pub(in crate::card::sets) static MINDSTAB_THRULL: CardRecord = CardRecord::new_w
 );
 
 // FEM 40b — Mindstab Thrull (alternate printing)
+const MINDSTAB_THRULL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&MINDSTAB_THRULL, 1)
+    .with_art("781e4b62-3910-4ba1-9e72-e99de8523a94", "Heather Hudson");
 
 // FEM 40c — Mindstab Thrull (alternate printing)
+const MINDSTAB_THRULL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&MINDSTAB_THRULL, 2)
+    .with_art("923189c6-d407-4cc4-a062-2f09a4c7c1e3", "Mark Tedin");
 
 // FEM 41a — Necrite
 pub(in crate::card::sets) static NECRITE: CardRecord = CardRecord::new_with_legacy_id(
@@ -1074,8 +1204,12 @@ pub(in crate::card::sets) static NECRITE: CardRecord = CardRecord::new_with_lega
 );
 
 // FEM 41b — Necrite (alternate printing)
+const NECRITE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&NECRITE, 1)
+    .with_art("e19a4d41-e7b0-48b3-8e2e-9ac00f119ce2", "Christopher Rush");
 
 // FEM 41c — Necrite (alternate printing)
+const NECRITE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&NECRITE, 2)
+    .with_art("660ae99f-4e61-45fd-9436-855a38289c8b", "Drew Tucker");
 
 // FEM 42a — Order of the Ebon Hand
 pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord =
@@ -1113,8 +1247,14 @@ pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord =
     );
 
 // FEM 42b — Order of the Ebon Hand (alternate printing)
+const ORDER_OF_THE_EBON_HAND_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&ORDER_OF_THE_EBON_HAND, 1)
+        .with_art("60ffbb40-13c1-4d01-9421-95b2410d0d3b", "Christopher Rush");
 
 // FEM 42c — Order of the Ebon Hand (alternate printing)
+const ORDER_OF_THE_EBON_HAND_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&ORDER_OF_THE_EBON_HAND, 2)
+        .with_art("22c32774-5507-4a60-9ed2-2a570f6ff8e3", "Ron Spencer");
 
 // FEM 43 — Soul Exchange
 // Audit: unsupported — Needs a zone-object query and identity-preserving continuation for “As an additional cost to cast this spell, exile a creature you control”.
@@ -1250,10 +1390,16 @@ pub(in crate::card::sets) static BRASSCLAW_ORCS: CardRecord = CardRecord::new_wi
 );
 
 // FEM 49b — Brassclaw Orcs (alternate printing)
+const BRASSCLAW_ORCS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&BRASSCLAW_ORCS, 1)
+    .with_art("ac9d0354-9ddd-4fe1-8174-9d3686ca564c", "Dan Frazier");
 
 // FEM 49c — Brassclaw Orcs (alternate printing)
+const BRASSCLAW_ORCS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&BRASSCLAW_ORCS, 2)
+    .with_art("a2c1e461-f74e-436c-a9df-aff197cf48e1", "Rob Alexander");
 
 // FEM 49d — Brassclaw Orcs (alternate printing)
+const BRASSCLAW_ORCS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&BRASSCLAW_ORCS, 3)
+    .with_art("50f0f4fe-2dd0-42c1-8f68-5d24a8a9d07d", "Heather Hudson");
 
 // FEM 50 — Dwarven Armorer
 // Audit: unsupported — Needs card-specific counter state and counter-consuming effects for “{R}, {T}, Discard a card: Put a +0/+1 counter or a +1/+0 counter on target creature”.
@@ -1330,8 +1476,15 @@ pub(in crate::card::sets) static DWARVEN_SOLDIER: CardRecord = CardRecord::new_w
 );
 
 // FEM 53b — Dwarven Soldier (alternate printing)
+const DWARVEN_SOLDIER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&DWARVEN_SOLDIER, 1)
+    .with_art(
+        "ea7e4c52-dfe1-4b15-a0d6-4f26c294426d",
+        "Randy Asplund-Faith",
+    );
 
 // FEM 53c — Dwarven Soldier (alternate printing)
+const DWARVEN_SOLDIER_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&DWARVEN_SOLDIER, 2)
+    .with_art("872c5601-f356-4873-adf9-9a39536e7d4a", "Douglas Shuler");
 
 // FEM 54a — Goblin Chirurgeon
 pub(in crate::card::sets) static GOBLIN_CHIRURGEON: CardRecord = CardRecord::new_with_legacy_id(
@@ -1357,8 +1510,14 @@ pub(in crate::card::sets) static GOBLIN_CHIRURGEON: CardRecord = CardRecord::new
 );
 
 // FEM 54b — Goblin Chirurgeon (alternate printing)
+const GOBLIN_CHIRURGEON_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&GOBLIN_CHIRURGEON, 1)
+        .with_art("982115b2-e1e7-4b2f-8eb6-a1633477d4a8", "Phil Foglio");
 
 // FEM 54c — Goblin Chirurgeon (alternate printing)
+const GOBLIN_CHIRURGEON_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&GOBLIN_CHIRURGEON, 2)
+        .with_art("c9740842-7955-4cf9-8f76-a426858360b1", "Dan Frazier");
 
 // FEM 55 — Goblin Flotilla
 // Audit: unsupported — Needs a combat declaration or damage-assignment constraint for “At the beginning of each combat, unless you pay {R}, whenever this creature blocks or becomes blocked by a creature this combat, that creature gains first strike until end of turn”.
@@ -1393,8 +1552,12 @@ pub(in crate::card::sets) static GOBLIN_GRENADE: CardRecord = CardRecord::new_wi
 );
 
 // FEM 56b — Goblin Grenade (alternate printing)
+const GOBLIN_GRENADE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&GOBLIN_GRENADE, 1)
+    .with_art("dee262da-3002-4c08-8043-4e40e1b46822", "Dan Frazier");
 
 // FEM 56c — Goblin Grenade (alternate printing)
+const GOBLIN_GRENADE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&GOBLIN_GRENADE, 2)
+    .with_art("1befdfc7-a1e3-4a2a-ad68-7d0fee170f3f", "Christopher Rush");
 
 // FEM 57 — Goblin Kites
 pub(in crate::card::sets) static GOBLIN_KITES: CardRecord = CardRecord::new_with_legacy_id(
@@ -1469,10 +1632,21 @@ pub(in crate::card::sets) static GOBLIN_WAR_DRUMS: CardRecord = CardRecord::new_
 );
 
 // FEM 58b — Goblin War Drums (alternate printing)
+const GOBLIN_WAR_DRUMS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&GOBLIN_WAR_DRUMS, 1).with_art(
+        "5988a3d2-748f-4642-9e33-293ddc568111",
+        "Richard Kane Ferguson",
+    );
 
 // FEM 58c — Goblin War Drums (alternate printing)
+const GOBLIN_WAR_DRUMS_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&GOBLIN_WAR_DRUMS, 2)
+        .with_art("2232386e-986d-41b5-8b70-e086264f3277", "Heather Hudson");
 
 // FEM 58d — Goblin War Drums (alternate printing)
+const GOBLIN_WAR_DRUMS_ALTERNATE_3: PrintingRecord =
+    PrintingRecord::alternate(&GOBLIN_WAR_DRUMS, 3)
+        .with_art("2a0185f3-fbc0-44d7-b933-30627cda1bf9", "Jeff A. Menges");
 
 // FEM 59 — Goblin Warrens
 // Audit: unsupported — Needs an activated cost that selects and sacrifices two Goblins; only one chosen permanent can currently be sacrificed as a cost.
@@ -1545,8 +1719,12 @@ pub(in crate::card::sets) static ORCISH_SPY: CardRecord = CardRecord::new_with_l
 );
 
 // FEM 61b — Orcish Spy (alternate printing)
+const ORCISH_SPY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ORCISH_SPY, 1)
+    .with_art("8b931cfd-b952-416c-ab2c-271ecaee8e0c", "Daniel Gelon");
 
 // FEM 61c — Orcish Spy (alternate printing)
+const ORCISH_SPY_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ORCISH_SPY, 2)
+    .with_art("28e08767-7e92-4ff4-b0d8-196565fbc23c", "Pete Venters");
 
 // FEM 62a — Orcish Veteran
 pub(in crate::card::sets) static ORCISH_VETERAN: CardRecord = CardRecord::new_with_legacy_id(
@@ -1582,10 +1760,16 @@ pub(in crate::card::sets) static ORCISH_VETERAN: CardRecord = CardRecord::new_wi
 );
 
 // FEM 62b — Orcish Veteran (alternate printing)
+const ORCISH_VETERAN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ORCISH_VETERAN, 1)
+    .with_art("bc37db83-9efc-4d58-90c9-78eef9073ec2", "Dan Frazier");
 
 // FEM 62c — Orcish Veteran (alternate printing)
+const ORCISH_VETERAN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ORCISH_VETERAN, 2)
+    .with_art("334004e6-bf8c-4a4e-a30c-1537a99819c9", "Quinton Hoover");
 
 // FEM 62d — Orcish Veteran (alternate printing)
+const ORCISH_VETERAN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&ORCISH_VETERAN, 3)
+    .with_art("4990dd4b-2b18-4e4c-81d4-1cd8d746a7dc", "Melissa A. Benson");
 
 // FEM 63 — Orgg
 pub(in crate::card::sets) static ORGG: CardRecord = CardRecord::new_with_legacy_id(
@@ -1661,10 +1845,19 @@ pub(in crate::card::sets) static ELVEN_FORTRESS: CardRecord = CardRecord::new_wi
 );
 
 // FEM 65b — Elven Fortress (alternate printing)
+const ELVEN_FORTRESS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ELVEN_FORTRESS, 1)
+    .with_art(
+        "091b5ed4-91f5-47c1-b1a1-5443f7346078",
+        "Randy Asplund-Faith",
+    );
 
 // FEM 65c — Elven Fortress (alternate printing)
+const ELVEN_FORTRESS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ELVEN_FORTRESS, 2)
+    .with_art("960b542f-cb24-4f74-92da-d31559d87c2d", "Mark Poole");
 
 // FEM 65d — Elven Fortress (alternate printing)
+const ELVEN_FORTRESS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&ELVEN_FORTRESS, 3)
+    .with_art("c52743f0-5c5b-46b9-bbbd-67950d4c89e5", "Tom Wänerstrand");
 
 // FEM 66 — Elvish Farmer
 pub(in crate::card::sets) static ELVISH_FARMER: CardRecord = CardRecord::new_with_legacy_id(
@@ -1744,8 +1937,12 @@ pub(in crate::card::sets) static ELVISH_HUNTER: CardRecord = CardRecord::new_wit
 );
 
 // FEM 67b — Elvish Hunter (alternate printing)
+const ELVISH_HUNTER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ELVISH_HUNTER, 1)
+    .with_art("51ff096c-487f-42f9-a394-a298503391da", "Anson Maddocks");
 
 // FEM 67c — Elvish Hunter (alternate printing)
+const ELVISH_HUNTER_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ELVISH_HUNTER, 2)
+    .with_art("204c8aff-b103-4606-b86b-d794bc5dcde1", "Susan Van Camp");
 
 // FEM 68a — Elvish Scout
 pub(in crate::card::sets) static ELVISH_SCOUT: CardRecord = CardRecord::new_with_legacy_id(
@@ -1797,8 +1994,12 @@ pub(in crate::card::sets) static ELVISH_SCOUT: CardRecord = CardRecord::new_with
 );
 
 // FEM 68b — Elvish Scout (alternate printing)
+const ELVISH_SCOUT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ELVISH_SCOUT, 1)
+    .with_art("1faff88d-594e-473c-a2d1-cd60f51b2ee7", "Pete Venters");
 
 // FEM 68c — Elvish Scout (alternate printing)
+const ELVISH_SCOUT_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ELVISH_SCOUT, 2)
+    .with_art("d414bf5a-2604-426c-8c68-5c1696557b57", "Christopher Rush");
 
 // FEM 69 — Feral Thallid
 pub(in crate::card::sets) static FERAL_THALLID: CardRecord = CardRecord::new_with_legacy_id(
@@ -1865,8 +2066,12 @@ pub(in crate::card::sets) static NIGHT_SOIL: CardRecord = CardRecord::new(
 );
 
 // FEM 71b — Night Soil (alternate printing)
+const NIGHT_SOIL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&NIGHT_SOIL, 1)
+    .with_art("4f25a497-46dc-47aa-8586-d514578a6d25", "Heather Hudson");
 
 // FEM 71c — Night Soil (alternate printing)
+const NIGHT_SOIL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&NIGHT_SOIL, 2)
+    .with_art("ee3eb61b-698c-42b1-8a33-0ce7c3829e07", "Drew Tucker");
 
 // FEM 72a — Spore Cloud
 pub(in crate::card::sets) static SPORE_CLOUD: CardRecord = CardRecord::new_with_legacy_id(
@@ -1909,8 +2114,12 @@ pub(in crate::card::sets) static SPORE_CLOUD: CardRecord = CardRecord::new_with_
 );
 
 // FEM 72b — Spore Cloud (alternate printing)
+const SPORE_CLOUD_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SPORE_CLOUD, 1)
+    .with_art("2c3070f8-6dae-4f22-b186-e2a3a9647cc5", "Jesper Myrfors");
 
 // FEM 72c — Spore Cloud (alternate printing)
+const SPORE_CLOUD_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&SPORE_CLOUD, 2)
+    .with_art("17fe098c-c9b5-4bba-92b5-5720d6919073", "Amy Weber");
 
 // FEM 73 — Spore Flower
 pub(in crate::card::sets) static SPORE_FLOWER: CardRecord = CardRecord::new_with_legacy_id(
@@ -1987,10 +2196,16 @@ pub(in crate::card::sets) static THALLID: CardRecord = CardRecord::new_with_lega
 );
 
 // FEM 74b — Thallid (alternate printing)
+const THALLID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&THALLID, 1)
+    .with_art("80f8f778-ae31-45cd-b27f-f93a07853ede", "Jesper Myrfors");
 
 // FEM 74c — Thallid (alternate printing)
+const THALLID_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&THALLID, 2)
+    .with_art("2cf2f3da-9101-439d-8caa-910ff40bfbb3", "Ron Spencer");
 
 // FEM 74d — Thallid (alternate printing)
+const THALLID_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&THALLID, 3)
+    .with_art("01827286-b104-41c5-bac9-7c38414bc40e", "Daniel Gelon");
 
 // FEM 75 — Thallid Devourer
 pub(in crate::card::sets) static THALLID_DEVOURER: CardRecord = CardRecord::new_with_legacy_id(
@@ -2146,10 +2361,16 @@ pub(in crate::card::sets) static THORN_THALLID: CardRecord = CardRecord::new_wit
 );
 
 // FEM 80b — Thorn Thallid (alternate printing)
+const THORN_THALLID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&THORN_THALLID, 1)
+    .with_art("84283348-789b-4236-b406-7fc6338a867d", "Heather Hudson");
 
 // FEM 80c — Thorn Thallid (alternate printing)
+const THORN_THALLID_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&THORN_THALLID, 2)
+    .with_art("1537a338-3b68-4a41-bac6-554e8e530e46", "Jesper Myrfors");
 
 // FEM 80d — Thorn Thallid (alternate printing)
+const THORN_THALLID_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&THORN_THALLID, 3)
+    .with_art("1e8f50be-1629-40eb-8916-019903d2e6a4", "Mark Tedin");
 
 // FEM 81 — Aeolipile
 pub(in crate::card::sets) static AEOLIPILE: CardRecord = CardRecord::new_with_legacy_id(
@@ -2827,89 +3048,89 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&COMBAT_MEDIC, 1),     // FEM 1b
-    PrintingRecord::alternate(&COMBAT_MEDIC, 2),     // FEM 1c
-    PrintingRecord::alternate(&COMBAT_MEDIC, 3),     // FEM 1d
-    PrintingRecord::alternate(&FARRELS_ZEALOT, 1),   // FEM 3b
-    PrintingRecord::alternate(&FARRELS_ZEALOT, 2),   // FEM 3c
-    PrintingRecord::alternate(&ICATIAN_INFANTRY, 1), // FEM 7b
-    PrintingRecord::alternate(&ICATIAN_INFANTRY, 2), // FEM 7c
-    PrintingRecord::alternate(&ICATIAN_INFANTRY, 3), // FEM 7d
-    PrintingRecord::alternate(&ICATIAN_JAVELINEERS, 1), // FEM 8b
-    PrintingRecord::alternate(&ICATIAN_JAVELINEERS, 2), // FEM 8c
-    PrintingRecord::alternate(&ICATIAN_MONEYCHANGER, 1), // FEM 10b
-    PrintingRecord::alternate(&ICATIAN_MONEYCHANGER, 2), // FEM 10c
-    PrintingRecord::alternate(&ICATIAN_SCOUT, 1),    // FEM 13b
-    PrintingRecord::alternate(&ICATIAN_SCOUT, 2),    // FEM 13c
-    PrintingRecord::alternate(&ICATIAN_SCOUT, 3),    // FEM 13d
-    PrintingRecord::alternate(&ORDER_OF_LEITBUR, 1), // FEM 16b
-    PrintingRecord::alternate(&ORDER_OF_LEITBUR, 2), // FEM 16c
-    PrintingRecord::alternate(&HIGH_TIDE, 1),        // FEM 18b
-    PrintingRecord::alternate(&HIGH_TIDE, 2),        // FEM 18c
-    PrintingRecord::alternate(&HOMARID, 1),          // FEM 19b
-    PrintingRecord::alternate(&HOMARID, 2),          // FEM 19c
-    PrintingRecord::alternate(&HOMARID, 3),          // FEM 19d
-    PrintingRecord::alternate(&HOMARID_WARRIOR, 1),  // FEM 22b
-    PrintingRecord::alternate(&HOMARID_WARRIOR, 2),  // FEM 22c
-    PrintingRecord::alternate(&MERSEINE, 1),         // FEM 23a
-    PrintingRecord::alternate(&MERSEINE, 2),         // FEM 23b
-    PrintingRecord::alternate(&MERSEINE, 3),         // FEM 23d
-    PrintingRecord::alternate(&TIDAL_FLATS, 1),      // FEM 27b
-    PrintingRecord::alternate(&TIDAL_FLATS, 2),      // FEM 27c
-    PrintingRecord::alternate(&VODALIAN_MAGE, 1),    // FEM 30b
-    PrintingRecord::alternate(&VODALIAN_MAGE, 2),    // FEM 30c
-    PrintingRecord::alternate(&VODALIAN_SOLDIERS, 1), // FEM 31b
-    PrintingRecord::alternate(&VODALIAN_SOLDIERS, 2), // FEM 31c
-    PrintingRecord::alternate(&VODALIAN_SOLDIERS, 3), // FEM 31d
-    PrintingRecord::alternate(&ARMOR_THRULL, 1),     // FEM 33b
-    PrintingRecord::alternate(&ARMOR_THRULL, 2),     // FEM 33c
-    PrintingRecord::alternate(&ARMOR_THRULL, 3),     // FEM 33d
-    PrintingRecord::alternate(&BASAL_THRULL, 1),     // FEM 34b
-    PrintingRecord::alternate(&BASAL_THRULL, 2),     // FEM 34c
-    PrintingRecord::alternate(&BASAL_THRULL, 3),     // FEM 34d
-    PrintingRecord::alternate(&HYMN_TO_TOURACH, 1),  // FEM 38b
-    PrintingRecord::alternate(&HYMN_TO_TOURACH, 2),  // FEM 38c
-    PrintingRecord::alternate(&HYMN_TO_TOURACH, 3),  // FEM 38d
-    PrintingRecord::alternate(&INITIATES_OF_THE_EBON_HAND, 1), // FEM 39a
-    PrintingRecord::alternate(&INITIATES_OF_THE_EBON_HAND, 2), // FEM 39c
-    PrintingRecord::alternate(&MINDSTAB_THRULL, 1),  // FEM 40b
-    PrintingRecord::alternate(&MINDSTAB_THRULL, 2),  // FEM 40c
-    PrintingRecord::alternate(&NECRITE, 1),          // FEM 41b
-    PrintingRecord::alternate(&NECRITE, 2),          // FEM 41c
-    PrintingRecord::alternate(&ORDER_OF_THE_EBON_HAND, 1), // FEM 42b
-    PrintingRecord::alternate(&ORDER_OF_THE_EBON_HAND, 2), // FEM 42c
-    PrintingRecord::alternate(&BRASSCLAW_ORCS, 1),   // FEM 49b
-    PrintingRecord::alternate(&BRASSCLAW_ORCS, 2),   // FEM 49c
-    PrintingRecord::alternate(&BRASSCLAW_ORCS, 3),   // FEM 49d
-    PrintingRecord::alternate(&DWARVEN_SOLDIER, 1),  // FEM 53b
-    PrintingRecord::alternate(&DWARVEN_SOLDIER, 2),  // FEM 53c
-    PrintingRecord::alternate(&GOBLIN_CHIRURGEON, 1), // FEM 54b
-    PrintingRecord::alternate(&GOBLIN_CHIRURGEON, 2), // FEM 54c
-    PrintingRecord::alternate(&GOBLIN_GRENADE, 1),   // FEM 56b
-    PrintingRecord::alternate(&GOBLIN_GRENADE, 2),   // FEM 56c
-    PrintingRecord::alternate(&GOBLIN_WAR_DRUMS, 1), // FEM 58b
-    PrintingRecord::alternate(&GOBLIN_WAR_DRUMS, 2), // FEM 58c
-    PrintingRecord::alternate(&GOBLIN_WAR_DRUMS, 3), // FEM 58d
-    PrintingRecord::alternate(&ORCISH_SPY, 1),       // FEM 61b
-    PrintingRecord::alternate(&ORCISH_SPY, 2),       // FEM 61c
-    PrintingRecord::alternate(&ORCISH_VETERAN, 1),   // FEM 62b
-    PrintingRecord::alternate(&ORCISH_VETERAN, 2),   // FEM 62c
-    PrintingRecord::alternate(&ORCISH_VETERAN, 3),   // FEM 62d
-    PrintingRecord::alternate(&ELVEN_FORTRESS, 1),   // FEM 65b
-    PrintingRecord::alternate(&ELVEN_FORTRESS, 2),   // FEM 65c
-    PrintingRecord::alternate(&ELVEN_FORTRESS, 3),   // FEM 65d
-    PrintingRecord::alternate(&ELVISH_HUNTER, 1),    // FEM 67b
-    PrintingRecord::alternate(&ELVISH_HUNTER, 2),    // FEM 67c
-    PrintingRecord::alternate(&ELVISH_SCOUT, 1),     // FEM 68b
-    PrintingRecord::alternate(&ELVISH_SCOUT, 2),     // FEM 68c
-    PrintingRecord::alternate(&NIGHT_SOIL, 1),       // FEM 71b
-    PrintingRecord::alternate(&NIGHT_SOIL, 2),       // FEM 71c
-    PrintingRecord::alternate(&SPORE_CLOUD, 1),      // FEM 72b
-    PrintingRecord::alternate(&SPORE_CLOUD, 2),      // FEM 72c
-    PrintingRecord::alternate(&THALLID, 1),          // FEM 74b
-    PrintingRecord::alternate(&THALLID, 2),          // FEM 74c
-    PrintingRecord::alternate(&THALLID, 3),          // FEM 74d
-    PrintingRecord::alternate(&THORN_THALLID, 1),    // FEM 80b
-    PrintingRecord::alternate(&THORN_THALLID, 2),    // FEM 80c
-    PrintingRecord::alternate(&THORN_THALLID, 3),    // FEM 80d
+    COMBAT_MEDIC_ALTERNATE_1,
+    COMBAT_MEDIC_ALTERNATE_2,
+    COMBAT_MEDIC_ALTERNATE_3,
+    FARRELS_ZEALOT_ALTERNATE_1,
+    FARRELS_ZEALOT_ALTERNATE_2,
+    ICATIAN_INFANTRY_ALTERNATE_1,
+    ICATIAN_INFANTRY_ALTERNATE_2,
+    ICATIAN_INFANTRY_ALTERNATE_3,
+    ICATIAN_JAVELINEERS_ALTERNATE_1,
+    ICATIAN_JAVELINEERS_ALTERNATE_2,
+    ICATIAN_MONEYCHANGER_ALTERNATE_1,
+    ICATIAN_MONEYCHANGER_ALTERNATE_2,
+    ICATIAN_SCOUT_ALTERNATE_1,
+    ICATIAN_SCOUT_ALTERNATE_2,
+    ICATIAN_SCOUT_ALTERNATE_3,
+    ORDER_OF_LEITBUR_ALTERNATE_1,
+    ORDER_OF_LEITBUR_ALTERNATE_2,
+    HIGH_TIDE_ALTERNATE_1,
+    HIGH_TIDE_ALTERNATE_2,
+    HOMARID_ALTERNATE_1,
+    HOMARID_ALTERNATE_2,
+    HOMARID_ALTERNATE_3,
+    HOMARID_WARRIOR_ALTERNATE_1,
+    HOMARID_WARRIOR_ALTERNATE_2,
+    MERSEINE_ALTERNATE_1,
+    MERSEINE_ALTERNATE_2,
+    MERSEINE_ALTERNATE_3,
+    TIDAL_FLATS_ALTERNATE_1,
+    TIDAL_FLATS_ALTERNATE_2,
+    VODALIAN_MAGE_ALTERNATE_1,
+    VODALIAN_MAGE_ALTERNATE_2,
+    VODALIAN_SOLDIERS_ALTERNATE_1,
+    VODALIAN_SOLDIERS_ALTERNATE_2,
+    VODALIAN_SOLDIERS_ALTERNATE_3,
+    ARMOR_THRULL_ALTERNATE_1,
+    ARMOR_THRULL_ALTERNATE_2,
+    ARMOR_THRULL_ALTERNATE_3,
+    BASAL_THRULL_ALTERNATE_1,
+    BASAL_THRULL_ALTERNATE_2,
+    BASAL_THRULL_ALTERNATE_3,
+    HYMN_TO_TOURACH_ALTERNATE_1,
+    HYMN_TO_TOURACH_ALTERNATE_2,
+    HYMN_TO_TOURACH_ALTERNATE_3,
+    INITIATES_OF_THE_EBON_HAND_ALTERNATE_1,
+    INITIATES_OF_THE_EBON_HAND_ALTERNATE_2,
+    MINDSTAB_THRULL_ALTERNATE_1,
+    MINDSTAB_THRULL_ALTERNATE_2,
+    NECRITE_ALTERNATE_1,
+    NECRITE_ALTERNATE_2,
+    ORDER_OF_THE_EBON_HAND_ALTERNATE_1,
+    ORDER_OF_THE_EBON_HAND_ALTERNATE_2,
+    BRASSCLAW_ORCS_ALTERNATE_1,
+    BRASSCLAW_ORCS_ALTERNATE_2,
+    BRASSCLAW_ORCS_ALTERNATE_3,
+    DWARVEN_SOLDIER_ALTERNATE_1,
+    DWARVEN_SOLDIER_ALTERNATE_2,
+    GOBLIN_CHIRURGEON_ALTERNATE_1,
+    GOBLIN_CHIRURGEON_ALTERNATE_2,
+    GOBLIN_GRENADE_ALTERNATE_1,
+    GOBLIN_GRENADE_ALTERNATE_2,
+    GOBLIN_WAR_DRUMS_ALTERNATE_1,
+    GOBLIN_WAR_DRUMS_ALTERNATE_2,
+    GOBLIN_WAR_DRUMS_ALTERNATE_3,
+    ORCISH_SPY_ALTERNATE_1,
+    ORCISH_SPY_ALTERNATE_2,
+    ORCISH_VETERAN_ALTERNATE_1,
+    ORCISH_VETERAN_ALTERNATE_2,
+    ORCISH_VETERAN_ALTERNATE_3,
+    ELVEN_FORTRESS_ALTERNATE_1,
+    ELVEN_FORTRESS_ALTERNATE_2,
+    ELVEN_FORTRESS_ALTERNATE_3,
+    ELVISH_HUNTER_ALTERNATE_1,
+    ELVISH_HUNTER_ALTERNATE_2,
+    ELVISH_SCOUT_ALTERNATE_1,
+    ELVISH_SCOUT_ALTERNATE_2,
+    NIGHT_SOIL_ALTERNATE_1,
+    NIGHT_SOIL_ALTERNATE_2,
+    SPORE_CLOUD_ALTERNATE_1,
+    SPORE_CLOUD_ALTERNATE_2,
+    THALLID_ALTERNATE_1,
+    THALLID_ALTERNATE_2,
+    THALLID_ALTERNATE_3,
+    THORN_THALLID_ALTERNATE_1,
+    THORN_THALLID_ALTERNATE_2,
+    THORN_THALLID_ALTERNATE_3,
 ];

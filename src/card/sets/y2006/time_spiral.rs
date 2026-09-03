@@ -1,6 +1,8 @@
 //! TSP card records required by supported formats.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::AppliedEffectDef;
+use crate::ResolvedEffectDurationDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ComparisonDef, CounterKind,
@@ -9,6 +11,52 @@ use crate::card::{
     TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
+
+// TSP 19 — Fortify
+pub(in crate::card::sets) static FORTIFY: CardRecord = CardRecord::new_with_legacy_id(
+    1149,
+    "Fortify",
+    CardArt::new(
+        "1eff4028-d4f9-4822-81d6-9f5e5e6f3011",
+        "Christopher Moeller",
+    ),
+    CardSet::TimeSpiral,
+    CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::modal_spell(
+        "Choose one —",
+        &[
+            AbilityDef::spell(
+                "Creatures you control get +2/+0 until end of turn.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(2),
+                        ValueDef::Constant(0),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::spell(
+                "Creatures you control get +0/+2 until end of turn.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(0),
+                        ValueDef::Constant(2),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ],
+    )),
+);
 
 // TSP 29 — Momentary Blink
 // Audit: unsupported — Card rules have not been implemented.
@@ -53,6 +101,23 @@ pub(in crate::card::sets) static ANCESTRAL_VISION: CardRecord = CardRecord::new(
             },
         ),
     ]),
+);
+
+// TSP 51 — Cancel
+pub(in crate::card::sets) static CANCEL: CardRecord = CardRecord::new_with_legacy_id(
+    1252,
+    "Cancel",
+    CardArt::new("fd994a26-65ff-43be-8d52-476e887d3ed2", "Karl Kopinski"),
+    CardSet::TimeSpiral,
+    CardRules::new_instant(mana_cost!("{1}{U}{U}")).with_ability(AbilityDef::counter_target(
+        "Counter target spell.",
+        &AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::Spell,
+            zones: &[ZoneKind::Stack],
+            controller: None,
+            owner: None,
+        }),
+    )),
 );
 
 // TSP 53 — Clockspinning
@@ -144,6 +209,18 @@ pub(in crate::card::sets) static LOOTER_IL_KOR: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+// TSP 86 — Think Twice
+pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new_with_legacy_id(
+    226,
+    "Think Twice",
+    CardArt::new("53e44060-a9a2-4095-9f5b-f60297525315", "Anthony Francisco"),
+    CardSet::TimeSpiral,
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
+        AbilityDef::spell("Draw a card.", abilities::draw_cards(ValueDef::Constant(1))),
+        abilities::flashback(mana_cost!("{2}{U}")),
+    ]),
+);
+
 // TSP 104 — Dread Return
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DREAD_RETURN: CardRecord = CardRecord::new(
@@ -152,6 +229,34 @@ pub(in crate::card::sets) static DREAD_RETURN: CardRecord = CardRecord::new(
     crate::card::CardArt::new("d7e304fc-0ace-459e-8d2f-376f1899639c", "Kev Walker"),
     crate::card::CardSet::TimeSpiral,
     crate::card::CardRules::unsupported(),
+);
+
+// TSP 131 — Smallpox
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static SMALLPOX: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("175d5a88-2597-4e85-aed6-7a65c0595fb4"),
+    "Smallpox",
+    crate::card::CardArt::new("93c8159b-8c1d-480a-b517-dbd67bba1838", "Ryan Pancoast"),
+    crate::card::CardSet::TimeSpiral,
+    crate::card::CardRules::unsupported(),
+);
+
+// TSP 143 — Ancient Grudge
+pub(in crate::card::sets) static ANCIENT_GRUDGE: CardRecord = CardRecord::new_with_legacy_id(
+    908,
+    "Ancient Grudge",
+    CardArt::new("e5e7b966-7c5b-44e6-a6df-4bd7af4edaa9", "Ryan Yee"),
+    CardSet::TimeSpiral,
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_abilities(&[
+        AbilityDef::destroy_target(
+            "Destroy target artifact.",
+            &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(
+                CardType::Artifact,
+            )),
+            true,
+        ),
+        abilities::flashback(mana_cost!("{G}")),
+    ]),
 );
 
 // TSP 161 — Greater Gargadon
@@ -181,6 +286,16 @@ pub(in crate::card::sets) static GREATER_GARGADON: CardRecord = CardRecord::new(
         .with_source_zones(&[ZoneKind::Exile])
         .with_activation_condition(&abilities::SUSPEND_SOURCE_IS_SUSPENDED),
     ]),
+);
+
+// TSP 170 — Mogg War Marshal
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static MOGG_WAR_MARSHAL: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("8b9e0bdb-b615-447a-b80d-d7244c25c56e"),
+    "Mogg War Marshal",
+    crate::card::CardArt::new("deed0a5a-6662-460c-bd78-e3d95e8bc83e", "Jesper Ejsing"),
+    crate::card::CardSet::TimeSpiral,
+    crate::card::CardRules::unsupported(),
 );
 
 // TSP 176 — Rift Bolt
@@ -389,14 +504,20 @@ pub(in crate::card::sets) static GEMSTONE_CAVERNS: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &FORTIFY,
     &MOMENTARY_BLINK,
     &SERRA_AVENGER,
     &ANCESTRAL_VISION,
+    &CANCEL,
     &CLOCKSPINNING,
     &DEEP_SEA_KRAKEN,
     &LOOTER_IL_KOR,
+    &THINK_TWICE,
     &DREAD_RETURN,
+    &SMALLPOX,
+    &ANCIENT_GRUDGE,
     &GREATER_GARGADON,
+    &MOGG_WAR_MARSHAL,
     &RIFT_BOLT,
     &SULFUROUS_BLAST,
     &DURKWOOD_BALOTH,

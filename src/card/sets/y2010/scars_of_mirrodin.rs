@@ -118,6 +118,9 @@ pub(in crate::card::sets) static ABUNA_ACOLYTE: CardRecord = CardRecord::new(
 );
 
 // SOM 2 — Arrest (reprint)
+const ARREST_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1999::mercadian_masques::ARREST)
+        .with_art("f52d6cf9-1d92-4d3b-8631-0db19a073b44", "Daarken");
 
 // SOM 3 — Auriok Edgewright
 pub(in crate::card::sets) static AURIOK_EDGEWRIGHT: CardRecord = CardRecord::new(
@@ -729,6 +732,9 @@ pub(in crate::card::sets) static DARKSLICK_DRAKE: CardRecord = CardRecord::new(
 );
 
 // SOM 31 — Disperse (reprint)
+const DISPERSE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2008::morningtide::DISPERSE)
+        .with_art("1572457f-90e0-4ffc-a403-6f877c6a8186", "Adrian Smith");
 
 // SOM 32 — Dissipation Field
 pub(in crate::card::sets) static DISSIPATION_FIELD: CardRecord = CardRecord::new(
@@ -1034,36 +1040,10 @@ pub(in crate::card::sets) static THRUMMINGBIRD: CardRecord = CardRecord::new(
         ]),
 );
 
-// SOM 48 — Trinket Mage
-pub(in crate::card::sets) static TRINKET_MAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4c5a41ab-1840-4abb-a8bb-f0b1e7d1b450"),
-    "Trinket Mage",
-    crate::card::CardArt::new("cb52e7ba-5340-44e1-9b63-775e1f387925", "Scott Chou"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    CardRules::new_creature(mana_cost!("{2}{U}"), &["Human", "Wizard"], 2, 2).with_ability(
-        abilities::enters_trigger(
-            "When this creature enters, you may search your library for an artifact card with mana value 1 or less, reveal that card, put it into your hand, then shuffle.",
-            EffectDef::SearchZone {
-                player: EffectRecipientDef::Controller,
-                source: ZoneKind::Library,
-                object: ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Artifact),
-                    ObjectPredicateDef::ManaValueAtMost(1),
-                ]),
-                minimum: 0,
-                maximum: ValueDef::Constant(1),
-                reveal: true,
-                destination: ZoneKind::Hand,
-                placement: ZonePlacement::Top,
-                shuffle: true,
-                enters_tapped: false,
-                attachment: None,
-                binding: None,
-                then: None,
-            },
-        ),
-    ),
-);
+// SOM 48 — Trinket Mage (reprint)
+const TRINKET_MAGE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2004::fifth_dawn::TRINKET_MAGE)
+        .with_art("cb52e7ba-5340-44e1-9b63-775e1f387925", "Scott Chou");
 
 // SOM 49 — Turn Aside
 pub(in crate::card::sets) static TURN_ASIDE: CardRecord = CardRecord::new(
@@ -1935,29 +1915,10 @@ pub(in crate::card::sets) static BLADE_TRIBE_BERSERKERS: CardRecord = CardRecord
     ),
 );
 
-// SOM 85 — Bloodshot Trainee
-pub(in crate::card::sets) static BLOODSHOT_TRAINEE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b930b146-d132-454f-b35d-4a247c14c054"),
-    "Bloodshot Trainee",
-    crate::card::CardArt::new("c2d5ce81-6cca-4990-a515-34ac44cae039", "Matt Stewart"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    CardRules::new_creature(mana_cost!("{3}{R}"), &["Goblin", "Warrior"], 2, 3).with_ability(
-        AbilityDef::activated_with_targets(
-            "{T}: This creature deals 4 damage to target creature. Activate only if this creature's power is 4 or greater.",
-            &[AbilityCostDef::TapSource],
-            &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::HasType(CardType::Creature),
-            )],
-            EffectDef::DealDamage {
-                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::Constant(4),
-            },
-        )
-        .with_activation_condition(&TriggerConditionDef::SourceMatches {
-            object: ObjectPredicateDef::PowerAtLeast(4),
-        }),
-    ),
-);
+// SOM 85 — Bloodshot Trainee (reprint)
+const BLOODSHOT_TRAINEE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2007::future_sight::BLOODSHOT_TRAINEE)
+        .with_art("c2d5ce81-6cca-4990-a515-34ac44cae039", "Matt Stewart");
 
 // SOM 86 — Cerebral Eruption
 // Audit: unsupported — Needs a top-card reveal continuation that branches on land, otherwise deals the revealed card's mana value to the opponent and every creature they control, and returns the source spell on the land branch.
@@ -2385,6 +2346,9 @@ pub(in crate::card::sets) static SCORIA_ELEMENTAL: CardRecord = CardRecord::new(
 );
 
 // SOM 103 — Shatter (reprint)
+const SHATTER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::SHATTER)
+        .with_art("04d70f7e-5ae9-455f-8430-123623920a92", "jD");
 
 // SOM 104 — Spikeshot Elder
 pub(in crate::card::sets) static SPIKESHOT_ELDER: CardRecord = CardRecord::new(
@@ -2417,7 +2381,18 @@ pub(in crate::card::sets) static TUNNEL_IGNUS: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// SOM 106 — Turn to Slag (reprint)
+// SOM 106 — Turn to Slag
+// Audit: unsupported — Attachment queries cannot select Equipment attached to an arbitrary target object.
+pub(in crate::card::sets) static TURN_TO_SLAG: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("66fd5b49-b4f2-40da-94d5-6d6fc69506f6"),
+    "Turn to Slag",
+    crate::card::CardArt::new(
+        "7275ede4-22d6-41db-91e9-3b0295abb8a9",
+        "Zoltan Boros & Gabor Szikszai",
+    ),
+    crate::card::CardSet::ScarsOfMirrodin,
+    crate::card::CardRules::unsupported(),
+);
 
 // SOM 107 — Vulshok Heartstoker
 pub(in crate::card::sets) static VULSHOK_HEARTSTOKER: CardRecord = CardRecord::new(
@@ -3084,7 +3059,35 @@ pub(in crate::card::sets) static VENSER_THE_SOJOURNER: CardRecord = CardRecord::
         ]),
 );
 
-// SOM 136 — Accorder's Shield (reprint)
+// SOM 136 — Accorder's Shield
+pub(in crate::card::sets) static ACCORDERS_SHIELD: CardRecord = CardRecord::new_with_legacy_id(
+    1624,
+    "Accorder's Shield",
+    CardArt::new("c5a4c2ab-c5bc-4e07-8671-a688ebd5471c", "Alan Pollack"),
+    CardSet::ScarsOfMirrodin,
+    CardRules::new_artifact(mana_cost!("{0}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +0/+3 and has vigilance.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(0),
+                            ValueDef::Constant(3),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::vigilance()),
+                    ]),
+                },
+            ),
+            abilities::equip(
+                &[AbilityCostDef::Mana(mana_cost!("{3}"))],
+                "Equip {3} ({3}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
 
 // SOM 137 — Argentum Armor
 pub(in crate::card::sets) static ARGENTUM_ARMOR: CardRecord = CardRecord::new(
@@ -3311,20 +3314,10 @@ pub(in crate::card::sets) static CONTAGION_ENGINE: CardRecord = CardRecord::new(
     ]),
 );
 
-// SOM 146 — Copper Myr
-pub(in crate::card::sets) static COPPER_MYR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a52b2dc4-4fb3-4ddf-bdb6-c63e8c8efc09"),
-    "Copper Myr",
-    crate::card::CardArt::new("323efe27-da58-4207-9c0c-dba5031bfa04", "Alan Pollack"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 1).with_ability(
-        AbilityDef::activated_mana(
-            "{T}: Add {G}.",
-            &[AbilityCostDef::TapSource],
-            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
-        ),
-    ),
-);
+// SOM 146 — Copper Myr (reprint)
+const COPPER_MYR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2003::mirrodin::COPPER_MYR)
+        .with_art("323efe27-da58-4207-9c0c-dba5031bfa04", "Alan Pollack");
 
 // SOM 147 — Corpse Cur
 pub(in crate::card::sets) static CORPSE_CUR: CardRecord = CardRecord::new(
@@ -3607,20 +3600,10 @@ pub(in crate::card::sets) static GLINT_HAWK_IDOL: CardRecord = CardRecord::new(
     ]),
 );
 
-// SOM 157 — Gold Myr
-pub(in crate::card::sets) static GOLD_MYR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fa9b4040-ab49-476b-b101-5ef2b1824e10"),
-    "Gold Myr",
-    crate::card::CardArt::new("ac92126c-fb22-4b97-bbc5-b0533a0baad8", "Alan Pollack"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 1).with_ability(
-        AbilityDef::activated_mana(
-            "{T}: Add {W}.",
-            &[AbilityCostDef::TapSource],
-            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::White)),
-        ),
-    ),
-);
+// SOM 157 — Gold Myr (reprint)
+const GOLD_MYR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2003::mirrodin::GOLD_MYR)
+        .with_art("ac92126c-fb22-4b97-bbc5-b0533a0baad8", "Alan Pollack");
 
 // SOM 158 — Golden Urn
 pub(in crate::card::sets) static GOLDEN_URN: CardRecord = CardRecord::new(
@@ -3946,20 +3929,10 @@ pub(in crate::card::sets) static INFILTRATION_LENS: CardRecord = CardRecord::new
     crate::card::CardRules::unsupported(),
 );
 
-// SOM 168 — Iron Myr
-pub(in crate::card::sets) static IRON_MYR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("08e17883-0767-40b5-ac44-a52a1ea54993"),
-    "Iron Myr",
-    crate::card::CardArt::new("5bd0a588-b695-4060-b5d5-c6a74710ff0f", "Alan Pollack"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 1).with_ability(
-        AbilityDef::activated_mana(
-            "{T}: Add {R}.",
-            &[AbilityCostDef::TapSource],
-            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
-        ),
-    ),
-);
+// SOM 168 — Iron Myr (reprint)
+const IRON_MYR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2003::mirrodin::IRON_MYR)
+        .with_art("5bd0a588-b695-4060-b5d5-c6a74710ff0f", "Alan Pollack");
 
 // SOM 169 — Kuldotha Forgemaster
 pub(in crate::card::sets) static KULDOTHA_FORGEMASTER: CardRecord = CardRecord::new(
@@ -3997,20 +3970,10 @@ pub(in crate::card::sets) static KULDOTHA_FORGEMASTER: CardRecord = CardRecord::
     ),
 );
 
-// SOM 170 — Leaden Myr
-pub(in crate::card::sets) static LEADEN_MYR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("555efe5f-848f-44da-92b5-69c8e852f179"),
-    "Leaden Myr",
-    crate::card::CardArt::new("3a709559-fec3-44f4-a2bf-3396989b9189", "Alan Pollack"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 1).with_ability(
-        AbilityDef::activated_mana(
-            "{T}: Add {B}.",
-            &[AbilityCostDef::TapSource],
-            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Black)),
-        ),
-    ),
-);
+// SOM 170 — Leaden Myr (reprint)
+const LEADEN_MYR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2003::mirrodin::LEADEN_MYR)
+        .with_art("3a709559-fec3-44f4-a2bf-3396989b9189", "Alan Pollack");
 
 // SOM 171 — Liquimetal Coating
 pub(in crate::card::sets) static LIQUIMETAL_COATING: CardRecord = CardRecord::new(
@@ -4130,15 +4093,10 @@ pub(in crate::card::sets) static MIMIC_VAT: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// SOM 176 — Mindslaver
-// Audit: unsupported — The engine has no continuous effect that lets one player make every game choice for another player during that player's next turn.
-pub(in crate::card::sets) static MINDSLAVER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("98fb1eaa-2871-491a-a4f5-3e358778ba40"),
-    "Mindslaver",
-    crate::card::CardArt::new("00d03b17-75ae-40d2-8570-b219ef0dfd4a", "Volkan Baǵa"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    crate::card::CardRules::unsupported(),
-);
+// SOM 176 — Mindslaver (reprint)
+const MINDSLAVER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2003::mirrodin::MINDSLAVER)
+        .with_art("00d03b17-75ae-40d2-8570-b219ef0dfd4a", "Volkan Baǵa");
 
 // SOM 177 — Molten-Tail Masticore
 pub(in crate::card::sets) static MOLTEN_TAIL_MASTICORE: CardRecord = CardRecord::new(
@@ -4656,7 +4614,40 @@ pub(in crate::card::sets) static PROTOTYPE_PORTAL: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// SOM 196 — Ratchet Bomb (reprint)
+// SOM 196 — Ratchet Bomb
+pub(in crate::card::sets) static RATCHET_BOMB: CardRecord = CardRecord::new_with_legacy_id(
+    200,
+    "Ratchet Bomb",
+    CardArt::new("3e9045df-3eff-4236-9bbb-77537b302e27", "Austin Hsu"),
+    CardSet::ScarsOfMirrodin,
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::activated(
+            "{T}: Put a charge counter on this artifact.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::named("charge"),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated(
+            "{T}, Sacrifice this artifact: Destroy each nonland permanent with mana value equal to the number of charge counters on this artifact.",
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            EffectDef::Destroy {
+                object: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                        // The Bomb is already gone by the time this resolves,
+                        // so the count comes from last-known information.
+                        ObjectPredicateDef::ManaValueEqualTo(ValueDef::CountersOnSource(
+                            CounterKind::named("charge"),
+                        )),
+                    ]), &[ZoneKind::Battlefield], PlayerRelation::Any),
+                can_regenerate: true,
+                then: None,
+            },
+        ),
+    ]),
+);
 
 // SOM 197 — Razorfield Thresher
 pub(in crate::card::sets) static RAZORFIELD_THRESHER: CardRecord = CardRecord::new(
@@ -4731,20 +4722,10 @@ pub(in crate::card::sets) static SEMBLANCE_ANVIL: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// SOM 202 — Silver Myr
-pub(in crate::card::sets) static SILVER_MYR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b83a73a2-fedb-40bd-8e29-82a7abd6f211"),
-    "Silver Myr",
-    crate::card::CardArt::new("fdd60081-3942-4e0e-aacd-a0c121bb08c7", "Alan Pollack"),
-    crate::card::CardSet::ScarsOfMirrodin,
-    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 1).with_ability(
-        AbilityDef::activated_mana(
-            "{T}: Add {U}.",
-            &[AbilityCostDef::TapSource],
-            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Blue)),
-        ),
-    ),
-);
+// SOM 202 — Silver Myr (reprint)
+const SILVER_MYR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2003::mirrodin::SILVER_MYR)
+        .with_art("fdd60081-3942-4e0e-aacd-a0c121bb08c7", "Alan Pollack");
 
 // SOM 203 — Snapsail Glider
 pub(in crate::card::sets) static SNAPSAIL_GLIDER: CardRecord = CardRecord::new(
@@ -5568,44 +5549,89 @@ pub(in crate::card::sets) static SEACHROME_COAST: CardRecord = CardRecord::new_w
 );
 
 // SOM 230 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::PLAINS)
+        .with_art("a410e95b-afd0-4ac4-beb5-96163b411fe2", "James Paick");
 
 // SOM 231 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("440680d3-1eea-442a-b58e-96db09bc279e", "James Paick");
 
 // SOM 232 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 2)
+    .with_art("4315d5ea-eb76-4378-a3da-5d5cdad809b8", "James Paick");
 
 // SOM 233 — Plains (alternate printing)
+const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 3)
+    .with_art("e4f48ac3-f0cb-4e5c-8ea6-e423aa92ce11", "James Paick");
 
 // SOM 234 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::ISLAND)
+        .with_art("d2748f53-0d81-4656-8e4b-5f0128215879", "Jung Park");
 
 // SOM 235 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("b6549f83-e3da-4df2-a1e4-f01773607d56", "Jung Park");
 
 // SOM 236 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 2)
+    .with_art("27e879fe-a79b-427f-9901-c989fa73e234", "Jung Park");
 
 // SOM 237 — Island (alternate printing)
+const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 3)
+    .with_art("e160cb2a-1d8a-47cb-b136-8347eaab67d7", "Jung Park");
 
 // SOM 238 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::SWAMP)
+        .with_art("42a1264f-bda3-45ac-b959-463c6e532fd3", "Lars Grant-West");
 
 // SOM 239 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("fd8897b2-0ef2-4812-9772-cd99c5ce5586", "Lars Grant-West");
 
 // SOM 240 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 2)
+    .with_art("239511f0-34b7-423c-b53b-1327d6b7da28", "Lars Grant-West");
 
 // SOM 241 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 3)
+    .with_art("aeccfafb-0b3e-4e22-8c5c-6d5a0f5896c5", "Lars Grant-West");
 
 // SOM 242 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::MOUNTAIN)
+        .with_art("6df2f49d-097e-4685-8ddb-69c55f07f60c", "Tomasz Jedruszek");
 
 // SOM 243 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("a68647c2-a343-4314-8abb-00e7de6ecf0d", "Tomasz Jedruszek");
 
 // SOM 244 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2)
+    .with_art("46bad0eb-807f-4391-82c9-edc9d14070f5", "Tomasz Jedruszek");
 
 // SOM 245 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3)
+    .with_art("58dcb5ef-85f8-48ce-be39-d0a4eb8345af", "Tomasz Jedruszek");
 
 // SOM 246 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::FOREST)
+        .with_art("34cc6a36-b551-40c7-b081-53beffbca235", "Mark Tedin");
 
 // SOM 247 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("46c661a6-322a-4460-9d75-a2c95d1a49de", "Mark Tedin");
 
 // SOM 248 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 2)
+    .with_art("798b4f41-1e33-4da6-99c1-de926297c073", "Mark Tedin");
 
 // SOM 249 — Forest (alternate printing)
+const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 3)
+    .with_art("edb2bf35-efe6-4ad4-bf6e-55848ba71dfe", "Mark Tedin");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ABUNA_ACOLYTE,
@@ -5653,7 +5679,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STEADY_PROGRESS,
     &STOIC_REBUTTAL,
     &THRUMMINGBIRD,
-    &TRINKET_MAGE,
     &TURN_ASIDE,
     &TWISTED_IMAGE,
     &VAULT_SKYWARD,
@@ -5690,7 +5715,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ASSAULT_STROBE,
     &BARRAGE_OGRE,
     &BLADE_TRIBE_BERSERKERS,
-    &BLOODSHOT_TRAINEE,
     &CEREBRAL_ERUPTION,
     &EMBERSMITH,
     &FERROVORE,
@@ -5710,6 +5734,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCORIA_ELEMENTAL,
     &SPIKESHOT_ELDER,
     &TUNNEL_IGNUS,
+    &TURN_TO_SLAG,
     &VULSHOK_HEARTSTOKER,
     &ACID_WEB_SPIDER,
     &ALPHA_TYRRANAX,
@@ -5739,6 +5764,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WING_PUNCTURE,
     &WITHSTAND_DEATH,
     &VENSER_THE_SOJOURNER,
+    &ACCORDERS_SHIELD,
     &ARGENTUM_ARMOR,
     &AURIOK_REPLICA,
     &BARBED_BATTLEGEAR,
@@ -5748,7 +5774,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CLONE_SHELL,
     &CONTAGION_CLASP,
     &CONTAGION_ENGINE,
-    &COPPER_MYR,
     &CORPSE_CUR,
     &CULLING_DAIS,
     &DARKSTEEL_AXE,
@@ -5759,7 +5784,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ETCHED_CHAMPION,
     &FLIGHT_SPELLBOMB,
     &GLINT_HAWK_IDOL,
-    &GOLD_MYR,
     &GOLDEN_URN,
     &GOLEM_ARTISAN,
     &GOLEM_FOUNDRY,
@@ -5770,15 +5794,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HORIZON_SPELLBOMB,
     &ICHORCLAW_MYR,
     &INFILTRATION_LENS,
-    &IRON_MYR,
     &KULDOTHA_FORGEMASTER,
-    &LEADEN_MYR,
     &LIQUIMETAL_COATING,
     &LIVEWIRE_LASH,
     &LUX_CANNON,
     &MEMNITE,
     &MIMIC_VAT,
-    &MINDSLAVER,
     &MOLTEN_TAIL_MASTICORE,
     &MORIOK_REPLICA,
     &MOX_OPAL,
@@ -5798,12 +5819,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PLATINUM_EMPERION,
     &PRECURSOR_GOLEM,
     &PROTOTYPE_PORTAL,
+    &RATCHET_BOMB,
     &RAZORFIELD_THRESHER,
     &RUST_TICK,
     &RUSTED_RELIC,
     &SABERCLAW_GOLEM,
     &SEMBLANCE_ANVIL,
-    &SILVER_MYR,
     &SNAPSAIL_GLIDER,
     &SOLITON,
     &STEEL_HELLKITE,
@@ -5834,30 +5855,35 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&crate::card::sets::y1999::mercadian_masques::ARREST), // SOM 2
-    PrintingRecord::reprint(&crate::card::sets::y2013::magic_2014::DISPERSE),      // SOM 31
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::SHATTER),            // SOM 103
-    PrintingRecord::reprint(&crate::card::sets::y2012::magic_2013::TURN_TO_SLAG),  // SOM 106
-    PrintingRecord::reprint(&crate::card::sets::y2013::magic_2014::ACCORDERS_SHIELD), // SOM 136
-    PrintingRecord::reprint(&crate::card::sets::y2013::magic_2014::RATCHET_BOMB),  // SOM 196
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::PLAINS),             // SOM 230
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1),                            // SOM 231
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 2),                            // SOM 232
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 3),                            // SOM 233
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::ISLAND),             // SOM 234
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1),                            // SOM 235
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 2),                            // SOM 236
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 3),                            // SOM 237
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::SWAMP),              // SOM 238
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1),                             // SOM 239
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 2),                             // SOM 240
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 3),                             // SOM 241
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::MOUNTAIN),           // SOM 242
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1),                          // SOM 243
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2),                          // SOM 244
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3),                          // SOM 245
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::FOREST),             // SOM 246
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1),                            // SOM 247
-    PrintingRecord::alternate(&catalog_lea::FOREST, 2),                            // SOM 248
-    PrintingRecord::alternate(&catalog_lea::FOREST, 3),                            // SOM 249
+    ARREST_REPRINT,
+    DISPERSE_REPRINT,
+    TRINKET_MAGE_REPRINT,
+    BLOODSHOT_TRAINEE_REPRINT,
+    SHATTER_REPRINT,
+    COPPER_MYR_REPRINT,
+    GOLD_MYR_REPRINT,
+    IRON_MYR_REPRINT,
+    LEADEN_MYR_REPRINT,
+    MINDSLAVER_REPRINT,
+    SILVER_MYR_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    PLAINS_ALTERNATE_3,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    ISLAND_ALTERNATE_3,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    SWAMP_ALTERNATE_3,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    MOUNTAIN_ALTERNATE_3,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
+    FOREST_ALTERNATE_3,
 ];

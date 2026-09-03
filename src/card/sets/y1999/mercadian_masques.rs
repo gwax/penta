@@ -1,6 +1,7 @@
 //! Mercadian Masques cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::ZonePlacement;
 use crate::card::CostQuantityDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y1993::arabian_nights as catalog_arn;
@@ -8,13 +9,9 @@ use crate::card::sets::y1994::antiquities as catalog_atq;
 use crate::card::sets::y1995::ice_age as catalog_ice;
 use crate::card::sets::y1996::alliances as catalog_all;
 use crate::card::sets::y1996::mirage as catalog_mir;
-use crate::card::sets::y1997::tempest as catalog_tmp;
 use crate::card::sets::y1997::visions as catalog_vis;
 use crate::card::sets::y1997::weatherlight as catalog_wth;
 use crate::card::sets::y1998::portal_second_age as catalog_p02;
-use crate::card::sets::y2010::rise_of_the_eldrazi as catalog_roe;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2013::gatecrash as catalog_gtc;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
@@ -25,6 +22,8 @@ use crate::card::{
 use crate::{TargetIndex, mana_cost};
 
 // MMQ 1 — Afterlife (reprint)
+const AFTERLIFE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_mir::AFTERLIFE)
+    .with_art("8fa2ecf9-b53c-4f1d-9028-ca3820d043cb", "Brian Snõddy");
 
 // MMQ 2 — Alabaster Wall
 // Audit: unsupported — Card rules have not been implemented.
@@ -215,6 +214,8 @@ pub(in crate::card::sets) static DEVOUT_WITNESS: CardRecord = CardRecord::new(
 );
 
 // MMQ 18 — Disenchant (reprint)
+const DISENCHANT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DISENCHANT)
+    .with_art("366407d8-3ed9-4809-b9bb-388ebb9ea815", "Adam Rex");
 
 // MMQ 19 — Fountain Watch
 // Audit: unsupported — Card rules have not been implemented.
@@ -486,6 +487,9 @@ pub(in crate::card::sets) static REVERENT_MANTRA: CardRecord = CardRecord::new(
 );
 
 // MMQ 45 — Righteous Aura (reprint)
+const RIGHTEOUS_AURA_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_vis::RIGHTEOUS_AURA)
+        .with_art("66d3bcb4-6cbd-4144-a95d-f61e68c10296", "Pete Venters");
 
 // MMQ 46 — Righteous Indignation
 // Audit: unsupported — Card rules have not been implemented.
@@ -638,6 +642,8 @@ pub(in crate::card::sets) static BLOCKADE_RUNNER: CardRecord = CardRecord::new(
 );
 
 // MMQ 61 — Brainstorm (reprint)
+const BRAINSTORM_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_ice::BRAINSTORM)
+    .with_art("9ff71d13-c4b7-4125-ab10-db4abbb7a074", "DiTerlizzi");
 
 // MMQ 62 — Bribery
 // Audit: unsupported — Card rules have not been implemented.
@@ -710,6 +716,8 @@ pub(in crate::card::sets) static COASTAL_PIRACY: CardRecord = CardRecord::new(
 );
 
 // MMQ 69 — Counterspell (reprint)
+const COUNTERSPELL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::COUNTERSPELL)
+    .with_art("7bd03c80-7812-4704-9e07-9cf73b49c01f", "Gao Yan");
 
 // MMQ 70 — Cowardice
 // Audit: unsupported — Card rules have not been implemented.
@@ -792,6 +800,8 @@ pub(in crate::card::sets) static EMBARGO: CardRecord = CardRecord::new(
 );
 
 // MMQ 78 — Energy Flux (reprint)
+const ENERGY_FLUX_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_atq::ENERGY_FLUX)
+    .with_art("a77b22a0-d5cc-4dbb-aec3-763b8efaee7e", "Qiao Dafu");
 
 // MMQ 79 — Extravagant Spirit
 // Audit: unsupported — Card rules have not been implemented.
@@ -807,6 +817,8 @@ pub(in crate::card::sets) static EXTRAVAGANT_SPIRIT: CardRecord = CardRecord::ne
 );
 
 // MMQ 80 — False Demise (reprint)
+const FALSE_DEMISE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_all::FALSE_DEMISE)
+    .with_art("48872422-895f-45f0-ba2a-7cd307285c7d", "Pat Lewis");
 
 // MMQ 81 — Glowing Anemone
 // Audit: unsupported — Card rules have not been implemented.
@@ -1205,6 +1217,11 @@ pub(in crate::card::sets) static TIDAL_KRAKEN: CardRecord = CardRecord::new(
 );
 
 // MMQ 111 — Timid Drake (reprint)
+const TIMID_DRAKE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_wth::TIMID_DRAKE)
+    .with_art(
+        "9212f685-d7af-4279-b17e-7201d8f63813",
+        "Edward P. Beard, Jr.",
+    );
 
 // MMQ 112 — Trade Routes
 // Audit: unsupported — Card rules have not been implemented.
@@ -1386,6 +1403,8 @@ pub(in crate::card::sets) static CORRUPT_OFFICIAL: CardRecord = CardRecord::new(
 );
 
 // MMQ 129 — Dark Ritual (reprint)
+const DARK_RITUAL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DARK_RITUAL)
+    .with_art("a6aacc3e-fe37-4a08-83e6-7ee8c0c0af74", "Rebecca Guay");
 
 // MMQ 130 — Deathgazer
 // Audit: unsupported — Card rules have not been implemented.
@@ -1647,6 +1666,11 @@ pub(in crate::card::sets) static QUAGMIRE_LAMPREY: CardRecord = CardRecord::new(
 );
 
 // MMQ 155 — Rain of Tears (reprint)
+const RAIN_OF_TEARS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::RAIN_OF_TEARS).with_art(
+        "85bffa7f-919c-4c9b-9fdc-dde8204c61c2",
+        "Edward P. Beard, Jr.",
+    );
 
 // MMQ 156 — Rampart Crawler
 // Audit: unsupported — Card rules have not been implemented.
@@ -1817,7 +1841,15 @@ pub(in crate::card::sets) static UNNATURAL_HUNGER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// MMQ 170 — Vendetta (reprint)
+// MMQ 170 — Vendetta
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static VENDETTA: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("67ced38e-0f33-4bda-8e18-09f6ac03a3d7"),
+    "Vendetta",
+    crate::card::CardArt::new("039fc76d-3b7e-4329-a997-07c25509e421", "Karl Kopinski"),
+    crate::card::CardSet::MercadianMasques,
+    crate::card::CardRules::unsupported(),
+);
 
 // MMQ 171 — Wall of Distortion
 // Audit: unsupported — Card rules have not been implemented.
@@ -1829,7 +1861,32 @@ pub(in crate::card::sets) static WALL_OF_DISTORTION: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
-// MMQ 172 — Arms Dealer (reprint)
+// MMQ 172 — Arms Dealer
+pub(in crate::card::sets) static ARMS_DEALER: CardRecord = CardRecord::new_with_legacy_id(
+    1359,
+    "Arms Dealer",
+    CardArt::new("910d3c33-8cda-487b-8b44-87a9d06d6749", "Wayne Reynolds"),
+    CardSet::MercadianMasques,
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Rogue"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{1}{R}, Sacrifice a Goblin: This creature deals 4 damage to target creature.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}{R}")),
+                AbilityCostDef::SacrificePermanent {
+                    object: ObjectPredicateDef::Subtype("Goblin"),
+                    controller: PlayerRelation::You,
+                },
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(4),
+            },
+        ),
+    ),
+);
 
 // MMQ 173 — Battle Rampart
 // Audit: unsupported — Card rules have not been implemented.
@@ -1934,7 +1991,30 @@ pub(in crate::card::sets) static CEREMONIAL_GUARD: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// MMQ 183 — Cinder Elemental (reprint)
+// MMQ 183 — Cinder Elemental
+pub(in crate::card::sets) static CINDER_ELEMENTAL: CardRecord = CardRecord::new_with_legacy_id(
+    1085,
+    "Cinder Elemental",
+    CardArt::new("8bbf10ce-69e0-4984-91a3-f65df919830d", "Svetlin Velinov"),
+    CardSet::MercadianMasques,
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Elemental"], 2, 2).with_ability(
+        AbilityDef::activated_with_targets(
+            "{X}{R}, {T}, Sacrifice this creature: It deals X damage to any target.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{X}{R}")),
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificeSource,
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::ChosenX,
+            },
+        ),
+    ),
+);
 
 // MMQ 184 — Close Quarters
 // Audit: unsupported — Card rules have not been implemented.
@@ -2157,6 +2237,9 @@ pub(in crate::card::sets) static MERCADIA_S_DOWNFALL: CardRecord = CardRecord::n
 );
 
 // MMQ 206 — Ogre Taskmaster (reprint)
+const OGRE_TASKMASTER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_p02::OGRE_TASKMASTER)
+        .with_art("186d6c28-6468-4bde-9738-eb51594fa7c1", "Dany Orizio");
 
 // MMQ 207 — Pulverize
 // Audit: unsupported — Card rules have not been implemented.
@@ -2242,6 +2325,8 @@ pub(in crate::card::sets) static SQUEE_GOBLIN_NABOB: CardRecord = CardRecord::ne
 );
 
 // MMQ 215 — Stone Rain (reprint)
+const STONE_RAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::STONE_RAIN)
+    .with_art("29cd7ded-9249-42c8-bb17-4c6b8cd2a9cc", "Ben Thompson");
 
 // MMQ 216 — Tectonic Break
 // Audit: unsupported — Card rules have not been implemented.
@@ -2284,6 +2369,8 @@ pub(in crate::card::sets) static THUNDERCLAP: CardRecord = CardRecord::new(
 );
 
 // MMQ 220 — Tremor (reprint)
+const TREMOR_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_vis::TREMOR)
+    .with_art("8531efb1-d77d-451a-8621-424fc278ccf9", "Mark Romanoski");
 
 // MMQ 221 — Two-Headed Dragon
 // Audit: unsupported — Card rules have not been implemented.
@@ -2356,6 +2443,9 @@ pub(in crate::card::sets) static WILD_JHOVALL: CardRecord = CardRecord::new(
 );
 
 // MMQ 228 — Word of Blasting (reprint)
+const WORD_OF_BLASTING_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_ice::WORD_OF_BLASTING)
+        .with_art("c5362ead-9162-4160-bfa9-432f7d0e222d", "Eric Peterson");
 
 // MMQ 229 — Ancestral Mask
 // Audit: unsupported — Card rules have not been implemented.
@@ -2451,6 +2541,8 @@ pub(in crate::card::sets) static DAWNSTRIDER: CardRecord = CardRecord::new(
 );
 
 // MMQ 238 — Deadly Insect (reprint)
+const DEADLY_INSECT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_all::DEADLY_INSECT)
+    .with_art("46be78e6-13bb-4500-87db-5ed5cae0145e", "Randy Gallegos");
 
 // MMQ 239 — Deepwood Drummer
 // Audit: unsupported — Card rules have not been implemented.
@@ -2496,6 +2588,9 @@ pub(in crate::card::sets) static DEEPWOOD_WOLVERINE: CardRecord = CardRecord::ne
 );
 
 // MMQ 243 — Desert Twister (reprint)
+const DESERT_TWISTER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_arn::DESERT_TWISTER)
+        .with_art("7d2437f2-1966-4e83-9f7e-6aaf76e21d11", "Kevin Murphy");
 
 // MMQ 244 — Erithizon
 // Audit: unsupported — Card rules have not been implemented.
@@ -2548,6 +2643,9 @@ pub(in crate::card::sets) static GAME_PRESERVE: CardRecord = CardRecord::new(
 );
 
 // MMQ 249 — Giant Caterpillar (reprint)
+const GIANT_CATERPILLAR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_vis::GIANT_CATERPILLAR)
+        .with_art("bdc5eb8a-4531-4408-90fe-9b352d71a052", "Arnie Swekel");
 
 // MMQ 250 — Groundskeeper
 // Audit: unsupported — Card rules have not been implemented.
@@ -2666,6 +2764,8 @@ pub(in crate::card::sets) static LUMBERING_SATYR: CardRecord = CardRecord::new(
 );
 
 // MMQ 258 — Lure (reprint)
+const LURE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::LURE)
+    .with_art("89e0015e-9b16-4787-8b4f-02d8bddb1b80", "DiTerlizzi");
 
 // MMQ 259 — Megatherium
 // Audit: unsupported — Card rules have not been implemented.
@@ -2697,7 +2797,29 @@ pub(in crate::card::sets) static PANGOSAUR: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// MMQ 262 — Revive (reprint)
+// MMQ 262 — Revive
+pub(in crate::card::sets) static REVIVE: CardRecord = CardRecord::new_with_legacy_id(
+    1036,
+    "Revive",
+    CardArt::new("3a9aae03-f29b-4da6-a0cb-edd67bb111f5", "Matthew D. Wilson"),
+    CardSet::MercadianMasques,
+    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Return target green card from your graveyard to your hand.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Color(ManaColor::Green),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: Some(PlayerRelation::You),
+            },
+        )],
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+        },
+    )),
+);
 
 // MMQ 263 — Rushwood Dryad
 // Audit: unsupported — Card rules have not been implemented.
@@ -2819,15 +2941,10 @@ pub(in crate::card::sets) static SPONTANEOUS_GENERATION: CardRecord = CardRecord
     crate::card::CardRules::unsupported(),
 );
 
-// MMQ 275 — Squall
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static SQUALL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("63c1b2f6-e47f-4f18-a94a-1d08eb009ef3"),
-    "Squall",
-    crate::card::CardArt::new("e5409b54-66ed-4add-bf43-cfeb074b1c50", "Val Mayerik"),
-    crate::card::CardSet::MercadianMasques,
-    crate::card::CardRules::unsupported(),
-);
+// MMQ 275 — Squall (reprint)
+const SQUALL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1999::starter_1999::SQUALL)
+        .with_art("e5409b54-66ed-4add-bf43-cfeb074b1c50", "Val Mayerik");
 
 // MMQ 276 — Squallmonger
 // Audit: unsupported — Card rules have not been implemented.
@@ -2870,8 +2987,13 @@ pub(in crate::card::sets) static TIGER_CLAWS: CardRecord = CardRecord::new(
 );
 
 // MMQ 280 — Tranquility (reprint)
+const TRANQUILITY_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::TRANQUILITY)
+    .with_art("843e801e-1ceb-4e3f-82e6-3c092051ba8c", "Heather Hudson");
 
 // MMQ 281 — Venomous Breath (reprint)
+const VENOMOUS_BREATH_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_ice::VENOMOUS_BREATH)
+        .with_art("4797556c-df74-4e13-b8fb-8b0b58c92b4c", "DiTerlizzi");
 
 // MMQ 282 — Venomous Dragonfly
 // Audit: unsupported — Card rules have not been implemented.
@@ -3403,44 +3525,87 @@ pub(in crate::card::sets) static TOWER_OF_THE_MAGISTRATE: CardRecord = CardRecor
 );
 
 // MMQ 331 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::PLAINS)
+    .with_art("2edf5042-d185-424e-922d-c0bd4ce3e8b0", "Terry Springer");
 
 // MMQ 332 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("44214f36-8bb3-4a32-8046-3ecdfff8407b", "Scott Bailey");
 
 // MMQ 333 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 2)
+    .with_art("e3e536cc-e724-43d4-9fe3-dfb4952613cb", "Dana Knutson");
 
 // MMQ 334 — Plains (alternate printing)
+const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 3)
+    .with_art(
+        "3a8fd867-8be1-4ee7-bb67-32c3f22db59e",
+        "Edward P. Beard, Jr.",
+    );
 
 // MMQ 335 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::ISLAND)
+    .with_art("5bae77e8-1230-4a6e-8c75-c99d2741a509", "Terry Springer");
 
 // MMQ 336 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("9a38509a-2b74-42a0-af91-ed453e463b95", "Scott Bailey");
 
 // MMQ 337 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 2)
+    .with_art("b2d83856-2201-4c30-bfcf-9cab62545201", "Scott Bailey");
 
 // MMQ 338 — Island (alternate printing)
+const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 3)
+    .with_art("e0fedd66-e547-492c-ad0d-9c7b527bdd17", "Tony Szczudlo");
 
 // MMQ 339 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SWAMP)
+    .with_art("72020810-bfa3-42d5-ad0d-6d02a6fe1b31", "Jeff Easley");
 
 // MMQ 340 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("c2436ceb-05c0-40e6-b370-a6f02f4adbe4", "Rob Alexander");
 
 // MMQ 341 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 2)
+    .with_art("1017347b-6b1a-4a2f-9147-98acad779616", "Rob Alexander");
 
 // MMQ 342 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 3)
+    .with_art("4a0243d2-5fde-489f-8113-4ece0511cb5c", "Terry Springer");
 
 // MMQ 343 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
+    .with_art("19b5fff1-7a60-4e50-893a-8177cd62bf82", "Terry Springer");
 
 // MMQ 344 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("4dbd12ed-e512-43d8-919d-478b18674deb", "Scott Bailey");
 
 // MMQ 345 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2)
+    .with_art("1921ce16-8ed8-41d7-a2b4-9e62f44ac8d6", "Dana Knutson");
 
 // MMQ 346 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3)
+    .with_art("423f4311-9feb-4c63-8b4c-32ddd38382e0", "Rob Alexander");
 
 // MMQ 347 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FOREST)
+    .with_art("695de19e-801f-4f08-b44c-b0726e4aced0", "Donato Giancola");
 
 // MMQ 348 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("a38e4ee7-6965-4e12-95d4-c9de1dbb014c", "Rob Alexander");
 
 // MMQ 349 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 2)
+    .with_art("c1973049-2d42-4091-9703-189ba374254d", "Rob Alexander");
 
 // MMQ 350 — Forest (alternate printing)
+const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 3)
+    .with_art("98c4806b-a31a-4026-9876-eab4d0d1694b", "Terry Springer");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ALABASTER_WALL,
@@ -3602,7 +3767,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &UNDERTAKER,
     &UNMASK,
     &UNNATURAL_HUNGER,
+    &VENDETTA,
     &WALL_OF_DISTORTION,
+    &ARMS_DEALER,
     &BATTLE_RAMPART,
     &BATTLE_SQUADRON,
     &BLASTER_MAGE,
@@ -3613,6 +3780,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CAVE_IN,
     &CAVERN_CRAWLER,
     &CEREMONIAL_GUARD,
+    &CINDER_ELEMENTAL,
     &CLOSE_QUARTERS,
     &CRAG_SAURIAN,
     &CRASH,
@@ -3683,6 +3851,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MEGATHERIUM,
     &NATURAL_AFFINITY,
     &PANGOSAUR,
+    &REVIVE,
     &RUSHWOOD_DRYAD,
     &RUSHWOOD_ELEMENTAL,
     &RUSHWOOD_HERBALIST,
@@ -3695,7 +3864,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SNORTING_GAHR,
     &SPIDERSILK_ARMOR,
     &SPONTANEOUS_GENERATION,
-    &SQUALL,
     &SQUALLMONGER,
     &STAMINA,
     &SUSTENANCE,
@@ -3752,48 +3920,45 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_mir::AFTERLIFE), // MMQ 1
-    PrintingRecord::reprint(&catalog_lea::DISENCHANT), // MMQ 18
-    PrintingRecord::reprint(&catalog_vis::RIGHTEOUS_AURA), // MMQ 45
-    PrintingRecord::reprint(&catalog_ice::BRAINSTORM), // MMQ 61
-    PrintingRecord::reprint(&catalog_lea::COUNTERSPELL), // MMQ 69
-    PrintingRecord::reprint(&catalog_atq::ENERGY_FLUX), // MMQ 78
-    PrintingRecord::reprint(&catalog_all::FALSE_DEMISE), // MMQ 80
-    PrintingRecord::reprint(&catalog_wth::TIMID_DRAKE), // MMQ 111
-    PrintingRecord::reprint(&catalog_lea::DARK_RITUAL), // MMQ 129
-    PrintingRecord::reprint(&catalog_tmp::RAIN_OF_TEARS), // MMQ 155
-    PrintingRecord::reprint(&catalog_roe::VENDETTA),  // MMQ 170
-    PrintingRecord::reprint(&catalog_m13::ARMS_DEALER), // MMQ 172
-    PrintingRecord::reprint(&catalog_gtc::CINDER_ELEMENTAL), // MMQ 183
-    PrintingRecord::reprint(&catalog_p02::OGRE_TASKMASTER), // MMQ 206
-    PrintingRecord::reprint(&catalog_lea::STONE_RAIN), // MMQ 215
-    PrintingRecord::reprint(&catalog_vis::TREMOR),    // MMQ 220
-    PrintingRecord::reprint(&catalog_ice::WORD_OF_BLASTING), // MMQ 228
-    PrintingRecord::reprint(&catalog_all::DEADLY_INSECT), // MMQ 238
-    PrintingRecord::reprint(&catalog_arn::DESERT_TWISTER), // MMQ 243
-    PrintingRecord::reprint(&catalog_vis::GIANT_CATERPILLAR), // MMQ 249
-    PrintingRecord::reprint(&catalog_lea::LURE),      // MMQ 258
-    PrintingRecord::reprint(&catalog_m13::REVIVE),    // MMQ 262
-    PrintingRecord::reprint(&catalog_lea::TRANQUILITY), // MMQ 280
-    PrintingRecord::reprint(&catalog_ice::VENOMOUS_BREATH), // MMQ 281
-    PrintingRecord::reprint(&catalog_lea::PLAINS),    // MMQ 331
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1), // MMQ 332
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 2), // MMQ 333
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 3), // MMQ 334
-    PrintingRecord::reprint(&catalog_lea::ISLAND),    // MMQ 335
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1), // MMQ 336
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 2), // MMQ 337
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 3), // MMQ 338
-    PrintingRecord::reprint(&catalog_lea::SWAMP),     // MMQ 339
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1), // MMQ 340
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 2), // MMQ 341
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 3), // MMQ 342
-    PrintingRecord::reprint(&catalog_lea::MOUNTAIN),  // MMQ 343
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1), // MMQ 344
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2), // MMQ 345
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3), // MMQ 346
-    PrintingRecord::reprint(&catalog_lea::FOREST),    // MMQ 347
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1), // MMQ 348
-    PrintingRecord::alternate(&catalog_lea::FOREST, 2), // MMQ 349
-    PrintingRecord::alternate(&catalog_lea::FOREST, 3), // MMQ 350
+    AFTERLIFE_REPRINT,
+    DISENCHANT_REPRINT,
+    RIGHTEOUS_AURA_REPRINT,
+    BRAINSTORM_REPRINT,
+    COUNTERSPELL_REPRINT,
+    ENERGY_FLUX_REPRINT,
+    FALSE_DEMISE_REPRINT,
+    TIMID_DRAKE_REPRINT,
+    DARK_RITUAL_REPRINT,
+    RAIN_OF_TEARS_REPRINT,
+    OGRE_TASKMASTER_REPRINT,
+    STONE_RAIN_REPRINT,
+    TREMOR_REPRINT,
+    WORD_OF_BLASTING_REPRINT,
+    DEADLY_INSECT_REPRINT,
+    DESERT_TWISTER_REPRINT,
+    GIANT_CATERPILLAR_REPRINT,
+    LURE_REPRINT,
+    SQUALL_REPRINT,
+    TRANQUILITY_REPRINT,
+    VENOMOUS_BREATH_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    PLAINS_ALTERNATE_3,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    ISLAND_ALTERNATE_3,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    SWAMP_ALTERNATE_3,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    MOUNTAIN_ALTERNATE_3,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
+    FOREST_ALTERNATE_3,
 ];

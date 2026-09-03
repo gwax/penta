@@ -540,6 +540,8 @@ pub(in crate::card::sets) static SLICKSHOT_SHOW_OFF: CardRecord = CardRecord::ne
 );
 
 // OTJ 359 — Pillage the Bog (alternate printing)
+const PILLAGE_THE_BOG_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&PILLAGE_THE_BOG, 1)
+    .with_art("c05939b7-1877-4464-98fe-d3b9ae754fb9", "Forrest Imel");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RUSTLER_RAMPAGE,
@@ -560,6 +562,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SLICKSHOT_SHOW_OFF,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&PILLAGE_THE_BOG, 1), // OTJ 359
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[PILLAGE_THE_BOG_ALTERNATE_1];

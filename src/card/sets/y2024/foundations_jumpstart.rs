@@ -6,8 +6,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
     CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, tokens,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    tokens,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -186,95 +186,43 @@ pub(in crate::card::sets) static IVORA_INSATIABLE_HEIR: CardRecord = CardRecord:
 );
 
 // J25 114 — Dark Confidant (reprint)
+const DARK_CONFIDANT_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_rav::DARK_CONFIDANT).with_art(
+        "c74e9388-460d-4dbf-934e-f3ecb48af6e8",
+        "Victor Adame Minguez",
+    );
 
-// J25 212 — Inspiring Overseer
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static INSPIRING_OVERSEER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("35d9da1d-8678-4252-b0f8-9960795642f0"),
-    "Inspiring Overseer",
-    crate::card::CardArt::new("be1c0c41-cd92-49b2-be07-0c44219bcb6a", "Irina Nordsol"),
-    crate::card::CardSet::FoundationsJumpstart,
-    crate::card::CardRules::unsupported(),
-);
+// J25 212 — Inspiring Overseer (reprint)
+const INSPIRING_OVERSEER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2022::streets_of_new_capenna::INSPIRING_OVERSEER)
+        .with_art("be1c0c41-cd92-49b2-be07-0c44219bcb6a", "Irina Nordsol");
 
-// J25 343 — Pestermite
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static PESTERMITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f252ae53-443c-4a27-b8f0-639a9a2b8598"),
-    "Pestermite",
-    crate::card::CardArt::new(
+// J25 343 — Pestermite (reprint)
+const PESTERMITE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2007::lorwyn::PESTERMITE).with_art(
         "4c8b4f64-244c-4944-b23f-c383039d9767",
         "Christopher Moeller",
-    ),
-    crate::card::CardSet::FoundationsJumpstart,
-    crate::card::CardRules::unsupported(),
-);
+    );
 
-// J25 349 — Remand
-pub(in crate::card::sets) static REMAND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("581f3780-c480-48c6-b15c-1618f2feccb9"),
-    "Remand",
-    CardArt::new("36de9999-8d0a-4174-8e38-549bacdc128b", "Mark A. Nelson"),
-    CardSet::FoundationsJumpstart,
-    // Two mana to buy a turn and replace itself. What it answers comes back,
-    // so this is tempo rather than an answer.
-    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
-        "Counter target spell. If that spell is countered this way, put it into its owner's hand \
-         instead of into that player's graveyard.\nDraw a card.",
-        &[AbilityTargetDef::exactly_one(
-            AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::Spell,
-                zones: &[ZoneKind::Stack],
-                controller: None,
-                owner: None,
-            },
-        )],
-        // The countered card goes to its owner's hand rather than their graveyard,
-        // which the counter effect's own destination says. The draw is a second
-        // clause and happens whether or not the counter found anything to do.
-        EffectDef::Sequence(&[
-            EffectDef::Counter {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                zone: ZoneKind::Hand,
-                placement: ZonePlacement::Top,
-            },
-            EffectDef::DrawCards {
-                recipient: EffectRecipientDef::Controller,
-                amount: ValueDef::Constant(1),
-            },
-        ]),
-    )),
-);
+// J25 349 — Remand (reprint)
+const REMAND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::REMAND)
+        .with_art("36de9999-8d0a-4174-8e38-549bacdc128b", "Mark A. Nelson");
 
-// J25 641 — Bushwhack
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static BUSHWHACK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("712a0640-d9c8-46fc-b38b-bf20a40fa902"),
-    "Bushwhack",
-    crate::card::CardArt::new("f6b92766-1ab8-462d-bd45-ccd6f55cbe14", "Artur Nakhodkin"),
-    crate::card::CardSet::FoundationsJumpstart,
-    crate::card::CardRules::unsupported(),
-);
+// J25 641 — Bushwhack (reprint)
+const BUSHWHACK_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2022::the_brothers_war::BUSHWHACK)
+        .with_art("f6b92766-1ab8-462d-bd45-ccd6f55cbe14", "Artur Nakhodkin");
 
-// J25 684 — Llanowar Visionary
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static LLANOWAR_VISIONARY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("880c9523-717e-4903-a09e-d6c47614383d"),
-    "Llanowar Visionary",
-    crate::card::CardArt::new("c2635b0c-c990-4cce-9ac4-97602a757cf0", "Cristi Balanescu"),
-    crate::card::CardSet::FoundationsJumpstart,
-    crate::card::CardRules::unsupported(),
-);
+// J25 684 — Llanowar Visionary (reprint)
+const LLANOWAR_VISIONARY_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2020::core_set_2021::LLANOWAR_VISIONARY)
+        .with_art("c2635b0c-c990-4cce-9ac4-97602a757cf0", "Cristi Balanescu");
 
-// J25 753 — Guardian Idol
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static GUARDIAN_IDOL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a6a62a73-b7db-47ec-9b68-65dd7c1a06a5"),
-    "Guardian Idol",
-    crate::card::CardArt::new("1537f377-64c3-4c3b-a276-28d8234c029b", "Igor Kieryluk"),
-    crate::card::CardSet::FoundationsJumpstart,
-    crate::card::CardRules::unsupported(),
-);
+// J25 753 — Guardian Idol (reprint)
+const GUARDIAN_IDOL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2004::fifth_dawn::GUARDIAN_IDOL)
+        .with_art("1537f377-64c3-4c3b-a276-28d8234c029b", "Igor Kieryluk");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCHOLAR_OF_COMBUSTION,
@@ -282,14 +230,14 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SHARDLESS_OUTLANDER,
     &PLAGON_LORD_OF_THE_BEACH,
     &IVORA_INSATIABLE_HEIR,
-    &INSPIRING_OVERSEER,
-    &PESTERMITE,
-    &REMAND,
-    &BUSHWHACK,
-    &LLANOWAR_VISIONARY,
-    &GUARDIAN_IDOL,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_rav::DARK_CONFIDANT), // J25 114
+    DARK_CONFIDANT_REPRINT,
+    INSPIRING_OVERSEER_REPRINT,
+    PESTERMITE_REPRINT,
+    REMAND_REPRINT,
+    BUSHWHACK_REPRINT,
+    LLANOWAR_VISIONARY_REPRINT,
+    GUARDIAN_IDOL_REPRINT,
 ];

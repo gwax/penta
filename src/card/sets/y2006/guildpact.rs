@@ -1,6 +1,9 @@
 //! GPT card records required by supported formats.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::AbilityCostDef;
+use crate::CastTimingPermissionDef;
+use crate::ResolvedEffectDurationDef;
 use crate::card::{
     AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype,
     CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
@@ -59,6 +62,43 @@ pub(in crate::card::sets) static LEYLINE_OF_SINGULARITY: CardRecord = CardRecord
             },
         ),
     ]),
+);
+
+// GPT 31 — Quicken
+pub(in crate::card::sets) static QUICKEN: CardRecord = CardRecord::new_with_legacy_id(
+    199,
+    "Quicken",
+    CardArt::new("066bef3d-c785-4b25-9b91-8f676aa9906f", "Aleksi Briclot"),
+    CardSet::Guildpact,
+    // One spell ability per part, so the card's two sentences are one clause
+    // with a sequence rather than two spell clauses.
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell(
+        "The next sorcery spell you cast this turn can be cast as though it had flash. (It can be cast any time you could cast an instant.)\nDraw a card.",
+        EffectDef::Sequence(&[
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(
+                    CastTimingPermissionDef::new(ObjectPredicateDef::HasType(CardType::Sorcery)),
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn
+                    .or(ResolvedEffectDurationDef::UntilNextMatchingCast),
+            },
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ]),
+    )),
+);
+
+// GPT 32 — Repeal
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static REPEAL: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("9e7dd929-4bba-46a6-86c9-b8ed853eb721"),
+    "Repeal",
+    crate::card::CardArt::new("265b80cd-2e9c-4e4b-a065-eafb29b3e07a", "Dan Murayama Scott"),
+    crate::card::CardSet::Guildpact,
+    crate::card::CardRules::unsupported(),
 );
 
 // GPT 52 — Leyline of the Void
@@ -142,6 +182,28 @@ pub(in crate::card::sets) static LEYLINE_OF_LIFEFORCE: CardRecord = CardRecord::
     ]),
 );
 
+// GPT 112 — Feral Animist
+pub(in crate::card::sets) static FERAL_ANIMIST: CardRecord = CardRecord::new_with_legacy_id(
+    642,
+    "Feral Animist",
+    CardArt::new("108a9ef2-c74a-450b-8148-4fdf9f09843f", "Dave Kendall"),
+    CardSet::Guildpact,
+    CardRules::new_creature(mana_cost!("{1}{R}{G}"), &["Goblin", "Shaman"], 2, 1).with_ability(
+        AbilityDef::activated(
+            "{3}: This creature gets +X/+0 until end of turn, where X is its power.",
+            &[AbilityCostDef::Mana(mana_cost!("{3}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::SourcePower,
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
+
 // GPT 125 — Pillory of the Sleepless
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PILLORY_OF_THE_SLEEPLESS: CardRecord = CardRecord::new(
@@ -150,6 +212,15 @@ pub(in crate::card::sets) static PILLORY_OF_THE_SLEEPLESS: CardRecord = CardReco
     crate::card::CardArt::new("36964bbd-f068-4a69-8d6b-7e4e97938b98", "Mark Romanoski"),
     crate::card::CardSet::Guildpact,
     crate::card::CardRules::unsupported(),
+);
+
+// GPT 157 — Godless Shrine
+pub(in crate::card::sets) static GODLESS_SHRINE: CardRecord = CardRecord::new_with_legacy_id(
+    171,
+    "Godless Shrine",
+    CardArt::new("6fd672bb-18cf-44e3-8dda-5310b1e0fffe", "Cliff Childs"),
+    CardSet::Guildpact,
+    CardRules::new_land(&["Plains", "Swamp"]).with_ability(abilities::shock_land_enters()),
 );
 
 // GPT 158 — Gruul Turf
@@ -162,16 +233,62 @@ pub(in crate::card::sets) static GRUUL_TURF: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+// GPT 159 — Izzet Boilerworks
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static IZZET_BOILERWORKS: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("666f455e-3a3d-475d-b67a-a1fdd74820eb"),
+    "Izzet Boilerworks",
+    crate::card::CardArt::new("c86e42c6-342b-443f-9b99-a68cf536ff45", "John Avon"),
+    crate::card::CardSet::Guildpact,
+    crate::card::CardRules::unsupported(),
+);
+
+// GPT 161 — Orzhov Basilica
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static ORZHOV_BASILICA: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("f9154d2a-3fc5-4fd6-9885-a810cb6b542a"),
+    "Orzhov Basilica",
+    crate::card::CardArt::new("7c14375a-98c1-4e57-bf0d-1bea89a6bbd9", "John Avon"),
+    crate::card::CardSet::Guildpact,
+    crate::card::CardRules::unsupported(),
+);
+
+// GPT 164 — Steam Vents
+pub(in crate::card::sets) static STEAM_VENTS: CardRecord = CardRecord::new_with_legacy_id(
+    217,
+    "Steam Vents",
+    CardArt::new("de911c88-f5c8-4955-9fa5-1f28a9b17236", "Yeong-Hao Han"),
+    CardSet::Guildpact,
+    CardRules::new_land(&["Island", "Mountain"]).with_ability(abilities::shock_land_enters()),
+);
+
+// GPT 165 — Stomping Ground
+pub(in crate::card::sets) static STOMPING_GROUND: CardRecord = CardRecord::new_with_legacy_id(
+    218,
+    "Stomping Ground",
+    CardArt::new("f29f3415-971c-4a5d-aae9-3893f4bdab1e", "David Palumbo"),
+    CardSet::Guildpact,
+    CardRules::new_land(&["Mountain", "Forest"]).with_ability(abilities::shock_land_enters()),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LEYLINE_OF_THE_MEEK,
     &LEYLINE_OF_SINGULARITY,
+    &QUICKEN,
+    &REPEAL,
     &LEYLINE_OF_THE_VOID,
     &PLAGUED_RUSALKA,
     &LEYLINE_OF_LIGHTNING,
     &SCORCHED_RUSALKA,
     &LEYLINE_OF_LIFEFORCE,
+    &FERAL_ANIMIST,
     &PILLORY_OF_THE_SLEEPLESS,
+    &GODLESS_SHRINE,
     &GRUUL_TURF,
+    &IZZET_BOILERWORKS,
+    &ORZHOV_BASILICA,
+    &STEAM_VENTS,
+    &STOMPING_GROUND,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

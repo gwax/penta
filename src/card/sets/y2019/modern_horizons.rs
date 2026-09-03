@@ -298,15 +298,10 @@ pub(in crate::card::sets) static FORCE_OF_NEGATION: CardRecord = CardRecord::new
     ]),
 );
 
-// MH1 55 — Man-o'-War
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static MAN_O_WAR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4dbf9bf9-75cd-4b25-a3a1-43b7e029700b"),
-    "Man-o'-War",
-    crate::card::CardArt::new("5eaa4199-df9b-494a-af7a-2491e8b0ef70", "Jon J Muth"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
-);
+// MH1 55 — Man-o'-War (reprint)
+const MAN_O_WAR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::visions::MAN_O_WAR)
+        .with_art("5eaa4199-df9b-494a-af7a-2491e8b0ef70", "Jon J Muth");
 
 // MH1 75 — Urza, Lord High Artificer
 /// "This token gets +1/+1 for each artifact you control", which counts the
@@ -383,15 +378,10 @@ pub(in crate::card::sets) static URZA_LORD_HIGH_ARTIFICER: CardRecord = CardReco
         ]),
 );
 
-// MH1 81 — Carrion Feeder
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static CARRION_FEEDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("88042031-64af-4f84-85d5-95992b43aa6c"),
-    "Carrion Feeder",
-    crate::card::CardArt::new("0a19da90-880e-4eca-8cf7-6d7baf090d53", "Svetlin Velinov"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
-);
+// MH1 81 — Carrion Feeder (reprint)
+const CARRION_FEEDER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2003::scourge::CARRION_FEEDER)
+        .with_art("0a19da90-880e-4eca-8cf7-6d7baf090d53", "Svetlin Velinov");
 
 // MH1 91 — First-Sphere Gargantua
 // Audit: unsupported — Card rules have not been implemented.
@@ -423,15 +413,10 @@ pub(in crate::card::sets) static BOGARDAN_DRAGONHEART: CardRecord = CardRecord::
     crate::card::CardRules::unsupported(),
 );
 
-// MH1 144 — Reckless Charge
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static RECKLESS_CHARGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0938e686-345e-4411-b564-cf9324ec6b9d"),
-    "Reckless Charge",
-    crate::card::CardArt::new("1754a8db-060e-470f-94c0-37f12d82978a", "Steve Argyle"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
-);
+// MH1 144 — Reckless Charge (reprint)
+const RECKLESS_CHARGE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2001::odyssey::RECKLESS_CHARGE)
+        .with_art("1754a8db-060e-470f-94c0-37f12d82978a", "Steve Argyle");
 
 // MH1 145 — Seasoned Pyromancer
 /// A 1/1 red Elemental, which is what both halves of him make: the arrival
@@ -663,15 +648,10 @@ pub(in crate::card::sets) static HEXDRINKER: CardRecord = CardRecord::new(
     ]),
 );
 
-// MH1 169 — Krosan Tusker
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static KROSAN_TUSKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0b872f85-60c5-44c4-956d-a8aa8132908b"),
-    "Krosan Tusker",
-    crate::card::CardArt::new("6391ba8b-7d9a-4077-8eeb-1b2ced14d973", "Kev Walker"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
-);
+// MH1 169 — Krosan Tusker (reprint)
+const KROSAN_TUSKER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2002::onslaught::KROSAN_TUSKER)
+        .with_art("6391ba8b-7d9a-4077-8eeb-1b2ced14d973", "Kev Walker");
 
 // MH1 171 — Mother Bear
 // Audit: unsupported — Card rules have not been implemented.
@@ -985,18 +965,14 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ECHO_OF_EONS,
     &FAERIE_SEER,
     &FORCE_OF_NEGATION,
-    &MAN_O_WAR,
     &URZA_LORD_HIGH_ARTIFICER,
-    &CARRION_FEEDER,
     &FIRST_SPHERE_GARGANTUA,
     &PUTRID_GOBLIN,
     &BOGARDAN_DRAGONHEART,
-    &RECKLESS_CHARGE,
     &SEASONED_PYROMANCER,
     &COLLECTOR_OUPHE,
     &FORCE_OF_VIGOR,
     &HEXDRINKER,
-    &KROSAN_TUSKER,
     &MOTHER_BEAR,
     &TRUMPETING_HERD,
     &WINDING_WAY,
@@ -1011,4 +987,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WATERLOGGED_GROVE,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
+    MAN_O_WAR_REPRINT,
+    CARRION_FEEDER_REPRINT,
+    RECKLESS_CHARGE_REPRINT,
+    KROSAN_TUSKER_REPRINT,
+];

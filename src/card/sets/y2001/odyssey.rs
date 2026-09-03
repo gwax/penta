@@ -1,16 +1,13 @@
 //! Odyssey cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::TurnStepDef;
+use crate::card::HalvedValueDef;
+use crate::card::RoundingDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y1997::tempest as catalog_tmp;
 use crate::card::sets::y1997::weatherlight as catalog_wth;
 use crate::card::sets::y1998::exodus as catalog_exo;
-use crate::card::sets::y2011::magic_2012 as catalog_m12;
-use crate::card::sets::y2012::avacyn_restored as catalog_avr;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2013::magic_2014 as catalog_m14;
-use crate::card::sets::y2016::eternal_masters as catalog_ema;
-use crate::card::sets::y2019::modern_horizons as catalog_mh1;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
@@ -61,6 +58,9 @@ pub(in crate::card::sets) static ANCESTRAL_TRIBUTE: CardRecord = CardRecord::new
 );
 
 // ODY 3 — Angelic Wall (reprint)
+const ANGELIC_WALL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::portal_second_age::ANGELIC_WALL)
+        .with_art("6d7c9675-e663-4ad1-9271-38d5c050a7c7", "John Avon");
 
 // ODY 4 — Animal Boneyard
 // Audit: unsupported — Card rules have not been implemented.
@@ -75,7 +75,28 @@ pub(in crate::card::sets) static ANIMAL_BONEYARD: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ODY 5 — Auramancer (reprint)
+// ODY 5 — Auramancer
+pub(in crate::card::sets) static AURAMANCER: CardRecord = CardRecord::new_with_legacy_id(
+    1144,
+    "Auramancer",
+    CardArt::new("0a3dc4ab-1c45-4495-91b6-27d62087380c", "Rebecca Guay"),
+    CardSet::Odyssey,
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Wizard"], 2, 2).with_ability(
+        abilities::enters_trigger_with_targets("When this creature enters, you may return target enchantment card from your graveyard to your hand.", &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Enchantment),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: Some(PlayerRelation::You),
+            })], EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::MoveToZone {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    zone: ZoneKind::Hand,
+                    placement: ZonePlacement::Top,
+},
+            }),
+    ),
+);
 
 // ODY 6 — Aven Archer
 // Audit: unsupported — Card rules have not been implemented.
@@ -284,6 +305,8 @@ pub(in crate::card::sets) static EMBOLDEN: CardRecord = CardRecord::new(
 );
 
 // ODY 23 — Gallantry (reprint)
+const GALLANTRY_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_tmp::GALLANTRY)
+    .with_art("d7992f83-93ad-4132-b8f2-a9f93bc96b4e", "Mark Tedin");
 
 // ODY 24 — Graceful Antelope
 // Audit: unsupported — Card rules have not been implemented.
@@ -768,7 +791,34 @@ pub(in crate::card::sets) static BAMBOOZLE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ODY 69 — Battle of Wits (reprint)
+// ODY 69 — Battle of Wits
+pub(in crate::card::sets) static BATTLE_OF_WITS: CardRecord = CardRecord::new_with_legacy_id(
+    1353,
+    "Battle of Wits",
+    CardArt::new("b4be15a4-693f-4e22-a46c-38bb440c073c", "Jason Chan"),
+    CardSet::Odyssey,
+    CardRules::new_enchantment(mana_cost!("{3}{U}{U}")).with_ability(
+        AbilityDef::triggered_if(
+            "At the beginning of your upkeep, if you have 200 or more cards in your library, you win the game.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            &TriggerConditionDef::ObjectCount {
+                query: ObjectQueryDef::matching(
+                    ObjectPredicateDef::Any,
+                    &[ZoneKind::Library],
+                    PlayerRelation::You,
+                ),
+                comparison: ComparisonDef::GreaterOrEqual,
+                amount: 200,
+            },
+            EffectDef::LoseTheGame {
+                player: EffectRecipientDef::Opponent,
+            },
+        ),
+    ),
+);
 
 // ODY 70 — Careful Study
 // Audit: unsupported — Card rules have not been implemented.
@@ -791,6 +841,8 @@ pub(in crate::card::sets) static CEPHALID_BROKER: CardRecord = CardRecord::new(
 );
 
 // ODY 72 — Cephalid Looter (alternate printing)
+const CEPHALID_LOOTER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&CEPHALID_LOOTER, 1)
+    .with_art("cb6f1c4e-4fbc-4474-8dd2-5846d417b6ab", "Keith Garletts");
 
 // ODY 72† — Cephalid Looter
 // Audit: unsupported — Card rules have not been implemented.
@@ -1110,6 +1162,8 @@ pub(in crate::card::sets) static RITES_OF_REFUSAL: CardRecord = CardRecord::new(
 );
 
 // ODY 100 — Scrivener (reprint)
+const SCRIVENER_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_exo::SCRIVENER)
+    .with_art("606f16fb-0829-45f9-a12e-aeb2371dd533", "Kev Walker");
 
 // ODY 101 — Shifty Doppelganger
 // Audit: unsupported — Card rules have not been implemented.
@@ -1150,7 +1204,23 @@ pub(in crate::card::sets) static STANDSTILL: CardRecord = CardRecord::new_with_l
     )),
 );
 
-// ODY 103 — Syncopate (reprint)
+// ODY 103 — Syncopate
+pub(in crate::card::sets) static SYNCOPATE: CardRecord = CardRecord::new_with_legacy_id(
+    223,
+    "Syncopate",
+    CardArt::new("ba6f218f-83b0-4b68-a00f-0327cd79f32a", "Clint Cearley"),
+    CardSet::Odyssey,
+    CardRules::new_instant(mana_cost!("{X}{U}")).with_ability(
+        AbilityDef::spell_with_targets("Counter target spell unless its controller pays {X}. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.", &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Spell,
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            },
+        )], abilities::counter_target_to_exile_unless_paid(ValueDef::ChosenX)),
+    ),
+);
 
 // ODY 104 — Think Tank
 // Audit: unsupported — Card rules have not been implemented.
@@ -1212,7 +1282,29 @@ pub(in crate::card::sets) static TOUCH_OF_INVISIBILITY: CardRecord = CardRecord:
     crate::card::CardRules::unsupported(),
 );
 
-// ODY 110 — Traumatize (reprint)
+// ODY 110 — Traumatize
+pub(in crate::card::sets) static TRAUMATIZE: CardRecord = CardRecord::new_with_legacy_id(
+    2008,
+    "Traumatize",
+    CardArt::new("9b8784dd-83f9-41f8-aedc-f0f81073ffcb", "Greg Staples"),
+    CardSet::Odyssey,
+    CardRules::new_sorcery(mana_cost!("{3}{U}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player mills half their library, rounded down.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::Mill {
+            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            // Half of what the library holds when the spell resolves, rounded down.
+            // Reading it from the target rather than from a fixed count is the whole
+            // clause: a Traumatize into an empty library mills nothing.
+            amount: ValueDef::Halved(&HalvedValueDef::new(
+                ValueDef::TargetLibrarySize(TargetIndex::PRIMARY),
+                RoundingDef::Down,
+            )),
+        },
+    )),
+);
 
 // ODY 111 — Treetop Sentinel
 // Audit: unsupported — Card rules have not been implemented.
@@ -1295,6 +1387,8 @@ pub(in crate::card::sets) static BRAIDS_CABAL_MINION: CardRecord = CardRecord::n
 );
 
 // ODY 118 — Buried Alive (reprint)
+const BURIED_ALIVE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_wth::BURIED_ALIVE)
+    .with_art("7db3697e-a31b-45a5-b742-fdfb00ce3929", "Greg Staples");
 
 // ODY 119 — Cabal Inquisitor
 // Audit: unsupported — Card rules have not been implemented.
@@ -1359,7 +1453,32 @@ pub(in crate::card::sets) static COFFIN_PURGE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ODY 125 — Crypt Creeper (reprint)
+// ODY 125 — Crypt Creeper
+pub(in crate::card::sets) static CRYPT_CREEPER: CardRecord = CardRecord::new_with_legacy_id(
+    786,
+    "Crypt Creeper",
+    CardArt::new("0382cb94-0836-4e23-99b7-034faa363203", "Scott Chou"),
+    CardSet::Odyssey,
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Zombie"], 2, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "Sacrifice this creature: Exile target card from a graveyard.",
+            &[AbilityCostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::Any,
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: None,
+                },
+            )],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Exile,
+                placement: ZonePlacement::Top,
+            },
+        ),
+    ),
+);
 
 // ODY 126 — Cursed Monstrosity
 // Audit: unsupported — Card rules have not been implemented.
@@ -1391,7 +1510,31 @@ pub(in crate::card::sets) static DECOMPOSE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ODY 129 — Diabolic Tutor (reprint)
+// ODY 129 — Diabolic Tutor
+pub(in crate::card::sets) static DIABOLIC_TUTOR: CardRecord = CardRecord::new_with_legacy_id(
+    1184,
+    "Diabolic Tutor",
+    CardArt::new("d75a7c8b-f29f-4574-96c0-daac17fc75bb", "Greg Staples"),
+    CardSet::Odyssey,
+    CardRules::new_sorcery(mana_cost!("{2}{B}{B}")).with_ability(AbilityDef::spell(
+        "Search your library for a card, put that card into your hand, then shuffle.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::Any,
+            minimum: 1,
+            maximum: ValueDef::Constant(1),
+            reveal: false,
+            destination: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    )),
+);
 
 // ODY 130 — Dirty Wererat
 // Audit: unsupported — Card rules have not been implemented.
@@ -1513,6 +1656,9 @@ pub(in crate::card::sets) static GHASTLY_DEMISE: CardRecord = CardRecord::new(
 );
 
 // ODY 140 — Gravedigger (reprint)
+const GRAVEDIGGER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::GRAVEDIGGER)
+        .with_art("c92e67ef-d1e9-427f-827b-d07e06126821", "Tony Szczudlo");
 
 // ODY 141 — Gravestorm
 // Audit: unsupported — Card rules have not been implemented.
@@ -1881,9 +2027,19 @@ pub(in crate::card::sets) static ZOMBIE_CANNIBAL: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ODY 170 — Zombie Infestation (reprint)
+// ODY 170 — Zombie Infestation
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static ZOMBIE_INFESTATION: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("ccd5f98a-7ab5-44b3-850c-b50963dace66"),
+    "Zombie Infestation",
+    crate::card::CardArt::new("c84a3e27-841a-4eb5-afcd-ddb87d4280f7", "Thomas M. Baxa"),
+    crate::card::CardSet::Odyssey,
+    crate::card::CardRules::unsupported(),
+);
 
 // ODY 171 — Zombify (alternate printing)
+const ZOMBIFY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ZOMBIFY, 1)
+    .with_art("513a2a6f-9ae6-42cb-b75f-6b45fc35f36e", "Mark Romanoski");
 
 // ODY 171† — Zombify
 // Audit: unsupported — Card rules have not been implemented.
@@ -1906,6 +2062,8 @@ pub(in crate::card::sets) static ACCEPTABLE_LOSSES: CardRecord = CardRecord::new
 );
 
 // ODY 173 — Anarchist (reprint)
+const ANARCHIST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_exo::ANARCHIST)
+    .with_art("5514627a-b24c-48c9-9a5a-5a375adcdf62", "Greg Hildebrandt");
 
 // ODY 174 — Ashen Firebeast
 // Audit: unsupported — Card rules have not been implemented.
@@ -2000,7 +2158,21 @@ pub(in crate::card::sets) static CHANCE_ENCOUNTER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ODY 183 — Demolish (reprint)
+// ODY 183 — Demolish
+pub(in crate::card::sets) static DEMOLISH: CardRecord = CardRecord::new_with_legacy_id(
+    802,
+    "Demolish",
+    CardArt::new("4657aa15-8274-4bd7-afe4-504693064373", "Raymond Swanland"),
+    CardSet::Odyssey,
+    CardRules::new_sorcery(mana_cost!("{3}{R}")).with_ability(AbilityDef::destroy_target(
+        "Destroy target artifact or land.",
+        &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::AnyOf(&[
+            ObjectPredicateDef::HasType(CardType::Artifact),
+            ObjectPredicateDef::HasType(CardType::Land),
+        ])),
+        true,
+    )),
+);
 
 // ODY 184 — Demoralize
 // Audit: unsupported — Card rules have not been implemented.
@@ -2331,7 +2503,15 @@ pub(in crate::card::sets) static PRICE_OF_GLORY: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ODY 215 — Reckless Charge (reprint)
+// ODY 215 — Reckless Charge
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static RECKLESS_CHARGE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("0938e686-345e-4411-b564-cf9324ec6b9d"),
+    "Reckless Charge",
+    crate::card::CardArt::new("1754a8db-060e-470f-94c0-37f12d82978a", "Steve Argyle"),
+    crate::card::CardSet::Odyssey,
+    crate::card::CardRules::unsupported(),
+);
 
 // ODY 216 — Recoup
 // Audit: unsupported — Card rules have not been implemented.
@@ -2494,6 +2674,8 @@ pub(in crate::card::sets) static CALL_OF_THE_HERD: CardRecord = CardRecord::new(
 );
 
 // ODY 232 — Cartographer (reprint)
+const CARTOGRAPHER_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_exo::CARTOGRAPHER)
+    .with_art("8241680d-6453-44ac-ab0f-3e7ebdd31e89", "Donato Giancola");
 
 // ODY 233 — Chatter of the Squirrel
 // Audit: unsupported — Card rules have not been implemented.
@@ -2781,6 +2963,9 @@ pub(in crate::card::sets) static NUT_COLLECTOR: CardRecord = CardRecord::new(
 );
 
 // ODY 260 — Overrun (reprint)
+const OVERRUN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::tempest::OVERRUN)
+        .with_art("96f9df13-3bd8-415d-b949-9b39f97fdde7", "Carl Critchlow");
 
 // ODY 261 — Piper's Melody
 // Audit: unsupported — Card rules have not been implemented.
@@ -3004,7 +3189,15 @@ pub(in crate::card::sets) static VIVIFY: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ODY 282 — Werebear (reprint)
+// ODY 282 — Werebear
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static WEREBEAR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("964cf7e3-932d-432f-8ad4-9bd651aada96"),
+    "Werebear",
+    crate::card::CardArt::new("224ea635-b95b-4803-8716-edd4cb655923", "Filip Burburan"),
+    crate::card::CardSet::Odyssey,
+    crate::card::CardRules::unsupported(),
+);
 
 // ODY 283 — Wild Mongrel
 // Audit: unsupported — Card rules have not been implemented.
@@ -3278,6 +3471,9 @@ pub(in crate::card::sets) static OTARIAN_JUGGERNAUT: CardRecord = CardRecord::ne
 );
 
 // ODY 306 — Patchwork Gnomes (reprint)
+const PATCHWORK_GNOMES_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_tmp::PATCHWORK_GNOMES)
+        .with_art("cd8958d5-e4a9-42ee-ae82-d184c4b92c9d", "Jerry Tiritilli");
 
 // ODY 307 — Sandstone Deadfall
 // Audit: unsupported — Card rules have not been implemented.
@@ -3520,6 +3716,8 @@ pub(in crate::card::sets) static RAVAGED_HIGHLANDS: CardRecord = CardRecord::new
 );
 
 // ODY 325 — Seafloor Debris (alternate printing)
+const SEAFLOOR_DEBRIS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SEAFLOOR_DEBRIS, 1)
+    .with_art("9e492399-d514-485a-8cdd-a3797a05e47a", "Larry Elmore");
 
 // ODY 325† — Seafloor Debris
 // Audit: unsupported — Card rules have not been implemented.
@@ -3594,49 +3792,90 @@ pub(in crate::card::sets) static TIMBERLAND_RUINS: CardRecord = CardRecord::new(
 );
 
 // ODY 331 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::PLAINS)
+    .with_art("eecfb420-ace3-4627-a2e0-62a701d025c9", "Alan Pollack");
 
 // ODY 332 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("014efd6a-5b0c-41d1-b7de-78eab5b62917", "Don Hazeltine");
 
 // ODY 333 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 2)
+    .with_art("51b0dd0f-8ad8-4292-9df6-7b28ab4605e3", "Eric Peterson");
 
 // ODY 334 — Plains (alternate printing)
+const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 3)
+    .with_art("7ee52bef-0586-46b8-a405-f4e0741f0059", "Rob Alexander");
 
 // ODY 335 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::ISLAND)
+    .with_art("527f36a0-80b8-4492-b1c3-20a34953ceb7", "Alan Pollack");
 
 // ODY 336 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("ef57bbe1-8507-4284-8d08-6b10b7894f96", "Ben Thompson");
 
 // ODY 337 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 2)
+    .with_art("ba30bfc3-5aec-480d-a80a-fe71b098b14b", "Larry Elmore");
 
 // ODY 338 — Island (alternate printing)
+const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 3)
+    .with_art("bf964c1b-941f-4a02-895b-0608bddc1ce7", "Rob Alexander");
 
 // ODY 339 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SWAMP)
+    .with_art("276b18fb-66cb-4dc0-9c67-60cee1502c7f", "Jerry Tiritilli");
 
 // ODY 340 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("907ff242-885f-4948-b95c-61cf033d0969", "Arnie Swekel");
 
 // ODY 341 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 2)
+    .with_art("5a4a9736-da37-4327-b9ee-e9a38fbe8a19", "Rob Alexander");
 
 // ODY 342 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 3)
+    .with_art("82f74cd0-cd73-4b08-8544-5f56b6d96f78", "Alan Pollack");
 
 // ODY 343 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
+    .with_art("3c22765e-a131-4be6-ba48-64b84564ea51", "Anthony S. Waters");
 
 // ODY 344 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("e1e88b41-7ae5-40fc-8947-5f5aa03388be", "Franz Vohwinkel");
 
 // ODY 345 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2)
+    .with_art("025e57e4-d088-4ad9-b872-cba327f63e9c", "Rob Alexander");
 
 // ODY 346 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3)
+    .with_art("9b396f90-92b1-4cc0-9be8-2f724b39fbc6", "Tony Szczudlo");
 
 // ODY 347 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FOREST)
+    .with_art("73029d4b-f073-4df0-a6cc-8014284a1ced", "Larry Elmore");
 
 // ODY 348 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("9397010b-6116-4612-993a-11ec2a5d3115", "Rob Alexander");
 
 // ODY 349 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 2)
+    .with_art("318b15ea-80b9-48df-b010-aa1aabcf51ea", "Jerry Tiritilli");
 
 // ODY 350 — Forest (alternate printing)
+const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 3)
+    .with_art("65e8080f-9e4a-4fad-9ea3-09d5e0e1c816", "Tony Szczudlo");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AEGIS_OF_HONOR,
     &ANCESTRAL_TRIBUTE,
     &ANIMAL_BONEYARD,
+    &AURAMANCER,
     &AVEN_ARCHER,
     &AVEN_CLOUDCHASER,
     &AVEN_FLOCK,
@@ -3699,6 +3938,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BALSHAN_BEGUILER,
     &BALSHAN_GRIFFIN,
     &BAMBOOZLE,
+    &BATTLE_OF_WITS,
     &CAREFUL_STUDY,
     &CEPHALID_BROKER,
     &CEPHALID_LOOTER,
@@ -3731,12 +3971,14 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RITES_OF_REFUSAL,
     &SHIFTY_DOPPELGANGER,
     &STANDSTILL,
+    &SYNCOPATE,
     &THINK_TANK,
     &THOUGHT_DEVOURER,
     &THOUGHT_EATER,
     &THOUGHT_NIBBLER,
     &TIME_STRETCH,
     &TOUCH_OF_INVISIBILITY,
+    &TRAUMATIZE,
     &TREETOP_SENTINEL,
     &UNIFYING_THEORY,
     &UPHEAVAL,
@@ -3750,9 +3992,11 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CAUSTIC_TAR,
     &CHILDHOOD_HORROR,
     &COFFIN_PURGE,
+    &CRYPT_CREEPER,
     &CURSED_MONSTROSITY,
     &DECAYING_SOIL,
     &DECOMPOSE,
+    &DIABOLIC_TUTOR,
     &DIRTY_WERERAT,
     &DUSK_IMP,
     &ENTOMB,
@@ -3792,6 +4036,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WHISPERING_SHADE,
     &ZOMBIE_ASSASSIN,
     &ZOMBIE_CANNIBAL,
+    &ZOMBIE_INFESTATION,
     &ZOMBIFY,
     &ACCEPTABLE_LOSSES,
     &ASHEN_FIREBEAST,
@@ -3803,6 +4048,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BURNING_SANDS,
     &CHAINFLINGER,
     &CHANCE_ENCOUNTER,
+    &DEMOLISH,
     &DEMORALIZE,
     &DWARVEN_GRUNT,
     &DWARVEN_RECRUITER,
@@ -3834,6 +4080,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PARDIC_MINER,
     &PARDIC_SWORDSMITH,
     &PRICE_OF_GLORY,
+    &RECKLESS_CHARGE,
     &RECOUP,
     &RITES_OF_INITIATION,
     &SAVAGE_FIRECAT,
@@ -3898,6 +4145,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TWIGWALKER,
     &VERDANT_SUCCESSION,
     &VIVIFY,
+    &WEREBEAR,
     &WILD_MONGREL,
     &WOODLAND_DRUID,
     &ZOOLOGIST,
@@ -3948,46 +4196,36 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_avr::ANGELIC_WALL), // ODY 3
-    PrintingRecord::reprint(&catalog_m14::AURAMANCER),   // ODY 5
-    PrintingRecord::reprint(&catalog_tmp::GALLANTRY),    // ODY 23
-    PrintingRecord::reprint(&catalog_m13::BATTLE_OF_WITS), // ODY 69
-    PrintingRecord::alternate(&CEPHALID_LOOTER, 1),      // ODY 72
-    PrintingRecord::reprint(&catalog_exo::SCRIVENER),    // ODY 100
-    PrintingRecord::reprint(&crate::card::sets::y2012::return_to_ravnica::SYNCOPATE), // ODY 103
-    PrintingRecord::reprint(&catalog_m14::TRAUMATIZE),   // ODY 110
-    PrintingRecord::reprint(&catalog_wth::BURIED_ALIVE), // ODY 118
-    PrintingRecord::reprint(&catalog_avr::CRYPT_CREEPER), // ODY 125
-    PrintingRecord::reprint(&catalog_m14::DIABOLIC_TUTOR), // ODY 129
-    PrintingRecord::reprint(&catalog_m12::GRAVEDIGGER),  // ODY 140
-    PrintingRecord::reprint(&catalog_m12::ZOMBIE_INFESTATION), // ODY 170
-    PrintingRecord::alternate(&ZOMBIFY, 1),              // ODY 171
-    PrintingRecord::reprint(&catalog_exo::ANARCHIST),    // ODY 173
-    PrintingRecord::reprint(&catalog_avr::DEMOLISH),     // ODY 183
-    PrintingRecord::reprint(&catalog_mh1::RECKLESS_CHARGE), // ODY 215
-    PrintingRecord::reprint(&catalog_exo::CARTOGRAPHER), // ODY 232
-    PrintingRecord::reprint(&catalog_m12::OVERRUN),      // ODY 260
-    PrintingRecord::reprint(&catalog_ema::WEREBEAR),     // ODY 282
-    PrintingRecord::reprint(&catalog_tmp::PATCHWORK_GNOMES), // ODY 306
-    PrintingRecord::alternate(&SEAFLOOR_DEBRIS, 1),      // ODY 325
-    PrintingRecord::reprint(&catalog_lea::PLAINS),       // ODY 331
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1),  // ODY 332
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 2),  // ODY 333
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 3),  // ODY 334
-    PrintingRecord::reprint(&catalog_lea::ISLAND),       // ODY 335
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1),  // ODY 336
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 2),  // ODY 337
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 3),  // ODY 338
-    PrintingRecord::reprint(&catalog_lea::SWAMP),        // ODY 339
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1),   // ODY 340
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 2),   // ODY 341
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 3),   // ODY 342
-    PrintingRecord::reprint(&catalog_lea::MOUNTAIN),     // ODY 343
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1), // ODY 344
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2), // ODY 345
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3), // ODY 346
-    PrintingRecord::reprint(&catalog_lea::FOREST),       // ODY 347
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1),  // ODY 348
-    PrintingRecord::alternate(&catalog_lea::FOREST, 2),  // ODY 349
-    PrintingRecord::alternate(&catalog_lea::FOREST, 3),  // ODY 350
+    ANGELIC_WALL_REPRINT,
+    GALLANTRY_REPRINT,
+    CEPHALID_LOOTER_ALTERNATE_1,
+    SCRIVENER_REPRINT,
+    BURIED_ALIVE_REPRINT,
+    GRAVEDIGGER_REPRINT,
+    ZOMBIFY_ALTERNATE_1,
+    ANARCHIST_REPRINT,
+    CARTOGRAPHER_REPRINT,
+    OVERRUN_REPRINT,
+    PATCHWORK_GNOMES_REPRINT,
+    SEAFLOOR_DEBRIS_ALTERNATE_1,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    PLAINS_ALTERNATE_3,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    ISLAND_ALTERNATE_3,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    SWAMP_ALTERNATE_3,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    MOUNTAIN_ALTERNATE_3,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
+    FOREST_ALTERNATE_3,
 ];

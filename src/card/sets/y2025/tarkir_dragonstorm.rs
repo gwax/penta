@@ -518,6 +518,9 @@ pub(in crate::card::sets) static ELSPETH_STORM_SLAYER: CardRecord = CardRecord::
 );
 
 // TDM 409 — Ugin, Eye of the Storms (alternate printing)
+const UGIN_EYE_OF_THE_STORMS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&UGIN_EYE_OF_THE_STORMS, 1)
+        .with_art("2e7cb37b-3ab5-42d0-860a-0c0760924850", "Joshua Raphael");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &UGIN_EYE_OF_THE_STORMS,
@@ -536,6 +539,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELSPETH_STORM_SLAYER,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&UGIN_EYE_OF_THE_STORMS, 1), // TDM 409
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[UGIN_EYE_OF_THE_STORMS_ALTERNATE_1];

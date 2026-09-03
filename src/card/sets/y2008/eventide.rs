@@ -1,6 +1,10 @@
 //! Eventide cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::AbilityTargetPredicate;
+use crate::ManaColor;
+use crate::ZoneKind;
+use crate::ZonePlacement;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
     CreatureTypeSetDef, EffectDef, EffectRecipientDef, ObjectPredicateDef,
@@ -8,6 +12,28 @@ use crate::card::{
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
+
+// EVE 1 — Archon of Justice
+pub(in crate::card::sets) static ARCHON_OF_JUSTICE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("ab707e7f-8ab5-43f1-9428-6a17c1b672fa"),
+    "Archon of Justice",
+    crate::card::CardArt::new("dcaee06f-edc1-4c3a-9ecc-97882c1b911e", "Jason Chan"),
+    crate::card::CardSet::Eventide,
+    CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Archon"], 4, 4).with_abilities(&[
+        abilities::flying(),
+        abilities::dies_trigger_with_targets(
+            "When this creature dies, exile target permanent.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::Any,
+            )],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Exile,
+                placement: ZonePlacement::Top,
+            },
+        ),
+    ]),
+);
 
 // EVE 6 — Flickerwisp
 pub(in crate::card::sets) static FLICKERWISP: CardRecord = CardRecord::new(
@@ -42,6 +68,43 @@ pub(in crate::card::sets) static RAVEN_S_CRIME: CardRecord = CardRecord::new(
     crate::card::CardArt::new("7ced5797-5de0-43ca-9dc9-e48912333a70", "Warren Mahy"),
     crate::card::CardSet::Eventide,
     crate::card::CardRules::unsupported(),
+);
+
+// EVE 67 — Duskdale Wurm
+pub(in crate::card::sets) static DUSKDALE_WURM: CardRecord = CardRecord::new_with_legacy_id(
+    1033,
+    "Duskdale Wurm",
+    CardArt::new("7d1a2d9a-e14c-4c44-8cf1-a2ce09bdae27", "Dan Dos Santos"),
+    CardSet::Eventide,
+    CardRules::new_creature(mana_cost!("{5}{G}{G}"), &["Wurm"], 7, 7)
+        .with_abilities(&[abilities::trample()]),
+);
+
+// EVE 82 — Beckon Apparition
+pub(in crate::card::sets) static BECKON_APPARITION: CardRecord = CardRecord::new_with_legacy_id(
+    1127,
+    "Beckon Apparition",
+    CardArt::new("8b2ef9c5-ca6f-4243-bd38-2b325257831c", "Cliff Childs"),
+    CardSet::Eventide,
+    CardRules::new_instant(mana_cost!("{W/B}")).with_ability(
+        AbilityDef::spell_with_targets(
+            "Exile target card from a graveyard. Create a 1/1 white and black Spirit creature token with flying.",
+            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Any,
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: None,
+            })],
+            EffectDef::Sequence(&[
+                EffectDef::MoveToZone {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    zone: ZoneKind::Exile,
+                    placement: ZonePlacement::Top,
+},
+                EffectDef::create_creature_token(&["Spirit"], &[ManaColor::White, ManaColor::Black], 1, 1).with_abilities(&[abilities::flying()]).with_art(CardArt::new("91f3a4b0-0992-4245-b245-033ad1083a93", "Cliff Childs")),
+            ]),
+        ),
+    ),
 );
 
 // EVE 119 — Desecrator Hag
@@ -131,8 +194,11 @@ pub(in crate::card::sets) static FIGURE_OF_DESTINY: CardRecord = CardRecord::new
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &ARCHON_OF_JUSTICE,
     &FLICKERWISP,
     &RAVEN_S_CRIME,
+    &DUSKDALE_WURM,
+    &BECKON_APPARITION,
     &DESECRATOR_HAG,
     &FIGURE_OF_DESTINY,
 ];

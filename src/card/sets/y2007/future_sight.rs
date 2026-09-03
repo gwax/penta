@@ -217,6 +217,40 @@ pub(in crate::card::sets) static ARC_BLADE: CardRecord = CardRecord::new(
     ]),
 );
 
+// FUT 110 — Bloodshot Trainee
+pub(in crate::card::sets) static BLOODSHOT_TRAINEE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("b930b146-d132-454f-b35d-4a247c14c054"),
+    "Bloodshot Trainee",
+    crate::card::CardArt::new("c2d5ce81-6cca-4990-a515-34ac44cae039", "Matt Stewart"),
+    crate::card::CardSet::FutureSight,
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Goblin", "Warrior"], 2, 3).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: This creature deals 4 damage to target creature. Activate only if this creature's power is 4 or greater.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(4),
+            },
+        )
+        .with_activation_condition(&TriggerConditionDef::SourceMatches {
+            object: ObjectPredicateDef::PowerAtLeast(4),
+        }),
+    ),
+);
+
+// FUT 137 — Rites of Flourishing
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static RITES_OF_FLOURISHING: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("811458c7-dcdc-43ef-8c3e-a90e21ce315e"),
+    "Rites of Flourishing",
+    crate::card::CardArt::new("0e3d43ce-8297-47f6-a877-d723b9b43fdb", "Brandon Kitkouski"),
+    crate::card::CardSet::FutureSight,
+    crate::card::CardRules::unsupported(),
+);
+
 // FUT 138 — Sprout Swarm
 pub(in crate::card::sets) static SPROUT_SWARM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0b915355-4e98-44df-81bd-961a3d3c86b8"),
@@ -268,6 +302,34 @@ pub(in crate::card::sets) static JHOIRA_OF_THE_GHITU: CardRecord = CardRecord::n
                     duration: ResolvedEffectDurationDef::Permanent,
                 },
             ]),
+        )),
+);
+
+// FUT 159 — Akroma's Memorial
+pub(in crate::card::sets) static AKROMAS_MEMORIAL: CardRecord = CardRecord::new_with_legacy_id(
+    1360,
+    "Akroma's Memorial",
+    CardArt::new(
+        "d00d63c3-85a5-4c2d-bdba-6213527b5e9a",
+        "Dan Murayama Scott",
+    ),
+    CardSet::FutureSight,
+    CardRules::new_artifact(mana_cost!("{7}"))
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(AbilityDef::static_ability(
+            "Creatures you control have flying, first strike, vigilance, trample, haste, and protection from black and from red.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You),
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::add_ability(&abilities::flying()),
+                    AppliedEffectDef::add_ability(&abilities::first_strike()),
+                    AppliedEffectDef::add_ability(&abilities::vigilance()),
+                    AppliedEffectDef::add_ability(&abilities::trample()),
+                    AppliedEffectDef::add_ability(&abilities::haste()),
+                    AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::Black)),
+                    AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::Red)),
+                ]),
+            },
         )),
 );
 
@@ -514,8 +576,11 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SHIMIAN_SPECTER,
     &BRIDGE_FROM_BELOW,
     &ARC_BLADE,
+    &BLOODSHOT_TRAINEE,
+    &RITES_OF_FLOURISHING,
     &SPROUT_SWARM,
     &JHOIRA_OF_THE_GHITU,
+    &AKROMAS_MEMORIAL,
     &COALITION_RELIC,
     &EPOCHRASITE,
     &SWORD_OF_THE_MEEK,

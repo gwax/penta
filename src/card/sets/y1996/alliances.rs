@@ -22,6 +22,8 @@ pub(in crate::card::sets) static CARRIER_PIGEONS: CardRecord = CardRecord::new(
 );
 
 // ALL 1b — Carrier Pigeons (alternate printing)
+const CARRIER_PIGEONS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&CARRIER_PIGEONS, 1)
+    .with_art("9d68befe-78bc-4d9c-968b-f7e6b3042f27", "Pat Lewis");
 
 // ALL 2a — Errand of Duty
 // Audit: unsupported — Card rules have not been implemented.
@@ -34,6 +36,8 @@ pub(in crate::card::sets) static ERRAND_OF_DUTY: CardRecord = CardRecord::new(
 );
 
 // ALL 2b — Errand of Duty (alternate printing)
+const ERRAND_OF_DUTY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ERRAND_OF_DUTY, 1)
+    .with_art("8a7362e2-8dc0-4d76-a4eb-55ed56b1cd66", "Julie Baroh");
 
 // ALL 3 — Exile
 // Audit: unsupported — Card rules have not been implemented.
@@ -86,6 +90,9 @@ pub(in crate::card::sets) static KJELDORAN_ESCORT: CardRecord = CardRecord::new(
 );
 
 // ALL 7b — Kjeldoran Escort (alternate printing)
+const KJELDORAN_ESCORT_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&KJELDORAN_ESCORT, 1)
+        .with_art("70f54ca5-1f1b-40c7-ad0b-569c54d1b5aa", "Bryon Wackwitz");
 
 // ALL 8 — Kjeldoran Home Guard
 // Audit: unsupported — Card rules have not been implemented.
@@ -98,6 +105,8 @@ pub(in crate::card::sets) static KJELDORAN_HOME_GUARD: CardRecord = CardRecord::
 );
 
 // ALL 9a — Kjeldoran Pride (alternate printing)
+const KJELDORAN_PRIDE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&KJELDORAN_PRIDE, 1)
+    .with_art("d0acdf4d-6fdd-4430-9204-9c80dc8fb387", "Kaja Foglio");
 
 // ALL 9b — Kjeldoran Pride
 // Audit: unsupported — Card rules have not been implemented.
@@ -110,6 +119,8 @@ pub(in crate::card::sets) static KJELDORAN_PRIDE: CardRecord = CardRecord::new(
 );
 
 // ALL 10a — Martyrdom (alternate printing)
+const MARTYRDOM_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&MARTYRDOM, 1)
+    .with_art("6ab5775a-7138-4526-83fe-350127695224", "Mark Poole");
 
 // ALL 10b — Martyrdom
 // Audit: unsupported — Card rules have not been implemented.
@@ -132,8 +143,12 @@ pub(in crate::card::sets) static NOBLE_STEEDS: CardRecord = CardRecord::new(
 );
 
 // ALL 11b — Noble Steeds (alternate printing)
+const NOBLE_STEEDS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&NOBLE_STEEDS, 1)
+    .with_art("684bc5b2-c5fb-4340-9c11-73891adb4b93", "Rebecca Guay");
 
 // ALL 12a — Reinforcements (alternate printing)
+const REINFORCEMENTS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&REINFORCEMENTS, 1)
+    .with_art("d734086b-a0fb-4504-96e5-89842aa587b3", "Diana Vick");
 
 // ALL 12b — Reinforcements
 // Audit: unsupported — Card rules have not been implemented.
@@ -159,6 +174,10 @@ pub(in crate::card::sets) static REPRISAL: CardRecord = CardRecord::new(
 );
 
 // ALL 13b — Reprisal (alternate printing)
+const REPRISAL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&REPRISAL, 1).with_art(
+    "839df85a-1aca-4d4b-b327-2778caa6d289",
+    "Randy Asplund-Faith",
+);
 
 // ALL 14 — Royal Decree
 // Audit: unsupported — Card rules have not been implemented.
@@ -181,6 +200,8 @@ pub(in crate::card::sets) static ROYAL_HERBALIST: CardRecord = CardRecord::new(
 );
 
 // ALL 15b — Royal Herbalist (alternate printing)
+const ROYAL_HERBALIST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ROYAL_HERBALIST, 1)
+    .with_art("6456ee12-7c09-434e-9028-613506ef7ff6", "Douglas Shuler");
 
 // ALL 16 — Scars of the Veteran
 // Audit: unsupported — Card rules have not been implemented.
@@ -246,6 +267,8 @@ pub(in crate::card::sets) static WILD_AESTHIR: CardRecord = CardRecord::new(
 );
 
 // ALL 21b — Wild Aesthir (alternate printing)
+const WILD_AESTHIR_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&WILD_AESTHIR, 1)
+    .with_art("ffecf097-a5b1-4bd9-ac3f-784bd44e447c", "Greg Simanson");
 
 // ALL 22a — Arcane Denial
 /// "Up to two" is two questions rather than one number: take the first card,
@@ -320,8 +343,16 @@ pub(in crate::card::sets) static ARCANE_DENIAL: CardRecord = CardRecord::new_wit
 );
 
 // ALL 22b — Arcane Denial (alternate printing)
+const ARCANE_DENIAL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ARCANE_DENIAL, 1)
+    .with_art(
+        "415a3104-90e6-4235-b67f-69337c7fe714",
+        "Richard Kane Ferguson",
+    );
 
 // ALL 23a — Awesome Presence (alternate printing)
+const AWESOME_PRESENCE_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&AWESOME_PRESENCE, 1)
+        .with_art("80017e84-87bc-4eb8-a663-5c263d8df812", "Lawrence Snelly");
 
 // ALL 23b — Awesome Presence
 // Audit: unsupported — Card rules have not been implemented.
@@ -344,6 +375,9 @@ pub(in crate::card::sets) static BENTHIC_EXPLORERS: CardRecord = CardRecord::new
 );
 
 // ALL 24b — Benthic Explorers (alternate printing)
+const BENTHIC_EXPLORERS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&BENTHIC_EXPLORERS, 1)
+        .with_art("397d7602-d374-484c-aab2-3e57f12ceaa4", "Greg Simanson");
 
 // ALL 25 — Browse
 // Audit: unsupported — Card rules have not been implemented.
@@ -376,6 +410,8 @@ pub(in crate::card::sets) static FALSE_DEMISE: CardRecord = CardRecord::new(
 );
 
 // ALL 27b — False Demise (alternate printing)
+const FALSE_DEMISE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&FALSE_DEMISE, 1)
+    .with_art("9e844464-cf1b-4a34-ac37-3a4da858c6bf", "Randy Gallegos");
 
 // ALL 28 — Force of Will
 pub(in crate::card::sets) static FORCE_OF_WILL: CardRecord = CardRecord::new_with_legacy_id(
@@ -428,8 +464,13 @@ pub(in crate::card::sets) static FORESIGHT: CardRecord = CardRecord::new(
 );
 
 // ALL 29b — Foresight (alternate printing)
+const FORESIGHT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&FORESIGHT, 1)
+    .with_art("a4fe74e0-bcde-4176-8da5-38e78daad5e5", "Terese Nielsen");
 
 // ALL 30a — Lat-Nam's Legacy (alternate printing)
+const LAT_NAM_S_LEGACY_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&LAT_NAM_S_LEGACY, 1)
+        .with_art("e3b3420b-424e-4c30-b329-bc4447f121d3", "Tom Wänerstrand");
 
 // ALL 30b — Lat-Nam's Legacy
 // Audit: unsupported — Card rules have not been implemented.
@@ -462,6 +503,8 @@ pub(in crate::card::sets) static PHANTASMAL_SPHERE: CardRecord = CardRecord::new
 );
 
 // ALL 33a — Soldevi Heretic (alternate printing)
+const SOLDEVI_HERETIC_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SOLDEVI_HERETIC, 1)
+    .with_art("d46accc8-b926-4443-bc12-dfd5870b2d2e", "Mike Kimble");
 
 // ALL 33b — Soldevi Heretic
 // Audit: unsupported — Card rules have not been implemented.
@@ -484,6 +527,8 @@ pub(in crate::card::sets) static SOLDEVI_SAGE: CardRecord = CardRecord::new(
 );
 
 // ALL 34b — Soldevi Sage (alternate printing)
+const SOLDEVI_SAGE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SOLDEVI_SAGE, 1)
+    .with_art("53dc5902-817c-4a85-a0b9-20555574fad1", "Carol Heyer");
 
 // ALL 35 — Spiny Starfish
 // Audit: unsupported — Card rules have not been implemented.
@@ -496,6 +541,8 @@ pub(in crate::card::sets) static SPINY_STARFISH: CardRecord = CardRecord::new(
 );
 
 // ALL 36a — Storm Crow (alternate printing)
+const STORM_CROW_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&STORM_CROW, 1)
+    .with_art("a2d4ea78-16f1-46ac-8a60-db20c37aad5e", "Sandra Everingham");
 
 // ALL 36b — Storm Crow
 // Audit: unsupported — Card rules have not been implemented.
@@ -548,6 +595,8 @@ pub(in crate::card::sets) static TIDAL_CONTROL: CardRecord = CardRecord::new(
 );
 
 // ALL 41a — Viscerid Armor (alternate printing)
+const VISCERID_ARMOR_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&VISCERID_ARMOR, 1)
+    .with_art("d9c3f55a-5aa7-42e1-9aab-168a7e61c112", "Heather Hudson");
 
 // ALL 41b — Viscerid Armor
 // Audit: unsupported — Card rules have not been implemented.
@@ -580,6 +629,9 @@ pub(in crate::card::sets) static BALDUVIAN_DEAD: CardRecord = CardRecord::new(
 );
 
 // ALL 44a — Casting of Bones (alternate printing)
+const CASTING_OF_BONES_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&CASTING_OF_BONES, 1)
+        .with_art("e823c295-b66e-41c3-bd77-1a13f95e69c3", "Anson Maddocks");
 
 // ALL 44b — Casting of Bones
 // Audit: unsupported — Card rules have not been implemented.
@@ -642,6 +694,8 @@ pub(in crate::card::sets) static FEAST_OR_FAMINE: CardRecord = CardRecord::new(
 );
 
 // ALL 49b — Feast or Famine (alternate printing)
+const FEAST_OR_FAMINE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&FEAST_OR_FAMINE, 1)
+    .with_art("f4ac1586-c3d5-4add-bade-b527dcf4a391", "Pete Venters");
 
 // ALL 50a — Fevered Strength
 // Audit: unsupported — Card rules have not been implemented.
@@ -654,6 +708,9 @@ pub(in crate::card::sets) static FEVERED_STRENGTH: CardRecord = CardRecord::new(
 );
 
 // ALL 50b — Fevered Strength (alternate printing)
+const FEVERED_STRENGTH_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&FEVERED_STRENGTH, 1)
+        .with_art("ca621684-1e0d-44d3-8bc4-f77e354b9ab4", "Brian Snõddy");
 
 // ALL 51a — Insidious Bookworms
 // Audit: unsupported — Card rules have not been implemented.
@@ -666,6 +723,9 @@ pub(in crate::card::sets) static INSIDIOUS_BOOKWORMS: CardRecord = CardRecord::n
 );
 
 // ALL 51b — Insidious Bookworms (alternate printing)
+const INSIDIOUS_BOOKWORMS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&INSIDIOUS_BOOKWORMS, 1)
+        .with_art("7a043cc2-1bd4-4b44-ba23-d2585ffc3841", "Greg Simanson");
 
 // ALL 52 — Keeper of Tresserhorn
 // Audit: unsupported — Card rules have not been implemented.
@@ -701,6 +761,9 @@ pub(in crate::card::sets) static KROVIKAN_PLAGUE: CardRecord = CardRecord::new(
 );
 
 // ALL 55a — Lim-Dûl's High Guard (alternate printing)
+const LIM_DUL_S_HIGH_GUARD_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&LIM_DUL_S_HIGH_GUARD, 1)
+        .with_art("b5afe9b5-3be8-472a-95c3-2c34231bc042", "Anson Maddocks");
 
 // ALL 55b — Lim-Dûl's High Guard
 // Audit: unsupported — Card rules have not been implemented.
@@ -726,6 +789,9 @@ pub(in crate::card::sets) static MISINFORMATION: CardRecord = CardRecord::new(
 );
 
 // ALL 57a — Phantasmal Fiend (alternate printing)
+const PHANTASMAL_FIEND_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&PHANTASMAL_FIEND, 1)
+        .with_art("9a05d428-7c70-4813-8e6c-20278cc0b0bd", "Scott Kirschner");
 
 // ALL 57b — Phantasmal Fiend
 // Audit: unsupported — Card rules have not been implemented.
@@ -738,6 +804,8 @@ pub(in crate::card::sets) static PHANTASMAL_FIEND: CardRecord = CardRecord::new(
 );
 
 // ALL 58a — Phyrexian Boon (alternate printing)
+const PHYREXIAN_BOON_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&PHYREXIAN_BOON, 1)
+    .with_art("b9734708-d8e3-4d72-86b9-dd91fcfab5b4", "Mark Tedin");
 
 // ALL 58b — Phyrexian Boon
 // Audit: unsupported — Card rules have not been implemented.
@@ -760,6 +828,8 @@ pub(in crate::card::sets) static RITUAL_OF_THE_MACHINE: CardRecord = CardRecord:
 );
 
 // ALL 60a — Soldevi Adnate (alternate printing)
+const SOLDEVI_ADNATE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SOLDEVI_ADNATE, 1)
+    .with_art("8b2651b0-1ab2-4d7e-834f-7505797da474", "Christopher Rush");
 
 // ALL 60b — Soldevi Adnate
 // Audit: unsupported — Card rules have not been implemented.
@@ -772,6 +842,8 @@ pub(in crate::card::sets) static SOLDEVI_ADNATE: CardRecord = CardRecord::new(
 );
 
 // ALL 61a — Stench of Decay (alternate printing)
+const STENCH_OF_DECAY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&STENCH_OF_DECAY, 1)
+    .with_art("f9a45644-549a-4eaa-8367-b170027bd5a2", "Heather Hudson");
 
 // ALL 61b — Stench of Decay
 // Audit: unsupported — Card rules have not been implemented.
@@ -804,6 +876,8 @@ pub(in crate::card::sets) static SWAMP_MOSQUITO: CardRecord = CardRecord::new(
 );
 
 // ALL 63b — Swamp Mosquito (alternate printing)
+const SWAMP_MOSQUITO_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SWAMP_MOSQUITO, 1)
+    .with_art("ac2fbe77-8757-4333-a083-975d5c3c6433", "Nicola Leonard");
 
 // ALL 64a — Agent of Stromgald
 // Audit: unsupported — Card rules have not been implemented.
@@ -816,6 +890,9 @@ pub(in crate::card::sets) static AGENT_OF_STROMGALD: CardRecord = CardRecord::ne
 );
 
 // ALL 64b — Agent of Stromgald (alternate printing)
+const AGENT_OF_STROMGALD_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&AGENT_OF_STROMGALD, 1)
+        .with_art("d9236d75-1724-4121-9fa9-57fa96b19361", "Alan Rabinowitz");
 
 // ALL 65 — Balduvian Horde
 // Audit: unsupported — Card rules have not been implemented.
@@ -838,6 +915,9 @@ pub(in crate::card::sets) static BALDUVIAN_WAR_MAKERS: CardRecord = CardRecord::
 );
 
 // ALL 66b — Balduvian War-Makers (alternate printing)
+const BALDUVIAN_WAR_MAKERS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&BALDUVIAN_WAR_MAKERS, 1)
+        .with_art("dada7aeb-0062-4fb2-8bcb-abdd75029fb2", "Mike Kimble");
 
 // ALL 67a — Bestial Fury
 // Audit: unsupported — Card rules have not been implemented.
@@ -850,6 +930,8 @@ pub(in crate::card::sets) static BESTIAL_FURY: CardRecord = CardRecord::new(
 );
 
 // ALL 67b — Bestial Fury (alternate printing)
+const BESTIAL_FURY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&BESTIAL_FURY, 1)
+    .with_art("7271e0d7-0c55-4020-97de-b8a27ba51d4b", "Mike Raabe");
 
 // ALL 68 — Burnout
 // Audit: unsupported — Card rules have not been implemented.
@@ -882,6 +964,8 @@ pub(in crate::card::sets) static DEATH_SPARK: CardRecord = CardRecord::new(
 );
 
 // ALL 71a — Enslaved Scout (alternate printing)
+const ENSLAVED_SCOUT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ENSLAVED_SCOUT, 1)
+    .with_art("ea21414e-65f7-4d65-b0dc-7fec7b9b416d", "Rebecca Guay");
 
 // ALL 71b — Enslaved Scout
 // Audit: unsupported — Card rules have not been implemented.
@@ -894,6 +978,8 @@ pub(in crate::card::sets) static ENSLAVED_SCOUT: CardRecord = CardRecord::new(
 );
 
 // ALL 72a — Gorilla Shaman (alternate printing)
+const GORILLA_SHAMAN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&GORILLA_SHAMAN, 1)
+    .with_art("bf8b213e-31ca-4eb5-bf0b-515a0ad4fd31", "Anthony S. Waters");
 
 // ALL 72b — Gorilla Shaman
 // Audit: unsupported — Card rules have not been implemented.
@@ -916,8 +1002,15 @@ pub(in crate::card::sets) static GORILLA_WAR_CRY: CardRecord = CardRecord::new(
 );
 
 // ALL 73b — Gorilla War Cry (alternate printing)
+const GORILLA_WAR_CRY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&GORILLA_WAR_CRY, 1)
+    .with_art("e14752ef-bebf-4c31-b130-32167473482f", "Bryon Wackwitz");
 
 // ALL 74a — Guerrilla Tactics (alternate printing)
+const GUERRILLA_TACTICS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&GUERRILLA_TACTICS, 1).with_art(
+        "51811f2a-7002-4ba7-98d8-5b09d887975c",
+        "Randy Asplund-Faith",
+    );
 
 // ALL 74b — Guerrilla Tactics
 // Audit: unsupported — Card rules have not been implemented.
@@ -1081,6 +1174,8 @@ pub(in crate::card::sets) static SOLDIER_OF_FORTUNE: CardRecord = CardRecord::ne
 );
 
 // ALL 81a — Storm Shaman (alternate printing)
+const STORM_SHAMAN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&STORM_SHAMAN, 1)
+    .with_art("92c30a0a-3083-4d9f-9fe0-de5d6294f80e", "Carol Heyer");
 
 // ALL 81b — Storm Shaman
 // Audit: unsupported — Card rules have not been implemented.
@@ -1103,6 +1198,9 @@ pub(in crate::card::sets) static VARCHILD_S_CRUSADER: CardRecord = CardRecord::n
 );
 
 // ALL 82b — Varchild's Crusader (alternate printing)
+const VARCHILD_S_CRUSADER_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&VARCHILD_S_CRUSADER, 1)
+        .with_art("d730611f-ad45-40b7-80c8-5decf2627e79", "Mark Poole");
 
 // ALL 83 — Varchild's War-Riders
 // Audit: unsupported — Card rules have not been implemented.
@@ -1115,6 +1213,8 @@ pub(in crate::card::sets) static VARCHILD_S_WAR_RIDERS: CardRecord = CardRecord:
 );
 
 // ALL 84a — Veteran's Voice (alternate printing)
+const VETERAN_S_VOICE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&VETERAN_S_VOICE, 1)
+    .with_art("93babf85-eb13-4e06-b45b-8927791bcde5", "Andi Rusu");
 
 // ALL 84b — Veteran's Voice
 // Audit: unsupported — Card rules have not been implemented.
@@ -1137,6 +1237,8 @@ pub(in crate::card::sets) static BOUNTY_OF_THE_HUNT: CardRecord = CardRecord::ne
 );
 
 // ALL 86a — Deadly Insect (alternate printing)
+const DEADLY_INSECT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&DEADLY_INSECT, 1)
+    .with_art("add1b999-5c3f-4187-adac-ed1037406b3f", "Scott Kirschner");
 
 // ALL 86b — Deadly Insect
 // Audit: unsupported — Card rules have not been implemented.
@@ -1159,6 +1261,8 @@ pub(in crate::card::sets) static ELVISH_BARD: CardRecord = CardRecord::new(
 );
 
 // ALL 88a — Elvish Ranger (alternate printing)
+const ELVISH_RANGER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ELVISH_RANGER, 1)
+    .with_art("ad9f1b09-73c2-43c5-a28b-4a40fff7b727", "Terese Nielsen");
 
 // ALL 88b — Elvish Ranger
 // Audit: unsupported — Card rules have not been implemented.
@@ -1197,6 +1301,8 @@ pub(in crate::card::sets) static FYNDHORN_DRUID: CardRecord = CardRecord::new(
 );
 
 // ALL 90b — Fyndhorn Druid (alternate printing)
+const FYNDHORN_DRUID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&FYNDHORN_DRUID, 1)
+    .with_art("f79d880c-0052-4e2c-92aa-bf3cbd107cbd", "Rob Alexander");
 
 // ALL 91 — Gargantuan Gorilla
 // Audit: unsupported — Card rules have not been implemented.
@@ -1209,6 +1315,9 @@ pub(in crate::card::sets) static GARGANTUAN_GORILLA: CardRecord = CardRecord::ne
 );
 
 // ALL 92a — Gift of the Woods (alternate printing)
+const GIFT_OF_THE_WOODS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&GIFT_OF_THE_WOODS, 1)
+        .with_art("da48976b-667d-4a1e-92de-9c3cb25dfd21", "Susan Van Camp");
 
 // ALL 92b — Gift of the Woods
 // Audit: unsupported — Card rules have not been implemented.
@@ -1231,6 +1340,9 @@ pub(in crate::card::sets) static GORILLA_BERSERKERS: CardRecord = CardRecord::ne
 );
 
 // ALL 93b — Gorilla Berserkers (alternate printing)
+const GORILLA_BERSERKERS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&GORILLA_BERSERKERS, 1)
+        .with_art("e3c32b65-58e7-455b-9a30-7a2edcc27b9d", "John Matson");
 
 // ALL 94a — Gorilla Chieftain
 // Audit: unsupported — Card rules have not been implemented.
@@ -1243,6 +1355,9 @@ pub(in crate::card::sets) static GORILLA_CHIEFTAIN: CardRecord = CardRecord::new
 );
 
 // ALL 94b — Gorilla Chieftain (alternate printing)
+const GORILLA_CHIEFTAIN_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&GORILLA_CHIEFTAIN, 1)
+        .with_art("6bdde5d2-3dd2-4eaa-9c52-4ad400b56ed1", "Quinton Hoover");
 
 // ALL 95 — Hail Storm
 // Audit: unsupported — Card rules have not been implemented.
@@ -1295,6 +1410,9 @@ pub(in crate::card::sets) static SPLINTERING_WIND: CardRecord = CardRecord::new(
 );
 
 // ALL 100a — Taste of Paradise (alternate printing)
+const TASTE_OF_PARADISE_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&TASTE_OF_PARADISE, 1)
+        .with_art("b9248694-88fa-4fe1-9902-f03a41100cd6", "Lawrence Snelly");
 
 // ALL 100b — Taste of Paradise
 // Audit: unsupported — Card rules have not been implemented.
@@ -1317,6 +1435,8 @@ pub(in crate::card::sets) static TORNADO: CardRecord = CardRecord::new(
 );
 
 // ALL 102a — Undergrowth (alternate printing)
+const UNDERGROWTH_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&UNDERGROWTH, 1)
+    .with_art("9ade0829-8b90-4ed2-99f3-dd748e7706b8", "Pat Lewis");
 
 // ALL 102b — Undergrowth
 // Audit: unsupported — Card rules have not been implemented.
@@ -1329,6 +1449,8 @@ pub(in crate::card::sets) static UNDERGROWTH: CardRecord = CardRecord::new(
 );
 
 // ALL 103a — Whip Vine (alternate printing)
+const WHIP_VINE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&WHIP_VINE, 1)
+    .with_art("4b66b9fe-47f1-4786-96d5-981d62012663", "Allen Williams");
 
 // ALL 103b — Whip Vine
 // Audit: unsupported — Card rules have not been implemented.
@@ -1341,6 +1463,9 @@ pub(in crate::card::sets) static WHIP_VINE: CardRecord = CardRecord::new(
 );
 
 // ALL 104a — Yavimaya Ancients (alternate printing)
+const YAVIMAYA_ANCIENTS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&YAVIMAYA_ANCIENTS, 1)
+        .with_art("94fc4db5-08e5-4cf8-bf47-f7c6a58162b2", "Quinton Hoover");
 
 // ALL 104b — Yavimaya Ancients
 // Audit: unsupported — Card rules have not been implemented.
@@ -1473,6 +1598,8 @@ pub(in crate::card::sets) static AESTHIR_GLIDER: CardRecord = CardRecord::new(
 );
 
 // ALL 116b — Aesthir Glider (alternate printing)
+const AESTHIR_GLIDER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&AESTHIR_GLIDER, 1)
+    .with_art("435b78cb-5acc-4d14-966f-979322d99114", "Ruth Thompson");
 
 // ALL 117 — Ashnod's Cylix
 // Audit: unsupported — Card rules have not been implemented.
@@ -1485,6 +1612,8 @@ pub(in crate::card::sets) static ASHNOD_S_CYLIX: CardRecord = CardRecord::new(
 );
 
 // ALL 118a — Astrolabe (alternate printing)
+const ASTROLABE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ASTROLABE, 1)
+    .with_art("b97ad2d4-0660-4503-9f16-246dae87601c", "Amy Weber");
 
 // ALL 118b — Astrolabe
 // Audit: unsupported — Card rules have not been implemented.
@@ -1587,6 +1716,9 @@ pub(in crate::card::sets) static PHYREXIAN_WAR_BEAST: CardRecord = CardRecord::n
 );
 
 // ALL 127b — Phyrexian War Beast (alternate printing)
+const PHYREXIAN_WAR_BEAST_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&PHYREXIAN_WAR_BEAST, 1)
+        .with_art("e7d651f6-50be-4df9-80f8-4c62bb860e71", "Bill Sienkiewicz");
 
 // ALL 128 — Scarab of the Unseen
 // Audit: unsupported — Card rules have not been implemented.
@@ -1639,8 +1771,13 @@ pub(in crate::card::sets) static SOLDEVI_SENTRY: CardRecord = CardRecord::new(
 );
 
 // ALL 132b — Soldevi Sentry (alternate printing)
+const SOLDEVI_SENTRY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SOLDEVI_SENTRY, 1)
+    .with_art("be2a84d7-3f49-4652-bb31-4be7e3474e26", "Alan Rabinowitz");
 
 // ALL 133a — Soldevi Steam Beast (alternate printing)
+const SOLDEVI_STEAM_BEAST_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&SOLDEVI_STEAM_BEAST, 1)
+        .with_art("ead79d2c-170e-4106-962d-d69c4b5fead0", "Bill Sienkiewicz");
 
 // ALL 133b — Soldevi Steam Beast
 // Audit: unsupported — Card rules have not been implemented.
@@ -1961,59 +2098,59 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&CARRIER_PIGEONS, 1), // ALL 1b
-    PrintingRecord::alternate(&ERRAND_OF_DUTY, 1),  // ALL 2b
-    PrintingRecord::alternate(&KJELDORAN_ESCORT, 1), // ALL 7b
-    PrintingRecord::alternate(&KJELDORAN_PRIDE, 1), // ALL 9a
-    PrintingRecord::alternate(&MARTYRDOM, 1),       // ALL 10a
-    PrintingRecord::alternate(&NOBLE_STEEDS, 1),    // ALL 11b
-    PrintingRecord::alternate(&REINFORCEMENTS, 1),  // ALL 12a
-    PrintingRecord::alternate(&REPRISAL, 1),        // ALL 13b
-    PrintingRecord::alternate(&ROYAL_HERBALIST, 1), // ALL 15b
-    PrintingRecord::alternate(&WILD_AESTHIR, 1),    // ALL 21b
-    PrintingRecord::alternate(&ARCANE_DENIAL, 1),   // ALL 22b
-    PrintingRecord::alternate(&AWESOME_PRESENCE, 1), // ALL 23a
-    PrintingRecord::alternate(&BENTHIC_EXPLORERS, 1), // ALL 24b
-    PrintingRecord::alternate(&FALSE_DEMISE, 1),    // ALL 27b
-    PrintingRecord::alternate(&FORESIGHT, 1),       // ALL 29b
-    PrintingRecord::alternate(&LAT_NAM_S_LEGACY, 1), // ALL 30a
-    PrintingRecord::alternate(&SOLDEVI_HERETIC, 1), // ALL 33a
-    PrintingRecord::alternate(&SOLDEVI_SAGE, 1),    // ALL 34b
-    PrintingRecord::alternate(&STORM_CROW, 1),      // ALL 36a
-    PrintingRecord::alternate(&VISCERID_ARMOR, 1),  // ALL 41a
-    PrintingRecord::alternate(&CASTING_OF_BONES, 1), // ALL 44a
-    PrintingRecord::alternate(&FEAST_OR_FAMINE, 1), // ALL 49b
-    PrintingRecord::alternate(&FEVERED_STRENGTH, 1), // ALL 50b
-    PrintingRecord::alternate(&INSIDIOUS_BOOKWORMS, 1), // ALL 51b
-    PrintingRecord::alternate(&LIM_DUL_S_HIGH_GUARD, 1), // ALL 55a
-    PrintingRecord::alternate(&PHANTASMAL_FIEND, 1), // ALL 57a
-    PrintingRecord::alternate(&PHYREXIAN_BOON, 1),  // ALL 58a
-    PrintingRecord::alternate(&SOLDEVI_ADNATE, 1),  // ALL 60a
-    PrintingRecord::alternate(&STENCH_OF_DECAY, 1), // ALL 61a
-    PrintingRecord::alternate(&SWAMP_MOSQUITO, 1),  // ALL 63b
-    PrintingRecord::alternate(&AGENT_OF_STROMGALD, 1), // ALL 64b
-    PrintingRecord::alternate(&BALDUVIAN_WAR_MAKERS, 1), // ALL 66b
-    PrintingRecord::alternate(&BESTIAL_FURY, 1),    // ALL 67b
-    PrintingRecord::alternate(&ENSLAVED_SCOUT, 1),  // ALL 71a
-    PrintingRecord::alternate(&GORILLA_SHAMAN, 1),  // ALL 72a
-    PrintingRecord::alternate(&GORILLA_WAR_CRY, 1), // ALL 73b
-    PrintingRecord::alternate(&GUERRILLA_TACTICS, 1), // ALL 74a
-    PrintingRecord::alternate(&STORM_SHAMAN, 1),    // ALL 81a
-    PrintingRecord::alternate(&VARCHILD_S_CRUSADER, 1), // ALL 82b
-    PrintingRecord::alternate(&VETERAN_S_VOICE, 1), // ALL 84a
-    PrintingRecord::alternate(&DEADLY_INSECT, 1),   // ALL 86a
-    PrintingRecord::alternate(&ELVISH_RANGER, 1),   // ALL 88a
-    PrintingRecord::alternate(&FYNDHORN_DRUID, 1),  // ALL 90b
-    PrintingRecord::alternate(&GIFT_OF_THE_WOODS, 1), // ALL 92a
-    PrintingRecord::alternate(&GORILLA_BERSERKERS, 1), // ALL 93b
-    PrintingRecord::alternate(&GORILLA_CHIEFTAIN, 1), // ALL 94b
-    PrintingRecord::alternate(&TASTE_OF_PARADISE, 1), // ALL 100a
-    PrintingRecord::alternate(&UNDERGROWTH, 1),     // ALL 102a
-    PrintingRecord::alternate(&WHIP_VINE, 1),       // ALL 103a
-    PrintingRecord::alternate(&YAVIMAYA_ANCIENTS, 1), // ALL 104a
-    PrintingRecord::alternate(&AESTHIR_GLIDER, 1),  // ALL 116b
-    PrintingRecord::alternate(&ASTROLABE, 1),       // ALL 118a
-    PrintingRecord::alternate(&PHYREXIAN_WAR_BEAST, 1), // ALL 127b
-    PrintingRecord::alternate(&SOLDEVI_SENTRY, 1),  // ALL 132b
-    PrintingRecord::alternate(&SOLDEVI_STEAM_BEAST, 1), // ALL 133a
+    CARRIER_PIGEONS_ALTERNATE_1,
+    ERRAND_OF_DUTY_ALTERNATE_1,
+    KJELDORAN_ESCORT_ALTERNATE_1,
+    KJELDORAN_PRIDE_ALTERNATE_1,
+    MARTYRDOM_ALTERNATE_1,
+    NOBLE_STEEDS_ALTERNATE_1,
+    REINFORCEMENTS_ALTERNATE_1,
+    REPRISAL_ALTERNATE_1,
+    ROYAL_HERBALIST_ALTERNATE_1,
+    WILD_AESTHIR_ALTERNATE_1,
+    ARCANE_DENIAL_ALTERNATE_1,
+    AWESOME_PRESENCE_ALTERNATE_1,
+    BENTHIC_EXPLORERS_ALTERNATE_1,
+    FALSE_DEMISE_ALTERNATE_1,
+    FORESIGHT_ALTERNATE_1,
+    LAT_NAM_S_LEGACY_ALTERNATE_1,
+    SOLDEVI_HERETIC_ALTERNATE_1,
+    SOLDEVI_SAGE_ALTERNATE_1,
+    STORM_CROW_ALTERNATE_1,
+    VISCERID_ARMOR_ALTERNATE_1,
+    CASTING_OF_BONES_ALTERNATE_1,
+    FEAST_OR_FAMINE_ALTERNATE_1,
+    FEVERED_STRENGTH_ALTERNATE_1,
+    INSIDIOUS_BOOKWORMS_ALTERNATE_1,
+    LIM_DUL_S_HIGH_GUARD_ALTERNATE_1,
+    PHANTASMAL_FIEND_ALTERNATE_1,
+    PHYREXIAN_BOON_ALTERNATE_1,
+    SOLDEVI_ADNATE_ALTERNATE_1,
+    STENCH_OF_DECAY_ALTERNATE_1,
+    SWAMP_MOSQUITO_ALTERNATE_1,
+    AGENT_OF_STROMGALD_ALTERNATE_1,
+    BALDUVIAN_WAR_MAKERS_ALTERNATE_1,
+    BESTIAL_FURY_ALTERNATE_1,
+    ENSLAVED_SCOUT_ALTERNATE_1,
+    GORILLA_SHAMAN_ALTERNATE_1,
+    GORILLA_WAR_CRY_ALTERNATE_1,
+    GUERRILLA_TACTICS_ALTERNATE_1,
+    STORM_SHAMAN_ALTERNATE_1,
+    VARCHILD_S_CRUSADER_ALTERNATE_1,
+    VETERAN_S_VOICE_ALTERNATE_1,
+    DEADLY_INSECT_ALTERNATE_1,
+    ELVISH_RANGER_ALTERNATE_1,
+    FYNDHORN_DRUID_ALTERNATE_1,
+    GIFT_OF_THE_WOODS_ALTERNATE_1,
+    GORILLA_BERSERKERS_ALTERNATE_1,
+    GORILLA_CHIEFTAIN_ALTERNATE_1,
+    TASTE_OF_PARADISE_ALTERNATE_1,
+    UNDERGROWTH_ALTERNATE_1,
+    WHIP_VINE_ALTERNATE_1,
+    YAVIMAYA_ANCIENTS_ALTERNATE_1,
+    AESTHIR_GLIDER_ALTERNATE_1,
+    ASTROLABE_ALTERNATE_1,
+    PHYREXIAN_WAR_BEAST_ALTERNATE_1,
+    SOLDEVI_SENTRY_ALTERNATE_1,
+    SOLDEVI_STEAM_BEAST_ALTERNATE_1,
 ];

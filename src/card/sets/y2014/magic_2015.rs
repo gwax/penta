@@ -9,6 +9,16 @@ use crate::card::{
 };
 use crate::mana_cost;
 
+// M15 14 — Heliod's Pilgrim
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static HELIOD_S_PILGRIM: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("7ea54b97-9182-4d46-9d70-3cc7f9b18ada"),
+    "Heliod's Pilgrim",
+    crate::card::CardArt::new("cafce2f5-f4f4-465b-96dc-bcdd29d4e4bb", "Micah Epstein"),
+    crate::card::CardSet::Magic2015,
+    crate::card::CardRules::unsupported(),
+);
+
 // M15 40 — Triplicate Spirits
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRIPLICATE_SPIRITS: CardRecord = CardRecord::new(
@@ -19,15 +29,10 @@ pub(in crate::card::sets) static TRIPLICATE_SPIRITS: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
-// M15 142 — Frenzied Goblin
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static FRENZIED_GOBLIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d307d8c7-b9b5-4f8f-933d-f1c64cbbf92f"),
-    "Frenzied Goblin",
-    crate::card::CardArt::new("7ddfe382-3a80-45f3-a022-54739c4b69a6", "Carl Critchlow"),
-    crate::card::CardSet::Magic2015,
-    crate::card::CardRules::unsupported(),
-);
+// M15 142 — Frenzied Goblin (reprint)
+const FRENZIED_GOBLIN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::FRENZIED_GOBLIN)
+        .with_art("7ddfe382-3a80-45f3-a022-54739c4b69a6", "Carl Critchlow");
 
 // M15 145 — Goblin Rabblemaster
 pub(in crate::card::sets) static GOBLIN_RABBLEMASTER: CardRecord = CardRecord::new_with_legacy_id(
@@ -97,6 +102,7 @@ pub(in crate::card::sets) static GOBLIN_RABBLEMASTER: CardRecord = CardRecord::n
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&TRIPLICATE_SPIRITS, &FRENZIED_GOBLIN, &GOBLIN_RABBLEMASTER];
+    &[&HELIOD_S_PILGRIM, &TRIPLICATE_SPIRITS, &GOBLIN_RABBLEMASTER];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[FRENZIED_GOBLIN_REPRINT];

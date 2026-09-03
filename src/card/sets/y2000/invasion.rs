@@ -1,6 +1,8 @@
 //! Invasion cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::CardSupertype;
+use crate::ResolvedEffectDurationDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y1994::legends as catalog_leg;
 use crate::card::sets::y1995::ice_age as catalog_ice;
@@ -11,9 +13,6 @@ use crate::card::sets::y1997::weatherlight as catalog_wth;
 use crate::card::sets::y1998::exodus as catalog_exo;
 use crate::card::sets::y1998::portal_second_age as catalog_p02;
 use crate::card::sets::y1998::urzas_saga as catalog_usg;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2012::return_to_ravnica as catalog_rtr;
-use crate::card::sets::y2013::gatecrash as catalog_gtc;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AdditionalCostValueDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules,
@@ -38,6 +37,9 @@ pub(in crate::card::sets) static ALABASTER_LEECH: CardRecord = CardRecord::new(
 );
 
 // INV 2 — Angel of Mercy (reprint)
+const ANGEL_OF_MERCY_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_p02::ANGEL_OF_MERCY)
+        .with_art("5b6de688-685f-4389-be35-a472ada988e1", "Mark Tedin");
 
 // INV 3 — Ardent Soldier
 // Audit: unsupported — Card rules have not been implemented.
@@ -100,6 +102,9 @@ pub(in crate::card::sets) static BENALISH_TRAPPER: CardRecord = CardRecord::new(
 );
 
 // INV 9 — Blinding Light (reprint)
+const BLINDING_LIGHT_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_mir::BLINDING_LIGHT)
+        .with_art("882c1e15-b508-4885-9626-4c8d2598a006", "Marc Fishman");
 
 // INV 10 — Capashen Unicorn
 // Audit: unsupported — Card rules have not been implemented.
@@ -205,6 +210,8 @@ pub(in crate::card::sets) static HARSH_JUDGMENT: CardRecord = CardRecord::new(
 );
 
 // INV 20 — Holy Day (reprint)
+const HOLY_DAY_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_leg::HOLY_DAY)
+    .with_art("aa91fd4e-4e1f-4cfa-b10f-456bd875238f", "Pete Venters");
 
 // INV 21 — Liberate
 // Audit: unsupported — Card rules have not been implemented.
@@ -370,6 +377,8 @@ pub(in crate::card::sets) static SAMITE_MINISTRATION: CardRecord = CardRecord::n
 );
 
 // INV 37 — Shackles (reprint)
+const SHACKLES_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_exo::SHACKLES)
+    .with_art("35b3da05-9a3e-4827-96b8-5de244128db3", "Greg Staples");
 
 // INV 38 — Spirit of Resistance
 // Audit: unsupported — Card rules have not been implemented.
@@ -505,6 +514,8 @@ pub(in crate::card::sets) static CRYSTAL_SPRAY: CardRecord = CardRecord::new(
 );
 
 // INV 51 — Disrupt (reprint)
+const DISRUPT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_wth::DISRUPT)
+    .with_art("c000a02f-6b7e-4925-a938-59e645e980d7", "Paolo Parente");
 
 // INV 52 — Distorting Wake
 // Audit: unsupported — Card rules have not been implemented.
@@ -697,6 +708,9 @@ pub(in crate::card::sets) static OPT: CardRecord = CardRecord::new_with_legacy_i
 );
 
 // INV 65 — Phantasmal Terrain (reprint)
+const PHANTASMAL_TERRAIN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::PHANTASMAL_TERRAIN)
+        .with_art("ea56a1bb-f52c-4c6b-a089-1f78600f3db0", "Dana Knutson");
 
 // INV 66 — Probe
 // Audit: unsupported — Card rules have not been implemented.
@@ -796,6 +810,9 @@ pub(in crate::card::sets) static SAPPHIRE_LEECH: CardRecord = CardRecord::new(
 );
 
 // INV 72 — Shimmering Wings (reprint)
+const SHIMMERING_WINGS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_tmp::SHIMMERING_WINGS)
+        .with_art("9615a6c2-1732-4a04-9be1-cc0a8d39de3f", "Carl Critchlow");
 
 // INV 73 — Shoreline Raider
 // Audit: unsupported — Card rules have not been implemented.
@@ -933,7 +950,28 @@ pub(in crate::card::sets) static TOLARIAN_EMISSARY: CardRecord = CardRecord::new
     crate::card::CardRules::unsupported(),
 );
 
-// INV 82 — Tower Drake (reprint)
+// INV 82 — Tower Drake
+pub(in crate::card::sets) static TOWER_DRAKE: CardRecord = CardRecord::new_with_legacy_id(
+    1264,
+    "Tower Drake",
+    CardArt::new("5d759d6f-daf0-47f4-8a35-81c9d6437495", "Ryan Barger"),
+    CardSet::Invasion,
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Drake"], 2, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::activated(
+            "{W}: This creature gets +0/+1 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{W}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // INV 83 — Traveler's Cloak
 // Audit: unsupported — Card rules have not been implemented.
@@ -1068,7 +1106,35 @@ pub(in crate::card::sets) static BOG_INITIATE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// INV 96 — Cremate (reprint)
+// INV 96 — Cremate
+pub(in crate::card::sets) static CREMATE: CardRecord = CardRecord::new_with_legacy_id(
+    1268,
+    "Cremate",
+    CardArt::new("013d5260-f906-4f6a-97ed-725197743b60", "Cynthia Sheppard"),
+    CardSet::Invasion,
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Exile target card from a graveyard. Draw a card.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Any,
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: None,
+            },
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Exile,
+                placement: ZonePlacement::Top,
+            },
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ]),
+    )),
+);
 
 // INV 97 — Crypt Angel
 // Audit: unsupported — Card rules have not been implemented.
@@ -1081,6 +1147,8 @@ pub(in crate::card::sets) static CRYPT_ANGEL: CardRecord = CardRecord::new(
 );
 
 // INV 98 — Cursed Flesh (reprint)
+const CURSED_FLESH_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_exo::CURSED_FLESH)
+    .with_art("fb151ae8-9281-434d-ba8d-9ce34f0875eb", "Chippy");
 
 // INV 99 — Defiling Tears
 // Audit: unsupported — Card rules have not been implemented.
@@ -1299,8 +1367,14 @@ pub(in crate::card::sets) static PLAGUE_SPITTER: CardRecord = CardRecord::new(
 );
 
 // INV 120 — Ravenous Rats (reprint)
+const RAVENOUS_RATS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::portal_second_age::RAVENOUS_RATS)
+        .with_art("89e29069-add5-4099-b800-9f1e4402cc1a", "Tom Wänerstrand");
 
 // INV 121 — Reckless Spite (reprint)
+const RECKLESS_SPITE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_tmp::RECKLESS_SPITE)
+        .with_art("2412497b-cae5-444d-9beb-7761d15cd5c5", "Chippy");
 
 // INV 122 — Recover
 // Audit: unsupported — Card rules have not been implemented.
@@ -1323,10 +1397,16 @@ pub(in crate::card::sets) static SCAVENGED_WEAPONRY: CardRecord = CardRecord::ne
 );
 
 // INV 124 — Soul Burn (reprint)
+const SOUL_BURN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_ice::SOUL_BURN)
+    .with_art("70515cd2-97d5-4491-a758-bc7188fdc6dc", "Andrew Goldhawk");
 
 // INV 124s — Soul Burn (alternate printing)
+const SOUL_BURN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_ice::SOUL_BURN, 1)
+    .with_art("6eb3278a-1a23-4e0a-b541-0c37b2bc3f3c", "Andrew Goldhawk");
 
 // INV 124★ — Soul Burn (alternate printing)
+const SOUL_BURN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_ice::SOUL_BURN, 2)
+    .with_art("301c4e8e-0468-4e16-9be5-7feb7999226f", "Andrew Goldhawk");
 
 // INV 125 — Spreading Plague
 // Audit: unsupported — Card rules have not been implemented.
@@ -1419,8 +1499,12 @@ pub(in crate::card::sets) static URBORG_SHAMBLER: CardRecord = CardRecord::new(
 );
 
 // INV 134 — Urborg Skeleton (alternate printing)
+const URBORG_SKELETON_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&URBORG_SKELETON, 1)
+    .with_art("6e522a62-fbca-4362-9006-d4356c525704", "Alan Pollack");
 
 // INV 134s — Urborg Skeleton (alternate printing)
+const URBORG_SKELETON_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&URBORG_SKELETON, 2)
+    .with_art("6819c2f5-29a2-46d2-af36-c22b64338807", "Tom Wänerstrand");
 
 // INV 134★ — Urborg Skeleton
 // Audit: unsupported — Card rules have not been implemented.
@@ -1509,6 +1593,11 @@ pub(in crate::card::sets) static COLLAPSING_BORDERS: CardRecord = CardRecord::ne
 );
 
 // INV 142 — Crown of Flames (reprint)
+const CROWN_OF_FLAMES_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_tmp::CROWN_OF_FLAMES).with_art(
+        "5a46239c-3de7-48ca-8f5c-b51f307fd0e5",
+        "Christopher Moeller",
+    );
 
 // INV 143 — Firebrand Ranger
 // Audit: unsupported — Card rules have not been implemented.
@@ -1637,6 +1726,8 @@ pub(in crate::card::sets) static MAGES_CONTEST: CardRecord = CardRecord::new(
 );
 
 // INV 155 — Maniacal Rage (reprint)
+const MANIACAL_RAGE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_exo::MANIACAL_RAGE)
+    .with_art("3d17886c-fffd-4f0d-b4da-4b5fba18b811", "Matt Cavotta");
 
 // INV 156 — Obliterate
 // Audit: unsupported — Card rules have not been implemented.
@@ -1835,6 +1926,8 @@ pub(in crate::card::sets) static STAND_OR_FALL: CardRecord = CardRecord::new(
 );
 
 // INV 172 — Stun (reprint)
+const STUN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_tmp::STUN)
+    .with_art("d22f3ae8-a40b-4dab-abf4-3ab7b05191f7", "Mike Ploog");
 
 // INV 173 — Tectonic Instability
 // Audit: unsupported — Card rules have not been implemented.
@@ -1996,8 +2089,13 @@ pub(in crate::card::sets) static EXPLOSIVE_GROWTH: CardRecord = CardRecord::new(
 );
 
 // INV 188 — Fertile Ground (reprint)
+const FERTILE_GROUND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_usg::FERTILE_GROUND)
+        .with_art("789e3582-b541-4916-ac7e-015214d7a27a", "Carl Critchlow");
 
 // INV 189 — Harrow (reprint)
+const HARROW_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_tmp::HARROW)
+    .with_art("ed0f633e-7238-4d02-ad8b-06dd20453030", "Rob Alexander");
 
 // INV 190 — Jade Leech
 pub(in crate::card::sets) static JADE_LEECH: CardRecord = CardRecord::new(
@@ -2139,6 +2237,8 @@ pub(in crate::card::sets) static PULSE_OF_LLANOWAR: CardRecord = CardRecord::new
 );
 
 // INV 203 — Quirion Elves (reprint)
+const QUIRION_ELVES_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_mir::QUIRION_ELVES)
+    .with_art("c660a748-82a9-4d6a-8023-56aeafe1bdce", "Douglas Shuler");
 
 // INV 204 — Quirion Sentinel
 // Audit: unsupported — Card rules have not been implemented.
@@ -2274,6 +2374,8 @@ pub(in crate::card::sets) static THORNSCAPE_MASTER: CardRecord = CardRecord::new
 );
 
 // INV 217 — Tranquility (reprint)
+const TRANQUILITY_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::TRANQUILITY)
+    .with_art("97019ba5-ce2a-460c-8a4e-2b22053ced65", "Rob Alexander");
 
 // INV 218 — Treefolk Healer
 // Audit: unsupported — Card rules have not been implemented.
@@ -2565,7 +2667,46 @@ pub(in crate::card::sets) static FIRES_OF_YAVIMAYA: CardRecord = CardRecord::new
     crate::card::CardRules::unsupported(),
 );
 
-// INV 247 — Frenzied Tilling (reprint)
+// INV 247 — Frenzied Tilling
+pub(in crate::card::sets) static FRENZIED_TILLING: CardRecord = CardRecord::new_with_legacy_id(
+    1980,
+    "Frenzied Tilling",
+    CardArt::new("03bce9a7-6215-43ff-b4d0-55f96f683aba", "Noah Bradley"),
+    CardSet::Invasion,
+    CardRules::new_sorcery(mana_cost!("{3}{R}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target land. Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Land),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+                then: None,
+            },
+            // Tapped, so the land it fetches does not pay for anything this turn --
+            // which is the whole reason a five-mana Stone Rain is playable.
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                ]),
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: true,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: true,
+                attachment: None,
+                binding: None,
+                then: None,
+            },
+        ]),
+    )),
+);
 
 // INV 248 — Galina's Knight
 // Audit: unsupported — Card rules have not been implemented.
@@ -2587,7 +2728,23 @@ pub(in crate::card::sets) static HANNA_SHIP_S_NAVIGATOR: CardRecord = CardRecord
     crate::card::CardRules::unsupported(),
 );
 
-// INV 250 — Heroes' Reunion (reprint)
+// INV 250 — Heroes' Reunion
+pub(in crate::card::sets) static HEROES_REUNION: CardRecord = CardRecord::new_with_legacy_id(
+    1318,
+    "Heroes' Reunion",
+    CardArt::new("99b56515-f688-495c-b721-2b9abc6628c2", "Howard Lyon"),
+    CardSet::Invasion,
+    CardRules::new_instant(mana_cost!("{G}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player gains 7 life.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(7),
+        },
+    )),
+);
 
 // INV 251 — Horned Cheetah
 // Audit: unsupported — Card rules have not been implemented.
@@ -2630,6 +2787,10 @@ pub(in crate::card::sets) static LLANOWAR_KNIGHT: CardRecord = CardRecord::new(
 );
 
 // INV 255 — Lobotomy (reprint)
+const LOBOTOMY_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_tmp::LOBOTOMY).with_art(
+    "ff307dbb-4ab6-457b-be56-47106864bf61",
+    "D. Alexander Gregory",
+);
 
 // INV 256 — Meteor Storm
 // Audit: unsupported — Card rules have not been implemented.
@@ -2792,6 +2953,8 @@ pub(in crate::card::sets) static SHIVAN_ZOMBIE: CardRecord = CardRecord::new(
 );
 
 // INV 272 — Simoon (reprint)
+const SIMOON_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_vis::SIMOON)
+    .with_art("84b1930d-2e4b-472f-98a9-008fd632f3be", "Tony Szczudlo");
 
 // INV 273 — Sleeper's Robe
 // Audit: unsupported — Card rules have not been implemented.
@@ -3472,44 +3635,84 @@ pub(in crate::card::sets) static URBORG_VOLCANO: CardRecord = CardRecord::new(
 );
 
 // INV 331 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::PLAINS)
+    .with_art("5ba9ef2e-d3ec-41f7-802e-e1414f14dd10", "John Avon");
 
 // INV 332 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("bc73d7ff-bbef-4df9-ae7f-aa2ac8ac7025", "Ben Thompson");
 
 // INV 333 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 2)
+    .with_art("87a66868-2efa-4985-b4fc-405d7fa8d410", "D. J. Cleland-Hura");
 
 // INV 334 — Plains (alternate printing)
+const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 3)
+    .with_art("b5b4963b-c706-439f-9800-ff5d70003dcf", "Scott Bailey");
 
 // INV 335 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::ISLAND)
+    .with_art("8a3fc29c-f5cb-49b9-aabf-a5fef97e7a7e", "Tony Szczudlo");
 
 // INV 336 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("2fc04e1e-6a14-41cc-9fff-6dcd92cc6a3b", "John Avon");
 
 // INV 337 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 2)
+    .with_art("f849f726-c6a2-400d-9b90-fe050f8ef5eb", "Terese Nielsen");
 
 // INV 338 — Island (alternate printing)
+const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 3)
+    .with_art("d07d1982-56ff-47ef-87aa-62978f1fcf30", "Darrell Riche");
 
 // INV 339 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SWAMP)
+    .with_art("2a7ce037-e04d-404a-afde-9122518e6a31", "Ron Spencer");
 
 // INV 340 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("7cdb8b9d-2573-4162-9255-50a281dfb775", "Rob Alexander");
 
 // INV 341 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 2)
+    .with_art("99b2bba7-8889-460c-a18f-fcd1e350ef4e", "Rob Alexander");
 
 // INV 342 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 3)
+    .with_art("31a756b0-f430-4286-afe1-97c641e4f3b4", "Ron Spencer");
 
 // INV 343 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
+    .with_art("ba6694bb-f3b7-48ff-9d93-cbed84fac210", "Matt Cavotta");
 
 // INV 344 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("977527da-2953-493f-8e8c-ffc64ddeaf10", "Jeff Miracola");
 
 // INV 345 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2)
+    .with_art("68df89dc-3909-4051-adc1-a86589d0e99d", "Glen Angus");
 
 // INV 346 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3)
+    .with_art("7e8ae541-98e2-4a84-90a6-b17502f4442d", "Scott Bailey");
 
 // INV 347 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FOREST)
+    .with_art("f82d0a1c-5812-4254-a000-e4ff9aece3d9", "John Avon");
 
 // INV 348 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("24788990-42ff-4b2b-8d01-fa2d0ec66a03", "Alan Pollack");
 
 // INV 349 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 2)
+    .with_art("0b741c86-a563-4180-a857-7850de6ee366", "Alan Pollack");
 
 // INV 350 — Forest (alternate printing)
+const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 3)
+    .with_art("cfacc498-f089-4ae4-8ce8-697cc671f445", "Glen Angus");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ALABASTER_LEECH,
@@ -3586,6 +3789,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TEMPORAL_DISTORTION,
     &TIDAL_VISIONARY,
     &TOLARIAN_EMISSARY,
+    &TOWER_DRAKE,
     &TRAVELER_S_CLOAK,
     &VODALIAN_HYPNOTIST,
     &VODALIAN_MERCHANT,
@@ -3599,6 +3803,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANDRADITE_LEECH,
     &ANNIHILATE,
     &BOG_INITIATE,
+    &CREMATE,
     &CRYPT_ANGEL,
     &DEFILING_TEARS,
     &DESPERATE_RESEARCH,
@@ -3738,8 +3943,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DROMAR_THE_BANISHER,
     &DUELING_GROUNDS,
     &FIRES_OF_YAVIMAYA,
+    &FRENZIED_TILLING,
     &GALINA_S_KNIGHT,
     &HANNA_SHIP_S_NAVIGATOR,
+    &HEROES_REUNION,
     &HORNED_CHEETAH,
     &HUNTING_KAVU,
     &KANGEE_AERIE_KEEPER,
@@ -3821,52 +4028,48 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_p02::ANGEL_OF_MERCY), // INV 2
-    PrintingRecord::reprint(&catalog_mir::BLINDING_LIGHT), // INV 9
-    PrintingRecord::reprint(&catalog_leg::HOLY_DAY),       // INV 20
-    PrintingRecord::reprint(&catalog_exo::SHACKLES),       // INV 37
-    PrintingRecord::reprint(&catalog_wth::DISRUPT),        // INV 51
-    PrintingRecord::reprint(&catalog_lea::PHANTASMAL_TERRAIN), // INV 65
-    PrintingRecord::reprint(&catalog_tmp::SHIMMERING_WINGS), // INV 72
-    PrintingRecord::reprint(&catalog_rtr::TOWER_DRAKE),    // INV 82
-    PrintingRecord::reprint(&catalog_rtr::CREMATE),        // INV 96
-    PrintingRecord::reprint(&catalog_exo::CURSED_FLESH),   // INV 98
-    PrintingRecord::reprint(&catalog_m13::RAVENOUS_RATS),  // INV 120
-    PrintingRecord::reprint(&catalog_tmp::RECKLESS_SPITE), // INV 121
-    PrintingRecord::reprint(&catalog_ice::SOUL_BURN),      // INV 124
-    PrintingRecord::alternate(&catalog_ice::SOUL_BURN, 1), // INV 124s
-    PrintingRecord::alternate(&catalog_ice::SOUL_BURN, 2), // INV 124★
-    PrintingRecord::alternate(&URBORG_SKELETON, 1),        // INV 134
-    PrintingRecord::alternate(&URBORG_SKELETON, 2),        // INV 134s
-    PrintingRecord::reprint(&catalog_tmp::CROWN_OF_FLAMES), // INV 142
-    PrintingRecord::reprint(&catalog_exo::MANIACAL_RAGE),  // INV 155
-    PrintingRecord::reprint(&catalog_tmp::STUN),           // INV 172
-    PrintingRecord::reprint(&catalog_usg::FERTILE_GROUND), // INV 188
-    PrintingRecord::reprint(&catalog_tmp::HARROW),         // INV 189
-    PrintingRecord::reprint(&catalog_mir::QUIRION_ELVES),  // INV 203
-    PrintingRecord::reprint(&catalog_lea::TRANQUILITY),    // INV 217
-    PrintingRecord::reprint(&catalog_gtc::FRENZIED_TILLING), // INV 247
-    PrintingRecord::reprint(&catalog_rtr::HEROES_REUNION), // INV 250
-    PrintingRecord::reprint(&catalog_tmp::LOBOTOMY),       // INV 255
-    PrintingRecord::reprint(&catalog_vis::SIMOON),         // INV 272
-    PrintingRecord::reprint(&catalog_lea::PLAINS),         // INV 331
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1),    // INV 332
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 2),    // INV 333
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 3),    // INV 334
-    PrintingRecord::reprint(&catalog_lea::ISLAND),         // INV 335
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1),    // INV 336
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 2),    // INV 337
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 3),    // INV 338
-    PrintingRecord::reprint(&catalog_lea::SWAMP),          // INV 339
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1),     // INV 340
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 2),     // INV 341
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 3),     // INV 342
-    PrintingRecord::reprint(&catalog_lea::MOUNTAIN),       // INV 343
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1),  // INV 344
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2),  // INV 345
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3),  // INV 346
-    PrintingRecord::reprint(&catalog_lea::FOREST),         // INV 347
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1),    // INV 348
-    PrintingRecord::alternate(&catalog_lea::FOREST, 2),    // INV 349
-    PrintingRecord::alternate(&catalog_lea::FOREST, 3),    // INV 350
+    ANGEL_OF_MERCY_REPRINT,
+    BLINDING_LIGHT_REPRINT,
+    HOLY_DAY_REPRINT,
+    SHACKLES_REPRINT,
+    DISRUPT_REPRINT,
+    PHANTASMAL_TERRAIN_REPRINT,
+    SHIMMERING_WINGS_REPRINT,
+    CURSED_FLESH_REPRINT,
+    RAVENOUS_RATS_REPRINT,
+    RECKLESS_SPITE_REPRINT,
+    SOUL_BURN_REPRINT,
+    SOUL_BURN_ALTERNATE_1,
+    SOUL_BURN_ALTERNATE_2,
+    URBORG_SKELETON_ALTERNATE_1,
+    URBORG_SKELETON_ALTERNATE_2,
+    CROWN_OF_FLAMES_REPRINT,
+    MANIACAL_RAGE_REPRINT,
+    STUN_REPRINT,
+    FERTILE_GROUND_REPRINT,
+    HARROW_REPRINT,
+    QUIRION_ELVES_REPRINT,
+    TRANQUILITY_REPRINT,
+    LOBOTOMY_REPRINT,
+    SIMOON_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    PLAINS_ALTERNATE_3,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    ISLAND_ALTERNATE_3,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    SWAMP_ALTERNATE_3,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    MOUNTAIN_ALTERNATE_3,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
+    FOREST_ALTERNATE_3,
 ];

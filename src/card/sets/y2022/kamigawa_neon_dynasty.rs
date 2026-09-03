@@ -684,6 +684,9 @@ pub(in crate::card::sets) static BOSEIJU_WHO_ENDURES: CardRecord = CardRecord::n
 );
 
 // NEO 418 — The Wandering Emperor (alternate printing)
+const THE_WANDERING_EMPEROR_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&THE_WANDERING_EMPEROR, 1)
+        .with_art("22edc832-993b-432a-8435-8d8a72799122", "Hisashi Momose");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IMPERIAL_OATH,
@@ -706,6 +709,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BOSEIJU_WHO_ENDURES,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&THE_WANDERING_EMPEROR, 1), // NEO 418
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[THE_WANDERING_EMPEROR_ALTERNATE_1];

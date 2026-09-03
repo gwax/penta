@@ -3,6 +3,7 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::sets::y1998::stronghold as catalog_sth;
 use crate::card::sets::y2001::odyssey as catalog_ody;
+use crate::card::sets::y2005::ravnica_city_of_guilds as catalog_rav;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
@@ -132,15 +133,10 @@ pub(in crate::card::sets) static ANGELIC_SKIRMISHER: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
-// GTC 4 — Assault Griffin
-pub(in crate::card::sets) static ASSAULT_GRIFFIN: CardRecord = CardRecord::new_with_legacy_id(
-    1056,
-    "Assault Griffin",
-    CardArt::new("704286a5-e3a8-4517-85e5-6447c5c2530f", "Eric Velhagen"),
-    CardSet::Gatecrash,
-    CardRules::new_creature(mana_cost!("{3}{W}"), &["Griffin"], 3, 2)
-        .with_ability(abilities::flying()),
-);
+// GTC 4 — Assault Griffin (reprint)
+const ASSAULT_GRIFFIN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2010::magic_2011::ASSAULT_GRIFFIN)
+        .with_art("704286a5-e3a8-4517-85e5-6447c5c2530f", "Eric Velhagen");
 
 // GTC 5 — Basilica Guards
 pub(in crate::card::sets) static BASILICA_GUARDS: CardRecord = CardRecord::new_with_legacy_id(
@@ -519,28 +515,10 @@ pub(in crate::card::sets) static NAV_SQUAD_COMMANDOS: CardRecord = CardRecord::n
     ),
 );
 
-// GTC 23 — Righteous Charge
-pub(in crate::card::sets) static RIGHTEOUS_CHARGE: CardRecord = CardRecord::new_with_legacy_id(
-    1064,
-    "Righteous Charge",
-    CardArt::new("f52cb325-4f16-4cf3-9999-feafe0fde8c2", "Svetlin Velinov"),
-    CardSet::Gatecrash,
-    CardRules::new_sorcery(mana_cost!("{1}{W}{W}")).with_ability(AbilityDef::spell(
-        "Creatures you control get +2/+2 until end of turn.",
-        EffectDef::Apply {
-            recipient: EffectRecipientDef::matching_objects(
-                ObjectPredicateDef::HasType(CardType::Creature),
-                &[ZoneKind::Battlefield],
-                PlayerRelation::You,
-            ),
-            effect: AppliedEffectDef::modify_power_toughness(
-                ValueDef::Constant(2),
-                ValueDef::Constant(2),
-            ),
-            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-        },
-    )),
-);
+// GTC 23 — Righteous Charge (reprint)
+const RIGHTEOUS_CHARGE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::portal_second_age::RIGHTEOUS_CHARGE)
+        .with_art("f52cb325-4f16-4cf3-9999-feafe0fde8c2", "Svetlin Velinov");
 
 // GTC 24 — Shielded Passage
 pub(in crate::card::sets) static SHIELDED_PASSAGE: CardRecord = CardRecord::new_with_legacy_id(
@@ -563,6 +541,8 @@ pub(in crate::card::sets) static SHIELDED_PASSAGE: CardRecord = CardRecord::new_
 );
 
 // GTC 25 — Smite (reprint)
+const SMITE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_sth::SMITE)
+    .with_art("ff799e40-fd40-4f6a-8fa8-c22d77476168", "Zoltan Boros");
 
 // GTC 26 — Syndic of Tithes
 pub(in crate::card::sets) static SYNDIC_OF_TITHES: CardRecord = CardRecord::new_with_legacy_id(
@@ -1195,47 +1175,10 @@ pub(in crate::card::sets) static BASILICA_SCREECHER: CardRecord = CardRecord::ne
         .with_abilities(&[abilities::flying(), abilities::extort()]),
 );
 
-// GTC 59 — Contaminated Ground
-pub(in crate::card::sets) static CONTAMINATED_GROUND: CardRecord = CardRecord::new_with_legacy_id(
-    1075,
-    "Contaminated Ground",
-    CardArt::new("c2384356-0a62-499a-8b28-085974331368", "Christine Choi"),
-    CardSet::Gatecrash,
-    CardRules::new_enchantment(mana_cost!("{1}{B}"))
-        .with_subtypes(&["Aura"])
-        .with_abilities(&[
-            AbilityDef::spell_with_targets(
-                "Enchant land",
-                &[AbilityTargetDef::exactly_one_permanent(
-                    ObjectPredicateDef::HasType(CardType::Land),
-                )],
-                EffectDef::Attach {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
-            ),
-            AbilityDef::static_ability(
-                "Enchanted land is a Swamp.",
-                EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::set_basic_land_types(&[BasicLandType::Swamp]),
-                },
-            ),
-            AbilityDef::static_ability(
-                "Whenever enchanted land becomes tapped, its controller loses 2 life.",
-                EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::add_ability(&AbilityDef::triggered(
-                        "Whenever enchanted land becomes tapped, its controller loses 2 life.",
-                        TriggerEventDef::tapped(ObjectPredicateDef::Source),
-                        EffectDef::LoseLife {
-                            recipient: EffectRecipientDef::Controller,
-                            amount: ValueDef::Constant(2),
-                        },
-                    )),
-                },
-            ),
-        ]),
-);
+// GTC 59 — Contaminated Ground (reprint)
+const CONTAMINATED_GROUND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2010::rise_of_the_eldrazi::CONTAMINATED_GROUND)
+        .with_art("c2384356-0a62-499a-8b28-085974331368", "Christine Choi");
 
 // GTC 60 — Corpse Blockade
 pub(in crate::card::sets) static CORPSE_BLOCKADE: CardRecord = CardRecord::new_with_legacy_id(
@@ -1771,36 +1714,10 @@ pub(in crate::card::sets) static WIGHT_OF_PRECINCT_SIX: CardRecord = CardRecord:
     ),
 );
 
-// GTC 85 — Act of Treason
-pub(in crate::card::sets) static ACT_OF_TREASON: CardRecord = CardRecord::new_with_legacy_id(
-    1084,
-    "Act of Treason",
-    CardArt::new("a04c8c6f-14e9-427c-918e-208ccd39ec4a", "Matt Stewart"),
-    CardSet::Gatecrash,
-    CardRules::new_sorcery(mana_cost!("{2}{R}")).with_ability(
-        AbilityDef::spell_with_targets(
-            "Gain control of target creature until end of turn. Untap that creature. It gains haste until end of turn.",
-            &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::HasType(CardType::Creature),
-            )],
-            EffectDef::Sequence(&[
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    duration: ControlDurationDef::UntilEndOfTurn,
-                    controller: PlayerRefDef::EffectController,
-                },
-                EffectDef::Untap {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
-                EffectDef::Apply {
-                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    effect: AppliedEffectDef::add_ability(&abilities::haste()),
-                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-                },
-            ]),
-        ),
-    ),
-);
+// GTC 85 — Act of Treason (reprint)
+const ACT_OF_TREASON_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2009::magic_2010::ACT_OF_TREASON)
+        .with_art("a04c8c6f-14e9-427c-918e-208ccd39ec4a", "Matt Stewart");
 
 // GTC 86 — Bomber Corps
 pub(in crate::card::sets) static BOMBER_CORPS: CardRecord = CardRecord::new_with_legacy_id(
@@ -1824,30 +1741,10 @@ pub(in crate::card::sets) static BOMBER_CORPS: CardRecord = CardRecord::new_with
     ),
 );
 
-// GTC 87 — Cinder Elemental
-pub(in crate::card::sets) static CINDER_ELEMENTAL: CardRecord = CardRecord::new_with_legacy_id(
-    1085,
-    "Cinder Elemental",
-    CardArt::new("8bbf10ce-69e0-4984-91a3-f65df919830d", "Svetlin Velinov"),
-    CardSet::Gatecrash,
-    CardRules::new_creature(mana_cost!("{3}{R}"), &["Elemental"], 2, 2).with_ability(
-        AbilityDef::activated_with_targets(
-            "{X}{R}, {T}, Sacrifice this creature: It deals X damage to any target.",
-            &[
-                AbilityCostDef::Mana(mana_cost!("{X}{R}")),
-                AbilityCostDef::TapSource,
-                AbilityCostDef::SacrificeSource,
-            ],
-            &[AbilityTargetDef::exactly_one(
-                AbilityTargetPredicate::AnyTarget,
-            )],
-            EffectDef::DealDamage {
-                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::ChosenX,
-            },
-        ),
-    ),
-);
+// GTC 87 — Cinder Elemental (reprint)
+const CINDER_ELEMENTAL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1999::mercadian_masques::CINDER_ELEMENTAL)
+        .with_art("8bbf10ce-69e0-4984-91a3-f65df919830d", "Svetlin Velinov");
 
 // GTC 88 — Crackling Perimeter
 pub(in crate::card::sets) static CRACKLING_PERIMETER: CardRecord = CardRecord::new_with_legacy_id(
@@ -1866,6 +1763,8 @@ pub(in crate::card::sets) static CRACKLING_PERIMETER: CardRecord = CardRecord::n
 );
 
 // GTC 89 — Ember Beast (reprint)
+const EMBER_BEAST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_ody::EMBER_BEAST)
+    .with_art("8a6d9cab-b07b-456b-9562-7ea7f6bec7f3", "David Rapoza");
 
 // GTC 90 — Firefist Striker
 pub(in crate::card::sets) static FIREFIST_STRIKER: CardRecord = CardRecord::new_with_legacy_id(
@@ -2594,6 +2493,9 @@ pub(in crate::card::sets) static MIMING_SLIME: CardRecord = CardRecord::new(
 // Naturalize first debuted in Onslaught; its GTC printing is registered in ADDITIONAL_PRINTINGS.
 
 // GTC 127 — Naturalize (reprint)
+const NATURALIZE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2002::onslaught::NATURALIZE)
+        .with_art("4adf36ca-56ca-4987-ac93-248d43c9c401", "Daniel Ljunggren");
 
 // GTC 128 — Ooze Flux
 // Audit: unsupported — Needs removing an arbitrary number of +1/+1 counters distributed among creatures and a token sized by the amount removed.
@@ -3469,46 +3371,10 @@ pub(in crate::card::sets) static FOUNDRY_CHAMPION: CardRecord = CardRecord::new_
     ]),
 );
 
-// GTC 166 — Frenzied Tilling
-pub(in crate::card::sets) static FRENZIED_TILLING: CardRecord = CardRecord::new_with_legacy_id(
-    1980,
-    "Frenzied Tilling",
-    CardArt::new("03bce9a7-6215-43ff-b4d0-55f96f683aba", "Noah Bradley"),
-    CardSet::Gatecrash,
-    CardRules::new_sorcery(mana_cost!("{3}{R}{G}")).with_ability(AbilityDef::spell_with_targets(
-        "Destroy target land. Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
-        &[AbilityTargetDef::exactly_one_permanent(
-            ObjectPredicateDef::HasType(CardType::Land),
-        )],
-        EffectDef::Sequence(&[
-            EffectDef::Destroy {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                can_regenerate: true,
-                then: None,
-            },
-            // Tapped, so the land it fetches does not pay for anything this turn --
-            // which is the whole reason a five-mana Stone Rain is playable.
-            EffectDef::SearchZone {
-                player: EffectRecipientDef::Controller,
-                source: ZoneKind::Library,
-                object: ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Land),
-                    ObjectPredicateDef::Supertype(CardSupertype::Basic),
-                ]),
-                minimum: 0,
-                maximum: ValueDef::Constant(1),
-                reveal: true,
-                destination: ZoneKind::Battlefield,
-                placement: ZonePlacement::Top,
-                shuffle: true,
-                enters_tapped: true,
-                attachment: None,
-                binding: None,
-                then: None,
-            },
-        ]),
-    )),
-);
+// GTC 166 — Frenzied Tilling (reprint)
+const FRENZIED_TILLING_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2000::invasion::FRENZIED_TILLING)
+        .with_art("03bce9a7-6215-43ff-b4d0-55f96f683aba", "Noah Bradley");
 
 // GTC 167 — Ghor-Clan Rampager
 pub(in crate::card::sets) static GHOR_CLAN_RAMPAGER: CardRecord = CardRecord::new_with_legacy_id(
@@ -4078,15 +3944,10 @@ pub(in crate::card::sets) static SKARRG_GUILDMAGE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// GTC 197 — Skyknight Legionnaire
-pub(in crate::card::sets) static SKYKNIGHT_LEGIONNAIRE: CardRecord = CardRecord::new_with_legacy_id(
-    1120,
-    "Skyknight Legionnaire",
-    CardArt::new("ae8c9948-b52e-4d07-a72a-99ab6be05cc6", "Anthony Palumbo"),
-    CardSet::Gatecrash,
-    CardRules::new_creature(mana_cost!("{1}{R}{W}"), &["Human", "Knight"], 2, 2)
-        .with_abilities(&[abilities::flying(), abilities::haste()]),
-);
+// GTC 197 — Skyknight Legionnaire (reprint)
+const SKYKNIGHT_LEGIONNAIRE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_rav::SKYKNIGHT_LEGIONNAIRE)
+        .with_art("ae8c9948-b52e-4d07-a72a-99ab6be05cc6", "Anthony Palumbo");
 
 // GTC 198 — Soul Ransom
 // Audit: unsupported — Needs indefinite control from an Aura and an activated ability restricted to opponents that makes the Aura's controller sacrifice it before drawing.
@@ -4349,32 +4210,10 @@ pub(in crate::card::sets) static ARROWS_OF_JUSTICE: CardRecord = CardRecord::new
     )),
 );
 
-// GTC 212 — Beckon Apparition
-pub(in crate::card::sets) static BECKON_APPARITION: CardRecord = CardRecord::new_with_legacy_id(
-    1127,
-    "Beckon Apparition",
-    CardArt::new("8b2ef9c5-ca6f-4243-bd38-2b325257831c", "Cliff Childs"),
-    CardSet::Gatecrash,
-    CardRules::new_instant(mana_cost!("{W/B}")).with_ability(
-        AbilityDef::spell_with_targets(
-            "Exile target card from a graveyard. Create a 1/1 white and black Spirit creature token with flying.",
-            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::Any,
-                zones: &[ZoneKind::Graveyard],
-                controller: None,
-                owner: None,
-            })],
-            EffectDef::Sequence(&[
-                EffectDef::MoveToZone {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    zone: ZoneKind::Exile,
-                    placement: ZonePlacement::Top,
-},
-                EffectDef::create_creature_token(&["Spirit"], &[ManaColor::White, ManaColor::Black], 1, 1).with_abilities(&[abilities::flying()]).with_art(CardArt::new("91f3a4b0-0992-4245-b245-033ad1083a93", "Cliff Childs")),
-            ]),
-        ),
-    ),
-);
+// GTC 212 — Beckon Apparition (reprint)
+const BECKON_APPARITION_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2008::eventide::BECKON_APPARITION)
+        .with_art("8b2ef9c5-ca6f-4243-bd38-2b325257831c", "Cliff Childs");
 
 // GTC 213 — Biomass Mutation
 // Audit: unsupported — Temporary continuous effects cannot set base power and toughness to the spell's chosen X.
@@ -4796,30 +4635,10 @@ pub(in crate::card::sets) static ORZHOV_KEYRUNE: CardRecord = CardRecord::new_wi
     ]),
 );
 
-// GTC 234 — Prophetic Prism
-pub(in crate::card::sets) static PROPHETIC_PRISM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cfb90d44-8cb1-4b83-b2f2-92c19d6304fb"),
-    "Prophetic Prism",
-    CardArt::new("b15b29a2-9e6f-45b7-8af5-f09779aae58e", "Daniel Ljunggren"),
-    CardSet::Gatecrash,
-    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
-        abilities::enters_trigger(
-            "When this artifact enters, draw a card.",
-            EffectDef::DrawCards {
-                recipient: EffectRecipientDef::Controller,
-                amount: ValueDef::Constant(1),
-            },
-        ),
-        AbilityDef::activated_mana(
-            "{1}, {T}: Add one mana of any color.",
-            &[
-                AbilityCostDef::Mana(mana_cost!("{1}")),
-                AbilityCostDef::TapSource,
-            ],
-            EffectDef::AddMana(AddManaEffectDef::any_color()),
-        ),
-    ]),
-);
+// GTC 234 — Prophetic Prism (reprint)
+const PROPHETIC_PRISM_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2010::rise_of_the_eldrazi::PROPHETIC_PRISM)
+        .with_art("b15b29a2-9e6f-45b7-8af5-f09779aae58e", "Daniel Ljunggren");
 
 // GTC 235 — Razortip Whip
 pub(in crate::card::sets) static RAZORTIP_WHIP: CardRecord = CardRecord::new_with_legacy_id(
@@ -4956,14 +4775,10 @@ pub(in crate::card::sets) static BOROS_GUILDGATE: CardRecord = CardRecord::new_w
     ]),
 );
 
-// GTC 240 — Breeding Pool
-pub(in crate::card::sets) static BREEDING_POOL: CardRecord = CardRecord::new_with_legacy_id(
-    1137,
-    "Breeding Pool",
-    CardArt::new("ece3bcdd-cb33-4923-b919-ba57a327d3cd", "Mike Bierek"),
-    CardSet::Gatecrash,
-    CardRules::new_land(&["Forest", "Island"]).with_ability(abilities::shock_land_enters()),
-);
+// GTC 240 — Breeding Pool (reprint)
+const BREEDING_POOL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::dissension::BREEDING_POOL)
+        .with_art("ece3bcdd-cb33-4923-b919-ba57a327d3cd", "Mike Bierek");
 
 // GTC 241 — Dimir Guildgate
 pub(in crate::card::sets) static DIMIR_GUILDGATE: CardRecord = CardRecord::new_with_legacy_id(
@@ -4984,14 +4799,10 @@ pub(in crate::card::sets) static DIMIR_GUILDGATE: CardRecord = CardRecord::new_w
     ]),
 );
 
-// GTC 242 — Godless Shrine
-pub(in crate::card::sets) static GODLESS_SHRINE: CardRecord = CardRecord::new_with_legacy_id(
-    171,
-    "Godless Shrine",
-    CardArt::new("6fd672bb-18cf-44e3-8dda-5310b1e0fffe", "Cliff Childs"),
-    CardSet::Gatecrash,
-    CardRules::new_land(&["Plains", "Swamp"]).with_ability(abilities::shock_land_enters()),
-);
+// GTC 242 — Godless Shrine (reprint)
+const GODLESS_SHRINE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::guildpact::GODLESS_SHRINE)
+        .with_art("6fd672bb-18cf-44e3-8dda-5310b1e0fffe", "Cliff Childs");
 
 // GTC 243 — Gruul Guildgate
 pub(in crate::card::sets) static GRUUL_GUILDGATE: CardRecord = CardRecord::new_with_legacy_id(
@@ -5031,14 +4842,10 @@ pub(in crate::card::sets) static ORZHOV_GUILDGATE: CardRecord = CardRecord::new_
     ]),
 );
 
-// GTC 245 — Sacred Foundry
-pub(in crate::card::sets) static SACRED_FOUNDRY: CardRecord = CardRecord::new_with_legacy_id(
-    207,
-    "Sacred Foundry",
-    CardArt::new("0a26d900-c652-4f9c-8681-a35c5f8b1937", "Sam Burley"),
-    CardSet::Gatecrash,
-    CardRules::new_land(&["Mountain", "Plains"]).with_ability(abilities::shock_land_enters()),
-);
+// GTC 245 — Sacred Foundry (reprint)
+const SACRED_FOUNDRY_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::SACRED_FOUNDRY)
+        .with_art("0a26d900-c652-4f9c-8681-a35c5f8b1937", "Sam Burley");
 
 // GTC 246 — Simic Guildgate
 pub(in crate::card::sets) static SIMIC_GUILDGATE: CardRecord = CardRecord::new_with_legacy_id(
@@ -5059,14 +4866,10 @@ pub(in crate::card::sets) static SIMIC_GUILDGATE: CardRecord = CardRecord::new_w
     ]),
 );
 
-// GTC 247 — Stomping Ground
-pub(in crate::card::sets) static STOMPING_GROUND: CardRecord = CardRecord::new_with_legacy_id(
-    218,
-    "Stomping Ground",
-    CardArt::new("f29f3415-971c-4a5d-aae9-3893f4bdab1e", "David Palumbo"),
-    CardSet::Gatecrash,
-    CardRules::new_land(&["Mountain", "Forest"]).with_ability(abilities::shock_land_enters()),
-);
+// GTC 247 — Stomping Ground (reprint)
+const STOMPING_GROUND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::guildpact::STOMPING_GROUND)
+        .with_art("f29f3415-971c-4a5d-aae9-3893f4bdab1e", "David Palumbo");
 
 // GTC 248 — Thespian's Stage
 pub(in crate::card::sets) static THESPIANS_STAGE: CardRecord = CardRecord::new_with_legacy_id(
@@ -5100,20 +4903,15 @@ pub(in crate::card::sets) static THESPIANS_STAGE: CardRecord = CardRecord::new_w
     ]),
 );
 
-// GTC 249 — Watery Grave
-pub(in crate::card::sets) static WATERY_GRAVE: CardRecord = CardRecord::new_with_legacy_id(
-    1142,
-    "Watery Grave",
-    CardArt::new("47fde349-010e-4a2e-838e-e924dbeec355", "Raymond Swanland"),
-    CardSet::Gatecrash,
-    CardRules::new_land(&["Island", "Swamp"]).with_ability(abilities::shock_land_enters()),
-);
+// GTC 249 — Watery Grave (reprint)
+const WATERY_GRAVE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::WATERY_GRAVE)
+        .with_art("47fde349-010e-4a2e-838e-e924dbeec355", "Raymond Swanland");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AERIAL_MANEUVER,
     &ANGELIC_EDICT,
     &ANGELIC_SKIRMISHER,
-    &ASSAULT_GRIFFIN,
     &BASILICA_GUARDS,
     &BLIND_OBEDIENCE,
     &BOROS_ELITE,
@@ -5132,7 +4930,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LUMINATE_PRIMORDIAL,
     &MURDER_INVESTIGATION,
     &NAV_SQUAD_COMMANDOS,
-    &RIGHTEOUS_CHARGE,
     &SHIELDED_PASSAGE,
     &SYNDIC_OF_TITHES,
     &URBIS_PROTECTOR,
@@ -5167,7 +4964,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WAY_OF_THE_THIEF,
     &BALUSTRADE_SPY,
     &BASILICA_SCREECHER,
-    &CONTAMINATED_GROUND,
     &CORPSE_BLOCKADE,
     &CRYPT_GHAST,
     &DEATH_S_APPROACH,
@@ -5193,9 +4989,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &UNDERCITY_INFORMER,
     &UNDERCITY_PLAGUE,
     &WIGHT_OF_PRECINCT_SIX,
-    &ACT_OF_TREASON,
     &BOMBER_CORPS,
-    &CINDER_ELEMENTAL,
     &CRACKLING_PERIMETER,
     &FIREFIST_STRIKER,
     &FIVE_ALARM_FIRE,
@@ -5272,7 +5066,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FIREMANE_AVENGER,
     &FORTRESS_CYCLOPS,
     &FOUNDRY_CHAMPION,
-    &FRENZIED_TILLING,
     &GHOR_CLAN_RAMPAGER,
     &GROUND_ASSAULT,
     &GRUUL_CHARM,
@@ -5303,7 +5096,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SIGNAL_THE_CLANS,
     &SIMIC_CHARM,
     &SKARRG_GUILDMAGE,
-    &SKYKNIGHT_LEGIONNAIRE,
     &SOUL_RANSOM,
     &SPARK_TROOPER,
     &SUNHOME_GUILDMAGE,
@@ -5318,7 +5110,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ZAMECK_GUILDMAGE,
     &ZHUR_TAA_SWINE,
     &ARROWS_OF_JUSTICE,
-    &BECKON_APPARITION,
     &BIOMASS_MUTATION,
     &BIOSHIFT,
     &BOROS_RECKONER,
@@ -5340,26 +5131,34 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ILLUSIONIST_S_BRACERS,
     &MILLENNIAL_GARGOYLE,
     &ORZHOV_KEYRUNE,
-    &PROPHETIC_PRISM,
     &RAZORTIP_WHIP,
     &RIOT_GEAR,
     &SIMIC_KEYRUNE,
     &SKYBLINDER_STAFF,
     &BOROS_GUILDGATE,
-    &BREEDING_POOL,
     &DIMIR_GUILDGATE,
-    &GODLESS_SHRINE,
     &GRUUL_GUILDGATE,
     &ORZHOV_GUILDGATE,
-    &SACRED_FOUNDRY,
     &SIMIC_GUILDGATE,
-    &STOMPING_GROUND,
     &THESPIANS_STAGE,
-    &WATERY_GRAVE,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_sth::SMITE), // GTC 25
-    PrintingRecord::reprint(&catalog_ody::EMBER_BEAST), // GTC 89
-    PrintingRecord::reprint(&crate::card::sets::y2002::onslaught::NATURALIZE), // GTC 127
+    ASSAULT_GRIFFIN_REPRINT,
+    RIGHTEOUS_CHARGE_REPRINT,
+    SMITE_REPRINT,
+    CONTAMINATED_GROUND_REPRINT,
+    ACT_OF_TREASON_REPRINT,
+    CINDER_ELEMENTAL_REPRINT,
+    EMBER_BEAST_REPRINT,
+    NATURALIZE_REPRINT,
+    FRENZIED_TILLING_REPRINT,
+    SKYKNIGHT_LEGIONNAIRE_REPRINT,
+    BECKON_APPARITION_REPRINT,
+    PROPHETIC_PRISM_REPRINT,
+    BREEDING_POOL_REPRINT,
+    GODLESS_SHRINE_REPRINT,
+    SACRED_FOUNDRY_REPRINT,
+    STOMPING_GROUND_REPRINT,
+    WATERY_GRAVE_REPRINT,
 ];

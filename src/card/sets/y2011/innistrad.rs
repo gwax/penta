@@ -1365,46 +1365,10 @@ pub(in crate::card::sets) static CLAUSTROPHOBIA: CardRecord = CardRecord::new_wi
         ]),
 );
 
-// ISD 49 — Curiosity
-pub(in crate::card::sets) static CURIOSITY: CardRecord = CardRecord::new_with_legacy_id(
-    874,
-    "Curiosity",
-    CardArt::new("b212c36a-6d1f-4217-b384-1c2b0e07b68a", "Igor Kieryluk"),
-    CardSet::Innistrad,
-    CardRules::new_enchantment(mana_cost!("{U}"))
-        .with_subtypes(&["Aura"])
-        .with_abilities(&[
-            AbilityDef::spell_with_targets(
-                "Enchant creature",
-                &[AbilityTargetDef::exactly_one_permanent(
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                )],
-                EffectDef::Attach {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
-            ),
-            AbilityDef::static_ability(
-                "Whenever enchanted creature deals damage to an opponent, you may draw a card.",
-                EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::add_ability(&AbilityDef::triggered(
-                        "Whenever this creature deals damage to an opponent, you may draw a card.",
-                        TriggerEventDef::damage_to_player(
-                            ObjectPredicateDef::Source,
-                            PlayerRelation::Opponent,
-                        ),
-                        EffectDef::May {
-                            player: EffectRecipientDef::Controller,
-                            effect: &EffectDef::DrawCards {
-                                recipient: EffectRecipientDef::Controller,
-                                amount: ValueDef::Constant(1),
-                            },
-                        },
-                    )),
-                },
-            ),
-        ]),
-);
+// ISD 49 — Curiosity (reprint)
+const CURIOSITY_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::exodus::CURIOSITY)
+        .with_art("b212c36a-6d1f-4217-b384-1c2b0e07b68a", "Igor Kieryluk");
 
 // ISD 50 — Curse of the Bloody Tome
 pub(in crate::card::sets) static CURSE_OF_THE_BLOODY_TOME: CardRecord = CardRecord::new(
@@ -1532,29 +1496,10 @@ pub(in crate::card::sets) static DERANGED_ASSISTANT: CardRecord = CardRecord::ne
     ),
 );
 
-// ISD 53 — Dissipate
-pub(in crate::card::sets) static DISSIPATE: CardRecord = CardRecord::new_with_legacy_id(
-    156,
-    "Dissipate",
-    CardArt::new("5d778082-bcdb-423a-b16f-57ac0d4dace7", "Tomasz Jedruszek"),
-    CardSet::Innistrad,
-    CardRules::new_instant(mana_cost!("{1}{U}{U}")).with_ability(
-        AbilityDef::spell_with_targets(
-            "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
-            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::Spell,
-                zones: &[ZoneKind::Stack],
-                controller: None,
-                owner: None,
-            })],
-            EffectDef::Counter {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                zone: ZoneKind::Exile,
-                placement: ZonePlacement::Top,
-            },
-        ),
-    ),
-);
+// ISD 53 — Dissipate (reprint)
+const DISSIPATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1996::mirage::DISSIPATE)
+        .with_art("5d778082-bcdb-423a-b16f-57ac0d4dace7", "Tomasz Jedruszek");
 
 // ISD 54 — Dream Twist
 pub(in crate::card::sets) static DREAM_TWIST: CardRecord = CardRecord::new_with_legacy_id(
@@ -2347,17 +2292,10 @@ pub(in crate::card::sets) static STURMGEIST: CardRecord = CardRecord::new_with_l
     ]),
 );
 
-// ISD 83 — Think Twice
-pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new_with_legacy_id(
-    226,
-    "Think Twice",
-    CardArt::new("53e44060-a9a2-4095-9f5b-f60297525315", "Anthony Francisco"),
-    CardSet::Innistrad,
-    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
-        AbilityDef::spell("Draw a card.", abilities::draw_cards(ValueDef::Constant(1))),
-        abilities::flashback(mana_cost!("{2}{U}")),
-    ]),
-);
+// ISD 83 — Think Twice (reprint)
+const THINK_TWICE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::time_spiral::THINK_TWICE)
+        .with_art("53e44060-a9a2-4095-9f5b-f60297525315", "Anthony Francisco");
 
 // ISD 84 — Undead Alchemist
 // Audit: unsupported — Needs a combat-damage replacement that mills instead, plus a linked library-to-graveyard creature-card trigger.
@@ -3497,23 +3435,10 @@ pub(in crate::card::sets) static WALKING_CORPSE: CardRecord = CardRecord::new_wi
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Zombie"], 2, 2),
 );
 
-// ISD 127 — Ancient Grudge
-pub(in crate::card::sets) static ANCIENT_GRUDGE: CardRecord = CardRecord::new_with_legacy_id(
-    908,
-    "Ancient Grudge",
-    CardArt::new("e5e7b966-7c5b-44e6-a6df-4bd7af4edaa9", "Ryan Yee"),
-    CardSet::Innistrad,
-    CardRules::new_instant(mana_cost!("{1}{R}")).with_abilities(&[
-        AbilityDef::destroy_target(
-            "Destroy target artifact.",
-            &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(
-                CardType::Artifact,
-            )),
-            true,
-        ),
-        abilities::flashback(mana_cost!("{G}")),
-    ]),
-);
+// ISD 127 — Ancient Grudge (reprint)
+const ANCIENT_GRUDGE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::time_spiral::ANCIENT_GRUDGE)
+        .with_art("e5e7b966-7c5b-44e6-a6df-4bd7af4edaa9", "Ryan Yee");
 
 // ISD 128 — Ashmouth Hound
 pub(in crate::card::sets) static ASHMOUTH_HOUND: CardRecord = CardRecord::new(
@@ -5487,22 +5412,16 @@ pub(in crate::card::sets) static MOONMIST: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ISD 196 — Mulch
-pub(in crate::card::sets) static MULCH: CardRecord = CardRecord::new_with_legacy_id(
-    188,
-    "Mulch",
-    CardArt::new("52a1dabd-82df-4814-9d64-bf7bf9c1018d", "Christopher Moeller"),
-    CardSet::Innistrad,
-    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell(
-        "Reveal the top four cards of your library. Put all land cards revealed this way into your hand and the rest into your graveyard.",
-        abilities::reveal_top_cards_put_matching_in_hand_rest_graveyard(
-            ValueDef::Constant(4),
-            ObjectPredicateDef::HasType(CardType::Land),
-        ),
-    )),
-);
+// ISD 196 — Mulch (reprint)
+const MULCH_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::stronghold::MULCH).with_art(
+        "52a1dabd-82df-4814-9d64-bf7bf9c1018d",
+        "Christopher Moeller",
+    );
 
 // ISD 197 — Naturalize (reprint)
+const NATURALIZE_REPRINT: PrintingRecord = PrintingRecord::reprint(&onslaught::NATURALIZE)
+    .with_art("236f1a8c-13ab-4ab3-b11f-082054d297e5", "Scott Chou");
 
 // ISD 198 — Orchard Spirit
 pub(in crate::card::sets) static ORCHARD_SPIRIT: CardRecord = CardRecord::new_with_legacy_id(
@@ -6006,6 +5925,8 @@ pub(in crate::card::sets) static OLIVIA_VOLDAREN: CardRecord = CardRecord::new(
 );
 
 // ISD 216 — Blazing Torch (reprint)
+const BLAZING_TORCH_REPRINT: PrintingRecord = PrintingRecord::reprint(&zendikar::BLAZING_TORCH)
+    .with_art("4e14fc60-f300-40f0-b712-4e339dc27929", "Scott Chou");
 
 // ISD 217 — Butcher's Cleaver
 pub(in crate::card::sets) static BUTCHERS_CLEAVER: CardRecord = CardRecord::new_with_legacy_id(
@@ -6674,50 +6595,10 @@ pub(in crate::card::sets) static GAVONY_TOWNSHIP: CardRecord = CardRecord::new_w
     ]),
 );
 
-// ISD 240 — Ghost Quarter
-pub(in crate::card::sets) static GHOST_QUARTER: CardRecord = CardRecord::new_with_legacy_id(
-    169,
-    "Ghost Quarter",
-    CardArt::new("1c6456ed-0ffb-4d22-b252-5775076030ce", "Peter Mohrbacher"),
-    CardSet::Innistrad,
-    CardRules::new_land(&[]).with_abilities(&[
-        abilities::tap_for(ManaColor::Colorless),
-        AbilityDef::activated_with_targets("{T}, Sacrifice this land: Destroy target land. Its controller may search their library for a basic land card, put it onto the battlefield, then shuffle.", &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource], &[AbilityTargetDef::exactly_one_permanent(
-            ObjectPredicateDef::HasType(CardType::Land),
-        )], EffectDef::Sequence(&[
-                EffectDef::Destroy {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    can_regenerate: true,
-                    then: None,
-                },
-                // Declining the printed "may" skips the entire search, including
-                // its shuffle. If accepted, the qualified hidden-zone search
-                // may still legally fail to find. The controller is read after
-                // destruction from last-known information.
-                EffectDef::May {
-                    player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
-                    effect: &EffectDef::SearchZone {
-                    player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
-                    source: ZoneKind::Library,
-                    object: ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Land),
-                        ObjectPredicateDef::Supertype(CardSupertype::Basic),
-                    ]),
-                    minimum: 0,
-                    maximum: ValueDef::Constant(1),
-                    reveal: false,
-                    destination: ZoneKind::Battlefield,
-                    placement: ZonePlacement::Top,
-                    shuffle: true,
-                        enters_tapped: false,
-                        attachment: None,
-                        binding: None,
-                        then: None,
-                    },
-                },
-            ])),
-    ]),
-);
+// ISD 240 — Ghost Quarter (reprint)
+const GHOST_QUARTER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::dissension::GHOST_QUARTER)
+        .with_art("1c6456ed-0ffb-4d22-b252-5775076030ce", "Peter Mohrbacher");
 
 // ISD 241 — Hinterland Harbor
 pub(in crate::card::sets) static HINTERLAND_HARBOR: CardRecord = CardRecord::new_with_legacy_id(
@@ -6850,6 +6731,9 @@ pub(in crate::card::sets) static NEPHALIA_DROWNYARD: CardRecord = CardRecord::ne
 );
 
 // ISD 246 — Shimmering Grotto (reprint)
+const SHIMMERING_GROTTO_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lrw::SHIMMERING_GROTTO)
+        .with_art("a48e7a7a-574f-4850-9697-8cb276a5812c", "Cliff Childs");
 
 // ISD 247 — Stensia Bloodhall
 pub(in crate::card::sets) static STENSIA_BLOODHALL: CardRecord = CardRecord::new_with_legacy_id(
@@ -6916,35 +6800,66 @@ pub(in crate::card::sets) static WOODLAND_CEMETERY: CardRecord = CardRecord::new
         ),
     ]),
 );
+
 // ISD 250 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::PLAINS)
+    .with_art("d595ba72-3334-48f4-9ea9-a43f5e824aa8", "Adam Paquette");
 
 // ISD 251 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::PLAINS, 1)
+    .with_art("fceab58a-304a-40e4-8830-837a7b51d31b", "Jung Park");
 
 // ISD 252 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::PLAINS, 2)
+    .with_art("b75ca372-c110-4321-b497-8841547f3c2b", "Eytan Zana");
 
 // ISD 253 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::ISLAND)
+    .with_art("cf258641-b73c-4813-8a23-da47cf79eca5", "James Paick");
 
 // ISD 254 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::ISLAND, 1)
+    .with_art("48b51501-d3b3-480f-9bcb-e66420c4db06", "Adam Paquette");
 
 // ISD 255 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::ISLAND, 2)
+    .with_art("2e19f6dd-9eed-4656-b8c7-e64b61446d7f", "Jung Park");
 
 // ISD 256 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::SWAMP)
+    .with_art("a5a14894-2936-4fc4-b6a5-f9c73c32b177", "James Paick");
 
 // ISD 257 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::SWAMP, 1)
+    .with_art("8d37e23b-7898-4b5d-b088-d4e54947f579", "Adam Paquette");
 
 // ISD 258 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::SWAMP, 2)
+    .with_art("fcd2ecdd-37ee-4351-833a-f4eac3c55eca", "Jung Park");
 
 // ISD 259 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::MOUNTAIN)
+    .with_art("17de9f2c-e051-404c-8ec0-c35f500efd67", "James Paick");
 
 // ISD 260 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::MOUNTAIN, 1)
+    .with_art("3a200286-67f3-4bff-8a53-3e76733414fa", "Adam Paquette");
 
 // ISD 261 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::MOUNTAIN, 2)
+    .with_art("d2075dfe-b48c-46e3-bde1-f9f8e3b9d928", "Eytan Zana");
 
 // ISD 262 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::FOREST)
+    .with_art("b606f644-1728-4cb3-90ed-121838875de1", "James Paick");
 
 // ISD 263 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::FOREST, 1)
+    .with_art("16f52885-1f01-4f06-90a8-1a0ecf291ab5", "Jung Park");
 
 // ISD 264 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::FOREST, 2)
+    .with_art("4dea3762-c6ae-4304-aee4-6c3f56685319", "Eytan Zana");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ABBEY_GRIFFIN,
@@ -6995,11 +6910,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CACKLING_COUNTERPART,
     &CIVILIZED_SCHOLAR,
     &CLAUSTROPHOBIA,
-    &CURIOSITY,
     &CURSE_OF_THE_BLOODY_TOME,
     &DELVER_OF_SECRETS,
     &DERANGED_ASSISTANT,
-    &DISSIPATE,
     &DREAM_TWIST,
     &FORBIDDEN_ALCHEMY,
     &FORTRESS_CRAB,
@@ -7029,7 +6942,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STITCHED_DRAKE,
     &STITCHERS_APPRENTICE,
     &STURMGEIST,
-    &THINK_TWICE,
     &UNDEAD_ALCHEMIST,
     &ABATTOIR_GHOUL,
     &ALTARS_REAP,
@@ -7073,7 +6985,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &VICTIM_OF_NIGHT,
     &VILLAGE_CANNIBALS,
     &WALKING_CORPSE,
-    &ANCIENT_GRUDGE,
     &ASHMOUTH_HOUND,
     &BALEFIRE_DRAGON,
     &BLASPHEMOUS_ACT,
@@ -7142,7 +7053,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MAYOR_OF_AVABRUCK,
     &MOLDGRAF_MONSTROSITY,
     &MOONMIST,
-    &MULCH,
     &ORCHARD_SPIRIT,
     &PARALLEL_LIVES,
     &PREY_UPON,
@@ -7184,7 +7094,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WOODEN_STAKE,
     &CLIFFTOP_RETREAT,
     &GAVONY_TOWNSHIP,
-    &GHOST_QUARTER,
     &HINTERLAND_HARBOR,
     &ISOLATED_CHAPEL,
     &KESSIG_WOLF_RUN,
@@ -7196,22 +7105,28 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&onslaught::NATURALIZE), // ISD 197
-    PrintingRecord::reprint(&zendikar::BLAZING_TORCH), // ISD 216
-    PrintingRecord::reprint(&catalog_lrw::SHIMMERING_GROTTO), // ISD 246
-    PrintingRecord::reprint(&alpha::PLAINS),         // ISD 250
-    PrintingRecord::alternate(&alpha::PLAINS, 1),    // ISD 251
-    PrintingRecord::alternate(&alpha::PLAINS, 2),    // ISD 252
-    PrintingRecord::reprint(&alpha::ISLAND),         // ISD 253
-    PrintingRecord::alternate(&alpha::ISLAND, 1),    // ISD 254
-    PrintingRecord::alternate(&alpha::ISLAND, 2),    // ISD 255
-    PrintingRecord::reprint(&alpha::SWAMP),          // ISD 256
-    PrintingRecord::alternate(&alpha::SWAMP, 1),     // ISD 257
-    PrintingRecord::alternate(&alpha::SWAMP, 2),     // ISD 258
-    PrintingRecord::reprint(&alpha::MOUNTAIN),       // ISD 259
-    PrintingRecord::alternate(&alpha::MOUNTAIN, 1),  // ISD 260
-    PrintingRecord::alternate(&alpha::MOUNTAIN, 2),  // ISD 261
-    PrintingRecord::reprint(&alpha::FOREST),         // ISD 262
-    PrintingRecord::alternate(&alpha::FOREST, 1),    // ISD 263
-    PrintingRecord::alternate(&alpha::FOREST, 2),    // ISD 264
+    CURIOSITY_REPRINT,
+    DISSIPATE_REPRINT,
+    THINK_TWICE_REPRINT,
+    ANCIENT_GRUDGE_REPRINT,
+    MULCH_REPRINT,
+    NATURALIZE_REPRINT,
+    BLAZING_TORCH_REPRINT,
+    GHOST_QUARTER_REPRINT,
+    SHIMMERING_GROTTO_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
 ];

@@ -1,9 +1,7 @@
 //! Apocalypse cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
-use crate::card::sets::y2011::mirrodin_besieged as catalog_mbs;
-use crate::card::sets::y2013::magic_2014 as catalog_m14;
-use crate::card::sets::y2016::eternal_masters as catalog_ema;
+use crate::CardSupertype;
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AdditionalCostValueDef, AppliedEffectDef,
     CardArt, CardRules, CardSet, CardType, DiscardFollowUpDef, DiscardSelectionDef, DividedTotal,
@@ -36,7 +34,15 @@ pub(in crate::card::sets) static COALITION_FLAG: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// APC 3 — Coalition Honor Guard (reprint)
+// APC 3 — Coalition Honor Guard
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static COALITION_HONOR_GUARD: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("c5b7be3e-b4af-46d4-bcc6-b44c651f2012"),
+    "Coalition Honor Guard",
+    crate::card::CardArt::new("2c7c2b5c-634a-4d83-81bc-c6128e3ac339", "Eric Peterson"),
+    crate::card::CardSet::Apocalypse,
+    crate::card::CardRules::unsupported(),
+);
 
 // APC 4 — Dega Disciple
 // Audit: unsupported — Card rules have not been implemented.
@@ -506,7 +512,28 @@ pub(in crate::card::sets) static PHYREXIAN_GARGANTUA: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
-// APC 49 — Phyrexian Rager (reprint)
+// APC 49 — Phyrexian Rager
+pub(in crate::card::sets) static PHYREXIAN_RAGER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("c0a29ba4-fe8b-442f-a8b5-8cce7c765011"),
+    "Phyrexian Rager",
+    crate::card::CardArt::new("f11889da-d5dd-4bb3-b3d0-0d90698f4f34", "Stephan Martiniere"),
+    crate::card::CardSet::Apocalypse,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Phyrexian", "Horror"], 2, 2).with_ability(
+        abilities::enters_trigger(
+            "When this creature enters, you draw a card and you lose 1 life.",
+            EffectDef::Sequence(&[
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            ]),
+        ),
+    ),
+);
 
 // APC 50 — Planar Despair
 // Audit: unsupported — Card rules have not been implemented.
@@ -889,7 +916,34 @@ pub(in crate::card::sets) static KAVU_MAULER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// APC 81 — Lay of the Land (reprint)
+// APC 81 — Lay of the Land
+pub(in crate::card::sets) static LAY_OF_THE_LAND: CardRecord = CardRecord::new_with_legacy_id(
+    1220,
+    "Lay of the Land",
+    CardArt::new("3bb3410b-d6c3-4e42-b3c9-fb557f9a16f0", "Chuck Lukacs"),
+    CardSet::Apocalypse,
+    CardRules::new_sorcery(mana_cost!("{G}")).with_ability(AbilityDef::spell(
+        "Search your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Land),
+                ObjectPredicateDef::Supertype(CardSupertype::Basic),
+            ]),
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: true,
+            destination: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    )),
+);
 
 // APC 82 — Penumbra Bobcat
 // Audit: unsupported — Card rules have not been implemented.
@@ -1683,6 +1737,7 @@ pub(in crate::card::sets) static YAVIMAYA_COAST: CardRecord = CardRecord::new_wi
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANGELFIRE_CRUSADER,
     &COALITION_FLAG,
+    &COALITION_HONOR_GUARD,
     &DEGA_DISCIPLE,
     &DEGA_SANCTUARY,
     &DEGAVOLVER,
@@ -1728,6 +1783,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &NECRAVOLVER,
     &PHYREXIAN_ARENA,
     &PHYREXIAN_GARGANTUA,
+    &PHYREXIAN_RAGER,
     &PLANAR_DESPAIR,
     &QUAGMIRE_DRUID,
     &SUPPRESS,
@@ -1759,6 +1815,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GLADE_GNARR,
     &KAVU_HOWLER,
     &KAVU_MAULER,
+    &LAY_OF_THE_LAND,
     &PENUMBRA_BOBCAT,
     &PENUMBRA_KAVU,
     &PENUMBRA_WURM,
@@ -1823,8 +1880,4 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &YAVIMAYA_COAST,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_ema::COALITION_HONOR_GUARD), // APC 3
-    PrintingRecord::reprint(&catalog_mbs::PHYREXIAN_RAGER),       // APC 49
-    PrintingRecord::reprint(&catalog_m14::LAY_OF_THE_LAND),       // APC 81
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

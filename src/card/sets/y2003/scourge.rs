@@ -2,9 +2,6 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::sets::y1998::portal_second_age as catalog_p02;
-use crate::card::sets::y2011::magic_2012 as catalog_m12;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2019::modern_horizons as catalog_mh1;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AppliedEffectDef, AppliedRuleDef, ArrivalAttachmentDef, AttackDefenderScopeDef,
@@ -300,7 +297,24 @@ pub(in crate::card::sets) static NOBLE_TEMPLAR: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// SCG 20 — Rain of Blades (reprint)
+// SCG 20 — Rain of Blades
+pub(in crate::card::sets) static RAIN_OF_BLADES: CardRecord = CardRecord::new_with_legacy_id(
+    980,
+    "Rain of Blades",
+    CardArt::new("f3bd6ca4-c4ed-41c3-834c-23e0c1741b72", "Rob Alexander"),
+    CardSet::Scourge,
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell(
+        "Rain of Blades deals 1 damage to each attacking creature.",
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Attacking,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            amount: ValueDef::Constant(1),
+        },
+    )),
+);
 
 // SCG 21 — Recuperate
 // Audit: unsupported — Card rules have not been implemented.
@@ -769,9 +783,25 @@ pub(in crate::card::sets) static CABAL_INTERROGATOR: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
-// SCG 58 — Call to the Grave (reprint)
+// SCG 58 — Call to the Grave
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static CALL_TO_THE_GRAVE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("2a346b4a-ac8a-4f99-9ed7-dd41102e56ce"),
+    "Call to the Grave",
+    crate::card::CardArt::new("5e1324b6-dba0-4aff-a403-a45d2b405f5b", "Daarken"),
+    crate::card::CardSet::Scourge,
+    crate::card::CardRules::unsupported(),
+);
 
-// SCG 59 — Carrion Feeder (reprint)
+// SCG 59 — Carrion Feeder
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static CARRION_FEEDER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("88042031-64af-4f84-85d5-95992b43aa6c"),
+    "Carrion Feeder",
+    crate::card::CardArt::new("0a19da90-880e-4eca-8cf7-6d7baf090d53", "Svetlin Velinov"),
+    crate::card::CardSet::Scourge,
+    crate::card::CardRules::unsupported(),
+);
 
 // SCG 60 — Chill Haunting
 // Audit: unsupported — Card rules have not been implemented.
@@ -1260,6 +1290,9 @@ pub(in crate::card::sets) static GOBLIN_PSYCHOPATH: CardRecord = CardRecord::new
 );
 
 // SCG 96 — Goblin War Strike (reprint)
+const GOBLIN_WAR_STRIKE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_p02::GOBLIN_WAR_STRIKE)
+        .with_art("dce59945-37a2-4f09-8831-9d44b4a59ea7", "Pete Venters");
 
 // SCG 97 — Goblin Warchief
 pub(in crate::card::sets) static GOBLIN_WARCHIEF: CardRecord = CardRecord::new_with_legacy_id(
@@ -1823,6 +1856,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GUILTY_CONSCIENCE,
     &KARONA_S_ZEALOT,
     &NOBLE_TEMPLAR,
+    &RAIN_OF_BLADES,
     &RECUPERATE,
     &REWARD_THE_FAITHFUL,
     &SILVER_KNIGHT,
@@ -1860,6 +1894,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLADEWING_S_THRALL,
     &CABAL_CONDITIONING,
     &CABAL_INTERROGATOR,
+    &CALL_TO_THE_GRAVE,
+    &CARRION_FEEDER,
     &CHILL_HAUNTING,
     &CLUTCH_OF_UNDEATH,
     &CONSUMPTIVE_GOO,
@@ -1945,9 +1981,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TEMPLE_OF_THE_FALSE_GOD,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_m13::RAIN_OF_BLADES), // SCG 20
-    PrintingRecord::reprint(&catalog_m12::CALL_TO_THE_GRAVE), // SCG 58
-    PrintingRecord::reprint(&catalog_mh1::CARRION_FEEDER), // SCG 59
-    PrintingRecord::reprint(&catalog_p02::GOBLIN_WAR_STRIKE), // SCG 96
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[GOBLIN_WAR_STRIKE_REPRINT];

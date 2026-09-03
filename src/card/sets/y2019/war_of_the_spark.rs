@@ -373,8 +373,9 @@ pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD: CardRecord =
                 ),
             ]),
     )
-    .with_identity_anchor(PrintingAnchor::scryfall(
+    .with_debut_art(CardArt::new(
         "f857bbe4-5619-4733-a0c7-69700f2ef4f3",
+        "Chris Rallis",
     ));
 
 // WAR 220 — Tamiyo, Collector of Tales
@@ -438,8 +439,9 @@ pub(in crate::card::sets) static TAMIYO_COLLECTOR_OF_TALES: CardRecord =
                 ),
             ]),
     )
-    .with_identity_anchor(PrintingAnchor::scryfall(
+    .with_debut_art(CardArt::new(
         "76776b24-a2e1-4590-88e7-8a421baf2fc4",
+        "Chase Stone",
     ));
 
 // WAR 221 — Teferi, Time Raveler

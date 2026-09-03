@@ -1,6 +1,12 @@
 //! Zendikar cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::ControlDurationDef;
+use crate::CounterKind;
+use crate::KeywordAbility;
+use crate::PlayerRefDef;
+use crate::ResolvedEffectDurationDef;
+use crate::card::ColorChoiceOperationDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AdditionalCostValueDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules,
@@ -20,6 +26,52 @@ const fn fetch_land(text: &'static str, land_types: &'static [BasicLandType]) ->
         ObjectPredicateDef::HasAnyBasicLandType(land_types),
     ))
 }
+
+// ZEN 4 — Brave the Elements
+pub(in crate::card::sets) static BRAVE_THE_ELEMENTS: CardRecord = CardRecord::new_with_legacy_id(
+    1996,
+    "Brave the Elements",
+    CardArt::new("097d7838-ae58-4306-ba0f-e914601b31b6", "Goran Josic"),
+    CardSet::Zendikar,
+    // One mana that makes a white board unblockable, or immune to a sweeper:
+    // the group is settled first and the colour named afterwards.
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell(
+        "Choose a color. White creatures you control gain protection from the chosen color until end of turn.",
+        EffectDef::ChooseColor {
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Color(ManaColor::White),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            operation: ColorChoiceOperationDef::ProtectionFromChosenColor,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
+
+// ZEN 9 — Day of Judgment
+pub(in crate::card::sets) static DAY_OF_JUDGMENT: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("6ba873f7-a7a4-44aa-84a6-44501424dc7a"),
+    "Day of Judgment",
+    crate::card::CardArt::new("1ed43ed8-9490-4433-843f-9020cd3470a1", "Vincent Proce"),
+    crate::card::CardSet::Zendikar,
+    CardRules::new_sorcery(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::spell(
+        "Destroy all creatures.",
+        EffectDef::Destroy {
+            object: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            can_regenerate: true,
+            then: None,
+        },
+    )),
+);
 
 // ZEN 14 — Journey to Nowhere
 // Audit: unsupported — Card rules have not been implemented.
@@ -41,6 +93,15 @@ pub(in crate::card::sets) static KOR_SKYFISHER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+// ZEN 31 — Pillarfield Ox
+pub(in crate::card::sets) static PILLARFIELD_OX: CardRecord = CardRecord::new_with_legacy_id(
+    978,
+    "Pillarfield Ox",
+    CardArt::new("33e2f3ae-bf92-478b-9c63-acc3f175f02a", "Andrew Robinson"),
+    CardSet::Zendikar,
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Ox"], 2, 4),
+);
+
 // ZEN 48 — Into the Roil
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INTO_THE_ROIL: CardRecord = CardRecord::new(
@@ -49,6 +110,43 @@ pub(in crate::card::sets) static INTO_THE_ROIL: CardRecord = CardRecord::new(
     crate::card::CardArt::new("5dba9972-dd8b-407b-9374-a8f0ed1a96db", "Kieran Yanner"),
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
+);
+
+// ZEN 50 — Kraken Hatchling
+pub(in crate::card::sets) static KRAKEN_HATCHLING: CardRecord = CardRecord::new_with_legacy_id(
+    989,
+    "Kraken Hatchling",
+    CardArt::new("59a50590-9091-4632-bf8c-792e1e0a75a8", "Jason Felix"),
+    CardSet::Zendikar,
+    CardRules::new_creature(mana_cost!("{U}"), &["Kraken"], 0, 4),
+);
+
+// ZEN 58 — Paralyzing Grasp
+pub(in crate::card::sets) static PARALYZING_GRASP: CardRecord = CardRecord::new_with_legacy_id(
+    1260,
+    "Paralyzing Grasp",
+    CardArt::new("3dfd97b3-d83e-406f-af45-40eec6347462", "Scott Chou"),
+    CardSet::Zendikar,
+    CardRules::new_enchantment(mana_cost!("{2}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            AbilityDef::spell_with_targets(
+                "Enchant creature",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )],
+                EffectDef::Attach {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                },
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature doesn't untap during its controller's untap step.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+                },
+            ),
+        ]),
 );
 
 // ZEN 67 — Spell Pierce
@@ -72,6 +170,36 @@ pub(in crate::card::sets) static SPELL_PIERCE: CardRecord = CardRecord::new_with
         )],
         abilities::counter_target_unless_paid(ValueDef::Constant(2)),
     )),
+);
+
+// ZEN 76 — Welkin Tern
+pub(in crate::card::sets) static WELKIN_TERN: CardRecord = CardRecord::new_with_legacy_id(
+    1748,
+    "Welkin Tern",
+    CardArt::new("ddfd4f37-3630-4770-bfad-83623c11be19", "Austin Hsu"),
+    CardSet::Zendikar,
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Bird"], 2, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "This creature can block only creatures with flying.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::can_block_only(
+                    ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                )),
+            },
+        ),
+    ]),
+);
+
+// ZEN 80 — Blood Seeker
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static BLOOD_SEEKER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("d1abc9e8-9ecf-4665-9ea5-ee18ab83c148"),
+    "Blood Seeker",
+    crate::card::CardArt::new("8033de8d-a396-4097-aedd-f9facb800b33", "Greg Staples"),
+    crate::card::CardSet::Zendikar,
+    crate::card::CardRules::unsupported(),
 );
 
 // ZEN 83 — Bloodghast
@@ -136,6 +264,26 @@ pub(in crate::card::sets) static DISFIGURE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+// ZEN 90 — Giant Scorpion
+pub(in crate::card::sets) static GIANT_SCORPION: CardRecord = CardRecord::new_with_legacy_id(
+    1002,
+    "Giant Scorpion",
+    CardArt::new("4097d5dc-46d3-4054-818f-a4ad8d7effe2", "Raymond Swanland"),
+    CardSet::Zendikar,
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Scorpion"], 1, 3)
+        .with_abilities(&[abilities::deathtouch()]),
+);
+
+// ZEN 111 — Sorin Markov
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static SORIN_MARKOV: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("29606aca-f23f-4dfe-b685-2065193109c8"),
+    "Sorin Markov",
+    crate::card::CardArt::new("e25b3a89-3a99-4e02-bf0c-a3cf450da1a1", "Michael Komarck"),
+    crate::card::CardSet::Zendikar,
+    crate::card::CardRules::unsupported(),
+);
+
 // ZEN 114 — Vampire Hexmage
 pub(in crate::card::sets) static VAMPIRE_HEXMAGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("93d2c4d1-6205-404a-b03d-995b90a3a33a"),
@@ -178,6 +326,31 @@ pub(in crate::card::sets) static VAMPIRE_LACERATOR: CardRecord = CardRecord::new
     crate::card::CardRules::unsupported(),
 );
 
+// ZEN 116 — Vampire Nighthawk
+pub(in crate::card::sets) static VAMPIRE_NIGHTHAWK: CardRecord = CardRecord::new_with_legacy_id(
+    236,
+    "Vampire Nighthawk",
+    CardArt::new("9ba96d96-8d9e-47c8-ab39-17479564aadf", "Jason Chan"),
+    CardSet::Zendikar,
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Vampire", "Shaman"], 2, 3).with_abilities(
+        &[
+            abilities::flying(),
+            abilities::deathtouch(),
+            abilities::lifelink(),
+        ],
+    ),
+);
+
+// ZEN 118 — Bladetusk Boar
+pub(in crate::card::sets) static BLADETUSK_BOAR: CardRecord = CardRecord::new_with_legacy_id(
+    1009,
+    "Bladetusk Boar",
+    CardArt::new("d28442f9-06cf-4273-80a3-2b054f5881a4", "Paul Bonner"),
+    CardSet::Zendikar,
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Boar"], 3, 2)
+        .with_abilities(&[abilities::intimidate()]),
+);
+
 // ZEN 119 — Burst Lightning
 pub(in crate::card::sets) static BURST_LIGHTNING: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("2dc16614-5cf8-444d-a5ae-cac25018af68"),
@@ -215,6 +388,81 @@ pub(in crate::card::sets) static GOBLIN_BUSHWHACKER: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
+// ZEN 128 — Goblin Shortcutter
+pub(in crate::card::sets) static GOBLIN_SHORTCUTTER: CardRecord = CardRecord::new_with_legacy_id(
+    1747,
+    "Goblin Shortcutter",
+    CardArt::new("71bccbec-6e1e-43d5-b0dc-eddf942fa798", "Jesper Ejsing"),
+    CardSet::Zendikar,
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Scout"], 2, 1).with_ability(
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, target creature can't block this turn.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BLOCK),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
+
+// ZEN 129 — Goblin War Paint
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static GOBLIN_WAR_PAINT: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("4388e57e-0c87-4d66-a862-58261d76c5ac"),
+    "Goblin War Paint",
+    crate::card::CardArt::new("fde711c9-fdef-4024-8269-a59ee0748f95", "Austin Hsu"),
+    crate::card::CardSet::Zendikar,
+    crate::card::CardRules::unsupported(),
+);
+
+// ZEN 137 — Mark of Mutiny
+pub(in crate::card::sets) static MARK_OF_MUTINY: CardRecord = CardRecord::new_with_legacy_id(
+    1021,
+    "Mark of Mutiny",
+    CardArt::new("0b7c6e09-3a14-4cc4-ba6b-f1f45e7d9f2a", "Mike Bierek"),
+    CardSet::Zendikar,
+    CardRules::new_sorcery(mana_cost!("{2}{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Gain control of target creature until end of turn. Put a +1/+1 counter on it and untap it. That creature gains haste until end of turn.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::GainControl {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                duration: ControlDurationDef::UntilEndOfTurn,
+                controller: PlayerRefDef::EffectController,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ]),
+    )),
+);
+
+// ZEN 149 — Slaughter Cry
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static SLAUGHTER_CRY: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("c93b0eda-693e-4a17-be1d-1df162702146"),
+    "Slaughter Cry",
+    crate::card::CardArt::new("65ec8b61-e602-41f2-ac1a-64e150b2ce18", "Matt Cavotta"),
+    crate::card::CardSet::Zendikar,
+    crate::card::CardRules::unsupported(),
+);
+
 // ZEN 168 — Lotus Cobra
 pub(in crate::card::sets) static LOTUS_COBRA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("19adde22-e5eb-4815-beb6-c520b3274cc9"),
@@ -247,6 +495,15 @@ pub(in crate::card::sets) static LOTUS_COBRA: CardRecord = CardRecord::new(
             ])),
         ),
     ),
+);
+
+// ZEN 192 — Vastwood Gorger
+pub(in crate::card::sets) static VASTWOOD_GORGER: CardRecord = CardRecord::new_with_legacy_id(
+    1042,
+    "Vastwood Gorger",
+    CardArt::new("70fc4a5f-1c59-4139-a506-72baebb1168f", "Kieran Yanner"),
+    CardSet::Zendikar,
+    CardRules::new_creature(mana_cost!("{5}{G}"), &["Wurm"], 5, 6),
 );
 
 // ZEN 193 — Vines of Vastwood
@@ -416,17 +673,33 @@ pub(in crate::card::sets) static VERDANT_CATACOMBS: CardRecord = CardRecord::new
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &BRAVE_THE_ELEMENTS,
+    &DAY_OF_JUDGMENT,
     &JOURNEY_TO_NOWHERE,
     &KOR_SKYFISHER,
+    &PILLARFIELD_OX,
     &INTO_THE_ROIL,
+    &KRAKEN_HATCHLING,
+    &PARALYZING_GRASP,
     &SPELL_PIERCE,
+    &WELKIN_TERN,
+    &BLOOD_SEEKER,
     &BLOODGHAST,
     &DISFIGURE,
+    &GIANT_SCORPION,
+    &SORIN_MARKOV,
     &VAMPIRE_HEXMAGE,
     &VAMPIRE_LACERATOR,
+    &VAMPIRE_NIGHTHAWK,
+    &BLADETUSK_BOAR,
     &BURST_LIGHTNING,
     &GOBLIN_BUSHWHACKER,
+    &GOBLIN_SHORTCUTTER,
+    &GOBLIN_WAR_PAINT,
+    &MARK_OF_MUTINY,
+    &SLAUGHTER_CRY,
     &LOTUS_COBRA,
+    &VASTWOOD_GORGER,
     &VINES_OF_VASTWOOD,
     &BLAZING_TORCH,
     &EXPEDITION_MAP,

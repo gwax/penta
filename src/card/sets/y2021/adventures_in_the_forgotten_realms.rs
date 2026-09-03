@@ -60,7 +60,21 @@ pub(in crate::card::sets) static OWLBEAR: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&PORTABLE_HOLE, &YOU_HEAR_SOMETHING_ON_WATCH, &OWLBEAR];
+// AFR 215 — You Meet in a Tavern
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static YOU_MEET_IN_A_TAVERN: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("593aa59a-4025-4df8-9f27-188fc7712fde"),
+    "You Meet in a Tavern",
+    crate::card::CardArt::new("9fddbd7a-799c-4432-810c-d839c5c354b9", "Zoltan Boros"),
+    crate::card::CardSet::AdventuresInTheForgottenRealms,
+    crate::card::CardRules::unsupported(),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &PORTABLE_HOLE,
+    &YOU_HEAR_SOMETHING_ON_WATCH,
+    &OWLBEAR,
+    &YOU_MEET_IN_A_TAVERN,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

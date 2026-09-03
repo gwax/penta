@@ -11,12 +11,45 @@ use crate::card::{
 use crate::ids::ParentBinding;
 use crate::{TargetIndex, mana_cost};
 
+// MRD 11 — Leonin Skyhunter
+pub(in crate::card::sets) static LEONIN_SKYHUNTER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("275a47e1-816c-44f9-bd05-b8b56410436f"),
+    "Leonin Skyhunter",
+    crate::card::CardArt::new(
+        "f7eb723d-aa4c-4a38-98de-1faefffab56b",
+        "Jana Schirmer & Johannes Voss",
+    ),
+    crate::card::CardSet::Mirrodin,
+    CardRules::new_creature(mana_cost!("{W}{W}"), &["Cat", "Knight"], 2, 2)
+        .with_abilities(&[abilities::flying()]),
+);
+
+// MRD 16 — Raise the Alarm
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static RAISE_THE_ALARM: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("4be510c8-fc01-4374-ac04-7968d24480fe"),
+    "Raise the Alarm",
+    crate::card::CardArt::new("764a7a53-314e-4b1f-aa33-0f312d06df71", "Zoltan Boros"),
+    crate::card::CardSet::Mirrodin,
+    crate::card::CardRules::unsupported(),
+);
+
 // MRD 57 — Barter in Blood
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BARTER_IN_BLOOD: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("beccbb2c-ca1d-4b72-9eca-a64a313fd830"),
     "Barter in Blood",
     crate::card::CardArt::new("beccbb2c-ca1d-4b72-9eca-a64a313fd830", "Paolo Parente"),
+    crate::card::CardSet::Mirrodin,
+    crate::card::CardRules::unsupported(),
+);
+
+// MRD 60 — Consume Spirit
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static CONSUME_SPIRIT: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("f375a49c-806a-4d8b-9513-6b4afc19497b"),
+    "Consume Spirit",
+    crate::card::CardArt::new("ef144439-fc8e-4844-8ebb-3e36e05ac9a0", "Justin Sweet"),
     crate::card::CardSet::Mirrodin,
     crate::card::CardRules::unsupported(),
 );
@@ -144,6 +177,106 @@ pub(in crate::card::sets) static CHROME_MOX: CardRecord = CardRecord::new(
     ]),
 );
 
+// MRD 158 — Copper Myr
+pub(in crate::card::sets) static COPPER_MYR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("a52b2dc4-4fb3-4ddf-bdb6-c63e8c8efc09"),
+    "Copper Myr",
+    crate::card::CardArt::new("323efe27-da58-4207-9c0c-dba5031bfa04", "Alan Pollack"),
+    crate::card::CardSet::Mirrodin,
+    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{T}: Add {G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+        ),
+    ),
+);
+
+// MRD 171 — Fireshrieker
+pub(in crate::card::sets) static FIRESHRIEKER: CardRecord = CardRecord::new_with_legacy_id(
+    1625,
+    "Fireshrieker",
+    CardArt::new(
+        "9f653742-b92a-4cfa-b3b5-8d20aabdb5dd",
+        "Christopher Moeller",
+    ),
+    CardSet::Mirrodin,
+    CardRules::new_artifact(mana_cost!("{3}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has double strike.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&abilities::double_strike()),
+                },
+            ),
+            abilities::equip(
+                &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+                "Equip {2} ({2}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
+);
+
+// MRD 175 — Gilded Lotus
+pub(in crate::card::sets) static GILDED_LOTUS: CardRecord = CardRecord::new_with_legacy_id(
+    1046,
+    "Gilded Lotus",
+    CardArt::new("33704052-aeb1-4798-a64d-778e1879eeb9", "Martina Pilcerova"),
+    CardSet::Mirrodin,
+    CardRules::new_artifact(mana_cost!("{5}")).with_ability(AbilityDef::activated_mana(
+        "{T}: Add three mana of any one color.",
+        &[AbilityCostDef::TapSource],
+        EffectDef::AddMana(AddManaEffectDef::any_color().with_amount(3)),
+    )),
+);
+
+// MRD 180 — Gold Myr
+pub(in crate::card::sets) static GOLD_MYR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("fa9b4040-ab49-476b-b101-5ef2b1824e10"),
+    "Gold Myr",
+    crate::card::CardArt::new("ac92126c-fb22-4b97-bbc5-b0533a0baad8", "Alan Pollack"),
+    crate::card::CardSet::Mirrodin,
+    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{T}: Add {W}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::White)),
+        ),
+    ),
+);
+
+// MRD 187 — Iron Myr
+pub(in crate::card::sets) static IRON_MYR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("08e17883-0767-40b5-ac44-a52a1ea54993"),
+    "Iron Myr",
+    crate::card::CardArt::new("5bd0a588-b695-4060-b5d5-c6a74710ff0f", "Alan Pollack"),
+    crate::card::CardSet::Mirrodin,
+    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{T}: Add {R}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
+        ),
+    ),
+);
+
+// MRD 191 — Leaden Myr
+pub(in crate::card::sets) static LEADEN_MYR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("555efe5f-848f-44da-92b5-69c8e852f179"),
+    "Leaden Myr",
+    crate::card::CardArt::new("3a709559-fec3-44f4-a2bf-3396989b9189", "Alan Pollack"),
+    crate::card::CardSet::Mirrodin,
+    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{T}: Add {B}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Black)),
+        ),
+    ),
+);
+
 // MRD 199 — Lightning Greaves
 pub(in crate::card::sets) static LIGHTNING_GREAVES: CardRecord = CardRecord::new_with_legacy_id(
     2170,
@@ -170,6 +303,51 @@ pub(in crate::card::sets) static LIGHTNING_GREAVES: CardRecord = CardRecord::new
             ),
             abilities::equip(&[AbilityCostDef::Mana(mana_cost!("{0}"))], "Equip {0}"),
         ]),
+);
+
+// MRD 206 — Mindslaver
+// Audit: unsupported — The engine has no continuous effect that lets one player make every game choice for another player during that player's next turn.
+pub(in crate::card::sets) static MINDSLAVER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("98fb1eaa-2871-491a-a4f5-3e358778ba40"),
+    "Mindslaver",
+    crate::card::CardArt::new("00d03b17-75ae-40d2-8570-b219ef0dfd4a", "Volkan Baǵa"),
+    crate::card::CardSet::Mirrodin,
+    crate::card::CardRules::unsupported(),
+);
+
+// MRD 226 — Pentavus
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static PENTAVUS: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("32a11f0a-7547-4fda-a8ed-caf76ce98f10"),
+    "Pentavus",
+    crate::card::CardArt::new("eb10af81-8ff3-4063-a67a-b760fdba95f8", "Greg Staples"),
+    crate::card::CardSet::Mirrodin,
+    crate::card::CardRules::unsupported(),
+);
+
+// MRD 241 — Silver Myr
+pub(in crate::card::sets) static SILVER_MYR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("b83a73a2-fedb-40bd-8e29-82a7abd6f211"),
+    "Silver Myr",
+    crate::card::CardArt::new("fdd60081-3942-4e0e-aacd-a0c121bb08c7", "Alan Pollack"),
+    crate::card::CardSet::Mirrodin,
+    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{T}: Add {U}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Blue)),
+        ),
+    ),
+);
+
+// MRD 245 — Solemn Simulacrum
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static SOLEMN_SIMULACRUM: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("00f9955f-a522-47bf-b064-92dd21a76b18"),
+    "Solemn Simulacrum",
+    crate::card::CardArt::new("246d2ce1-6926-4acc-810a-4894dc346b8b", "Dan Murayama Scott"),
+    crate::card::CardSet::Mirrodin,
+    crate::card::CardRules::unsupported(),
 );
 
 // MRD 253 — Talisman of Dominance
@@ -228,15 +406,39 @@ pub(in crate::card::sets) static TALISMAN_OF_PROGRESS: CardRecord = CardRecord::
     ]),
 );
 
+// MRD 276 — Worldslayer
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static WORLDSLAYER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("3cb1b869-3e2d-4447-a12d-e790883feeee"),
+    "Worldslayer",
+    crate::card::CardArt::new("db6c6b15-40f3-4556-978f-878bedb13762", "Greg Staples"),
+    crate::card::CardSet::Mirrodin,
+    crate::card::CardRules::unsupported(),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &LEONIN_SKYHUNTER,
+    &RAISE_THE_ALARM,
     &BARTER_IN_BLOOD,
+    &CONSUME_SPIRIT,
     &HUM_OF_THE_RADIX,
     &AETHER_SPELLBOMB,
     &BONESPLITTER,
     &CHROME_MOX,
+    &COPPER_MYR,
+    &FIRESHRIEKER,
+    &GILDED_LOTUS,
+    &GOLD_MYR,
+    &IRON_MYR,
+    &LEADEN_MYR,
     &LIGHTNING_GREAVES,
+    &MINDSLAVER,
+    &PENTAVUS,
+    &SILVER_MYR,
+    &SOLEMN_SIMULACRUM,
     &TALISMAN_OF_DOMINANCE,
     &TALISMAN_OF_PROGRESS,
+    &WORLDSLAYER,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

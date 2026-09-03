@@ -3,9 +3,6 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::CostQuantityDef;
 use crate::card::sets::y1998::portal_second_age as catalog_p02;
-use crate::card::sets::y2011::magic_2012 as catalog_m12;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2013::magic_2014 as catalog_m14;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryChoiceDestinationDef,
@@ -29,15 +26,10 @@ pub(in crate::card::sets) static ANGELIC_CURATOR: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ULG 2 — Blessed Reversal
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static BLESSED_REVERSAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("899ecc19-8106-4e5a-bb25-aaea9684ba0e"),
-    "Blessed Reversal",
-    crate::card::CardArt::new("3fb6d738-f6a8-4626-8103-68e63874eda4", "Pete Venters"),
-    crate::card::CardSet::UrzasLegacy,
-    crate::card::CardRules::unsupported(),
-);
+// ULG 2 — Blessed Reversal (reprint)
+const BLESSED_REVERSAL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::BLESSED_REVERSAL)
+        .with_art("3fb6d738-f6a8-4626-8103-68e63874eda4", "Pete Venters");
 
 // ULG 3 — Burst of Energy
 // Audit: unsupported — Card rules have not been implemented.
@@ -79,7 +71,24 @@ pub(in crate::card::sets) static DEVOUT_HARPIST: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ULG 7 — Erase (reprint)
+// ULG 7 — Erase
+pub(in crate::card::sets) static ERASE: CardRecord = CardRecord::new_with_legacy_id(
+    973,
+    "Erase",
+    CardArt::new("8618b737-faa0-4a0c-a3f2-bee685c00580", "Richard Wright"),
+    CardSet::UrzasLegacy,
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Exile target enchantment.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+        )],
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Exile,
+            placement: ZonePlacement::Top,
+        },
+    )),
+);
 
 // ULG 8 — Expendable Troops
 // Audit: unsupported — Card rules have not been implemented.
@@ -413,7 +422,24 @@ pub(in crate::card::sets) static KING_CRAB: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// ULG 35 — Levitation (reprint)
+// ULG 35 — Levitation
+pub(in crate::card::sets) static LEVITATION: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("ca18a2e7-6b01-4d10-82b5-0c1cb6ba0d2b"),
+    "Levitation",
+    crate::card::CardArt::new("63e5124a-67c0-44ed-8085-28bf37816423", "Jim Murray"),
+    crate::card::CardSet::UrzasLegacy,
+    CardRules::new_enchantment(mana_cost!("{2}{U}{U}")).with_ability(AbilityDef::static_ability(
+        "Creatures you control have flying.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&abilities::flying()),
+        },
+    )),
+);
 
 // ULG 36 — Miscalculation
 pub(in crate::card::sets) static MISCALCULATION: CardRecord = CardRecord::new_with_legacy_id(
@@ -441,7 +467,23 @@ pub(in crate::card::sets) static MISCALCULATION: CardRecord = CardRecord::new_wi
     ]),
 );
 
-// ULG 37 — Opportunity (reprint)
+// ULG 37 — Opportunity
+pub(in crate::card::sets) static OPPORTUNITY: CardRecord = CardRecord::new_with_legacy_id(
+    1168,
+    "Opportunity",
+    CardArt::new("e1b242f3-9398-4d65-a2c7-4de56ee58933", "Allen Williams"),
+    CardSet::UrzasLegacy,
+    CardRules::new_instant(mana_cost!("{4}{U}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player draws four cards.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(4),
+        },
+    )),
+);
 
 // ULG 38 — Palinchron
 // Audit: unsupported — Card rules have not been implemented.
@@ -999,6 +1041,9 @@ pub(in crate::card::sets) static LAST_DITCH_EFFORT: CardRecord = CardRecord::new
 );
 
 // ULG 84 — Lava Axe (reprint)
+const LAVA_AXE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::LAVA_AXE)
+        .with_art("e11ec278-46f5-4970-ad0b-f6718c73de6c", "Brian Snõddy");
 
 // ULG 85 — Molten Hydra
 // Audit: unsupported — Card rules have not been implemented.
@@ -1230,6 +1275,8 @@ pub(in crate::card::sets) static HIDDEN_GIBBONS: CardRecord = CardRecord::new(
 );
 
 // ULG 105 — Lone Wolf (reprint)
+const LONE_WOLF_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_p02::LONE_WOLF)
+    .with_art("e70ae8e9-852e-4e47-b48d-d1847666fc50", "Una Fricker");
 
 // ULG 106 — Might of Oaks
 // Audit: unsupported — Card rules have not been implemented.
@@ -1592,7 +1639,15 @@ pub(in crate::card::sets) static MEMORY_JAR: CardRecord = CardRecord::new(
     )),
 );
 
-// ULG 130 — Quicksilver Amulet (reprint)
+// ULG 130 — Quicksilver Amulet
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static QUICKSILVER_AMULET: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("ecfdebbe-6432-426f-ac2a-5a9af3047813"),
+    "Quicksilver Amulet",
+    crate::card::CardArt::new("04c0357a-e98d-4c49-83ad-d7a8ebe7e2d1", "Brad Rigney"),
+    crate::card::CardSet::UrzasLegacy,
+    crate::card::CardRules::unsupported(),
+);
 
 // ULG 131 — Ring of Gix
 // Audit: unsupported — Card rules have not been implemented.
@@ -1732,11 +1787,11 @@ pub(in crate::card::sets) static TREETOP_VILLAGE: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANGELIC_CURATOR,
-    &BLESSED_REVERSAL,
     &BURST_OF_ENERGY,
     &CESSATION,
     &DEFENDER_OF_LAW,
     &DEVOUT_HARPIST,
+    &ERASE,
     &EXPENDABLE_TROOPS,
     &HOPE_AND_GLORY,
     &IRON_WILL,
@@ -1764,7 +1819,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FRANTIC_SEARCH,
     &INTERVENE,
     &KING_CRAB,
+    &LEVITATION,
     &MISCALCULATION,
+    &OPPORTUNITY,
     &PALINCHRON,
     &RAVEN_FAMILIAR,
     &REBUILD,
@@ -1855,6 +1912,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IRON_MAIDEN,
     &JHOIRA_S_TOOLBOX,
     &MEMORY_JAR,
+    &QUICKSILVER_AMULET,
     &RING_OF_GIX,
     &SCRAPHEAP,
     &THRAN_LENS,
@@ -1871,10 +1929,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_m13::ERASE), // ULG 7
-    PrintingRecord::reprint(&catalog_m12::LEVITATION), // ULG 35
-    PrintingRecord::reprint(&catalog_m14::OPPORTUNITY), // ULG 37
-    PrintingRecord::reprint(&catalog_m14::LAVA_AXE), // ULG 84
-    PrintingRecord::reprint(&catalog_p02::LONE_WOLF), // ULG 105
-    PrintingRecord::reprint(&catalog_m12::QUICKSILVER_AMULET), // ULG 130
+    BLESSED_REVERSAL_REPRINT,
+    LAVA_AXE_REPRINT,
+    LONE_WOLF_REPRINT,
 ];

@@ -88,6 +88,8 @@ pub(in crate::card::sets) static ARMY_OF_ALLAH: CardRecord = CardRecord::new_wit
 );
 
 // ARN 2† — Army of Allah (alternate printing)
+const ARMY_OF_ALLAH_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ARMY_OF_ALLAH, 1)
+    .with_art("9899352a-a4c9-47bf-b9cb-0c34060ae1c4", "Brian Snõddy");
 
 // ARN 3 — Camel
 // Audit: unsupported — Needs a prevention that lives on the permanent and reads its combat state, for “As long as this creature is attacking, prevent all damage Deserts would deal to this creature and to creatures banded with this creature”. Deserts and band membership are both readable now.
@@ -155,6 +157,8 @@ pub(in crate::card::sets) static MOORISH_CAVALRY: CardRecord = CardRecord::new_w
 );
 
 // ARN 7† — Moorish Cavalry (alternate printing)
+const MOORISH_CAVALRY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&MOORISH_CAVALRY, 1)
+    .with_art("113a6b31-3748-48c1-a915-ab0b613eabb3", "Dameon Willich");
 
 // ARN 8 — Piety
 pub(in crate::card::sets) static PIETY: CardRecord = CardRecord::new_with_legacy_id(
@@ -184,6 +188,8 @@ pub(in crate::card::sets) static PIETY: CardRecord = CardRecord::new_with_legacy
 );
 
 // ARN 8† — Piety (alternate printing)
+const PIETY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&PIETY, 1)
+    .with_art("8a5a1a13-dfc8-49b7-9b17-3f0c5ca1b8be", "Mark Poole");
 
 // ARN 9 — Repentant Blacksmith
 pub(in crate::card::sets) static REPENTANT_BLACKSMITH: CardRecord = CardRecord::new_with_legacy_id(
@@ -216,6 +222,8 @@ pub(in crate::card::sets) static WAR_ELEPHANT: CardRecord = CardRecord::new_with
 );
 
 // ARN 11† — War Elephant (alternate printing)
+const WAR_ELEPHANT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&WAR_ELEPHANT, 1)
+    .with_art("cd87344d-9113-4fec-9a93-38bc1abe2af5", "Kristen Bishop");
 
 // ARN 12 — Dandân
 pub(in crate::card::sets) static DANDAN: CardRecord = CardRecord::new_with_legacy_id(
@@ -262,6 +270,8 @@ pub(in crate::card::sets) static FISHLIVER_OIL: CardRecord = CardRecord::new_wit
 );
 
 // ARN 13† — Fishliver Oil (alternate printing)
+const FISHLIVER_OIL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&FISHLIVER_OIL, 1)
+    .with_art("c066c452-1d87-4946-8d3b-6cc160a82282", "Anson Maddocks");
 
 // ARN 14 — Flying Men
 pub(in crate::card::sets) static FLYING_MEN: CardRecord = CardRecord::new_with_legacy_id(
@@ -303,6 +313,8 @@ pub(in crate::card::sets) static GIANT_TORTOISE: CardRecord = CardRecord::new_wi
 );
 
 // ARN 15† — Giant Tortoise (alternate printing)
+const GIANT_TORTOISE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&GIANT_TORTOISE, 1)
+    .with_art("170fa026-c17b-4731-b520-455c39ccbe6d", "Kaja Foglio");
 
 // ARN 16 — Island Fish Jasconius
 pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord::new_with_legacy_id(
@@ -526,6 +538,8 @@ pub(in crate::card::sets) static ERG_RAIDERS: CardRecord = CardRecord::new_with_
 );
 
 // ARN 25† — Erg Raiders (alternate printing)
+const ERG_RAIDERS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ERG_RAIDERS, 1)
+    .with_art("2717b2e2-bea8-4ba8-9ad1-abb60abf6e4c", "Dameon Willich");
 
 // ARN 26 — Guardian Beast
 pub(in crate::card::sets) static GUARDIAN_BEAST: CardRecord = CardRecord::new_with_legacy_id(
@@ -580,6 +594,8 @@ pub(in crate::card::sets) static HASRAN_OGRESS: CardRecord = CardRecord::new_wit
 );
 
 // ARN 27† — Hasran Ogress (alternate printing)
+const HASRAN_OGRESS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HASRAN_OGRESS, 1)
+    .with_art("d8fcc83f-c67f-46a2-bb0e-dafbf0a2bfc0", "Dan Frazier");
 
 // ARN 28 — Junún Efreet
 pub(in crate::card::sets) static JUNUN_EFREET: CardRecord = CardRecord::new_with_legacy_id(
@@ -663,6 +679,8 @@ pub(in crate::card::sets) static OUBLIETTE: CardRecord = CardRecord::new(
 );
 
 // ARN 31† — Oubliette (alternate printing)
+const OUBLIETTE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&OUBLIETTE, 1)
+    .with_art("58d74d1d-3f68-4cab-903e-e146a33258f3", "Douglas Shuler");
 
 // ARN 32 — Sorceress Queen
 pub(in crate::card::sets) static SORCERESS_QUEEN: CardRecord = CardRecord::new_with_legacy_id(
@@ -707,6 +725,9 @@ pub(in crate::card::sets) static STONE_THROWING_DEVILS: CardRecord = CardRecord:
 );
 
 // ARN 33† — Stone-Throwing Devils (alternate printing)
+const STONE_THROWING_DEVILS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&STONE_THROWING_DEVILS, 1)
+        .with_art("cb0b28ac-144e-43c5-84f3-d4a2a229f49b", "Ken Meyer, Jr.");
 
 // ARN 34 — Aladdin
 pub(in crate::card::sets) static ALADDIN: CardRecord = CardRecord::new_with_legacy_id(
@@ -792,6 +813,8 @@ pub(in crate::card::sets) static BIRD_MAIDEN: CardRecord = CardRecord::new_with_
 );
 
 // ARN 37† — Bird Maiden (alternate printing)
+const BIRD_MAIDEN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&BIRD_MAIDEN, 1)
+    .with_art("709532d8-cd3e-4844-b580-e6925ce837ff", "Kaja Foglio");
 
 // ARN 38 — Desert Nomads
 // Audit: unsupported — Needs a landwalk naming a land subtype, and a prevention that lives on the permanent rather than being created by a resolving effect, for “Prevent all damage that would be dealt to this creature by Deserts”. Desert itself is now cataloged, so the land type the walk reads exists.
@@ -913,6 +936,8 @@ pub(in crate::card::sets) static RUKH_EGG: CardRecord = CardRecord::new_with_leg
 );
 
 // ARN 43† — Rukh Egg (alternate printing)
+const RUKH_EGG_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&RUKH_EGG, 1)
+    .with_art("9c4defc2-b1a2-4ae2-bda0-24ecd4ff8181", "Christopher Rush");
 
 // ARN 44 — Ydwen Efreet
 // Audit: unsupported — Needs attackers this creature had blocked alone to become unblocked, which reverses the ordinary rule that removing a blocker leaves them blocked. The flip and the combat removal are available.
@@ -1095,6 +1120,8 @@ pub(in crate::card::sets) static METAMORPHOSIS: CardRecord = CardRecord::new(
 );
 
 // ARN 52 — Nafs Asp (alternate printing)
+const NAFS_ASP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&NAFS_ASP, 1)
+    .with_art("965f722c-2b18-4c22-8c30-12552def5940", "Christopher Rush");
 
 // ARN 52† — Nafs Asp
 // Audit: unsupported — Card rules have not been implemented.
@@ -1179,6 +1206,8 @@ pub(in crate::card::sets) static WYLULI_WOLF: CardRecord = CardRecord::new_with_
 );
 
 // ARN 55† — Wyluli Wolf (alternate printing)
+const WYLULI_WOLF_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&WYLULI_WOLF, 1)
+    .with_art("1cc1188c-4331-41dc-a577-bd4bedd7ca76", "Susan Van Camp");
 
 // ARN 56 — Aladdin's Lamp
 // Audit: unsupported — Needs seeded random selection with replay-visible provenance for “{X}, {T}: The next time you would draw a card this turn, instead look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then…”.
@@ -1697,6 +1726,8 @@ pub(in crate::card::sets) static LIBRARY_OF_ALEXANDRIA: CardRecord = CardRecord:
 );
 
 // ARN 77 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
+    .with_art("c321d0e1-ff30-4424-979b-25e1a33e45d5", "Douglas Shuler");
 
 // ARN 78 — Oasis
 pub(in crate::card::sets) static OASIS: CardRecord = CardRecord::new_with_legacy_id(
@@ -1801,19 +1832,19 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&ARMY_OF_ALLAH, 1),   // ARN 2†
-    PrintingRecord::alternate(&MOORISH_CAVALRY, 1), // ARN 7†
-    PrintingRecord::alternate(&PIETY, 1),           // ARN 8†
-    PrintingRecord::alternate(&WAR_ELEPHANT, 1),    // ARN 11†
-    PrintingRecord::alternate(&FISHLIVER_OIL, 1),   // ARN 13†
-    PrintingRecord::alternate(&GIANT_TORTOISE, 1),  // ARN 15†
-    PrintingRecord::alternate(&ERG_RAIDERS, 1),     // ARN 25†
-    PrintingRecord::alternate(&HASRAN_OGRESS, 1),   // ARN 27†
-    PrintingRecord::alternate(&OUBLIETTE, 1),       // ARN 31†
-    PrintingRecord::alternate(&STONE_THROWING_DEVILS, 1), // ARN 33†
-    PrintingRecord::alternate(&BIRD_MAIDEN, 1),     // ARN 37†
-    PrintingRecord::alternate(&RUKH_EGG, 1),        // ARN 43†
-    PrintingRecord::alternate(&NAFS_ASP, 1),        // ARN 52
-    PrintingRecord::alternate(&WYLULI_WOLF, 1),     // ARN 55†
-    PrintingRecord::reprint(&catalog_lea::MOUNTAIN), // ARN 77
+    ARMY_OF_ALLAH_ALTERNATE_1,
+    MOORISH_CAVALRY_ALTERNATE_1,
+    PIETY_ALTERNATE_1,
+    WAR_ELEPHANT_ALTERNATE_1,
+    FISHLIVER_OIL_ALTERNATE_1,
+    GIANT_TORTOISE_ALTERNATE_1,
+    ERG_RAIDERS_ALTERNATE_1,
+    HASRAN_OGRESS_ALTERNATE_1,
+    OUBLIETTE_ALTERNATE_1,
+    STONE_THROWING_DEVILS_ALTERNATE_1,
+    BIRD_MAIDEN_ALTERNATE_1,
+    RUKH_EGG_ALTERNATE_1,
+    NAFS_ASP_ALTERNATE_1,
+    WYLULI_WOLF_ALTERNATE_1,
+    MOUNTAIN_REPRINT,
 ];

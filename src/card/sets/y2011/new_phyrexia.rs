@@ -1395,42 +1395,10 @@ pub(in crate::card::sets) static DISMEMBER: CardRecord = CardRecord::new(
     ),
 );
 
-// NPH 58 — Enslave
-pub(in crate::card::sets) static ENSLAVE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6c6283e1-e4f1-4ff6-be01-b66ab623e0ac"),
-    "Enslave",
-    crate::card::CardArt::new("17c2f5f0-1f37-4f51-9c10-c02e2ef7d4ee", "Chris Rahn"),
-    crate::card::CardSet::NewPhyrexia,
-    CardRules::new_enchantment(mana_cost!("{4}{B}{B}"))
-        .with_subtypes(&["Aura"])
-        .with_abilities(&[
-            abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
-            AbilityDef::static_ability(
-                "You control enchanted creature.",
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::AttachedPermanent,
-                    controller: PlayerRefDef::EffectController,
-                    duration: ControlDurationDef::WhileSourceRemains {
-                        while_tapped: false,
-                    },
-                },
-            ),
-            AbilityDef::triggered(
-                "At the beginning of your upkeep, enchanted creature deals 1 damage to its owner.",
-                TriggerEventDef::StepBegins {
-                    step: TurnStepDef::Upkeep,
-                    player: PlayerRelation::You,
-                },
-                EffectDef::DealDamageFrom {
-                    source: ObjectRefDef::AttachedToSource,
-                    recipient: EffectRecipientDef::player(PlayerRefDef::OwnerOf(
-                        ObjectRefDef::AttachedToSource,
-                    )),
-                    amount: ValueDef::Constant(1),
-                },
-            ),
-        ]),
-);
+// NPH 58 — Enslave (reprint)
+const ENSLAVE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2007::planar_chaos::ENSLAVE)
+        .with_art("17c2f5f0-1f37-4f51-9c10-c02e2ef7d4ee", "Chris Rahn");
 
 // NPH 59 — Entomber Exarch
 pub(in crate::card::sets) static ENTOMBER_EXARCH: CardRecord = CardRecord::new(
@@ -1478,6 +1446,9 @@ pub(in crate::card::sets) static ENTOMBER_EXARCH: CardRecord = CardRecord::new(
 );
 
 // NPH 60 — Evil Presence (reprint)
+const EVIL_PRESENCE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::EVIL_PRESENCE)
+        .with_art("4dd00bc5-234c-4ded-b0b7-1181bc16cb28", "Scott Chou");
 
 // NPH 61 — Geth's Verdict
 pub(in crate::card::sets) static GETH_S_VERDICT: CardRecord = CardRecord::new(
@@ -3510,6 +3481,9 @@ pub(in crate::card::sets) static PESTILENT_SOULEATER: CardRecord = CardRecord::n
 );
 
 // NPH 150 — Phyrexian Hulk (reprint)
+const PHYREXIAN_HULK_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::tempest::PHYREXIAN_HULK)
+        .with_art("1687b5a7-7013-409a-ba8d-9cd8b5bb08f3", "Steven Belledin");
 
 // NPH 151 — Pristine Talisman
 // Audit: unsupported — Shared mana-ability execution cannot sequence the printed life gain after adding mana.
@@ -3959,24 +3933,49 @@ pub(in crate::card::sets) static PHYREXIA_S_CORE: CardRecord = CardRecord::new(
 );
 
 // NPH 166 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::PLAINS)
+        .with_art("db0c6f01-42be-40a1-becb-085f54750830", "James Paick");
 
 // NPH 167 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("9129628e-ee2b-450b-a3d6-fc94e9bf477d", "James Paick");
 
 // NPH 168 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::ISLAND)
+        .with_art("61a25790-29ac-4fc6-afd8-9c4063f4284d", "Jung Park");
 
 // NPH 169 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("3aba057e-11db-432b-a39c-a2845868bccd", "Jung Park");
 
 // NPH 170 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::SWAMP)
+        .with_art("267d4321-4411-499c-a476-70c805abf02a", "Lars Grant-West");
 
 // NPH 171 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("c1f11dc9-cedd-4691-9615-0ed65b5398ba", "Lars Grant-West");
 
 // NPH 172 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::MOUNTAIN)
+        .with_art("9af1a73f-e2ab-4832-b9a0-5bd9643f4fd3", "Tomasz Jedruszek");
 
 // NPH 173 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("d5d68279-a6fd-4cf3-afb3-1ba4e26a78a3", "Tomasz Jedruszek");
 
 // NPH 174 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::FOREST)
+        .with_art("37a8d9ff-291a-4862-b2e8-3db520cc9ae4", "Mark Tedin");
 
 // NPH 175 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("4ebd9027-5b48-42c0-9533-afe50bb101e6", "Mark Tedin");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KARN_LIBERATED,
@@ -4036,7 +4035,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEMENTIA_BAT,
     &DESPISE,
     &DISMEMBER,
-    &ENSLAVE,
     &ENTOMBER_EXARCH,
     &GETH_S_VERDICT,
     &GLISTENING_OIL,
@@ -4145,16 +4143,17 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::EVIL_PRESENCE), // NPH 60
-    PrintingRecord::reprint(&crate::card::sets::y2012::magic_2013::PHYREXIAN_HULK), // NPH 150
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::PLAINS),        // NPH 166
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1),                       // NPH 167
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::ISLAND),        // NPH 168
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1),                       // NPH 169
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::SWAMP),         // NPH 170
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1),                        // NPH 171
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::MOUNTAIN),      // NPH 172
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1),                     // NPH 173
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::FOREST),        // NPH 174
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1),                       // NPH 175
+    ENSLAVE_REPRINT,
+    EVIL_PRESENCE_REPRINT,
+    PHYREXIAN_HULK_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
 ];

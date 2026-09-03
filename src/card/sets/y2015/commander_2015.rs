@@ -1,6 +1,7 @@
 //! Commander 2015 cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::sets::y2005::betrayers_of_kamigawa as catalog_bok;
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType,
     EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ValueDef, ZoneKind,
@@ -123,32 +124,18 @@ pub(in crate::card::sets) static CALLER_OF_THE_PACK: CardRecord = CardRecord::ne
         .with_abilities(&[abilities::trample(), abilities::myriad()]),
 );
 
-// C15 69 — Faith's Fetters
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static FAITH_S_FETTERS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5b8ffba3-44a9-41ce-a5a1-37413346db2f"),
-    "Faith's Fetters",
-    crate::card::CardArt::new("fe653236-c5c1-4dcd-95cd-3c53f1e256ef", "Brian Despain"),
-    crate::card::CardSet::Commander2015,
-    crate::card::CardRules::unsupported(),
-);
+// C15 69 — Faith's Fetters (reprint)
+const FAITH_S_FETTERS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::FAITH_S_FETTERS)
+        .with_art("fe653236-c5c1-4dcd-95cd-3c53f1e256ef", "Brian Despain");
 
-// C15 99 — Ninja of the Deep Hours
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static NINJA_OF_THE_DEEP_HOURS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("367a67c7-54db-4336-b55a-3fa27625172a"),
-    "Ninja of the Deep Hours",
-    crate::card::CardArt::new("26184ff2-3b8c-419a-9b28-95d6e4e996bb", "Dan Murayama Scott"),
-    crate::card::CardSet::Commander2015,
-    crate::card::CardRules::unsupported(),
-);
+// C15 99 — Ninja of the Deep Hours (reprint)
+const NINJA_OF_THE_DEEP_HOURS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_bok::NINJA_OF_THE_DEEP_HOURS)
+        .with_art("26184ff2-3b8c-419a-9b28-95d6e4e996bb", "Dan Murayama Scott");
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
-    &MYSTIC_CONFLUENCE,
-    &FIERY_CONFLUENCE,
-    &CALLER_OF_THE_PACK,
-    &FAITH_S_FETTERS,
-    &NINJA_OF_THE_DEEP_HOURS,
-];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&MYSTIC_CONFLUENCE, &FIERY_CONFLUENCE, &CALLER_OF_THE_PACK];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[FAITH_S_FETTERS_REPRINT, NINJA_OF_THE_DEEP_HOURS_REPRINT];

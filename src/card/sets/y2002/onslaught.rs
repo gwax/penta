@@ -1,16 +1,13 @@
 //! Onslaught cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::KeywordAbility;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y1994::legends as catalog_leg;
 use crate::card::sets::y1996::mirage as catalog_mir;
 use crate::card::sets::y1998::urzas_saga as catalog_usg;
 use crate::card::sets::y1999::urzas_destiny as catalog_uds;
 use crate::card::sets::y1999::urzas_legacy as catalog_ulg;
-use crate::card::sets::y2011::magic_2012 as catalog_m12;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2013::magic_2014 as catalog_m14;
-use crate::card::sets::y2019::modern_horizons as catalog_mh1;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardType,
@@ -319,9 +316,29 @@ pub(in crate::card::sets) static DEFENSIVE_MANEUVERS: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
-// ONS 24 — Demystify (reprint)
+// ONS 24 — Demystify
+pub(in crate::card::sets) static DEMYSTIFY: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("d0df839f-dc4c-44b0-82c7-cb2037172ac5"),
+    "Demystify",
+    crate::card::CardArt::new("8f1b042f-f059-4e9f-a459-8682688f45cf", "Véronique Meignaud"),
+    crate::card::CardSet::Onslaught,
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target enchantment.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+        )],
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+            then: None,
+        },
+    )),
+);
 
 // ONS 25 — Disciple of Grace (reprint)
+const DISCIPLE_OF_GRACE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_usg::DISCIPLE_OF_GRACE)
+        .with_art("1d1790cb-34e4-4f23-8a13-1906fd9a956f", "Thomas M. Baxa");
 
 // ONS 26 — Dive Bomber
 // Audit: unsupported — Card rules have not been implemented.
@@ -555,6 +572,9 @@ pub(in crate::card::sets) static OBLATION: CardRecord = CardRecord::new(
 );
 
 // ONS 47 — Pacifism (reprint)
+const PACIFISM_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1996::mirage::PACIFISM)
+        .with_art("ee262fde-8df1-431f-9e5c-0cafe9212b49", "Matthew D. Wilson");
 
 // ONS 48 — Pearlspear Courier
 // Audit: unsupported — Card rules have not been implemented.
@@ -875,6 +895,8 @@ pub(in crate::card::sets) static CHOKING_TETHERS: CardRecord = CardRecord::new(
 );
 
 // ONS 75 — Clone (reprint)
+const CLONE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::CLONE)
+    .with_art("1d513dde-7c5f-46f1-b871-5290595bdbbe", "Carl Critchlow");
 
 // ONS 76 — Complicate
 // Audit: unsupported — Card rules have not been implemented.
@@ -1046,6 +1068,8 @@ pub(in crate::card::sets) static MAGE_S_GUILE: CardRecord = CardRecord::new(
 );
 
 // ONS 92 — Meddle (reprint)
+const MEDDLE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_mir::MEDDLE)
+    .with_art("685edfe8-9770-47c6-95fb-0816f3126f04", "Brian Snõddy");
 
 // ONS 93 — Mistform Dreamer
 // Audit: unsupported — Card rules have not been implemented.
@@ -1898,6 +1922,8 @@ pub(in crate::card::sets) static STRONGARM_TACTICS: CardRecord = CardRecord::new
 );
 
 // ONS 174 — Swat (reprint)
+const SWAT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_ulg::SWAT)
+    .with_art("cec3a260-6c50-401d-a0ff-bf49a973e1a1", "rk post");
 
 // ONS 175 — Syphon Mind
 // Audit: unsupported — Card rules have not been implemented.
@@ -1910,6 +1936,8 @@ pub(in crate::card::sets) static SYPHON_MIND: CardRecord = CardRecord::new(
 );
 
 // ONS 176 — Syphon Soul (reprint)
+const SYPHON_SOUL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_leg::SYPHON_SOUL)
+    .with_art("3bdaef0f-9965-463b-902d-72ec24b2db7b", "Ron Spears");
 
 // ONS 177 — Thrashing Mudspawn
 // Audit: unsupported — Card rules have not been implemented.
@@ -2151,6 +2179,9 @@ pub(in crate::card::sets) static DWARVEN_BLASTMINER: CardRecord = CardRecord::ne
 );
 
 // ONS 200 — Embermage Goblin (alternate printing)
+const EMBERMAGE_GOBLIN_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&EMBERMAGE_GOBLIN, 1)
+        .with_art("f50f60a8-e99a-4891-b474-a21abee38970", "Pete Venters");
 
 // ONS 200★ — Embermage Goblin
 // Audit: unsupported — Card rules have not been implemented.
@@ -2413,6 +2444,8 @@ pub(in crate::card::sets) static LAVAMANCER_S_SKILL: CardRecord = CardRecord::ne
 );
 
 // ONS 216 — Lay Waste (reprint)
+const LAY_WASTE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_usg::LAY_WASTE)
+    .with_art("22061b5e-81d3-4c7f-ab39-7ee719c13cef", "Carl Critchlow");
 
 // ONS 217 — Lightning Rift
 // Audit: unsupported — Card rules have not been implemented.
@@ -2518,6 +2551,11 @@ pub(in crate::card::sets) static SHALESKIN_BRUISER: CardRecord = CardRecord::new
 );
 
 // ONS 227 — Shock (reprint)
+const SHOCK_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::stronghold::SHOCK).with_art(
+        "83c92b5d-103c-4719-a850-690a7010291a",
+        "Edward P. Beard, Jr.",
+    );
 
 // ONS 228 — Skirk Commando
 // Audit: unsupported — Card rules have not been implemented.
@@ -2820,6 +2858,8 @@ pub(in crate::card::sets) static CROWN_OF_VIGOR: CardRecord = CardRecord::new(
 );
 
 // ONS 254 — Elven Riders (reprint)
+const ELVEN_RIDERS_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_leg::ELVEN_RIDERS)
+    .with_art("f7c1aa30-0271-48d9-b9d0-3b1da26d98bf", "Darrell Riche");
 
 // ONS 255 — Elvish Guidance
 // Audit: unsupported — Card rules have not been implemented.
@@ -3003,7 +3043,15 @@ pub(in crate::card::sets) static KROSAN_GROUNDSHAKER: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
-// ONS 272 — Krosan Tusker (reprint)
+// ONS 272 — Krosan Tusker
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static KROSAN_TUSKER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("0b872f85-60c5-44c4-956d-a8aa8132908b"),
+    "Krosan Tusker",
+    crate::card::CardArt::new("6391ba8b-7d9a-4077-8eeb-1b2ced14d973", "Kev Walker"),
+    crate::card::CardSet::Onslaught,
+    crate::card::CardRules::unsupported(),
+);
 
 // ONS 273 — Leery Fogbeast
 // Audit: unsupported — Card rules have not been implemented.
@@ -3091,7 +3139,31 @@ pub(in crate::card::sets) static SERPENTINE_BASILISK: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
-// ONS 281 — Silklash Spider (reprint)
+// ONS 281 — Silklash Spider
+pub(in crate::card::sets) static SILKLASH_SPIDER: CardRecord = CardRecord::new_with_legacy_id(
+    1645,
+    "Silklash Spider",
+    CardArt::new("359d1bb9-dbfd-4094-bda0-9a19817ce4bc", "Iain McCaig"),
+    CardSet::Onslaught,
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Spider"], 2, 7).with_abilities(&[
+        abilities::reach(),
+        AbilityDef::activated(
+            "{X}{G}{G}: This creature deals X damage to each creature with flying.",
+            &[AbilityCostDef::Mana(mana_cost!("{X}{G}{G}"))],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                amount: ValueDef::ChosenX,
+            },
+        ),
+    ]),
+);
 
 // ONS 282 — Silvos, Rogue Elemental
 // Audit: unsupported — Card rules have not been implemented.
@@ -3174,6 +3246,8 @@ pub(in crate::card::sets) static SYMBIOTIC_WURM: CardRecord = CardRecord::new(
 );
 
 // ONS 290 — Taunting Elf (reprint)
+const TAUNTING_ELF_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_uds::TAUNTING_ELF)
+    .with_art("6b24af94-9632-47da-9bf3-e81bb743cd43", "Rebecca Guay");
 
 // ONS 291 — Tempting Wurm
 // Audit: unsupported — Card rules have not been implemented.
@@ -3604,44 +3678,84 @@ pub(in crate::card::sets) static WOODED_FOOTHILLS: CardRecord = CardRecord::new_
 );
 
 // ONS 331 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::PLAINS)
+    .with_art("7bf7d68a-dbd0-45f3-acbb-59ee38e6057e", "Rob Alexander");
 
 // ONS 332 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("e52ed647-bd30-40a5-b648-0b98d1a3fd4a", "Matthew Mitchell");
 
 // ONS 333 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 2)
+    .with_art("854a255e-fd89-4c5d-b97b-416a9ac70960", "David Martin");
 
 // ONS 334 — Plains (alternate printing)
+const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 3)
+    .with_art("fd7babbe-f8c1-4e7c-8de2-2224dd357de4", "David Day");
 
 // ONS 335 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::ISLAND)
+    .with_art("36e062ec-df51-40c0-ad8a-2ee1cb8f8f17", "Tony Szczudlo");
 
 // ONS 336 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("6e8c0e52-8482-4c33-bc5d-26eaad922e72", "Bradley Williams");
 
 // ONS 337 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 2)
+    .with_art("1dac3bfe-884b-4875-bc7d-df564eb014cd", "Matt Thompson");
 
 // ONS 338 — Island (alternate printing)
+const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 3)
+    .with_art("189a09b8-46d2-4ef6-b7cc-9e510d1ea0b8", "Randy Elliott");
 
 // ONS 339 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SWAMP)
+    .with_art("0356ae45-e5ca-46b9-8ebc-42bf4776e89c", "Tony Szczudlo");
 
 // ONS 340 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("a6285f63-a5d8-4b8b-a6dd-51ce7968fbaf", "Doug Chaffee");
 
 // ONS 341 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 2)
+    .with_art("7aa97b25-1ea0-4351-ab9f-f06c8bb4d044", "Dan Frazier");
 
 // ONS 342 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 3)
+    .with_art("8e10b125-eaa6-4630-a6fe-6b1805921f07", "Pete Venters");
 
 // ONS 343 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
+    .with_art("05f9bdca-0d54-46c7-b803-9083dfc9ee24", "Tony Szczudlo");
 
 // ONS 344 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("b6d39f35-c7b2-43b2-aee3-4ff2cd3e37e7", "Sam Wood");
 
 // ONS 345 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2)
+    .with_art("e8aade2d-5cf5-44f6-9095-aa3756b1c1dd", "David Day");
 
 // ONS 346 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3)
+    .with_art("fd194fb1-0d3a-4eff-a446-240d18dad43c", "Heather Hudson");
 
 // ONS 347 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FOREST)
+    .with_art("b361b42d-401f-440a-bae9-35338b5dde0e", "John Avon");
 
 // ONS 348 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("4d8edfee-7837-450a-bcf3-a7bb25670056", "John Matson");
 
 // ONS 349 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 2)
+    .with_art("7b0af992-80e0-4ac6-a828-5eaac47eaff6", "John Avon");
 
 // ONS 350 — Forest (alternate printing)
+const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 3)
+    .with_art("835a4eed-a308-428d-ac85-e385b5d47d8e", "David Martin");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AKROMA_S_BLESSING,
@@ -3667,6 +3781,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DAUNTING_DEFENDER,
     &DAWNING_PURIST,
     &DEFENSIVE_MANEUVERS,
+    &DEMYSTIFY,
     &DIVE_BOMBER,
     &DOUBTLESS_ONE,
     &EXALTED_ANGEL,
@@ -3905,6 +4020,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KAMAHL_S_SUMMONS,
     &KROSAN_COLOSSUS,
     &KROSAN_GROUNDSHAKER,
+    &KROSAN_TUSKER,
     &LEERY_FOGBEAST,
     &MYTHIC_PROPORTIONS,
     &NATURALIZE,
@@ -3913,6 +4029,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RAVENOUS_BALOTH,
     &RUN_WILD,
     &SERPENTINE_BASILISK,
+    &SILKLASH_SPIDER,
     &SILVOS_ROGUE_ELEMENTAL,
     &SNARLING_UNDORAK,
     &SPITTING_GOURNA,
@@ -3964,38 +4081,35 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_m12::DEMYSTIFY), // ONS 24
-    PrintingRecord::reprint(&catalog_usg::DISCIPLE_OF_GRACE), // ONS 25
-    PrintingRecord::reprint(&catalog_m13::PACIFISM),  // ONS 47
-    PrintingRecord::reprint(&catalog_lea::CLONE),     // ONS 75
-    PrintingRecord::reprint(&catalog_mir::MEDDLE),    // ONS 92
-    PrintingRecord::reprint(&catalog_ulg::SWAT),      // ONS 174
-    PrintingRecord::reprint(&catalog_leg::SYPHON_SOUL), // ONS 176
-    PrintingRecord::alternate(&EMBERMAGE_GOBLIN, 1),  // ONS 200
-    PrintingRecord::reprint(&catalog_usg::LAY_WASTE), // ONS 216
-    PrintingRecord::reprint(&catalog_m14::SHOCK),     // ONS 227
-    PrintingRecord::reprint(&catalog_leg::ELVEN_RIDERS), // ONS 254
-    PrintingRecord::reprint(&catalog_mh1::KROSAN_TUSKER), // ONS 272
-    PrintingRecord::reprint(&catalog_m13::SILKLASH_SPIDER), // ONS 281
-    PrintingRecord::reprint(&catalog_uds::TAUNTING_ELF), // ONS 290
-    PrintingRecord::reprint(&catalog_lea::PLAINS),    // ONS 331
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1), // ONS 332
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 2), // ONS 333
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 3), // ONS 334
-    PrintingRecord::reprint(&catalog_lea::ISLAND),    // ONS 335
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1), // ONS 336
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 2), // ONS 337
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 3), // ONS 338
-    PrintingRecord::reprint(&catalog_lea::SWAMP),     // ONS 339
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1), // ONS 340
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 2), // ONS 341
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 3), // ONS 342
-    PrintingRecord::reprint(&catalog_lea::MOUNTAIN),  // ONS 343
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1), // ONS 344
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2), // ONS 345
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3), // ONS 346
-    PrintingRecord::reprint(&catalog_lea::FOREST),    // ONS 347
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1), // ONS 348
-    PrintingRecord::alternate(&catalog_lea::FOREST, 2), // ONS 349
-    PrintingRecord::alternate(&catalog_lea::FOREST, 3), // ONS 350
+    DISCIPLE_OF_GRACE_REPRINT,
+    PACIFISM_REPRINT,
+    CLONE_REPRINT,
+    MEDDLE_REPRINT,
+    SWAT_REPRINT,
+    SYPHON_SOUL_REPRINT,
+    EMBERMAGE_GOBLIN_ALTERNATE_1,
+    LAY_WASTE_REPRINT,
+    SHOCK_REPRINT,
+    ELVEN_RIDERS_REPRINT,
+    TAUNTING_ELF_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    PLAINS_ALTERNATE_3,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    ISLAND_ALTERNATE_3,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    SWAMP_ALTERNATE_3,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    MOUNTAIN_ALTERNATE_3,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
+    FOREST_ALTERNATE_3,
 ];

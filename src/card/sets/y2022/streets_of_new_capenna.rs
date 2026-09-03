@@ -22,6 +22,16 @@ const fn triome(types: &'static [&'static str]) -> CardRules {
     CardRules::new_land(types).with_abilities(TRIOME_ABILITIES)
 }
 
+// SNC 18 — Inspiring Overseer
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static INSPIRING_OVERSEER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("35d9da1d-8678-4252-b0f8-9960795642f0"),
+    "Inspiring Overseer",
+    crate::card::CardArt::new("be1c0c41-cd92-49b2-be07-0c44219bcb6a", "Irina Nordsol"),
+    crate::card::CardSet::StreetsOfNewCapenna,
+    crate::card::CardRules::unsupported(),
+);
+
 // SNC 26 — Raffine's Informant
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAFFINE_S_INFORMANT: CardRecord = CardRecord::new(
@@ -165,6 +175,7 @@ pub(in crate::card::sets) static ZIATORAS_PROVING_GROUND: CardRecord =
     );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &INSPIRING_OVERSEER,
     &RAFFINE_S_INFORMANT,
     &LEDGER_SHREDDER,
     &WITNESS_PROTECTION,

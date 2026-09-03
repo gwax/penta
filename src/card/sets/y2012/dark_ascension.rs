@@ -19,7 +19,7 @@ use crate::card::{
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
     abilities,
 };
-use crate::ids::{AdditionalCostObjectIndex, TargetIndex};
+use crate::ids::TargetIndex;
 use crate::{ParentBinding, mana_cost, value_if_condition};
 
 static FATEFUL_HOUR: TriggerConditionDef = TriggerConditionDef::ControllerLifeAtMost(5);
@@ -435,32 +435,10 @@ pub(in crate::card::sets) static NIBLIS_OF_THE_URN: CardRecord = CardRecord::new
     ]),
 );
 
-// DKA 17 — Ray of Revelation
-pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new_with_legacy_id(
-    201,
-    "Ray of Revelation",
-    CardArt::new("d7e2c5a4-cf92-46bd-9033-8036436488cb", "Cliff Childs"),
-    CardSet::DarkAscension,
-    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[
-        AbilityDef::spell_with_targets(
-            "Destroy target enchantment.",
-            &[AbilityTargetDef::exactly_one(
-                AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::HasType(CardType::Enchantment),
-                    zones: &[ZoneKind::Battlefield],
-                    controller: None,
-                    owner: None,
-                },
-            )],
-            EffectDef::Destroy {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                can_regenerate: true,
-                then: None,
-            },
-        ),
-        abilities::flashback(mana_cost!("{G}")),
-    ]),
-);
+// DKA 17 — Ray of Revelation (reprint)
+const RAY_OF_REVELATION_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2002::judgment::RAY_OF_REVELATION)
+        .with_art("d7e2c5a4-cf92-46bd-9033-8036436488cb", "Cliff Childs");
 
 // DKA 18 — Requiem Angel
 pub(in crate::card::sets) static REQUIEM_ANGEL: CardRecord = CardRecord::new_with_legacy_id(
@@ -810,17 +788,10 @@ pub(in crate::card::sets) static CURSE_OF_ECHOES: CardRecord = CardRecord::new(
     CardRules::unsupported(),
 );
 
-// DKA 35 — Divination
-pub(in crate::card::sets) static DIVINATION: CardRecord = CardRecord::new_with_legacy_id(
-    696,
-    "Divination",
-    CardArt::new("4a1340f1-85a4-4551-9871-bb00db6d97a8", "Scott Chou"),
-    CardSet::DarkAscension,
-    CardRules::new_sorcery(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
-        "Draw two cards.",
-        abilities::draw_cards(ValueDef::Constant(2)),
-    )),
-);
+// DKA 35 — Divination (reprint)
+const DIVINATION_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2009::magic_2010::DIVINATION)
+        .with_art("4a1340f1-85a4-4551-9871-bb00db6d97a8", "Scott Chou");
 
 // DKA 36 — Dungeon Geists
 pub(in crate::card::sets) static DUNGEON_GEISTS: CardRecord = CardRecord::new_with_legacy_id(
@@ -2077,29 +2048,10 @@ pub(in crate::card::sets) static FLAYER_OF_THE_HATEBOUND: CardRecord = CardRecor
     ]),
 );
 
-// DKA 90 — Fling
-pub(in crate::card::sets) static FLING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6b144452-2e91-4e46-abe9-ed76b39f8314"),
-    "Fling",
-    crate::card::CardArt::new("cf1ab466-44bb-45d5-a94f-21b8924f0d89", "Izzy"),
-    crate::card::CardSet::DarkAscension,
-    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(
-        AbilityDef::spell_with_additional_cost(
-            "As an additional cost to cast this spell, sacrifice a creature. Fling deals damage equal to the sacrificed creature's power to any target.",
-            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)],
-            SpellAdditionalCostDef::sacrifice(
-                ObjectPredicateDef::HasType(CardType::Creature),
-                CostQuantityDef::Fixed(1),
-            ),
-            EffectDef::DealDamage {
-                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::ObjectPower(ObjectRefDef::AdditionalCostObject(
-                    AdditionalCostObjectIndex::PRIMARY,
-                )),
-            },
-        ),
-    ),
-);
+// DKA 90 — Fling (reprint)
+const FLING_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::stronghold::FLING)
+        .with_art("cf1ab466-44bb-45d5-a94f-21b8924f0d89", "Izzy");
 
 // DKA 91 — Forge Devil
 pub(in crate::card::sets) static FORGE_DEVIL: CardRecord = CardRecord::new_with_legacy_id(
@@ -3741,19 +3693,10 @@ pub(in crate::card::sets) static WOLFHUNTERS_QUIVER: CardRecord = CardRecord::ne
         ]),
 );
 
-// DKA 155 — Evolving Wilds
-pub(in crate::card::sets) static EVOLVING_WILDS: CardRecord = CardRecord::new_with_legacy_id(
-    1602,
-    "Evolving Wilds",
-    CardArt::new("30066306-f943-44c1-8814-b8b60388c26d", "Cliff Childs"),
-    CardSet::DarkAscension,
-    CardRules::new_land(&[]).with_ability(AbilityDef::activated(
-        "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the \
-         battlefield tapped, then shuffle.",
-        &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
-        FETCH_A_BASIC_TAPPED,
-    )),
-);
+// DKA 155 — Evolving Wilds (reprint)
+const EVOLVING_WILDS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2010::rise_of_the_eldrazi::EVOLVING_WILDS)
+        .with_art("30066306-f943-44c1-8814-b8b60388c26d", "Cliff Childs");
 
 // DKA 156 — Grim Backwoods
 pub(in crate::card::sets) static GRIM_BACKWOODS: CardRecord = CardRecord::new_with_legacy_id(
@@ -3861,6 +3804,7 @@ pub(in crate::card::sets) static VAULT_OF_THE_ARCHANGEL: CardRecord = CardRecord
         ),
     ]),
 );
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARCHANGELS_LIGHT,
     &BAR_THE_DOOR,
@@ -3878,7 +3822,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MIDNIGHT_GUARD,
     &NIBLIS_OF_THE_MIST,
     &NIBLIS_OF_THE_URN,
-    &RAY_OF_REVELATION,
     &REQUIEM_ANGEL,
     &SANCTUARY_CAT,
     &SEANCE,
@@ -3896,7 +3839,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CHILL_OF_FOREBODING,
     &COUNTERLASH,
     &CURSE_OF_ECHOES,
-    &DIVINATION,
     &DUNGEON_GEISTS,
     &GERALFS_MINDCRUSHER,
     &GRIPTIDE,
@@ -3951,7 +3893,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FAITHLESS_LOOTING,
     &FIRES_OF_UNDEATH,
     &FLAYER_OF_THE_HATEBOUND,
-    &FLING,
     &FORGE_DEVIL,
     &HECKLING_FIENDS,
     &HELLRIDER,
@@ -4016,10 +3957,14 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &JAR_OF_EYEBALLS,
     &WARDEN_OF_THE_WALL,
     &WOLFHUNTERS_QUIVER,
-    &EVOLVING_WILDS,
     &GRIM_BACKWOODS,
     &HAUNTED_FENGRAF,
     &VAULT_OF_THE_ARCHANGEL,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
+    RAY_OF_REVELATION_REPRINT,
+    DIVINATION_REPRINT,
+    FLING_REPRINT,
+    EVOLVING_WILDS_REPRINT,
+];

@@ -12,8 +12,10 @@ representative set module. Prefer the card's first paper printing in an
 English-language set when one exists; use its first paper printing in any
 language only when no English printing exists. In the local Scryfall index,
 this means selecting the earliest nondigital `printings` row with `lang = en`
-when possible rather than letting an earlier non-English-only product own the
-definition. Its `CardRecord` keeps its identity and primary `CardRules`
+and `reprint = 0` when possible rather than letting an earlier non-English-only
+product or a preview reprint own the definition. Prefer the ordinary set row
+over a same-day promo treatment when both introduce the identity. Its
+`CardRecord` keeps its identity and primary `CardRules`
 together: name, cost, types, creature stats, and ordered ability clauses can
 all be understood at the declaration.
 
@@ -46,8 +48,8 @@ An incomplete identity uses `blocked` when it has no declaration or
 Blocked header-and-audit pairs stand alone at the identity's collector
 position. Reprints do not repeat the audit. Keep every identity
 header in natural collector order. The header identifies the canonical
-printing in that module's set even when presentation art intentionally comes
-from another printing.
+printing and its debut artwork; later artwork belongs to an additional printing
+record.
 
 Helpers used by more than one card are set-level vocabulary rather than part of
 one declaration block. Keep them at the top of the set module before the first
@@ -57,7 +59,9 @@ other cards' blocks.
 
 Existing definitions use `CardRecord::new_with_legacy_id`, with their historic
 numeric value written beside the record. Never allocate another sequential
-legacy value. A new definition uses `CardRecord::new` with an explicitly frozen
+legacy value. If its existing artwork came from a later printing, use
+`with_debut_art` to supply the exact debut UUID and artist. A new definition
+uses `CardRecord::new` with an explicitly frozen
 exact preferred-printing Scryfall UUID through `PrintingAnchor::scryfall`: the
 first English-language paper printing when possible, otherwise the first paper
 printing in any language. The build derives a stable 52-bit ID and rejects
@@ -69,24 +73,28 @@ vanishingly unlikely collision occurs, commit
 existing record. The ordinary `card::cards::*` constants are compatibility
 output generated from these declarations, not an independently authored ID
 registry. A compact build fingerprint prevents any migrated legacy assignment
-from moving. Presentation art may change independently; use
-`with_identity_anchor` when the anchor printing differs from the selected art.
+from moving. Presentation art for later printings belongs on their
+`PrintingRecord` rather than the canonical definition.
 
 Keep `ADDITIONAL_PRINTINGS` in natural order by the collector number in that
 module's set, including for reprint-only modules with an empty `CARDS`
-registry. Put each nonempty entry on its own line with a trailing identity such
-as `// LEB 233`: uppercase target set code and collector number, without the
-card name. Empty registries need no comments. Creator-owned token and emblem
+registry. Declare each printing as a card-derived constant immediately below
+its collector-ordered header, such as `SAVANNAH_LIONS_REPRINT` or
+`URZA_S_MINE_ALTERNATE_2`, and put only those constants in the bottom
+registry. Attach the exact printing's Scryfall UUID and artist to the adjacent
+constant with `PrintingRecord::reprint(...).with_art(...)` or
+`PrintingRecord::alternate(...).with_art(...)`; this presentation metadata
+does not change which canonical definition owns the card's rules. Empty
+registries need no comments. Creator-owned token and emblem
 characteristics and rules-owned face-down characteristics are built by the
 effect or mechanism that creates them, are not card definitions, and remain
 outside these conventions.
 
-Mirror every nonempty `ADDITIONAL_PRINTINGS` entry in the collector-ordered
-upper portion of the set file. Use `// M14 1 — Ajani, Caller of the Pride
-(reprint)` for the default printing and `// SET NUMBER — Name (alternate
-printing)` for another art or variant. These standalone comments make the set
-inventory readable from top to bottom; the source-organization test checks
-that a file which uses them mirrors its additional-printing registry exactly.
+Use `// M14 1 — Ajani, Caller of the Pride (reprint)` for the default printing
+and `// SET NUMBER — Name (alternate printing)` for another art or variant.
+The constant immediately following each comment keeps the identity, kind, and
+artwork readable in one place. The source-organization test checks that these
+constants exactly mirror the additional-printing registry.
 
 Start new and migrated work with the card's ordered `AbilityDef` clauses. Each
 printed clause should carry its explicit timing category and, where applicable,

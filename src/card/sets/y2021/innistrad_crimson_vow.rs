@@ -121,6 +121,16 @@ pub(in crate::card::sets) static CONCEALING_CURTAINS: CardRecord = CardRecord::n
     ],
 );
 
+// VOW 134 — Undying Malice
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static UNDYING_MALICE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("8eb38041-043a-4b18-9d9a-f1283684e8f1"),
+    "Undying Malice",
+    crate::card::CardArt::new("97b3cf11-e352-4ee1-8c03-13898f576ef9", "Igor Kieryluk"),
+    crate::card::CardSet::InnistradCrimsonVow,
+    crate::card::CardRules::unsupported(),
+);
+
 // VOW 174 — Reckless Impulse
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RECKLESS_IMPULSE: CardRecord = CardRecord::new(
@@ -286,6 +296,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CRUEL_WITNESS,
     &BLOOD_FOUNTAIN,
     &CONCEALING_CURTAINS,
+    &UNDYING_MALICE,
     &RECKLESS_IMPULSE,
     &VOLDAREN_EPICURE,
     &BRAMBLE_WURM,

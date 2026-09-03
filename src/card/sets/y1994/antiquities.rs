@@ -499,6 +499,8 @@ pub(in crate::card::sets) static ATOG: CardRecord = CardRecord::new_with_legacy_
 );
 
 // ATQ 23† — Atog (alternate printing)
+const ATOG_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ATOG, 1)
+    .with_art("f77fda65-f70d-44b1-89db-910d2761b81c", "Jesper Myrfors");
 
 // ATQ 24 — Detonate
 pub(in crate::card::sets) static DETONATE: CardRecord = CardRecord::new_with_legacy_id(
@@ -1616,6 +1618,9 @@ pub(in crate::card::sets) static TAWNOSS_WEAPONRY: CardRecord = CardRecord::new_
 );
 
 // ATQ 70† — Tawnos's Weaponry (alternate printing)
+const TAWNOSS_WEAPONRY_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&TAWNOSS_WEAPONRY, 1)
+        .with_art("cca371f0-e7c9-4154-8e1d-47576c0202bc", "Dan Frazier");
 
 // ATQ 71 — Tetravus
 pub(crate) static TETRAVITE: TokenCharacteristics =
@@ -1888,10 +1893,25 @@ pub(in crate::card::sets) static MISHRA_S_FACTORY: CardRecord = CardRecord::new_
 );
 
 // ATQ 80b — Mishra's Factory (alternate printing)
+const MISHRA_S_FACTORY_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&MISHRA_S_FACTORY, 1).with_art(
+        "4047df9c-335c-4c1a-968d-00f40e2e7386",
+        "Kaja Foglio & Phil Foglio",
+    );
 
 // ATQ 80c — Mishra's Factory (alternate printing)
+const MISHRA_S_FACTORY_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&MISHRA_S_FACTORY, 2).with_art(
+        "c44669b2-bf9a-41c3-91c7-d845b0061fbf",
+        "Kaja Foglio & Phil Foglio",
+    );
 
 // ATQ 80d — Mishra's Factory (alternate printing)
+const MISHRA_S_FACTORY_ALTERNATE_3: PrintingRecord =
+    PrintingRecord::alternate(&MISHRA_S_FACTORY, 3).with_art(
+        "ac09a506-427f-4636-bcfd-b40f8d511905",
+        "Kaja Foglio & Phil Foglio",
+    );
 
 // ATQ 81 — Mishra's Workshop
 pub(in crate::card::sets) static MISHRA_S_WORKSHOP: CardRecord = CardRecord::new_with_legacy_id(
@@ -1941,10 +1961,16 @@ pub(in crate::card::sets) static STRIP_MINE: CardRecord = CardRecord::new_with_l
 );
 
 // ATQ 82b — Strip Mine (alternate printing)
+const STRIP_MINE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&STRIP_MINE, 1)
+    .with_art("a48bd745-5e9f-4807-97b0-29222a5b838d", "Daniel Gelon");
 
 // ATQ 82c — Strip Mine (alternate printing)
+const STRIP_MINE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&STRIP_MINE, 2)
+    .with_art("917e98db-a0c4-4836-9e4b-3fda142eedf6", "Daniel Gelon");
 
 // ATQ 82d — Strip Mine (alternate printing)
+const STRIP_MINE_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&STRIP_MINE, 3)
+    .with_art("e0f6a92f-edd8-4cb6-be91-f3ec229b20a6", "Daniel Gelon");
 
 // ATQ 83a — Urza's Mine
 pub(in crate::card::sets) static URZA_S_MINE: CardRecord = CardRecord::new_with_legacy_id(
@@ -1969,10 +1995,16 @@ pub(in crate::card::sets) static URZA_S_MINE: CardRecord = CardRecord::new_with_
 );
 
 // ATQ 83b — Urza's Mine (alternate printing)
+const URZA_S_MINE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&URZA_S_MINE, 1)
+    .with_art("27886da1-9161-4bed-81b5-06da21a25f91", "Anson Maddocks");
 
 // ATQ 83c — Urza's Mine (alternate printing)
+const URZA_S_MINE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&URZA_S_MINE, 2)
+    .with_art("da68a5c0-84fe-4a8f-93b2-790eca3cc95c", "Anson Maddocks");
 
 // ATQ 83d — Urza's Mine (alternate printing)
+const URZA_S_MINE_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&URZA_S_MINE, 3)
+    .with_art("cd8617d2-a0e9-4fb4-85da-2c7e385be3f6", "Anson Maddocks");
 
 // ATQ 84a — Urza's Power Plant
 pub(in crate::card::sets) static URZA_S_POWER_PLANT: CardRecord = CardRecord::new_with_legacy_id(
@@ -1996,10 +2028,19 @@ pub(in crate::card::sets) static URZA_S_POWER_PLANT: CardRecord = CardRecord::ne
 );
 
 // ATQ 84b — Urza's Power Plant (alternate printing)
+const URZA_S_POWER_PLANT_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&URZA_S_POWER_PLANT, 1)
+        .with_art("e237d921-6d84-402e-b5e3-6bbdb3028f57", "Mark Tedin");
 
 // ATQ 84c — Urza's Power Plant (alternate printing)
+const URZA_S_POWER_PLANT_ALTERNATE_2: PrintingRecord =
+    PrintingRecord::alternate(&URZA_S_POWER_PLANT, 2)
+        .with_art("5cc02459-83ae-4b6c-85a1-26eeaf7a2ee7", "Mark Tedin");
 
 // ATQ 84d — Urza's Power Plant (alternate printing)
+const URZA_S_POWER_PLANT_ALTERNATE_3: PrintingRecord =
+    PrintingRecord::alternate(&URZA_S_POWER_PLANT, 3)
+        .with_art("b0bbe643-3e07-4541-a2e6-45c63a5133cf", "Mark Tedin");
 
 // ATQ 85a — Urza's Tower
 pub(in crate::card::sets) static URZA_S_TOWER: CardRecord = CardRecord::new_with_legacy_id(
@@ -2024,10 +2065,16 @@ pub(in crate::card::sets) static URZA_S_TOWER: CardRecord = CardRecord::new_with
 );
 
 // ATQ 85b — Urza's Tower (alternate printing)
+const URZA_S_TOWER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&URZA_S_TOWER, 1)
+    .with_art("6aba1f0f-73b0-4898-8d07-43322e43d74e", "Mark Poole");
 
 // ATQ 85c — Urza's Tower (alternate printing)
+const URZA_S_TOWER_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&URZA_S_TOWER, 2)
+    .with_art("4a03554a-0ee7-4106-b3e4-4bc51f48032d", "Mark Poole");
 
 // ATQ 85d — Urza's Tower (alternate printing)
+const URZA_S_TOWER_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&URZA_S_TOWER, 3)
+    .with_art("cc78f2e5-c02b-4f58-8510-660ca27d9a71", "Mark Poole");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARGIVIAN_ARCHAEOLOGIST,
@@ -2118,23 +2165,23 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&ATOG, 1),               // ATQ 23†
-    PrintingRecord::alternate(&TAWNOSS_WEAPONRY, 1),   // ATQ 70†
-    PrintingRecord::alternate(&MISHRA_S_FACTORY, 1),   // ATQ 80b
-    PrintingRecord::alternate(&MISHRA_S_FACTORY, 2),   // ATQ 80c
-    PrintingRecord::alternate(&MISHRA_S_FACTORY, 3),   // ATQ 80d
-    PrintingRecord::alternate(&STRIP_MINE, 1),         // ATQ 82b
-    PrintingRecord::alternate(&STRIP_MINE, 2),         // ATQ 82c
-    PrintingRecord::alternate(&STRIP_MINE, 3),         // ATQ 82d
-    PrintingRecord::alternate(&URZA_S_MINE, 1),        // ATQ 83b
-    PrintingRecord::alternate(&URZA_S_MINE, 2),        // ATQ 83c
-    PrintingRecord::alternate(&URZA_S_MINE, 3),        // ATQ 83d
-    PrintingRecord::alternate(&URZA_S_POWER_PLANT, 1), // ATQ 84b
-    PrintingRecord::alternate(&URZA_S_POWER_PLANT, 2), // ATQ 84c
-    PrintingRecord::alternate(&URZA_S_POWER_PLANT, 3), // ATQ 84d
-    PrintingRecord::alternate(&URZA_S_TOWER, 1),       // ATQ 85b
-    PrintingRecord::alternate(&URZA_S_TOWER, 2),       // ATQ 85c
-    PrintingRecord::alternate(&URZA_S_TOWER, 3),       // ATQ 85d
+    ATOG_ALTERNATE_1,
+    TAWNOSS_WEAPONRY_ALTERNATE_1,
+    MISHRA_S_FACTORY_ALTERNATE_1,
+    MISHRA_S_FACTORY_ALTERNATE_2,
+    MISHRA_S_FACTORY_ALTERNATE_3,
+    STRIP_MINE_ALTERNATE_1,
+    STRIP_MINE_ALTERNATE_2,
+    STRIP_MINE_ALTERNATE_3,
+    URZA_S_MINE_ALTERNATE_1,
+    URZA_S_MINE_ALTERNATE_2,
+    URZA_S_MINE_ALTERNATE_3,
+    URZA_S_POWER_PLANT_ALTERNATE_1,
+    URZA_S_POWER_PLANT_ALTERNATE_2,
+    URZA_S_POWER_PLANT_ALTERNATE_3,
+    URZA_S_TOWER_ALTERNATE_1,
+    URZA_S_TOWER_ALTERNATE_2,
+    URZA_S_TOWER_ALTERNATE_3,
 ];
 
 #[cfg(test)]

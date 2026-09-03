@@ -167,15 +167,10 @@ pub(in crate::card::sets) static SHEOLDRED_THE_APOCALYPSE: CardRecord =
             ]),
     );
 
-// DMU 137 — Lightning Strike
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static LIGHTNING_STRIKE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bbb03f2e-2b92-4aa1-afae-301ed5d151d3"),
-    "Lightning Strike",
-    crate::card::CardArt::new("7d541125-bfb8-4f88-8bf3-ad7b6af7ad1d", "Marta Nael"),
-    crate::card::CardSet::DominariaUnited,
-    crate::card::CardRules::unsupported(),
-);
+// DMU 137 — Lightning Strike (reprint)
+const LIGHTNING_STRIKE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2013::theros::LIGHTNING_STRIKE)
+        .with_art("7d541125-bfb8-4f88-8bf3-ad7b6af7ad1d", "Marta Nael");
 
 // DMU 183 — Tear Asunder
 pub(in crate::card::sets) static TEAR_ASUNDER: CardRecord = CardRecord::new(
@@ -318,6 +313,8 @@ pub(in crate::card::sets) static ERTAI_RESURRECTED: CardRecord = CardRecord::new
 );
 
 // DMU 387 — Leyline Binding (alternate printing)
+const LEYLINE_BINDING_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&LEYLINE_BINDING, 1)
+    .with_art("32da8479-7d0e-4eb1-b18c-66eb170e31a5", "Cristi Balanescu");
 
 // DMU 388 — Serra Paragon
 pub(in crate::card::sets) static SERRA_PARAGON: CardRecord = CardRecord::new(
@@ -386,12 +383,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TOLARIAN_TERROR,
     &CUT_DOWN,
     &SHEOLDRED_THE_APOCALYPSE,
-    &LIGHTNING_STRIKE,
     &TEAR_ASUNDER,
     &ERTAI_RESURRECTED,
     &SERRA_PARAGON,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&LEYLINE_BINDING, 1), // DMU 387
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[LIGHTNING_STRIKE_REPRINT, LEYLINE_BINDING_ALTERNATE_1];

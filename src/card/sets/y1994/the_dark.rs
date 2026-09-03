@@ -1718,6 +1718,8 @@ pub(in crate::card::sets) static GAEAS_TOUCH: CardRecord = CardRecord::new_with_
 );
 
 // DRK 77† — Gaea's Touch (alternate printing)
+const GAEAS_TOUCH_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&GAEAS_TOUCH, 1)
+    .with_art("b7705328-4b5d-4383-9abe-75fca9c32c09", "Mark Poole");
 
 // DRK 78 — Hidden Path
 pub(in crate::card::sets) static HIDDEN_PATH: CardRecord = CardRecord::new_with_legacy_id(
@@ -2297,6 +2299,9 @@ pub(in crate::card::sets) static FOUNTAIN_OF_YOUTH: CardRecord = CardRecord::new
 );
 
 // DRK 103† — Fountain of Youth (alternate printing)
+const FOUNTAIN_OF_YOUTH_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&FOUNTAIN_OF_YOUTH, 1)
+        .with_art("d56cca55-1ea7-4a11-8c5d-3d84c9af862f", "Daniel Gelon");
 
 // DRK 104 — Living Armor
 // Audit: unsupported — Needs card-specific counter state and counter-consuming effects for “{T}, Sacrifice this artifact: Put X +0/+1 counters on target creature, where X is that creature's mana value”.
@@ -2368,6 +2373,8 @@ pub(in crate::card::sets) static RUNESWORD: CardRecord = CardRecord::new(
 );
 
 // DRK 107† — Runesword (alternate printing)
+const RUNESWORD_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&RUNESWORD, 1)
+    .with_art("bf27955f-015b-4d86-99b9-4c4f6fe2fa73", "Christopher Rush");
 
 // DRK 108 — Scarecrow
 pub(in crate::card::sets) static SCARECROW: CardRecord = CardRecord::new_with_legacy_id(
@@ -2761,7 +2768,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&GAEAS_TOUCH, 1), // DRK 77†
-    PrintingRecord::alternate(&FOUNTAIN_OF_YOUTH, 1), // DRK 103†
-    PrintingRecord::alternate(&RUNESWORD, 1),   // DRK 107†
+    GAEAS_TOUCH_ALTERNATE_1,
+    FOUNTAIN_OF_YOUTH_ALTERNATE_1,
+    RUNESWORD_ALTERNATE_1,
 ];

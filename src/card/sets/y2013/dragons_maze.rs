@@ -443,6 +443,11 @@ pub(in crate::card::sets) static UNCOVERED_CLUES: CardRecord = CardRecord::new(
 );
 
 // DGM 20 — Wind Drake (reprint)
+const WIND_DRAKE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::WIND_DRAKE).with_art(
+        "86ea454f-b640-4a89-937f-bae05556292a",
+        "John Severin Brassell",
+    );
 
 // DGM 21 — Bane Alley Blackguard
 pub(in crate::card::sets) static BANE_ALLEY_BLACKGUARD: CardRecord = CardRecord::new_with_legacy_id(
@@ -1360,27 +1365,10 @@ pub(in crate::card::sets) static EXAVA_RAKDOS_BLOOD_WITCH: CardRecord =
             ]),
     );
 
-// DGM 70 — Feral Animist
-pub(in crate::card::sets) static FERAL_ANIMIST: CardRecord = CardRecord::new_with_legacy_id(
-    642,
-    "Feral Animist",
-    CardArt::new("108a9ef2-c74a-450b-8148-4fdf9f09843f", "Dave Kendall"),
-    CardSet::DragonsMaze,
-    CardRules::new_creature(mana_cost!("{1}{R}{G}"), &["Goblin", "Shaman"], 2, 1).with_ability(
-        AbilityDef::activated(
-            "{3}: This creature gets +X/+0 until end of turn, where X is its power.",
-            &[AbilityCostDef::Mana(mana_cost!("{3}"))],
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::modify_power_toughness(
-                    ValueDef::SourcePower,
-                    ValueDef::Constant(0),
-                ),
-                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-            },
-        ),
-    ),
-);
+// DGM 70 — Feral Animist (reprint)
+const FERAL_ANIMIST_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::guildpact::FERAL_ANIMIST)
+        .with_art("108a9ef2-c74a-450b-8148-4fdf9f09843f", "Dave Kendall");
 
 // DGM 71 — Fluxcharger
 pub(in crate::card::sets) static FLUXCHARGER: CardRecord = CardRecord::new_with_legacy_id(
@@ -1807,21 +1795,10 @@ pub(in crate::card::sets) static PROGENITOR_MIMIC: CardRecord = CardRecord::new(
     ),
 );
 
-// DGM 93 — Putrefy
-pub(in crate::card::sets) static PUTREFY: CardRecord = CardRecord::new_with_legacy_id(
-    198,
-    "Putrefy",
-    CardArt::new("0d43a0b6-2a5c-4959-96ee-6e570949dfed", "Igor Kieryluk"),
-    CardSet::DragonsMaze,
-    CardRules::new_instant(mana_cost!("{1}{B}{G}")).with_ability(AbilityDef::destroy_target(
-        "Destroy target artifact or creature. It can't be regenerated.",
-        &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::AnyOf(&[
-            ObjectPredicateDef::HasType(CardType::Artifact),
-            ObjectPredicateDef::HasType(CardType::Creature),
-        ])),
-        false,
-    )),
-);
+// DGM 93 — Putrefy (reprint)
+const PUTREFY_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::PUTREFY)
+        .with_art("0d43a0b6-2a5c-4959-96ee-6e570949dfed", "Igor Kieryluk");
 
 // DGM 94 — Ral Zarek
 static RAL_ZAREK_EXTRA_TURN: EffectDef = EffectDef::TakeExtraTurn {
@@ -2964,16 +2941,34 @@ pub(in crate::card::sets) static SIMIC_CLUESTONE: CardRecord = CardRecord::new_w
 );
 
 // DGM 146 — Azorius Guildgate (reprint)
+const AZORIUS_GUILDGATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&return_to_ravnica::AZORIUS_GUILDGATE)
+        .with_art("65bbe27d-c92a-4c65-a997-b21536d7667e", "Drew Baker");
 
 // DGM 147 — Boros Guildgate (reprint)
+const BOROS_GUILDGATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&gatecrash::BOROS_GUILDGATE)
+        .with_art("e94cc167-a6da-4404-88aa-61eee8b4b9e8", "Noah Bradley");
 
 // DGM 148 — Dimir Guildgate (reprint)
+const DIMIR_GUILDGATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&gatecrash::DIMIR_GUILDGATE)
+        .with_art("9627f9eb-c3fc-4517-9d65-132fdcc217d7", "Cliff Childs");
 
 // DGM 149 — Golgari Guildgate (reprint)
+const GOLGARI_GUILDGATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&return_to_ravnica::GOLGARI_GUILDGATE)
+        .with_art("0248cc88-e95c-4667-82a2-40e881acabc2", "Eytan Zana");
 
 // DGM 150 — Gruul Guildgate (reprint)
+const GRUUL_GUILDGATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&gatecrash::GRUUL_GUILDGATE)
+        .with_art("24221b9a-5ff1-43f8-b409-c56967f8308d", "Randy Gallegos");
 
 // DGM 151 — Izzet Guildgate (reprint)
+const IZZET_GUILDGATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&return_to_ravnica::IZZET_GUILDGATE)
+        .with_art("165ee8d7-d509-41d4-abd2-298b3db3ca46", "Noah Bradley");
 
 // DGM 152 — Maze's End
 // Audit: unsupported — Needs returning the land as an activation cost, a Gate-specific library search to the battlefield, and the ten-distinct-names win condition.
@@ -2986,12 +2981,24 @@ pub(in crate::card::sets) static MAZE_S_END: CardRecord = CardRecord::new(
 );
 
 // DGM 153 — Orzhov Guildgate (reprint)
+const ORZHOV_GUILDGATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&gatecrash::ORZHOV_GUILDGATE)
+        .with_art("8f4e2006-5bff-4e91-862b-aa76521a99c3", "John Avon");
 
 // DGM 154 — Rakdos Guildgate (reprint)
+const RAKDOS_GUILDGATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&return_to_ravnica::RAKDOS_GUILDGATE)
+        .with_art("1368e7c6-2220-4dad-8129-68336f261af0", "Eytan Zana");
 
 // DGM 155 — Selesnya Guildgate (reprint)
+const SELESNYA_GUILDGATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&return_to_ravnica::SELESNYA_GUILDGATE)
+        .with_art("90198725-0cd3-4650-9575-c22674aa4185", "Howard Lyon");
 
 // DGM 156 — Simic Guildgate (reprint)
+const SIMIC_GUILDGATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&gatecrash::SIMIC_GUILDGATE)
+        .with_art("fee34fcb-0158-4741-9292-513fed9684cb", "Svetlin Velinov");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BOROS_MASTIFF,
@@ -3062,7 +3069,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DROWN_IN_FILTH,
     &EMMARA_TANDRIS,
     &EXAVA_RAKDOS_BLOOD_WITCH,
-    &FERAL_ANIMIST,
     &FLUXCHARGER,
     &GAZE_OF_GRANITE,
     &GLEAM_OF_BATTLE,
@@ -3085,7 +3091,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PILFERED_PLANS,
     &PLASM_CAPTURE,
     &PROGENITOR_MIMIC,
-    &PUTREFY,
     &RAL_ZAREK,
     &REAP_INTELLECT,
     &RENDER_SILENT,
@@ -3142,15 +3147,17 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&crate::card::sets::y2012::magic_2013::WIND_DRAKE), // DGM 20
-    PrintingRecord::reprint(&return_to_ravnica::AZORIUS_GUILDGATE),             // DGM 146
-    PrintingRecord::reprint(&gatecrash::BOROS_GUILDGATE),                       // DGM 147
-    PrintingRecord::reprint(&gatecrash::DIMIR_GUILDGATE),                       // DGM 148
-    PrintingRecord::reprint(&return_to_ravnica::GOLGARI_GUILDGATE),             // DGM 149
-    PrintingRecord::reprint(&gatecrash::GRUUL_GUILDGATE),                       // DGM 150
-    PrintingRecord::reprint(&return_to_ravnica::IZZET_GUILDGATE),               // DGM 151
-    PrintingRecord::reprint(&gatecrash::ORZHOV_GUILDGATE),                      // DGM 153
-    PrintingRecord::reprint(&return_to_ravnica::RAKDOS_GUILDGATE),              // DGM 154
-    PrintingRecord::reprint(&return_to_ravnica::SELESNYA_GUILDGATE),            // DGM 155
-    PrintingRecord::reprint(&gatecrash::SIMIC_GUILDGATE),                       // DGM 156
+    WIND_DRAKE_REPRINT,
+    FERAL_ANIMIST_REPRINT,
+    PUTREFY_REPRINT,
+    AZORIUS_GUILDGATE_REPRINT,
+    BOROS_GUILDGATE_REPRINT,
+    DIMIR_GUILDGATE_REPRINT,
+    GOLGARI_GUILDGATE_REPRINT,
+    GRUUL_GUILDGATE_REPRINT,
+    IZZET_GUILDGATE_REPRINT,
+    ORZHOV_GUILDGATE_REPRINT,
+    RAKDOS_GUILDGATE_REPRINT,
+    SELESNYA_GUILDGATE_REPRINT,
+    SIMIC_GUILDGATE_REPRINT,
 ];

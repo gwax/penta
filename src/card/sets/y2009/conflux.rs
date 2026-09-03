@@ -1,6 +1,13 @@
 //! Conflux cards cataloged for the Vintage Cube.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::AbilityTargetPredicate;
+use crate::AppliedRuleDef;
+use crate::ControlDurationDef;
+use crate::DiscardSelectionDef;
+use crate::PlayerRefDef;
+use crate::PlayerSetDef;
+use crate::card::SacrificedAmountDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef,
     BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef,
@@ -8,6 +15,38 @@ use crate::card::{
     ObjectSetDef, PlayerRelation, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
+
+// CON 3 — Aven Squire
+pub(in crate::card::sets) static AVEN_SQUIRE: CardRecord = CardRecord::new_with_legacy_id(
+    1502,
+    "Aven Squire",
+    CardArt::new("e60a0c43-9f47-404a-8acf-508173e7062f", "David Palumbo"),
+    CardSet::Conflux,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Bird", "Soldier"], 1, 1)
+        .with_abilities(&[abilities::flying(), abilities::exalted()]),
+);
+
+// CON 5 — Celestial Purge
+pub(in crate::card::sets) static CELESTIAL_PURGE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("31c404e8-1241-4675-b259-fbbf1dba15c4"),
+    "Celestial Purge",
+    crate::card::CardArt::new("75f75e85-9454-4008-aa51-a1d5965752d6", "David Palumbo"),
+    crate::card::CardSet::Conflux,
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Exile target black or red permanent.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::Color(ManaColor::Black),
+                ObjectPredicateDef::Color(ManaColor::Red),
+            ]),
+        )],
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Exile,
+            placement: ZonePlacement::Top,
+        },
+    )),
+);
 
 // CON 15 — Path to Exile
 pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new_with_legacy_id(
@@ -49,6 +88,15 @@ pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new_wit
             },
         ]),
     )),
+);
+
+// CON 60 — Canyon Minotaur
+pub(in crate::card::sets) static CANYON_MINOTAUR: CardRecord = CardRecord::new_with_legacy_id(
+    1010,
+    "Canyon Minotaur",
+    CardArt::new("f8dc0efb-5847-4061-b386-9b4099361a58", "Steve Prescott"),
+    CardSet::Conflux,
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Minotaur", "Warrior"], 3, 3),
 );
 
 // CON 87 — Noble Hierarch
@@ -136,6 +184,69 @@ pub(in crate::card::sets) static KNIGHT_OF_THE_RELIQUARY: CardRecord = CardRecor
         ]),
 );
 
+// CON 120 — Nicol Bolas, Planeswalker
+pub(in crate::card::sets) static NICOL_BOLAS_PLANESWALKER: CardRecord = CardRecord::new_with_legacy_id(
+    1700,
+    "Nicol Bolas, Planeswalker",
+    CardArt::new("0e3b1fea-5c2c-4848-8109-548f56b99d49", "D. Alexander Gregory"),
+    CardSet::Conflux,
+    CardRules::new_planeswalker(mana_cost!("{4}{U}{B}{B}{R}"), &["Bolas"], 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::activated_with_targets(
+                "+3: Destroy target noncreature permanent.",
+                &[AbilityCostDef::Loyalty(3)],
+                &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: None,
+                    owner: None,
+                })],
+                EffectDef::Destroy {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    can_regenerate: true,
+                    then: None,
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "−2: Gain control of target creature.",
+                &[AbilityCostDef::Loyalty(-2)],
+                &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(CardType::Creature))],
+                EffectDef::GainControl {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    controller: PlayerRefDef::EffectController,
+                    duration: ControlDurationDef::Indefinitely,
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "−9: Nicol Bolas deals 7 damage to target player or planeswalker. That player or that planeswalker's controller discards seven then sacrifices seven permanents of their choice.",
+                &[AbilityCostDef::Loyalty(-9)],
+                &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any))],
+                EffectDef::Sequence(&[
+                    EffectDef::DealDamage {
+                        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        amount: ValueDef::Constant(7),
+                    },
+                    EffectDef::Discard {
+                        recipient: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
+                        amount: ValueDef::Constant(7),
+                        selection: DiscardSelectionDef::RecipientChooses,
+                        then: None,
+                    },
+                    EffectDef::SacrificeOfChoice {
+                        player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
+                        object: ObjectPredicateDef::Any,
+                        count: ValueDef::Constant(7),
+                        then: None,
+                        amount: SacrificedAmountDef::Power,
+                        otherwise: None,
+                        optional: false,
+                    },
+                ]),
+            ),
+        ]),
+);
+
 // CON 142 — Exotic Orchard
 pub(in crate::card::sets) static EXOTIC_ORCHARD: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6aae6480-4e71-4d94-a648-f80d3849d792"),
@@ -156,11 +267,43 @@ pub(in crate::card::sets) static EXOTIC_ORCHARD: CardRecord = CardRecord::new(
     )),
 );
 
+// CON 143 — Reliquary Tower
+pub(in crate::card::sets) static RELIQUARY_TOWER: CardRecord = CardRecord::new_with_legacy_id(
+    1950,
+    "Reliquary Tower",
+    CardArt::new("f92583e4-9749-4c11-9d32-fb81260c5b63", "Jesper Ejsing"),
+    CardSet::Conflux,
+    // "You", so it does nothing for the opponent, and it is read at cleanup
+    // rather than captured -- losing the Tower on your own turn puts the
+    // limit straight back.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::static_ability(
+            "You have no maximum hand size.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::players(PlayerSetDef::Related(PlayerRelation::You)),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
+                    crate::card::PlayerRuleDef::NoMaximumHandSize,
+                )),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {C}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+        ),
+    ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &AVEN_SQUIRE,
+    &CELESTIAL_PURGE,
     &PATH_TO_EXILE,
+    &CANYON_MINOTAUR,
     &NOBLE_HIERARCH,
     &KNIGHT_OF_THE_RELIQUARY,
+    &NICOL_BOLAS_PLANESWALKER,
     &EXOTIC_ORCHARD,
+    &RELIQUARY_TOWER,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

@@ -63,6 +63,26 @@ pub(in crate::card::sets) static STONEFORGE_MYSTIC: CardRecord = CardRecord::new
         ]),
 );
 
+// WWK 26 — Dispel
+pub(in crate::card::sets) static DISPEL: CardRecord = CardRecord::new_with_legacy_id(
+    155,
+    "Dispel",
+    CardArt::new("08d4a8d7-c136-472f-8146-a1100701ca4f", "Chase Stone"),
+    CardSet::Worldwake,
+    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::counter_target(
+        "Counter target instant spell.",
+        &AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::Spell,
+                ObjectPredicateDef::HasType(CardType::Instant),
+            ]),
+            zones: &[ZoneKind::Stack],
+            controller: None,
+            owner: None,
+        }),
+    )),
+);
+
 // WWK 31 — Jace, the Mind Sculptor
 static A_PLAYER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::Player(PlayerRelation::Any),
@@ -148,6 +168,19 @@ pub(in crate::card::sets) static JACE_THE_MIND_SCULPTOR: CardRecord =
             ]),
     );
 
+// WWK 52 — Brink of Disaster
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static BRINK_OF_DISASTER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("0c841c3e-e0d1-49d7-bcec-3c45f73c13c5"),
+    "Brink of Disaster",
+    crate::card::CardArt::new(
+        "dbab78cd-a899-4c5d-86b3-0666adadba87",
+        "Alex Horley-Orlandelli",
+    ),
+    crate::card::CardSet::Worldwake,
+    crate::card::CardRules::unsupported(),
+);
+
 // WWK 87 — Ricochet Trap
 pub(in crate::card::sets) static RICOCHET_TRAP: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5d782375-9192-4ed0-bd79-f3404e5a1b01"),
@@ -198,6 +231,31 @@ pub(in crate::card::sets) static RICOCHET_TRAP: CardRecord = CardRecord::new(
                     restriction: None,
                 },
             }),
+        ),
+    ]),
+);
+
+// WWK 95 — Arbor Elf
+pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new_with_legacy_id(
+    132,
+    "Arbor Elf",
+    CardArt::new("b7d6b117-0c14-4455-92fc-29555ee75d97", "rk post"),
+    CardSet::Worldwake,
+    CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Druid"], 1, 1).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{T}: Untap target Forest.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::Subtype("Forest"),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: None,
+                    owner: None,
+                },
+            )],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
         ),
     ]),
 );
@@ -256,6 +314,39 @@ pub(in crate::card::sets) static EVERFLOWING_CHALICE: CardRecord = CardRecord::n
             ),
         ),
     ]),
+);
+
+// WWK 126 — Kitesail
+pub(in crate::card::sets) static KITESAIL: CardRecord = CardRecord::new_with_legacy_id(
+    1923,
+    "Kitesail",
+    CardArt::new(
+        "2f95cf4c-1845-4260-8571-91c03d582da3",
+        "Cyril Van Der Haegen",
+    ),
+    CardSet::Worldwake,
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +1/+0 and has flying.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(1),
+                            ValueDef::Constant(0),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::flying()),
+                    ]),
+                },
+            ),
+            abilities::equip(
+                &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+                "Equip {2} ({2}: Attach to target creature you control. Equip only as a \
+                 sorcery.)",
+            ),
+        ]),
 );
 
 // WWK 133 — Celestial Colonnade
@@ -337,51 +428,23 @@ pub(in crate::card::sets) static CREEPING_TAR_PIT: CardRecord = CardRecord::new(
     ]),
 );
 
-// WWK 140 — Quicksand
-pub(in crate::card::sets) static QUICKSAND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("11370658-8d80-4d2f-afa5-ec6df6dee369"),
-    "Quicksand",
-    crate::card::CardArt::new("4e396df7-9931-43f6-b009-27cf93c4a3e5", "Matt Stewart"),
-    crate::card::CardSet::Worldwake,
-    CardRules::new_land(&[]).with_abilities(&[
-        AbilityDef::activated_mana(
-            "{T}: Add {C}.",
-            &[AbilityCostDef::TapSource],
-            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
-        ),
-        AbilityDef::activated_with_targets(
-            "{T}, Sacrifice this land: Target attacking creature without flying gets -1/-2 until end of turn.",
-            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
-            &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Attacking,
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasKeyword(
-                        crate::card::KeywordAbility::Flying,
-                    )),
-                ]),
-            )],
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                effect: AppliedEffectDef::modify_power_toughness(
-                    ValueDef::Constant(-1),
-                    ValueDef::Constant(-2),
-                ),
-                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-            },
-        ),
-    ]),
-);
+// WWK 140 — Quicksand (reprint)
+const QUICKSAND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::visions::QUICKSAND)
+        .with_art("4e396df7-9931-43f6-b009-27cf93c4a3e5", "Matt Stewart");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STONEFORGE_MYSTIC,
+    &DISPEL,
     &JACE_THE_MIND_SCULPTOR,
+    &BRINK_OF_DISASTER,
     &RICOCHET_TRAP,
+    &ARBOR_ELF,
     &WOLFBRIAR_ELEMENTAL,
     &EVERFLOWING_CHALICE,
+    &KITESAIL,
     &CELESTIAL_COLONNADE,
     &CREEPING_TAR_PIT,
-    &QUICKSAND,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[QUICKSAND_REPRINT];

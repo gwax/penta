@@ -19,15 +19,10 @@ pub(in crate::card::sets) static BEHOLD_THE_MULTIVERSE: CardRecord = CardRecord:
     crate::card::CardRules::unsupported(),
 );
 
-// KHM 117 — Village Rites
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static VILLAGE_RITES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9c0f60a6-b5c8-4704-8b61-94e8fc463e5d"),
-    "Village Rites",
-    crate::card::CardArt::new("0fab9ee8-776a-48e5-b309-bcd381e67bf7", "Igor Kieryluk"),
-    crate::card::CardSet::Kaldheim,
-    crate::card::CardRules::unsupported(),
-);
+// KHM 117 — Village Rites (reprint)
+const VILLAGE_RITES_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2020::core_set_2021::VILLAGE_RITES)
+        .with_art("0fab9ee8-776a-48e5-b309-bcd381e67bf7", "Igor Kieryluk");
 
 // KHM 139 — Goldspan Dragon
 pub(in crate::card::sets) static GOLDSPAN_DRAGON: CardRecord = CardRecord::new(
@@ -234,7 +229,6 @@ pub(in crate::card::sets) static ESIKA_S_CHARIOT: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BEHOLD_THE_MULTIVERSE,
-    &VILLAGE_RITES,
     &GOLDSPAN_DRAGON,
     &MAGDA_BRAZEN_OUTLAW,
     &TUSKERI_FIREWALKER,
@@ -243,4 +237,4 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ESIKA_S_CHARIOT,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[VILLAGE_RITES_REPRINT];

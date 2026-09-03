@@ -29,6 +29,16 @@ static ARCLIGHT_PHOENIX_RETURN_CONDITION: TriggerConditionDef = TriggerCondition
     TriggerConditionDef::ValueComparison(&ARCLIGHT_PHOENIX_CAST_COUNT),
 ]);
 
+// GRN 45 — Murmuring Mystic
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static MURMURING_MYSTIC: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("5fc6adff-dcb3-456d-a8c2-0e77b784ff89"),
+    "Murmuring Mystic",
+    crate::card::CardArt::new("ab25853c-29d3-4244-88db-813300a262a5", "Mark Winters"),
+    crate::card::CardSet::GuildsOfRavnica,
+    crate::card::CardRules::unsupported(),
+);
+
 // GRN 91 — Arclight Phoenix
 pub(in crate::card::sets) static ARCLIGHT_PHOENIX: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("787de9ce-02c5-4a17-a88b-d38e83dbeb0b"),
@@ -58,6 +68,6 @@ pub(in crate::card::sets) static ARCLIGHT_PHOENIX: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&ARCLIGHT_PHOENIX];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&MURMURING_MYSTIC, &ARCLIGHT_PHOENIX];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

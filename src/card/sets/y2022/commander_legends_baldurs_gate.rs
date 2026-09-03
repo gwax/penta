@@ -2,6 +2,7 @@
 //! Vintage Cube.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::sets::y2021::adventures_in_the_forgotten_realms as catalog_afr;
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet,
     CardSupertype, CardType, DeckConstructionDef, EffectDef, EffectRecipientDef, ManaColor,
@@ -60,15 +61,10 @@ pub(in crate::card::sets) static ARMS_OF_HADAR: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// CLB 119 — Cast Down
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static CAST_DOWN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("116ce944-6871-4f51-a889-d9c4a5d7cff2"),
-    "Cast Down",
-    crate::card::CardArt::new("aba79021-39af-4e74-beb5-f2f508c865b2", "Tyler Walpole"),
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
-    crate::card::CardRules::unsupported(),
-);
+// CLB 119 — Cast Down (reprint)
+const CAST_DOWN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2018::dominaria::CAST_DOWN)
+        .with_art("aba79021-39af-4e74-beb5-f2f508c865b2", "Tyler Walpole");
 
 // CLB 130 — Guildsworn Prowler
 // Audit: unsupported — Card rules have not been implemented.
@@ -139,15 +135,10 @@ pub(in crate::card::sets) static GUT_TRUE_SOUL_ZEALOT: CardRecord = CardRecord::
         ]),
 );
 
-// CLB 263 — You Meet in a Tavern
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static YOU_MEET_IN_A_TAVERN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("593aa59a-4025-4df8-9f27-188fc7712fde"),
-    "You Meet in a Tavern",
-    crate::card::CardArt::new("9fddbd7a-799c-4432-810c-d839c5c354b9", "Zoltan Boros"),
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
-    crate::card::CardRules::unsupported(),
-);
+// CLB 263 — You Meet in a Tavern (reprint)
+const YOU_MEET_IN_A_TAVERN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_afr::YOU_MEET_IN_A_TAVERN)
+        .with_art("9fddbd7a-799c-4432-810c-d839c5c354b9", "Zoltan Boros");
 
 // CLB 285 — Minsc & Boo, Timeless Heroes
 // Audit: unsupported — Needs a sacrifice-scoped reflexive trigger that chooses its damage target after the sacrifice.
@@ -157,6 +148,16 @@ pub(in crate::card::sets) static MINSC_BOO_TIMELESS_HEROES: CardRecord = CardRec
     CardArt::new("928036c9-11b8-493e-b9f2-8fbd3487cd19", "Andreas Zafiratos"),
     CardSet::CommanderLegendsBattleForBaldursGate,
     CardRules::unsupported(),
+);
+
+// CLB 346 — Basilisk Gate
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static BASILISK_GATE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("4a306025-d429-4006-b7ed-bdb287e83f57"),
+    "Basilisk Gate",
+    crate::card::CardArt::new("935f3dfa-7d8d-459a-8ac2-37892cb9545f", "Jorge Jacinto"),
+    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
+    crate::card::CardRules::unsupported(),
 );
 
 // CLB 560 — Displacer Kitten
@@ -245,25 +246,15 @@ pub(in crate::card::sets) static DELAYED_BLAST_FIREBALL: CardRecord =
         ]),
     );
 
-// CLB 748 — Dauthi Horror
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static DAUTHI_HORROR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c5a8bb3a-3a84-442f-8e31-8af2f04408ab"),
-    "Dauthi Horror",
-    crate::card::CardArt::new("7c41afe6-7eed-4cf5-9bbb-ccc9f82cb4fa", "Jeff Laubenstein"),
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
-    crate::card::CardRules::unsupported(),
-);
+// CLB 748 — Dauthi Horror (reprint)
+const DAUTHI_HORROR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::tempest::DAUTHI_HORROR)
+        .with_art("7c41afe6-7eed-4cf5-9bbb-ccc9f82cb4fa", "Jeff Laubenstein");
 
-// CLB 897 — Izzet Boilerworks
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static IZZET_BOILERWORKS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("666f455e-3a3d-475d-b67a-a1fdd74820eb"),
-    "Izzet Boilerworks",
-    crate::card::CardArt::new("c86e42c6-342b-443f-9b99-a68cf536ff45", "John Avon"),
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
-    crate::card::CardRules::unsupported(),
-);
+// CLB 897 — Izzet Boilerworks (reprint)
+const IZZET_BOILERWORKS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::guildpact::IZZET_BOILERWORKS)
+        .with_art("c86e42c6-342b-443f-9b99-a68cf536ff45", "John Avon");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLESSED_HIPPOGRIFF,
@@ -271,15 +262,17 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SWORD_COAST_SERPENT,
     &YOUNG_BLUE_DRAGON,
     &ARMS_OF_HADAR,
-    &CAST_DOWN,
     &GUILDSWORN_PROWLER,
     &GUT_TRUE_SOUL_ZEALOT,
-    &YOU_MEET_IN_A_TAVERN,
     &MINSC_BOO_TIMELESS_HEROES,
+    &BASILISK_GATE,
     &DISPLACER_KITTEN,
     &DELAYED_BLAST_FIREBALL,
-    &DAUTHI_HORROR,
-    &IZZET_BOILERWORKS,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
+    CAST_DOWN_REPRINT,
+    YOU_MEET_IN_A_TAVERN_REPRINT,
+    DAUTHI_HORROR_REPRINT,
+    IZZET_BOILERWORKS_REPRINT,
+];

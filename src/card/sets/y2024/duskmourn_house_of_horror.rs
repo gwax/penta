@@ -808,8 +808,13 @@ pub(in crate::card::sets) static CHAINSAW: CardRecord = CardRecord::new(
 );
 
 // DSK 316 — Fear of Missing Out (alternate printing)
+const FEAR_OF_MISSING_OUT_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&FEAR_OF_MISSING_OUT, 1)
+        .with_art("45b924a5-6533-4ca6-bd2e-32debdfb6c08", "Cacho Rubione");
 
 // DSK 329 — Blazemire Verge (alternate printing)
+const BLAZEMIRE_VERGE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&BLAZEMIRE_VERGE, 1)
+    .with_art("73a926c5-ba2b-4ac5-9717-6c9181f9a827", "Allen Douglas");
 
 // DSK 348 — Screaming Nemesis
 pub(in crate::card::sets) static SCREAMING_NEMESIS: CardRecord = CardRecord::new(
@@ -922,6 +927,9 @@ pub(in crate::card::sets) static OVERLORD_OF_THE_MISTMOORS: CardRecord = CardRec
 );
 
 // DSK 409 — Kaito, Bane of Nightmares (alternate printing)
+const KAITO_BANE_OF_NIGHTMARES_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&KAITO_BANE_OF_NIGHTMARES, 1)
+        .with_art("14901700-881a-4c79-b162-aeeb1579757e", "Richard Luong");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENDURING_INNOCENCE,
@@ -949,7 +957,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&FEAR_OF_MISSING_OUT, 1), // DSK 316
-    PrintingRecord::alternate(&BLAZEMIRE_VERGE, 1),     // DSK 329
-    PrintingRecord::alternate(&KAITO_BANE_OF_NIGHTMARES, 1), // DSK 409
+    FEAR_OF_MISSING_OUT_ALTERNATE_1,
+    BLAZEMIRE_VERGE_ALTERNATE_1,
+    KAITO_BANE_OF_NIGHTMARES_ALTERNATE_1,
 ];

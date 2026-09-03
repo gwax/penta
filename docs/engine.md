@@ -279,7 +279,10 @@ records for reprints or additional variants in that set. The resulting
 alternate art can be distinguished while sharing one runtime `CardDefinition`
 and its rules. Format legality considers all known printings: a nonbasic card
 is legal when at least one printing belongs to the format's allowed sets,
-regardless of which printing might eventually be selected for presentation.
+regardless of which printing might eventually be selected for presentation. A
+format can also admit exact card identities for dated promos whose physical
+promo set spans the format boundary; it does not treat every card in that set
+as legal.
 
 Many executable effects use reusable declarative primitives or constructors in
 `card::abilities`. Card definitions do not carry an alternate execution

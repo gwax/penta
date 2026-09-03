@@ -1,8 +1,9 @@
 //! EXO card records required by supported formats.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
-use crate::card::sets::y2011::innistrad as catalog_isd;
-use crate::card::sets::y2011::magic_2012 as catalog_m12;
+use crate::AppliedEffectDef;
+use crate::DiscardSelectionDef;
+use crate::ValueDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
@@ -21,15 +22,10 @@ pub(in crate::card::sets) static ALLAY: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// EXO 2 — Angelic Blessing
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static ANGELIC_BLESSING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("31dda640-2a00-437e-855f-173c487e7395"),
-    "Angelic Blessing",
-    crate::card::CardArt::new("ed3c8bae-953f-4bb4-a78d-02e4e354e53c", "Mark Zug"),
-    crate::card::CardSet::Exodus,
-    crate::card::CardRules::unsupported(),
-);
+// EXO 2 — Angelic Blessing (reprint)
+const ANGELIC_BLESSING_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::ANGELIC_BLESSING)
+        .with_art("ed3c8bae-953f-4bb4-a78d-02e4e354e53c", "Mark Zug");
 
 // EXO 3 — Cataclysm
 // Audit: unsupported — Card rules have not been implemented.
@@ -41,15 +37,10 @@ pub(in crate::card::sets) static CATACLYSM: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// EXO 4 — Charging Paladin
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static CHARGING_PALADIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("29db1bbf-a6cf-460c-bec8-dbd682157af4"),
-    "Charging Paladin",
-    crate::card::CardArt::new("851f3f72-2923-4432-898a-02679a8b320f", "Ciruelo"),
-    crate::card::CardSet::Exodus,
-    crate::card::CardRules::unsupported(),
-);
+// EXO 4 — Charging Paladin (reprint)
+const CHARGING_PALADIN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::CHARGING_PALADIN)
+        .with_art("851f3f72-2923-4432-898a-02679a8b320f", "Ciruelo");
 
 // EXO 5 — Convalescence
 // Audit: unsupported — Card rules have not been implemented.
@@ -297,7 +288,46 @@ pub(in crate::card::sets) static CUNNING: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// EXO 29 — Curiosity (reprint)
+// EXO 29 — Curiosity
+pub(in crate::card::sets) static CURIOSITY: CardRecord = CardRecord::new_with_legacy_id(
+    874,
+    "Curiosity",
+    CardArt::new("b212c36a-6d1f-4217-b384-1c2b0e07b68a", "Igor Kieryluk"),
+    CardSet::Exodus,
+    CardRules::new_enchantment(mana_cost!("{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            AbilityDef::spell_with_targets(
+                "Enchant creature",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )],
+                EffectDef::Attach {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                },
+            ),
+            AbilityDef::static_ability(
+                "Whenever enchanted creature deals damage to an opponent, you may draw a card.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::add_ability(&AbilityDef::triggered(
+                        "Whenever this creature deals damage to an opponent, you may draw a card.",
+                        TriggerEventDef::damage_to_player(
+                            ObjectPredicateDef::Source,
+                            PlayerRelation::Opponent,
+                        ),
+                        EffectDef::May {
+                            player: EffectRecipientDef::Controller,
+                            effect: &EffectDef::DrawCards {
+                                recipient: EffectRecipientDef::Controller,
+                                amount: ValueDef::Constant(1),
+                            },
+                        },
+                    )),
+                },
+            ),
+        ]),
+);
 
 // EXO 30 — Dominating Licid
 // Audit: unsupported — Card rules have not been implemented.
@@ -389,7 +419,31 @@ pub(in crate::card::sets) static MANA_BREACH: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// EXO 39 — Merfolk Looter (reprint)
+// EXO 39 — Merfolk Looter
+pub(in crate::card::sets) static MERFOLK_LOOTER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("0fbb1c41-388f-4ff2-af37-ad64a0f4618e"),
+    "Merfolk Looter",
+    crate::card::CardArt::new("aad3aaec-7c88-4925-8023-0cf61bf906c2", "Austin Hsu"),
+    crate::card::CardSet::Exodus,
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Merfolk", "Rogue"], 1, 1).with_ability(
+        AbilityDef::activated(
+            "{T}: Draw a card, then discard a card.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::Sequence(&[
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+                EffectDef::Discard {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                    selection: DiscardSelectionDef::RecipientChooses,
+                    then: None,
+                },
+            ]),
+        ),
+    ),
+);
 
 // EXO 40 — Mind Over Matter
 // Audit: unsupported — Card rules have not been implemented.
@@ -481,18 +535,12 @@ pub(in crate::card::sets) static THALAKOS_SCOUT: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// EXO 49 — Theft of Dreams
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static THEFT_OF_DREAMS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("29019e28-4ef8-4732-9972-0a47305fe303"),
-    "Theft of Dreams",
-    crate::card::CardArt::new(
+// EXO 49 — Theft of Dreams (reprint)
+const THEFT_OF_DREAMS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::THEFT_OF_DREAMS).with_art(
         "099da8aa-16b1-4395-8467-1636feb14a8a",
         "Richard Kane Ferguson",
-    ),
-    crate::card::CardSet::Exodus,
-    crate::card::CardRules::unsupported(),
-);
+    );
 
 // EXO 50 — Treasure Trove
 // Audit: unsupported — Card rules have not been implemented.
@@ -991,15 +1039,10 @@ pub(in crate::card::sets) static PRICE_OF_PROGRESS: CardRecord = CardRecord::new
     crate::card::CardRules::unsupported(),
 );
 
-// EXO 96 — Raging Goblin
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static RAGING_GOBLIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6c0fa444-5534-4476-8bfa-78b2364f2dd3"),
-    "Raging Goblin",
-    crate::card::CardArt::new("1f0a166c-f7c0-45b4-aa90-053ce545cfb2", "Brian Snõddy"),
-    crate::card::CardSet::Exodus,
-    crate::card::CardRules::unsupported(),
-);
+// EXO 96 — Raging Goblin (reprint)
+const RAGING_GOBLIN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::RAGING_GOBLIN)
+        .with_art("1f0a166c-f7c0-45b4-aa90-053ce545cfb2", "Brian Snõddy");
 
 // EXO 97 — Ravenous Baboons
 // Audit: unsupported — Card rules have not been implemented.
@@ -1265,7 +1308,29 @@ pub(in crate::card::sets) static RABID_WOLVERINES: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// EXO 120 — Reclaim (reprint)
+// EXO 120 — Reclaim
+pub(in crate::card::sets) static RECLAIM: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("2b47c082-57f6-4f69-87e8-a07cad9ef042"),
+    "Reclaim",
+    crate::card::CardArt::new("78f67503-2f0f-43bf-9c4f-a254cc6c501a", "Andrew Robinson"),
+    crate::card::CardSet::Exodus,
+    CardRules::new_instant(mana_cost!("{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Put target card from your graveyard on top of your library.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Any,
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: Some(PlayerRelation::You),
+            },
+        )],
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Library,
+            placement: ZonePlacement::Top,
+        },
+    )),
+);
 
 // EXO 121 — Resuscitate
 // Audit: unsupported — Card rules have not been implemented.
@@ -1357,15 +1422,10 @@ pub(in crate::card::sets) static SURVIVAL_OF_THE_FITTEST: CardRecord = CardRecor
     crate::card::CardRules::unsupported(),
 );
 
-// EXO 130 — Wood Elves
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static WOOD_ELVES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b7f1fb90-5c85-46a5-802d-248cc0250921"),
-    "Wood Elves",
-    crate::card::CardArt::new("4716bb55-0821-4809-9bc0-04e299b09549", "Rebecca Guay"),
-    crate::card::CardSet::Exodus,
-    crate::card::CardRules::unsupported(),
-);
+// EXO 130 — Wood Elves (reprint)
+const WOOD_ELVES_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::WOOD_ELVES)
+        .with_art("4716bb55-0821-4809-9bc0-04e299b09549", "Rebecca Guay");
 
 // EXO 131 — Coat of Arms
 // Audit: unsupported — Card rules have not been implemented.
@@ -1523,9 +1583,7 @@ pub(in crate::card::sets) static CITY_OF_TRAITORS: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ALLAY,
-    &ANGELIC_BLESSING,
     &CATACLYSM,
-    &CHARGING_PALADIN,
     &CONVALESCENCE,
     &EXALTED_DRAGON,
     &HIGH_GROUND,
@@ -1550,6 +1608,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ZEALOTS_EN_DAL,
     &AETHER_TIDE,
     &CUNNING,
+    &CURIOSITY,
     &DOMINATING_LICID,
     &EPHEMERON,
     &EQUILIBRIUM,
@@ -1559,6 +1618,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KEEPER_OF_THE_MIND,
     &KILLER_WHALE,
     &MANA_BREACH,
+    &MERFOLK_LOOTER,
     &MIND_OVER_MATTER,
     &MIROZEL,
     &OATH_OF_SCHOLARS,
@@ -1568,7 +1628,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCRIVENER,
     &THALAKOS_DRIFTERS,
     &THALAKOS_SCOUT,
-    &THEFT_OF_DREAMS,
     &TREASURE_TROVE,
     &WAYWARD_SOUL,
     &WHIPTONGUE_FROG,
@@ -1615,7 +1674,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PANDEMONIUM,
     &PAROXYSM,
     &PRICE_OF_PROGRESS,
-    &RAGING_GOBLIN,
     &RAVENOUS_BABOONS,
     &RECKLESS_OGRE,
     &SABERTOOTH_WYVERN,
@@ -1639,6 +1697,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PREDATORY_HUNGER,
     &PYGMY_TROLL,
     &RABID_WOLVERINES,
+    &RECLAIM,
     &RESUSCITATE,
     &ROOTWATER_ALLIGATOR,
     &SKYSHROUD_ELITE,
@@ -1648,7 +1707,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPIKE_ROGUE,
     &SPIKE_WEAVER,
     &SURVIVAL_OF_THE_FITTEST,
-    &WOOD_ELVES,
     &COAT_OF_ARMS,
     &ERRATIC_PORTAL,
     &MEDICINE_BAG,
@@ -1665,7 +1723,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_isd::CURIOSITY), // EXO 29
-    PrintingRecord::reprint(&catalog_m12::MERFOLK_LOOTER), // EXO 39
-    PrintingRecord::reprint(&catalog_m12::RECLAIM),   // EXO 120
+    ANGELIC_BLESSING_REPRINT,
+    CHARGING_PALADIN_REPRINT,
+    THEFT_OF_DREAMS_REPRINT,
+    RAGING_GOBLIN_REPRINT,
+    WOOD_ELVES_REPRINT,
 ];

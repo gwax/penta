@@ -1,18 +1,17 @@
 //! Return to Ravnica card records used by the built-in ISD–M14 Standard deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
-use crate::card::sets::{y1993::alpha, y1999::mercadian_masques as mmq, y2012::magic_2013};
+use crate::card::sets::{y1993::alpha, y1999::mercadian_masques as mmq};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, CardTypeSet, ColorSet, ComparisonDef, ControlDurationDef, CostModificationDef,
-    CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef,
-    DiscardSelectionDef, EffectDef, EffectPaymentDef, EffectRecipientDef, KeywordAbility,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, ReplacementEffectDef, ReplacementEventDef,
-    ResolvedEffectDurationDef, SacrificedAmountDef, SpellResolutionDestinationDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneChangeEventMatcherDef,
-    ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
+    CardType, CardTypeSet, ColorSet, ComparisonDef, CostModificationDef, CounterKind,
+    CreatureTypeSetDef, DamageEventMatcherDef, DamagePreventionDef, DiscardSelectionDef, EffectDef,
+    EffectPaymentDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
+    SpellResolutionDestinationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
+    ZoneChangeEventMatcherDef, ZoneKind, ZoneMoveCauseDef, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -144,6 +143,8 @@ pub(in crate::card::sets) static ARMORY_GUARD: CardRecord = CardRecord::new(
 );
 
 // RTR 3 — Arrest (reprint)
+const ARREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&mmq::ARREST)
+    .with_art("498f74a2-7e5e-4082-97e7-b938d703f869", "Greg Staples");
 
 // RTR 4 — Avenging Arrow
 pub(in crate::card::sets) static AVENGING_ARROW: CardRecord = CardRecord::new_with_legacy_id(
@@ -738,22 +739,10 @@ pub(in crate::card::sets) static BLUSTERSQUALL: CardRecord = CardRecord::new_wit
     ]),
 );
 
-// RTR 31 — Cancel
-pub(in crate::card::sets) static CANCEL: CardRecord = CardRecord::new_with_legacy_id(
-    1252,
-    "Cancel",
-    CardArt::new("fd994a26-65ff-43be-8d52-476e887d3ed2", "Karl Kopinski"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{1}{U}{U}")).with_ability(AbilityDef::counter_target(
-        "Counter target spell.",
-        &AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
-            object: ObjectPredicateDef::Spell,
-            zones: &[ZoneKind::Stack],
-            controller: None,
-            owner: None,
-        }),
-    )),
-);
+// RTR 31 — Cancel (reprint)
+const CANCEL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::time_spiral::CANCEL)
+        .with_art("fd994a26-65ff-43be-8d52-476e887d3ed2", "Karl Kopinski");
 
 // RTR 32 — Chronic Flooding
 // Audit: unsupported — Needs a trigger for the attached land becoming tapped and the attached land's controller as the mill recipient.
@@ -832,25 +821,10 @@ pub(in crate::card::sets) static CYCLONIC_RIFT: CardRecord = CardRecord::new_wit
     ]),
 );
 
-// RTR 36 — Dispel
-pub(in crate::card::sets) static DISPEL: CardRecord = CardRecord::new_with_legacy_id(
-    155,
-    "Dispel",
-    CardArt::new("08d4a8d7-c136-472f-8146-a1100701ca4f", "Chase Stone"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::counter_target(
-        "Counter target instant spell.",
-        &AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
-            object: ObjectPredicateDef::All(&[
-                ObjectPredicateDef::Spell,
-                ObjectPredicateDef::HasType(CardType::Instant),
-            ]),
-            zones: &[ZoneKind::Stack],
-            controller: None,
-            owner: None,
-        }),
-    )),
-);
+// RTR 36 — Dispel (reprint)
+const DISPEL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2010::worldwake::DISPEL)
+        .with_art("08d4a8d7-c136-472f-8146-a1100701ca4f", "Chase Stone");
 
 // RTR 37 — Doorkeeper
 pub(in crate::card::sets) static DOORKEEPER: CardRecord = CardRecord::new_with_legacy_id(
@@ -977,23 +951,10 @@ pub(in crate::card::sets) static INACTION_INJUNCTION: CardRecord = CardRecord::n
     )),
 );
 
-// RTR 42 — Inspiration
-pub(in crate::card::sets) static INSPIRATION: CardRecord = CardRecord::new_with_legacy_id(
-    1258,
-    "Inspiration",
-    CardArt::new("e3cf9dc0-0a12-459c-88e2-97ed94653058", "Izzy"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{3}{U}")).with_ability(AbilityDef::spell_with_targets(
-        "Target player draws two cards.",
-        &[AbilityTargetDef::exactly_one(
-            AbilityTargetPredicate::Player(PlayerRelation::Any),
-        )],
-        EffectDef::DrawCards {
-            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            amount: ValueDef::Constant(2),
-        },
-    )),
-);
+// RTR 42 — Inspiration (reprint)
+const INSPIRATION_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::visions::INSPIRATION)
+        .with_art("e3cf9dc0-0a12-459c-88e2-97ed94653058", "Izzy");
 
 // RTR 43 — Isperia's Skywatch
 pub(in crate::card::sets) static ISPERIAS_SKYWATCH: CardRecord = CardRecord::new_with_legacy_id(
@@ -1075,33 +1036,10 @@ pub(in crate::card::sets) static MIZZIUM_SKIN: CardRecord = CardRecord::new_with
     ]),
 );
 
-// RTR 46 — Paralyzing Grasp
-pub(in crate::card::sets) static PARALYZING_GRASP: CardRecord = CardRecord::new_with_legacy_id(
-    1260,
-    "Paralyzing Grasp",
-    CardArt::new("3dfd97b3-d83e-406f-af45-40eec6347462", "Scott Chou"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_enchantment(mana_cost!("{2}{U}"))
-        .with_subtypes(&["Aura"])
-        .with_abilities(&[
-            AbilityDef::spell_with_targets(
-                "Enchant creature",
-                &[AbilityTargetDef::exactly_one_permanent(
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                )],
-                EffectDef::Attach {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
-            ),
-            AbilityDef::static_ability(
-                "Enchanted creature doesn't untap during its controller's untap step.",
-                EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::AttachedPermanent,
-                    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
-                },
-            ),
-        ]),
-);
+// RTR 46 — Paralyzing Grasp (reprint)
+const PARALYZING_GRASP_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2009::zendikar::PARALYZING_GRASP)
+        .with_art("3dfd97b3-d83e-406f-af45-40eec6347462", "Scott Chou");
 
 // RTR 47 — Psychic Spiral
 // Audit: unsupported — Needs to preserve the number of graveyard cards shuffled into the library for the later mill amount.
@@ -1204,46 +1142,15 @@ pub(in crate::card::sets) static STEALER_OF_SECRETS: CardRecord = CardRecord::ne
     ),
 );
 
-// RTR 54 — Syncopate
-pub(in crate::card::sets) static SYNCOPATE: CardRecord = CardRecord::new_with_legacy_id(
-    223,
-    "Syncopate",
-    CardArt::new("ba6f218f-83b0-4b68-a00f-0327cd79f32a", "Clint Cearley"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{X}{U}")).with_ability(
-        AbilityDef::spell_with_targets("Counter target spell unless its controller pays {X}. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.", &[AbilityTargetDef::exactly_one(
-            AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::Spell,
-                zones: &[ZoneKind::Stack],
-                controller: None,
-                owner: None,
-            },
-        )], abilities::counter_target_to_exile_unless_paid(ValueDef::ChosenX)),
-    ),
-);
+// RTR 54 — Syncopate (reprint)
+const SYNCOPATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2001::odyssey::SYNCOPATE)
+        .with_art("ba6f218f-83b0-4b68-a00f-0327cd79f32a", "Clint Cearley");
 
-// RTR 55 — Tower Drake
-pub(in crate::card::sets) static TOWER_DRAKE: CardRecord = CardRecord::new_with_legacy_id(
-    1264,
-    "Tower Drake",
-    CardArt::new("5d759d6f-daf0-47f4-8a35-81c9d6437495", "Ryan Barger"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_creature(mana_cost!("{2}{U}"), &["Drake"], 2, 1).with_abilities(&[
-        abilities::flying(),
-        AbilityDef::activated(
-            "{W}: This creature gets +0/+1 until end of turn.",
-            &[AbilityCostDef::Mana(mana_cost!("{W}"))],
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::modify_power_toughness(
-                    ValueDef::Constant(0),
-                    ValueDef::Constant(1),
-                ),
-                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-            },
-        ),
-    ]),
-);
+// RTR 55 — Tower Drake (reprint)
+const TOWER_DRAKE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2000::invasion::TOWER_DRAKE)
+        .with_art("5d759d6f-daf0-47f4-8a35-81c9d6437495", "Ryan Barger");
 
 // RTR 56 — Voidwielder
 pub(in crate::card::sets) static VOIDWIELDER: CardRecord = CardRecord::new_with_legacy_id(
@@ -1313,35 +1220,10 @@ pub(in crate::card::sets) static CATACOMB_SLUG: CardRecord = vanilla_creature(
     6,
 );
 
-// RTR 59 — Cremate
-pub(in crate::card::sets) static CREMATE: CardRecord = CardRecord::new_with_legacy_id(
-    1268,
-    "Cremate",
-    CardArt::new("013d5260-f906-4f6a-97ed-725197743b60", "Cynthia Sheppard"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
-        "Exile target card from a graveyard. Draw a card.",
-        &[AbilityTargetDef::exactly_one(
-            AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::Any,
-                zones: &[ZoneKind::Graveyard],
-                controller: None,
-                owner: None,
-            },
-        )],
-        EffectDef::Sequence(&[
-            EffectDef::MoveToZone {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                zone: ZoneKind::Exile,
-                placement: ZonePlacement::Top,
-            },
-            EffectDef::DrawCards {
-                recipient: EffectRecipientDef::Controller,
-                amount: ValueDef::Constant(1),
-            },
-        ]),
-    )),
-);
+// RTR 59 — Cremate (reprint)
+const CREMATE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2000::invasion::CREMATE)
+        .with_art("013d5260-f906-4f6a-97ed-725197743b60", "Cynthia Sheppard");
 
 // RTR 60 — Daggerdrome Imp
 pub(in crate::card::sets) static DAGGERDROME_IMP: CardRecord = CardRecord::new_with_legacy_id(
@@ -1537,6 +1419,9 @@ pub(in crate::card::sets) static LAUNCH_PARTY: CardRecord = CardRecord::new(
 );
 
 // RTR 70 — Mind Rot (reprint)
+const MIND_ROT_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::MIND_ROT)
+        .with_art("5261ab4b-dfe7-4761-a71c-44a893fc4a69", "Yeong-Hao Han");
 
 // RTR 71 — Necropolis Regent
 pub(in crate::card::sets) static NECROPOLIS_REGENT: CardRecord = CardRecord::new_with_legacy_id(
@@ -2397,39 +2282,10 @@ pub(in crate::card::sets) static TENEMENT_CRASHER: CardRecord = keyword_creature
     abilities::haste(),
 );
 
-// RTR 109 — Traitorous Instinct
-pub(in crate::card::sets) static TRAITOROUS_INSTINCT: CardRecord = CardRecord::new_with_legacy_id(
-    1291,
-    "Traitorous Instinct",
-    CardArt::new("d4456951-844a-4847-b933-c32cfafbfef0", "Daarken"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_sorcery(mana_cost!("{3}{R}")).with_ability(
-        AbilityDef::spell_with_targets(
-            "Gain control of target creature until end of turn. Untap that creature. Until end of turn, it gets +2/+0 and gains haste.",
-            &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::HasType(CardType::Creature),
-            )],
-            EffectDef::Sequence(&[
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    duration: ControlDurationDef::UntilEndOfTurn,
-                    controller: PlayerRefDef::EffectController,
-                },
-                EffectDef::Untap {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
-                EffectDef::Apply {
-                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(0)),
-                        AppliedEffectDef::add_ability(&abilities::haste()),
-                    ]),
-                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-                },
-            ]),
-        ),
-    ),
-);
+// RTR 109 — Traitorous Instinct (reprint)
+const TRAITOROUS_INSTINCT_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2010::rise_of_the_eldrazi::TRAITOROUS_INSTINCT)
+        .with_art("d4456951-844a-4847-b933-c32cfafbfef0", "Daarken");
 
 // RTR 110 — Utvara Hellkite
 pub(in crate::card::sets) static UTVARA_HELLKITE: CardRecord = CardRecord::new_with_legacy_id(
@@ -2756,6 +2612,8 @@ pub(in crate::card::sets) static GATECREEPER_VINE: CardRecord = CardRecord::new_
 );
 
 // RTR 125 — Giant Growth (reprint)
+const GIANT_GROWTH_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::GIANT_GROWTH)
+    .with_art("7b1f6503-e4b2-4085-92cd-e9c522b4b10d", "Noah Bradley");
 
 // RTR 126 — Gobbling Ooze
 pub(in crate::card::sets) static GOBBLING_OOZE: CardRecord = CardRecord::new_with_legacy_id(
@@ -2907,37 +2765,10 @@ pub(in crate::card::sets) static SAVAGE_SURGE: CardRecord = CardRecord::new_with
     )),
 );
 
-// RTR 134 — Seek the Horizon
-pub(in crate::card::sets) static SEEK_THE_HORIZON: CardRecord = CardRecord::new_with_legacy_id(
-    1367,
-    "Seek the Horizon",
-    CardArt::new(
-        "b6f52ac7-933f-4b31-8576-338f5dcf4285",
-        "Howard Lyon",
-    ),
-    CardSet::ReturnToRavnica,
-    CardRules::new_sorcery(mana_cost!("{3}{G}")).with_ability(AbilityDef::spell(
-        "Search your library for up to three basic land reveal them, put them into your hand, then shuffle.",
-        EffectDef::SearchZone {
-            player: EffectRecipientDef::Controller,
-            source: ZoneKind::Library,
-            object: ObjectPredicateDef::All(&[
-                ObjectPredicateDef::HasType(CardType::Land),
-                ObjectPredicateDef::Supertype(CardSupertype::Basic),
-            ]),
-            minimum: 0,
-            maximum: ValueDef::Constant(3),
-            reveal: true,
-            destination: ZoneKind::Hand,
-            placement: ZonePlacement::Top,
-            shuffle: true,
-            enters_tapped: false,
-            attachment: None,
-            binding: None,
-            then: None,
-        },
-    )),
-);
+// RTR 134 — Seek the Horizon (reprint)
+const SEEK_THE_HORIZON_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::saviors_of_kamigawa::SEEK_THE_HORIZON)
+        .with_art("b6f52ac7-933f-4b31-8576-338f5dcf4285", "Howard Lyon");
 
 // RTR 135 — Slime Molding
 // Audit: unsupported — Token creation cannot produce a token whose power and toughness are the chosen X value.
@@ -3715,23 +3546,10 @@ pub(in crate::card::sets) static HELLHOLE_FLAILER: CardRecord = CardRecord::new_
     ]),
 );
 
-// RTR 168 — Heroes' Reunion
-pub(in crate::card::sets) static HEROES_REUNION: CardRecord = CardRecord::new_with_legacy_id(
-    1318,
-    "Heroes' Reunion",
-    CardArt::new("99b56515-f688-495c-b721-2b9abc6628c2", "Howard Lyon"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_instant(mana_cost!("{G}{W}")).with_ability(AbilityDef::spell_with_targets(
-        "Target player gains 7 life.",
-        &[AbilityTargetDef::exactly_one(
-            AbilityTargetPredicate::Player(PlayerRelation::Any),
-        )],
-        EffectDef::GainLife {
-            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            amount: ValueDef::Constant(7),
-        },
-    )),
-);
+// RTR 168 — Heroes' Reunion (reprint)
+const HEROES_REUNION_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2000::invasion::HEROES_REUNION)
+        .with_art("99b56515-f688-495c-b721-2b9abc6628c2", "Howard Lyon");
 
 // RTR 169 — Hussar Patrol
 pub(in crate::card::sets) static HUSSAR_PATROL: CardRecord = CardRecord::new_with_legacy_id(
@@ -5254,22 +5072,10 @@ pub(in crate::card::sets) static IZZET_KEYRUNE: CardRecord = CardRecord::new_wit
     ]),
 );
 
-// RTR 231 — Pithing Needle
-pub(in crate::card::sets) static PITHING_NEEDLE: CardRecord = CardRecord::new_with_legacy_id(
-    196,
-    "Pithing Needle",
-    CardArt::new("786c1e91-9d75-46a3-9e0d-56d29fcb01a7", "Anthony Palumbo"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
-        abilities::choose_card_name_as_enters(
-            "As this artifact enters, choose a card name.",
-            crate::card::BattlefieldEntryScalarChoiceDef::CARD_NAME,
-        ),
-        abilities::cannot_activate_nonmana_abilities_with_chosen_name(
-            "Activated abilities of sources with the chosen name can't be activated unless they're mana abilities.",
-        ),
-    ]),
-);
+// RTR 231 — Pithing Needle (reprint)
+const PITHING_NEEDLE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::saviors_of_kamigawa::PITHING_NEEDLE)
+        .with_art("786c1e91-9d75-46a3-9e0d-56d29fcb01a7", "Anthony Palumbo");
 
 // RTR 232 — Rakdos Keyrune
 pub(in crate::card::sets) static RAKDOS_KEYRUNE: CardRecord = CardRecord::new_with_legacy_id(
@@ -5387,14 +5193,10 @@ pub(in crate::card::sets) static AZORIUS_GUILDGATE: CardRecord = CardRecord::new
     ]),
 );
 
-// RTR 238 — Blood Crypt
-pub(in crate::card::sets) static BLOOD_CRYPT: CardRecord = CardRecord::new_with_legacy_id(
-    1344,
-    "Blood Crypt",
-    CardArt::new("8bd5828b-8dcd-4ce6-b834-ebe9cbaa12d1", "Vincent Proce"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_land(&["Swamp", "Mountain"]).with_ability(abilities::shock_land_enters()),
-);
+// RTR 238 — Blood Crypt (reprint)
+const BLOOD_CRYPT_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::dissension::BLOOD_CRYPT)
+        .with_art("8bd5828b-8dcd-4ce6-b834-ebe9cbaa12d1", "Vincent Proce");
 
 // RTR 239 — Golgari Guildgate
 pub(in crate::card::sets) static GOLGARI_GUILDGATE: CardRecord = CardRecord::new_with_legacy_id(
@@ -5425,14 +5227,10 @@ pub(in crate::card::sets) static GROVE_OF_THE_GUARDIAN: CardRecord = CardRecord:
     crate::card::CardRules::unsupported(),
 );
 
-// RTR 241 — Hallowed Fountain
-pub(in crate::card::sets) static HALLOWED_FOUNTAIN: CardRecord = CardRecord::new_with_legacy_id(
-    174,
-    "Hallowed Fountain",
-    CardArt::new("af7091c9-5f98-4078-a42b-c9e057346d9b", "Jung Park"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_land(&["Plains", "Island"]).with_ability(abilities::shock_land_enters()),
-);
+// RTR 241 — Hallowed Fountain (reprint)
+const HALLOWED_FOUNTAIN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::dissension::HALLOWED_FOUNTAIN)
+        .with_art("af7091c9-5f98-4078-a42b-c9e057346d9b", "Jung Park");
 
 // RTR 242 — Izzet Guildgate
 pub(in crate::card::sets) static IZZET_GUILDGATE: CardRecord = CardRecord::new_with_legacy_id(
@@ -5450,14 +5248,10 @@ pub(in crate::card::sets) static IZZET_GUILDGATE: CardRecord = CardRecord::new_w
     ]),
 );
 
-// RTR 243 — Overgrown Tomb
-pub(in crate::card::sets) static OVERGROWN_TOMB: CardRecord = CardRecord::new_with_legacy_id(
-    194,
-    "Overgrown Tomb",
-    CardArt::new("1c7d50d6-b63a-4d8c-88fa-1d78ae693a45", "Steven Belledin"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_land(&["Swamp", "Forest"]).with_ability(abilities::shock_land_enters()),
-);
+// RTR 243 — Overgrown Tomb (reprint)
+const OVERGROWN_TOMB_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::OVERGROWN_TOMB)
+        .with_art("1c7d50d6-b63a-4d8c-88fa-1d78ae693a45", "Steven Belledin");
 
 // RTR 244 — Rakdos Guildgate
 pub(in crate::card::sets) static RAKDOS_GUILDGATE: CardRecord = CardRecord::new_with_legacy_id(
@@ -5525,23 +5319,15 @@ pub(in crate::card::sets) static SELESNYA_GUILDGATE: CardRecord = CardRecord::ne
     ]),
 );
 
-// RTR 247 — Steam Vents
-pub(in crate::card::sets) static STEAM_VENTS: CardRecord = CardRecord::new_with_legacy_id(
-    217,
-    "Steam Vents",
-    CardArt::new("de911c88-f5c8-4955-9fa5-1f28a9b17236", "Yeong-Hao Han"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_land(&["Island", "Mountain"]).with_ability(abilities::shock_land_enters()),
-);
+// RTR 247 — Steam Vents (reprint)
+const STEAM_VENTS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::guildpact::STEAM_VENTS)
+        .with_art("de911c88-f5c8-4955-9fa5-1f28a9b17236", "Yeong-Hao Han");
 
-// RTR 248 — Temple Garden
-pub(in crate::card::sets) static TEMPLE_GARDEN: CardRecord = CardRecord::new_with_legacy_id(
-    224,
-    "Temple Garden",
-    CardArt::new("b821e604-f9fd-47a4-b5ff-bfb5022834c2", "Volkan Baǵa"),
-    CardSet::ReturnToRavnica,
-    CardRules::new_land(&["Forest", "Plains"]).with_ability(abilities::shock_land_enters()),
-);
+// RTR 248 — Temple Garden (reprint)
+const TEMPLE_GARDEN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::TEMPLE_GARDEN)
+        .with_art("b821e604-f9fd-47a4-b5ff-bfb5022834c2", "Volkan Baǵa");
 
 // RTR 249 — Transguild Promenade
 pub(in crate::card::sets) static TRANSGUILD_PROMENADE: CardRecord = CardRecord::new_with_legacy_id(
@@ -5575,54 +5361,104 @@ pub(in crate::card::sets) static TRANSGUILD_PROMENADE: CardRecord = CardRecord::
 );
 
 // RTR 250 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::PLAINS)
+    .with_art("ac754820-343e-4c01-bcfa-89fa5c8c7e1d", "John Avon");
 
 // RTR 251 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::PLAINS, 1)
+    .with_art("34044cf5-79ed-479c-abdc-3718ec193dd3", "Yeong-Hao Han");
 
 // RTR 252 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::PLAINS, 2)
+    .with_art("b0b9bcca-b41a-4a6a-b380-36bfea9f0715", "Adam Paquette");
 
 // RTR 253 — Plains (alternate printing)
+const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&alpha::PLAINS, 3)
+    .with_art("d293ea0f-8b87-4d8a-ad8f-650131c83c20", "Richard Wright");
 
 // RTR 254 — Plains (alternate printing)
+const PLAINS_ALTERNATE_4: PrintingRecord = PrintingRecord::alternate(&alpha::PLAINS, 4)
+    .with_art("be0334fe-3de3-4779-a31d-d021db50b62b", "Richard Wright");
 
 // RTR 255 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::ISLAND)
+    .with_art("78f35064-c662-48ff-a2a9-d26f594500f5", "John Avon");
 
 // RTR 256 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::ISLAND, 1)
+    .with_art("8dc5e0d9-1c8f-4d38-9915-40469988983d", "Yeong-Hao Han");
 
 // RTR 257 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::ISLAND, 2)
+    .with_art("f10e5b17-6099-445d-9a7b-484eeff7cea8", "Adam Paquette");
 
 // RTR 258 — Island (alternate printing)
+const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&alpha::ISLAND, 3)
+    .with_art("7869f14e-d1d5-4a99-bc2c-f3a0d63077a5", "Richard Wright");
 
 // RTR 259 — Island (alternate printing)
+const ISLAND_ALTERNATE_4: PrintingRecord = PrintingRecord::alternate(&alpha::ISLAND, 4)
+    .with_art("e070e97c-142a-4d5d-ae89-c0c6d85a97ac", "Richard Wright");
 
 // RTR 260 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::SWAMP)
+    .with_art("2d8c3f29-121e-42d1-be21-29f403f97708", "John Avon");
 
 // RTR 261 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::SWAMP, 1)
+    .with_art("be73b50e-8230-41e5-8492-db8f749d00a4", "Yeong-Hao Han");
 
 // RTR 262 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::SWAMP, 2)
+    .with_art("46908606-f572-4b2d-9562-ed9c6f50f1ad", "Adam Paquette");
 
 // RTR 263 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&alpha::SWAMP, 3)
+    .with_art("f7cd375e-f41c-42b1-bbd4-36032d4fb92d", "Richard Wright");
 
 // RTR 264 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_4: PrintingRecord = PrintingRecord::alternate(&alpha::SWAMP, 4)
+    .with_art("745b1731-af31-44d2-ad50-b3e43b620913", "Richard Wright");
 
 // RTR 265 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::MOUNTAIN)
+    .with_art("3b4a196f-de7e-4100-ad65-56cf8b0a8b23", "John Avon");
 
 // RTR 266 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::MOUNTAIN, 1)
+    .with_art("a5b2d0ed-0b47-459a-8f5c-554dd816c03a", "Yeong-Hao Han");
 
 // RTR 267 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::MOUNTAIN, 2)
+    .with_art("5353e8b2-3280-48ec-9bc2-8c8e7a15b460", "Adam Paquette");
 
 // RTR 268 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&alpha::MOUNTAIN, 3)
+    .with_art("24b61852-860e-4f89-a1b2-6429168f0c02", "Richard Wright");
 
 // RTR 269 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_4: PrintingRecord = PrintingRecord::alternate(&alpha::MOUNTAIN, 4)
+    .with_art("96614dc1-9386-4861-b792-b83bcc6c5811", "Richard Wright");
 
 // RTR 270 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&alpha::FOREST)
+    .with_art("f00849dd-c1ba-4171-a503-603fe77c0a43", "John Avon");
 
 // RTR 271 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&alpha::FOREST, 1)
+    .with_art("1428575c-f18e-41a0-b58a-259d2feafd06", "Yeong-Hao Han");
 
 // RTR 272 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&alpha::FOREST, 2)
+    .with_art("e6850740-6219-4f82-a705-2e7b20ede751", "Adam Paquette");
 
 // RTR 273 — Forest (alternate printing)
+const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&alpha::FOREST, 3)
+    .with_art("edc50993-1fd4-4dba-9d2f-ae7a18559829", "Richard Wright");
 
 // RTR 274 — Forest (alternate printing)
+const FOREST_ALTERNATE_4: PrintingRecord = PrintingRecord::alternate(&alpha::FOREST, 4)
+    .with_art("ddfcde62-1b20-48ce-8ba0-7929edcd26fc", "Richard Wright");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANGEL_OF_SERENITY,
@@ -5654,22 +5490,18 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TROSTANIS_JUDGMENT,
     &AQUUS_STEED,
     &BLUSTERSQUALL,
-    &CANCEL,
     &CHRONIC_FLOODING,
     &CONJURED_CURRENCY,
     &CROSSTOWN_COURIER,
     &CYCLONIC_RIFT,
-    &DISPEL,
     &DOORKEEPER,
     &DOWNSIZE,
     &FAERIE_IMPOSTOR,
     &HOVER_BARRIER,
     &INACTION_INJUNCTION,
-    &INSPIRATION,
     &ISPERIAS_SKYWATCH,
     &JACE_ARCHITECT_OF_THOUGHT,
     &MIZZIUM_SKIN,
-    &PARALYZING_GRASP,
     &PSYCHIC_SPIRAL,
     &RUNEWING,
     &SEARCH_THE_CITY,
@@ -5677,12 +5509,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SOULSWORN_SPIRIT,
     &SPHINX_OF_THE_CHIMES,
     &STEALER_OF_SECRETS,
-    &SYNCOPATE,
-    &TOWER_DRAKE,
     &VOIDWIELDER,
     &ASSASSINS_STRIKE,
     &CATACOMB_SLUG,
-    &CREMATE,
     &DAGGERDROME_IMP,
     &DARK_REVENANT,
     &DEAD_REVELER,
@@ -5731,7 +5560,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STREET_SPASM,
     &SURVEY_THE_WRECKAGE,
     &TENEMENT_CRASHER,
-    &TRAITOROUS_INSTINCT,
     &UTVARA_HELLKITE,
     &VANDALBLAST,
     &VIASHINO_RACKETEER,
@@ -5755,7 +5583,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &OAK_STREET_INNKEEPER,
     &RUBBLEBACK_RHINO,
     &SAVAGE_SURGE,
-    &SEEK_THE_HORIZON,
     &SLIME_MOLDING,
     &STONEFARE_CROCODILE,
     &TOWERING_INDRIK,
@@ -5789,7 +5616,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GRISLY_SALVAGE,
     &HAVOC_FESTIVAL,
     &HELLHOLE_FLAILER,
-    &HEROES_REUNION,
     &HUSSAR_PATROL,
     &HYPERSONIC_DRAGON,
     &ISPERIA_SUPREME_JUDGE,
@@ -5852,54 +5678,64 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CODEX_SHREDDER,
     &GOLGARI_KEYRUNE,
     &IZZET_KEYRUNE,
-    &PITHING_NEEDLE,
     &RAKDOS_KEYRUNE,
     &SELESNYA_KEYRUNE,
     &STREET_SWEEPER,
     &TABLET_OF_THE_GUILDS,
     &VOLATILE_RIG,
     &AZORIUS_GUILDGATE,
-    &BLOOD_CRYPT,
     &GOLGARI_GUILDGATE,
     &GROVE_OF_THE_GUARDIAN,
-    &HALLOWED_FOUNTAIN,
     &IZZET_GUILDGATE,
-    &OVERGROWN_TOMB,
     &RAKDOS_GUILDGATE,
     &ROGUES_PASSAGE,
     &SELESNYA_GUILDGATE,
-    &STEAM_VENTS,
-    &TEMPLE_GARDEN,
     &TRANSGUILD_PROMENADE,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&mmq::ARREST),          // RTR 3
-    PrintingRecord::reprint(&magic_2013::MIND_ROT), // RTR 70
-    PrintingRecord::reprint(&alpha::GIANT_GROWTH),  // RTR 125
-    PrintingRecord::reprint(&alpha::PLAINS),        // RTR 250
-    PrintingRecord::alternate(&alpha::PLAINS, 1),   // RTR 251
-    PrintingRecord::alternate(&alpha::PLAINS, 2),   // RTR 252
-    PrintingRecord::alternate(&alpha::PLAINS, 3),   // RTR 253
-    PrintingRecord::alternate(&alpha::PLAINS, 4),   // RTR 254
-    PrintingRecord::reprint(&alpha::ISLAND),        // RTR 255
-    PrintingRecord::alternate(&alpha::ISLAND, 1),   // RTR 256
-    PrintingRecord::alternate(&alpha::ISLAND, 2),   // RTR 257
-    PrintingRecord::alternate(&alpha::ISLAND, 3),   // RTR 258
-    PrintingRecord::alternate(&alpha::ISLAND, 4),   // RTR 259
-    PrintingRecord::reprint(&alpha::SWAMP),         // RTR 260
-    PrintingRecord::alternate(&alpha::SWAMP, 1),    // RTR 261
-    PrintingRecord::alternate(&alpha::SWAMP, 2),    // RTR 262
-    PrintingRecord::alternate(&alpha::SWAMP, 3),    // RTR 263
-    PrintingRecord::alternate(&alpha::SWAMP, 4),    // RTR 264
-    PrintingRecord::reprint(&alpha::MOUNTAIN),      // RTR 265
-    PrintingRecord::alternate(&alpha::MOUNTAIN, 1), // RTR 266
-    PrintingRecord::alternate(&alpha::MOUNTAIN, 2), // RTR 267
-    PrintingRecord::alternate(&alpha::MOUNTAIN, 3), // RTR 268
-    PrintingRecord::alternate(&alpha::MOUNTAIN, 4), // RTR 269
-    PrintingRecord::reprint(&alpha::FOREST),        // RTR 270
-    PrintingRecord::alternate(&alpha::FOREST, 1),   // RTR 271
-    PrintingRecord::alternate(&alpha::FOREST, 2),   // RTR 272
-    PrintingRecord::alternate(&alpha::FOREST, 3),   // RTR 273
-    PrintingRecord::alternate(&alpha::FOREST, 4),   // RTR 274
+    ARREST_REPRINT,
+    CANCEL_REPRINT,
+    DISPEL_REPRINT,
+    INSPIRATION_REPRINT,
+    PARALYZING_GRASP_REPRINT,
+    SYNCOPATE_REPRINT,
+    TOWER_DRAKE_REPRINT,
+    CREMATE_REPRINT,
+    MIND_ROT_REPRINT,
+    TRAITOROUS_INSTINCT_REPRINT,
+    GIANT_GROWTH_REPRINT,
+    SEEK_THE_HORIZON_REPRINT,
+    HEROES_REUNION_REPRINT,
+    PITHING_NEEDLE_REPRINT,
+    BLOOD_CRYPT_REPRINT,
+    HALLOWED_FOUNTAIN_REPRINT,
+    OVERGROWN_TOMB_REPRINT,
+    STEAM_VENTS_REPRINT,
+    TEMPLE_GARDEN_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    PLAINS_ALTERNATE_3,
+    PLAINS_ALTERNATE_4,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    ISLAND_ALTERNATE_3,
+    ISLAND_ALTERNATE_4,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    SWAMP_ALTERNATE_3,
+    SWAMP_ALTERNATE_4,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    MOUNTAIN_ALTERNATE_3,
+    MOUNTAIN_ALTERNATE_4,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
+    FOREST_ALTERNATE_3,
+    FOREST_ALTERNATE_4,
 ];

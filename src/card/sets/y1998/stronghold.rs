@@ -1,11 +1,10 @@
 //! Stronghold cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::AdditionalCostObjectIndex;
+use crate::ObjectRefDef;
 use crate::TargetIndex;
 use crate::card::CostQuantityDef;
-use crate::card::sets::y2011::innistrad as catalog_isd;
-use crate::card::sets::y2012::dark_ascension as catalog_dka;
-use crate::card::sets::y2013::magic_2014 as catalog_m14;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, AttackDefenderScopeDef,
@@ -319,22 +318,10 @@ pub(in crate::card::sets) static TEMPER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// STH 21 — Venerable Monk
-pub(in crate::card::sets) static VENERABLE_MONK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("72322032-c287-4a9e-9d61-a452f6c45bfb"),
-    "Venerable Monk",
-    crate::card::CardArt::new("704b8be3-4ed8-4e94-aa66-c7187a299088", "Terese Nielsen"),
-    crate::card::CardSet::Stronghold,
-    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Monk", "Cleric"], 2, 2).with_ability(
-        abilities::enters_trigger(
-            "When this creature enters, you gain 2 life.",
-            EffectDef::GainLife {
-                recipient: EffectRecipientDef::Controller,
-                amount: ValueDef::Constant(2),
-            },
-        ),
-    ),
-);
+// STH 21 — Venerable Monk (reprint)
+const VENERABLE_MONK_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::VENERABLE_MONK)
+        .with_art("704b8be3-4ed8-4e94-aa66-c7187a299088", "Terese Nielsen");
 
 // STH 22 — Wall of Essence
 // Audit: unsupported — Card rules have not been implemented.
@@ -387,25 +374,10 @@ pub(in crate::card::sets) static YOUTHFUL_KNIGHT: CardRecord = CardRecord::new(
         .with_ability(abilities::first_strike()),
 );
 
-// STH 26 — Cloud Spirit
-pub(in crate::card::sets) static CLOUD_SPIRIT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cc7547aa-fcf7-4b6e-955d-cc5ebc40cd7d"),
-    "Cloud Spirit",
-    crate::card::CardArt::new("938d6c51-903b-4e0b-8702-291666581f2a", "Randy Gallegos"),
-    crate::card::CardSet::Stronghold,
-    CardRules::new_creature(mana_cost!("{2}{U}"), &["Spirit"], 3, 1).with_abilities(&[
-        abilities::flying(),
-        AbilityDef::static_ability(
-            "This creature can block only creatures with flying.",
-            EffectDef::StaticApply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::Rule(AppliedRuleDef::can_block_only(
-                    ObjectPredicateDef::HasKeyword(crate::card::KeywordAbility::Flying),
-                )),
-            },
-        ),
-    ]),
-);
+// STH 26 — Cloud Spirit (reprint)
+const CLOUD_SPIRIT_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::CLOUD_SPIRIT)
+        .with_art("938d6c51-903b-4e0b-8702-291666581f2a", "Randy Gallegos");
 
 // STH 27 — Contempt
 // Audit: unsupported — Card rules have not been implemented.
@@ -731,33 +703,10 @@ pub(in crate::card::sets) static THALAKOS_DECEIVER: CardRecord = CardRecord::new
     crate::card::CardRules::unsupported(),
 );
 
-// STH 46 — Tidal Surge
-pub(in crate::card::sets) static TIDAL_SURGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a027c31d-c662-4ce1-a0d1-a32e62f6a724"),
-    "Tidal Surge",
-    crate::card::CardArt::new("8737440b-0bf0-483f-895b-aa24da2b9cfe", "Doug Chaffee"),
-    crate::card::CardSet::Stronghold,
-    CardRules::new_sorcery(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
-        "Tap up to three target creatures without flying.",
-        &[AbilityTargetDef::up_to(
-            AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasKeyword(
-                        crate::card::KeywordAbility::Flying,
-                    )),
-                ]),
-                zones: &[ZoneKind::Battlefield],
-                controller: None,
-                owner: None,
-            },
-            3,
-        )],
-        EffectDef::Tap {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-        },
-    )),
-);
+// STH 46 — Tidal Surge (reprint)
+const TIDAL_SURGE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::TIDAL_SURGE)
+        .with_art("8737440b-0bf0-483f-895b-aa24da2b9cfe", "Doug Chaffee");
 
 // STH 47 — Tidal Warrior
 pub(in crate::card::sets) static TIDAL_WARRIOR: CardRecord = CardRecord::new(
@@ -1160,22 +1109,10 @@ pub(in crate::card::sets) static REVENANT: CardRecord = CardRecord::new(
     ]),
 );
 
-// STH 69 — Serpent Warrior
-pub(in crate::card::sets) static SERPENT_WARRIOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c364fd06-64c5-45f6-8ed5-64f44a1e8bda"),
-    "Serpent Warrior",
-    crate::card::CardArt::new("ab726e7d-171f-48b2-9652-545e17913330", "Ron Spencer"),
-    crate::card::CardSet::Stronghold,
-    CardRules::new_creature(mana_cost!("{2}{B}"), &["Snake", "Warrior"], 3, 3).with_ability(
-        abilities::enters_trigger(
-            "When this creature enters, you lose 3 life.",
-            EffectDef::LoseLife {
-                recipient: EffectRecipientDef::Controller,
-                amount: ValueDef::Constant(3),
-            },
-        ),
-    ),
-);
+// STH 69 — Serpent Warrior (reprint)
+const SERPENT_WARRIOR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::SERPENT_WARRIOR)
+        .with_art("ab726e7d-171f-48b2-9652-545e17913330", "Ron Spencer");
 
 // STH 70 — Skeleton Scavengers
 // Audit: unsupported — Card rules have not been implemented.
@@ -1350,22 +1287,10 @@ pub(in crate::card::sets) static CONVULSING_LICID: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// STH 78 — Craven Giant
-pub(in crate::card::sets) static CRAVEN_GIANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4a2e1c12-f848-43b4-9505-851c66a509f1"),
-    "Craven Giant",
-    crate::card::CardArt::new("ea3cf964-88f6-4e62-97ce-cf0e179a53fb", "Brian Snõddy"),
-    crate::card::CardSet::Stronghold,
-    CardRules::new_creature(mana_cost!("{2}{R}"), &["Giant"], 4, 1).with_ability(
-        AbilityDef::static_ability(
-            "This creature can't block.",
-            EffectDef::StaticApply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BLOCK),
-            },
-        ),
-    ),
-);
+// STH 78 — Craven Giant (reprint)
+const CRAVEN_GIANT_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::CRAVEN_GIANT)
+        .with_art("ea3cf964-88f6-4e62-97ce-cf0e179a53fb", "Brian Snõddy");
 
 // STH 79 — Duct Crawler
 // Audit: unsupported — Card rules have not been implemented.
@@ -1408,7 +1333,29 @@ pub(in crate::card::sets) static FLAME_WAVE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// STH 82 — Fling (reprint)
+// STH 82 — Fling
+pub(in crate::card::sets) static FLING: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("6b144452-2e91-4e46-abe9-ed76b39f8314"),
+    "Fling",
+    crate::card::CardArt::new("cf1ab466-44bb-45d5-a94f-21b8924f0d89", "Izzy"),
+    crate::card::CardSet::Stronghold,
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, sacrifice a creature. Fling deals damage equal to the sacrificed creature's power to any target.",
+            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)],
+            SpellAdditionalCostDef::sacrifice(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                CostQuantityDef::Fixed(1),
+            ),
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::ObjectPower(ObjectRefDef::AdditionalCostObject(
+                    AdditionalCostObjectIndex::PRIMARY,
+                )),
+            },
+        ),
+    ),
+);
 
 // STH 83 — Flowstone Blade
 pub(in crate::card::sets) static FLOWSTONE_BLADE: CardRecord = CardRecord::new(
@@ -1666,7 +1613,23 @@ pub(in crate::card::sets) static SHARD_PHOENIX: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// STH 98 — Shock (reprint)
+// STH 98 — Shock
+pub(in crate::card::sets) static SHOCK: CardRecord = CardRecord::new_with_legacy_id(
+    1209,
+    "Shock",
+    CardArt::new("2fbec2ea-7b60-4c51-9782-52ccdd96c4b7", "Jon Foster"),
+    CardSet::Stronghold,
+    CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Shock deals 2 damage to any target.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::AnyTarget,
+        )],
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(2),
+        },
+    )),
+);
 
 // STH 99 — Spitting Hydra
 pub(in crate::card::sets) static SPITTING_HYDRA: CardRecord = CardRecord::new(
@@ -1868,7 +1831,20 @@ pub(in crate::card::sets) static LOWLAND_BASILISK: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// STH 110 — Mulch (reprint)
+// STH 110 — Mulch
+pub(in crate::card::sets) static MULCH: CardRecord = CardRecord::new_with_legacy_id(
+    188,
+    "Mulch",
+    CardArt::new("52a1dabd-82df-4814-9d64-bf7bf9c1018d", "Christopher Moeller"),
+    CardSet::Stronghold,
+    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell(
+        "Reveal the top four cards of your library. Put all land cards revealed this way into your hand and the rest into your graveyard.",
+        abilities::reveal_top_cards_put_matching_in_hand_rest_graveyard(
+            ValueDef::Constant(4),
+            ObjectPredicateDef::HasType(CardType::Land),
+        ),
+    )),
+);
 
 // STH 111 — Overgrowth
 pub(in crate::card::sets) static OVERGROWTH: CardRecord = CardRecord::new(
@@ -2096,14 +2072,10 @@ pub(in crate::card::sets) static SPIKE_WORKER: CardRecord = CardRecord::new(
     ]),
 );
 
-// STH 121 — Spined Wurm
-pub(in crate::card::sets) static SPINED_WURM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0053bd00-90fd-48c2-8f79-952d5d1e3e74"),
-    "Spined Wurm",
-    crate::card::CardArt::new("113fad70-36bc-4ab7-962a-cda3bddd02fc", "Keith Parkinson"),
-    crate::card::CardSet::Stronghold,
-    CardRules::new_creature(mana_cost!("{4}{G}"), &["Wurm"], 5, 4),
-);
+// STH 121 — Spined Wurm (reprint)
+const SPINED_WURM_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::SPINED_WURM)
+        .with_art("113fad70-36bc-4ab7-962a-cda3bddd02fc", "Keith Parkinson");
 
 // STH 122 — Tempting Licid
 // Audit: unsupported — Card rules have not been implemented.
@@ -2459,12 +2431,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SOLTARI_CHAMPION,
     &SPIRIT_EN_KOR,
     &TEMPER,
-    &VENERABLE_MONK,
     &WALL_OF_ESSENCE,
     &WARRIOR_EN_KOR,
     &WARRIOR_ANGEL,
     &YOUTHFUL_KNIGHT,
-    &CLOUD_SPIRIT,
     &CONTEMPT,
     &DREAM_HALLS,
     &DREAM_PROWLER,
@@ -2484,7 +2454,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SILVER_WYVERN,
     &SPINDRIFT_DRAKE,
     &THALAKOS_DECEIVER,
-    &TIDAL_SURGE,
     &TIDAL_WARRIOR,
     &VOLRATH_S_SHAPESHIFTER,
     &WALKING_DREAM,
@@ -2507,7 +2476,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MORTUARY,
     &RABID_RATS,
     &REVENANT,
-    &SERPENT_WARRIOR,
     &SKELETON_SCAVENGERS,
     &STRONGHOLD_ASSASSIN,
     &STRONGHOLD_TASKMASTER,
@@ -2516,10 +2484,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WALL_OF_SOULS,
     &AMOK,
     &CONVULSING_LICID,
-    &CRAVEN_GIANT,
     &DUCT_CRAWLER,
     &FANNING_THE_FLAMES,
     &FLAME_WAVE,
+    &FLING,
     &FLOWSTONE_BLADE,
     &FLOWSTONE_HELLION,
     &FLOWSTONE_MAULER,
@@ -2535,6 +2503,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RUINATION,
     &SEETHING_ANGER,
     &SHARD_PHOENIX,
+    &SHOCK,
     &SPITTING_HYDRA,
     &WALL_OF_RAZORS,
     &AWAKENING,
@@ -2546,6 +2515,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENDANGERED_ARMODON,
     &HERMIT_DRUID,
     &LOWLAND_BASILISK,
+    &MULCH,
     &OVERGROWTH,
     &PRIMAL_RAGE,
     &PROVOKE,
@@ -2556,7 +2526,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPIKE_FEEDER,
     &SPIKE_SOLDIER,
     &SPIKE_WORKER,
-    &SPINED_WURM,
     &TEMPTING_LICID,
     &VERDANT_TOUCH,
     &VOLRATH_S_GARDENS,
@@ -2582,7 +2551,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_dka::FLING), // STH 82
-    PrintingRecord::reprint(&catalog_m14::SHOCK), // STH 98
-    PrintingRecord::reprint(&catalog_isd::MULCH), // STH 110
+    VENERABLE_MONK_REPRINT,
+    CLOUD_SPIRIT_REPRINT,
+    TIDAL_SURGE_REPRINT,
+    SERPENT_WARRIOR_REPRINT,
+    CRAVEN_GIANT_REPRINT,
+    SPINED_WURM_REPRINT,
 ];

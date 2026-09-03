@@ -1940,25 +1940,15 @@ pub(in crate::card::sets) static SINK_INTO_STUPOR: CardRecord = CardRecord::new_
     ],
 );
 
-// MH3 284 — Annoyed Altisaur
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static ANNOYED_ALTISAUR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7536d618-0c98-45bb-913b-b8117b4acf87"),
-    "Annoyed Altisaur",
-    crate::card::CardArt::new("4aa9354d-3496-47f4-81c9-aead15efb8bb", "Lars Grant-West"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
-);
+// MH3 284 — Annoyed Altisaur (reprint)
+const ANNOYED_ALTISAUR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2020::commander_legends::ANNOYED_ALTISAUR)
+        .with_art("4aa9354d-3496-47f4-81c9-aead15efb8bb", "Lars Grant-West");
 
-// MH3 286 — Priest of Titania
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static PRIEST_OF_TITANIA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("965c33c3-0c68-4516-b8b0-5a0552ed44b6"),
-    "Priest of Titania",
-    crate::card::CardArt::new("eb11921b-1b28-483f-a707-4de21a6daa31", "Rebecca Guay"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
-);
+// MH3 286 — Priest of Titania (reprint)
+const PRIEST_OF_TITANIA_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::urzas_saga::PRIEST_OF_TITANIA)
+        .with_art("eb11921b-1b28-483f-a707-4de21a6daa31", "Rebecca Guay");
 
 // MH3 351 — Arena of Glory
 pub(in crate::card::sets) static ARENA_OF_GLORY: CardRecord = CardRecord::new(
@@ -2478,6 +2468,11 @@ pub(in crate::card::sets) static CRABOMINATION: CardRecord = CardRecord::new(
 );
 
 // MH3 457 — Detective's Phoenix (alternate printing)
+const DETECTIVES_PHOENIX_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&DETECTIVES_PHOENIX, 1).with_art(
+        "db16e02b-1b7f-4976-b9eb-41350337616c",
+        "Deruchenko Alexander",
+    );
 
 // MH3 460 — Wight of the Reliquary
 /// Your own graveyard, which is what makes the sacrifice cost pay twice: the
@@ -2540,6 +2535,8 @@ pub(in crate::card::sets) static WIGHT_OF_THE_RELIQUARY: CardRecord = CardRecord
 );
 
 // MH3 484 — Six (alternate printing)
+const SIX_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SIX, 1)
+    .with_art("8f3070e7-dce0-4121-bbef-c4357f8265ab", "Andrew Mar");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEVOURER_OF_DESTINY,
@@ -2597,8 +2594,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AJANI_NACATL_PARIAH,
     &WITCH_ENCHANTER,
     &SINK_INTO_STUPOR,
-    &ANNOYED_ALTISAUR,
-    &PRIEST_OF_TITANIA,
     &ARENA_OF_GLORY,
     &NADU_WINGED_WISDOM,
     &TAMIYO_INQUISITIVE_STUDENT,
@@ -2609,6 +2604,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&DETECTIVES_PHOENIX, 1), // MH3 457
-    PrintingRecord::alternate(&SIX, 1),                // MH3 484
+    ANNOYED_ALTISAUR_REPRINT,
+    PRIEST_OF_TITANIA_REPRINT,
+    DETECTIVES_PHOENIX_ALTERNATE_1,
+    SIX_ALTERNATE_1,
 ];

@@ -102,9 +102,9 @@ pub(in crate::card::sets) static GAU_FERAL_YOUTH: CardRecord = CardRecord::new_w
 );
 
 // FIC 119 — Transpose (alternate printing)
+const TRANSPOSE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&TRANSPOSE, 1)
+    .with_art("51cb61ab-0508-4668-8680-051d38df7ccb", "Toni Infante");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&TRANSPOSE, &GAU_FERAL_YOUTH];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&TRANSPOSE, 1), // FIC 119
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[TRANSPOSE_ALTERNATE_1];

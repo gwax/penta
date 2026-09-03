@@ -92,11 +92,22 @@ pub(in crate::card::sets) static FIREBLADE_ARTIST: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+// RNA 178 — Growth Spiral
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static GROWTH_SPIRAL: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("288ed3e9-4485-44ad-8561-efa09ed96f34"),
+    "Growth Spiral",
+    crate::card::CardArt::new("1e10e2b4-9639-41ae-8b8e-253224d3d513", "Nicholas Gregory"),
+    crate::card::CardSet::RavnicaAllegiance,
+    crate::card::CardRules::unsupported(),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SPHINX_OF_FORESIGHT,
     &SKEWER_THE_CRITICS,
     &FINAL_PAYMENT,
     &FIREBLADE_ARTIST,
+    &GROWTH_SPIRAL,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

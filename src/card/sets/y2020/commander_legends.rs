@@ -44,6 +44,16 @@ pub(in crate::card::sets) static HULLBREACHER: CardRecord = CardRecord::new(
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&HULLBREACHER];
+// CMR 216 — Annoyed Altisaur
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static ANNOYED_ALTISAUR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("7536d618-0c98-45bb-913b-b8117b4acf87"),
+    "Annoyed Altisaur",
+    crate::card::CardArt::new("4aa9354d-3496-47f4-81c9-aead15efb8bb", "Lars Grant-West"),
+    crate::card::CardSet::CommanderLegends,
+    crate::card::CardRules::unsupported(),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&HULLBREACHER, &ANNOYED_ALTISAUR];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

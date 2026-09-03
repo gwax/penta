@@ -34,15 +34,10 @@ pub(in crate::card::sets) const fn escape(
     )
 }
 
-// THB 20 — Heliod's Pilgrim
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static HELIOD_S_PILGRIM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7ea54b97-9182-4d46-9d70-3cc7f9b18ada"),
-    "Heliod's Pilgrim",
-    crate::card::CardArt::new("cafce2f5-f4f4-465b-96dc-bcdd29d4e4bb", "Micah Epstein"),
-    crate::card::CardSet::TherosBeyondDeath,
-    crate::card::CardRules::unsupported(),
-);
+// THB 20 — Heliod's Pilgrim (reprint)
+const HELIOD_S_PILGRIM_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2014::magic_2015::HELIOD_S_PILGRIM)
+        .with_art("cafce2f5-f4f4-465b-96dc-bcdd29d4e4bb", "Micah Epstein");
 
 // THB 73 — Thassa's Oracle
 const ORACLE_TOP: Binding = Binding!("oracle_top");
@@ -124,15 +119,10 @@ pub(in crate::card::sets) static THASSAS_ORACLE: CardRecord = CardRecord::new_wi
     ),
 );
 
-// THB 99 — Gray Merchant of Asphodel
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static GRAY_MERCHANT_OF_ASPHODEL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b06078ce-f534-4e16-9a70-d51620a33eb2"),
-    "Gray Merchant of Asphodel",
-    crate::card::CardArt::new("7c1a7dd8-8034-4f59-a351-33666b26ff5a", "Scott Murphy"),
-    crate::card::CardSet::TherosBeyondDeath,
-    crate::card::CardRules::unsupported(),
-);
+// THB 99 — Gray Merchant of Asphodel (reprint)
+const GRAY_MERCHANT_OF_ASPHODEL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2013::theros::GRAY_MERCHANT_OF_ASPHODEL)
+        .with_art("7c1a7dd8-8034-4f59-a351-33666b26ff5a", "Scott Murphy");
 
 // THB 105 — Mire Triton
 // Audit: unsupported — Card rules have not been implemented.
@@ -348,9 +338,7 @@ pub(in crate::card::sets) static SOUL_GUIDE_LANTERN: CardRecord = CardRecord::ne
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
-    &HELIOD_S_PILGRIM,
     &THASSAS_ORACLE,
-    &GRAY_MERCHANT_OF_ASPHODEL,
     &MIRE_TRITON,
     &UNDERWORLD_CHARGER,
     &BLOOD_ASPIRANT,
@@ -360,4 +348,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SOUL_GUIDE_LANTERN,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[HELIOD_S_PILGRIM_REPRINT, GRAY_MERCHANT_OF_ASPHODEL_REPRINT];

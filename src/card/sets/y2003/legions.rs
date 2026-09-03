@@ -284,6 +284,11 @@ pub(in crate::card::sets) static WHIPGRASS_ENTANGLER: CardRecord = CardRecord::n
 );
 
 // LGN 27 — White Knight (reprint)
+const WHITE_KNIGHT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::WHITE_KNIGHT)
+    .with_art(
+        "cb9cb8ed-7abb-4e71-b42f-5041dd0c0394",
+        "Edward P. Beard, Jr.",
+    );
 
 // LGN 28 — Windborn Muse
 // Audit: unsupported — Card rules have not been implemented.
@@ -1711,6 +1716,4 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WIREWOOD_HIVEMASTER,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_lea::WHITE_KNIGHT), // LGN 27
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[WHITE_KNIGHT_REPRINT];

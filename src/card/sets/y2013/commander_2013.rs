@@ -88,21 +88,13 @@ pub(in crate::card::sets) static TOXIC_DELUGE: CardRecord = CardRecord::new_with
     ),
 );
 
-// C13 279 — Boros Garrison
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static BOROS_GARRISON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7dfe3f03-078f-44fb-89cd-efa3ebfaf637"),
-    "Boros Garrison",
-    crate::card::CardArt::new("c468dd1c-6f0a-4679-9d33-17e17db8841d", "John Avon"),
-    crate::card::CardSet::Commander2013,
-    crate::card::CardRules::unsupported(),
-);
+// C13 279 — Boros Garrison (reprint)
+const BOROS_GARRISON_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::BOROS_GARRISON)
+        .with_art("c468dd1c-6f0a-4679-9d33-17e17db8841d", "John Avon");
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
-    &UNEXPECTEDLY_ABSENT,
-    &TRUE_NAME_NEMESIS,
-    &TOXIC_DELUGE,
-    &BOROS_GARRISON,
-];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&UNEXPECTEDLY_ABSENT, &TRUE_NAME_NEMESIS, &TOXIC_DELUGE];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[BOROS_GARRISON_REPRINT];

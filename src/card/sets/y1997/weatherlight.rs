@@ -1,9 +1,8 @@
 //! Weatherlight cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
-use crate::card::sets::y2012::avacyn_restored as catalog_avr;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2013::magic_2014 as catalog_m14;
+use crate::KeywordAbility;
+use crate::card::abilities;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
@@ -55,15 +54,10 @@ pub(in crate::card::sets) static ABEYANCE: CardRecord = CardRecord::new_with_leg
     )),
 );
 
-// WTH 2 — Alabaster Dragon
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static ALABASTER_DRAGON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1edc6ec1-3b34-45e0-8573-39eba1d10efa"),
-    "Alabaster Dragon",
-    crate::card::CardArt::new("3a2fcc23-ac09-4ada-b194-424739c9c734", "Bob Eggleton"),
-    crate::card::CardSet::Weatherlight,
-    crate::card::CardRules::unsupported(),
-);
+// WTH 2 — Alabaster Dragon (reprint)
+const ALABASTER_DRAGON_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::ALABASTER_DRAGON)
+        .with_art("3a2fcc23-ac09-4ada-b194-424739c9c734", "Bob Eggleton");
 
 // WTH 3 — Alms
 // Audit: unsupported — Card rules have not been implemented.
@@ -85,15 +79,10 @@ pub(in crate::card::sets) static ANGELIC_RENEWAL: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// WTH 5 — Ardent Militia
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static ARDENT_MILITIA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("543f8c6a-bcf1-4400-82e5-83d36cb60464"),
-    "Ardent Militia",
-    crate::card::CardArt::new("bb212ca5-bbb5-4c83-9a7b-9d5ab451e032", "Zina Saunders"),
-    crate::card::CardSet::Weatherlight,
-    crate::card::CardRules::unsupported(),
-);
+// WTH 5 — Ardent Militia (reprint)
+const ARDENT_MILITIA_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::ARDENT_MILITIA)
+        .with_art("bb212ca5-bbb5-4c83-9a7b-9d5ab451e032", "Zina Saunders");
 
 // WTH 6 — Argivian Find
 // Audit: unsupported — Card rules have not been implemented.
@@ -458,18 +447,12 @@ pub(in crate::card::sets) static ERTAI_S_FAMILIAR: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// WTH 39 — Flux
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static FLUX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3c26bf66-8fa8-4f69-9556-c9fcc56a7f33"),
-    "Flux",
-    crate::card::CardArt::new(
+// WTH 39 — Flux (reprint)
+const FLUX_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::FLUX).with_art(
         "368b28e4-a367-4a38-866d-c3768bd9b7ad",
         "Richard Kane Ferguson",
-    ),
-    crate::card::CardSet::Weatherlight,
-    crate::card::CardRules::unsupported(),
-);
+    );
 
 // WTH 40 — Fog Elemental
 // Audit: unsupported — Card rules have not been implemented.
@@ -552,6 +535,9 @@ pub(in crate::card::sets) static PENDRELL_MISTS: CardRecord = CardRecord::new(
 );
 
 // WTH 48 — Phantom Warrior (reprint)
+const PHANTOM_WARRIOR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::PHANTOM_WARRIOR)
+        .with_art("b414c9f8-ee46-4368-a8dc-0767c645a9c1", "John Matson");
 
 // WTH 49 — Phantom Wings
 // Audit: unsupported — Card rules have not been implemented.
@@ -1072,7 +1058,24 @@ pub(in crate::card::sets) static DWARVEN_THAUMATURGIST: CardRecord = CardRecord:
     crate::card::CardRules::unsupported(),
 );
 
-// WTH 99 — Fervor (reprint)
+// WTH 99 — Fervor
+pub(in crate::card::sets) static FERVOR: CardRecord = CardRecord::new_with_legacy_id(
+    1015,
+    "Fervor",
+    CardArt::new("a88515c2-4b4f-4d16-9f50-149ef012e961", "Wayne England"),
+    CardSet::Weatherlight,
+    CardRules::new_enchantment(mana_cost!("{2}{R}")).with_ability(AbilityDef::static_ability(
+        "Creatures you control have haste.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&abilities::haste()),
+        },
+    )),
+);
 
 // WTH 100 — Fire Whip
 // Audit: unsupported — Card rules have not been implemented.
@@ -1260,17 +1263,46 @@ pub(in crate::card::sets) static SAWTOOTH_OGRE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// WTH 115 — Thunderbolt (reprint)
-
-// WTH 116 — Thundermare
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static THUNDERMARE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("59a9f3f5-c80f-47a4-bf84-b7262437017f"),
-    "Thundermare",
-    crate::card::CardArt::new("e936e5cb-0a8e-4348-afea-e5f96b19fe23", "Bob Eggleton"),
-    crate::card::CardSet::Weatherlight,
-    crate::card::CardRules::unsupported(),
+// WTH 115 — Thunderbolt
+pub(in crate::card::sets) static THUNDERBOLT: CardRecord = CardRecord::new_with_legacy_id(
+    1640,
+    "Thunderbolt",
+    CardArt::new("5845a5bc-6b7d-4bbb-80b3-a0f877b95553", "Anthony Francisco"),
+    CardSet::Weatherlight,
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(AbilityDef::modal_spell(
+        "Choose one —",
+        &[
+            AbilityDef::spell_with_targets(
+                "Thunderbolt deals 3 damage to target player or planeswalker.",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
+                )],
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(3),
+                },
+            ),
+            AbilityDef::spell_with_targets(
+                "Thunderbolt deals 4 damage to target creature with flying.",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                    ]),
+                )],
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(4),
+                },
+            ),
+        ],
+    )),
 );
+
+// WTH 116 — Thundermare (reprint)
+const THUNDERMARE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::THUNDERMARE)
+        .with_art("e936e5cb-0a8e-4348-afea-e5f96b19fe23", "Bob Eggleton");
 
 // WTH 117 — Aboroth
 // Audit: unsupported — Card rules have not been implemented.
@@ -1482,15 +1514,10 @@ pub(in crate::card::sets) static NATURE_S_RESURGENCE: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
-// WTH 138 — Redwood Treefolk
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static REDWOOD_TREEFOLK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e9399667-ae2a-4b64-84dd-8f97f3e5fe79"),
-    "Redwood Treefolk",
-    crate::card::CardArt::new("0274e162-33e4-4604-a6ea-51fc1a5c6a04", "Phil Foglio"),
-    crate::card::CardSet::Weatherlight,
-    crate::card::CardRules::unsupported(),
-);
+// WTH 138 — Redwood Treefolk (reprint)
+const REDWOOD_TREEFOLK_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::REDWOOD_TREEFOLK)
+        .with_art("0274e162-33e4-4604-a6ea-51fc1a5c6a04", "Phil Foglio");
 
 // WTH 139 — Rogue Elephant
 // Audit: unsupported — Card rules have not been implemented.
@@ -1889,10 +1916,8 @@ pub(in crate::card::sets) static WINDING_CANYONS: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ABEYANCE,
-    &ALABASTER_DRAGON,
     &ALMS,
     &ANGELIC_RENEWAL,
-    &ARDENT_MILITIA,
     &ARGIVIAN_FIND,
     &AURA_OF_SILENCE,
     &BENALISH_INFANTRY,
@@ -1926,7 +1951,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CLOUD_DJINN,
     &DISRUPT,
     &ERTAI_S_FAMILIAR,
-    &FLUX,
     &FOG_ELEMENTAL,
     &MANA_CHAINS,
     &MANTA_RAY,
@@ -1985,6 +2009,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DESPERATE_GAMBIT,
     &DWARVEN_BERSERKER,
     &DWARVEN_THAUMATURGIST,
+    &FERVOR,
     &FIRE_WHIP,
     &FIRESTORM,
     &FIT_OF_RAGE,
@@ -2000,7 +2025,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ORCISH_SETTLERS,
     &ROC_HATCHLING,
     &SAWTOOTH_OGRE,
-    &THUNDERMARE,
+    &THUNDERBOLT,
     &ABOROTH,
     &ARCTIC_WOLVES,
     &BARISHI,
@@ -2022,7 +2047,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MWONVULI_OOZE,
     &NATURE_S_KISS,
     &NATURE_S_RESURGENCE,
-    &REDWOOD_TREEFOLK,
     &ROGUE_ELEPHANT,
     &STRIPED_BEARS,
     &SYLVAN_HIEROPHANT,
@@ -2055,7 +2079,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_m14::PHANTOM_WARRIOR), // WTH 48
-    PrintingRecord::reprint(&catalog_m13::FERVOR),          // WTH 99
-    PrintingRecord::reprint(&catalog_avr::THUNDERBOLT),     // WTH 115
+    ALABASTER_DRAGON_REPRINT,
+    ARDENT_MILITIA_REPRINT,
+    FLUX_REPRINT,
+    PHANTOM_WARRIOR_REPRINT,
+    THUNDERMARE_REPRINT,
+    REDWOOD_TREEFOLK_REPRINT,
 ];

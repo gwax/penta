@@ -1,6 +1,9 @@
 //! Shadowmoor cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::AppliedRuleDef;
+use crate::BasicLandType;
+use crate::KeywordAbility;
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef, AppliedEffectDef,
     CardArt, CardRules, CardSet, CardType, CopyStackObjectDef, CostQuantityDef, EffectDef,
@@ -104,6 +107,47 @@ pub(in crate::card::sets) static BURN_TRAIL: CardRecord = CardRecord::new(
         },
     )),
 );
+// SHM 117 — Gloomwidow
+pub(in crate::card::sets) static GLOOMWIDOW: CardRecord = CardRecord::new_with_legacy_id(
+    1600,
+    "Gloomwidow",
+    CardArt::new("a016c872-09bd-42e1-94da-f587e8252492", "Svetlin Velinov"),
+    CardSet::Shadowmoor,
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Spider"], 3, 3).with_abilities(&[
+        abilities::reach(),
+        AbilityDef::static_ability(
+            "This creature can block only creatures with flying.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::can_block_only(
+                    ObjectPredicateDef::HasKeyword(KeywordAbility::Flying),
+                )),
+            },
+        ),
+    ]),
+);
+
+// SHM 119 — Howl of the Night Pack
+pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord =
+    CardRecord::new_with_legacy_id(
+        1218,
+        "Howl of the Night Pack",
+        CardArt::new("20fc5ff1-b8bd-44d5-a659-17eeae06736a", "Lars Grant-West"),
+        CardSet::Shadowmoor,
+        CardRules::new_sorcery(mana_cost!("{6}{G}")).with_ability(AbilityDef::spell(
+            "Create a 2/2 green Wolf creature token for each Forest you control.",
+            EffectDef::create_creature_token(&["Wolf"], &[ManaColor::Green], 2, 2)
+                .with_art(CardArt::new(
+                    "309f1bd4-78af-4722-9d45-b5f40b001570",
+                    "Lars Grant-West",
+                ))
+                .with_count(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                    ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ))),
+        )),
+    );
 
 // SHM 135 — Woodfall Primus
 pub(in crate::card::sets) static WOODFALL_PRIMUS: CardRecord = CardRecord::new(
@@ -201,6 +245,8 @@ pub(in crate::card::sets) static BARKSHELL_BLESSING: CardRecord = CardRecord::ne
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BESEECH_THE_QUEEN,
     &BURN_TRAIL,
+    &GLOOMWIDOW,
+    &HOWL_OF_THE_NIGHT_PACK,
     &WOODFALL_PRIMUS,
     &MANAMORPHOSE,
     &BARKSHELL_BLESSING,

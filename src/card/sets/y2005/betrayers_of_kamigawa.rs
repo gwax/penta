@@ -9,6 +9,16 @@ use crate::card::{
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
+// BOK 44 — Ninja of the Deep Hours
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static NINJA_OF_THE_DEEP_HOURS: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("367a67c7-54db-4336-b55a-3fa27625172a"),
+    "Ninja of the Deep Hours",
+    crate::card::CardArt::new("26184ff2-3b8c-419a-9b28-95d6e4e996bb", "Dan Murayama Scott"),
+    crate::card::CardSet::BetrayersOfKamigawa,
+    crate::card::CardRules::unsupported(),
+);
+
 // BOK 76 — Okiba-Gang Shinobi
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static OKIBA_GANG_SHINOBI: CardRecord = CardRecord::new(
@@ -90,6 +100,10 @@ pub(in crate::card::sets) static UMEZAWAS_JITTE: CardRecord = CardRecord::new_wi
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&OKIBA_GANG_SHINOBI, &UMEZAWAS_JITTE];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &NINJA_OF_THE_DEEP_HOURS,
+    &OKIBA_GANG_SHINOBI,
+    &UMEZAWAS_JITTE,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

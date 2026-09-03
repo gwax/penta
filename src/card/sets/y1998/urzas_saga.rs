@@ -1,13 +1,15 @@
 //! Urza's Saga cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::DamageEventMatcherDef;
+use crate::DamageKindDef;
+use crate::DamageRecipientMatcherDef;
+use crate::DamageSourceMatcherDef;
+use crate::card::ScaledValueDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y1994::legends as catalog_leg;
 use crate::card::sets::y1995::ice_age as catalog_ice;
 use crate::card::sets::y1998::portal_second_age as catalog_p02;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2013::magic_2014 as catalog_m14;
-use crate::card::sets::y2024::modern_horizons_3 as catalog_mh3;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardChoiceSourceDef, CardRules,
@@ -144,7 +146,31 @@ pub(in crate::card::sets) static CLEAR: CardRecord = CardRecord::new(
     ]),
 );
 
-// USG 8 — Congregate (reprint)
+// USG 8 — Congregate
+pub(in crate::card::sets) static CONGREGATE: CardRecord = CardRecord::new_with_legacy_id(
+    1861,
+    "Congregate",
+    CardArt::new("b792574a-4d8f-4c80-a958-7c0edbe391fc", "Mark Zug"),
+    CardSet::UrzasSaga,
+    CardRules::new_instant(mana_cost!("{3}{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player gains 2 life for each creature on the battlefield.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Scaled(
+                &// Every creature on the battlefield, both sides included: the card says "on
+                // the battlefield" rather than "you control".
+                ScaledValueDef::new(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                )), 2),
+            ),
+        },
+    )),
+);
 
 // USG 9 — Defensive Formation
 // Audit: unsupported — Card rules have not been implemented.
@@ -187,6 +213,8 @@ pub(in crate::card::sets) static DISCIPLE_OF_LAW: CardRecord = CardRecord::new(
 );
 
 // USG 12 — Disenchant (reprint)
+const DISENCHANT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DISENCHANT)
+    .with_art("1da67d77-1cbd-4f0e-a109-87fb4c84bcca", "Donato Giancola");
 
 // USG 13 — Elite Archers
 pub(in crate::card::sets) static ELITE_ARCHERS: CardRecord = CardRecord::new(
@@ -244,6 +272,8 @@ pub(in crate::card::sets) static GLORIOUS_ANTHEM: CardRecord = CardRecord::new(
 );
 
 // USG 16 — Healing Salve (reprint)
+const HEALING_SALVE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::HEALING_SALVE)
+    .with_art("89146f6a-583f-4ed1-8b43-75e9a55892c6", "Heather Hudson");
 
 // USG 17 — Herald of Serra
 pub(in crate::card::sets) static HERALD_OF_SERRA: CardRecord = CardRecord::new(
@@ -388,6 +418,9 @@ pub(in crate::card::sets) static OPAL_TITAN: CardRecord = CardRecord::new(
 );
 
 // USG 27 — Pacifism (reprint)
+const PACIFISM_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1996::mirage::PACIFISM)
+        .with_art("dc81638f-a74c-47fc-825a-ae778c524f66", "Randy Gallegos");
 
 // USG 28 — Pariah
 // Audit: unsupported — Card rules have not been implemented.
@@ -400,6 +433,9 @@ pub(in crate::card::sets) static PARIAH: CardRecord = CardRecord::new(
 );
 
 // USG 29 — Path of Peace (reprint)
+const PATH_OF_PEACE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::PATH_OF_PEACE)
+        .with_art("af7a2719-7910-4601-be88-7b3c249199d3", "Val Mayerik");
 
 // USG 30 — Pegasus Charger
 pub(in crate::card::sets) static PEGASUS_CHARGER: CardRecord = CardRecord::new(
@@ -422,6 +458,9 @@ pub(in crate::card::sets) static PLANAR_BIRTH: CardRecord = CardRecord::new(
 );
 
 // USG 32 — Presence of the Master (reprint)
+const PRESENCE_OF_THE_MASTER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1994::legends::PRESENCE_OF_THE_MASTER)
+        .with_art("849adb29-61ad-4307-98b9-61e33aec6500", "Ciruelo");
 
 // USG 33 — Redeem
 // Audit: unsupported — Card rules have not been implemented.
@@ -536,15 +575,10 @@ pub(in crate::card::sets) static SANCTUM_GUARDIAN: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// USG 44 — Seasoned Marshal
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static SEASONED_MARSHAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("17db0060-3667-4c8c-ae9b-d62dceac64e3"),
-    "Seasoned Marshal",
-    crate::card::CardArt::new("9de20845-06b7-4542-8d61-4b97309669f9", "Matthew D. Wilson"),
-    crate::card::CardSet::UrzasSaga,
-    crate::card::CardRules::unsupported(),
-);
+// USG 44 — Seasoned Marshal (reprint)
+const SEASONED_MARSHAL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::SEASONED_MARSHAL)
+        .with_art("9de20845-06b7-4542-8d61-4b97309669f9", "Matthew D. Wilson");
 
 // USG 45 — Serra Avatar
 // Audit: unsupported — Card rules have not been implemented.
@@ -816,7 +850,14 @@ pub(in crate::card::sets) static CONFISCATE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// USG 67 — Coral Merfolk (reprint)
+// USG 67 — Coral Merfolk
+pub(in crate::card::sets) static CORAL_MERFOLK: CardRecord = CardRecord::new_with_legacy_id(
+    1163,
+    "Coral Merfolk",
+    CardArt::new("09ef366b-26f5-473a-ab96-e668ed54d691", "rk post"),
+    CardSet::UrzasSaga,
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Merfolk"], 2, 1),
+);
 
 // USG 68 — Curfew
 // Audit: unsupported — Card rules have not been implemented.
@@ -859,6 +900,11 @@ pub(in crate::card::sets) static DRIFTING_DJINN: CardRecord = CardRecord::new(
 );
 
 // USG 72 — Enchantment Alteration (reprint)
+const ENCHANTMENT_ALTERATION_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_leg::ENCHANTMENT_ALTERATION).with_art(
+        "254aa8d0-f0f5-4fb2-a6ba-07453d71e229",
+        "D. Alexander Gregory",
+    );
 
 // USG 73 — Energy Field
 // Audit: unsupported — Card rules have not been implemented.
@@ -871,8 +917,41 @@ pub(in crate::card::sets) static ENERGY_FIELD: CardRecord = CardRecord::new(
 );
 
 // USG 74 — Exhaustion (reprint)
+const EXHAUSTION_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::EXHAUSTION)
+        .with_art("666efc89-b566-4b2b-a0e2-52f1dedc9e10", "Paolo Parente");
 
-// USG 75 — Fog Bank (reprint)
+// USG 75 — Fog Bank
+pub(in crate::card::sets) static FOG_BANK: CardRecord = CardRecord::new_with_legacy_id(
+    1912,
+    "Fog Bank",
+    CardArt::new("8a5a69dc-c6f3-459b-9dcd-b3363c26ca34", "Howard Lyon"),
+    CardSet::UrzasSaga,
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Wall"], 0, 2).with_abilities(&[
+        abilities::defender(),
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "Prevent all combat damage that would be dealt to and dealt by this creature.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                // Both directions of the same clause: nothing it deals lands and nothing
+                // dealt to it lands, so it blocks anything and survives, and kills nothing.
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(DamageEventMatcherDef {
+                        kind: DamageKindDef::Combat,
+                        source: DamageSourceMatcherDef::Any,
+                        recipient: DamageRecipientMatcherDef::AffectedObject,
+                    })),
+                    AppliedEffectDef::Rule(AppliedRuleDef::PreventDamage(DamageEventMatcherDef {
+                        kind: DamageKindDef::Combat,
+                        source: DamageSourceMatcherDef::AffectedObject,
+                        recipient: DamageRecipientMatcherDef::Any,
+                    })),
+                ]),
+            },
+        ),
+    ]),
+);
 
 // USG 76 — Gilded Drake
 pub(in crate::card::sets) static GILDED_DRAKE: CardRecord = CardRecord::new_with_legacy_id(
@@ -1072,6 +1151,8 @@ pub(in crate::card::sets) static PEREGRINE_DRAKE: CardRecord = CardRecord::new(
 );
 
 // USG 89 — Power Sink (reprint)
+const POWER_SINK_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::POWER_SINK)
+    .with_art("662cf693-18c4-4169-bcce-09862778f60c", "Andrew Robinson");
 
 // USG 90 — Power Taint
 // Audit: unsupported — Card rules have not been implemented.
@@ -1483,17 +1564,15 @@ pub(in crate::card::sets) static BLOOD_VASSAL: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// USG 119 — Bog Raiders
-pub(in crate::card::sets) static BOG_RAIDERS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("eb7bbb7a-b59a-4a01-b1cb-66eef881ffcd"),
-    "Bog Raiders",
-    crate::card::CardArt::new("3739188b-f2b3-4ab0-8e5c-b3a1d2a1ad09", "Carl Critchlow"),
-    crate::card::CardSet::UrzasSaga,
-    CardRules::new_creature(mana_cost!("{2}{B}"), &["Zombie"], 2, 2)
-        .with_ability(abilities::landwalk(BasicLandType::Swamp)),
-);
+// USG 119 — Bog Raiders (reprint)
+const BOG_RAIDERS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::BOG_RAIDERS)
+        .with_art("3739188b-f2b3-4ab0-8e5c-b3a1d2a1ad09", "Carl Critchlow");
 
 // USG 119s — Bog Raiders (alternate printing)
+const BOG_RAIDERS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&crate::card::sets::y1997::portal::BOG_RAIDERS, 1)
+        .with_art("3c8a8e6f-4c3b-4d92-bd05-9bbb0150d653", "Carl Critchlow");
 
 // USG 120 — Breach
 // Audit: unsupported — Card rules have not been implemented.
@@ -1588,6 +1667,8 @@ pub(in crate::card::sets) static DARK_HATCHLING: CardRecord = CardRecord::new(
 );
 
 // USG 127 — Dark Ritual (reprint)
+const DARK_RITUAL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DARK_RITUAL)
+    .with_art("3f0e9d0d-e1a3-4e0a-bf39-e9aaf4d36d67", "Tom Fleming");
 
 // USG 128 — Darkest Hour
 // Audit: unsupported — Card rules have not been implemented.
@@ -1623,6 +1704,9 @@ pub(in crate::card::sets) static DIABOLIC_SERVITUDE: CardRecord = CardRecord::ne
 );
 
 // USG 130s — Diabolic Servitude (alternate printing)
+const DIABOLIC_SERVITUDE_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&DIABOLIC_SERVITUDE, 1)
+        .with_art("d353d6bc-693b-4c2b-9c3b-b0db241ebb42", "Scott M. Fischer");
 
 // USG 131 — Discordant Dirge
 // Audit: unsupported — Card rules have not been implemented.
@@ -1634,7 +1718,26 @@ pub(in crate::card::sets) static DISCORDANT_DIRGE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// USG 132 — Duress (reprint)
+// USG 132 — Duress
+pub(in crate::card::sets) static DURESS: CardRecord = CardRecord::new_with_legacy_id(
+    159,
+    "Duress",
+    CardArt::new("f7201d43-ae2e-4faa-a508-8555079c3bc7", "Steven Belledin"),
+    CardSet::UrzasSaga,
+    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target opponent reveals their hand. You choose a noncreature, nonland card from it. That player discards that card.",
+        &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+            PlayerRelation::Opponent,
+        ))],
+        EffectDef::Sequence(&abilities::reveal_hand_and_discard_chosen_card(
+            PlayerRefDef::Target(TargetIndex::PRIMARY),
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            ]),
+        )),
+    )),
+);
 
 // USG 133 — Eastern Paladin
 pub(in crate::card::sets) static EASTERN_PALADIN: CardRecord = CardRecord::new(
@@ -1760,6 +1863,8 @@ pub(in crate::card::sets) static ILL_GOTTEN_GAINS: CardRecord = CardRecord::new(
 );
 
 // USG 139 — Looming Shade (alternate printing)
+const LOOMING_SHADE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&LOOMING_SHADE, 1)
+    .with_art("525f63ae-e002-4d47-bea5-b24dc89d4d06", "Vincent Evans");
 
 // USG 139s — Looming Shade
 pub(in crate::card::sets) static LOOMING_SHADE: CardRecord = CardRecord::new(
@@ -1804,6 +1909,9 @@ pub(in crate::card::sets) static MANA_LEECH: CardRecord = CardRecord::new(
 );
 
 // USG 142 — No Rest for the Wicked (alternate printing)
+const NO_REST_FOR_THE_WICKED_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&NO_REST_FOR_THE_WICKED, 1)
+        .with_art("d9f9b2b0-65aa-42a1-b9f8-563b194ca5b1", "Carl Critchlow");
 
 // USG 142s — No Rest for the Wicked
 // Audit: unsupported — Card rules have not been implemented.
@@ -1859,6 +1967,8 @@ pub(in crate::card::sets) static PERSECUTE: CardRecord = CardRecord::new(
 );
 
 // USG 147 — Pestilence (reprint)
+const PESTILENCE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::PESTILENCE)
+    .with_art("2f1f5630-647f-4789-8506-e7fafcbdd671", "Pete Venters");
 
 // USG 148 — Phyrexian Ghoul
 // Audit: unsupported — Card rules have not been implemented.
@@ -2081,6 +2191,8 @@ pub(in crate::card::sets) static UNWORTHY_DEAD: CardRecord = CardRecord::new(
 );
 
 // USG 163s — Unworthy Dead (alternate printing)
+const UNWORTHY_DEAD_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&UNWORTHY_DEAD, 1)
+    .with_art("fcf88542-e5af-430e-9d48-03a216d7526f", "Carl Critchlow");
 
 // USG 164 — Vampiric Embrace
 // Audit: unsupported — Card rules have not been implemented.
@@ -2093,6 +2205,9 @@ pub(in crate::card::sets) static VAMPIRIC_EMBRACE: CardRecord = CardRecord::new(
 );
 
 // USG 164s — Vampiric Embrace (alternate printing)
+const VAMPIRIC_EMBRACE_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&VAMPIRIC_EMBRACE, 1)
+        .with_art("91d48d7c-3db8-437a-85e2-2bf9699a305c", "Thomas M. Baxa");
 
 // USG 165 — Vebulid
 // Audit: unsupported — Card rules have not been implemented.
@@ -2387,6 +2502,8 @@ pub(in crate::card::sets) static FIRE_ANTS: CardRecord = CardRecord::new(
 );
 
 // USG 187s — Fire Ants (alternate printing)
+const FIRE_ANTS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&FIRE_ANTS, 1)
+    .with_art("c5e32a3d-c477-419a-97c2-851974c6b89e", "Tom Fleming");
 
 // USG 188 — Gamble
 // Audit: unsupported — Card rules have not been implemented.
@@ -2451,32 +2568,10 @@ pub(in crate::card::sets) static GOBLIN_LACKEY: CardRecord = CardRecord::new_wit
     ),
 );
 
-// USG 191 — Goblin Matron
-pub(in crate::card::sets) static GOBLIN_MATRON: CardRecord = CardRecord::new_with_legacy_id(
-    2018,
-    "Goblin Matron",
-    CardArt::new("9e9e2e5d-ad06-4378-9afb-ffb174e6a5b4", "DiTerlizzi"),
-    CardSet::UrzasSaga,
-    // Any Goblin card, so it fetches the answer rather than the biggest
-    // body: Tinkerer against artifacts, Ringleader for more cards.
-    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin"], 1, 1).with_ability(
-        abilities::enters_trigger("When this creature enters, you may search your library for a Goblin card, reveal that card, put it into your hand, then shuffle.", EffectDef::SearchZone {
-                player: EffectRecipientDef::Controller,
-                source: ZoneKind::Library,
-                object: ObjectPredicateDef::Subtype("Goblin"),
-                minimum: 0,
-                maximum: ValueDef::Constant(1),
-                reveal: true,
-                destination: ZoneKind::Hand,
-                placement: ZonePlacement::Top,
-                shuffle: true,
-                enters_tapped: false,
-                attachment: None,
-                binding: None,
-                then: None,
-            }),
-    ),
-);
+// USG 191 — Goblin Matron (reprint)
+const GOBLIN_MATRON_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::portal_second_age::GOBLIN_MATRON)
+        .with_art("9e9e2e5d-ad06-4378-9afb-ffb174e6a5b4", "DiTerlizzi");
 
 // USG 192 — Goblin Offensive
 // Audit: unsupported — Card rules have not been implemented.
@@ -2503,6 +2598,8 @@ pub(in crate::card::sets) static GOBLIN_PATROL: CardRecord = CardRecord::new_wit
 );
 
 // USG 194 — Goblin Raider (reprint)
+const GOBLIN_RAIDER_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_p02::GOBLIN_RAIDER)
+    .with_art("e150a460-8a81-4097-8100-ccb8a9bb1bd7", "Greg Staples");
 
 // USG 195 — Goblin Spelunkers
 pub(in crate::card::sets) static GOBLIN_SPELUNKERS: CardRecord = CardRecord::new(
@@ -2568,6 +2665,9 @@ pub(in crate::card::sets) static HEAT_RAY: CardRecord = CardRecord::new(
 );
 
 // USG 200 — Jagged Lightning (reprint)
+const JAGGED_LIGHTNING_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_p02::JAGGED_LIGHTNING)
+        .with_art("49304f24-a961-4d1e-b85c-af6e3d8d5edc", "Mike Raabe");
 
 // USG 201 — Lay Waste
 pub(in crate::card::sets) static LAY_WASTE: CardRecord = CardRecord::new(
@@ -2645,30 +2745,10 @@ pub(in crate::card::sets) static OUTMANEUVER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// USG 206 — Rain of Salt
-pub(in crate::card::sets) static RAIN_OF_SALT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("661ffab2-9cf5-492d-874f-de73d7a13e2b"),
-    "Rain of Salt",
-    crate::card::CardArt::new("4792293a-e11d-4c5e-bbd9-6f09e69ee617", "Adam Rex"),
-    crate::card::CardSet::UrzasSaga,
-    CardRules::new_sorcery(mana_cost!("{4}{R}{R}")).with_ability(AbilityDef::spell_with_targets(
-        "Destroy two target lands.",
-        &[AbilityTargetDef::exactly_value(
-            AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::HasType(CardType::Land),
-                zones: &[ZoneKind::Battlefield],
-                controller: None,
-                owner: None,
-            },
-            ValueDef::Constant(2),
-        )],
-        EffectDef::Destroy {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            can_regenerate: true,
-            then: None,
-        },
-    )),
-);
+// USG 206 — Rain of Salt (reprint)
+const RAIN_OF_SALT_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::RAIN_OF_SALT)
+        .with_art("4792293a-e11d-4c5e-bbd9-6f09e69ee617", "Adam Rex");
 
 // USG 207 — Raze
 // Audit: unsupported — Card rules have not been implemented.
@@ -3002,6 +3082,8 @@ pub(in crate::card::sets) static VUG_LIZARD: CardRecord = CardRecord::new(
 );
 
 // USG 228 — Wildfire (reprint)
+const WILDFIRE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_p02::WILDFIRE)
+    .with_art("72d50972-4549-40cd-9c33-4b341333803f", "Carl Critchlow");
 
 // USG 229 — Abundance
 // Audit: unsupported — Card rules have not been implemented.
@@ -3043,15 +3125,10 @@ pub(in crate::card::sets) static ALBINO_TROLL: CardRecord = CardRecord::new(
     ]),
 );
 
-// USG 232 — Anaconda
-pub(in crate::card::sets) static ANACONDA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0a2012ad-6425-4935-83af-fc7309ec2ece"),
-    "Anaconda",
-    crate::card::CardArt::new("1be798fd-18c9-45b0-8207-7e5e01c83f49", "Stephen Daniele"),
-    crate::card::CardSet::UrzasSaga,
-    CardRules::new_creature(mana_cost!("{3}{G}"), &["Snake"], 3, 3)
-        .with_ability(abilities::landwalk(BasicLandType::Swamp)),
-);
+// USG 232 — Anaconda (reprint)
+const ANACONDA_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::ANACONDA)
+        .with_art("1be798fd-18c9-45b0-8207-7e5e01c83f49", "Stephen Daniele");
 
 // USG 233 — Argothian Elder
 pub(in crate::card::sets) static ARGOTHIAN_ELDER: CardRecord = CardRecord::new(
@@ -3128,15 +3205,10 @@ pub(in crate::card::sets) static BLANCHWOOD_TREEFOLK: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{4}{G}"), &["Treefolk"], 4, 5),
 );
 
-// USG 239 — Bull Hippo
-pub(in crate::card::sets) static BULL_HIPPO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1fbe115b-ded7-4749-95e2-b69bff26fc74"),
-    "Bull Hippo",
-    crate::card::CardArt::new("1d1f8259-1825-4a46-8026-75adc4480322", "Daren Bader"),
-    crate::card::CardSet::UrzasSaga,
-    CardRules::new_creature(mana_cost!("{3}{G}"), &["Hippo"], 3, 3)
-        .with_ability(abilities::landwalk(BasicLandType::Island)),
-);
+// USG 239 — Bull Hippo (reprint)
+const BULL_HIPPO_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::BULL_HIPPO)
+        .with_art("1d1f8259-1825-4a46-8026-75adc4480322", "Daren Bader");
 
 // USG 240 — Carpet of Flowers
 // Audit: unsupported — Card rules have not been implemented.
@@ -3371,14 +3443,10 @@ pub(in crate::card::sets) static GAEA_S_EMBRACE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// USG 256 — Gorilla Warrior
-pub(in crate::card::sets) static GORILLA_WARRIOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("38f9c3f3-0d4d-4eec-bd14-9be3233178dc"),
-    "Gorilla Warrior",
-    crate::card::CardArt::new("76c7e2b0-2df0-4cde-8565-762c93e6c14f", "Steve White"),
-    crate::card::CardSet::UrzasSaga,
-    CardRules::new_creature(mana_cost!("{2}{G}"), &["Ape", "Warrior"], 3, 2),
-);
+// USG 256 — Gorilla Warrior (reprint)
+const GORILLA_WARRIOR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::GORILLA_WARRIOR)
+        .with_art("76c7e2b0-2df0-4cde-8565-762c93e6c14f", "Steve White");
 
 // USG 257 — Greater Good
 // Audit: unsupported — Card rules have not been implemented.
@@ -3531,7 +3599,15 @@ pub(in crate::card::sets) static POUNCING_JAGUAR: CardRecord = CardRecord::new(
     )),
 );
 
-// USG 270 — Priest of Titania (reprint)
+// USG 270 — Priest of Titania
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static PRIEST_OF_TITANIA: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("965c33c3-0c68-4516-b8b0-5a0552ed44b6"),
+    "Priest of Titania",
+    crate::card::CardArt::new("eb11921b-1b28-483f-a707-4de21a6daa31", "Rebecca Guay"),
+    crate::card::CardSet::UrzasSaga,
+    crate::card::CardRules::unsupported(),
+);
 
 // USG 271 — Rejuvenate
 pub(in crate::card::sets) static REJUVENATE: CardRecord = CardRecord::new(
@@ -3978,6 +4054,8 @@ pub(in crate::card::sets) static PHYREXIAN_PROCESSOR: CardRecord = CardRecord::n
 );
 
 // USG 307 — Pit Trap (reprint)
+const PIT_TRAP_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_ice::PIT_TRAP)
+    .with_art("4e2003c1-356b-4714-9a2a-4e12f782321e", "Brian Snõddy");
 
 // USG 308 — Purging Scythe
 // Audit: unsupported — Card rules have not been implemented.
@@ -4340,44 +4418,84 @@ pub(in crate::card::sets) static TOLARIAN_ACADEMY: CardRecord = CardRecord::new_
 );
 
 // USG 331 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::PLAINS)
+    .with_art("b9e35567-05df-4a3f-8c29-d8327abc2e8d", "Rob Alexander");
 
 // USG 332 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("a34ef351-2864-42f6-8943-75bb6fffc9f7", "Rob Alexander");
 
 // USG 333 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 2)
+    .with_art("54db7822-ebed-4c7c-8ede-469d72fd694a", "Rob Alexander");
 
 // USG 334 — Plains (alternate printing)
+const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 3)
+    .with_art("11f87b5c-78b4-443c-ad92-f37bb62d0bbe", "Rob Alexander");
 
 // USG 335 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::ISLAND)
+    .with_art("8e4ce9ff-c295-475b-b9fa-88ed65a84f35", "Donato Giancola");
 
 // USG 336 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("bbf69bc5-8ee3-4b17-a3b1-51e35dd2d0dc", "Donato Giancola");
 
 // USG 337 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 2)
+    .with_art("92724530-9c7a-44ab-9381-ee56bfccb641", "Donato Giancola");
 
 // USG 338 — Island (alternate printing)
+const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 3)
+    .with_art("43297ca7-846c-4bc4-a347-997279bc73d6", "Donato Giancola");
 
 // USG 339 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SWAMP)
+    .with_art("c04dac6d-a7c2-44ee-b735-bd4eade06e4e", "John Avon");
 
 // USG 340 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("8a97cc92-6894-4c6f-8c8d-bfc9fdd4f974", "John Avon");
 
 // USG 341 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 2)
+    .with_art("f72d1102-0ad5-40df-9ca2-26448321d3d1", "John Avon");
 
 // USG 342 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 3)
+    .with_art("f7f24df7-65c6-4488-967a-e847bdec7db0", "John Avon");
 
 // USG 343 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
+    .with_art("e9d34a2f-09ed-4fb4-891a-890f450699bd", "John Avon");
 
 // USG 344 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("be7e4b30-7f45-4109-b5ed-9223a9422d95", "John Avon");
 
 // USG 345 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2)
+    .with_art("3d811021-40b1-43b1-88f1-04d711c2ab57", "John Avon");
 
 // USG 346 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3)
+    .with_art("29b39c91-e367-487d-9820-893870df23b1", "John Avon");
 
 // USG 347 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FOREST)
+    .with_art("b38c68a5-86eb-4fb2-8a43-4a7d63195462", "Anthony S. Waters");
 
 // USG 348 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("c151d945-7da0-4ab8-b0db-e41d10c0eb91", "Anthony S. Waters");
 
 // USG 349 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 2)
+    .with_art("a8990632-f055-4583-ae85-5ac742549b61", "Anthony S. Waters");
 
 // USG 350 — Forest (alternate printing)
+const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 3)
+    .with_art("0b43815e-8b8a-4745-bdf3-f72c8d60c48c", "Anthony S. Waters");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ABSOLUTE_GRACE,
@@ -4387,6 +4505,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BRILLIANT_HALO,
     &CATASTROPHE,
     &CLEAR,
+    &CONGREGATE,
     &DEFENSIVE_FORMATION,
     &DISCIPLE_OF_GRACE,
     &DISCIPLE_OF_LAW,
@@ -4417,7 +4536,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RUNE_OF_PROTECTION_WHITE,
     &SANCTUM_CUSTODIAN,
     &SANCTUM_GUARDIAN,
-    &SEASONED_MARSHAL,
     &SERRA_AVATAR,
     &SERRA_ZEALOT,
     &SERRA_S_EMBRACE,
@@ -4440,11 +4558,13 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CATALOG,
     &CLOAK_OF_MISTS,
     &CONFISCATE,
+    &CORAL_MERFOLK,
     &CURFEW,
     &DISRUPTIVE_STUDENT,
     &DOUSE,
     &DRIFTING_DJINN,
     &ENERGY_FIELD,
+    &FOG_BANK,
     &GILDED_DRAKE,
     &GREAT_WHALE,
     &HERMETIC_STUDY,
@@ -4487,7 +4607,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BEFOUL,
     &BEREAVEMENT,
     &BLOOD_VASSAL,
-    &BOG_RAIDERS,
     &BREACH,
     &CACKLING_FIEND,
     &CARRION_BEETLES,
@@ -4499,6 +4618,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DESPONDENCY,
     &DIABOLIC_SERVITUDE,
     &DISCORDANT_DIRGE,
+    &DURESS,
     &EASTERN_PALADIN,
     &EXHUME,
     &EXPUNGE,
@@ -4556,7 +4676,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GAMBLE,
     &GOBLIN_CADETS,
     &GOBLIN_LACKEY,
-    &GOBLIN_MATRON,
     &GOBLIN_OFFENSIVE,
     &GOBLIN_PATROL,
     &GOBLIN_SPELUNKERS,
@@ -4569,7 +4688,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MELTDOWN,
     &OKK,
     &OUTMANEUVER,
-    &RAIN_OF_SALT,
     &RAZE,
     &REFLEXES,
     &RETROMANCER,
@@ -4594,14 +4712,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ABUNDANCE,
     &ACRIDIAN,
     &ALBINO_TROLL,
-    &ANACONDA,
     &ARGOTHIAN_ELDER,
     &ARGOTHIAN_ENCHANTRESS,
     &ARGOTHIAN_SWINE,
     &ARGOTHIAN_WURM,
     &BLANCHWOOD_ARMOR,
     &BLANCHWOOD_TREEFOLK,
-    &BULL_HIPPO,
     &CARPET_OF_FLOWERS,
     &CAVE_TIGER,
     &CHILD_OF_GAEA,
@@ -4618,7 +4734,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FORTITUDE,
     &GAEA_S_BOUNTY,
     &GAEA_S_EMBRACE,
-    &GORILLA_WARRIOR,
     &GREATER_GOOD,
     &GREENER_PASTURES,
     &HAWKEATER_MOTH,
@@ -4632,6 +4747,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LULL,
     &MIDSUMMER_REVEL,
     &POUNCING_JAGUAR,
+    &PRIEST_OF_TITANIA,
     &REJUVENATE,
     &RETALIATION,
     &SPOROGENESIS,
@@ -4694,50 +4810,52 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_m14::CONGREGATE), // USG 8
-    PrintingRecord::reprint(&catalog_lea::DISENCHANT), // USG 12
-    PrintingRecord::reprint(&catalog_lea::HEALING_SALVE), // USG 16
-    PrintingRecord::reprint(&catalog_m13::PACIFISM),   // USG 27
-    PrintingRecord::reprint(&catalog_p02::PATH_OF_PEACE), // USG 29
-    PrintingRecord::reprint(&crate::card::sets::y1994::legends::PRESENCE_OF_THE_MASTER), // USG 32
-    PrintingRecord::reprint(&catalog_m14::CORAL_MERFOLK), // USG 67
-    PrintingRecord::reprint(&catalog_leg::ENCHANTMENT_ALTERATION), // USG 72
-    PrintingRecord::reprint(&catalog_p02::EXHAUSTION), // USG 74
-    PrintingRecord::reprint(&catalog_m13::FOG_BANK),   // USG 75
-    PrintingRecord::reprint(&catalog_lea::POWER_SINK), // USG 89
-    PrintingRecord::alternate(&BOG_RAIDERS, 1),        // USG 119s
-    PrintingRecord::reprint(&catalog_lea::DARK_RITUAL), // USG 127
-    PrintingRecord::alternate(&DIABOLIC_SERVITUDE, 1), // USG 130s
-    PrintingRecord::reprint(&catalog_m13::DURESS),     // USG 132
-    PrintingRecord::alternate(&LOOMING_SHADE, 1),      // USG 139
-    PrintingRecord::alternate(&NO_REST_FOR_THE_WICKED, 1), // USG 142
-    PrintingRecord::reprint(&catalog_lea::PESTILENCE), // USG 147
-    PrintingRecord::alternate(&UNWORTHY_DEAD, 1),      // USG 163s
-    PrintingRecord::alternate(&VAMPIRIC_EMBRACE, 1),   // USG 164s
-    PrintingRecord::alternate(&FIRE_ANTS, 1),          // USG 187s
-    PrintingRecord::reprint(&catalog_p02::GOBLIN_RAIDER), // USG 194
-    PrintingRecord::reprint(&catalog_p02::JAGGED_LIGHTNING), // USG 200
-    PrintingRecord::reprint(&catalog_p02::WILDFIRE),   // USG 228
-    PrintingRecord::reprint(&catalog_mh3::PRIEST_OF_TITANIA), // USG 270
-    PrintingRecord::reprint(&catalog_ice::PIT_TRAP),   // USG 307
-    PrintingRecord::reprint(&catalog_lea::PLAINS),     // USG 331
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1), // USG 332
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 2), // USG 333
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 3), // USG 334
-    PrintingRecord::reprint(&catalog_lea::ISLAND),     // USG 335
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1), // USG 336
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 2), // USG 337
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 3), // USG 338
-    PrintingRecord::reprint(&catalog_lea::SWAMP),      // USG 339
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1), // USG 340
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 2), // USG 341
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 3), // USG 342
-    PrintingRecord::reprint(&catalog_lea::MOUNTAIN),   // USG 343
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1), // USG 344
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2), // USG 345
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3), // USG 346
-    PrintingRecord::reprint(&catalog_lea::FOREST),     // USG 347
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1), // USG 348
-    PrintingRecord::alternate(&catalog_lea::FOREST, 2), // USG 349
-    PrintingRecord::alternate(&catalog_lea::FOREST, 3), // USG 350
+    DISENCHANT_REPRINT,
+    HEALING_SALVE_REPRINT,
+    PACIFISM_REPRINT,
+    PATH_OF_PEACE_REPRINT,
+    PRESENCE_OF_THE_MASTER_REPRINT,
+    SEASONED_MARSHAL_REPRINT,
+    ENCHANTMENT_ALTERATION_REPRINT,
+    EXHAUSTION_REPRINT,
+    POWER_SINK_REPRINT,
+    BOG_RAIDERS_REPRINT,
+    BOG_RAIDERS_ALTERNATE_1,
+    DARK_RITUAL_REPRINT,
+    DIABOLIC_SERVITUDE_ALTERNATE_1,
+    LOOMING_SHADE_ALTERNATE_1,
+    NO_REST_FOR_THE_WICKED_ALTERNATE_1,
+    PESTILENCE_REPRINT,
+    UNWORTHY_DEAD_ALTERNATE_1,
+    VAMPIRIC_EMBRACE_ALTERNATE_1,
+    FIRE_ANTS_ALTERNATE_1,
+    GOBLIN_MATRON_REPRINT,
+    GOBLIN_RAIDER_REPRINT,
+    JAGGED_LIGHTNING_REPRINT,
+    RAIN_OF_SALT_REPRINT,
+    WILDFIRE_REPRINT,
+    ANACONDA_REPRINT,
+    BULL_HIPPO_REPRINT,
+    GORILLA_WARRIOR_REPRINT,
+    PIT_TRAP_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    PLAINS_ALTERNATE_3,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    ISLAND_ALTERNATE_3,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    SWAMP_ALTERNATE_3,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    MOUNTAIN_ALTERNATE_3,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
+    FOREST_ALTERNATE_3,
 ];

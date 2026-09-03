@@ -125,14 +125,29 @@ pub(in crate::card::sets) static CARIBOU_RANGE: CardRecord = CardRecord::new(
 );
 
 // ICE 12 — Circle of Protection: Black (reprint)
+const CIRCLE_OF_PROTECTION_BLACK_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_leb::CIRCLE_OF_PROTECTION_BLACK)
+        .with_art("d528045d-3b80-48fd-b606-c132da052685", "Sandra Everingham");
 
 // ICE 13 — Circle of Protection: Blue (reprint)
+const CIRCLE_OF_PROTECTION_BLUE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_BLUE)
+        .with_art("e0d377ec-c43c-43b9-934a-91b4d11650ab", "Pete Venters");
 
 // ICE 14 — Circle of Protection: Green (reprint)
+const CIRCLE_OF_PROTECTION_GREEN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_GREEN)
+        .with_art("487dfb1f-b3ab-4daa-bbd9-c43dc91a5fba", "Sandra Everingham");
 
 // ICE 15 — Circle of Protection: Red (reprint)
+const CIRCLE_OF_PROTECTION_RED_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_RED)
+        .with_art("5790ce22-a94f-402e-bcc7-b98f71af9fe5", "Pete Venters");
 
 // ICE 16 — Circle of Protection: White (reprint)
+const CIRCLE_OF_PROTECTION_WHITE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_WHITE)
+        .with_art("48bc4bb0-350c-424e-976e-b800915f7fb4", "Sandra Everingham");
 
 // ICE 17 — Cold Snap
 // Audit: unsupported — Card rules have not been implemented.
@@ -155,8 +170,12 @@ pub(in crate::card::sets) static COOPERATION: CardRecord = CardRecord::new(
 );
 
 // ICE 19 — Death Ward (reprint)
+const DEATH_WARD_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DEATH_WARD)
+    .with_art("c7b21d29-050d-4704-a4c8-93e3b55086ac", "Harold McNeill");
 
 // ICE 20 — Disenchant (reprint)
+const DISENCHANT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DISENCHANT)
+    .with_art("b6085d0c-ab2b-445d-bf9d-0fa0a19183a2", "Brian Snõddy");
 
 // ICE 21 — Drought
 // Audit: unsupported — Card rules have not been implemented.
@@ -495,6 +514,9 @@ pub(in crate::card::sets) static SNOW_HOUND: CardRecord = CardRecord::new(
 );
 
 // ICE 54 — Swords to Plowshares (reprint)
+const SWORDS_TO_PLOWSHARES_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::SWORDS_TO_PLOWSHARES)
+        .with_art("375fd2cb-443b-4be4-ad60-6d1a8e74f510", "Kaja Foglio");
 
 // ICE 55 — Warning
 // Audit: unsupported — Card rules have not been implemented.
@@ -593,6 +615,8 @@ pub(in crate::card::sets) static CLAIRVOYANCE: CardRecord = CardRecord::new(
 );
 
 // ICE 64 — Counterspell (reprint)
+const COUNTERSPELL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::COUNTERSPELL)
+    .with_art("aedbcbaa-40f0-485f-8427-778edc2d2ec0", "Allen Williams");
 
 // ICE 65 — Deflection
 pub(in crate::card::sets) static DEFLECTION: CardRecord = CardRecord::new(
@@ -928,6 +952,8 @@ pub(in crate::card::sets) static PORTENT: CardRecord = CardRecord::new_with_lega
 );
 
 // ICE 91 — Power Sink (reprint)
+const POWER_SINK_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::POWER_SINK)
+    .with_art("85cbec45-81b4-40cc-b356-d6713a6a9b2b", "Mark Poole");
 
 // ICE 92 — Ray of Command
 // Audit: unsupported — Card rules have not been implemented.
@@ -1000,6 +1026,9 @@ pub(in crate::card::sets) static SILVER_ERNE: CardRecord = CardRecord::new(
 );
 
 // ICE 99 — Sleight of Mind (reprint)
+const SLEIGHT_OF_MIND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::SLEIGHT_OF_MIND)
+        .with_art("93dc9f02-11ad-4c4a-8199-9d20c23d31a7", "Nicola Leonard");
 
 // ICE 100 — Snow Devil
 // Audit: unsupported — Card rules have not been implemented.
@@ -1211,6 +1240,8 @@ pub(in crate::card::sets) static DARK_BANISHING: CardRecord = CardRecord::new(
 );
 
 // ICE 120 — Dark Ritual (reprint)
+const DARK_RITUAL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DARK_RITUAL)
+    .with_art("4ebcd681-1871-4914-bcd7-6bd95829f6e0", "Justin Hampton");
 
 // ICE 121 — Demonic Consultation
 // Audit: unsupported — Card rules have not been implemented.
@@ -1243,6 +1274,8 @@ pub(in crate::card::sets) static DRIFT_OF_THE_DEAD: CardRecord = CardRecord::new
 );
 
 // ICE 124 — Fear (reprint)
+const FEAR_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FEAR)
+    .with_art("5709398f-0744-4780-a1d2-eead96c8f348", "Rick Emond");
 
 // ICE 125 — Flow of Maggots
 // Audit: unsupported — Card rules have not been implemented.
@@ -1315,6 +1348,9 @@ pub(in crate::card::sets) static HOAR_SHADE: CardRecord = CardRecord::new(
 );
 
 // ICE 132 — Howl from Beyond (reprint)
+const HOWL_FROM_BEYOND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::HOWL_FROM_BEYOND)
+        .with_art("ca9d0d6b-056e-4b94-8de5-a325768f67b6", "Mark Poole");
 
 // ICE 133 — Hyalopterous Lemure
 // Audit: unsupported — Card rules have not been implemented.
@@ -2207,8 +2243,12 @@ pub(in crate::card::sets) static SABRETOOTH_TIGER: CardRecord = CardRecord::new(
 );
 
 // ICE 216 — Shatter (reprint)
+const SHATTER_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SHATTER)
+    .with_art("7eb18d53-20de-43d7-86f7-97a6d14d54b8", "Bryon Wackwitz");
 
 // ICE 217 — Stone Rain (reprint)
+const STONE_RAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::STONE_RAIN)
+    .with_art("5a002e6d-ea59-4694-b3e5-075d6020b0d9", "Kaja Foglio");
 
 // ICE 218 — Stone Spirit
 // Audit: unsupported — Card rules have not been implemented.
@@ -2519,6 +2559,8 @@ pub(in crate::card::sets) static FYNDHORN_POLLEN: CardRecord = CardRecord::new(
 );
 
 // ICE 246 — Giant Growth (reprint)
+const GIANT_GROWTH_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::GIANT_GROWTH)
+    .with_art("431c9749-fd7b-4960-a910-8d41d3704e6c", "Allen Williams");
 
 // ICE 247 — Gorilla Pack
 // Audit: unsupported — Card rules have not been implemented.
@@ -2541,6 +2583,8 @@ pub(in crate::card::sets) static HOT_SPRINGS: CardRecord = CardRecord::new(
 );
 
 // ICE 249 — Hurricane (reprint)
+const HURRICANE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::HURRICANE)
+    .with_art("a8cc6db7-1f40-40e3-a7ea-92f1d05e2e3d", "Cornelius Brudi");
 
 // ICE 250 — Johtull Wurm
 // Audit: unsupported — Card rules have not been implemented.
@@ -2573,6 +2617,8 @@ pub(in crate::card::sets) static LHURGOYF: CardRecord = CardRecord::new(
 );
 
 // ICE 253 — Lure (reprint)
+const LURE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::LURE)
+    .with_art("87af69ee-c2bb-46ea-8d36-d484d04a3c8a", "Phil Foglio");
 
 // ICE 254 — Maddening Wind
 // Audit: unsupported — Card rules have not been implemented.
@@ -2628,6 +2674,8 @@ pub(in crate::card::sets) static PYKNITE: CardRecord = CardRecord::new(
 );
 
 // ICE 259 — Regeneration (reprint)
+const REGENERATION_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::REGENERATION)
+    .with_art("1dacfaec-6b61-450d-a134-2087c38a298a", "Justin Hampton");
 
 // ICE 260 — Rime Dryad
 // Audit: unsupported — Card rules have not been implemented.
@@ -2803,6 +2851,8 @@ pub(in crate::card::sets) static WIITIGO: CardRecord = CardRecord::new(
 );
 
 // ICE 277 — Wild Growth (reprint)
+const WILD_GROWTH_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::WILD_GROWTH)
+    .with_art("f8047ab9-a0fc-4933-bcbc-e761aa0f622b", "Mike Raabe");
 
 // ICE 278 — Woolly Mammoths
 // Audit: unsupported — Card rules have not been implemented.
@@ -3296,6 +3346,9 @@ pub(in crate::card::sets) static ICE_CAULDRON: CardRecord = CardRecord::new(
 );
 
 // ICE 322 — Icy Manipulator (reprint)
+const ICY_MANIPULATOR_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_lea::ICY_MANIPULATOR)
+        .with_art("1eda936f-7691-4440-9b83-eb0c6035b109", "Amy Weber");
 
 // ICE 323 — Infinite Hourglass
 // Audit: unsupported — Card rules have not been implemented.
@@ -3751,10 +3804,16 @@ pub(in crate::card::sets) static VELDT: CardRecord = CardRecord::new(
 );
 
 // ICE 364 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::PLAINS)
+    .with_art("7b68bdb0-41cc-48f6-905e-7da1ff4ba5e0", "Christopher Rush");
 
 // ICE 365 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("df3e94f7-9f97-4652-a1f1-381feb15f688", "Christopher Rush");
 
 // ICE 366 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 2)
+    .with_art("27ac1fc7-0698-4a94-8353-cc4c13bd6ffa", "Christopher Rush");
 
 // ICE 367 — Snow-Covered Plains
 // Audit: unsupported — Card rules have not been implemented.
@@ -3767,10 +3826,16 @@ pub(in crate::card::sets) static SNOW_COVERED_PLAINS: CardRecord = CardRecord::n
 );
 
 // ICE 368 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::ISLAND)
+    .with_art("ef2d6fc9-ddad-4dd2-b218-afa1a5449b7e", "Anson Maddocks");
 
 // ICE 369 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("61a467ab-4460-4e5e-94c1-8150bfe0c954", "Anson Maddocks");
 
 // ICE 370 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 2)
+    .with_art("82f11c42-9d67-4833-9519-e165e6a7e9c4", "Anson Maddocks");
 
 // ICE 371 — Snow-Covered Island
 // Audit: unsupported — Card rules have not been implemented.
@@ -3793,16 +3858,28 @@ pub(in crate::card::sets) static SNOW_COVERED_SWAMP: CardRecord = CardRecord::ne
 );
 
 // ICE 373 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SWAMP)
+    .with_art("4695653a-5c4c-4ff3-b80c-f4b6c685f370", "Douglas Shuler");
 
 // ICE 374 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("6a90b49f-53b3-4ce0-92c1-bcd76d6981ea", "Douglas Shuler");
 
 // ICE 375 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 2)
+    .with_art("ddca7e2e-bb0a-47ed-ade3-31900da992dc", "Douglas Shuler");
 
 // ICE 376 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
+    .with_art("4ecf39c3-3b5f-4263-a7b5-9881bded3494", "Tom Wänerstrand");
 
 // ICE 377 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("2eb15b42-be2a-4663-b064-aad6c7cb2714", "Tom Wänerstrand");
 
 // ICE 378 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2)
+    .with_art("17ac61e4-b543-4c37-9bfa-43f0c928152d", "Tom Wänerstrand");
 
 // ICE 379 — Snow-Covered Mountain
 // Audit: unsupported — Card rules have not been implemented.
@@ -3815,10 +3892,16 @@ pub(in crate::card::sets) static SNOW_COVERED_MOUNTAIN: CardRecord = CardRecord:
 );
 
 // ICE 380 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FOREST)
+    .with_art("fbdcbd97-90a9-45ea-94f6-2a1c6faaf965", "Pat Lewis");
 
 // ICE 381 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("b346b784-7bde-49d0-bfa9-56236cbe19d9", "Pat Lewis");
 
 // ICE 382 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 2)
+    .with_art("768c4d8f-5700-4f0a-9ff2-58422aeb1dac", "Pat Lewis");
 
 // ICE 383 — Snow-Covered Forest
 // Audit: unsupported — Card rules have not been implemented.
@@ -4180,41 +4263,41 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_leb::CIRCLE_OF_PROTECTION_BLACK), // ICE 12
-    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_BLUE),  // ICE 13
-    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_GREEN), // ICE 14
-    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_RED),   // ICE 15
-    PrintingRecord::reprint(&catalog_lea::CIRCLE_OF_PROTECTION_WHITE), // ICE 16
-    PrintingRecord::reprint(&catalog_lea::DEATH_WARD),                 // ICE 19
-    PrintingRecord::reprint(&catalog_lea::DISENCHANT),                 // ICE 20
-    PrintingRecord::reprint(&catalog_lea::SWORDS_TO_PLOWSHARES),       // ICE 54
-    PrintingRecord::reprint(&catalog_lea::COUNTERSPELL),               // ICE 64
-    PrintingRecord::reprint(&catalog_lea::POWER_SINK),                 // ICE 91
-    PrintingRecord::reprint(&catalog_lea::SLEIGHT_OF_MIND),            // ICE 99
-    PrintingRecord::reprint(&catalog_lea::DARK_RITUAL),                // ICE 120
-    PrintingRecord::reprint(&catalog_lea::FEAR),                       // ICE 124
-    PrintingRecord::reprint(&catalog_lea::HOWL_FROM_BEYOND),           // ICE 132
-    PrintingRecord::reprint(&catalog_lea::SHATTER),                    // ICE 216
-    PrintingRecord::reprint(&catalog_lea::STONE_RAIN),                 // ICE 217
-    PrintingRecord::reprint(&catalog_lea::GIANT_GROWTH),               // ICE 246
-    PrintingRecord::reprint(&catalog_lea::HURRICANE),                  // ICE 249
-    PrintingRecord::reprint(&catalog_lea::LURE),                       // ICE 253
-    PrintingRecord::reprint(&catalog_lea::REGENERATION),               // ICE 259
-    PrintingRecord::reprint(&catalog_lea::WILD_GROWTH),                // ICE 277
-    PrintingRecord::reprint(&catalog_lea::ICY_MANIPULATOR),            // ICE 322
-    PrintingRecord::reprint(&catalog_lea::PLAINS),                     // ICE 364
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1),                // ICE 365
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 2),                // ICE 366
-    PrintingRecord::reprint(&catalog_lea::ISLAND),                     // ICE 368
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1),                // ICE 369
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 2),                // ICE 370
-    PrintingRecord::reprint(&catalog_lea::SWAMP),                      // ICE 373
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1),                 // ICE 374
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 2),                 // ICE 375
-    PrintingRecord::reprint(&catalog_lea::MOUNTAIN),                   // ICE 376
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1),              // ICE 377
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2),              // ICE 378
-    PrintingRecord::reprint(&catalog_lea::FOREST),                     // ICE 380
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1),                // ICE 381
-    PrintingRecord::alternate(&catalog_lea::FOREST, 2),                // ICE 382
+    CIRCLE_OF_PROTECTION_BLACK_REPRINT,
+    CIRCLE_OF_PROTECTION_BLUE_REPRINT,
+    CIRCLE_OF_PROTECTION_GREEN_REPRINT,
+    CIRCLE_OF_PROTECTION_RED_REPRINT,
+    CIRCLE_OF_PROTECTION_WHITE_REPRINT,
+    DEATH_WARD_REPRINT,
+    DISENCHANT_REPRINT,
+    SWORDS_TO_PLOWSHARES_REPRINT,
+    COUNTERSPELL_REPRINT,
+    POWER_SINK_REPRINT,
+    SLEIGHT_OF_MIND_REPRINT,
+    DARK_RITUAL_REPRINT,
+    FEAR_REPRINT,
+    HOWL_FROM_BEYOND_REPRINT,
+    SHATTER_REPRINT,
+    STONE_RAIN_REPRINT,
+    GIANT_GROWTH_REPRINT,
+    HURRICANE_REPRINT,
+    LURE_REPRINT,
+    REGENERATION_REPRINT,
+    WILD_GROWTH_REPRINT,
+    ICY_MANIPULATOR_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
 ];

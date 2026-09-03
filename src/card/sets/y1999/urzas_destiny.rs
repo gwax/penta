@@ -1,9 +1,8 @@
 //! Urza's Destiny cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
-use crate::card::sets::y2011::magic_2012 as catalog_m12;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
-use crate::card::sets::y2013::magic_2014 as catalog_m14;
+use crate::ResolvedEffectDurationDef;
+use crate::card::abilities;
 use crate::card::{
     AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
     CardTypeSet, CharacteristicOperationDef, CounterKind, EffectDef, EffectRecipientDef,
@@ -32,7 +31,28 @@ pub(in crate::card::sets) static ARCHERY_TRAINING: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// UDS 3 — Capashen Knight (reprint)
+// UDS 3 — Capashen Knight
+pub(in crate::card::sets) static CAPASHEN_KNIGHT: CardRecord = CardRecord::new_with_legacy_id(
+    1146,
+    "Capashen Knight",
+    CardArt::new("78802af4-46b5-4bac-8cdf-5b77d0b19895", "Jasper Sandner"),
+    CardSet::UrzasDestiny,
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Knight"], 1, 1).with_abilities(&[
+        abilities::first_strike(),
+        AbilityDef::activated(
+            "{1}{W}: This creature gets +1/+0 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{1}{W}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // UDS 4 — Capashen Standard
 // Audit: unsupported — Card rules have not been implemented.
@@ -753,6 +773,9 @@ pub(in crate::card::sets) static RAPID_DECAY: CardRecord = CardRecord::new(
 );
 
 // UDS 68 — Ravenous Rats (reprint)
+const RAVENOUS_RATS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1998::portal_second_age::RAVENOUS_RATS)
+        .with_art("a9185188-9a32-4ccd-8f33-b0c299901d81", "Carl Critchlow");
 
 // UDS 69 — Scent of Nightshade
 // Audit: unsupported — Card rules have not been implemented.
@@ -1047,7 +1070,28 @@ pub(in crate::card::sets) static SOWING_SALT: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// UDS 98 — Trumpet Blast (reprint)
+// UDS 98 — Trumpet Blast
+pub(in crate::card::sets) static TRUMPET_BLAST: CardRecord = CardRecord::new_with_legacy_id(
+    1026,
+    "Trumpet Blast",
+    CardArt::new("4ac9f745-236a-4302-acf2-21c14c6e6eab", "Carl Critchlow"),
+    CardSet::UrzasDestiny,
+    CardRules::new_instant(mana_cost!("{2}{R}")).with_ability(AbilityDef::spell(
+        "Attacking creatures get +2/+0 until end of turn.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Attacking,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(2),
+                ValueDef::Constant(0),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
+);
 
 // UDS 99 — Wake of Destruction
 // Audit: unsupported — Card rules have not been implemented.
@@ -1517,7 +1561,15 @@ pub(in crate::card::sets) static THRAN_FOUNDRY: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// UDS 141 — Thran Golem (reprint)
+// UDS 141 — Thran Golem
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static THRAN_GOLEM: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("5778c52b-248b-4131-b5c0-12ea1986786e"),
+    "Thran Golem",
+    crate::card::CardArt::new("f01b98a6-5683-4b1b-a14c-d0b50fc26beb", "Ron Spears"),
+    crate::card::CardSet::UrzasDestiny,
+    crate::card::CardRules::unsupported(),
+);
 
 // UDS 142 — Urza's Incubator
 // Audit: unsupported — Card rules have not been implemented.
@@ -1542,6 +1594,7 @@ pub(in crate::card::sets) static YAVIMAYA_HOLLOW: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ACADEMY_RECTOR,
     &ARCHERY_TRAINING,
+    &CAPASHEN_KNIGHT,
     &CAPASHEN_STANDARD,
     &CAPASHEN_TEMPLAR,
     &FALSE_PROPHET,
@@ -1635,6 +1688,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &REPERCUSSION,
     &SCENT_OF_CINDER,
     &SOWING_SALT,
+    &TRUMPET_BLAST,
     &WAKE_OF_DESTRUCTION,
     &WILD_COLOS,
     &ANCIENT_SILVERBACK,
@@ -1677,13 +1731,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STORAGE_MATRIX,
     &THRAN_DYNAMO,
     &THRAN_FOUNDRY,
+    &THRAN_GOLEM,
     &URZA_S_INCUBATOR,
     &YAVIMAYA_HOLLOW,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_m14::CAPASHEN_KNIGHT), // UDS 3
-    PrintingRecord::reprint(&catalog_m13::RAVENOUS_RATS),   // UDS 68
-    PrintingRecord::reprint(&catalog_m13::TRUMPET_BLAST),   // UDS 98
-    PrintingRecord::reprint(&catalog_m12::THRAN_GOLEM),     // UDS 141
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[RAVENOUS_RATS_REPRINT];

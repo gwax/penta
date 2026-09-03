@@ -1,11 +1,10 @@
 //! Visions cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::AbilityCostDef;
+use crate::AddManaEffectDef;
+use crate::ResolvedEffectDurationDef;
 use crate::card::CostQuantityDef;
-use crate::card::sets::y2010::worldwake as catalog_wwk;
-use crate::card::sets::y2012::avacyn_restored as catalog_avr;
-use crate::card::sets::y2012::return_to_ravnica as catalog_rtr;
-use crate::card::sets::y2019::modern_horizons as catalog_mh1;
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
     ArrivalAttachmentDef, BasicLandType, CardArt, CardRules, CardSet, CardType, EffectDef,
@@ -19,7 +18,15 @@ use crate::card::{
 };
 use crate::{TargetIndex, mana_cost};
 
-// VIS 1 — Archangel (reprint)
+// VIS 1 — Archangel
+pub(in crate::card::sets) static ARCHANGEL: CardRecord = CardRecord::new_with_legacy_id(
+    752,
+    "Archangel",
+    CardArt::new("3741b2a7-7bda-481a-b8f8-9b04c96035b0", "Cynthia Sheppard"),
+    CardSet::Visions,
+    CardRules::new_creature(mana_cost!("{5}{W}{W}"), &["Angel"], 5, 5)
+        .with_abilities(&[abilities::flying(), abilities::vigilance()]),
+);
 
 // VIS 2 — Daraja Griffin
 // Audit: unsupported — Card rules have not been implemented.
@@ -364,7 +371,23 @@ pub(in crate::card::sets) static IMPULSE: CardRecord = CardRecord::new_with_lega
     )),
 );
 
-// VIS 35 — Inspiration (reprint)
+// VIS 35 — Inspiration
+pub(in crate::card::sets) static INSPIRATION: CardRecord = CardRecord::new_with_legacy_id(
+    1258,
+    "Inspiration",
+    CardArt::new("e3cf9dc0-0a12-459c-88e2-97ed94653058", "Izzy"),
+    CardSet::Visions,
+    CardRules::new_instant(mana_cost!("{3}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Target player draws two cards.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(2),
+        },
+    )),
+);
 
 // VIS 36 — Knight of the Mists
 // Audit: unsupported — Card rules have not been implemented.
@@ -376,7 +399,15 @@ pub(in crate::card::sets) static KNIGHT_OF_THE_MISTS: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
-// VIS 37 — Man-o'-War (reprint)
+// VIS 37 — Man-o'-War
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static MAN_O_WAR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("4dbf9bf9-75cd-4b25-a3a1-43b7e029700b"),
+    "Man-o'-War",
+    crate::card::CardArt::new("5eaa4199-df9b-494a-af7a-2491e8b0ef70", "Jon J Muth"),
+    crate::card::CardSet::Visions,
+    crate::card::CardRules::unsupported(),
+);
 
 // VIS 38 — Mystic Veil
 // Audit: unsupported — Card rules have not been implemented.
@@ -1944,7 +1975,41 @@ pub(in crate::card::sets) static KAROO: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// VIS 166 — Quicksand (reprint)
+// VIS 166 — Quicksand
+pub(in crate::card::sets) static QUICKSAND: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("11370658-8d80-4d2f-afa5-ec6df6dee369"),
+    "Quicksand",
+    crate::card::CardArt::new("4e396df7-9931-43f6-b009-27cf93c4a3e5", "Matt Stewart"),
+    crate::card::CardSet::Visions,
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {C}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+        ),
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice this land: Target attacking creature without flying gets -1/-2 until end of turn.",
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Attacking,
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasKeyword(
+                        crate::card::KeywordAbility::Flying,
+                    )),
+                ]),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(-1),
+                    ValueDef::Constant(-2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // VIS 167 — Undiscovered Paradise
 // Audit: unsupported — Card rules have not been implemented.
@@ -1957,6 +2022,7 @@ pub(in crate::card::sets) static UNDISCOVERED_PARADISE: CardRecord = CardRecord:
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &ARCHANGEL,
     &DARAJA_GRIFFIN,
     &EQUIPOISE,
     &EYE_OF_SINGULARITY,
@@ -1990,7 +2056,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FLOODED_SHORELINE,
     &FORESHADOW,
     &IMPULSE,
+    &INSPIRATION,
     &KNIGHT_OF_THE_MISTS,
+    &MAN_O_WAR,
     &MYSTIC_VEIL,
     &OVINOMANCER,
     &PROSPERITY,
@@ -2119,12 +2187,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GRIFFIN_CANYON,
     &JUNGLE_BASIN,
     &KAROO,
+    &QUICKSAND,
     &UNDISCOVERED_PARADISE,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_avr::ARCHANGEL), // VIS 1
-    PrintingRecord::reprint(&catalog_rtr::INSPIRATION), // VIS 35
-    PrintingRecord::reprint(&catalog_mh1::MAN_O_WAR), // VIS 37
-    PrintingRecord::reprint(&catalog_wwk::QUICKSAND), // VIS 166
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

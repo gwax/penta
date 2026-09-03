@@ -3690,7 +3690,6 @@ pub(in crate::card::sets) static ROC_OF_KHER_RIDGES: CardRecord = CardRecord::ne
         .with_abilities(&[abilities::flying()]),
 );
 
-// The chosen presentation art is its Beta printing; the definition debuted in Alpha.
 // LEA 171 — Rock Hydra
 // Audit: unsupported — Needs a duration-scoped replacement/prevention effect for “For each 1 damage that would be dealt to this creature, if it has a +1/+1 counter on it, remove a +1/+1 counter from it and prevent that 1 damage”.
 pub(in crate::card::sets) static ROCK_HYDRA: CardRecord = CardRecord::new(
@@ -3730,8 +3729,9 @@ pub(in crate::card::sets) static SEDGE_TROLL: CardRecord = CardRecord::new_with_
         ),
     ]),
 )
-.with_identity_anchor(PrintingAnchor::scryfall(
+.with_debut_art(CardArt::new(
     "b13bf496-f3c0-4c13-8282-e7abfab6a198",
+    "Dan Frazier",
 ));
 
 // LEA 173 — Shatter
@@ -6031,6 +6031,8 @@ pub(in crate::card::sets) static PLAINS: CardRecord = CardRecord::new_with_legac
 );
 
 // LEA 287 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&PLAINS, 1)
+    .with_art("51662253-789f-4a02-9937-688e36775024", "Jesper Myrfors");
 
 // LEA 288 — Island
 pub(in crate::card::sets) static ISLAND: CardRecord = CardRecord::new_with_legacy_id(
@@ -6042,6 +6044,8 @@ pub(in crate::card::sets) static ISLAND: CardRecord = CardRecord::new_with_legac
 );
 
 // LEA 289 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ISLAND, 1)
+    .with_art("bc6ea08d-7991-4a57-a1e3-abd508426970", "Mark Poole");
 
 // LEA 290 — Swamp
 pub(in crate::card::sets) static SWAMP: CardRecord = CardRecord::new_with_legacy_id(
@@ -6053,6 +6057,8 @@ pub(in crate::card::sets) static SWAMP: CardRecord = CardRecord::new_with_legacy
 );
 
 // LEA 291 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SWAMP, 1)
+    .with_art("edeba4e1-9012-4962-8797-3a1f6a660952", "Dan Frazier");
 
 // LEA 292 — Mountain
 pub(in crate::card::sets) static MOUNTAIN: CardRecord = CardRecord::new_with_legacy_id(
@@ -6064,6 +6070,8 @@ pub(in crate::card::sets) static MOUNTAIN: CardRecord = CardRecord::new_with_leg
 );
 
 // LEA 293 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&MOUNTAIN, 1)
+    .with_art("1a96315d-edc6-4d68-a260-d14f61281dc1", "Douglas Shuler");
 
 // LEA 294 — Forest
 pub(in crate::card::sets) static FOREST: CardRecord = CardRecord::new_with_legacy_id(
@@ -6075,6 +6083,8 @@ pub(in crate::card::sets) static FOREST: CardRecord = CardRecord::new_with_legac
 );
 
 // LEA 295 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&FOREST, 1)
+    .with_art("f20c89d9-71c9-45f5-a9cb-6e253b0a7cca", "Christopher Rush");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANIMATE_WALL,
@@ -6370,11 +6380,11 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&PLAINS, 1),   // LEA 287
-    PrintingRecord::alternate(&ISLAND, 1),   // LEA 289
-    PrintingRecord::alternate(&SWAMP, 1),    // LEA 291
-    PrintingRecord::alternate(&MOUNTAIN, 1), // LEA 293
-    PrintingRecord::alternate(&FOREST, 1),   // LEA 295
+    PLAINS_ALTERNATE_1,
+    ISLAND_ALTERNATE_1,
+    SWAMP_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_1,
+    FOREST_ALTERNATE_1,
 ];
 
 #[cfg(test)]

@@ -29,8 +29,13 @@ pub(in crate::card::sets) static ABBEY_MATRON: CardRecord = CardRecord::new(
 );
 
 // HML 2b — Abbey Matron (alternate printing)
+const ABBEY_MATRON_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ABBEY_MATRON, 1)
+    .with_art("fd950ddc-28f4-47a5-8fc1-d6f70002fceb", "Mike Kimble");
 
 // HML 3a — Aysen Bureaucrats (alternate printing)
+const AYSEN_BUREAUCRATS_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&AYSEN_BUREAUCRATS, 1)
+        .with_art("91170faf-3143-4fa8-88d6-eef72e1f5459", "Alan Rabinowitz");
 
 // HML 3b — Aysen Bureaucrats
 // Audit: unsupported — Card rules have not been implemented.
@@ -103,6 +108,8 @@ pub(in crate::card::sets) static LEECHES: CardRecord = CardRecord::new(
 );
 
 // HML 10a — Mesa Falcon (alternate printing)
+const MESA_FALCON_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&MESA_FALCON, 1)
+    .with_art("7c2c7004-691b-4385-ad9b-60b93d474ebd", "Mark Poole");
 
 // HML 10b — Mesa Falcon
 // Audit: unsupported — Card rules have not been implemented.
@@ -135,6 +142,9 @@ pub(in crate::card::sets) static RASHKA_THE_SLAYER: CardRecord = CardRecord::new
 );
 
 // HML 13a — Samite Alchemist (alternate printing)
+const SAMITE_ALCHEMIST_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&SAMITE_ALCHEMIST, 1)
+        .with_art("68224871-d4c2-4b43-9ab8-c0685588b035", "Tom Wänerstrand");
 
 // HML 13b — Samite Alchemist
 // Audit: unsupported — Card rules have not been implemented.
@@ -197,6 +207,8 @@ pub(in crate::card::sets) static SORAYA_THE_FALCONER: CardRecord = CardRecord::n
 );
 
 // HML 19a — Trade Caravan (alternate printing)
+const TRADE_CARAVAN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&TRADE_CARAVAN, 1)
+    .with_art("fdcc821b-8125-4585-ba44-4bf8c1873fbf", "Kaja Foglio");
 
 // HML 19b — Trade Caravan
 // Audit: unsupported — Card rules have not been implemented.
@@ -269,6 +281,8 @@ pub(in crate::card::sets) static DARK_MAZE: CardRecord = CardRecord::new(
 );
 
 // HML 25b — Dark Maze (alternate printing)
+const DARK_MAZE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&DARK_MAZE, 1)
+    .with_art("d3d68a76-c843-4c67-90a7-2f79295798d0", "Rob Alexander");
 
 // HML 26 — Forget
 // Audit: unsupported — Card rules have not been implemented.
@@ -291,6 +305,8 @@ pub(in crate::card::sets) static GIANT_ALBATROSS: CardRecord = CardRecord::new(
 );
 
 // HML 27b — Giant Albatross (alternate printing)
+const GIANT_ALBATROSS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&GIANT_ALBATROSS, 1)
+    .with_art("e26334fc-d8ee-4b8c-ac50-5a304fae6c60", "David A. Cherry");
 
 // HML 28 — Giant Oyster
 // Audit: unsupported — Card rules have not been implemented.
@@ -313,6 +329,9 @@ pub(in crate::card::sets) static JINX: CardRecord = CardRecord::new(
 );
 
 // HML 30a — Labyrinth Minotaur (alternate printing)
+const LABYRINTH_MINOTAUR_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&LABYRINTH_MINOTAUR, 1)
+        .with_art("eb8c1786-a2c1-43f9-9cef-8c4542833093", "Anson Maddocks");
 
 // HML 30b — Labyrinth Minotaur
 // Audit: unsupported — Card rules have not been implemented.
@@ -365,6 +384,8 @@ pub(in crate::card::sets) static MEMORY_LAPSE: CardRecord = CardRecord::new(
 );
 
 // HML 32b — Memory Lapse (alternate printing)
+const MEMORY_LAPSE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&MEMORY_LAPSE, 1)
+    .with_art("6c8b5df3-6153-470e-be9c-f38d3cf66081", "Mark Tedin");
 
 // HML 33 — Merchant Scroll
 // Audit: unsupported — Card rules have not been implemented.
@@ -407,6 +428,8 @@ pub(in crate::card::sets) static REEF_PIRATES: CardRecord = CardRecord::new(
 );
 
 // HML 36b — Reef Pirates (alternate printing)
+const REEF_PIRATES_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&REEF_PIRATES, 1)
+    .with_art("b7c5e641-0276-4321-b486-ef8602a5f185", "Tom Wänerstrand");
 
 // HML 37 — Reveka, Wizard Savant
 // Audit: unsupported — Card rules have not been implemented.
@@ -489,6 +512,8 @@ pub(in crate::card::sets) static CEMETERY_GATE: CardRecord = CardRecord::new(
 );
 
 // HML 44b — Cemetery Gate (alternate printing)
+const CEMETERY_GATE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&CEMETERY_GATE, 1)
+    .with_art("4a7b2cc1-cb0b-4cb8-963f-453a1d5b0e3c", "Melissa A. Benson");
 
 // HML 45 — Drudge Spell
 // Audit: unsupported — Card rules have not been implemented.
@@ -511,6 +536,8 @@ pub(in crate::card::sets) static DRY_SPELL: CardRecord = CardRecord::new(
 );
 
 // HML 46b — Dry Spell (alternate printing)
+const DRY_SPELL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&DRY_SPELL, 1)
+    .with_art("997ea663-40a1-49b7-80f1-2e1febc1b6fa", "Brian Snõddy");
 
 // HML 47a — Feast of the Unicorn
 // Audit: unsupported — Card rules have not been implemented.
@@ -523,6 +550,9 @@ pub(in crate::card::sets) static FEAST_OF_THE_UNICORN: CardRecord = CardRecord::
 );
 
 // HML 47b — Feast of the Unicorn (alternate printing)
+const FEAST_OF_THE_UNICORN_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&FEAST_OF_THE_UNICORN, 1)
+        .with_art("f05a2735-0f0d-46b5-9c2e-6c0ed8d8944d", "Dennis Detwiller");
 
 // HML 48 — Funeral March
 // Audit: unsupported — Card rules have not been implemented.
@@ -627,6 +657,8 @@ pub(in crate::card::sets) static SENGIR_AUTOCRAT: CardRecord = CardRecord::new(
 );
 
 // HML 57a — Sengir Bats (alternate printing)
+const SENGIR_BATS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SENGIR_BATS, 1)
+    .with_art("3c745c2c-4311-412d-a137-02bf6d106e46", "Dan Frazier");
 
 // HML 57b — Sengir Bats
 // Audit: unsupported — Card rules have not been implemented.
@@ -659,6 +691,8 @@ pub(in crate::card::sets) static TORTURE: CardRecord = CardRecord::new(
 );
 
 // HML 59b — Torture (alternate printing)
+const TORTURE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&TORTURE, 1)
+    .with_art("4c7e94a3-192f-483b-9a62-b94904ba3464", "Mark Tedin");
 
 // HML 60 — Veldrane of Sengir
 // Audit: unsupported — Card rules have not been implemented.
@@ -681,6 +715,8 @@ pub(in crate::card::sets) static ALIBAN_S_TOWER: CardRecord = CardRecord::new(
 );
 
 // HML 61b — Aliban's Tower (alternate printing)
+const ALIBAN_S_TOWER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ALIBAN_S_TOWER, 1)
+    .with_art("d66e94b9-23f6-45a8-97bd-602e3aaa6711", "Jeff A. Menges");
 
 // HML 62 — Ambush
 // Audit: unsupported — Card rules have not been implemented.
@@ -703,6 +739,8 @@ pub(in crate::card::sets) static AMBUSH_PARTY: CardRecord = CardRecord::new(
 );
 
 // HML 63b — Ambush Party (alternate printing)
+const AMBUSH_PARTY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&AMBUSH_PARTY, 1)
+    .with_art("ea200e93-e5bd-4777-b47e-e53849a89fe7", "Mark Poole");
 
 // HML 64 — An-Zerrin Ruins
 // Audit: unsupported — Card rules have not been implemented.
@@ -725,6 +763,8 @@ pub(in crate::card::sets) static ANABA_ANCESTOR: CardRecord = CardRecord::new(
 );
 
 // HML 66a — Anaba Bodyguard (alternate printing)
+const ANABA_BODYGUARD_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ANABA_BODYGUARD, 1)
+    .with_art("882e3c69-dca7-4c0a-8f8c-984250e6a867", "Anson Maddocks");
 
 // HML 66b — Anaba Bodyguard
 // Audit: unsupported — Card rules have not been implemented.
@@ -737,6 +777,8 @@ pub(in crate::card::sets) static ANABA_BODYGUARD: CardRecord = CardRecord::new(
 );
 
 // HML 67a — Anaba Shaman (alternate printing)
+const ANABA_SHAMAN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ANABA_SHAMAN, 1)
+    .with_art("c55d086a-d848-43bc-8c1e-de96d10877e1", "Anson Maddocks");
 
 // HML 67b — Anaba Shaman
 // Audit: unsupported — Card rules have not been implemented.
@@ -805,6 +847,11 @@ pub(in crate::card::sets) static DWARVEN_TRADER: CardRecord = CardRecord::new(
 );
 
 // HML 72b — Dwarven Trader (alternate printing)
+const DWARVEN_TRADER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&DWARVEN_TRADER, 1)
+    .with_art(
+        "8e6d9318-30d6-473f-b576-cc249454440f",
+        "Margaret Organ-Kean",
+    );
 
 // HML 73 — Eron the Relentless
 // Audit: unsupported — Card rules have not been implemented.
@@ -933,6 +980,8 @@ pub(in crate::card::sets) static CARAPACE: CardRecord = CardRecord::new(
 );
 
 // HML 84b — Carapace (alternate printing)
+const CARAPACE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&CARAPACE, 1)
+    .with_art("6d51d61e-c010-4b4e-a337-20ba5eb845e3", "Anson Maddocks");
 
 // HML 85 — Daughter of Autumn
 // Audit: unsupported — Card rules have not been implemented.
@@ -958,6 +1007,9 @@ pub(in crate::card::sets) static FAERIE_NOBLE: CardRecord = CardRecord::new(
 );
 
 // HML 87a — Folk of An-Havva (alternate printing)
+const FOLK_OF_AN_HAVVA_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&FOLK_OF_AN_HAVVA, 1)
+        .with_art("9f4a595e-51f6-4e84-aa3a-5d9c18dc8b3f", "Julie Baroh");
 
 // HML 87b — Folk of An-Havva
 // Audit: unsupported — Card rules have not been implemented.
@@ -980,6 +1032,8 @@ pub(in crate::card::sets) static HUNGRY_MIST: CardRecord = CardRecord::new(
 );
 
 // HML 88b — Hungry Mist (alternate printing)
+const HUNGRY_MIST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HUNGRY_MIST, 1)
+    .with_art("a486eab3-3a09-4bd5-ad97-8ec620434f7e", "Heather Hudson");
 
 // HML 89 — Joven's Ferrets
 // Audit: unsupported — Card rules have not been implemented.
@@ -1072,6 +1126,8 @@ pub(in crate::card::sets) static SHRINK: CardRecord = CardRecord::new(
 );
 
 // HML 97b — Shrink (alternate printing)
+const SHRINK_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SHRINK, 1)
+    .with_art("d9f4eaa1-3c2b-4f5d-8d4e-98d153899873", "Liz Danforth");
 
 // HML 98 — Spectral Bears
 // Audit: unsupported — Card rules have not been implemented.
@@ -1084,6 +1140,8 @@ pub(in crate::card::sets) static SPECTRAL_BEARS: CardRecord = CardRecord::new(
 );
 
 // HML 99a — Willow Faerie (alternate printing)
+const WILLOW_FAERIE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&WILLOW_FAERIE, 1)
+    .with_art("83ce80dc-86d9-4613-af98-c385ca5d1cf4", "Susan Van Camp");
 
 // HML 99b — Willow Faerie
 // Audit: unsupported — Card rules have not been implemented.
@@ -1378,29 +1436,29 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&ABBEY_MATRON, 1), // HML 2b
-    PrintingRecord::alternate(&AYSEN_BUREAUCRATS, 1), // HML 3a
-    PrintingRecord::alternate(&MESA_FALCON, 1),  // HML 10a
-    PrintingRecord::alternate(&SAMITE_ALCHEMIST, 1), // HML 13a
-    PrintingRecord::alternate(&TRADE_CARAVAN, 1), // HML 19a
-    PrintingRecord::alternate(&DARK_MAZE, 1),    // HML 25b
-    PrintingRecord::alternate(&GIANT_ALBATROSS, 1), // HML 27b
-    PrintingRecord::alternate(&LABYRINTH_MINOTAUR, 1), // HML 30a
-    PrintingRecord::alternate(&MEMORY_LAPSE, 1), // HML 32b
-    PrintingRecord::alternate(&REEF_PIRATES, 1), // HML 36b
-    PrintingRecord::alternate(&CEMETERY_GATE, 1), // HML 44b
-    PrintingRecord::alternate(&DRY_SPELL, 1),    // HML 46b
-    PrintingRecord::alternate(&FEAST_OF_THE_UNICORN, 1), // HML 47b
-    PrintingRecord::alternate(&SENGIR_BATS, 1),  // HML 57a
-    PrintingRecord::alternate(&TORTURE, 1),      // HML 59b
-    PrintingRecord::alternate(&ALIBAN_S_TOWER, 1), // HML 61b
-    PrintingRecord::alternate(&AMBUSH_PARTY, 1), // HML 63b
-    PrintingRecord::alternate(&ANABA_BODYGUARD, 1), // HML 66a
-    PrintingRecord::alternate(&ANABA_SHAMAN, 1), // HML 67a
-    PrintingRecord::alternate(&DWARVEN_TRADER, 1), // HML 72b
-    PrintingRecord::alternate(&CARAPACE, 1),     // HML 84b
-    PrintingRecord::alternate(&FOLK_OF_AN_HAVVA, 1), // HML 87a
-    PrintingRecord::alternate(&HUNGRY_MIST, 1),  // HML 88b
-    PrintingRecord::alternate(&SHRINK, 1),       // HML 97b
-    PrintingRecord::alternate(&WILLOW_FAERIE, 1), // HML 99a
+    ABBEY_MATRON_ALTERNATE_1,
+    AYSEN_BUREAUCRATS_ALTERNATE_1,
+    MESA_FALCON_ALTERNATE_1,
+    SAMITE_ALCHEMIST_ALTERNATE_1,
+    TRADE_CARAVAN_ALTERNATE_1,
+    DARK_MAZE_ALTERNATE_1,
+    GIANT_ALBATROSS_ALTERNATE_1,
+    LABYRINTH_MINOTAUR_ALTERNATE_1,
+    MEMORY_LAPSE_ALTERNATE_1,
+    REEF_PIRATES_ALTERNATE_1,
+    CEMETERY_GATE_ALTERNATE_1,
+    DRY_SPELL_ALTERNATE_1,
+    FEAST_OF_THE_UNICORN_ALTERNATE_1,
+    SENGIR_BATS_ALTERNATE_1,
+    TORTURE_ALTERNATE_1,
+    ALIBAN_S_TOWER_ALTERNATE_1,
+    AMBUSH_PARTY_ALTERNATE_1,
+    ANABA_BODYGUARD_ALTERNATE_1,
+    ANABA_SHAMAN_ALTERNATE_1,
+    DWARVEN_TRADER_ALTERNATE_1,
+    CARAPACE_ALTERNATE_1,
+    FOLK_OF_AN_HAVVA_ALTERNATE_1,
+    HUNGRY_MIST_ALTERNATE_1,
+    SHRINK_ALTERNATE_1,
+    WILLOW_FAERIE_ALTERNATE_1,
 ];

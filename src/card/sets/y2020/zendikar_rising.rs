@@ -426,6 +426,9 @@ pub(in crate::card::sets) static LUMINARCH_ASPIRANT: CardRecord = CardRecord::ne
 );
 
 // ZNR 335 — Thieving Skydiver (alternate printing)
+const THIEVING_SKYDIVER_ALTERNATE_1: PrintingRecord =
+    PrintingRecord::alternate(&THIEVING_SKYDIVER, 1)
+        .with_art("f8b3eb41-2351-4dca-becb-7ecb1fcfa14b", "Kieran Yanner");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DAUNTLESS_UNITY,
@@ -438,6 +441,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LUMINARCH_ASPIRANT,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::alternate(&THIEVING_SKYDIVER, 1), // ZNR 335
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[THIEVING_SKYDIVER_ALTERNATE_1];

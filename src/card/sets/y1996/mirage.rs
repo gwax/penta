@@ -1,14 +1,12 @@
 //! Mirage cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::CardSupertype;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y1993::arabian_nights as catalog_arn;
 use crate::card::sets::y1994::legends as catalog_leg;
 use crate::card::sets::y1995::homelands as catalog_hml;
 use crate::card::sets::y1995::ice_age as catalog_ice;
-use crate::card::sets::y2011::innistrad as catalog_isd;
-use crate::card::sets::y2011::magic_2012 as catalog_m12;
-use crate::card::sets::y2012::magic_2013 as catalog_m13;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef,
@@ -199,8 +197,13 @@ pub(in crate::card::sets) static DISEMPOWER: CardRecord = CardRecord::new(
 );
 
 // MIR 10 — Disenchant (reprint)
+const DISENCHANT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DISENCHANT)
+    .with_art("71e27cbc-d986-437a-9195-6f5e065a49a2", "Charles Gillespie");
 
 // MIR 11 — Divine Offering (reprint)
+const DIVINE_OFFERING_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_leg::DIVINE_OFFERING)
+        .with_art("4b84697e-d72d-4169-bf16-753144da281f", "Terese Nielsen");
 
 // MIR 12 — Divine Retribution
 // Audit: unsupported — Card rules have not been implemented.
@@ -301,6 +304,8 @@ pub(in crate::card::sets) static FEMEREF_SCOUTS: CardRecord = CardRecord::new(
 );
 
 // MIR 20 — Healing Salve (reprint)
+const HEALING_SALVE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::HEALING_SALVE)
+    .with_art("0d1c9ca9-3611-46df-8108-45ba383b4ee6", "Hannibal King");
 
 // MIR 21 — Illumination
 // Audit: unsupported — Card rules have not been implemented.
@@ -414,7 +419,31 @@ pub(in crate::card::sets) static NULL_CHAMBER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// MIR 32 — Pacifism (reprint)
+// MIR 32 — Pacifism
+pub(in crate::card::sets) static PACIFISM: CardRecord = CardRecord::new_with_legacy_id(
+    1750,
+    "Pacifism",
+    CardArt::new("258e9351-2108-4dbe-97a8-3eeb9c7b502a", "Robert Bliss"),
+    CardSet::Mirage,
+    CardRules::new_enchantment(mana_cost!("{1}{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            AbilityDef::static_ability(
+                "Enchanted creature can't attack or block.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    // Two prohibitions rather than one: nothing in the vocabulary bars combat
+                    // wholesale, and nothing needs to -- attacking and blocking are separate
+                    // declarations, so barring each is barring both.
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_ATTACK),
+                        AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BLOCK),
+                    ]),
+                },
+            ),
+        ]),
+);
 
 // MIR 33 — Pearl Dragon
 pub(in crate::card::sets) static PEARL_DRAGON: CardRecord = CardRecord::new(
@@ -698,6 +727,11 @@ pub(in crate::card::sets) static BAZAAR_OF_WONDERS: CardRecord = CardRecord::new
 );
 
 // MIR 56 — Boomerang (reprint)
+const BOOMERANG_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_leg::BOOMERANG)
+    .with_art(
+        "f5c98413-740d-47fd-bed6-2d3d05a72b31",
+        "Richard Kane Ferguson",
+    );
 
 // MIR 57 — Cerulean Wyvern
 pub(in crate::card::sets) static CERULEAN_WYVERN: CardRecord = CardRecord::new(
@@ -758,7 +792,29 @@ pub(in crate::card::sets) static DARING_APPRENTICE: CardRecord = CardRecord::new
     ),
 );
 
-// MIR 61 — Dissipate (reprint)
+// MIR 61 — Dissipate
+pub(in crate::card::sets) static DISSIPATE: CardRecord = CardRecord::new_with_legacy_id(
+    156,
+    "Dissipate",
+    CardArt::new("5d778082-bcdb-423a-b16f-57ac0d4dace7", "Tomasz Jedruszek"),
+    CardSet::Mirage,
+    CardRules::new_instant(mana_cost!("{1}{U}{U}")).with_ability(
+        AbilityDef::spell_with_targets(
+            "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Spell,
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            })],
+            EffectDef::Counter {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Exile,
+                placement: ZonePlacement::Top,
+            },
+        ),
+    ),
+);
 
 // MIR 62 — Dream Cache
 // Audit: unsupported — Card rules have not been implemented.
@@ -951,6 +1007,8 @@ pub(in crate::card::sets) static MEDDLE: CardRecord = CardRecord::new(
 );
 
 // MIR 74 — Memory Lapse (reprint)
+const MEMORY_LAPSE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_hml::MEMORY_LAPSE)
+    .with_art("63453ed9-5cf1-4cad-b173-a067f22a4405", "Rebecca Guay");
 
 // MIR 75 — Merfolk Raiders
 // Audit: unsupported — Card rules have not been implemented.
@@ -1065,6 +1123,8 @@ pub(in crate::card::sets) static POLYMORPH: CardRecord = CardRecord::new(
 );
 
 // MIR 83 — Power Sink (reprint)
+const POWER_SINK_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::POWER_SINK)
+    .with_art("49717583-e0bb-47d6-92d0-8959af13391f", "Charles Gillespie");
 
 // MIR 84 — Prismatic Lace
 // Audit: unsupported — Card rules have not been implemented.
@@ -1087,6 +1147,9 @@ pub(in crate::card::sets) static PSYCHIC_TRANSFER: CardRecord = CardRecord::new(
 );
 
 // MIR 86 — Ray of Command (reprint)
+const RAY_OF_COMMAND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_ice::RAY_OF_COMMAND)
+        .with_art("4361c600-7a97-46bf-8cc1-f3713d3c28ab", "Andrew Robinson");
 
 // MIR 87 — Reality Ripple
 pub(in crate::card::sets) static REALITY_RIPPLE: CardRecord = CardRecord::new(
@@ -1110,6 +1173,11 @@ pub(in crate::card::sets) static REALITY_RIPPLE: CardRecord = CardRecord::new(
 );
 
 // MIR 87† — Reality Ripple (alternate printing)
+const REALITY_RIPPLE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&REALITY_RIPPLE, 1)
+    .with_art(
+        "d2bea2ea-04d3-4835-843a-ebbed0ef5831",
+        "D. Alexander Gregory",
+    );
 
 // MIR 88 — Sandbar Crocodile
 // Audit: unsupported — Card rules have not been implemented.
@@ -1464,8 +1532,13 @@ pub(in crate::card::sets) static CRYPT_COBRA: CardRecord = CardRecord::new(
 );
 
 // MIR 115 — Dark Banishing (reprint)
+const DARK_BANISHING_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&catalog_ice::DARK_BANISHING)
+        .with_art("5f983dcb-b077-465f-a70b-6bd0e425556c", "Dermot Power");
 
 // MIR 116 — Dark Ritual (reprint)
+const DARK_RITUAL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DARK_RITUAL)
+    .with_art("1b5fc7ce-0618-4145-b8aa-bc871e4afa99", "John Coulthart");
 
 // MIR 117 — Dirtwater Wraith
 pub(in crate::card::sets) static DIRTWATER_WRAITH: CardRecord = CardRecord::new(
@@ -1491,6 +1564,11 @@ pub(in crate::card::sets) static DIRTWATER_WRAITH: CardRecord = CardRecord::new(
 );
 
 // MIR 118 — Drain Life (reprint)
+const DRAIN_LIFE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DRAIN_LIFE)
+    .with_art(
+        "e8f030a5-62c6-439d-93b6-43f2cf927a7f",
+        "Richard Kane Ferguson",
+    );
 
 // MIR 119 — Dread Specter
 // Audit: unsupported — Card rules have not been implemented.
@@ -1503,6 +1581,8 @@ pub(in crate::card::sets) static DREAD_SPECTER: CardRecord = CardRecord::new(
 );
 
 // MIR 120 — Ebony Charm (alternate printing)
+const EBONY_CHARM_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&EBONY_CHARM, 1)
+    .with_art("937c8016-43c8-418b-9057-b5d6715f71f7", "Gerry Grace");
 
 // MIR 120† — Ebony Charm
 // Audit: unsupported — Card rules have not been implemented.
@@ -2295,6 +2375,8 @@ pub(in crate::card::sets) static FINAL_FORTUNE: CardRecord = CardRecord::new(
 );
 
 // MIR 174 — Firebreathing (reprint)
+const FIREBREATHING_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FIREBREATHING)
+    .with_art("8d39dc35-87c9-4984-8a11-443da414e629", "Mike Kerr");
 
 // MIR 175 — Flame Elemental
 pub(in crate::card::sets) static FLAME_ELEMENTAL: CardRecord = CardRecord::new(
@@ -2325,6 +2407,8 @@ pub(in crate::card::sets) static FLAME_ELEMENTAL: CardRecord = CardRecord::new(
 );
 
 // MIR 176 — Flare (reprint)
+const FLARE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_ice::FLARE)
+    .with_art("1bd7755f-7ca5-4948-8baf-976823906891", "Greg Simanson");
 
 // MIR 177 — Goblin Elite Infantry
 pub(in crate::card::sets) static GOBLIN_ELITE_INFANTRY: CardRecord = CardRecord::new(
@@ -2438,6 +2522,8 @@ pub(in crate::card::sets) static ILLICIT_AUCTION: CardRecord = CardRecord::new(
 );
 
 // MIR 184 — Incinerate (reprint)
+const INCINERATE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_ice::INCINERATE)
+    .with_art("409b2be8-5bb6-45e0-ab87-ca73b4e3a396", "Brian Snõddy");
 
 // MIR 185 — Kaervek's Torch
 pub(in crate::card::sets) static KAERVEK_S_TORCH: CardRecord = CardRecord::new(
@@ -2550,6 +2636,8 @@ pub(in crate::card::sets) static SPITTING_EARTH: CardRecord = CardRecord::new(
 );
 
 // MIR 194 — Stone Rain (reprint)
+const STONE_RAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::STONE_RAIN)
+    .with_art("e64bc56f-9e0b-478e-9af4-5333ec2da1c3", "Tony Roberts");
 
 // MIR 195 — Subterranean Spirit
 // Audit: unsupported — Card rules have not been implemented.
@@ -2610,9 +2698,33 @@ pub(in crate::card::sets) static VIASHINO_WARRIOR: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Lizard", "Warrior"], 4, 2),
 );
 
-// MIR 201 — Volcanic Dragon (reprint)
+// MIR 201 — Volcanic Dragon
+pub(in crate::card::sets) static VOLCANIC_DRAGON: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("bda123a7-d121-483a-8ff0-a541ccdbc7ca"),
+    "Volcanic Dragon",
+    crate::card::CardArt::new("56134669-9575-44bc-9203-edbd75acecbd", "Chris Rahn"),
+    crate::card::CardSet::Mirage,
+    CardRules::new_creature(mana_cost!("{4}{R}{R}"), &["Dragon"], 4, 4)
+        .with_abilities(&[abilities::flying(), abilities::haste()]),
+);
 
-// MIR 202 — Volcanic Geyser (reprint)
+// MIR 202 — Volcanic Geyser
+pub(in crate::card::sets) static VOLCANIC_GEYSER: CardRecord = CardRecord::new_with_legacy_id(
+    1027,
+    "Volcanic Geyser",
+    CardArt::new("df5bab70-3c28-48db-9ed3-64706f64f4fa", "Clint Cearley"),
+    CardSet::Mirage,
+    CardRules::new_instant(mana_cost!("{X}{R}{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Volcanic Geyser deals X damage to any target.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::AnyTarget,
+        )],
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::ChosenX,
+        },
+    )),
+);
 
 // MIR 203 — Wildfire Emissary
 // Audit: unsupported — Card rules have not been implemented.
@@ -2784,6 +2896,8 @@ pub(in crate::card::sets) static FEMEREF_ARCHERS: CardRecord = CardRecord::new(
 );
 
 // MIR 216 — Fog (reprint)
+const FOG_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FOG)
+    .with_art("6d822598-2f0f-45fa-9643-0368e2c0e18b", "Harold McNeill");
 
 // MIR 217 — Foratog
 pub(in crate::card::sets) static FORATOG: CardRecord = CardRecord::new(
@@ -2996,9 +3110,38 @@ pub(in crate::card::sets) static QUIRION_ELVES: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// MIR 235 — Rampant Growth (reprint)
+// MIR 235 — Rampant Growth
+pub(in crate::card::sets) static RAMPANT_GROWTH: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("a9dd8043-4099-42bb-9d54-4efc8b38fe18"),
+    "Rampant Growth",
+    crate::card::CardArt::new("fe45a787-6d8a-48d7-ad6c-fb20a9b468a4", "Steven Belledin"),
+    crate::card::CardSet::Mirage,
+    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell(
+        "Search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Land),
+                ObjectPredicateDef::Supertype(CardSupertype::Basic),
+            ]),
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: true,
+            destination: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: true,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    )),
+);
 
 // MIR 236 — Regeneration (reprint)
+const REGENERATION_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::REGENERATION)
+    .with_art("cc3d7a4f-8ccc-44cf-bacc-5055c7e1edbc", "Charles Gillespie");
 
 // MIR 237 — Roots of Life
 // Audit: unsupported — Card rules have not been implemented.
@@ -3021,6 +3164,8 @@ pub(in crate::card::sets) static SABERTOOTH_COBRA: CardRecord = CardRecord::new(
 );
 
 // MIR 239 — Sandstorm (reprint)
+const SANDSTORM_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_arn::SANDSTORM)
+    .with_art("cdce7d3c-cc17-4010-85ec-402a6f256360", "Mike Kimble");
 
 // MIR 240 — Seedling Charm
 // Audit: unsupported — Card rules have not been implemented.
@@ -3507,6 +3652,8 @@ pub(in crate::card::sets) static ROCK_BASILISK: CardRecord = CardRecord::new(
 );
 
 // MIR 280 — Savage Twister (alternate printing)
+const SAVAGE_TWISTER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SAVAGE_TWISTER, 1)
+    .with_art("eb73313b-d39a-46ab-abfc-76f94a75dfca", "Bob Eggleton");
 
 // MIR 280† — Savage Twister
 pub(in crate::card::sets) static SAVAGE_TWISTER: CardRecord = CardRecord::new(
@@ -4285,44 +4432,84 @@ pub(in crate::card::sets) static TEFERI_S_ISLE: CardRecord = CardRecord::new(
 );
 
 // MIR 331 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::PLAINS)
+    .with_art("888f32ad-3bdd-4c46-b3f0-522ac9763591", "Tom Wänerstrand");
 
 // MIR 332 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("b078ef66-a83b-4e12-bcba-838bc3809322", "Tom Wänerstrand");
 
 // MIR 333 — Plains (alternate printing)
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 2)
+    .with_art("ac15978d-41e6-4eaa-9456-0de3b912d437", "Tom Wänerstrand");
 
 // MIR 334 — Plains (alternate printing)
+const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 3)
+    .with_art("81bbbf38-5d1a-4013-aff9-6167709897f0", "Tom Wänerstrand");
 
 // MIR 335 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::ISLAND)
+    .with_art("df84bf1b-8698-4c3e-baa9-926f0efc6a12", "Douglas Shuler");
 
 // MIR 336 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("776912e7-fa16-4d71-b830-0a5d35f38297", "Douglas Shuler");
 
 // MIR 337 — Island (alternate printing)
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 2)
+    .with_art("1e571f07-167f-4a7d-8f98-0c98d7d15e81", "Douglas Shuler");
 
 // MIR 338 — Island (alternate printing)
+const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 3)
+    .with_art("a39fc1e0-caf0-4cfa-bbf2-fea7ca32c00d", "Douglas Shuler");
 
 // MIR 339 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SWAMP)
+    .with_art("f2d28477-8be1-4caf-8185-64f47905ccb1", "Bob Eggleton");
 
 // MIR 340 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("2c4be2d6-d168-4e67-8d75-a04f637b56dd", "Bob Eggleton");
 
 // MIR 341 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 2)
+    .with_art("65181db5-3fc5-497b-ba61-385efdf740ed", "Bob Eggleton");
 
 // MIR 342 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 3)
+    .with_art("5083de34-d127-45df-9252-ff09b5cf8b47", "Bob Eggleton");
 
 // MIR 343 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
+    .with_art("97004cdc-0baf-415d-8e87-7f36667c4628", "John Avon");
 
 // MIR 344 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("207a468f-79c3-486e-ac5a-4516361b7b4d", "John Avon");
 
 // MIR 345 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2)
+    .with_art("681b9c8a-6140-4086-bc72-37f0058a8e9f", "John Avon");
 
 // MIR 346 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3)
+    .with_art("1cef9230-34fa-496f-8835-5dfaac627f70", "John Avon");
 
 // MIR 347 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FOREST)
+    .with_art("a0ae7a81-9a61-4112-af22-369c525b2eb1", "Tony Roberts");
 
 // MIR 348 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("bb6b3f80-20bf-4693-b106-cfb31a3d7f83", "Tony Roberts");
 
 // MIR 349 — Forest (alternate printing)
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 2)
+    .with_art("d8a67bf6-818b-4afe-af15-3d955dc5e884", "Tony Roberts");
 
 // MIR 350 — Forest (alternate printing)
+const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 3)
+    .with_art("95dfef30-acca-4b15-a05e-d33289055218", "Tony Roberts");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AFTERLIFE,
@@ -4353,6 +4540,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MTENDA_HERDER,
     &NOBLE_ELEPHANT,
     &NULL_CHAMBER,
+    &PACIFISM,
     &PEARL_DRAGON,
     &PRISMATIC_CIRCLE,
     &RASHIDA_SCALEBANE,
@@ -4380,6 +4568,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CLOAK_OF_INVISIBILITY,
     &CORAL_FIGHTERS,
     &DARING_APPRENTICE,
+    &DISSIPATE,
     &DREAM_CACHE,
     &DREAM_FIGHTER,
     &ENERGY_VORTEX,
@@ -4509,6 +4698,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TELIM_TOR_S_EDICT,
     &TORRENT_OF_LAVA,
     &VIASHINO_WARRIOR,
+    &VOLCANIC_DRAGON,
+    &VOLCANIC_GEYSER,
     &WILDFIRE_EMISSARY,
     &ZIRILAN_OF_THE_CLAW,
     &AFIYA_GROVE,
@@ -4540,6 +4731,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &NETTLETOOTH_DJINN,
     &PREFERRED_SELECTION,
     &QUIRION_ELVES,
+    &RAMPANT_GROWTH,
     &ROOTS_OF_LIFE,
     &SABERTOOTH_COBRA,
     &SEEDLING_CHARM,
@@ -4636,49 +4828,44 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_lea::DISENCHANT), // MIR 10
-    PrintingRecord::reprint(&catalog_leg::DIVINE_OFFERING), // MIR 11
-    PrintingRecord::reprint(&catalog_lea::HEALING_SALVE), // MIR 20
-    PrintingRecord::reprint(&catalog_m13::PACIFISM),   // MIR 32
-    PrintingRecord::reprint(&catalog_leg::BOOMERANG),  // MIR 56
-    PrintingRecord::reprint(&catalog_isd::DISSIPATE),  // MIR 61
-    PrintingRecord::reprint(&catalog_hml::MEMORY_LAPSE), // MIR 74
-    PrintingRecord::reprint(&catalog_lea::POWER_SINK), // MIR 83
-    PrintingRecord::reprint(&catalog_ice::RAY_OF_COMMAND), // MIR 86
-    PrintingRecord::alternate(&REALITY_RIPPLE, 1),     // MIR 87†
-    PrintingRecord::reprint(&catalog_ice::DARK_BANISHING), // MIR 115
-    PrintingRecord::reprint(&catalog_lea::DARK_RITUAL), // MIR 116
-    PrintingRecord::reprint(&catalog_lea::DRAIN_LIFE), // MIR 118
-    PrintingRecord::alternate(&EBONY_CHARM, 1),        // MIR 120
-    PrintingRecord::reprint(&catalog_lea::FIREBREATHING), // MIR 174
-    PrintingRecord::reprint(&catalog_ice::FLARE),      // MIR 176
-    PrintingRecord::reprint(&catalog_ice::INCINERATE), // MIR 184
-    PrintingRecord::reprint(&catalog_lea::STONE_RAIN), // MIR 194
-    PrintingRecord::reprint(&catalog_m12::VOLCANIC_DRAGON), // MIR 201
-    PrintingRecord::reprint(&catalog_m13::VOLCANIC_GEYSER), // MIR 202
-    PrintingRecord::reprint(&catalog_lea::FOG),        // MIR 216
-    PrintingRecord::reprint(&catalog_m12::RAMPANT_GROWTH), // MIR 235
-    PrintingRecord::reprint(&catalog_lea::REGENERATION), // MIR 236
-    PrintingRecord::reprint(&catalog_arn::SANDSTORM),  // MIR 239
-    PrintingRecord::alternate(&SAVAGE_TWISTER, 1),     // MIR 280
-    PrintingRecord::reprint(&catalog_lea::PLAINS),     // MIR 331
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1), // MIR 332
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 2), // MIR 333
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 3), // MIR 334
-    PrintingRecord::reprint(&catalog_lea::ISLAND),     // MIR 335
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1), // MIR 336
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 2), // MIR 337
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 3), // MIR 338
-    PrintingRecord::reprint(&catalog_lea::SWAMP),      // MIR 339
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1), // MIR 340
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 2), // MIR 341
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 3), // MIR 342
-    PrintingRecord::reprint(&catalog_lea::MOUNTAIN),   // MIR 343
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1), // MIR 344
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2), // MIR 345
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3), // MIR 346
-    PrintingRecord::reprint(&catalog_lea::FOREST),     // MIR 347
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1), // MIR 348
-    PrintingRecord::alternate(&catalog_lea::FOREST, 2), // MIR 349
-    PrintingRecord::alternate(&catalog_lea::FOREST, 3), // MIR 350
+    DISENCHANT_REPRINT,
+    DIVINE_OFFERING_REPRINT,
+    HEALING_SALVE_REPRINT,
+    BOOMERANG_REPRINT,
+    MEMORY_LAPSE_REPRINT,
+    POWER_SINK_REPRINT,
+    RAY_OF_COMMAND_REPRINT,
+    REALITY_RIPPLE_ALTERNATE_1,
+    DARK_BANISHING_REPRINT,
+    DARK_RITUAL_REPRINT,
+    DRAIN_LIFE_REPRINT,
+    EBONY_CHARM_ALTERNATE_1,
+    FIREBREATHING_REPRINT,
+    FLARE_REPRINT,
+    INCINERATE_REPRINT,
+    STONE_RAIN_REPRINT,
+    FOG_REPRINT,
+    REGENERATION_REPRINT,
+    SANDSTORM_REPRINT,
+    SAVAGE_TWISTER_ALTERNATE_1,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    PLAINS_ALTERNATE_2,
+    PLAINS_ALTERNATE_3,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    ISLAND_ALTERNATE_2,
+    ISLAND_ALTERNATE_3,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    SWAMP_ALTERNATE_2,
+    SWAMP_ALTERNATE_3,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    MOUNTAIN_ALTERNATE_2,
+    MOUNTAIN_ALTERNATE_3,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
+    FOREST_ALTERNATE_2,
+    FOREST_ALTERNATE_3,
 ];

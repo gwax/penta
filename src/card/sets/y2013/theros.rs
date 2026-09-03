@@ -19,6 +19,26 @@ pub(in crate::card::sets) static GODS_WILLING: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+// THS 89 — Gray Merchant of Asphodel
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static GRAY_MERCHANT_OF_ASPHODEL: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("b06078ce-f534-4e16-9a70-d51620a33eb2"),
+    "Gray Merchant of Asphodel",
+    crate::card::CardArt::new("7c1a7dd8-8034-4f59-a351-33666b26ff5a", "Scott Murphy"),
+    crate::card::CardSet::Theros,
+    crate::card::CardRules::unsupported(),
+);
+
+// THS 127 — Lightning Strike
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static LIGHTNING_STRIKE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("bbb03f2e-2b92-4aa1-afae-301ed5d151d3"),
+    "Lightning Strike",
+    crate::card::CardArt::new("7d541125-bfb8-4f88-8bf3-ad7b6af7ad1d", "Marta Nael"),
+    crate::card::CardSet::Theros,
+    crate::card::CardRules::unsupported(),
+);
+
 // THS 169 — Nylea's Presence
 pub(in crate::card::sets) static NYLEAS_PRESENCE: CardRecord = CardRecord::new_with_legacy_id(
     253,
@@ -79,7 +99,12 @@ pub(in crate::card::sets) static SYLVAN_CARYATID: CardRecord = CardRecord::new_w
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&GODS_WILLING, &NYLEAS_PRESENCE, &SYLVAN_CARYATID];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &GODS_WILLING,
+    &GRAY_MERCHANT_OF_ASPHODEL,
+    &LIGHTNING_STRIKE,
+    &NYLEAS_PRESENCE,
+    &SYLVAN_CARYATID,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

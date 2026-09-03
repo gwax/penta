@@ -1,12 +1,13 @@
 //! Portal Second Age cards used by the staged Premodern deck tranche.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::DiscardSelectionDef;
 use crate::card::abilities;
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
     CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef,
-    SacrificedAmountDef, ValueDef, ZoneKind, ZonePlacement,
+    ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef, SacrificedAmountDef, ValueDef,
+    ZoneKind, ZonePlacement,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -28,96 +29,58 @@ pub(in crate::card::sets) static ANGEL_OF_MERCY: CardRecord = CardRecord::new(
     ]),
 );
 
-// P02 15 — Breath of Life
-pub(in crate::card::sets) static BREATH_OF_LIFE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bcea5e09-6385-41df-970b-ac26c9b46127"),
-    "Breath of Life",
-    CardArt::new("a10f24f7-f82e-413e-824f-384607c7d858", "Lubov"),
+// P02 10 — Angelic Wall
+pub(in crate::card::sets) static ANGELIC_WALL: CardRecord = CardRecord::new_with_legacy_id(
+    751,
+    "Angelic Wall",
+    CardArt::new("d7b2450d-87a7-46dc-b43a-2db2abeca44f", "Allen Williams"),
     CardSet::PortalSecondAge,
-    CardRules::new_sorcery(mana_cost!("{3}{W}")).with_ability(AbilityDef::spell_with_targets(
-        "Return target creature card from your graveyard to the battlefield.",
-        &[AbilityTargetDef::exactly_one(
-            AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::HasType(CardType::Creature),
-                zones: &[ZoneKind::Graveyard],
-                controller: None,
-                owner: Some(PlayerRelation::You),
-            },
-        )],
-        EffectDef::MoveToZone {
-            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            zone: ZoneKind::Battlefield,
-            placement: ZonePlacement::Top,
-        },
-    )),
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Wall"], 0, 4)
+        .with_abilities(&[abilities::defender(), abilities::flying()]),
 );
 
-// P02 18 — Path of Peace
-pub(in crate::card::sets) static PATH_OF_PEACE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a1f3e1c9-bfad-49a1-b171-6fa344ef2eef"),
-    "Path of Peace",
-    CardArt::new("cb14d3f4-09f3-4113-bdc3-0fd753137f7c", "David A. Cherry"),
-    CardSet::PortalSecondAge,
-    CardRules::new_sorcery(mana_cost!("{3}{W}")).with_ability(AbilityDef::spell_with_targets(
-        "Destroy target creature. Its owner gains 4 life.",
-        &[AbilityTargetDef::exactly_one_permanent(
-            ObjectPredicateDef::HasType(CardType::Creature),
-        )],
-        EffectDef::Sequence(&[
-            EffectDef::Destroy {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                can_regenerate: true,
-                then: None,
-            },
-            EffectDef::GainLife {
-                recipient: EffectRecipientDef::player(PlayerRefDef::OwnerOf(ObjectRefDef::Target(
-                    TargetIndex::PRIMARY,
-                ))),
-                amount: ValueDef::Constant(4),
-            },
-        ]),
-    )),
-);
+// P02 15 — Breath of Life (reprint)
+const BREATH_OF_LIFE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::BREATH_OF_LIFE)
+        .with_art("a10f24f7-f82e-413e-824f-384607c7d858", "Lubov");
 
-// P02 27 — Vengeance
-pub(in crate::card::sets) static VENGEANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c91c249b-157c-4f1d-8171-29d1e75b1c9f"),
-    "Vengeance",
-    CardArt::new("3209ee48-4485-44fc-b71d-cd6241674e64", "Keith Parkinson"),
-    CardSet::PortalSecondAge,
-    CardRules::new_sorcery(mana_cost!("{3}{W}")).with_ability(AbilityDef::destroy_target(
-        "Destroy target tapped creature.",
-        &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
-            ObjectPredicateDef::HasType(CardType::Creature),
-            ObjectPredicateDef::Tapped,
-        ])),
-        true,
-    )),
-);
+// P02 18 — Path of Peace (reprint)
+const PATH_OF_PEACE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::PATH_OF_PEACE)
+        .with_art("cb14d3f4-09f3-4113-bdc3-0fd753137f7c", "David A. Cherry");
 
-// P02 37 — Exhaustion
-pub(in crate::card::sets) static EXHAUSTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9d6a5c33-cf74-4cec-a4f4-1aac9e7b8f79"),
-    "Exhaustion",
-    CardArt::new("fcc103a6-7888-4e35-b35b-a796a48caf70", "Kaja Foglio"),
+// P02 20 — Righteous Charge
+pub(in crate::card::sets) static RIGHTEOUS_CHARGE: CardRecord = CardRecord::new_with_legacy_id(
+    1064,
+    "Righteous Charge",
+    CardArt::new("f52cb325-4f16-4cf3-9999-feafe0fde8c2", "Svetlin Velinov"),
     CardSet::PortalSecondAge,
-    CardRules::new_sorcery(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
-        "Creatures and lands target opponent controls don't untap during their next untap step.",
-        &[AbilityTargetDef::exactly_one(
-            AbilityTargetPredicate::Player(PlayerRelation::Opponent),
-        )],
-        EffectDef::SkipNextUntapSteps {
-            object: EffectRecipientDef::objects_controlled_by_target(
-                ObjectPredicateDef::AnyOf(&[
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::HasType(CardType::Land),
-                ]),
-                TargetIndex::PRIMARY,
+    CardRules::new_sorcery(mana_cost!("{1}{W}{W}")).with_ability(AbilityDef::spell(
+        "Creatures you control get +2/+2 until end of turn.",
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
             ),
-            count: 1,
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(2),
+                ValueDef::Constant(2),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
 );
+
+// P02 27 — Vengeance (reprint)
+const VENGEANCE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::VENGEANCE)
+        .with_art("3209ee48-4485-44fc-b71d-cd6241674e64", "Keith Parkinson");
+
+// P02 37 — Exhaustion (reprint)
+const EXHAUSTION_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::EXHAUSTION)
+        .with_art("fcc103a6-7888-4e35-b35b-a796a48caf70", "Kaja Foglio");
 
 // P02 46 — Sleight of Hand
 pub(in crate::card::sets) static SLEIGHT_OF_HAND: CardRecord = CardRecord::new_with_legacy_id(
@@ -136,23 +99,32 @@ pub(in crate::card::sets) static SLEIGHT_OF_HAND: CardRecord = CardRecord::new_w
     )),
 );
 
-// P02 91 — Blaze
-pub(in crate::card::sets) static BLAZE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("04095ad2-7308-4e26-b9ef-070a5755d066"),
-    "Blaze",
-    CardArt::new("3940d0ca-0ca2-4446-9330-a554c3e89824", "David A. Cherry"),
+// P02 87 — Ravenous Rats
+pub(in crate::card::sets) static RAVENOUS_RATS: CardRecord = CardRecord::new_with_legacy_id(
+    1006,
+    "Ravenous Rats",
+    CardArt::new("0642111c-f668-4acb-9df5-f0b920352407", "Carl Critchlow"),
     CardSet::PortalSecondAge,
-    CardRules::new_sorcery(mana_cost!("{X}{R}")).with_ability(AbilityDef::spell_with_targets(
-        "Blaze deals X damage to any target.",
-        &[AbilityTargetDef::exactly_one(
-            AbilityTargetPredicate::AnyTarget,
-        )],
-        EffectDef::DealDamage {
-            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            amount: ValueDef::ChosenX,
-        },
-    )),
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Rat"], 1, 1).with_ability(
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, target opponent discards a card.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+            )],
+            EffectDef::Discard {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+                selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
+            },
+        ),
+    ),
 );
+
+// P02 91 — Blaze (reprint)
+const BLAZE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::BLAZE)
+        .with_art("3940d0ca-0ca2-4446-9330-a554c3e89824", "David A. Cherry");
 
 // P02 98 — Goblin Glider
 pub(in crate::card::sets) static GOBLIN_GLIDER: CardRecord = CardRecord::new(
@@ -170,6 +142,42 @@ pub(in crate::card::sets) static GOBLIN_GLIDER: CardRecord = CardRecord::new(
             },
         ),
     ]),
+);
+
+// P02 100 — Goblin Matron
+pub(in crate::card::sets) static GOBLIN_MATRON: CardRecord = CardRecord::new_with_legacy_id(
+    2018,
+    "Goblin Matron",
+    CardArt::new("9e9e2e5d-ad06-4378-9afb-ffb174e6a5b4", "DiTerlizzi"),
+    CardSet::PortalSecondAge,
+    // Any Goblin card, so it fetches the answer rather than the biggest
+    // body: Tinkerer against artifacts, Ringleader for more cards.
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin"], 1, 1).with_ability(
+        abilities::enters_trigger("When this creature enters, you may search your library for a Goblin card, reveal that card, put it into your hand, then shuffle.", EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::Subtype("Goblin"),
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: true,
+                destination: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: false,
+                attachment: None,
+                binding: None,
+                then: None,
+            }),
+    ),
+);
+
+// P02 102 — Goblin Piker
+pub(in crate::card::sets) static GOBLIN_PIKER: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("2786834d-dbda-40ce-82a4-e518cd554312"),
+    "Goblin Piker",
+    crate::card::CardArt::new("083ec3e7-950c-4e9d-aba5-02ed13d723f0", "DiTerlizzi"),
+    crate::card::CardSet::PortalSecondAge,
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Warrior"], 2, 1),
 );
 
 // P02 103 — Goblin Raider
@@ -252,26 +260,12 @@ pub(in crate::card::sets) static OGRE_TASKMASTER: CardRecord = CardRecord::new(
     ),
 );
 
-// P02 119 — Volcanic Hammer
-pub(in crate::card::sets) static VOLCANIC_HAMMER: CardRecord = CardRecord::new_with_legacy_id(
-    273,
-    "Volcanic Hammer",
-    CardArt::new(
+// P02 119 — Volcanic Hammer (reprint)
+const VOLCANIC_HAMMER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::VOLCANIC_HAMMER).with_art(
         "58c0489d-b073-4ad4-b044-447fcc865b6c",
         "Edward P. Beard, Jr.",
-    ),
-    CardSet::PortalSecondAge,
-    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell_with_targets(
-        "Volcanic Hammer deals 3 damage to any target.",
-        &[AbilityTargetDef::exactly_one(
-            AbilityTargetPredicate::AnyTarget,
-        )],
-        EffectDef::DealDamage {
-            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            amount: ValueDef::Constant(3),
-        },
-    )),
-);
+    );
 
 // P02 120 — Wildfire
 pub(in crate::card::sets) static WILDFIRE: CardRecord = CardRecord::new(
@@ -313,45 +307,34 @@ pub(in crate::card::sets) static LONE_WOLF: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// P02 133 — Monstrous Growth
-pub(in crate::card::sets) static MONSTROUS_GROWTH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0523c816-dddf-4b63-8db8-5e41dc673e5f"),
-    "Monstrous Growth",
-    CardArt::new("3816da20-4434-4bf7-a9dd-3eb3bb735f08", "Una Fricker"),
-    CardSet::PortalSecondAge,
-    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell_with_targets(
-        "Target creature gets +4/+4 until end of turn.",
-        &[AbilityTargetDef::exactly_one_permanent(
-            ObjectPredicateDef::HasType(CardType::Creature),
-        )],
-        EffectDef::Apply {
-            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-            effect: AppliedEffectDef::modify_power_toughness(
-                ValueDef::Constant(4),
-                ValueDef::Constant(4),
-            ),
-            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-        },
-    )),
-);
+// P02 133 — Monstrous Growth (reprint)
+const MONSTROUS_GROWTH_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1997::portal::MONSTROUS_GROWTH)
+        .with_art("3816da20-4434-4bf7-a9dd-3eb3bb735f08", "Una Fricker");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANGEL_OF_MERCY,
-    &BREATH_OF_LIFE,
-    &PATH_OF_PEACE,
-    &VENGEANCE,
-    &EXHAUSTION,
+    &ANGELIC_WALL,
+    &RIGHTEOUS_CHARGE,
     &SLEIGHT_OF_HAND,
-    &BLAZE,
+    &RAVENOUS_RATS,
     &GOBLIN_GLIDER,
+    &GOBLIN_MATRON,
+    &GOBLIN_PIKER,
     &GOBLIN_RAIDER,
     &GOBLIN_WAR_STRIKE,
     &JAGGED_LIGHTNING,
     &OGRE_TASKMASTER,
-    &VOLCANIC_HAMMER,
     &WILDFIRE,
     &LONE_WOLF,
-    &MONSTROUS_GROWTH,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
+    BREATH_OF_LIFE_REPRINT,
+    PATH_OF_PEACE_REPRINT,
+    VENGEANCE_REPRINT,
+    EXHAUSTION_REPRINT,
+    BLAZE_REPRINT,
+    VOLCANIC_HAMMER_REPRINT,
+    MONSTROUS_GROWTH_REPRINT,
+];

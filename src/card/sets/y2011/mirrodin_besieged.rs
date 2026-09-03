@@ -129,6 +129,9 @@ pub(in crate::card::sets) static CHOKING_FUMES: CardRecord = CardRecord::new(
 );
 
 // MBS 5 — Divine Offering (reprint)
+const DIVINE_OFFERING_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1994::legends::DIVINE_OFFERING)
+        .with_art("fe7c7a65-5a96-4986-877b-b34583092bb6", "Terese Nielsen");
 
 // MBS 6 — Frantic Salvage
 // Audit: unsupported — Needs an ordered multi-target graveyard move so the controller can choose the relative order of any number of artifact cards placed on top of the library before drawing.
@@ -231,18 +234,12 @@ pub(in crate::card::sets) static LEONIN_RELIC_WARDER: CardRecord = CardRecord::n
     ),
 );
 
-// MBS 11 — Leonin Skyhunter
-pub(in crate::card::sets) static LEONIN_SKYHUNTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("275a47e1-816c-44f9-bd05-b8b56410436f"),
-    "Leonin Skyhunter",
-    crate::card::CardArt::new(
+// MBS 11 — Leonin Skyhunter (reprint)
+const LEONIN_SKYHUNTER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2003::mirrodin::LEONIN_SKYHUNTER).with_art(
         "f7eb723d-aa4c-4a38-98de-1faefffab56b",
         "Jana Schirmer & Johannes Voss",
-    ),
-    crate::card::CardSet::MirrodinBesieged,
-    CardRules::new_creature(mana_cost!("{W}{W}"), &["Cat", "Knight"], 2, 2)
-        .with_abilities(&[abilities::flying()]),
-);
+    );
 
 // MBS 12 — Loxodon Partisan
 pub(in crate::card::sets) static LOXODON_PARTISAN: CardRecord = CardRecord::new(
@@ -1081,28 +1078,10 @@ pub(in crate::card::sets) static PHYREXIAN_CRUSADER: CardRecord = CardRecord::ne
     ]),
 );
 
-// MBS 51 — Phyrexian Rager
-pub(in crate::card::sets) static PHYREXIAN_RAGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c0a29ba4-fe8b-442f-a8b5-8cce7c765011"),
-    "Phyrexian Rager",
-    crate::card::CardArt::new("f11889da-d5dd-4bb3-b3d0-0d90698f4f34", "Stephan Martiniere"),
-    crate::card::CardSet::MirrodinBesieged,
-    CardRules::new_creature(mana_cost!("{2}{B}"), &["Phyrexian", "Horror"], 2, 2).with_ability(
-        abilities::enters_trigger(
-            "When this creature enters, you draw a card and you lose 1 life.",
-            EffectDef::Sequence(&[
-                EffectDef::DrawCards {
-                    recipient: EffectRecipientDef::Controller,
-                    amount: ValueDef::Constant(1),
-                },
-                EffectDef::LoseLife {
-                    recipient: EffectRecipientDef::Controller,
-                    amount: ValueDef::Constant(1),
-                },
-            ]),
-        ),
-    ),
-);
+// MBS 51 — Phyrexian Rager (reprint)
+const PHYREXIAN_RAGER_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2001::apocalypse::PHYREXIAN_RAGER)
+        .with_art("f11889da-d5dd-4bb3-b3d0-0d90698f4f34", "Stephan Martiniere");
 
 // MBS 52 — Phyrexian Vatmother
 pub(in crate::card::sets) static PHYREXIAN_VATMOTHER: CardRecord = CardRecord::new(
@@ -3343,24 +3322,49 @@ pub(in crate::card::sets) static INKMOTH_NEXUS: CardRecord = CardRecord::new(
 );
 
 // MBS 146 — Plains (reprint)
+const PLAINS_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::PLAINS)
+        .with_art("0eb24b22-d812-466b-b8bf-6562283ee335", "James Paick");
 
 // MBS 147 — Plains (alternate printing)
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
+    .with_art("e76a9b20-746c-42e5-9977-f5dce6aef0f2", "James Paick");
 
 // MBS 148 — Island (reprint)
+const ISLAND_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::ISLAND)
+        .with_art("39c7b858-61e1-43ea-95b6-2a0079a802d2", "Jung Park");
 
 // MBS 149 — Island (alternate printing)
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
+    .with_art("37736b90-7ecd-4b74-aeb6-50d3a81bc31d", "Jung Park");
 
 // MBS 150 — Swamp (reprint)
+const SWAMP_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::SWAMP)
+        .with_art("ca98a492-5c4e-4527-8c03-2ab2442ba7e1", "Lars Grant-West");
 
 // MBS 151 — Swamp (alternate printing)
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
+    .with_art("c794f2c8-9c64-4b93-b7d9-3040f325d43c", "Lars Grant-West");
 
 // MBS 152 — Mountain (reprint)
+const MOUNTAIN_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::MOUNTAIN)
+        .with_art("47a55065-555a-4bdb-8ab1-8830ca5ba6fd", "Tomasz Jedruszek");
 
 // MBS 153 — Mountain (alternate printing)
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
+    .with_art("318699f3-3ee4-4355-aebd-8a5a9006e07d", "Tomasz Jedruszek");
 
 // MBS 154 — Forest (reprint)
+const FOREST_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::FOREST)
+        .with_art("c8c84076-d503-48df-9b6c-9d4a835501b6", "Mark Tedin");
 
 // MBS 155 — Forest (alternate printing)
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
+    .with_art("42b8aa7c-0195-4ce9-9de4-4e6d780455aa", "Mark Tedin");
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ACCORDER_PALADIN,
@@ -3372,7 +3376,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HERO_OF_BLADEHOLD,
     &KEMBA_S_LEGION,
     &LEONIN_RELIC_WARDER,
-    &LEONIN_SKYHUNTER,
     &LOXODON_PARTISAN,
     &MASTER_S_CALL,
     &MIRRAN_CRUSADER,
@@ -3412,7 +3415,6 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &NESTED_GHOUL,
     &PHYRESIS,
     &PHYREXIAN_CRUSADER,
-    &PHYREXIAN_RAGER,
     &PHYREXIAN_VATMOTHER,
     &SANGROMANCER,
     &SCOURGE_SERVANT,
@@ -3510,15 +3512,17 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&crate::card::sets::y1994::legends::DIVINE_OFFERING), // MBS 5
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::PLAINS),            // MBS 146
-    PrintingRecord::alternate(&catalog_lea::PLAINS, 1),                           // MBS 147
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::ISLAND),            // MBS 148
-    PrintingRecord::alternate(&catalog_lea::ISLAND, 1),                           // MBS 149
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::SWAMP),             // MBS 150
-    PrintingRecord::alternate(&catalog_lea::SWAMP, 1),                            // MBS 151
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::MOUNTAIN),          // MBS 152
-    PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1),                         // MBS 153
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::FOREST),            // MBS 154
-    PrintingRecord::alternate(&catalog_lea::FOREST, 1),                           // MBS 155
+    DIVINE_OFFERING_REPRINT,
+    LEONIN_SKYHUNTER_REPRINT,
+    PHYREXIAN_RAGER_REPRINT,
+    PLAINS_REPRINT,
+    PLAINS_ALTERNATE_1,
+    ISLAND_REPRINT,
+    ISLAND_ALTERNATE_1,
+    SWAMP_REPRINT,
+    SWAMP_ALTERNATE_1,
+    MOUNTAIN_REPRINT,
+    MOUNTAIN_ALTERNATE_1,
+    FOREST_REPRINT,
+    FOREST_ALTERNATE_1,
 ];

@@ -123,11 +123,6 @@ const SET_MODULES: &[SetModule] = &[
         y1994::fallen_empires::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
-        CardSet::Promo1994,
-        y1994::promo_1994::CARDS,
-        y1994::promo_1994::ADDITIONAL_PRINTINGS,
-    ),
-    SetModule::new(
         CardSet::FourthEdition,
         y1995::fourth_edition::CARDS,
         y1995::fourth_edition::ADDITIONAL_PRINTINGS,
@@ -906,6 +901,61 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::GuildsOfRavnica,
         y2018::guilds_of_ravnica::CARDS,
         y2018::guilds_of_ravnica::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::HarperPrismBookPromos,
+        y1994::harper_prism_book_promos::CARDS,
+        y1994::harper_prism_book_promos::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::DragonCon,
+        y1994::dragon_con::CARDS,
+        y1994::dragon_con::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Portal,
+        y1997::portal::CARDS,
+        y1997::portal::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Starter1999,
+        y1999::starter_1999::CARDS,
+        y1999::starter_1999::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Morningtide,
+        y2008::morningtide::CARDS,
+        y2008::morningtide::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Magic2010,
+        y2009::magic_2010::CARDS,
+        y2009::magic_2010::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Archenemy,
+        y2010::archenemy::CARDS,
+        y2010::archenemy::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::Commander2011,
+        y2011::commander_2011::CARDS,
+        y2011::commander_2011::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::OathOfTheGatewatch,
+        y2016::oath_of_the_gatewatch::CARDS,
+        y2016::oath_of_the_gatewatch::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::RivalsOfIxalan,
+        y2018::rivals_of_ixalan::CARDS,
+        y2018::rivals_of_ixalan::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::CoreSet2021,
+        y2020::core_set_2021::CARDS,
+        y2020::core_set_2021::ADDITIONAL_PRINTINGS,
     ),
 ];
 

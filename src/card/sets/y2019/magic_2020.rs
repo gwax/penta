@@ -20,15 +20,10 @@ pub(in crate::card::sets) static ANCESTRAL_BLADE: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
-// M20 34 — Raise the Alarm
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static RAISE_THE_ALARM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4be510c8-fc01-4374-ac04-7968d24480fe"),
-    "Raise the Alarm",
-    crate::card::CardArt::new("764a7a53-314e-4b1f-aa33-0f312d06df71", "Zoltan Boros"),
-    crate::card::CardSet::Magic2020,
-    crate::card::CardRules::unsupported(),
-);
+// M20 34 — Raise the Alarm (reprint)
+const RAISE_THE_ALARM_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2003::mirrodin::RAISE_THE_ALARM)
+        .with_art("764a7a53-314e-4b1f-aa33-0f312d06df71", "Zoltan Boros");
 
 // M20 54 — Cloudkin Seer
 // Audit: unsupported — Card rules have not been implemented.
@@ -255,7 +250,6 @@ pub(in crate::card::sets) static WILDFIRE_ELEMENTAL: CardRecord = CardRecord::ne
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ANCESTRAL_BLADE,
-    &RAISE_THE_ALARM,
     &CLOUDKIN_SEER,
     &LEYLINE_OF_COMBUSTION,
     &ELVISH_RECLAIMER,
@@ -265,4 +259,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &WILDFIRE_ELEMENTAL,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[RAISE_THE_ALARM_REPRINT];

@@ -1,6 +1,10 @@
 //! Coldsnap card records required by supported formats.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::CardType;
+use crate::ObjectPredicateDef;
+use crate::ZoneKind;
+use crate::ZonePlacement;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, ComparisonDef,
@@ -9,6 +13,61 @@ use crate::card::{
     TriggerEventDef, TurnStepDef, ValueDef, abilities,
 };
 use crate::{TargetIndex, mana_cost};
+
+// CSP 33 — Flashfreeze
+pub(in crate::card::sets) static FLASHFREEZE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("cefd9955-a195-4855-a00e-3809b96ca92b"),
+    "Flashfreeze",
+    crate::card::CardArt::new("c425a629-371f-4624-b7a1-b34818ecccad", "Brian Despain"),
+    crate::card::CardSet::Coldsnap,
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target red or green spell.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::Spell,
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::Color(ManaColor::Red),
+                        ObjectPredicateDef::Color(ManaColor::Green),
+                    ]),
+                ]),
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            },
+        )],
+        EffectDef::Counter {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Graveyard,
+            placement: ZonePlacement::Top,
+        },
+    )),
+);
+
+// CSP 54 — Deathmark
+pub(in crate::card::sets) static DEATHMARK: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("e72e8728-d0a0-4ee5-87c3-092ca94225e0"),
+    "Deathmark",
+    crate::card::CardArt::new("b101ff4a-8617-4c0a-8503-ed8c857ad000", "Steven Belledin"),
+    crate::card::CardSet::Coldsnap,
+    CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target green or white creature.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::Color(ManaColor::Green),
+                    ObjectPredicateDef::Color(ManaColor::White),
+                ]),
+            ]),
+        )],
+        EffectDef::Destroy {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            can_regenerate: true,
+            then: None,
+        },
+    )),
+);
 
 // CSP 138 — Mishra's Bauble
 pub(in crate::card::sets) static MISHRA_S_BAUBLE: CardRecord = CardRecord::new(
@@ -110,6 +169,7 @@ pub(in crate::card::sets) static DARK_DEPTHS: CardRecord = CardRecord::new(
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&MISHRA_S_BAUBLE, &DARK_DEPTHS];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&FLASHFREEZE, &DEATHMARK, &MISHRA_S_BAUBLE, &DARK_DEPTHS];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

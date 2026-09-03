@@ -188,65 +188,38 @@ pub(in crate::card::sets) static UNRULY_KRASIS: CardRecord = CardRecord::new_wit
     ]),
 );
 
-// CLU 94 — Repeal
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static REPEAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9e7dd929-4bba-46a6-86c9-b8ed853eb721"),
-    "Repeal",
-    crate::card::CardArt::new("265b80cd-2e9c-4e4b-a065-eafb29b3e07a", "Dan Murayama Scott"),
-    crate::card::CardSet::RavnicaClueEdition,
-    crate::card::CardRules::unsupported(),
-);
+// CLU 94 — Repeal (reprint)
+const REPEAL_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::guildpact::REPEAL)
+        .with_art("265b80cd-2e9c-4e4b-a065-eafb29b3e07a", "Dan Murayama Scott");
 
-// CLU 186 — Dimir Guildmage
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static DIMIR_GUILDMAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b9ab53af-749e-4559-85fa-f8d4181cf7da"),
-    "Dimir Guildmage",
-    crate::card::CardArt::new("0b963389-6231-4095-a1f4-33457ce51ff2", "Adam Rex"),
-    crate::card::CardSet::RavnicaClueEdition,
-    crate::card::CardRules::unsupported(),
-);
+// CLU 186 — Dimir Guildmage (reprint)
+const DIMIR_GUILDMAGE_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::DIMIR_GUILDMAGE)
+        .with_art("0b963389-6231-4095-a1f4-33457ce51ff2", "Adam Rex");
 
-// CLU 229 — Azorius Chancery
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static AZORIUS_CHANCERY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e58365d2-e4db-444b-b1a9-795668ad3038"),
-    "Azorius Chancery",
-    crate::card::CardArt::new("a9d629f3-24b0-400c-b054-b66250696708", "John Avon"),
-    crate::card::CardSet::RavnicaClueEdition,
-    crate::card::CardRules::unsupported(),
-);
+// CLU 229 — Azorius Chancery (reprint)
+const AZORIUS_CHANCERY_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::dissension::AZORIUS_CHANCERY)
+        .with_art("a9d629f3-24b0-400c-b054-b66250696708", "John Avon");
 
-// CLU 241 — Orzhov Basilica
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static ORZHOV_BASILICA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f9154d2a-3fc5-4fd6-9885-a810cb6b542a"),
-    "Orzhov Basilica",
-    crate::card::CardArt::new("7c14375a-98c1-4e57-bf0d-1bea89a6bbd9", "John Avon"),
-    crate::card::CardSet::RavnicaClueEdition,
-    crate::card::CardRules::unsupported(),
-);
+// CLU 241 — Orzhov Basilica (reprint)
+const ORZHOV_BASILICA_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2006::guildpact::ORZHOV_BASILICA)
+        .with_art("7c14375a-98c1-4e57-bf0d-1bea89a6bbd9", "John Avon");
 
-// CLU 246 — Selesnya Sanctuary
-// Audit: unsupported — Card rules have not been implemented.
-pub(in crate::card::sets) static SELESNYA_SANCTUARY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c5e51787-f9c9-4926-9df1-a384a3092676"),
-    "Selesnya Sanctuary",
-    crate::card::CardArt::new("fdc53c6a-8e28-4314-9bcf-b31b6c6f56d7", "John Avon"),
-    crate::card::CardSet::RavnicaClueEdition,
-    crate::card::CardRules::unsupported(),
-);
+// CLU 246 — Selesnya Sanctuary (reprint)
+const SELESNYA_SANCTUARY_REPRINT: PrintingRecord =
+    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::SELESNYA_SANCTUARY)
+        .with_art("fdc53c6a-8e28-4314-9bcf-b31b6c6f56d7", "John Avon");
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
-    &HEADLINER_SCARLETT,
-    &CARNAGE_INTERPRETER,
-    &UNRULY_KRASIS,
-    &REPEAL,
-    &DIMIR_GUILDMAGE,
-    &AZORIUS_CHANCERY,
-    &ORZHOV_BASILICA,
-    &SELESNYA_SANCTUARY,
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&HEADLINER_SCARLETT, &CARNAGE_INTERPRETER, &UNRULY_KRASIS];
+
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
+    REPEAL_REPRINT,
+    DIMIR_GUILDMAGE_REPRINT,
+    AZORIUS_CHANCERY_REPRINT,
+    ORZHOV_BASILICA_REPRINT,
+    SELESNYA_SANCTUARY_REPRINT,
 ];
-
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

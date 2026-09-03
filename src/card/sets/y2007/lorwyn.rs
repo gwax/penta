@@ -1,6 +1,8 @@
 //! Lorwyn cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::CounterKind;
+use crate::TriggerEventDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef,
@@ -10,6 +12,44 @@ use crate::card::{
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
+
+// LRW 34 — Oblivion Ring
+pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new_with_legacy_id(
+    192,
+    "Oblivion Ring",
+    CardArt::new("1e2a73ec-39be-4d23-8c25-17d7c174dcee", "Franz Vohwinkel"),
+    CardSet::Lorwyn,
+    CardRules::new_enchantment(mana_cost!("{2}{W}")).with_abilities(&[
+        abilities::enters_trigger_with_targets("When this enchantment enters, exile another target nonland permanent.", &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )], EffectDef::ExileLinkedToSource {
+                until_source_leaves: false,
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+face_down: false,
+then: None,
+}),
+        AbilityDef::triggered(
+            "When this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+            TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), None),
+            EffectDef::ReturnLinkedExiles {
+                object: ObjectPredicateDef::Any,
+                counters: None,
+                zone: ZoneKind::Battlefield,
+                grant: None,
+                controller: None,
+                transformed: false,
+            },
+        ),
+    ]),
+);
 
 // LRW 56 — Cryptic Command
 pub(in crate::card::sets) static CRYPTIC_COMMAND: CardRecord = CardRecord::new_with_legacy_id(
@@ -83,6 +123,19 @@ pub(in crate::card::sets) static MULLDRIFTER: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+// LRW 78 — Pestermite
+// Audit: unsupported — Card rules have not been implemented.
+pub(in crate::card::sets) static PESTERMITE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("f252ae53-443c-4a27-b8f0-639a9a2b8598"),
+    "Pestermite",
+    crate::card::CardArt::new(
+        "4c8b4f64-244c-4944-b23f-c383039d9767",
+        "Christopher Moeller",
+    ),
+    crate::card::CardSet::Lorwyn,
+    crate::card::CardRules::unsupported(),
+);
+
 // LRW 79 — Ponder
 pub(in crate::card::sets) static PONDER: CardRecord = CardRecord::new_with_legacy_id(
     2241,
@@ -141,6 +194,41 @@ pub(in crate::card::sets) static THOUGHTSEIZE: CardRecord = CardRecord::new_with
             },
         ]),
     )),
+);
+
+// LRW 173 — Hamletback Goliath
+pub(in crate::card::sets) static HAMLETBACK_GOLIATH: CardRecord = CardRecord::new_with_legacy_id(
+    1871,
+    "Hamletback Goliath",
+    CardArt::new(
+        "01ddeef1-f6f9-48c0-a93c-7bb3877c0e59",
+        "Paolo Parente & Brian Snõddy",
+    ),
+    CardSet::Lorwyn,
+    // "Another creature", with no controller clause: the opponent's arrivals
+    // feed it too, which is what makes it worth its cost.
+    CardRules::new_creature(mana_cost!("{6}{R}"), &["Giant", "Warrior"], 6, 6).with_ability(
+        AbilityDef::triggered(
+            "Whenever another creature enters, you may put X +1/+1 counters on this creature, \
+             where X is that creature's power.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::TriggeringObjectPower,
+                },
+            },
+        ),
+    ),
 );
 
 // LRW 194 — Tarfire
@@ -293,10 +381,13 @@ pub(in crate::card::sets) static SHIMMERING_GROTTO: CardRecord = CardRecord::new
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &OBLIVION_RING,
     &CRYPTIC_COMMAND,
     &MULLDRIFTER,
+    &PESTERMITE,
     &PONDER,
     &THOUGHTSEIZE,
+    &HAMLETBACK_GOLIATH,
     &TARFIRE,
     &WILD_RICOCHET,
     &THORN_OF_AMETHYST,

@@ -3,7 +3,6 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::sets::y1993::arabian_nights as catalog_arn;
 use crate::card::sets::y1997::weatherlight as catalog_wth;
-use crate::card::sets::y2013::magic_2014 as catalog_m14;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AggregateOperationDef, AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet,
@@ -138,6 +137,8 @@ pub(in crate::card::sets) static GOLDEN_WISH: CardRecord = CardRecord::new(
 );
 
 // JUD 13 — Guided Strike (reprint)
+const GUIDED_STRIKE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_wth::GUIDED_STRIKE)
+    .with_art("d13138c1-e98f-4803-8c68-ffc80139c168", "Dave Dorman");
 
 // JUD 14 — Lead Astray
 // Audit: unsupported — Card rules have not been implemented.
@@ -199,7 +200,32 @@ pub(in crate::card::sets) static PULSEMAGE_ADVOCATE: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
-// JUD 20 — Ray of Revelation (reprint)
+// JUD 20 — Ray of Revelation
+pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new_with_legacy_id(
+    201,
+    "Ray of Revelation",
+    CardArt::new("d7e2c5a4-cf92-46bd-9033-8036436488cb", "Cliff Childs"),
+    CardSet::Judgment,
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Destroy target enchantment.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Enchantment),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: None,
+                    owner: None,
+                },
+            )],
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+                then: None,
+            },
+        ),
+        abilities::flashback(mana_cost!("{G}")),
+    ]),
+);
 
 // JUD 21 — Selfless Exorcist
 // Audit: unsupported — Card rules have not been implemented.
@@ -277,7 +303,15 @@ pub(in crate::card::sets) static SPURNMAGE_ADVOCATE: CardRecord = CardRecord::ne
     crate::card::CardRules::unsupported(),
 );
 
-// JUD 28 — Suntail Hawk (reprint)
+// JUD 28 — Suntail Hawk
+pub(in crate::card::sets) static SUNTAIL_HAWK: CardRecord = CardRecord::new_with_legacy_id(
+    1160,
+    "Suntail Hawk",
+    CardArt::new("28a1f83c-a9ef-463e-97b5-2ca3b7232f82", "Heather Hudson"),
+    CardSet::Judgment,
+    CardRules::new_creature(mana_cost!("{W}"), &["Bird"], 1, 1)
+        .with_abilities(&[abilities::flying()]),
+);
 
 // JUD 29 — Test of Endurance
 // Audit: unsupported — Card rules have not been implemented.
@@ -1233,6 +1267,8 @@ pub(in crate::card::sets) static EPIC_STRUGGLE: CardRecord = CardRecord::new(
 );
 
 // JUD 113 — Erhnam Djinn (reprint)
+const ERHNAM_DJINN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_arn::ERHNAM_DJINN)
+    .with_art("5bcf61ba-37fd-4029-b299-add7cf9d70bc", "Greg Staples");
 
 // JUD 114 — Exoskeletal Armor
 // Audit: unsupported — Card rules have not been implemented.
@@ -1644,6 +1680,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PHANTOM_NOMAD,
     &PRISMATIC_STRANDS,
     &PULSEMAGE_ADVOCATE,
+    &RAY_OF_REVELATION,
     &SELFLESS_EXORCIST,
     &SHIELDMAGE_ADVOCATE,
     &SILVER_SERAPH,
@@ -1651,6 +1688,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SOULCATCHERS_AERIE,
     &SPIRIT_CAIRN,
     &SPURNMAGE_ADVOCATE,
+    &SUNTAIL_HAWK,
     &TEST_OF_ENDURANCE,
     &TRAINED_PRONGHORN,
     &UNQUESTIONED_AUTHORITY,
@@ -1767,9 +1805,5 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &RIFTSTONE_PORTAL,
 ];
 
-pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[
-    PrintingRecord::reprint(&catalog_wth::GUIDED_STRIKE), // JUD 13
-    PrintingRecord::reprint(&crate::card::sets::y2012::dark_ascension::RAY_OF_REVELATION), // JUD 20
-    PrintingRecord::reprint(&catalog_m14::SUNTAIL_HAWK),  // JUD 28
-    PrintingRecord::reprint(&catalog_arn::ERHNAM_DJINN),  // JUD 113
-];
+pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
+    &[GUIDED_STRIKE_REPRINT, ERHNAM_DJINN_REPRINT];
