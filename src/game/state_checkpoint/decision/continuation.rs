@@ -438,7 +438,11 @@ fn parse_continuation(
                     );
                 }
             };
-            validate_authored_decision(
+            // An ordered binding makes the live decision carry resolution
+            // order semantics, so the rebuilt one has to be allowed to as
+            // well; without this, restoring at a Sylvan Library draw-step
+            // choice fails closed on the kind alone.
+            validate_authored_choice(
                 observation,
                 state.chooser,
                 prompt,
@@ -447,6 +451,8 @@ fn parse_continuation(
                 state.minimum,
                 state.maximum,
                 &state.options,
+                matches!(binding, crate::card::ObjectChoiceBindingDef::OrderedObjects(_))
+                    .then_some(DecisionOrderSemantics::Resolution),
                 "object choice",
             )?;
             DecisionContinuation::ChooseForEffect {

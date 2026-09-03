@@ -284,6 +284,72 @@ fn chains_replacement_and_discard_choices_survive_checkpoint_round_trip() {
     assert_eq!(rebuilt_discard.cards_drawn_this_turn[0], 1);
 }
 
+/// The sibling below rebuilds once the ordered choice has been answered. This
+/// one rebuilds while it is still the pending question, which is the state a
+/// nightly sweep kept landing on: the choice carries resolution order
+/// semantics, and a checkpoint that refuses to hand an ordered choice back
+/// fails closed on the kind before it ever looks at the options.
+#[test]
+fn sylvan_library_ordered_choice_survives_checkpoint_round_trip() {
+    let mut game = crate::game::tests::ready_game();
+    game.turn = 2;
+    game.step = Step::Upkeep;
+    game.put_onto_battlefield(PlayerId::One, crate::card::cards::SYLVAN_LIBRARY)
+        .expect("Sylvan Library enters");
+    game.players[0].library = vec![
+        crate::game::tests::card(77_020, crate::card::cards::PLAINS, PlayerId::One),
+        crate::game::tests::card(77_021, crate::card::cards::MOUNTAIN, PlayerId::One),
+        crate::game::tests::card(77_022, crate::card::cards::FOREST, PlayerId::One),
+    ];
+
+    game.advance_step();
+    let first = game.priority;
+    game.apply(first, Action::PassPriority).unwrap();
+    game.apply(first.opponent(), Action::PassPriority).unwrap();
+    crate::game::tests::pass_until_decision(&mut game);
+    let offer = game.pending_decisions[0].observation.clone();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: offer.id,
+            options: vec![1],
+        },
+    )
+    .expect("the extra draws are accepted");
+
+    let choice = game.pending_decisions[0].observation.clone();
+    assert_eq!(
+        choice.order_semantics,
+        Some(DecisionOrderSemantics::Resolution)
+    );
+
+    let (_, mut rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 4_254);
+    let rebuilt_choice = rebuilt.pending_decisions[0].observation.clone();
+    assert_eq!(
+        rebuilt_choice.order_semantics,
+        Some(DecisionOrderSemantics::Resolution)
+    );
+    assert_eq!(rebuilt_choice.minimum, choice.minimum);
+    assert_eq!(rebuilt_choice.maximum, choice.maximum);
+
+    let chosen = rebuilt_choice
+        .options
+        .iter()
+        .take(2)
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    rebuilt
+        .apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: rebuilt_choice.id,
+                options: chosen,
+            },
+        )
+        .expect("the reconstructed ordered choice is still answerable");
+    assert!(!rebuilt.pending_decisions.is_empty());
+}
+
 #[test]
 fn sylvan_library_for_each_payment_resumes_after_checkpoint_round_trip() {
     let mut game = crate::game::tests::ready_game();

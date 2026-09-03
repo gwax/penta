@@ -120,11 +120,45 @@ fn validate_authored_decision(
     options: &[DecisionOption],
     description: &str,
 ) -> Result<(), String> {
+    validate_authored_choice(
+        observation,
+        player,
+        prompt,
+        visibility,
+        preference,
+        minimum,
+        maximum,
+        options,
+        None,
+        description,
+    )
+}
+
+/// The same check for an authored choice that carries order semantics. An
+/// ordered binding asks one question -- pick these, in this order -- so the
+/// engine marks the decision `Resolution` and the bounds stay the authored
+/// ones. `validate_ordered_authored_decision` below is the separate case where
+/// ordering *is* the whole decision and every candidate must be placed.
+#[allow(clippy::too_many_arguments)]
+fn validate_authored_choice(
+    observation: &DecisionObservation,
+    player: PlayerId,
+    prompt: &str,
+    visibility: DecisionVisibility,
+    preference: DecisionPreference,
+    minimum: usize,
+    maximum: usize,
+    options: &[DecisionOption],
+    order_semantics: Option<DecisionOrderSemantics>,
+    description: &str,
+) -> Result<(), String> {
     let expected_minimum = minimum.min(options.len());
     let expected_maximum = maximum.max(expected_minimum);
     let mismatch = if observation.player != player {
         "player"
-    } else if observation.kind != DecisionKind::Choice || observation.order_semantics.is_some() {
+    } else if observation.kind != DecisionKind::Choice
+        || observation.order_semantics != order_semantics
+    {
         "kind"
     } else if observation.prompt != prompt {
         "prompt"
