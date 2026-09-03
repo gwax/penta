@@ -248,6 +248,8 @@ impl AdditionalCostIndex {
 pub struct Binding(u8);
 
 const BINDING_LABELS: &[&str] = &[
+    "alpine_moon_name",
+    "anointed_peacekeeper_name",
     "atraxa_chosen",
     "atraxa_rest",
     "balance_creatures_kept",
@@ -256,6 +258,7 @@ const BINDING_LABELS: &[&str] = &[
     "balance_hand_kept",
     "balance_lands_kept",
     "balance_lands_sacrificed",
+    "booby_trap_name",
     "branch_output",
     "call_of_the_wild_creature",
     "call_of_the_wild_other",
@@ -265,10 +268,12 @@ const BINDING_LABELS: &[&str] = &[
     "consult_kicked_rest",
     "consult_normal_chosen",
     "consult_normal_rest",
+    "counterbore_target",
     "delver_matching",
     "delver_other",
     "devourer_exiled",
     "devourer_top",
+    "disruptor_flute_name",
     "divine_reckoning_chosen",
     "divine_reckoning_destroyed",
     "domri_creature",
@@ -278,6 +283,7 @@ const BINDING_LABELS: &[&str] = &[
     "epic_experiment_exiled",
     "epic_experiment_rest",
     "exiled_creature",
+    "extirpate_target",
     "fact_chosen",
     "fact_first",
     "fact_second",
@@ -314,11 +320,13 @@ const BINDING_LABELS: &[&str] = &[
     "liliana_spared_pile",
     "manifest_dread_graveyard",
     "manifest_dread_permanent",
+    "meddling_mage_name",
     "mercurial_chemister_discarded",
     "milled_card",
     "milled_cards",
     "nadu_land",
     "nadu_nonland",
+    "nevermore_name",
     "object",
     "objects",
     "objects_2",
@@ -326,6 +334,9 @@ const BINDING_LABELS: &[&str] = &[
     "oracle_rest",
     "oracle_top",
     "outcome_owned_by_you",
+    "petrified_hamlet_name",
+    "phyrexian_revoker_name",
+    "pithing_needle_name",
     "produced_cards",
     "prophecy_land",
     "prophecy_nonland",
@@ -340,10 +351,15 @@ const BINDING_LABELS: &[&str] = &[
     "scry_ordered_bottom",
     "scry_ordered_top",
     "scry_top",
+    "search_and_exile_graveyard",
+    "search_and_exile_hand",
+    "search_and_exile_library",
+    "sorcerous_spyglass_name",
     "sphinx_chosen",
     "sphinx_first",
     "sphinx_second",
     "sphinx_unchosen",
+    "surgical_extraction_target",
     "surveil_graveyard",
     "surveil_top",
     "suspended_card",
@@ -353,13 +369,9 @@ const BINDING_LABELS: &[&str] = &[
     "ugin_spared_permanents",
     "uncovered_clues_chosen",
     "uncovered_clues_remainder",
+    "voidstone_gargoyle_name",
     "wilderness_remainder",
     "wilds_land",
-    // New labels append so every established compact identifier stays stable.
-    "counterbore_target",
-    "extirpate_target",
-    "search_and_exile_hand",
-    "search_and_exile_library",
 ];
 
 #[allow(non_upper_case_globals)]
@@ -388,6 +400,15 @@ impl Binding {
         } else {
             Some(BINDING_LABELS[self.0 as usize])
         }
+    }
+
+    #[must_use]
+    pub(crate) fn try_from_label(label: &str) -> Option<Self> {
+        BINDING_LABELS
+            .iter()
+            .position(|candidate| *candidate == label)
+            .and_then(|index| u8::try_from(index).ok())
+            .map(Self)
     }
 }
 
