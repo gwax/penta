@@ -1,6 +1,6 @@
 //! Core Set 2020 cards cataloged for the Vintage Cube.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, CounterKind, EffectDef,
@@ -13,27 +13,26 @@ use crate::{TargetIndex, mana_cost};
 // M20 3 — Ancestral Blade
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANCESTRAL_BLADE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2ba18114-af6c-48cd-82c9-eb6541d566bf"),
     "Ancestral Blade",
-    crate::card::CardArt::new("2ba18114-af6c-48cd-82c9-eb6541d566bf", "Scott Murphy"),
+    "2ba18114-af6c-48cd-82c9-eb6541d566bf",
+    "Scott Murphy",
     crate::card::CardSet::Magic2020,
     crate::card::CardRules::unsupported(),
 );
 
 // M20 34 — Raise the Alarm (reprint)
-const RAISE_THE_ALARM_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2003::mirrodin::RAISE_THE_ALARM)
-        .with_art("764a7a53-314e-4b1f-aa33-0f312d06df71", "Zoltan Boros");
+const RAISE_THE_ALARM_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2003::mirrodin::RAISE_THE_ALARM,
+    "764a7a53-314e-4b1f-aa33-0f312d06df71",
+    "Zoltan Boros",
+);
 
 // M20 54 — Cloudkin Seer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CLOUDKIN_SEER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e2111753-a930-403f-9d94-a86dfcb069da"),
     "Cloudkin Seer",
-    crate::card::CardArt::new(
-        "e2111753-a930-403f-9d94-a86dfcb069da",
-        "Anastasia Ovchinnikova",
-    ),
+    "e2111753-a930-403f-9d94-a86dfcb069da",
+    "Anastasia Ovchinnikova",
     crate::card::CardSet::Magic2020,
     crate::card::CardRules::unsupported(),
 );
@@ -41,21 +40,18 @@ pub(in crate::card::sets) static CLOUDKIN_SEER: CardRecord = CardRecord::new(
 // M20 148 — Leyline of Combustion
 // Audit: unsupported — Needs one grouped trigger for a spell or ability targeting the player and/or any controlled permanents.
 pub(in crate::card::sets) static LEYLINE_OF_COMBUSTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3a93c8e2-fb27-43af-83a7-2bd4d40e0eff"),
     "Leyline of Combustion",
-    CardArt::new("3a93c8e2-fb27-43af-83a7-2bd4d40e0eff", "Noah Bradley"),
+    "3a93c8e2-fb27-43af-83a7-2bd4d40e0eff",
+    "Noah Bradley",
     CardSet::Magic2020,
     CardRules::unsupported(),
 );
 
 // M20 169 — Elvish Reclaimer
 pub(in crate::card::sets) static ELVISH_RECLAIMER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("39c431d7-d94b-46c4-bb89-f3db56214ab4"),
     "Elvish Reclaimer",
-    CardArt::new(
-        "39c431d7-d94b-46c4-bb89-f3db56214ab4",
-        "Victor Adame Minguez",
-    ),
+    "39c431d7-d94b-46c4-bb89-f3db56214ab4",
+    "Victor Adame Minguez",
     CardSet::Magic2020,
     // One mana for a body that turns a spent fetchland into whatever land
     // the deck is built around, and is a 3/4 by the time it has done it
@@ -118,9 +114,9 @@ pub(in crate::card::sets) static ELVISH_RECLAIMER: CardRecord = CardRecord::new(
 
 // M20 179 — Leyline of Abundance
 pub(in crate::card::sets) static LEYLINE_OF_ABUNDANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c68e8342-78d2-4826-a287-64c371b97d19"),
     "Leyline of Abundance",
-    CardArt::new("c68e8342-78d2-4826-a287-64c371b97d19", "Noah Bradley"),
+    "c68e8342-78d2-4826-a287-64c371b97d19",
+    "Noah Bradley",
     CardSet::Magic2020,
     CardRules::new_enchantment(mana_cost!("{2}{G}{G}")).with_abilities(&[
         abilities::begin_game_on_battlefield(
@@ -151,10 +147,10 @@ pub(in crate::card::sets) static LEYLINE_OF_ABUNDANCE: CardRecord = CardRecord::
 );
 
 // M20 230 — Manifold Key
-pub(in crate::card::sets) static MANIFOLD_KEY: CardRecord = CardRecord::new_with_legacy_id(
-    2207,
+pub(in crate::card::sets) static MANIFOLD_KEY: CardRecord = CardRecord::new(
     "Manifold Key",
-    CardArt::new("715e637a-dfd8-45a0-b1ea-53e4abd29307", "Lake Hurwitz"),
+    "715e637a-dfd8-45a0-b1ea-53e4abd29307",
+    "Lake Hurwitz",
     CardSet::Magic2020,
     // One mana that untaps a Mox for profit and, when there is nothing to
     // untap, pushes a creature through instead.
@@ -197,9 +193,9 @@ pub(in crate::card::sets) static MANIFOLD_KEY: CardRecord = CardRecord::new_with
 
 // M20 247 — Field of the Dead
 pub(in crate::card::sets) static FIELD_OF_THE_DEAD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("470ca3f4-29aa-4c4c-8ff2-8cdd70c69943"),
     "Field of the Dead",
-    CardArt::new("470ca3f4-29aa-4c4c-8ff2-8cdd70c69943", "Kev Walker"),
+    "470ca3f4-29aa-4c4c-8ff2-8cdd70c69943",
+    "Kev Walker",
     CardSet::Magic2020,
     // A land that makes colourless and comes in tapped, which is what a deck
     // pays for turning every land drop after the seventh into a 2/2.
@@ -241,9 +237,9 @@ pub(in crate::card::sets) static FIELD_OF_THE_DEAD: CardRecord = CardRecord::new
 // M20 297 — Wildfire Elemental
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WILDFIRE_ELEMENTAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("272e317c-55c4-43b2-91aa-3e0009cfd7d5"),
     "Wildfire Elemental",
-    crate::card::CardArt::new("272e317c-55c4-43b2-91aa-3e0009cfd7d5", "Svetlin Velinov"),
+    "272e317c-55c4-43b2-91aa-3e0009cfd7d5",
+    "Svetlin Velinov",
     crate::card::CardSet::Magic2020,
     crate::card::CardRules::unsupported(),
 );

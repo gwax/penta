@@ -1,23 +1,23 @@
 //! Planar Chaos cards cataloged as cross-format rules-engine test cases.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::ControlDurationDef;
 use crate::ObjectRefDef;
 use crate::PlayerRefDef;
 use crate::TurnStepDef;
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AggregateOperationDef, AppliedEffectDef,
-    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind, EffectDef,
+    BasicLandType, CardRules, CardSet, CardSupertype, CardType, CounterKind, EffectDef,
     EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, ObjectValueAggregateDef,
     ObjectValueDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
 // PLC 25 — Mana Tithe
-pub(in crate::card::sets) static MANA_TITHE: CardRecord = CardRecord::new_with_legacy_id(
-    2114,
+pub(in crate::card::sets) static MANA_TITHE: CardRecord = CardRecord::new(
     "Mana Tithe",
-    CardArt::new("7d48d622-f397-4f31-b1a5-0c23f60aa71c", "Martina Pilcerova"),
+    "7d48d622-f397-4f31-b1a5-0c23f60aa71c",
+    "Martina Pilcerova",
     CardSet::PlanarChaos,
     CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
         "Counter target spell unless its controller pays {1}.",
@@ -36,9 +36,9 @@ pub(in crate::card::sets) static MANA_TITHE: CardRecord = CardRecord::new_with_l
 // PLC 26 — Mesa Enchantress
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MESA_ENCHANTRESS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4037d6de-f30b-483c-83a8-9a4e2978f7fc"),
     "Mesa Enchantress",
-    crate::card::CardArt::new("691dcce5-ac3d-4970-b3ff-3db485f9f5c3", "Randy Gallegos"),
+    "4037d6de-f30b-483c-83a8-9a4e2978f7fc",
+    "Randy Gallegos",
     crate::card::CardSet::PlanarChaos,
     crate::card::CardRules::unsupported(),
 );
@@ -46,18 +46,18 @@ pub(in crate::card::sets) static MESA_ENCHANTRESS: CardRecord = CardRecord::new(
 // PLC 31 — Sunlance
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUNLANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("46144ca5-aa81-4314-a1e5-1716f8565d70"),
     "Sunlance",
-    crate::card::CardArt::new("46144ca5-aa81-4314-a1e5-1716f8565d70", "Volkan Baǵa"),
+    "46144ca5-aa81-4314-a1e5-1716f8565d70",
+    "Volkan Baǵa",
     crate::card::CardSet::PlanarChaos,
     crate::card::CardRules::unsupported(),
 );
 
 // PLC 70 — Enslave
 pub(in crate::card::sets) static ENSLAVE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6c6283e1-e4f1-4ff6-be01-b66ab623e0ac"),
     "Enslave",
-    crate::card::CardArt::new("17c2f5f0-1f37-4f51-9c10-c02e2ef7d4ee", "Chris Rahn"),
+    "6c6283e1-e4f1-4ff6-be01-b66ab623e0ac",
+    "Zoltan Boros & Gabor Szikszai",
     crate::card::CardSet::PlanarChaos,
     CardRules::new_enchantment(mana_cost!("{4}{B}{B}"))
         .with_subtypes(&["Aura"])
@@ -92,9 +92,9 @@ pub(in crate::card::sets) static ENSLAVE: CardRecord = CardRecord::new(
 
 // PLC 128 — Fungal Behemoth
 pub(in crate::card::sets) static FUNGAL_BEHEMOTH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("53c1910b-9475-4551-b9a0-4b24511a6f98"),
     "Fungal Behemoth",
-    CardArt::new("53c1910b-9475-4551-b9a0-4b24511a6f98", "Mark Tedin"),
+    "53c1910b-9475-4551-b9a0-4b24511a6f98",
+    "Mark Tedin",
     CardSet::PlanarChaos,
     CardRules::new_creature(mana_cost!("{3}{G}"), &["Fungus"], 0, 0).with_abilities(&[
         AbilityDef::static_ability(
@@ -151,26 +151,25 @@ pub(in crate::card::sets) static FUNGAL_BEHEMOTH: CardRecord = CardRecord::new(
 );
 
 // PLC 165 — Urborg, Tomb of Yawgmoth
-pub(in crate::card::sets) static URBORG_TOMB_OF_YAWGMOTH: CardRecord =
-    CardRecord::new_with_legacy_id(
-        261,
-        "Urborg, Tomb of Yawgmoth",
-        CardArt::new("19e1224f-82cb-4f41-8739-f880cba61bbb", "John Avon"),
-        CardSet::PlanarChaos,
-        CardRules::new_land(&[])
-            .with_supertype(CardSupertype::Legendary)
-            .with_ability(AbilityDef::static_ability(
-                "Each land is a Swamp in addition to its other land types.",
-                EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::matching_objects(
-                        ObjectPredicateDef::HasType(CardType::Land),
-                        &[ZoneKind::Battlefield],
-                        PlayerRelation::Any,
-                    ),
-                    effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Swamp]),
-                },
-            )),
-    );
+pub(in crate::card::sets) static URBORG_TOMB_OF_YAWGMOTH: CardRecord = CardRecord::new(
+    "Urborg, Tomb of Yawgmoth",
+    "19e1224f-82cb-4f41-8739-f880cba61bbb",
+    "John Avon",
+    CardSet::PlanarChaos,
+    CardRules::new_land(&[])
+        .with_supertype(CardSupertype::Legendary)
+        .with_ability(AbilityDef::static_ability(
+            "Each land is a Swamp in addition to its other land types.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                effect: AppliedEffectDef::add_basic_land_types(&[BasicLandType::Swamp]),
+            },
+        )),
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MANA_TITHE,

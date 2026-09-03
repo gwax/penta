@@ -1,14 +1,14 @@
 //! Duskmourn: House of Horror cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::CardComposition;
 use crate::card::CostQuantityDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
-    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CardTypeSet, CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
-    CopyStackObjectDef, CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,
+    BattlefieldEntryModificationDef, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
+    CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CopyStackObjectDef,
+    CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,
     DamageRecipientMatcherDef, DamageSourceMatcherDef, DiscardSelectionDef, EffectDef,
     EffectRecipientDef, EmblemCharacteristics, GraveyardPlayPermissionDef, ManaColor,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef,
@@ -21,10 +21,10 @@ use crate::ids::ParentBinding;
 use crate::{TargetIndex, mana_cost};
 
 // DSK 6 — Enduring Innocence
-pub(in crate::card::sets) static ENDURING_INNOCENCE: CardRecord = CardRecord::new_with_legacy_id(
-    2222,
+pub(in crate::card::sets) static ENDURING_INNOCENCE: CardRecord = CardRecord::new(
     "Enduring Innocence",
-    CardArt::new("6d908299-aac0-46a6-8fa5-780d5b3e0386", "Liiga Smilshkalne"),
+    "08f79439-b8f8-418f-9772-26d81844749e",
+    "Liiga Smilshkalne",
     CardSet::DuskmournHouseOfHorror,
     // Answering it costs two cards: one to kill the creature and one for the
     // enchantment that gets up afterwards and keeps drawing.
@@ -89,9 +89,9 @@ pub(in crate::card::sets) static ENDURING_INNOCENCE: CardRecord = CardRecord::ne
 // DSK 18 — Leyline of Hope
 // Audit: unsupported — Needs ordered additive life-gain replacement effects and a starting-life-relative static condition.
 pub(in crate::card::sets) static LEYLINE_OF_HOPE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("40960e47-3065-485e-aede-29a62411034e"),
     "Leyline of Hope",
-    CardArt::new("40960e47-3065-485e-aede-29a62411034e", "Sergey Glushakov"),
+    "40960e47-3065-485e-aede-29a62411034e",
+    "Sergey Glushakov",
     CardSet::DuskmournHouseOfHorror,
     CardRules::unsupported(),
 );
@@ -99,18 +99,18 @@ pub(in crate::card::sets) static LEYLINE_OF_HOPE: CardRecord = CardRecord::new(
 // DSK 36 — Trapped in the Screen
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRAPPED_IN_THE_SCREEN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1fe95bfb-8ca7-434f-a2e7-a6b2e699584e"),
     "Trapped in the Screen",
-    crate::card::CardArt::new("1fe95bfb-8ca7-434f-a2e7-a6b2e699584e", "Michael Phillippi"),
+    "1fe95bfb-8ca7-434f-a2e7-a6b2e699584e",
+    "Michael Phillippi",
     crate::card::CardSet::DuskmournHouseOfHorror,
     crate::card::CardRules::unsupported(),
 );
 
 // DSK 42 — Abhorrent Oculus
-pub(in crate::card::sets) static ABHORRENT_OCULUS: CardRecord = CardRecord::new_with_legacy_id(
-    2270,
+pub(in crate::card::sets) static ABHORRENT_OCULUS: CardRecord = CardRecord::new(
     "Abhorrent Oculus",
-    CardArt::new("d2705b43-a94a-44c0-8740-82e0b296820c", "Bryan Sola"),
+    "d2705b43-a94a-44c0-8740-82e0b296820c",
+    "Bryan Sola",
     CardSet::DuskmournHouseOfHorror,
     // A three-mana 5/5 flier for a deck that filled its own graveyard on
     // purpose, and a body every turn afterwards for nothing.
@@ -145,19 +145,19 @@ pub(in crate::card::sets) static ABHORRENT_OCULUS: CardRecord = CardRecord::new_
 // DSK 78 — Unable to Scream
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNABLE_TO_SCREAM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7c59e0cd-10a8-4a32-9c0a-a2c6ef1ed9a6"),
     "Unable to Scream",
-    crate::card::CardArt::new("7c59e0cd-10a8-4a32-9c0a-a2c6ef1ed9a6", "Fariba Khamseh"),
+    "7c59e0cd-10a8-4a32-9c0a-a2c6ef1ed9a6",
+    "Fariba Khamseh",
     crate::card::CardSet::DuskmournHouseOfHorror,
     crate::card::CardRules::unsupported(),
 );
 
 // DSK 113 — Overlord of the Balemurk
 pub(in crate::card::sets) static OVERLORD_OF_THE_BALEMURK: CardRecord =
-    CardRecord::new_with_legacy_id(
-        2234,
-        "Overlord of the Balemurk",
-        CardArt::new("9b911653-7b96-4cf3-a907-13c5c53a14f7", "Babs Webb"),
+    CardRecord::new(
+    "Overlord of the Balemurk",
+    "9b911653-7b96-4cf3-a907-13c5c53a14f7",
+    "Babs Webb",
         CardSet::DuskmournHouseOfHorror,
         // Two mana for the trigger now and a 5/5 five turns later, which is the
         // whole appeal: the enchantment does the work while the body waits.
@@ -248,9 +248,9 @@ pub(in crate::card::sets) static OVERLORD_OF_THE_BALEMURK: CardRecord =
 
 // DSK 136 — Fear of Missing Out
 pub(in crate::card::sets) static FEAR_OF_MISSING_OUT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9d48aaff-46ab-411b-9456-171d4709f951"),
     "Fear of Missing Out",
-    CardArt::new("9d48aaff-46ab-411b-9456-171d4709f951", "John Stanko"),
+    "9d48aaff-46ab-411b-9456-171d4709f951",
+    "John Stanko",
     CardSet::DuskmournHouseOfHorror,
     // Two mana for a body that fills its own graveyard on the way in and
     // then, once the graveyard is deep enough, hands the whole team a second
@@ -303,9 +303,9 @@ pub(in crate::card::sets) static FEAR_OF_MISSING_OUT: CardRecord = CardRecord::n
 
 // DSK 143 — Leyline of Resonance
 pub(in crate::card::sets) static LEYLINE_OF_RESONANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("92c5f0e3-345a-40a8-9cda-565a62156692"),
     "Leyline of Resonance",
-    CardArt::new("92c5f0e3-345a-40a8-9cda-565a62156692", "Sergey Glushakov"),
+    "92c5f0e3-345a-40a8-9cda-565a62156692",
+    "Sergey Glushakov",
     CardSet::DuskmournHouseOfHorror,
     CardRules::new_enchantment(mana_cost!("{2}{R}{R}")).with_abilities(&[
         abilities::begin_game_on_battlefield(
@@ -344,9 +344,9 @@ pub(in crate::card::sets) static LEYLINE_OF_RESONANCE: CardRecord = CardRecord::
 // DSK 178 — Flesh Burrower
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLESH_BURROWER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("60499c90-a512-4abb-98eb-0735a7138421"),
     "Flesh Burrower",
-    crate::card::CardArt::new("60499c90-a512-4abb-98eb-0735a7138421", "Maxime Minard"),
+    "60499c90-a512-4abb-98eb-0735a7138421",
+    "Maxime Minard",
     crate::card::CardSet::DuskmournHouseOfHorror,
     crate::card::CardRules::unsupported(),
 );
@@ -354,9 +354,9 @@ pub(in crate::card::sets) static FLESH_BURROWER: CardRecord = CardRecord::new(
 // DSK 188 — Leyline of Mutation
 // Audit: unsupported — Needs a battlefield-granted alternative casting cost over every spell.
 pub(in crate::card::sets) static LEYLINE_OF_MUTATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2359b670-41f0-4ec7-8db9-3f87f7577bc3"),
     "Leyline of Mutation",
-    CardArt::new("2359b670-41f0-4ec7-8db9-3f87f7577bc3", "Sergey Glushakov"),
+    "2359b670-41f0-4ec7-8db9-3f87f7577bc3",
+    "Sergey Glushakov",
     CardSet::DuskmournHouseOfHorror,
     CardRules::unsupported(),
 );
@@ -364,9 +364,9 @@ pub(in crate::card::sets) static LEYLINE_OF_MUTATION: CardRecord = CardRecord::n
 // DSK 191 — Monstrous Emergence
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MONSTROUS_EMERGENCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b999eb47-b842-47f1-be91-c79fc46e1896"),
     "Monstrous Emergence",
-    crate::card::CardArt::new("b999eb47-b842-47f1-be91-c79fc46e1896", "Loïc Canavaggia"),
+    "b999eb47-b842-47f1-be91-c79fc46e1896",
+    "Loïc Canavaggia",
     crate::card::CardSet::DuskmournHouseOfHorror,
     crate::card::CardRules::unsupported(),
 );
@@ -456,24 +456,23 @@ fn walk_in_closet_composition() -> CardComposition {
     )
 }
 
-pub(in crate::card::sets) static WALK_IN_CLOSET_FORGOTTEN_CELLAR: CardRecord =
-    CardRecord::new_with_legacy_id(
-        2305,
-        "Walk-In Closet // Forgotten Cellar",
-        CardArt::new("0adcd4e5-d542-4293-8774-ace2305ef820", "Mikl\u{f3}s Ligeti"),
-        CardSet::DuskmournHouseOfHorror,
-        // Three mana for Crucible of Worlds, and five more whenever the game
-        // gives you nothing better to do -- which is what a Room is for: a card
-        // that is cheap early and still has something left late.
-        walk_in_closet_rules(),
-    )
-    .with_composition(walk_in_closet_composition);
+pub(in crate::card::sets) static WALK_IN_CLOSET_FORGOTTEN_CELLAR: CardRecord = CardRecord::new(
+    "Walk-In Closet // Forgotten Cellar",
+    "0adcd4e5-d542-4293-8774-ace2305ef820",
+    "Miklós Ligeti",
+    CardSet::DuskmournHouseOfHorror,
+    // Three mana for Crucible of Worlds, and five more whenever the game
+    // gives you nothing better to do -- which is what a Room is for: a card
+    // that is cheap early and still has something left late.
+    walk_in_closet_rules(),
+)
+.with_composition(walk_in_closet_composition);
 
 // DSK 220 — Kaito, Bane of Nightmares
 pub(in crate::card::sets) static KAITO_BANE_OF_NIGHTMARES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("55a14f30-4ff9-4472-90a6-c3139f1c18e5"),
     "Kaito, Bane of Nightmares",
-    CardArt::new("55a14f30-4ff9-4472-90a6-c3139f1c18e5", "Joshua Raphael"),
+    "55a14f30-4ff9-4472-90a6-c3139f1c18e5",
+    "Joshua Raphael",
     CardSet::DuskmournHouseOfHorror,
     // Four mana, or a ninjutsu out of a connected attacker: he arrives
     // attacking, is a hexproof 3/4 for as long as it is your turn, and is a
@@ -574,10 +573,10 @@ pub(in crate::card::sets) static KAITO_BANE_OF_NIGHTMARES: CardRecord = CardReco
 );
 
 // DSK 248 — Ghost Vacuum
-pub(in crate::card::sets) static GHOST_VACUUM: CardRecord = CardRecord::new_with_legacy_id(
-    2289,
+pub(in crate::card::sets) static GHOST_VACUUM: CardRecord = CardRecord::new(
     "Ghost Vacuum",
-    CardArt::new("8ac39c01-127f-4471-bc74-11a90c48e306", "David Szabo"),
+    "8ac39c01-127f-4471-bc74-11a90c48e306",
+    "David Szabo",
     CardSet::DuskmournHouseOfHorror,
     // One mana of graveyard hate that the deck playing it can cash in for a
     // board, which is what keeps it in a cube where dead cards are the cost
@@ -659,18 +658,18 @@ pub(in crate::card::sets) static GHOST_VACUUM: CardRecord = CardRecord::new_with
 // DSK 249 — Glimmerlight
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GLIMMERLIGHT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1071691c-5c65-42d4-ac96-d302185ca678"),
     "Glimmerlight",
-    crate::card::CardArt::new("1071691c-5c65-42d4-ac96-d302185ca678", "Wero Gallo"),
+    "1071691c-5c65-42d4-ac96-d302185ca678",
+    "Wero Gallo",
     crate::card::CardSet::DuskmournHouseOfHorror,
     crate::card::CardRules::unsupported(),
 );
 
 // DSK 256 — Blazemire Verge
 pub(in crate::card::sets) static BLAZEMIRE_VERGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d151c8e2-d715-470d-868a-f45191db9fa0"),
     "Blazemire Verge",
-    CardArt::new("d151c8e2-d715-470d-868a-f45191db9fa0", "Andrew Mar"),
+    "d151c8e2-d715-470d-868a-f45191db9fa0",
+    "Andrew Mar",
     CardSet::DuskmournHouseOfHorror,
     // Untapped and free either way: the black is unconditional, and the red
     // is what the rest of the mana base is for.
@@ -704,12 +703,9 @@ pub(in crate::card::sets) static BLAZEMIRE_VERGE: CardRecord = CardRecord::new(
 
 // DSK 270 — Thornspire Verge
 pub(in crate::card::sets) static THORNSPIRE_VERGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7e1cdc03-6faa-4138-9a52-caafbe34fb59"),
     "Thornspire Verge",
-    CardArt::new(
-        "7e1cdc03-6faa-4138-9a52-caafbe34fb59",
-        "Kasia 'Kafis' Zielińska",
-    ),
+    "7e1cdc03-6faa-4138-9a52-caafbe34fb59",
+    "Kasia 'Kafis' Zielińska",
     CardSet::DuskmournHouseOfHorror,
     // Untapped and free either way: the red is unconditional, and the green
     // is what the rest of the mana base is for.
@@ -744,18 +740,18 @@ pub(in crate::card::sets) static THORNSPIRE_VERGE: CardRecord = CardRecord::new(
 // DSK 295 — Clockwork Percussionist
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CLOCKWORK_PERCUSSIONIST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("10986e5a-9fc6-41e2-8352-289328245171"),
     "Clockwork Percussionist",
-    crate::card::CardArt::new("e44340c7-d3bb-4cf9-a105-ebbf6ce3ace1", "Eric Wilkerson"),
+    "e44340c7-d3bb-4cf9-a105-ebbf6ce3ace1",
+    "Eric Wilkerson",
     crate::card::CardSet::DuskmournHouseOfHorror,
     crate::card::CardRules::unsupported(),
 );
 
 // DSK 314 — Chainsaw
 pub(in crate::card::sets) static CHAINSAW: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1c8d0f4e-6b1e-4444-8851-adf857273964"),
     "Chainsaw",
-    CardArt::new("1c8d0f4e-6b1e-4444-8851-adf857273964", "Alexis Ziritt"),
+    "1c8d0f4e-6b1e-4444-8851-adf857273964",
+    "Alexis Ziritt",
     CardSet::DuskmournHouseOfHorror,
     // Two mana that shoots something on the way in and then grows for the
     // rest of the game, on a board where creatures keep dying anyway.
@@ -808,19 +804,26 @@ pub(in crate::card::sets) static CHAINSAW: CardRecord = CardRecord::new(
 );
 
 // DSK 316 — Fear of Missing Out (alternate printing)
-const FEAR_OF_MISSING_OUT_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&FEAR_OF_MISSING_OUT, 1)
-        .with_art("45b924a5-6533-4ca6-bd2e-32debdfb6c08", "Cacho Rubione");
+const FEAR_OF_MISSING_OUT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &FEAR_OF_MISSING_OUT,
+    1,
+    "45b924a5-6533-4ca6-bd2e-32debdfb6c08",
+    "Cacho Rubione",
+);
 
 // DSK 329 — Blazemire Verge (alternate printing)
-const BLAZEMIRE_VERGE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&BLAZEMIRE_VERGE, 1)
-    .with_art("73a926c5-ba2b-4ac5-9717-6c9181f9a827", "Allen Douglas");
+const BLAZEMIRE_VERGE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &BLAZEMIRE_VERGE,
+    1,
+    "73a926c5-ba2b-4ac5-9717-6c9181f9a827",
+    "Allen Douglas",
+);
 
 // DSK 348 — Screaming Nemesis
 pub(in crate::card::sets) static SCREAMING_NEMESIS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ad3f4c72-ff6e-4d7f-8eb8-45a0a9605fc0"),
     "Screaming Nemesis",
-    CardArt::new("ad3f4c72-ff6e-4d7f-8eb8-45a0a9605fc0", "Inkognit"),
+    "ad3f4c72-ff6e-4d7f-8eb8-45a0a9605fc0",
+    "Inkognit",
     CardSet::DuskmournHouseOfHorror,
     // Three mana that attacks into anything: blocking it, burning it, or
     // fighting it all send the damage somewhere else, and a player who takes
@@ -856,18 +859,18 @@ pub(in crate::card::sets) static SCREAMING_NEMESIS: CardRecord = CardRecord::new
 // DSK 372 — Leyline of Transformation
 // Audit: unsupported — Needs an as-enters creature-type choice feeding type layers in every relevant zone.
 pub(in crate::card::sets) static LEYLINE_OF_TRANSFORMATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fd545d86-9a3e-4e4f-b0fe-9363a85b9290"),
     "Leyline of Transformation",
-    CardArt::new("fd545d86-9a3e-4e4f-b0fe-9363a85b9290", "Sergey Glushakov"),
+    "fd545d86-9a3e-4e4f-b0fe-9363a85b9290",
+    "Sergey Glushakov",
     CardSet::DuskmournHouseOfHorror,
     CardRules::unsupported(),
 );
 
 // DSK 387 — Overlord of the Mistmoors
 pub(in crate::card::sets) static OVERLORD_OF_THE_MISTMOORS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1951ed76-16a1-4639-b824-08dfc3d6d098"),
     "Overlord of the Mistmoors",
-    CardArt::new("1951ed76-16a1-4639-b824-08dfc3d6d098", "Takeuchi Moto"),
+    "1951ed76-16a1-4639-b824-08dfc3d6d098",
+    "Takeuchi Moto",
     CardSet::DuskmournHouseOfHorror,
     // Four mana for four power of fliers now and a 6/6 four turns later,
     // which is the whole appeal: the enchantment does the work while the
@@ -927,9 +930,12 @@ pub(in crate::card::sets) static OVERLORD_OF_THE_MISTMOORS: CardRecord = CardRec
 );
 
 // DSK 409 — Kaito, Bane of Nightmares (alternate printing)
-const KAITO_BANE_OF_NIGHTMARES_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&KAITO_BANE_OF_NIGHTMARES, 1)
-        .with_art("14901700-881a-4c79-b162-aeeb1579757e", "Richard Luong");
+const KAITO_BANE_OF_NIGHTMARES_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &KAITO_BANE_OF_NIGHTMARES,
+    1,
+    "14901700-881a-4c79-b162-aeeb1579757e",
+    "Richard Luong",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ENDURING_INNOCENCE,

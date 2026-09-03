@@ -1,17 +1,17 @@
 //! Judgment cards used by the staged Premodern deck tranche.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::sets::y1993::arabian_nights as catalog_arn;
 use crate::card::sets::y1997::weatherlight as catalog_wth;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AggregateOperationDef, AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CardType, CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, CostQuantityDef,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, ObjectValueAggregateDef, ObjectValueDef, PlayerRefDef,
-    PlayerRelation, PlayerSetDef, PowerToughnessOperationDef, ReplacementChoiceDef,
-    ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    AggregateOperationDef, AlternativeCastKindDef, AppliedEffectDef, CardRules, CardSet, CardType,
+    CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef, CostQuantityDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectSetDef, ObjectValueAggregateDef, ObjectValueDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, PowerToughnessOperationDef, ReplacementChoiceDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, SpellAdditionalCostDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::ids::ParentBinding;
 use crate::{TargetIndex, mana_cost};
@@ -19,9 +19,9 @@ use crate::{TargetIndex, mana_cost};
 // JUD 1 — Ancestor's Chosen
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANCESTOR_S_CHOSEN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c0cf71e1-3c57-47f9-a4ef-e0d0ad1ee329"),
     "Ancestor's Chosen",
-    crate::card::CardArt::new("c0cf71e1-3c57-47f9-a4ef-e0d0ad1ee329", "Pete Venters"),
+    "c0cf71e1-3c57-47f9-a4ef-e0d0ad1ee329",
+    "Pete Venters",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -29,9 +29,9 @@ pub(in crate::card::sets) static ANCESTOR_S_CHOSEN: CardRecord = CardRecord::new
 // JUD 2 — Aven Warcraft
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AVEN_WARCRAFT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1fd5d21a-b151-4fea-ac0d-6659af131bf9"),
     "Aven Warcraft",
-    crate::card::CardArt::new("1fd5d21a-b151-4fea-ac0d-6659af131bf9", "Roger Raupp"),
+    "1fd5d21a-b151-4fea-ac0d-6659af131bf9",
+    "Roger Raupp",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -39,9 +39,9 @@ pub(in crate::card::sets) static AVEN_WARCRAFT: CardRecord = CardRecord::new(
 // JUD 3 — Battle Screech
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BATTLE_SCREECH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c3c38264-0d79-47d4-bca2-a20a991bbac9"),
     "Battle Screech",
-    crate::card::CardArt::new("c3c38264-0d79-47d4-bca2-a20a991bbac9", "Randy Gallegos"),
+    "c3c38264-0d79-47d4-bca2-a20a991bbac9",
+    "Randy Gallegos",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -49,9 +49,9 @@ pub(in crate::card::sets) static BATTLE_SCREECH: CardRecord = CardRecord::new(
 // JUD 4 — Battlewise Aven
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BATTLEWISE_AVEN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ca363409-cba9-43ed-bf88-3519521e1983"),
     "Battlewise Aven",
-    crate::card::CardArt::new("ca363409-cba9-43ed-bf88-3519521e1983", "Wayne England"),
+    "ca363409-cba9-43ed-bf88-3519521e1983",
+    "Wayne England",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -59,9 +59,9 @@ pub(in crate::card::sets) static BATTLEWISE_AVEN: CardRecord = CardRecord::new(
 // JUD 5 — Benevolent Bodyguard
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BENEVOLENT_BODYGUARD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("22492fb3-5ceb-4d5e-ba82-ae1a6a69c105"),
     "Benevolent Bodyguard",
-    crate::card::CardArt::new("22492fb3-5ceb-4d5e-ba82-ae1a6a69c105", "Roger Raupp"),
+    "22492fb3-5ceb-4d5e-ba82-ae1a6a69c105",
+    "Roger Raupp",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -69,9 +69,9 @@ pub(in crate::card::sets) static BENEVOLENT_BODYGUARD: CardRecord = CardRecord::
 // JUD 6 — Border Patrol
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BORDER_PATROL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a49a85c8-3516-4dda-b16b-bf1bf890becb"),
     "Border Patrol",
-    crate::card::CardArt::new("a49a85c8-3516-4dda-b16b-bf1bf890becb", "Roger Raupp"),
+    "a49a85c8-3516-4dda-b16b-bf1bf890becb",
+    "Roger Raupp",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -79,9 +79,9 @@ pub(in crate::card::sets) static BORDER_PATROL: CardRecord = CardRecord::new(
 // JUD 7 — Cagemail
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAGEMAIL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("72ab91ab-2bcf-4617-bec3-2bf040d4997c"),
     "Cagemail",
-    crate::card::CardArt::new("72ab91ab-2bcf-4617-bec3-2bf040d4997c", "Scott M. Fischer"),
+    "72ab91ab-2bcf-4617-bec3-2bf040d4997c",
+    "Scott M. Fischer",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -89,9 +89,9 @@ pub(in crate::card::sets) static CAGEMAIL: CardRecord = CardRecord::new(
 // JUD 8 — Chastise
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHASTISE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1169dab7-8f4c-474d-9289-42765a275376"),
     "Chastise",
-    crate::card::CardArt::new("1169dab7-8f4c-474d-9289-42765a275376", "Carl Critchlow"),
+    "1169dab7-8f4c-474d-9289-42765a275376",
+    "Carl Critchlow",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -99,9 +99,9 @@ pub(in crate::card::sets) static CHASTISE: CardRecord = CardRecord::new(
 // JUD 9 — Commander Eesha
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static COMMANDER_EESHA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3607f6a9-b8d2-4119-9f70-95dcedc0662d"),
     "Commander Eesha",
-    crate::card::CardArt::new("3607f6a9-b8d2-4119-9f70-95dcedc0662d", "Rebecca Guay"),
+    "3607f6a9-b8d2-4119-9f70-95dcedc0662d",
+    "Rebecca Guay",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -109,9 +109,9 @@ pub(in crate::card::sets) static COMMANDER_EESHA: CardRecord = CardRecord::new(
 // JUD 10 — Funeral Pyre
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FUNERAL_PYRE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4d8542f6-ee34-42c6-acd5-07b0c7cc2f63"),
     "Funeral Pyre",
-    crate::card::CardArt::new("4d8542f6-ee34-42c6-acd5-07b0c7cc2f63", "Carl Critchlow"),
+    "4d8542f6-ee34-42c6-acd5-07b0c7cc2f63",
+    "Carl Critchlow",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -119,9 +119,9 @@ pub(in crate::card::sets) static FUNERAL_PYRE: CardRecord = CardRecord::new(
 // JUD 11 — Glory
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GLORY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("319724d5-8937-4470-a880-a65e674f7b3b"),
     "Glory",
-    crate::card::CardArt::new("7a414f0e-b157-4570-8213-1c58a96bf7a5", "Donato Giancola"),
+    "7a414f0e-b157-4570-8213-1c58a96bf7a5",
+    "Donato Giancola",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -129,23 +129,26 @@ pub(in crate::card::sets) static GLORY: CardRecord = CardRecord::new(
 // JUD 12 — Golden Wish
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOLDEN_WISH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dc409ded-41f3-4f14-8199-72a9fe98bac0"),
     "Golden Wish",
-    crate::card::CardArt::new("dc409ded-41f3-4f14-8199-72a9fe98bac0", "Alan Pollack"),
+    "dc409ded-41f3-4f14-8199-72a9fe98bac0",
+    "Alan Pollack",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
 
 // JUD 13 — Guided Strike (reprint)
-const GUIDED_STRIKE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_wth::GUIDED_STRIKE)
-    .with_art("d13138c1-e98f-4803-8c68-ffc80139c168", "Dave Dorman");
+const GUIDED_STRIKE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_wth::GUIDED_STRIKE,
+    "d13138c1-e98f-4803-8c68-ffc80139c168",
+    "Dave Dorman",
+);
 
 // JUD 14 — Lead Astray
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LEAD_ASTRAY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("20a8fd2f-11fa-4879-be89-ea7833cf60d4"),
     "Lead Astray",
-    crate::card::CardArt::new("20a8fd2f-11fa-4879-be89-ea7833cf60d4", "Adam Rex"),
+    "20a8fd2f-11fa-4879-be89-ea7833cf60d4",
+    "Adam Rex",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -153,9 +156,9 @@ pub(in crate::card::sets) static LEAD_ASTRAY: CardRecord = CardRecord::new(
 // JUD 15 — Nomad Mythmaker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NOMAD_MYTHMAKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9a5694fe-57d2-4359-857a-63213d986747"),
     "Nomad Mythmaker",
-    crate::card::CardArt::new("9a5694fe-57d2-4359-857a-63213d986747", "Eric Peterson"),
+    "9a5694fe-57d2-4359-857a-63213d986747",
+    "Eric Peterson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -163,9 +166,9 @@ pub(in crate::card::sets) static NOMAD_MYTHMAKER: CardRecord = CardRecord::new(
 // JUD 16 — Phantom Flock
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHANTOM_FLOCK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("617d4246-c827-4742-ab6a-c5170c12cb87"),
     "Phantom Flock",
-    crate::card::CardArt::new("617d4246-c827-4742-ab6a-c5170c12cb87", "David Martin"),
+    "617d4246-c827-4742-ab6a-c5170c12cb87",
+    "David Martin",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -173,9 +176,9 @@ pub(in crate::card::sets) static PHANTOM_FLOCK: CardRecord = CardRecord::new(
 // JUD 17 — Phantom Nomad
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHANTOM_NOMAD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6c5309f5-8b32-4a57-99f2-dcf7a8341898"),
     "Phantom Nomad",
-    crate::card::CardArt::new("6c5309f5-8b32-4a57-99f2-dcf7a8341898", "Jim Nelson"),
+    "6c5309f5-8b32-4a57-99f2-dcf7a8341898",
+    "Jim Nelson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -183,9 +186,9 @@ pub(in crate::card::sets) static PHANTOM_NOMAD: CardRecord = CardRecord::new(
 // JUD 18 — Prismatic Strands
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PRISMATIC_STRANDS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3454ef42-2e0b-4ce4-945f-e4ec3e83c39d"),
     "Prismatic Strands",
-    crate::card::CardArt::new("3454ef42-2e0b-4ce4-945f-e4ec3e83c39d", "Eric Peterson"),
+    "3454ef42-2e0b-4ce4-945f-e4ec3e83c39d",
+    "Eric Peterson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -193,18 +196,18 @@ pub(in crate::card::sets) static PRISMATIC_STRANDS: CardRecord = CardRecord::new
 // JUD 19 — Pulsemage Advocate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PULSEMAGE_ADVOCATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0dce0e8f-9ad6-42b6-af61-c883613efc97"),
     "Pulsemage Advocate",
-    crate::card::CardArt::new("0dce0e8f-9ad6-42b6-af61-c883613efc97", "Jeff Easley"),
+    "0dce0e8f-9ad6-42b6-af61-c883613efc97",
+    "Jeff Easley",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
 
 // JUD 20 — Ray of Revelation
-pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new_with_legacy_id(
-    201,
+pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new(
     "Ray of Revelation",
-    CardArt::new("d7e2c5a4-cf92-46bd-9033-8036436488cb", "Cliff Childs"),
+    "6d762c8c-6172-4dc0-8fcc-d0f6dd8ca013",
+    "Doug Chaffee",
     CardSet::Judgment,
     CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[
         AbilityDef::spell_with_targets(
@@ -230,12 +233,9 @@ pub(in crate::card::sets) static RAY_OF_REVELATION: CardRecord = CardRecord::new
 // JUD 21 — Selfless Exorcist
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SELFLESS_EXORCIST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c9b1c300-aec3-4512-9902-309615e86c73"),
     "Selfless Exorcist",
-    crate::card::CardArt::new(
-        "c9b1c300-aec3-4512-9902-309615e86c73",
-        "Christopher Moeller",
-    ),
+    "c9b1c300-aec3-4512-9902-309615e86c73",
+    "Christopher Moeller",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -243,12 +243,9 @@ pub(in crate::card::sets) static SELFLESS_EXORCIST: CardRecord = CardRecord::new
 // JUD 22 — Shieldmage Advocate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHIELDMAGE_ADVOCATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2ea66a41-cb2e-49d6-81fe-3f69b0dfd40e"),
     "Shieldmage Advocate",
-    crate::card::CardArt::new(
-        "2ea66a41-cb2e-49d6-81fe-3f69b0dfd40e",
-        "Christopher Moeller",
-    ),
+    "2ea66a41-cb2e-49d6-81fe-3f69b0dfd40e",
+    "Christopher Moeller",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -256,9 +253,9 @@ pub(in crate::card::sets) static SHIELDMAGE_ADVOCATE: CardRecord = CardRecord::n
 // JUD 23 — Silver Seraph
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SILVER_SERAPH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1465ca9e-a997-4b8c-9677-6c7961f67eba"),
     "Silver Seraph",
-    crate::card::CardArt::new("1465ca9e-a997-4b8c-9677-6c7961f67eba", "Matthew D. Wilson"),
+    "1465ca9e-a997-4b8c-9677-6c7961f67eba",
+    "Matthew D. Wilson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -266,9 +263,9 @@ pub(in crate::card::sets) static SILVER_SERAPH: CardRecord = CardRecord::new(
 // JUD 24 — Solitary Confinement
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOLITARY_CONFINEMENT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e7a8eb7a-eb3f-405e-8f44-d8ea64d76386"),
     "Solitary Confinement",
-    crate::card::CardArt::new("e7a8eb7a-eb3f-405e-8f44-d8ea64d76386", "Scott M. Fischer"),
+    "e7a8eb7a-eb3f-405e-8f44-d8ea64d76386",
+    "Scott M. Fischer",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -276,9 +273,9 @@ pub(in crate::card::sets) static SOLITARY_CONFINEMENT: CardRecord = CardRecord::
 // JUD 25 — Soulcatchers' Aerie
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOULCATCHERS_AERIE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b30df994-bb09-4d16-8443-223c6ce342dc"),
     "Soulcatchers' Aerie",
-    crate::card::CardArt::new("b30df994-bb09-4d16-8443-223c6ce342dc", "Rob Alexander"),
+    "b30df994-bb09-4d16-8443-223c6ce342dc",
+    "Rob Alexander",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -286,9 +283,9 @@ pub(in crate::card::sets) static SOULCATCHERS_AERIE: CardRecord = CardRecord::ne
 // JUD 26 — Spirit Cairn
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPIRIT_CAIRN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d8baf60f-c20b-4b2f-9fe1-df008a9273c6"),
     "Spirit Cairn",
-    crate::card::CardArt::new("d8baf60f-c20b-4b2f-9fe1-df008a9273c6", "Gary Ruddell"),
+    "d8baf60f-c20b-4b2f-9fe1-df008a9273c6",
+    "Gary Ruddell",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -296,18 +293,18 @@ pub(in crate::card::sets) static SPIRIT_CAIRN: CardRecord = CardRecord::new(
 // JUD 27 — Spurnmage Advocate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPURNMAGE_ADVOCATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("008c8d72-097e-472d-88c8-78bf29e42e32"),
     "Spurnmage Advocate",
-    crate::card::CardArt::new("008c8d72-097e-472d-88c8-78bf29e42e32", "Ron Spears"),
+    "008c8d72-097e-472d-88c8-78bf29e42e32",
+    "Ron Spears",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
 
 // JUD 28 — Suntail Hawk
-pub(in crate::card::sets) static SUNTAIL_HAWK: CardRecord = CardRecord::new_with_legacy_id(
-    1160,
+pub(in crate::card::sets) static SUNTAIL_HAWK: CardRecord = CardRecord::new(
     "Suntail Hawk",
-    CardArt::new("28a1f83c-a9ef-463e-97b5-2ca3b7232f82", "Heather Hudson"),
+    "5fbdae0b-b4aa-40ff-9017-b4349bd6b627",
+    "Heather Hudson",
     CardSet::Judgment,
     CardRules::new_creature(mana_cost!("{W}"), &["Bird"], 1, 1)
         .with_abilities(&[abilities::flying()]),
@@ -316,9 +313,9 @@ pub(in crate::card::sets) static SUNTAIL_HAWK: CardRecord = CardRecord::new_with
 // JUD 29 — Test of Endurance
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TEST_OF_ENDURANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cf16bd6b-e99c-4da3-bd03-11f63b7ee85d"),
     "Test of Endurance",
-    crate::card::CardArt::new("cf16bd6b-e99c-4da3-bd03-11f63b7ee85d", "Mike Ploog"),
+    "cf16bd6b-e99c-4da3-bd03-11f63b7ee85d",
+    "Mike Ploog",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -326,9 +323,9 @@ pub(in crate::card::sets) static TEST_OF_ENDURANCE: CardRecord = CardRecord::new
 // JUD 30 — Trained Pronghorn
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRAINED_PRONGHORN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("720ec745-226c-4211-974f-e04a4f9e1902"),
     "Trained Pronghorn",
-    crate::card::CardArt::new("720ec745-226c-4211-974f-e04a4f9e1902", "John Matson"),
+    "720ec745-226c-4211-974f-e04a4f9e1902",
+    "John Matson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -336,12 +333,9 @@ pub(in crate::card::sets) static TRAINED_PRONGHORN: CardRecord = CardRecord::new
 // JUD 31 — Unquestioned Authority
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNQUESTIONED_AUTHORITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a015205e-5895-4038-9c2f-ed4766c498ff"),
     "Unquestioned Authority",
-    crate::card::CardArt::new(
-        "a015205e-5895-4038-9c2f-ed4766c498ff",
-        "Alex Horley-Orlandelli",
-    ),
+    "a015205e-5895-4038-9c2f-ed4766c498ff",
+    "Alex Horley-Orlandelli",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -349,9 +343,9 @@ pub(in crate::card::sets) static UNQUESTIONED_AUTHORITY: CardRecord = CardRecord
 // JUD 32 — Valor
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VALOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("58095f6b-d937-4871-b3af-5c6a1d9c04b3"),
     "Valor",
-    crate::card::CardArt::new("58095f6b-d937-4871-b3af-5c6a1d9c04b3", "Kev Walker"),
+    "58095f6b-d937-4871-b3af-5c6a1d9c04b3",
+    "Kev Walker",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -359,9 +353,9 @@ pub(in crate::card::sets) static VALOR: CardRecord = CardRecord::new(
 // JUD 33 — Vigilant Sentry
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VIGILANT_SENTRY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c3790282-ea04-4600-8912-dac541ffd081"),
     "Vigilant Sentry",
-    crate::card::CardArt::new("c3790282-ea04-4600-8912-dac541ffd081", "Eric Peterson"),
+    "c3790282-ea04-4600-8912-dac541ffd081",
+    "Eric Peterson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -369,12 +363,9 @@ pub(in crate::card::sets) static VIGILANT_SENTRY: CardRecord = CardRecord::new(
 // JUD 34 — Aven Fogbringer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AVEN_FOGBRINGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c0ee9e09-c4b1-4133-90a3-350677f0b72a"),
     "Aven Fogbringer",
-    crate::card::CardArt::new(
-        "c0ee9e09-c4b1-4133-90a3-350677f0b72a",
-        "Edward P. Beard, Jr.",
-    ),
+    "c0ee9e09-c4b1-4133-90a3-350677f0b72a",
+    "Edward P. Beard, Jr.",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -382,9 +373,9 @@ pub(in crate::card::sets) static AVEN_FOGBRINGER: CardRecord = CardRecord::new(
 // JUD 35 — Cephalid Constable
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CEPHALID_CONSTABLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6d98f05b-ddfe-4b93-b247-dbd1a89e0731"),
     "Cephalid Constable",
-    crate::card::CardArt::new("6d98f05b-ddfe-4b93-b247-dbd1a89e0731", "Alan Pollack"),
+    "6d98f05b-ddfe-4b93-b247-dbd1a89e0731",
+    "Alan Pollack",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -392,9 +383,9 @@ pub(in crate::card::sets) static CEPHALID_CONSTABLE: CardRecord = CardRecord::ne
 // JUD 36 — Cephalid Inkshrouder
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CEPHALID_INKSHROUDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2c3e8c80-690b-4d79-9dee-99d1a3876160"),
     "Cephalid Inkshrouder",
-    crate::card::CardArt::new("2c3e8c80-690b-4d79-9dee-99d1a3876160", "Tony Szczudlo"),
+    "2c3e8c80-690b-4d79-9dee-99d1a3876160",
+    "Tony Szczudlo",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -402,9 +393,9 @@ pub(in crate::card::sets) static CEPHALID_INKSHROUDER: CardRecord = CardRecord::
 // JUD 37 — Cunning Wish
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CUNNING_WISH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ca097675-5e82-493d-beab-9fc11efd7492"),
     "Cunning Wish",
-    crate::card::CardArt::new("ca097675-5e82-493d-beab-9fc11efd7492", "Jim Nelson"),
+    "ca097675-5e82-493d-beab-9fc11efd7492",
+    "Jim Nelson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -412,9 +403,9 @@ pub(in crate::card::sets) static CUNNING_WISH: CardRecord = CardRecord::new(
 // JUD 38 — Defy Gravity
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEFY_GRAVITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("461413fe-0392-41c1-b50f-05e87ea1c338"),
     "Defy Gravity",
-    crate::card::CardArt::new("461413fe-0392-41c1-b50f-05e87ea1c338", "Ben Thompson"),
+    "461413fe-0392-41c1-b50f-05e87ea1c338",
+    "Ben Thompson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -422,18 +413,18 @@ pub(in crate::card::sets) static DEFY_GRAVITY: CardRecord = CardRecord::new(
 // JUD 39 — Envelop
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ENVELOP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e7ed250e-12d0-4ebc-9410-5711e71c6d1f"),
     "Envelop",
-    crate::card::CardArt::new("e7ed250e-12d0-4ebc-9410-5711e71c6d1f", "Don Hazeltine"),
+    "e7ed250e-12d0-4ebc-9410-5711e71c6d1f",
+    "Don Hazeltine",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
 
 // JUD 40 — Flash of Insight
-pub(in crate::card::sets) static FLASH_OF_INSIGHT: CardRecord = CardRecord::new_with_legacy_id(
-    2064,
+pub(in crate::card::sets) static FLASH_OF_INSIGHT: CardRecord = CardRecord::new(
     "Flash of Insight",
-    CardArt::new("ffaab905-8b2f-4a5c-9b1f-3c8e5d2b7a41", "Ben Thompson"),
+    "ffaab905-0b97-42c2-a1a3-1e72275caa82",
+    "Ben Thompson",
     CardSet::Judgment,
     // Cast small early, flashed back huge late: the graveyard a control deck
     // fills is the second casting's mana.
@@ -467,9 +458,9 @@ pub(in crate::card::sets) static FLASH_OF_INSIGHT: CardRecord = CardRecord::new_
 // JUD 41 — Grip of Amnesia
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRIP_OF_AMNESIA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("43dc7e2a-5b9b-4f0f-8b2e-a7c7f847e1f1"),
     "Grip of Amnesia",
-    crate::card::CardArt::new("43dc7e2a-5b9b-4f0f-8b2e-a7c7f847e1f1", "Bradley Williams"),
+    "43dc7e2a-5b9b-4f0f-8b2e-a7c7f847e1f1",
+    "Bradley Williams",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -477,9 +468,9 @@ pub(in crate::card::sets) static GRIP_OF_AMNESIA: CardRecord = CardRecord::new(
 // JUD 42 — Hapless Researcher
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HAPLESS_RESEARCHER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("22ed0ee7-6749-4f38-8e53-c11b46b17e5d"),
     "Hapless Researcher",
-    crate::card::CardArt::new("22ed0ee7-6749-4f38-8e53-c11b46b17e5d", "Ron Spears"),
+    "22ed0ee7-6749-4f38-8e53-c11b46b17e5d",
+    "Ron Spears",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -487,9 +478,9 @@ pub(in crate::card::sets) static HAPLESS_RESEARCHER: CardRecord = CardRecord::ne
 // JUD 43 — Keep Watch
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KEEP_WATCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6e702ee4-62b5-4d3b-a202-8cac4b84591c"),
     "Keep Watch",
-    crate::card::CardArt::new("6e702ee4-62b5-4d3b-a202-8cac4b84591c", "Fred Rahmqvist"),
+    "6e702ee4-62b5-4d3b-a202-8cac4b84591c",
+    "Fred Rahmqvist",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -497,9 +488,9 @@ pub(in crate::card::sets) static KEEP_WATCH: CardRecord = CardRecord::new(
 // JUD 44 — Laquatus's Disdain
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LAQUATUS_S_DISDAIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e2ea5448-2d72-42eb-814c-197153d8e06a"),
     "Laquatus's Disdain",
-    crate::card::CardArt::new("e2ea5448-2d72-42eb-814c-197153d8e06a", "Pete Venters"),
+    "e2ea5448-2d72-42eb-814c-197153d8e06a",
+    "Pete Venters",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -507,9 +498,9 @@ pub(in crate::card::sets) static LAQUATUS_S_DISDAIN: CardRecord = CardRecord::ne
 // JUD 45 — Lost in Thought
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LOST_IN_THOUGHT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f5fb391a-2687-461d-b5ef-a494287ddb5d"),
     "Lost in Thought",
-    crate::card::CardArt::new("f5fb391a-2687-461d-b5ef-a494287ddb5d", "Ben Thompson"),
+    "f5fb391a-2687-461d-b5ef-a494287ddb5d",
+    "Ben Thompson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -517,9 +508,9 @@ pub(in crate::card::sets) static LOST_IN_THOUGHT: CardRecord = CardRecord::new(
 // JUD 46 — Mental Note
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MENTAL_NOTE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1f343724-6ecd-494f-8bfc-93676af4e173"),
     "Mental Note",
-    crate::card::CardArt::new("1f343724-6ecd-494f-8bfc-93676af4e173", "Bradley Williams"),
+    "1f343724-6ecd-494f-8bfc-93676af4e173",
+    "Bradley Williams",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -527,9 +518,9 @@ pub(in crate::card::sets) static MENTAL_NOTE: CardRecord = CardRecord::new(
 // JUD 47 — Mirror Wall
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MIRROR_WALL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d0e52b73-ebdf-4339-8780-84327a59ca57"),
     "Mirror Wall",
-    crate::card::CardArt::new("d0e52b73-ebdf-4339-8780-84327a59ca57", "Mark Brill"),
+    "d0e52b73-ebdf-4339-8780-84327a59ca57",
+    "Mark Brill",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -537,9 +528,9 @@ pub(in crate::card::sets) static MIRROR_WALL: CardRecord = CardRecord::new(
 // JUD 48 — Mist of Stagnation
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MIST_OF_STAGNATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("76d03121-9515-4101-9d60-e01225533f44"),
     "Mist of Stagnation",
-    crate::card::CardArt::new("76d03121-9515-4101-9d60-e01225533f44", "Mike Ploog"),
+    "76d03121-9515-4101-9d60-e01225533f44",
+    "Mike Ploog",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -547,9 +538,9 @@ pub(in crate::card::sets) static MIST_OF_STAGNATION: CardRecord = CardRecord::ne
 // JUD 49 — Quiet Speculation
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static QUIET_SPECULATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("71a314fa-293b-486f-95d8-267d340e4d8e"),
     "Quiet Speculation",
-    crate::card::CardArt::new("71a314fa-293b-486f-95d8-267d340e4d8e", "John Avon"),
+    "71a314fa-293b-486f-95d8-267d340e4d8e",
+    "John Avon",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -557,9 +548,9 @@ pub(in crate::card::sets) static QUIET_SPECULATION: CardRecord = CardRecord::new
 // JUD 50 — Scalpelexis
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCALPELEXIS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("29c3b7fa-78e7-4a0c-bcdc-4b829638e3f6"),
     "Scalpelexis",
-    crate::card::CardArt::new("29c3b7fa-78e7-4a0c-bcdc-4b829638e3f6", "Mark Tedin"),
+    "29c3b7fa-78e7-4a0c-bcdc-4b829638e3f6",
+    "Mark Tedin",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -567,9 +558,9 @@ pub(in crate::card::sets) static SCALPELEXIS: CardRecord = CardRecord::new(
 // JUD 51 — Spelljack
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPELLJACK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3eda8c7b-ce35-482a-bece-52a30cc78a9a"),
     "Spelljack",
-    crate::card::CardArt::new("3eda8c7b-ce35-482a-bece-52a30cc78a9a", "Pete Venters"),
+    "3eda8c7b-ce35-482a-bece-52a30cc78a9a",
+    "Pete Venters",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -577,9 +568,9 @@ pub(in crate::card::sets) static SPELLJACK: CardRecord = CardRecord::new(
 // JUD 52 — Telekinetic Bonds
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TELEKINETIC_BONDS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d68fad1d-a517-433a-b939-d0635e8f5535"),
     "Telekinetic Bonds",
-    crate::card::CardArt::new("d68fad1d-a517-433a-b939-d0635e8f5535", "Jim Nelson"),
+    "d68fad1d-a517-433a-b939-d0635e8f5535",
+    "Jim Nelson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -587,9 +578,9 @@ pub(in crate::card::sets) static TELEKINETIC_BONDS: CardRecord = CardRecord::new
 // JUD 53 — Web of Inertia
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WEB_OF_INERTIA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0e6d2721-1dfc-4f4f-a914-9352ca6981c0"),
     "Web of Inertia",
-    crate::card::CardArt::new("0e6d2721-1dfc-4f4f-a914-9352ca6981c0", "Don Hazeltine"),
+    "0e6d2721-1dfc-4f4f-a914-9352ca6981c0",
+    "Don Hazeltine",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -597,9 +588,9 @@ pub(in crate::card::sets) static WEB_OF_INERTIA: CardRecord = CardRecord::new(
 // JUD 54 — Wonder
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WONDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("44670666-9028-4b4a-a5af-a3bf35fc6a21"),
     "Wonder",
-    crate::card::CardArt::new("44670666-9028-4b4a-a5af-a3bf35fc6a21", "Rebecca Guay"),
+    "44670666-9028-4b4a-a5af-a3bf35fc6a21",
+    "Rebecca Guay",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -607,9 +598,9 @@ pub(in crate::card::sets) static WONDER: CardRecord = CardRecord::new(
 // JUD 55 — Wormfang Behemoth
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WORMFANG_BEHEMOTH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1c7f29aa-c069-4adb-b313-6a56849905d4"),
     "Wormfang Behemoth",
-    crate::card::CardArt::new("1c7f29aa-c069-4adb-b313-6a56849905d4", "Heather Hudson"),
+    "1c7f29aa-c069-4adb-b313-6a56849905d4",
+    "Heather Hudson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -617,9 +608,9 @@ pub(in crate::card::sets) static WORMFANG_BEHEMOTH: CardRecord = CardRecord::new
 // JUD 56 — Wormfang Crab
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WORMFANG_CRAB: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dcf56dcf-ec1a-4298-8644-1fe248443b7e"),
     "Wormfang Crab",
-    crate::card::CardArt::new("dcf56dcf-ec1a-4298-8644-1fe248443b7e", "Glen Angus"),
+    "dcf56dcf-ec1a-4298-8644-1fe248443b7e",
+    "Glen Angus",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -627,9 +618,9 @@ pub(in crate::card::sets) static WORMFANG_CRAB: CardRecord = CardRecord::new(
 // JUD 57 — Wormfang Drake
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WORMFANG_DRAKE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b6afd312-6448-4bd1-8539-0910cefead0d"),
     "Wormfang Drake",
-    crate::card::CardArt::new("b6afd312-6448-4bd1-8539-0910cefead0d", "Thomas M. Baxa"),
+    "b6afd312-6448-4bd1-8539-0910cefead0d",
+    "Thomas M. Baxa",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -637,9 +628,9 @@ pub(in crate::card::sets) static WORMFANG_DRAKE: CardRecord = CardRecord::new(
 // JUD 58 — Wormfang Manta
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WORMFANG_MANTA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bc9bf91d-6f7c-4fb5-bbc6-c012212e62e9"),
     "Wormfang Manta",
-    crate::card::CardArt::new("bc9bf91d-6f7c-4fb5-bbc6-c012212e62e9", "Heather Hudson"),
+    "bc9bf91d-6f7c-4fb5-bbc6-c012212e62e9",
+    "Heather Hudson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -647,9 +638,9 @@ pub(in crate::card::sets) static WORMFANG_MANTA: CardRecord = CardRecord::new(
 // JUD 59 — Wormfang Newt
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WORMFANG_NEWT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("df8012c1-76ec-4c36-8b38-5bc41ce5e156"),
     "Wormfang Newt",
-    crate::card::CardArt::new("df8012c1-76ec-4c36-8b38-5bc41ce5e156", "Doug Chaffee"),
+    "df8012c1-76ec-4c36-8b38-5bc41ce5e156",
+    "Doug Chaffee",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -657,9 +648,9 @@ pub(in crate::card::sets) static WORMFANG_NEWT: CardRecord = CardRecord::new(
 // JUD 60 — Wormfang Turtle
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WORMFANG_TURTLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("48404362-7579-4896-a71a-8eb40e5ac416"),
     "Wormfang Turtle",
-    crate::card::CardArt::new("48404362-7579-4896-a71a-8eb40e5ac416", "John Avon"),
+    "48404362-7579-4896-a71a-8eb40e5ac416",
+    "John Avon",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -667,18 +658,18 @@ pub(in crate::card::sets) static WORMFANG_TURTLE: CardRecord = CardRecord::new(
 // JUD 61 — Balthor the Defiled
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BALTHOR_THE_DEFILED: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ed4cc273-adc3-4f46-9743-134b552d1d56"),
     "Balthor the Defiled",
-    crate::card::CardArt::new("ed4cc273-adc3-4f46-9743-134b552d1d56", "Carl Critchlow"),
+    "ed4cc273-adc3-4f46-9743-134b552d1d56",
+    "Carl Critchlow",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
 
 // JUD 62 — Cabal Therapy
-pub(in crate::card::sets) static CABAL_THERAPY: CardRecord = CardRecord::new_with_legacy_id(
-    2068,
+pub(in crate::card::sets) static CABAL_THERAPY: CardRecord = CardRecord::new(
     "Cabal Therapy",
-    CardArt::new("0a5df970-c6ba-4824-b8ba-67244aec2b82", "Ron Spencer"),
+    "0a5df970-c6ba-4824-b8ba-67244aec2b82",
+    "Ron Spencer",
     CardSet::Judgment,
     // A guess for one mana, and the same guess again later for a creature
     // that has already attacked.
@@ -722,9 +713,9 @@ pub(in crate::card::sets) static CABAL_THERAPY: CardRecord = CardRecord::new_wit
 // JUD 63 — Cabal Trainee
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CABAL_TRAINEE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d345d702-b205-4391-985a-6201e707f0ba"),
     "Cabal Trainee",
-    crate::card::CardArt::new("d345d702-b205-4391-985a-6201e707f0ba", "Pete Venters"),
+    "d345d702-b205-4391-985a-6201e707f0ba",
+    "Pete Venters",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -732,9 +723,9 @@ pub(in crate::card::sets) static CABAL_TRAINEE: CardRecord = CardRecord::new(
 // JUD 64 — Death Wish
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEATH_WISH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7bf134c9-a50d-4eff-a5a8-7cfe6a010080"),
     "Death Wish",
-    crate::card::CardArt::new("7bf134c9-a50d-4eff-a5a8-7cfe6a010080", "Jeff Easley"),
+    "7bf134c9-a50d-4eff-a5a8-7cfe6a010080",
+    "Jeff Easley",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -742,9 +733,9 @@ pub(in crate::card::sets) static DEATH_WISH: CardRecord = CardRecord::new(
 // JUD 65 — Earsplitting Rats
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EARSPLITTING_RATS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5dad63b5-ced3-4150-ad84-1ca05a892840"),
     "Earsplitting Rats",
-    crate::card::CardArt::new("5dad63b5-ced3-4150-ad84-1ca05a892840", "Heather Hudson"),
+    "5dad63b5-ced3-4150-ad84-1ca05a892840",
+    "Heather Hudson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -752,9 +743,9 @@ pub(in crate::card::sets) static EARSPLITTING_RATS: CardRecord = CardRecord::new
 // JUD 66 — Filth
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FILTH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("37de06dc-c0c1-4edb-9732-2d16dbabfb31"),
     "Filth",
-    crate::card::CardArt::new("37de06dc-c0c1-4edb-9732-2d16dbabfb31", "Thomas M. Baxa"),
+    "37de06dc-c0c1-4edb-9732-2d16dbabfb31",
+    "Thomas M. Baxa",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -762,9 +753,9 @@ pub(in crate::card::sets) static FILTH: CardRecord = CardRecord::new(
 // JUD 67 — Grave Consequences
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRAVE_CONSEQUENCES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9ad5f9f2-282a-4ee0-a259-cc24404ddf6f"),
     "Grave Consequences",
-    crate::card::CardArt::new("9ad5f9f2-282a-4ee0-a259-cc24404ddf6f", "Tim Hildebrandt"),
+    "9ad5f9f2-282a-4ee0-a259-cc24404ddf6f",
+    "Tim Hildebrandt",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -772,9 +763,9 @@ pub(in crate::card::sets) static GRAVE_CONSEQUENCES: CardRecord = CardRecord::ne
 // JUD 68 — Guiltfeeder
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GUILTFEEDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e2e9af4e-bd02-4d91-898f-68d192446904"),
     "Guiltfeeder",
-    crate::card::CardArt::new("e2e9af4e-bd02-4d91-898f-68d192446904", "Mark Tedin"),
+    "e2e9af4e-bd02-4d91-898f-68d192446904",
+    "Mark Tedin",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -782,9 +773,9 @@ pub(in crate::card::sets) static GUILTFEEDER: CardRecord = CardRecord::new(
 // JUD 69 — Masked Gorgon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MASKED_GORGON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0d62728b-b834-4fa8-aed5-6348033ee69c"),
     "Masked Gorgon",
-    crate::card::CardArt::new("0d62728b-b834-4fa8-aed5-6348033ee69c", "Matthew D. Wilson"),
+    "0d62728b-b834-4fa8-aed5-6348033ee69c",
+    "Matthew D. Wilson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -792,9 +783,9 @@ pub(in crate::card::sets) static MASKED_GORGON: CardRecord = CardRecord::new(
 // JUD 70 — Morality Shift
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MORALITY_SHIFT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b5c83e4d-ccc1-4ebf-9e74-2cc1ff9a7b07"),
     "Morality Shift",
-    crate::card::CardArt::new("b5c83e4d-ccc1-4ebf-9e74-2cc1ff9a7b07", "Jerry Tiritilli"),
+    "b5c83e4d-ccc1-4ebf-9e74-2cc1ff9a7b07",
+    "Jerry Tiritilli",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -802,9 +793,9 @@ pub(in crate::card::sets) static MORALITY_SHIFT: CardRecord = CardRecord::new(
 // JUD 71 — Rats' Feast
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RATS_FEAST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b243ce02-4fff-444c-acc4-e1a199621a53"),
     "Rats' Feast",
-    crate::card::CardArt::new("b243ce02-4fff-444c-acc4-e1a199621a53", "Bob Petillo"),
+    "b243ce02-4fff-444c-acc4-e1a199621a53",
+    "Bob Petillo",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -812,18 +803,18 @@ pub(in crate::card::sets) static RATS_FEAST: CardRecord = CardRecord::new(
 // JUD 72 — Stitch Together
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STITCH_TOGETHER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b43c6172-2400-4038-8b8b-c62f2fbfce39"),
     "Stitch Together",
-    crate::card::CardArt::new("b43c6172-2400-4038-8b8b-c62f2fbfce39", "Arnie Swekel"),
+    "b43c6172-2400-4038-8b8b-c62f2fbfce39",
+    "Arnie Swekel",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
 
 // JUD 73 — Sutured Ghoul
-pub(in crate::card::sets) static SUTURED_GHOUL: CardRecord = CardRecord::new_with_legacy_id(
-    2089,
+pub(in crate::card::sets) static SUTURED_GHOUL: CardRecord = CardRecord::new(
     "Sutured Ghoul",
-    CardArt::new("754a167b-19ac-4100-91b8-4c605efa5ff7", "Carl Critchlow"),
+    "f769536f-def1-40b8-863f-ba12c7cb0d87",
+    "Carl Critchlow",
     CardSet::Judgment,
     // Seven mana for a creature the deck never pays for: it is reanimated
     // onto a graveyard the Druid has already filled, and eats all of it.
@@ -867,9 +858,9 @@ pub(in crate::card::sets) static SUTURED_GHOUL: CardRecord = CardRecord::new_wit
 // JUD 74 — Toxic Stench
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TOXIC_STENCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8c4d1f59-0dba-4b83-8386-ae564fb4b771"),
     "Toxic Stench",
-    crate::card::CardArt::new("8c4d1f59-0dba-4b83-8386-ae564fb4b771", "Bradley Williams"),
+    "8c4d1f59-0dba-4b83-8386-ae564fb4b771",
+    "Bradley Williams",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -877,9 +868,9 @@ pub(in crate::card::sets) static TOXIC_STENCH: CardRecord = CardRecord::new(
 // JUD 75 — Treacherous Vampire
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TREACHEROUS_VAMPIRE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a00562ae-b8b4-4f8f-8ea8-15d20568997d"),
     "Treacherous Vampire",
-    crate::card::CardArt::new("a00562ae-b8b4-4f8f-8ea8-15d20568997d", "Kev Walker"),
+    "a00562ae-b8b4-4f8f-8ea8-15d20568997d",
+    "Kev Walker",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -887,9 +878,9 @@ pub(in crate::card::sets) static TREACHEROUS_VAMPIRE: CardRecord = CardRecord::n
 // JUD 76 — Treacherous Werewolf
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TREACHEROUS_WEREWOLF: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c9647726-302b-4fc4-91d7-2aa0bba0b653"),
     "Treacherous Werewolf",
-    crate::card::CardArt::new("c9647726-302b-4fc4-91d7-2aa0bba0b653", "Mark Tedin"),
+    "c9647726-302b-4fc4-91d7-2aa0bba0b653",
+    "Mark Tedin",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -897,9 +888,9 @@ pub(in crate::card::sets) static TREACHEROUS_WEREWOLF: CardRecord = CardRecord::
 // JUD 77 — Anger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fa2920af-e6a1-4939-ab59-67af4430e5b8"),
     "Anger",
-    crate::card::CardArt::new("fa2920af-e6a1-4939-ab59-67af4430e5b8", "John Avon"),
+    "fa2920af-e6a1-4939-ab59-67af4430e5b8",
+    "John Avon",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -907,9 +898,9 @@ pub(in crate::card::sets) static ANGER: CardRecord = CardRecord::new(
 // JUD 78 — Arcane Teachings
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARCANE_TEACHINGS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("02c56677-c8e2-4500-9ee0-0b102496f454"),
     "Arcane Teachings",
-    crate::card::CardArt::new("02c56677-c8e2-4500-9ee0-0b102496f454", "Mark Brill"),
+    "02c56677-c8e2-4500-9ee0-0b102496f454",
+    "Mark Brill",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -917,9 +908,9 @@ pub(in crate::card::sets) static ARCANE_TEACHINGS: CardRecord = CardRecord::new(
 // JUD 79 — Barbarian Bully
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BARBARIAN_BULLY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e38f0f9f-ad7b-48da-89f3-b3e5346a3b71"),
     "Barbarian Bully",
-    crate::card::CardArt::new("e38f0f9f-ad7b-48da-89f3-b3e5346a3b71", "Mike Ploog"),
+    "e38f0f9f-ad7b-48da-89f3-b3e5346a3b71",
+    "Mike Ploog",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -927,9 +918,9 @@ pub(in crate::card::sets) static BARBARIAN_BULLY: CardRecord = CardRecord::new(
 // JUD 80 — Book Burning
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BOOK_BURNING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bead678c-7b6a-4668-9919-623312e08a65"),
     "Book Burning",
-    crate::card::CardArt::new("bead678c-7b6a-4668-9919-623312e08a65", "Dave Dorman"),
+    "bead678c-7b6a-4668-9919-623312e08a65",
+    "Dave Dorman",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -937,9 +928,9 @@ pub(in crate::card::sets) static BOOK_BURNING: CardRecord = CardRecord::new(
 // JUD 81 — Breaking Point
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BREAKING_POINT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("765ec2c9-8ffe-488a-bebe-e5dd63825a8c"),
     "Breaking Point",
-    crate::card::CardArt::new("765ec2c9-8ffe-488a-bebe-e5dd63825a8c", "Matthew D. Wilson"),
+    "765ec2c9-8ffe-488a-bebe-e5dd63825a8c",
+    "Matthew D. Wilson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -947,9 +938,9 @@ pub(in crate::card::sets) static BREAKING_POINT: CardRecord = CardRecord::new(
 // JUD 82 — Browbeat
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BROWBEAT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("74f20068-f225-4055-be7a-5c4a18e33b0b"),
     "Browbeat",
-    crate::card::CardArt::new("74f20068-f225-4055-be7a-5c4a18e33b0b", "Mark Tedin"),
+    "74f20068-f225-4055-be7a-5c4a18e33b0b",
+    "Mark Tedin",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -957,9 +948,9 @@ pub(in crate::card::sets) static BROWBEAT: CardRecord = CardRecord::new(
 // JUD 83 — Burning Wish
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BURNING_WISH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1c9b692a-e832-4612-a6ec-93b52f6a0410"),
     "Burning Wish",
-    crate::card::CardArt::new("1c9b692a-e832-4612-a6ec-93b52f6a0410", "Scott M. Fischer"),
+    "1c9b692a-e832-4612-a6ec-93b52f6a0410",
+    "Scott M. Fischer",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -967,9 +958,9 @@ pub(in crate::card::sets) static BURNING_WISH: CardRecord = CardRecord::new(
 // JUD 84 — Dwarven Bloodboiler
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DWARVEN_BLOODBOILER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9ac576b2-cda4-4aea-aa5c-933ec0457dda"),
     "Dwarven Bloodboiler",
-    crate::card::CardArt::new("9ac576b2-cda4-4aea-aa5c-933ec0457dda", "Arnie Swekel"),
+    "9ac576b2-cda4-4aea-aa5c-933ec0457dda",
+    "Arnie Swekel",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -977,12 +968,9 @@ pub(in crate::card::sets) static DWARVEN_BLOODBOILER: CardRecord = CardRecord::n
 // JUD 85 — Dwarven Driller
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DWARVEN_DRILLER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("69d815d3-7e33-4de9-aa36-ff5ffb893d73"),
     "Dwarven Driller",
-    crate::card::CardArt::new(
-        "69d815d3-7e33-4de9-aa36-ff5ffb893d73",
-        "Edward P. Beard, Jr.",
-    ),
+    "69d815d3-7e33-4de9-aa36-ff5ffb893d73",
+    "Edward P. Beard, Jr.",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -990,9 +978,9 @@ pub(in crate::card::sets) static DWARVEN_DRILLER: CardRecord = CardRecord::new(
 // JUD 86 — Dwarven Scorcher
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DWARVEN_SCORCHER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("099873b1-7181-4b9d-8ce1-8ec63c814afe"),
     "Dwarven Scorcher",
-    crate::card::CardArt::new("099873b1-7181-4b9d-8ce1-8ec63c814afe", "Thomas M. Baxa"),
+    "099873b1-7181-4b9d-8ce1-8ec63c814afe",
+    "Thomas M. Baxa",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1000,9 +988,9 @@ pub(in crate::card::sets) static DWARVEN_SCORCHER: CardRecord = CardRecord::new(
 // JUD 87 — Ember Shot
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EMBER_SHOT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6a9eb72b-9ae2-4b64-bbb9-187446b5fd2f"),
     "Ember Shot",
-    crate::card::CardArt::new("6a9eb72b-9ae2-4b64-bbb9-187446b5fd2f", "Alan Pollack"),
+    "6a9eb72b-9ae2-4b64-bbb9-187446b5fd2f",
+    "Alan Pollack",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1010,9 +998,9 @@ pub(in crate::card::sets) static EMBER_SHOT: CardRecord = CardRecord::new(
 // JUD 88 — Firecat Blitz
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FIRECAT_BLITZ: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d4e1d485-02d5-4a07-bcc6-d2a8d95763e8"),
     "Firecat Blitz",
-    crate::card::CardArt::new("d4e1d485-02d5-4a07-bcc6-d2a8d95763e8", "David Martin"),
+    "d4e1d485-02d5-4a07-bcc6-d2a8d95763e8",
+    "David Martin",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1020,9 +1008,9 @@ pub(in crate::card::sets) static FIRECAT_BLITZ: CardRecord = CardRecord::new(
 // JUD 89 — Flaring Pain
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLARING_PAIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("eeb5c96a-1d16-459d-9968-ced9a8f1c520"),
     "Flaring Pain",
-    crate::card::CardArt::new("eeb5c96a-1d16-459d-9968-ced9a8f1c520", "Glen Angus"),
+    "eeb5c96a-1d16-459d-9968-ced9a8f1c520",
+    "Glen Angus",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1030,9 +1018,9 @@ pub(in crate::card::sets) static FLARING_PAIN: CardRecord = CardRecord::new(
 // JUD 90 — Fledgling Dragon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLEDGLING_DRAGON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("315e5b4e-ae58-412a-be27-c4ef4899fbbd"),
     "Fledgling Dragon",
-    crate::card::CardArt::new("315e5b4e-ae58-412a-be27-c4ef4899fbbd", "Greg Staples"),
+    "315e5b4e-ae58-412a-be27-c4ef4899fbbd",
+    "Greg Staples",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1040,9 +1028,9 @@ pub(in crate::card::sets) static FLEDGLING_DRAGON: CardRecord = CardRecord::new(
 // JUD 91 — Goretusk Firebeast
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GORETUSK_FIREBEAST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9919d2dd-d6a1-4d45-b6aa-227ed05d7051"),
     "Goretusk Firebeast",
-    crate::card::CardArt::new("9919d2dd-d6a1-4d45-b6aa-227ed05d7051", "Keith Garletts"),
+    "9919d2dd-d6a1-4d45-b6aa-227ed05d7051",
+    "Keith Garletts",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1050,12 +1038,9 @@ pub(in crate::card::sets) static GORETUSK_FIREBEAST: CardRecord = CardRecord::ne
 // JUD 92 — Infectious Rage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INFECTIOUS_RAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8569cdf7-e0e9-4733-98b5-56fac216fad3"),
     "Infectious Rage",
-    crate::card::CardArt::new(
-        "8569cdf7-e0e9-4733-98b5-56fac216fad3",
-        "Christopher Moeller",
-    ),
+    "8569cdf7-e0e9-4733-98b5-56fac216fad3",
+    "Christopher Moeller",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1063,9 +1048,9 @@ pub(in crate::card::sets) static INFECTIOUS_RAGE: CardRecord = CardRecord::new(
 // JUD 93 — Jeska, Warrior Adept
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JESKA_WARRIOR_ADEPT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1cf96a59-8b7d-4a5b-adfd-17eeedd95db5"),
     "Jeska, Warrior Adept",
-    crate::card::CardArt::new("1cf96a59-8b7d-4a5b-adfd-17eeedd95db5", "rk post"),
+    "1cf96a59-8b7d-4a5b-adfd-17eeedd95db5",
+    "rk post",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1073,9 +1058,9 @@ pub(in crate::card::sets) static JESKA_WARRIOR_ADEPT: CardRecord = CardRecord::n
 // JUD 94 — Lava Dart
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LAVA_DART: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("865bb1d3-5b7d-40e9-87cc-96be9524a105"),
     "Lava Dart",
-    crate::card::CardArt::new("865bb1d3-5b7d-40e9-87cc-96be9524a105", "Darrell Riche"),
+    "865bb1d3-5b7d-40e9-87cc-96be9524a105",
+    "Darrell Riche",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1083,9 +1068,9 @@ pub(in crate::card::sets) static LAVA_DART: CardRecord = CardRecord::new(
 // JUD 95 — Liberated Dwarf
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIBERATED_DWARF: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e2c07842-9b70-40b1-9b97-9a9279b7ebc4"),
     "Liberated Dwarf",
-    crate::card::CardArt::new("e2c07842-9b70-40b1-9b97-9a9279b7ebc4", "Greg Hildebrandt"),
+    "e2c07842-9b70-40b1-9b97-9a9279b7ebc4",
+    "Greg Hildebrandt",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1093,9 +1078,9 @@ pub(in crate::card::sets) static LIBERATED_DWARF: CardRecord = CardRecord::new(
 // JUD 96 — Lightning Surge
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIGHTNING_SURGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0452d78d-eafc-4ccb-a478-d1f46bcefffe"),
     "Lightning Surge",
-    crate::card::CardArt::new("0452d78d-eafc-4ccb-a478-d1f46bcefffe", "Ron Spears"),
+    "0452d78d-eafc-4ccb-a478-d1f46bcefffe",
+    "Ron Spears",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1103,9 +1088,9 @@ pub(in crate::card::sets) static LIGHTNING_SURGE: CardRecord = CardRecord::new(
 // JUD 97 — Planar Chaos
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PLANAR_CHAOS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5dae5e16-d2fc-488c-9c53-d35c377d6a00"),
     "Planar Chaos",
-    crate::card::CardArt::new("5dae5e16-d2fc-488c-9c53-d35c377d6a00", "Ron Spencer"),
+    "5dae5e16-d2fc-488c-9c53-d35c377d6a00",
+    "Ron Spencer",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1113,9 +1098,9 @@ pub(in crate::card::sets) static PLANAR_CHAOS: CardRecord = CardRecord::new(
 // JUD 98 — Shaman's Trance
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHAMAN_S_TRANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dfc33a4f-9ec2-4324-82a1-a4b9700572f2"),
     "Shaman's Trance",
-    crate::card::CardArt::new("dfc33a4f-9ec2-4324-82a1-a4b9700572f2", "Greg Hildebrandt"),
+    "dfc33a4f-9ec2-4324-82a1-a4b9700572f2",
+    "Greg Hildebrandt",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1123,9 +1108,9 @@ pub(in crate::card::sets) static SHAMAN_S_TRANCE: CardRecord = CardRecord::new(
 // JUD 99 — Soulgorger Orgg
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOULGORGER_ORGG: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8aef55b8-5813-4aff-a35d-4b3cbd4a9ffb"),
     "Soulgorger Orgg",
-    crate::card::CardArt::new("8aef55b8-5813-4aff-a35d-4b3cbd4a9ffb", "John Matson"),
+    "8aef55b8-5813-4aff-a35d-4b3cbd4a9ffb",
+    "John Matson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1133,9 +1118,9 @@ pub(in crate::card::sets) static SOULGORGER_ORGG: CardRecord = CardRecord::new(
 // JUD 100 — Spellgorger Barbarian
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPELLGORGER_BARBARIAN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("043fcf80-dd20-4cc2-a0d5-4bb22b8b0789"),
     "Spellgorger Barbarian",
-    crate::card::CardArt::new("043fcf80-dd20-4cc2-a0d5-4bb22b8b0789", "Mark Romanoski"),
+    "043fcf80-dd20-4cc2-a0d5-4bb22b8b0789",
+    "Mark Romanoski",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1143,9 +1128,9 @@ pub(in crate::card::sets) static SPELLGORGER_BARBARIAN: CardRecord = CardRecord:
 // JUD 101 — Swelter
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SWELTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8f667c26-40f5-4ac5-87a4-cb03f70590a2"),
     "Swelter",
-    crate::card::CardArt::new("8f667c26-40f5-4ac5-87a4-cb03f70590a2", "Ben Thompson"),
+    "8f667c26-40f5-4ac5-87a4-cb03f70590a2",
+    "Ben Thompson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1153,9 +1138,9 @@ pub(in crate::card::sets) static SWELTER: CardRecord = CardRecord::new(
 // JUD 102 — Swirling Sandstorm
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SWIRLING_SANDSTORM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4d757ec3-c15f-4d6e-8e18-36ebae985448"),
     "Swirling Sandstorm",
-    crate::card::CardArt::new("4d757ec3-c15f-4d6e-8e18-36ebae985448", "Tony Szczudlo"),
+    "4d757ec3-c15f-4d6e-8e18-36ebae985448",
+    "Tony Szczudlo",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1163,9 +1148,9 @@ pub(in crate::card::sets) static SWIRLING_SANDSTORM: CardRecord = CardRecord::ne
 // JUD 103 — Worldgorger Dragon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WORLDGORGER_DRAGON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("99783a2b-a95a-457b-82d6-001933aee5ec"),
     "Worldgorger Dragon",
-    crate::card::CardArt::new("99783a2b-a95a-457b-82d6-001933aee5ec", "Wayne England"),
+    "99783a2b-a95a-457b-82d6-001933aee5ec",
+    "Wayne England",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1173,9 +1158,9 @@ pub(in crate::card::sets) static WORLDGORGER_DRAGON: CardRecord = CardRecord::ne
 // JUD 104 — Anurid Barkripper
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANURID_BARKRIPPER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("33255dfd-f8a9-4a15-aac5-c53dc0257859"),
     "Anurid Barkripper",
-    crate::card::CardArt::new("33255dfd-f8a9-4a15-aac5-c53dc0257859", "Randy Gallegos"),
+    "33255dfd-f8a9-4a15-aac5-c53dc0257859",
+    "Randy Gallegos",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1183,9 +1168,9 @@ pub(in crate::card::sets) static ANURID_BARKRIPPER: CardRecord = CardRecord::new
 // JUD 105 — Anurid Swarmsnapper
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANURID_SWARMSNAPPER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3636a9f8-d1d7-4452-8a53-788b514fdb97"),
     "Anurid Swarmsnapper",
-    crate::card::CardArt::new("3636a9f8-d1d7-4452-8a53-788b514fdb97", "John Matson"),
+    "3636a9f8-d1d7-4452-8a53-788b514fdb97",
+    "John Matson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1193,9 +1178,9 @@ pub(in crate::card::sets) static ANURID_SWARMSNAPPER: CardRecord = CardRecord::n
 // JUD 106 — Battlefield Scrounger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BATTLEFIELD_SCROUNGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f5ac74bc-1198-4a9a-bcde-668cca08b274"),
     "Battlefield Scrounger",
-    crate::card::CardArt::new("f5ac74bc-1198-4a9a-bcde-668cca08b274", "Daren Bader"),
+    "f5ac74bc-1198-4a9a-bcde-668cca08b274",
+    "Daren Bader",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1203,9 +1188,9 @@ pub(in crate::card::sets) static BATTLEFIELD_SCROUNGER: CardRecord = CardRecord:
 // JUD 107 — Brawn
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BRAWN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e9f4b7fc-8793-43af-ade3-b23846a80457"),
     "Brawn",
-    crate::card::CardArt::new("e9f4b7fc-8793-43af-ade3-b23846a80457", "Matt Cavotta"),
+    "e9f4b7fc-8793-43af-ade3-b23846a80457",
+    "Matt Cavotta",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1213,9 +1198,9 @@ pub(in crate::card::sets) static BRAWN: CardRecord = CardRecord::new(
 // JUD 108 — Canopy Claws
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CANOPY_CLAWS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c4530da2-fd04-40d9-ad69-5c2847921509"),
     "Canopy Claws",
-    crate::card::CardArt::new("c4530da2-fd04-40d9-ad69-5c2847921509", "Matthew Mitchell"),
+    "c4530da2-fd04-40d9-ad69-5c2847921509",
+    "Matthew Mitchell",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1223,9 +1208,9 @@ pub(in crate::card::sets) static CANOPY_CLAWS: CardRecord = CardRecord::new(
 // JUD 109 — Centaur Rootcaster
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CENTAUR_ROOTCASTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3f10dfd9-9889-4d9e-872a-07623dee6b6b"),
     "Centaur Rootcaster",
-    crate::card::CardArt::new("3f10dfd9-9889-4d9e-872a-07623dee6b6b", "Eric Peterson"),
+    "3f10dfd9-9889-4d9e-872a-07623dee6b6b",
+    "Eric Peterson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1233,12 +1218,9 @@ pub(in crate::card::sets) static CENTAUR_ROOTCASTER: CardRecord = CardRecord::ne
 // JUD 110 — Crush of Wurms
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRUSH_OF_WURMS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("32a924b3-3bd6-43ad-acbd-1303dd670db4"),
     "Crush of Wurms",
-    crate::card::CardArt::new(
-        "32a924b3-3bd6-43ad-acbd-1303dd670db4",
-        "Christopher Moeller",
-    ),
+    "32a924b3-3bd6-43ad-acbd-1303dd670db4",
+    "Christopher Moeller",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1246,9 +1228,9 @@ pub(in crate::card::sets) static CRUSH_OF_WURMS: CardRecord = CardRecord::new(
 // JUD 111 — Elephant Guide
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ELEPHANT_GUIDE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7d3a7226-f574-430e-9b8f-4e531a21540f"),
     "Elephant Guide",
-    crate::card::CardArt::new("7d3a7226-f574-430e-9b8f-4e531a21540f", "Jim Nelson"),
+    "7d3a7226-f574-430e-9b8f-4e531a21540f",
+    "Jim Nelson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1256,26 +1238,26 @@ pub(in crate::card::sets) static ELEPHANT_GUIDE: CardRecord = CardRecord::new(
 // JUD 112 — Epic Struggle
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EPIC_STRUGGLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0dc71f6f-f831-409e-aafd-3fa82a318e72"),
     "Epic Struggle",
-    crate::card::CardArt::new(
-        "0dc71f6f-f831-409e-aafd-3fa82a318e72",
-        "Greg Hildebrandt & Tim Hildebrandt",
-    ),
+    "0dc71f6f-f831-409e-aafd-3fa82a318e72",
+    "Greg Hildebrandt & Tim Hildebrandt",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
 
 // JUD 113 — Erhnam Djinn (reprint)
-const ERHNAM_DJINN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_arn::ERHNAM_DJINN)
-    .with_art("5bcf61ba-37fd-4029-b299-add7cf9d70bc", "Greg Staples");
+const ERHNAM_DJINN_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_arn::ERHNAM_DJINN,
+    "5bcf61ba-37fd-4029-b299-add7cf9d70bc",
+    "Greg Staples",
+);
 
 // JUD 114 — Exoskeletal Armor
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EXOSKELETAL_ARMOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e111fcab-17f7-4a02-b4eb-606ba18812b3"),
     "Exoskeletal Armor",
-    crate::card::CardArt::new("e111fcab-17f7-4a02-b4eb-606ba18812b3", "Wayne England"),
+    "e111fcab-17f7-4a02-b4eb-606ba18812b3",
+    "Wayne England",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1283,9 +1265,9 @@ pub(in crate::card::sets) static EXOSKELETAL_ARMOR: CardRecord = CardRecord::new
 // JUD 115 — Folk Medicine
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FOLK_MEDICINE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("751bd716-5352-41d7-89fb-d5f100f6646b"),
     "Folk Medicine",
-    crate::card::CardArt::new("751bd716-5352-41d7-89fb-d5f100f6646b", "Matt Cavotta"),
+    "751bd716-5352-41d7-89fb-d5f100f6646b",
+    "Matt Cavotta",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1293,9 +1275,9 @@ pub(in crate::card::sets) static FOLK_MEDICINE: CardRecord = CardRecord::new(
 // JUD 116 — Forcemage Advocate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FORCEMAGE_ADVOCATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1ad217fe-9309-4c67-8a6a-cfb8b1ce91f1"),
     "Forcemage Advocate",
-    crate::card::CardArt::new("1ad217fe-9309-4c67-8a6a-cfb8b1ce91f1", "Darrell Riche"),
+    "1ad217fe-9309-4c67-8a6a-cfb8b1ce91f1",
+    "Darrell Riche",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1303,9 +1285,9 @@ pub(in crate::card::sets) static FORCEMAGE_ADVOCATE: CardRecord = CardRecord::ne
 // JUD 117 — Genesis
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GENESIS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b43aee5e-b12e-43ea-9fae-16310acdc640"),
     "Genesis",
-    crate::card::CardArt::new("b43aee5e-b12e-43ea-9fae-16310acdc640", "Mark Zug"),
+    "b43aee5e-b12e-43ea-9fae-16310acdc640",
+    "Mark Zug",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1313,9 +1295,9 @@ pub(in crate::card::sets) static GENESIS: CardRecord = CardRecord::new(
 // JUD 118 — Giant Warthog
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GIANT_WARTHOG: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c402ef0e-51e7-4da6-a434-b99c5d435698"),
     "Giant Warthog",
-    crate::card::CardArt::new("c402ef0e-51e7-4da6-a434-b99c5d435698", "Kev Walker"),
+    "c402ef0e-51e7-4da6-a434-b99c5d435698",
+    "Kev Walker",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1323,9 +1305,9 @@ pub(in crate::card::sets) static GIANT_WARTHOG: CardRecord = CardRecord::new(
 // JUD 119 — Grizzly Fate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRIZZLY_FATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("92d23432-6181-44c3-8d36-d7632a8a329f"),
     "Grizzly Fate",
-    crate::card::CardArt::new("92d23432-6181-44c3-8d36-d7632a8a329f", "Dave Dorman"),
+    "92d23432-6181-44c3-8d36-d7632a8a329f",
+    "Dave Dorman",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1333,9 +1315,9 @@ pub(in crate::card::sets) static GRIZZLY_FATE: CardRecord = CardRecord::new(
 // JUD 120 — Harvester Druid
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HARVESTER_DRUID: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("97337e6e-1b3f-43a2-91f2-ca8f6c5dea88"),
     "Harvester Druid",
-    crate::card::CardArt::new("97337e6e-1b3f-43a2-91f2-ca8f6c5dea88", "David Martin"),
+    "97337e6e-1b3f-43a2-91f2-ca8f6c5dea88",
+    "David Martin",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1343,18 +1325,18 @@ pub(in crate::card::sets) static HARVESTER_DRUID: CardRecord = CardRecord::new(
 // JUD 121 — Ironshell Beetle
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static IRONSHELL_BEETLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("be9299cc-6f21-4185-ac63-2fd92e843faa"),
     "Ironshell Beetle",
-    crate::card::CardArt::new("be9299cc-6f21-4185-ac63-2fd92e843faa", "Heather Hudson"),
+    "be9299cc-6f21-4185-ac63-2fd92e843faa",
+    "Heather Hudson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
 
 // JUD 122 — Krosan Reclamation
-pub(in crate::card::sets) static KROSAN_RECLAMATION: CardRecord = CardRecord::new_with_legacy_id(
-    2074,
+pub(in crate::card::sets) static KROSAN_RECLAMATION: CardRecord = CardRecord::new(
     "Krosan Reclamation",
-    CardArt::new("2aa77608-8f0e-4b12-80e2-d1feabf7787d", "Gary Ruddell"),
+    "5b3c5144-7e15-46c6-b819-d729ecb30bb1",
+    "Gary Ruddell",
     CardSet::Judgment,
     // Graveyard hate that answers a single card twice, which is what a
     // combo deck holding one Sutured Ghoul actually needs.
@@ -1413,12 +1395,9 @@ pub(in crate::card::sets) static KROSAN_RECLAMATION: CardRecord = CardRecord::ne
 // JUD 123 — Krosan Wayfarer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KROSAN_WAYFARER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5356e684-c2fc-465e-a16c-7300824d2a8d"),
     "Krosan Wayfarer",
-    crate::card::CardArt::new(
-        "5356e684-c2fc-465e-a16c-7300824d2a8d",
-        "Edward P. Beard, Jr.",
-    ),
+    "5356e684-c2fc-465e-a16c-7300824d2a8d",
+    "Edward P. Beard, Jr.",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1426,9 +1405,9 @@ pub(in crate::card::sets) static KROSAN_WAYFARER: CardRecord = CardRecord::new(
 // JUD 124 — Living Wish
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIVING_WISH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2478a8d2-ca44-4c42-8d75-dd9cb1b59f61"),
     "Living Wish",
-    crate::card::CardArt::new("2478a8d2-ca44-4c42-8d75-dd9cb1b59f61", "Eric Peterson"),
+    "2478a8d2-ca44-4c42-8d75-dd9cb1b59f61",
+    "Eric Peterson",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1436,9 +1415,9 @@ pub(in crate::card::sets) static LIVING_WISH: CardRecord = CardRecord::new(
 // JUD 125 — Nantuko Tracer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NANTUKO_TRACER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("16b93c93-5944-4289-bc5a-30b6e73b0dfd"),
     "Nantuko Tracer",
-    crate::card::CardArt::new("16b93c93-5944-4289-bc5a-30b6e73b0dfd", "Greg Staples"),
+    "16b93c93-5944-4289-bc5a-30b6e73b0dfd",
+    "Greg Staples",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1446,9 +1425,9 @@ pub(in crate::card::sets) static NANTUKO_TRACER: CardRecord = CardRecord::new(
 // JUD 126 — Nullmage Advocate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NULLMAGE_ADVOCATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1c29991d-82f2-479d-95ca-5c88e9f3f219"),
     "Nullmage Advocate",
-    crate::card::CardArt::new("1c29991d-82f2-479d-95ca-5c88e9f3f219", "Darrell Riche"),
+    "1c29991d-82f2-479d-95ca-5c88e9f3f219",
+    "Darrell Riche",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1456,9 +1435,9 @@ pub(in crate::card::sets) static NULLMAGE_ADVOCATE: CardRecord = CardRecord::new
 // JUD 127 — Phantom Centaur
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHANTOM_CENTAUR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c421c2f1-2137-41bd-9a89-74d8a76fb5c5"),
     "Phantom Centaur",
-    crate::card::CardArt::new("c421c2f1-2137-41bd-9a89-74d8a76fb5c5", "Carl Critchlow"),
+    "c421c2f1-2137-41bd-9a89-74d8a76fb5c5",
+    "Carl Critchlow",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1466,9 +1445,9 @@ pub(in crate::card::sets) static PHANTOM_CENTAUR: CardRecord = CardRecord::new(
 // JUD 128 — Phantom Nantuko
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHANTOM_NANTUKO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("66f8ca45-b60f-4bb9-9f7e-1b5e13478f22"),
     "Phantom Nantuko",
-    crate::card::CardArt::new("66f8ca45-b60f-4bb9-9f7e-1b5e13478f22", "Wayne England"),
+    "66f8ca45-b60f-4bb9-9f7e-1b5e13478f22",
+    "Wayne England",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1476,9 +1455,9 @@ pub(in crate::card::sets) static PHANTOM_NANTUKO: CardRecord = CardRecord::new(
 // JUD 129 — Phantom Tiger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHANTOM_TIGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("32839296-e583-4f71-aa44-dbe16408665e"),
     "Phantom Tiger",
-    crate::card::CardArt::new("32839296-e583-4f71-aa44-dbe16408665e", "Brian Snõddy"),
+    "32839296-e583-4f71-aa44-dbe16408665e",
+    "Brian Snõddy",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1486,9 +1465,9 @@ pub(in crate::card::sets) static PHANTOM_TIGER: CardRecord = CardRecord::new(
 // JUD 130 — Seedtime
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SEEDTIME: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4ffd5c52-f260-400c-b088-8792282509a5"),
     "Seedtime",
-    crate::card::CardArt::new("4ffd5c52-f260-400c-b088-8792282509a5", "Rebecca Guay"),
+    "4ffd5c52-f260-400c-b088-8792282509a5",
+    "Rebecca Guay",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1496,9 +1475,9 @@ pub(in crate::card::sets) static SEEDTIME: CardRecord = CardRecord::new(
 // JUD 131 — Serene Sunset
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SERENE_SUNSET: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0a6ded26-b748-406d-8740-9b8590be2bb1"),
     "Serene Sunset",
-    crate::card::CardArt::new("0a6ded26-b748-406d-8740-9b8590be2bb1", "David Martin"),
+    "0a6ded26-b748-406d-8740-9b8590be2bb1",
+    "David Martin",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1506,18 +1485,18 @@ pub(in crate::card::sets) static SERENE_SUNSET: CardRecord = CardRecord::new(
 // JUD 132 — Sudden Strength
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUDDEN_STRENGTH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e3ca1108-ccf2-48ea-8ca7-986aa45d5fe8"),
     "Sudden Strength",
-    crate::card::CardArt::new("e3ca1108-ccf2-48ea-8ca7-986aa45d5fe8", "Alan Pollack"),
+    "e3ca1108-ccf2-48ea-8ca7-986aa45d5fe8",
+    "Alan Pollack",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
 
 // JUD 133 — Sylvan Safekeeper
-pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new_with_legacy_id(
-    293,
+pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new(
     "Sylvan Safekeeper",
-    CardArt::new("f1b8413f-c9fc-4cea-b416-a1fcf651b009", "Pete Venters"),
+    "f1b8413f-c9fc-4cea-b416-a1fcf651b009",
+    "Pete Venters",
     CardSet::Judgment,
     CardRules::new_creature(mana_cost!("{G}"), &["Human", "Wizard"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
@@ -1544,9 +1523,9 @@ pub(in crate::card::sets) static SYLVAN_SAFEKEEPER: CardRecord = CardRecord::new
 // JUD 134 — Thriss, Nantuko Primus
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THRISS_NANTUKO_PRIMUS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ad9e647d-903f-4a77-a56c-cd5c0c2f12cf"),
     "Thriss, Nantuko Primus",
-    crate::card::CardArt::new("ad9e647d-903f-4a77-a56c-cd5c0c2f12cf", "John Avon"),
+    "ad9e647d-903f-4a77-a56c-cd5c0c2f12cf",
+    "John Avon",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1554,9 +1533,9 @@ pub(in crate::card::sets) static THRISS_NANTUKO_PRIMUS: CardRecord = CardRecord:
 // JUD 135 — Tunneler Wurm
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TUNNELER_WURM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c8e246c8-3b3f-47c4-8a1b-b5f2d36f0ca4"),
     "Tunneler Wurm",
-    crate::card::CardArt::new("c8e246c8-3b3f-47c4-8a1b-b5f2d36f0ca4", "Jeff Easley"),
+    "c8e246c8-3b3f-47c4-8a1b-b5f2d36f0ca4",
+    "Jeff Easley",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1564,9 +1543,9 @@ pub(in crate::card::sets) static TUNNELER_WURM: CardRecord = CardRecord::new(
 // JUD 136 — Venomous Vines
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VENOMOUS_VINES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("db10359c-1ea8-4453-bc01-f638ad20a5ec"),
     "Venomous Vines",
-    crate::card::CardArt::new("db10359c-1ea8-4453-bc01-f638ad20a5ec", "Ron Spencer"),
+    "db10359c-1ea8-4453-bc01-f638ad20a5ec",
+    "Ron Spencer",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1574,9 +1553,9 @@ pub(in crate::card::sets) static VENOMOUS_VINES: CardRecord = CardRecord::new(
 // JUD 137 — Anurid Brushhopper
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANURID_BRUSHHOPPER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b09204c7-3e3d-484a-a4f7-da1b818e3884"),
     "Anurid Brushhopper",
-    crate::card::CardArt::new("b09204c7-3e3d-484a-a4f7-da1b818e3884", "Arnie Swekel"),
+    "b09204c7-3e3d-484a-a4f7-da1b818e3884",
+    "Arnie Swekel",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1584,9 +1563,9 @@ pub(in crate::card::sets) static ANURID_BRUSHHOPPER: CardRecord = CardRecord::ne
 // JUD 138 — Hunting Grounds
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HUNTING_GROUNDS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5b14a736-5223-457b-9d4e-f4a2d6ed9a8d"),
     "Hunting Grounds",
-    crate::card::CardArt::new("5b14a736-5223-457b-9d4e-f4a2d6ed9a8d", "Mark Brill"),
+    "5b14a736-5223-457b-9d4e-f4a2d6ed9a8d",
+    "Mark Brill",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1594,9 +1573,9 @@ pub(in crate::card::sets) static HUNTING_GROUNDS: CardRecord = CardRecord::new(
 // JUD 139 — Mirari's Wake
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MIRARI_S_WAKE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b5ddad46-5e2e-43c9-8c91-7aca6ca23562"),
     "Mirari's Wake",
-    crate::card::CardArt::new("b5ddad46-5e2e-43c9-8c91-7aca6ca23562", "David Martin"),
+    "b5ddad46-5e2e-43c9-8c91-7aca6ca23562",
+    "David Martin",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1604,9 +1583,9 @@ pub(in crate::card::sets) static MIRARI_S_WAKE: CardRecord = CardRecord::new(
 // JUD 140 — Phantom Nishoba
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHANTOM_NISHOBA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("56ebc372-aabd-4174-a943-c7bf59e5028d"),
     "Phantom Nishoba",
-    crate::card::CardArt::new("56ebc372-aabd-4174-a943-c7bf59e5028d", "Arnie Swekel"),
+    "56ebc372-aabd-4174-a943-c7bf59e5028d",
+    "Arnie Swekel",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1614,9 +1593,9 @@ pub(in crate::card::sets) static PHANTOM_NISHOBA: CardRecord = CardRecord::new(
 // JUD 141 — Krosan Verge
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KROSAN_VERGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bae25abc-22c2-436d-9e08-f123543a0911"),
     "Krosan Verge",
-    crate::card::CardArt::new("bae25abc-22c2-436d-9e08-f123543a0911", "Tony Szczudlo"),
+    "bae25abc-22c2-436d-9e08-f123543a0911",
+    "Tony Szczudlo",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
@@ -1624,18 +1603,18 @@ pub(in crate::card::sets) static KROSAN_VERGE: CardRecord = CardRecord::new(
 // JUD 142 — Nantuko Monastery
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NANTUKO_MONASTERY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cb870406-9d59-4493-9f81-0f4b84642001"),
     "Nantuko Monastery",
-    crate::card::CardArt::new("cb870406-9d59-4493-9f81-0f4b84642001", "Rob Alexander"),
+    "cb870406-9d59-4493-9f81-0f4b84642001",
+    "Rob Alexander",
     crate::card::CardSet::Judgment,
     crate::card::CardRules::unsupported(),
 );
 
 // JUD 143 — Riftstone Portal
 pub(in crate::card::sets) static RIFTSTONE_PORTAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("92ece630-e484-4221-911f-e32048894f23"),
     "Riftstone Portal",
-    crate::card::CardArt::new("92ece630-e484-4221-911f-e32048894f23", "Don Hazeltine"),
+    "92ece630-e484-4221-911f-e32048894f23",
+    "Don Hazeltine",
     crate::card::CardSet::Judgment,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),

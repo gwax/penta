@@ -1,13 +1,13 @@
 //! Rivals of Ixalan card records.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 
 // RIX 101 — Fanatical Firebrand
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FANATICAL_FIREBRAND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5e5565de-028c-4799-a9f6-4dcd685639eb"),
     "Fanatical Firebrand",
-    crate::card::CardArt::new("d1296316-7781-4e98-95e6-7020648be6a5", "Wayne Reynolds"),
+    "5e5565de-028c-4799-a9f6-4dcd685639eb",
+    "Wayne Reynolds",
     crate::card::CardSet::RivalsOfIxalan,
     crate::card::CardRules::unsupported(),
 );

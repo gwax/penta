@@ -1,31 +1,30 @@
 //! Phyrexia: All Will Be One cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::CostQuantityDef;
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, ChoiceVisibilityDef, ChooseOneOfEachDef, EffectDef, EffectRecipientDef,
-    MoveObjectsDef, ObjectPredicateDef, ObjectSetDef, PlayerRefDef, RandomizeObjectOrderDef,
-    RevealObjectsDef, SacrificedAmountDef, SpellAdditionalCostDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, CardRules, CardSet, CardSupertype, CardType,
+    ChoiceVisibilityDef, ChooseOneOfEachDef, EffectDef, EffectRecipientDef, MoveObjectsDef,
+    ObjectPredicateDef, ObjectSetDef, PlayerRefDef, RandomizeObjectOrderDef, RevealObjectsDef,
+    SacrificedAmountDef, SpellAdditionalCostDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{Binding, ParentBinding, mana_cost};
 
 // ONE 28 — Planar Disruption
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PLANAR_DISRUPTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8ee69a1f-aeed-4eb4-8987-fa720fc99715"),
     "Planar Disruption",
-    crate::card::CardArt::new("8ee69a1f-aeed-4eb4-8987-fa720fc99715", "Campbell White"),
+    "8ee69a1f-aeed-4eb4-8987-fa720fc99715",
+    "Campbell White",
     crate::card::CardSet::PhyrexiaAllWillBeOne,
     crate::card::CardRules::unsupported(),
 );
 
 // ONE 80 — Annihilating Glare
 pub(in crate::card::sets) static ANNIHILATING_GLARE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("be5d0b95-ec12-4e8e-99a0-7aca457f9107"),
     "Annihilating Glare",
-    CardArt::new("be5d0b95-ec12-4e8e-99a0-7aca457f9107", "Konstantin Porubov"),
+    "be5d0b95-ec12-4e8e-99a0-7aca457f9107",
+    "Konstantin Porubov",
     CardSet::PhyrexiaAllWillBeOne,
     CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_additional_cost(
         "As an additional cost to cast this spell, pay {4} or sacrifice an artifact or \
@@ -69,9 +68,9 @@ const fn edict(text: &'static str, object: ObjectPredicateDef) -> AbilityDef {
 }
 
 pub(in crate::card::sets) static SHEOLDRED_S_EDICT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a9225cc3-90f0-448f-a8d9-7c6c2796d077"),
     "Sheoldred's Edict",
-    CardArt::new("a9225cc3-90f0-448f-a8d9-7c6c2796d077", "Helge C. Balzer"),
+    "a9225cc3-90f0-448f-a8d9-7c6c2796d077",
+    "Helge C. Balzer",
     CardSet::PhyrexiaAllWillBeOne,
     // Two mana at instant speed for the one creature a protected threat
     // cannot dodge, as long as it is the only one they have.
@@ -107,9 +106,9 @@ pub(in crate::card::sets) static SHEOLDRED_S_EDICT: CardRecord = CardRecord::new
 // ONE 121 — Barbed Batterfist
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BARBED_BATTERFIST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("de1d02d1-91dc-47d6-bdbe-87602428abfb"),
     "Barbed Batterfist",
-    crate::card::CardArt::new("de1d02d1-91dc-47d6-bdbe-87602428abfb", "Randy Gallegos"),
+    "de1d02d1-91dc-47d6-bdbe-87602428abfb",
+    "Randy Gallegos",
     crate::card::CardSet::PhyrexiaAllWillBeOne,
     crate::card::CardRules::unsupported(),
 );
@@ -117,18 +116,18 @@ pub(in crate::card::sets) static BARBED_BATTERFIST: CardRecord = CardRecord::new
 // ONE 133 — Furnace Strider
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FURNACE_STRIDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("aa625ab0-1e79-4497-a5da-98fe1abfd024"),
     "Furnace Strider",
-    crate::card::CardArt::new("aa625ab0-1e79-4497-a5da-98fe1abfd024", "Denis Zhbankov"),
+    "aa625ab0-1e79-4497-a5da-98fe1abfd024",
+    "Denis Zhbankov",
     crate::card::CardSet::PhyrexiaAllWillBeOne,
     crate::card::CardRules::unsupported(),
 );
 
 // ONE 161 — Cankerbloom
-pub(in crate::card::sets) static CANKERBLOOM: CardRecord = CardRecord::new_with_legacy_id(
-    2292,
+pub(in crate::card::sets) static CANKERBLOOM: CardRecord = CardRecord::new(
     "Cankerbloom",
-    CardArt::new("89b39293-6f57-4294-85fc-c718bdbb4d40", "Nicholas Gregory"),
+    "89b39293-6f57-4294-85fc-c718bdbb4d40",
+    "Nicholas Gregory",
     CardSet::PhyrexiaAllWillBeOne,
     // A 3/2 for two that is also the artifact removal the deck was going to
     // have to find room for, which is the whole reason it is in a cube.
@@ -166,9 +165,9 @@ pub(in crate::card::sets) static CANKERBLOOM: CardRecord = CardRecord::new_with_
 // ONE 164 — Contagious Vorrac
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CONTAGIOUS_VORRAC: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("18af2c85-e58f-4043-99d3-e90121348aca"),
     "Contagious Vorrac",
-    crate::card::CardArt::new("18af2c85-e58f-4043-99d3-e90121348aca", "Maxime Minard"),
+    "18af2c85-e58f-4043-99d3-e90121348aca",
+    "Maxime Minard",
     crate::card::CardSet::PhyrexiaAllWillBeOne,
     crate::card::CardRules::unsupported(),
 );
@@ -185,9 +184,9 @@ pub(in crate::card::sets) static CONTAGIOUS_VORRAC: CardRecord = CardRecord::new
 const ATRAXA_CHOSEN: Binding = Binding!("atraxa_chosen");
 const ATRAXA_REST: Binding = Binding!("atraxa_rest");
 pub(in crate::card::sets) static ATRAXA_GRAND_UNIFIER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4a1f905f-1d55-4d02-9d24-e58070793d3f"),
     "Atraxa, Grand Unifier",
-    crate::card::CardArt::new("4a1f905f-1d55-4d02-9d24-e58070793d3f", "Marta Nael"),
+    "4a1f905f-1d55-4d02-9d24-e58070793d3f",
+    "Marta Nael",
     crate::card::CardSet::PhyrexiaAllWillBeOne,
     // Seven mana across four colours for a 7/7 that blocks everything, gains
     // the life back, and refills the hand on the way in.

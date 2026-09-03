@@ -19,36 +19,8 @@ enum CompositionSource {
     },
 }
 
-/// Immutable exact preferred-printing anchor from which a new definition ID
-/// is derived. New records prefer the first English-language paper printing,
-/// falling back to the first paper printing only when necessary.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub(super) struct PrintingAnchor {
-    scryfall_id: &'static str,
-    nonce: u32,
-}
-
-impl PrintingAnchor {
-    #[must_use]
-    pub(super) const fn scryfall(scryfall_id: &'static str) -> Self {
-        Self {
-            scryfall_id,
-            nonce: 0,
-        }
-    }
-
-    /// Commits the deterministic collision escape for one printing.
-    #[must_use]
-    #[allow(dead_code)] // Used only when a newly authored printing collides.
-    pub(super) const fn scryfall_with_nonce(scryfall_id: &'static str, nonce: u32) -> Self {
-        Self { scryfall_id, nonce }
-    }
-}
-
 /// Internal source record from which the runtime catalog is built.
 pub(super) struct CardRecord {
-    legacy_id: Option<CardDefinitionId>,
-    identity_anchor: PrintingAnchor,
     pub(super) name: &'static str,
     pub(super) art: CardArt,
     pub(super) debut_set: CardSet,
@@ -57,43 +29,18 @@ pub(super) struct CardRecord {
 }
 
 impl CardRecord {
-    /// Defines a card whose ID is derived from its immutable preferred-printing anchor.
+    /// Defines a card whose ID is derived from its exact debut artwork.
     #[allow(clippy::large_types_passed_by_value)]
-    #[allow(dead_code)] // Existing records use the migration-only legacy constructor.
     pub(super) const fn new(
-        identity_anchor: PrintingAnchor,
         name: &'static str,
-        art: CardArt,
+        scryfall_id: &'static str,
+        artist: &'static str,
         debut_set: CardSet,
         rules: CardRules,
     ) -> Self {
         Self {
-            legacy_id: None,
-            identity_anchor,
             name,
-            art,
-            debut_set,
-            rules,
-            composition: None,
-        }
-    }
-
-    /// Preserves an existing numeric ID while recording an anchor printing.
-    ///
-    /// Existing records default their anchor to the supplied debut artwork.
-    #[allow(clippy::large_types_passed_by_value)]
-    pub(super) const fn new_with_legacy_id(
-        legacy_id: u64,
-        name: &'static str,
-        art: CardArt,
-        debut_set: CardSet,
-        rules: CardRules,
-    ) -> Self {
-        Self {
-            legacy_id: Some(CardDefinitionId::new(legacy_id)),
-            identity_anchor: PrintingAnchor::scryfall(art.scryfall_id),
-            name,
-            art,
+            art: CardArt::new(scryfall_id, artist),
             debut_set,
             rules,
             composition: None,
@@ -101,21 +48,18 @@ impl CardRecord {
     }
 
     /// Defines a double-faced card whose ID is derived from its immutable
-    /// preferred-printing anchor.
+    /// debut artwork.
     const fn new_double_faced(
-        legacy_id: Option<CardDefinitionId>,
-        identity_anchor: PrintingAnchor,
         name: &'static str,
-        art: CardArt,
+        scryfall_id: &'static str,
+        artist: &'static str,
         debut_set: CardSet,
         faces: &'static [(&'static str, CardRules); 2],
         kind: DoubleFacedKind,
     ) -> Self {
         Self {
-            legacy_id,
-            identity_anchor,
             name,
-            art,
+            art: CardArt::new(scryfall_id, artist),
             debut_set,
             rules: faces[0].1,
             composition: Some(CompositionSource::DoubleFaced { faces, kind }),
@@ -123,19 +67,18 @@ impl CardRecord {
     }
 
     /// Defines a transforming double-faced card whose ID is derived from its
-    /// immutable preferred-printing anchor.
+    /// exact debut artwork.
     pub(super) const fn new_dfc(
-        identity_anchor: PrintingAnchor,
         name: &'static str,
-        art: CardArt,
+        scryfall_id: &'static str,
+        artist: &'static str,
         debut_set: CardSet,
         faces: &'static [(&'static str, CardRules); 2],
     ) -> Self {
         Self::new_double_faced(
-            None,
-            identity_anchor,
             name,
-            art,
+            scryfall_id,
+            artist,
             debut_set,
             faces,
             DoubleFacedKind::Transforming,
@@ -143,19 +86,18 @@ impl CardRecord {
     }
 
     /// Defines a modal double-faced card whose ID is derived from its
-    /// immutable preferred-printing anchor.
+    /// exact debut artwork.
     pub(super) const fn new_mdfc(
-        identity_anchor: PrintingAnchor,
         name: &'static str,
-        art: CardArt,
+        scryfall_id: &'static str,
+        artist: &'static str,
         debut_set: CardSet,
         faces: &'static [(&'static str, CardRules); 2],
     ) -> Self {
         Self::new_double_faced(
-            None,
-            identity_anchor,
             name,
-            art,
+            scryfall_id,
+            artist,
             debut_set,
             faces,
             DoubleFacedKind::Modal,
@@ -164,17 +106,15 @@ impl CardRecord {
 
     /// Defines a split card directly from its two printed halves.
     pub(super) const fn new_split(
-        identity_anchor: PrintingAnchor,
         name: &'static str,
-        art: CardArt,
+        scryfall_id: &'static str,
+        artist: &'static str,
         debut_set: CardSet,
         halves: &'static [(&'static str, CardRules); 2],
     ) -> Self {
         Self {
-            legacy_id: None,
-            identity_anchor,
             name,
-            art,
+            art: CardArt::new(scryfall_id, artist),
             debut_set,
             rules: halves[0].1,
             composition: Some(CompositionSource::Split {
@@ -186,14 +126,14 @@ impl CardRecord {
 
     /// Defines a fuse card directly from its two printed halves and combined cost.
     pub(super) const fn new_fuse(
-        identity_anchor: PrintingAnchor,
         name: &'static str,
-        art: CardArt,
+        scryfall_id: &'static str,
+        artist: &'static str,
         debut_set: CardSet,
         halves: &'static [(&'static str, CardRules); 2],
         fuse_cost: super::ManaCost,
     ) -> Self {
-        let mut record = Self::new_split(identity_anchor, name, art, debut_set, halves);
+        let mut record = Self::new_split(name, scryfall_id, artist, debut_set, halves);
         record.composition = Some(CompositionSource::Split {
             halves,
             fuse_cost: Some(fuse_cost),
@@ -201,80 +141,13 @@ impl CardRecord {
         record
     }
 
-    /// Preserves an existing numeric ID for a double-faced card.
-    pub(super) const fn new_dfc_with_legacy_id(
-        legacy_id: u64,
-        name: &'static str,
-        art: CardArt,
-        debut_set: CardSet,
-        faces: &'static [(&'static str, CardRules); 2],
-    ) -> Self {
-        Self::new_double_faced(
-            Some(CardDefinitionId::new(legacy_id)),
-            PrintingAnchor::scryfall(art.scryfall_id),
-            name,
-            art,
-            debut_set,
-            faces,
-            DoubleFacedKind::Transforming,
-        )
-    }
-
-    /// Preserves an existing numeric ID for a split card.
-    pub(super) const fn new_split_with_legacy_id(
-        legacy_id: u64,
-        name: &'static str,
-        art: CardArt,
-        debut_set: CardSet,
-        halves: &'static [(&'static str, CardRules); 2],
-    ) -> Self {
-        let mut record = Self::new_split(
-            PrintingAnchor::scryfall(art.scryfall_id),
-            name,
-            art,
-            debut_set,
-            halves,
-        );
-        record.legacy_id = Some(CardDefinitionId::new(legacy_id));
-        record
-    }
-
-    /// Preserves an existing numeric ID for a fuse card.
-    pub(super) const fn new_fuse_with_legacy_id(
-        legacy_id: u64,
-        name: &'static str,
-        art: CardArt,
-        debut_set: CardSet,
-        halves: &'static [(&'static str, CardRules); 2],
-        fuse_cost: super::ManaCost,
-    ) -> Self {
-        let mut record = Self::new_fuse(
-            PrintingAnchor::scryfall(art.scryfall_id),
-            name,
-            art,
-            debut_set,
-            halves,
-            fuse_cost,
-        );
-        record.legacy_id = Some(CardDefinitionId::new(legacy_id));
-        record
-    }
-
-    /// Moves a legacy definition to its exact debut artwork and identity.
-    #[must_use]
-    pub(super) const fn with_debut_art(mut self, art: CardArt) -> Self {
-        self.identity_anchor = PrintingAnchor::scryfall(art.scryfall_id);
-        self.art = art;
-        self
-    }
-
     #[must_use]
     pub(super) fn id(&self) -> CardDefinitionId {
-        self.legacy_id.unwrap_or_else(|| {
+        super::compatibility::historical_definition_id(self.art.scryfall_id).unwrap_or_else(|| {
             let mut hash = Sha256::new();
             hash.update(b"penta/card-printing-id/v1\0");
-            hash.update(self.identity_anchor.scryfall_id.as_bytes());
-            hash.update(self.identity_anchor.nonce.to_be_bytes());
+            hash.update(self.art.scryfall_id.as_bytes());
+            hash.update(0_u32.to_be_bytes());
             let digest = hash.finalize();
             let prefix = u64::from_be_bytes(
                 digest[..8]
@@ -283,12 +156,6 @@ impl CardRecord {
             );
             CardDefinitionId::new(prefix >> 12)
         })
-    }
-
-    #[must_use]
-    #[cfg(test)]
-    pub(super) const fn identity_anchor(&self) -> &'static str {
-        self.identity_anchor.scryfall_id
     }
 
     /// Supplies logical parts and play options for a structured or modal card.
@@ -328,61 +195,56 @@ impl CardRecord {
 pub(super) struct PrintingRecord {
     pub(super) card: &'static CardRecord,
     pub(super) variant: u16,
-    pub(super) art: Option<CardArt>,
+    pub(super) art: CardArt,
 }
 
 impl PrintingRecord {
     /// Adds the default variant of `card` to another set.
-    pub(super) const fn reprint(card: &'static CardRecord) -> Self {
+    pub(super) const fn reprint(
+        card: &'static CardRecord,
+        scryfall_id: &'static str,
+        artist: &'static str,
+    ) -> Self {
         Self {
             card,
             variant: 0,
-            art: None,
+            art: CardArt::new(scryfall_id, artist),
         }
     }
 
     /// Adds another distinguishable printing of `card` within the same set.
-    pub(super) const fn alternate(card: &'static CardRecord, variant: u16) -> Self {
+    pub(super) const fn alternate(
+        card: &'static CardRecord,
+        variant: u16,
+        scryfall_id: &'static str,
+        artist: &'static str,
+    ) -> Self {
         assert!(variant > 0, "alternate printing variants start at one");
         Self {
             card,
             variant,
-            art: None,
+            art: CardArt::new(scryfall_id, artist),
         }
     }
 
-    /// Records the artwork printed on this exact reprint or variant.
-    #[must_use]
-    pub(super) const fn with_art(
-        mut self,
-        scryfall_id: &'static str,
-        artist: &'static str,
-    ) -> Self {
-        self.art = Some(CardArt::new(scryfall_id, artist));
-        self
-    }
-
     pub(super) fn printing(&self, set: CardSet) -> CardPrinting {
-        self.art.map_or_else(
-            || CardPrinting::with_variant(self.card.id(), set, self.variant),
-            |art| CardPrinting::with_variant_and_art(self.card.id(), set, self.variant, art),
-        )
+        CardPrinting::with_variant_and_art(self.card.id(), set, self.variant, self.art)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{CardRecord, PrintingAnchor};
+    use super::CardRecord;
     use crate::CardDefinitionId;
-    use crate::card::{CardArt, CardRules, CardSet};
+    use crate::card::{CardRules, CardSet};
 
     const ANCHOR: &str = "00000000-0000-0000-0000-000000000001";
 
-    fn derived(anchor: PrintingAnchor) -> CardRecord {
+    fn derived() -> CardRecord {
         CardRecord::new(
-            anchor,
             "Derived identity test",
-            CardArt::new(ANCHOR, "Test Artist"),
+            ANCHOR,
+            "Test Artist",
             CardSet::Alpha,
             CardRules::unsupported(),
         )
@@ -390,27 +252,6 @@ mod tests {
 
     #[test]
     fn printing_ids_follow_the_frozen_sha256_vector() {
-        assert_eq!(
-            derived(PrintingAnchor::scryfall(ANCHOR)).id(),
-            CardDefinitionId::new(4_013_269_539_742_549),
-        );
-        assert_eq!(
-            derived(PrintingAnchor::scryfall_with_nonce(ANCHOR, 1)).id(),
-            CardDefinitionId::new(2_624_005_265_348_835),
-        );
-    }
-
-    #[test]
-    fn legacy_ids_do_not_depend_on_the_anchor_printing() {
-        let record = CardRecord::new_with_legacy_id(
-            587,
-            "Legacy identity test",
-            CardArt::new(ANCHOR, "Test Artist"),
-            CardSet::Alpha,
-            CardRules::unsupported(),
-        );
-
-        assert_eq!(record.id(), CardDefinitionId::new(587));
-        assert_eq!(record.identity_anchor(), ANCHOR);
+        assert_eq!(derived().id(), CardDefinitionId::new(4_013_269_539_742_549),);
     }
 }

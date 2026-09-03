@@ -1,9 +1,9 @@
 //! March of the Machine Commander card records required by supported formats.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::TargetIndex;
 use crate::card::{
-    AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, EffectDef, EffectRecipientDef,
+    AbilityDef, AppliedEffectDef, CardRules, CardSet, EffectDef, EffectRecipientDef,
     ResolvedEffectDurationDef, abilities,
 };
 use crate::mana_cost;
@@ -15,9 +15,9 @@ use crate::mana_cost;
 static CHAMPION_DOUBLE_STRIKE: AbilityDef = abilities::double_strike();
 
 pub(in crate::card::sets) static DEATH_GREETER_S_CHAMPION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7cb2b582-1c45-4bb2-8aef-59a71a5a9e94"),
     "Death-Greeter's Champion",
-    CardArt::new("7cb2b582-1c45-4bb2-8aef-59a71a5a9e94", "Jason Rainville"),
+    "7cb2b582-1c45-4bb2-8aef-59a71a5a9e94",
+    "Jason Rainville",
     CardSet::MarchOfTheMachineCommander,
     // Three mana for four damage a turn on its own, and a dash cost for the
     // turns when the double strike is better spent on something already out.

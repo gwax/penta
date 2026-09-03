@@ -1,6 +1,6 @@
 //! Mercadian Masques cards used by the staged Premodern deck tranche.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::ZonePlacement;
 use crate::card::CostQuantityDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
@@ -14,23 +14,26 @@ use crate::card::sets::y1997::weatherlight as catalog_wth;
 use crate::card::sets::y1998::portal_second_age as catalog_p02;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef,
-    SpellAdditionalCostDef, TriggerConditionDef, ValueDef, ZoneKind, abilities,
+    AppliedEffectDef, AppliedRuleDef, BasicLandType, CardRules, CardSet, CardSupertype, CardType,
+    ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef, SpellAdditionalCostDef,
+    TriggerConditionDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
 // MMQ 1 — Afterlife (reprint)
-const AFTERLIFE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_mir::AFTERLIFE)
-    .with_art("8fa2ecf9-b53c-4f1d-9028-ca3820d043cb", "Brian Snõddy");
+const AFTERLIFE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_mir::AFTERLIFE,
+    "8fa2ecf9-b53c-4f1d-9028-ca3820d043cb",
+    "Brian Snõddy",
+);
 
 // MMQ 2 — Alabaster Wall
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ALABASTER_WALL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9cf393a3-831e-4d3a-8404-ee83f60970aa"),
     "Alabaster Wall",
-    crate::card::CardArt::new("9cf393a3-831e-4d3a-8404-ee83f60970aa", "Randy Gallegos"),
+    "9cf393a3-831e-4d3a-8404-ee83f60970aa",
+    "Randy Gallegos",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -38,18 +41,18 @@ pub(in crate::card::sets) static ALABASTER_WALL: CardRecord = CardRecord::new(
 // MMQ 3 — Armistice
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARMISTICE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1eb4402a-f263-4f82-b4c0-cf0aa58dc946"),
     "Armistice",
-    crate::card::CardArt::new("1eb4402a-f263-4f82-b4c0-cf0aa58dc946", "Dan Frazier"),
+    "1eb4402a-f263-4f82-b4c0-cf0aa58dc946",
+    "Dan Frazier",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 4 — Arrest
-pub(in crate::card::sets) static ARREST: CardRecord = CardRecord::new_with_legacy_id(
-    1952,
+pub(in crate::card::sets) static ARREST: CardRecord = CardRecord::new(
     "Arrest",
-    CardArt::new("3b083fd8-6422-4cd3-a27d-41b6d88598c2", "Dan Frazier"),
+    "3b083fd8-6422-4cd3-a27d-41b6d88598c2",
+    "Dan Frazier",
     CardSet::MercadianMasques,
     // The creature keeps its triggered and static abilities: only the
     // activations are shut off.
@@ -77,9 +80,9 @@ pub(in crate::card::sets) static ARREST: CardRecord = CardRecord::new_with_legac
 // MMQ 5 — Ballista Squad
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BALLISTA_SQUAD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("30d51d84-23d2-41ff-ab68-a633beddba06"),
     "Ballista Squad",
-    crate::card::CardArt::new("30d51d84-23d2-41ff-ab68-a633beddba06", "Matthew D. Wilson"),
+    "30d51d84-23d2-41ff-ab68-a633beddba06",
+    "Matthew D. Wilson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -87,9 +90,9 @@ pub(in crate::card::sets) static BALLISTA_SQUAD: CardRecord = CardRecord::new(
 // MMQ 6 — Charm Peddler
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHARM_PEDDLER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("082e6ee3-cc1f-46c7-9d82-56751478b3cf"),
     "Charm Peddler",
-    crate::card::CardArt::new("082e6ee3-cc1f-46c7-9d82-56751478b3cf", "John Matson"),
+    "082e6ee3-cc1f-46c7-9d82-56751478b3cf",
+    "John Matson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -97,9 +100,9 @@ pub(in crate::card::sets) static CHARM_PEDDLER: CardRecord = CardRecord::new(
 // MMQ 7 — Charmed Griffin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHARMED_GRIFFIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("66d36960-3c78-4032-9325-8002b2a48503"),
     "Charmed Griffin",
-    crate::card::CardArt::new("66d36960-3c78-4032-9325-8002b2a48503", "Ray Lago"),
+    "66d36960-3c78-4032-9325-8002b2a48503",
+    "Ray Lago",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -107,9 +110,9 @@ pub(in crate::card::sets) static CHARMED_GRIFFIN: CardRecord = CardRecord::new(
 // MMQ 8 — Cho-Arrim Alchemist
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHO_ARRIM_ALCHEMIST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("42c9d49d-61eb-4f33-b06b-03bdd990efd0"),
     "Cho-Arrim Alchemist",
-    crate::card::CardArt::new("42c9d49d-61eb-4f33-b06b-03bdd990efd0", "Scott M. Fischer"),
+    "42c9d49d-61eb-4f33-b06b-03bdd990efd0",
+    "Scott M. Fischer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -117,9 +120,9 @@ pub(in crate::card::sets) static CHO_ARRIM_ALCHEMIST: CardRecord = CardRecord::n
 // MMQ 9 — Cho-Arrim Bruiser
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHO_ARRIM_BRUISER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("26e98f06-ad8d-4a93-8ae6-3da42b63b5b5"),
     "Cho-Arrim Bruiser",
-    crate::card::CardArt::new("26e98f06-ad8d-4a93-8ae6-3da42b63b5b5", "Paolo Parente"),
+    "26e98f06-ad8d-4a93-8ae6-3da42b63b5b5",
+    "Paolo Parente",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -127,9 +130,9 @@ pub(in crate::card::sets) static CHO_ARRIM_BRUISER: CardRecord = CardRecord::new
 // MMQ 10 — Cho-Arrim Legate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHO_ARRIM_LEGATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1427a3a1-24e1-4697-b5eb-1c0a24f89e75"),
     "Cho-Arrim Legate",
-    crate::card::CardArt::new("1427a3a1-24e1-4697-b5eb-1c0a24f89e75", "rk post"),
+    "1427a3a1-24e1-4697-b5eb-1c0a24f89e75",
+    "rk post",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -137,12 +140,9 @@ pub(in crate::card::sets) static CHO_ARRIM_LEGATE: CardRecord = CardRecord::new(
 // MMQ 11 — Cho-Manno, Revolutionary
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHO_MANNO_REVOLUTIONARY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3dc51393-de63-4ce3-ab02-c695e4448018"),
     "Cho-Manno, Revolutionary",
-    crate::card::CardArt::new(
-        "3dc51393-de63-4ce3-ab02-c695e4448018",
-        "Greg Hildebrandt & Tim Hildebrandt",
-    ),
+    "3dc51393-de63-4ce3-ab02-c695e4448018",
+    "Greg Hildebrandt & Tim Hildebrandt",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -150,9 +150,9 @@ pub(in crate::card::sets) static CHO_MANNO_REVOLUTIONARY: CardRecord = CardRecor
 // MMQ 12 — Cho-Manno's Blessing
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHO_MANNO_S_BLESSING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5c9f33c6-5294-4584-854d-c8c0f847aba8"),
     "Cho-Manno's Blessing",
-    crate::card::CardArt::new("5c9f33c6-5294-4584-854d-c8c0f847aba8", "John Matson"),
+    "5c9f33c6-5294-4584-854d-c8c0f847aba8",
+    "John Matson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -160,9 +160,9 @@ pub(in crate::card::sets) static CHO_MANNO_S_BLESSING: CardRecord = CardRecord::
 // MMQ 13 — Common Cause
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static COMMON_CAUSE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("eae4c25f-2005-4ac0-a5f0-2fc250520995"),
     "Common Cause",
-    crate::card::CardArt::new("eae4c25f-2005-4ac0-a5f0-2fc250520995", "John Matson"),
+    "eae4c25f-2005-4ac0-a5f0-2fc250520995",
+    "John Matson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -170,12 +170,9 @@ pub(in crate::card::sets) static COMMON_CAUSE: CardRecord = CardRecord::new(
 // MMQ 14 — Cornered Market
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CORNERED_MARKET: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0d4f3c1d-d25e-4263-ab2b-19534c852678"),
     "Cornered Market",
-    crate::card::CardArt::new(
-        "0d4f3c1d-d25e-4263-ab2b-19534c852678",
-        "Edward P. Beard, Jr.",
-    ),
+    "0d4f3c1d-d25e-4263-ab2b-19534c852678",
+    "Edward P. Beard, Jr.",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -183,9 +180,9 @@ pub(in crate::card::sets) static CORNERED_MARKET: CardRecord = CardRecord::new(
 // MMQ 15 — Crackdown
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRACKDOWN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a7009fd8-1d80-41bb-a1b0-fea9c909c63d"),
     "Crackdown",
-    crate::card::CardArt::new("a7009fd8-1d80-41bb-a1b0-fea9c909c63d", "Rebecca Guay"),
+    "a7009fd8-1d80-41bb-a1b0-fea9c909c63d",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -193,12 +190,9 @@ pub(in crate::card::sets) static CRACKDOWN: CardRecord = CardRecord::new(
 // MMQ 16 — Crossbow Infantry
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CROSSBOW_INFANTRY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("744c2177-3140-48a1-95a4-2f0a27ca5b2f"),
     "Crossbow Infantry",
-    crate::card::CardArt::new(
-        "744c2177-3140-48a1-95a4-2f0a27ca5b2f",
-        "Greg Hildebrandt & Tim Hildebrandt",
-    ),
+    "744c2177-3140-48a1-95a4-2f0a27ca5b2f",
+    "Greg Hildebrandt & Tim Hildebrandt",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -206,23 +200,26 @@ pub(in crate::card::sets) static CROSSBOW_INFANTRY: CardRecord = CardRecord::new
 // MMQ 17 — Devout Witness
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEVOUT_WITNESS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("48ca7aeb-09db-4409-9ba2-c5c5500ad72f"),
     "Devout Witness",
-    crate::card::CardArt::new("48ca7aeb-09db-4409-9ba2-c5c5500ad72f", "Don Hazeltine"),
+    "48ca7aeb-09db-4409-9ba2-c5c5500ad72f",
+    "Don Hazeltine",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 18 — Disenchant (reprint)
-const DISENCHANT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DISENCHANT)
-    .with_art("366407d8-3ed9-4809-b9bb-388ebb9ea815", "Adam Rex");
+const DISENCHANT_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::DISENCHANT,
+    "366407d8-3ed9-4809-b9bb-388ebb9ea815",
+    "Adam Rex",
+);
 
 // MMQ 19 — Fountain Watch
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FOUNTAIN_WATCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("690daa19-1842-4605-9bda-bf67e4ede3c4"),
     "Fountain Watch",
-    crate::card::CardArt::new("690daa19-1842-4605-9bda-bf67e4ede3c4", "Jeff Miracola"),
+    "690daa19-1842-4605-9bda-bf67e4ede3c4",
+    "Jeff Miracola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -230,9 +227,9 @@ pub(in crate::card::sets) static FOUNTAIN_WATCH: CardRecord = CardRecord::new(
 // MMQ 20 — Fresh Volunteers
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FRESH_VOLUNTEERS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e070ea4a-c417-405f-b788-78fb7ca2eaa5"),
     "Fresh Volunteers",
-    crate::card::CardArt::new("e070ea4a-c417-405f-b788-78fb7ca2eaa5", "Jeff Miracola"),
+    "e070ea4a-c417-405f-b788-78fb7ca2eaa5",
+    "Jeff Miracola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -240,9 +237,9 @@ pub(in crate::card::sets) static FRESH_VOLUNTEERS: CardRecord = CardRecord::new(
 // MMQ 21 — Honor the Fallen
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HONOR_THE_FALLEN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("70147617-10e0-413d-be0a-a888b9cb6b97"),
     "Honor the Fallen",
-    crate::card::CardArt::new("70147617-10e0-413d-be0a-a888b9cb6b97", "Terese Nielsen"),
+    "70147617-10e0-413d-be0a-a888b9cb6b97",
+    "Terese Nielsen",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -250,9 +247,9 @@ pub(in crate::card::sets) static HONOR_THE_FALLEN: CardRecord = CardRecord::new(
 // MMQ 22 — Ignoble Soldier
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static IGNOBLE_SOLDIER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("676a2506-17f8-4b8e-be0c-eacc0fe972f6"),
     "Ignoble Soldier",
-    crate::card::CardArt::new("676a2506-17f8-4b8e-be0c-eacc0fe972f6", "Mark Romanoski"),
+    "676a2506-17f8-4b8e-be0c-eacc0fe972f6",
+    "Mark Romanoski",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -260,9 +257,9 @@ pub(in crate::card::sets) static IGNOBLE_SOLDIER: CardRecord = CardRecord::new(
 // MMQ 23 — Inviolability
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INVIOLABILITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9ece8504-389a-43e3-b178-7067722c4b75"),
     "Inviolability",
-    crate::card::CardArt::new("9ece8504-389a-43e3-b178-7067722c4b75", "DiTerlizzi"),
+    "9ece8504-389a-43e3-b178-7067722c4b75",
+    "DiTerlizzi",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -270,9 +267,9 @@ pub(in crate::card::sets) static INVIOLABILITY: CardRecord = CardRecord::new(
 // MMQ 24 — Ivory Mask
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static IVORY_MASK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("35ea3762-a419-412c-b2bd-0a40902d8d51"),
     "Ivory Mask",
-    crate::card::CardArt::new("35ea3762-a419-412c-b2bd-0a40902d8d51", "Glen Angus"),
+    "35ea3762-a419-412c-b2bd-0a40902d8d51",
+    "Glen Angus",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -280,9 +277,9 @@ pub(in crate::card::sets) static IVORY_MASK: CardRecord = CardRecord::new(
 // MMQ 25 — Jhovall Queen
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JHOVALL_QUEEN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b8eb55cc-ddde-4f15-9262-b9aee28059d3"),
     "Jhovall Queen",
-    crate::card::CardArt::new("b8eb55cc-ddde-4f15-9262-b9aee28059d3", "Michael Sutfin"),
+    "b8eb55cc-ddde-4f15-9262-b9aee28059d3",
+    "Michael Sutfin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -290,9 +287,9 @@ pub(in crate::card::sets) static JHOVALL_QUEEN: CardRecord = CardRecord::new(
 // MMQ 26 — Jhovall Rider
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JHOVALL_RIDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7e1f7c51-0011-4ea5-b123-3c26293f5dab"),
     "Jhovall Rider",
-    crate::card::CardArt::new("7e1f7c51-0011-4ea5-b123-3c26293f5dab", "Scott M. Fischer"),
+    "7e1f7c51-0011-4ea5-b123-3c26293f5dab",
+    "Scott M. Fischer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -300,9 +297,9 @@ pub(in crate::card::sets) static JHOVALL_RIDER: CardRecord = CardRecord::new(
 // MMQ 27 — Last Breath
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LAST_BREATH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3b540da2-f8c6-48d6-af6d-db78958f0a17"),
     "Last Breath",
-    crate::card::CardArt::new("3b540da2-f8c6-48d6-af6d-db78958f0a17", "DiTerlizzi"),
+    "3b540da2-f8c6-48d6-af6d-db78958f0a17",
+    "DiTerlizzi",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -310,12 +307,9 @@ pub(in crate::card::sets) static LAST_BREATH: CardRecord = CardRecord::new(
 // MMQ 28 — Moment of Silence
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOMENT_OF_SILENCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3f50b5f5-8dac-4785-b1af-a0bd64ce7a92"),
     "Moment of Silence",
-    crate::card::CardArt::new(
-        "3f50b5f5-8dac-4785-b1af-a0bd64ce7a92",
-        "Christopher Moeller",
-    ),
+    "3f50b5f5-8dac-4785-b1af-a0bd64ce7a92",
+    "Christopher Moeller",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -323,12 +317,9 @@ pub(in crate::card::sets) static MOMENT_OF_SILENCE: CardRecord = CardRecord::new
 // MMQ 29 — Moonlit Wake
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOONLIT_WAKE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1eba9595-6789-4d7a-9e46-8d1f75993b21"),
     "Moonlit Wake",
-    crate::card::CardArt::new(
-        "1eba9595-6789-4d7a-9e46-8d1f75993b21",
-        "Greg Hildebrandt & Tim Hildebrandt",
-    ),
+    "1eba9595-6789-4d7a-9e46-8d1f75993b21",
+    "Greg Hildebrandt & Tim Hildebrandt",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -336,9 +327,9 @@ pub(in crate::card::sets) static MOONLIT_WAKE: CardRecord = CardRecord::new(
 // MMQ 30 — Muzzle
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MUZZLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8b3048ec-bcbf-4a69-b56f-83bbe82b68e5"),
     "Muzzle",
-    crate::card::CardArt::new("8b3048ec-bcbf-4a69-b56f-83bbe82b68e5", "Matt Cavotta"),
+    "8b3048ec-bcbf-4a69-b56f-83bbe82b68e5",
+    "Matt Cavotta",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -346,9 +337,9 @@ pub(in crate::card::sets) static MUZZLE: CardRecord = CardRecord::new(
 // MMQ 31 — Nightwind Glider
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NIGHTWIND_GLIDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0968401d-522f-4def-92a1-d504471ac54e"),
     "Nightwind Glider",
-    crate::card::CardArt::new("0968401d-522f-4def-92a1-d504471ac54e", "Randy Gallegos"),
+    "0968401d-522f-4def-92a1-d504471ac54e",
+    "Randy Gallegos",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -356,9 +347,9 @@ pub(in crate::card::sets) static NIGHTWIND_GLIDER: CardRecord = CardRecord::new(
 // MMQ 32 — Noble Purpose
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NOBLE_PURPOSE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ad5ff149-8516-456e-af8a-3dea78715acb"),
     "Noble Purpose",
-    crate::card::CardArt::new("ad5ff149-8516-456e-af8a-3dea78715acb", "Kev Walker"),
+    "ad5ff149-8516-456e-af8a-3dea78715acb",
+    "Kev Walker",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -366,9 +357,9 @@ pub(in crate::card::sets) static NOBLE_PURPOSE: CardRecord = CardRecord::new(
 // MMQ 33 — Orim's Cure
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ORIM_S_CURE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("754ae359-363b-456a-bbca-52fbfbaa86b8"),
     "Orim's Cure",
-    crate::card::CardArt::new("754ae359-363b-456a-bbca-52fbfbaa86b8", "Don Hazeltine"),
+    "754ae359-363b-456a-bbca-52fbfbaa86b8",
+    "Don Hazeltine",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -376,9 +367,9 @@ pub(in crate::card::sets) static ORIM_S_CURE: CardRecord = CardRecord::new(
 // MMQ 34 — Pious Warrior
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PIOUS_WARRIOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bc20c1f0-9883-484c-88d8-1cab08d0b210"),
     "Pious Warrior",
-    crate::card::CardArt::new("bc20c1f0-9883-484c-88d8-1cab08d0b210", "Jeff Miracola"),
+    "bc20c1f0-9883-484c-88d8-1cab08d0b210",
+    "Jeff Miracola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -386,9 +377,9 @@ pub(in crate::card::sets) static PIOUS_WARRIOR: CardRecord = CardRecord::new(
 // MMQ 35 — Ramosian Captain
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAMOSIAN_CAPTAIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0e9d2e2a-c608-4787-bbd9-e1871f681b58"),
     "Ramosian Captain",
-    crate::card::CardArt::new("0e9d2e2a-c608-4787-bbd9-e1871f681b58", "Matthew D. Wilson"),
+    "0e9d2e2a-c608-4787-bbd9-e1871f681b58",
+    "Matthew D. Wilson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -396,9 +387,9 @@ pub(in crate::card::sets) static RAMOSIAN_CAPTAIN: CardRecord = CardRecord::new(
 // MMQ 36 — Ramosian Commander
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAMOSIAN_COMMANDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("867f5d82-71c2-455f-ab16-5a32bba46986"),
     "Ramosian Commander",
-    crate::card::CardArt::new("867f5d82-71c2-455f-ab16-5a32bba46986", "Scott Hampton"),
+    "867f5d82-71c2-455f-ab16-5a32bba46986",
+    "Scott Hampton",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -406,9 +397,9 @@ pub(in crate::card::sets) static RAMOSIAN_COMMANDER: CardRecord = CardRecord::ne
 // MMQ 37 — Ramosian Lieutenant
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAMOSIAN_LIEUTENANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("debe840a-ebc9-43c4-9bf7-7eb292b65bf9"),
     "Ramosian Lieutenant",
-    crate::card::CardArt::new("debe840a-ebc9-43c4-9bf7-7eb292b65bf9", "Alan Pollack"),
+    "debe840a-ebc9-43c4-9bf7-7eb292b65bf9",
+    "Alan Pollack",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -416,12 +407,9 @@ pub(in crate::card::sets) static RAMOSIAN_LIEUTENANT: CardRecord = CardRecord::n
 // MMQ 38 — Ramosian Rally
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAMOSIAN_RALLY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7fc0ff04-43e7-4a0d-b7e2-8bab72cc6cc0"),
     "Ramosian Rally",
-    crate::card::CardArt::new(
-        "7fc0ff04-43e7-4a0d-b7e2-8bab72cc6cc0",
-        "Christopher Moeller",
-    ),
+    "7fc0ff04-43e7-4a0d-b7e2-8bab72cc6cc0",
+    "Christopher Moeller",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -429,9 +417,9 @@ pub(in crate::card::sets) static RAMOSIAN_RALLY: CardRecord = CardRecord::new(
 // MMQ 39 — Ramosian Sergeant
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAMOSIAN_SERGEANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ef2b036d-5721-4a6e-bf43-69148b90da10"),
     "Ramosian Sergeant",
-    crate::card::CardArt::new("ef2b036d-5721-4a6e-bf43-69148b90da10", "Don Hazeltine"),
+    "ef2b036d-5721-4a6e-bf43-69148b90da10",
+    "Don Hazeltine",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -439,9 +427,9 @@ pub(in crate::card::sets) static RAMOSIAN_SERGEANT: CardRecord = CardRecord::new
 // MMQ 40 — Ramosian Sky Marshal
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAMOSIAN_SKY_MARSHAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("16638976-8a78-4233-8ebc-42ea9bb49e0a"),
     "Ramosian Sky Marshal",
-    crate::card::CardArt::new("16638976-8a78-4233-8ebc-42ea9bb49e0a", "Matt Cavotta"),
+    "16638976-8a78-4233-8ebc-42ea9bb49e0a",
+    "Matt Cavotta",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -449,9 +437,9 @@ pub(in crate::card::sets) static RAMOSIAN_SKY_MARSHAL: CardRecord = CardRecord::
 // MMQ 41 — Rappelling Scouts
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAPPELLING_SCOUTS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("113b8366-e6d0-423e-af4b-52c1e08ed446"),
     "Rappelling Scouts",
-    crate::card::CardArt::new("113b8366-e6d0-423e-af4b-52c1e08ed446", "Nelson DeCastro"),
+    "113b8366-e6d0-423e-af4b-52c1e08ed446",
+    "Nelson DeCastro",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -459,9 +447,9 @@ pub(in crate::card::sets) static RAPPELLING_SCOUTS: CardRecord = CardRecord::new
 // MMQ 42 — Renounce
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RENOUNCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8bb2bfb9-cc4a-4d33-99f9-17db4d9fc718"),
     "Renounce",
-    crate::card::CardArt::new("8bb2bfb9-cc4a-4d33-99f9-17db4d9fc718", "Carl Critchlow"),
+    "8bb2bfb9-cc4a-4d33-99f9-17db4d9fc718",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -469,9 +457,9 @@ pub(in crate::card::sets) static RENOUNCE: CardRecord = CardRecord::new(
 // MMQ 43 — Revered Elder
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static REVERED_ELDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b0793175-e56b-4ff8-9e22-3a96a698068c"),
     "Revered Elder",
-    crate::card::CardArt::new("b0793175-e56b-4ff8-9e22-3a96a698068c", "Donato Giancola"),
+    "b0793175-e56b-4ff8-9e22-3a96a698068c",
+    "Donato Giancola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -479,24 +467,26 @@ pub(in crate::card::sets) static REVERED_ELDER: CardRecord = CardRecord::new(
 // MMQ 44 — Reverent Mantra
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static REVERENT_MANTRA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("48364e19-a3ea-4980-925f-7918e57315f1"),
     "Reverent Mantra",
-    crate::card::CardArt::new("48364e19-a3ea-4980-925f-7918e57315f1", "Rebecca Guay"),
+    "48364e19-a3ea-4980-925f-7918e57315f1",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 45 — Righteous Aura (reprint)
-const RIGHTEOUS_AURA_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&catalog_vis::RIGHTEOUS_AURA)
-        .with_art("66d3bcb4-6cbd-4144-a95d-f61e68c10296", "Pete Venters");
+const RIGHTEOUS_AURA_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_vis::RIGHTEOUS_AURA,
+    "66d3bcb4-6cbd-4144-a95d-f61e68c10296",
+    "Pete Venters",
+);
 
 // MMQ 46 — Righteous Indignation
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RIGHTEOUS_INDIGNATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c1fb6335-cfd8-438c-b936-09b850d61b28"),
     "Righteous Indignation",
-    crate::card::CardArt::new("c1fb6335-cfd8-438c-b936-09b850d61b28", "Val Mayerik"),
+    "c1fb6335-cfd8-438c-b936-09b850d61b28",
+    "Val Mayerik",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -504,9 +494,9 @@ pub(in crate::card::sets) static RIGHTEOUS_INDIGNATION: CardRecord = CardRecord:
 // MMQ 47 — Security Detail
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SECURITY_DETAIL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5b89d34b-1a67-4f5c-a731-54b56c5233ff"),
     "Security Detail",
-    crate::card::CardArt::new("5b89d34b-1a67-4f5c-a731-54b56c5233ff", "Val Mayerik"),
+    "5b89d34b-1a67-4f5c-a731-54b56c5233ff",
+    "Val Mayerik",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -514,9 +504,9 @@ pub(in crate::card::sets) static SECURITY_DETAIL: CardRecord = CardRecord::new(
 // MMQ 48 — Soothing Balm
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOOTHING_BALM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("96b8f4be-9f4d-4373-8141-a03518ecd38a"),
     "Soothing Balm",
-    crate::card::CardArt::new("96b8f4be-9f4d-4373-8141-a03518ecd38a", "Scott M. Fischer"),
+    "96b8f4be-9f4d-4373-8141-a03518ecd38a",
+    "Scott M. Fischer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -524,9 +514,9 @@ pub(in crate::card::sets) static SOOTHING_BALM: CardRecord = CardRecord::new(
 // MMQ 49 — Spiritual Focus
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPIRITUAL_FOCUS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8521ae08-eb46-45ff-8fc4-62d8b07cfac2"),
     "Spiritual Focus",
-    crate::card::CardArt::new("8521ae08-eb46-45ff-8fc4-62d8b07cfac2", "Andrew Goldhawk"),
+    "8521ae08-eb46-45ff-8fc4-62d8b07cfac2",
+    "Andrew Goldhawk",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -534,9 +524,9 @@ pub(in crate::card::sets) static SPIRITUAL_FOCUS: CardRecord = CardRecord::new(
 // MMQ 50 — Steadfast Guard
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STEADFAST_GUARD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6381774b-fb91-46cc-9bf6-6eeb4d67a165"),
     "Steadfast Guard",
-    crate::card::CardArt::new("6381774b-fb91-46cc-9bf6-6eeb4d67a165", "Adam Rex"),
+    "6381774b-fb91-46cc-9bf6-6eeb4d67a165",
+    "Adam Rex",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -544,9 +534,9 @@ pub(in crate::card::sets) static STEADFAST_GUARD: CardRecord = CardRecord::new(
 // MMQ 51 — Story Circle
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STORY_CIRCLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("675378bb-7dc1-4bc8-b026-27e6e8e72e18"),
     "Story Circle",
-    crate::card::CardArt::new("675378bb-7dc1-4bc8-b026-27e6e8e72e18", "Bradley Williams"),
+    "675378bb-7dc1-4bc8-b026-27e6e8e72e18",
+    "Bradley Williams",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -554,9 +544,9 @@ pub(in crate::card::sets) static STORY_CIRCLE: CardRecord = CardRecord::new(
 // MMQ 52 — Task Force
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TASK_FORCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("17a58c5b-28c2-4261-992c-2ecadb721880"),
     "Task Force",
-    crate::card::CardArt::new("17a58c5b-28c2-4261-992c-2ecadb721880", "Gary Ruddell"),
+    "17a58c5b-28c2-4261-992c-2ecadb721880",
+    "Gary Ruddell",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -564,9 +554,9 @@ pub(in crate::card::sets) static TASK_FORCE: CardRecord = CardRecord::new(
 // MMQ 53 — Thermal Glider
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THERMAL_GLIDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fd909c26-930d-4af0-b19a-c899847338b4"),
     "Thermal Glider",
-    crate::card::CardArt::new("fd909c26-930d-4af0-b19a-c899847338b4", "Mark Zug"),
+    "fd909c26-930d-4af0-b19a-c899847338b4",
+    "Mark Zug",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -574,9 +564,9 @@ pub(in crate::card::sets) static THERMAL_GLIDER: CardRecord = CardRecord::new(
 // MMQ 54 — Tonic Peddler
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TONIC_PEDDLER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("334bbd9d-3549-4352-9635-d772aab28503"),
     "Tonic Peddler",
-    crate::card::CardArt::new("334bbd9d-3549-4352-9635-d772aab28503", "Adam Rex"),
+    "334bbd9d-3549-4352-9635-d772aab28503",
+    "Adam Rex",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -584,9 +574,9 @@ pub(in crate::card::sets) static TONIC_PEDDLER: CardRecord = CardRecord::new(
 // MMQ 55 — Trap Runner
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRAP_RUNNER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("eba97681-1d1f-4ab6-a21b-fbbbe63a1c74"),
     "Trap Runner",
-    crate::card::CardArt::new("eba97681-1d1f-4ab6-a21b-fbbbe63a1c74", "Ron Spencer"),
+    "eba97681-1d1f-4ab6-a21b-fbbbe63a1c74",
+    "Ron Spencer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -594,9 +584,9 @@ pub(in crate::card::sets) static TRAP_RUNNER: CardRecord = CardRecord::new(
 // MMQ 56 — Wave of Reckoning
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WAVE_OF_RECKONING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0b101b5e-d478-4686-b3cf-bdc545f089e5"),
     "Wave of Reckoning",
-    crate::card::CardArt::new("0b101b5e-d478-4686-b3cf-bdc545f089e5", "Bradley Williams"),
+    "0b101b5e-d478-4686-b3cf-bdc545f089e5",
+    "Bradley Williams",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -604,9 +594,9 @@ pub(in crate::card::sets) static WAVE_OF_RECKONING: CardRecord = CardRecord::new
 // MMQ 57 — Wishmonger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WISHMONGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5a0d8834-109e-4235-a145-75edc43da0ec"),
     "Wishmonger",
-    crate::card::CardArt::new("5a0d8834-109e-4235-a145-75edc43da0ec", "Heather Hudson"),
+    "5a0d8834-109e-4235-a145-75edc43da0ec",
+    "Heather Hudson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -614,9 +604,9 @@ pub(in crate::card::sets) static WISHMONGER: CardRecord = CardRecord::new(
 // MMQ 58 — Aerial Caravan
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AERIAL_CARAVAN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("adac91af-5165-4779-99f7-e75c83fa5d5d"),
     "Aerial Caravan",
-    crate::card::CardArt::new("adac91af-5165-4779-99f7-e75c83fa5d5d", "DiTerlizzi"),
+    "adac91af-5165-4779-99f7-e75c83fa5d5d",
+    "DiTerlizzi",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -624,9 +614,9 @@ pub(in crate::card::sets) static AERIAL_CARAVAN: CardRecord = CardRecord::new(
 // MMQ 59 — Balloon Peddler
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BALLOON_PEDDLER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c34963e6-850e-4ce4-b04f-5e623ce5b73f"),
     "Balloon Peddler",
-    crate::card::CardArt::new("c34963e6-850e-4ce4-b04f-5e623ce5b73f", "Paolo Parente"),
+    "c34963e6-850e-4ce4-b04f-5e623ce5b73f",
+    "Paolo Parente",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -634,23 +624,26 @@ pub(in crate::card::sets) static BALLOON_PEDDLER: CardRecord = CardRecord::new(
 // MMQ 60 — Blockade Runner
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLOCKADE_RUNNER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("59e483df-b58a-401e-85bc-0afda4bf7cac"),
     "Blockade Runner",
-    crate::card::CardArt::new("59e483df-b58a-401e-85bc-0afda4bf7cac", "Carl Critchlow"),
+    "59e483df-b58a-401e-85bc-0afda4bf7cac",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 61 — Brainstorm (reprint)
-const BRAINSTORM_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_ice::BRAINSTORM)
-    .with_art("9ff71d13-c4b7-4125-ab10-db4abbb7a074", "DiTerlizzi");
+const BRAINSTORM_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_ice::BRAINSTORM,
+    "9ff71d13-c4b7-4125-ab10-db4abbb7a074",
+    "DiTerlizzi",
+);
 
 // MMQ 62 — Bribery
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BRIBERY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dfc0ea8a-62f6-49e8-8eec-9748870bc596"),
     "Bribery",
-    crate::card::CardArt::new("dfc0ea8a-62f6-49e8-8eec-9748870bc596", "Andrew Robinson"),
+    "dfc0ea8a-62f6-49e8-8eec-9748870bc596",
+    "Andrew Robinson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -658,9 +651,9 @@ pub(in crate::card::sets) static BRIBERY: CardRecord = CardRecord::new(
 // MMQ 63 — Buoyancy
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BUOYANCY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b208dad2-a412-45fd-b19a-d370426ef5b8"),
     "Buoyancy",
-    crate::card::CardArt::new("b208dad2-a412-45fd-b19a-d370426ef5b8", "Jeff Miracola"),
+    "b208dad2-a412-45fd-b19a-d370426ef5b8",
+    "Jeff Miracola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -668,9 +661,9 @@ pub(in crate::card::sets) static BUOYANCY: CardRecord = CardRecord::new(
 // MMQ 64 — Chambered Nautilus
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHAMBERED_NAUTILUS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("860c613d-d031-4c2a-922b-39f4eec04e18"),
     "Chambered Nautilus",
-    crate::card::CardArt::new("860c613d-d031-4c2a-922b-39f4eec04e18", "John Matson"),
+    "860c613d-d031-4c2a-922b-39f4eec04e18",
+    "John Matson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -678,9 +671,9 @@ pub(in crate::card::sets) static CHAMBERED_NAUTILUS: CardRecord = CardRecord::ne
 // MMQ 65 — Chameleon Spirit
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHAMELEON_SPIRIT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("05972ea2-b0bc-40fd-bce4-07eebdb150d5"),
     "Chameleon Spirit",
-    crate::card::CardArt::new("05972ea2-b0bc-40fd-bce4-07eebdb150d5", "Bradley Williams"),
+    "05972ea2-b0bc-40fd-bce4-07eebdb150d5",
+    "Bradley Williams",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -688,9 +681,9 @@ pub(in crate::card::sets) static CHAMELEON_SPIRIT: CardRecord = CardRecord::new(
 // MMQ 66 — Charisma
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHARISMA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("63565b03-28e9-4534-b085-d5803e2623bb"),
     "Charisma",
-    crate::card::CardArt::new("63565b03-28e9-4534-b085-d5803e2623bb", "Terese Nielsen"),
+    "63565b03-28e9-4534-b085-d5803e2623bb",
+    "Terese Nielsen",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -698,9 +691,9 @@ pub(in crate::card::sets) static CHARISMA: CardRecord = CardRecord::new(
 // MMQ 67 — Cloud Sprite
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CLOUD_SPRITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3d14352c-ac8c-45b5-b930-63822408ba3d"),
     "Cloud Sprite",
-    crate::card::CardArt::new("3d14352c-ac8c-45b5-b930-63822408ba3d", "Mark Zug"),
+    "3d14352c-ac8c-45b5-b930-63822408ba3d",
+    "Mark Zug",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -708,23 +701,26 @@ pub(in crate::card::sets) static CLOUD_SPRITE: CardRecord = CardRecord::new(
 // MMQ 68 — Coastal Piracy
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static COASTAL_PIRACY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("179d1f76-6f4c-4a77-815a-aae7a933c9ad"),
     "Coastal Piracy",
-    crate::card::CardArt::new("179d1f76-6f4c-4a77-815a-aae7a933c9ad", "Matthew D. Wilson"),
+    "179d1f76-6f4c-4a77-815a-aae7a933c9ad",
+    "Matthew D. Wilson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 69 — Counterspell (reprint)
-const COUNTERSPELL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::COUNTERSPELL)
-    .with_art("7bd03c80-7812-4704-9e07-9cf73b49c01f", "Gao Yan");
+const COUNTERSPELL_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::COUNTERSPELL,
+    "7bd03c80-7812-4704-9e07-9cf73b49c01f",
+    "Gao Yan",
+);
 
 // MMQ 70 — Cowardice
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static COWARDICE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d2e46d3d-7c7f-487f-8cc6-078b17c113a0"),
     "Cowardice",
-    crate::card::CardArt::new("d2e46d3d-7c7f-487f-8cc6-078b17c113a0", "Scott M. Fischer"),
+    "d2e46d3d-7c7f-487f-8cc6-078b17c113a0",
+    "Scott M. Fischer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -732,9 +728,9 @@ pub(in crate::card::sets) static COWARDICE: CardRecord = CardRecord::new(
 // MMQ 71 — Customs Depot
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CUSTOMS_DEPOT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("067d8c46-c334-4b00-af06-2e28b6086c58"),
     "Customs Depot",
-    crate::card::CardArt::new("067d8c46-c334-4b00-af06-2e28b6086c58", "Scott M. Fischer"),
+    "067d8c46-c334-4b00-af06-2e28b6086c58",
+    "Scott M. Fischer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -742,9 +738,9 @@ pub(in crate::card::sets) static CUSTOMS_DEPOT: CardRecord = CardRecord::new(
 // MMQ 72 — Darting Merfolk
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DARTING_MERFOLK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("438e15f7-59bb-4047-af1f-ef92cc1866b8"),
     "Darting Merfolk",
-    crate::card::CardArt::new("438e15f7-59bb-4047-af1f-ef92cc1866b8", "Sam Wood"),
+    "438e15f7-59bb-4047-af1f-ef92cc1866b8",
+    "Sam Wood",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -752,9 +748,9 @@ pub(in crate::card::sets) static DARTING_MERFOLK: CardRecord = CardRecord::new(
 // MMQ 73 — Dehydration
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEHYDRATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2c9e4043-e7a6-4c68-aa03-ef2f88e46451"),
     "Dehydration",
-    crate::card::CardArt::new("2c9e4043-e7a6-4c68-aa03-ef2f88e46451", "Val Mayerik"),
+    "2c9e4043-e7a6-4c68-aa03-ef2f88e46451",
+    "Val Mayerik",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -762,9 +758,9 @@ pub(in crate::card::sets) static DEHYDRATION: CardRecord = CardRecord::new(
 // MMQ 74 — Diplomatic Escort
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DIPLOMATIC_ESCORT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9356bdbb-d647-4f51-a7a3-18ecea898a7f"),
     "Diplomatic Escort",
-    crate::card::CardArt::new("9356bdbb-d647-4f51-a7a3-18ecea898a7f", "Rebecca Guay"),
+    "9356bdbb-d647-4f51-a7a3-18ecea898a7f",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -772,9 +768,9 @@ pub(in crate::card::sets) static DIPLOMATIC_ESCORT: CardRecord = CardRecord::new
 // MMQ 75 — Diplomatic Immunity
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DIPLOMATIC_IMMUNITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fb1e610e-a4a2-460b-8e4c-13674badbce3"),
     "Diplomatic Immunity",
-    crate::card::CardArt::new("fb1e610e-a4a2-460b-8e4c-13674badbce3", "Terese Nielsen"),
+    "fb1e610e-a4a2-460b-8e4c-13674badbce3",
+    "Terese Nielsen",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -782,9 +778,9 @@ pub(in crate::card::sets) static DIPLOMATIC_IMMUNITY: CardRecord = CardRecord::n
 // MMQ 76 — Drake Hatchling
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DRAKE_HATCHLING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("64ee32f9-6120-4f15-a692-89a4cd8167c6"),
     "Drake Hatchling",
-    crate::card::CardArt::new("64ee32f9-6120-4f15-a692-89a4cd8167c6", "Bradley Williams"),
+    "64ee32f9-6120-4f15-a692-89a4cd8167c6",
+    "Bradley Williams",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -792,49 +788,52 @@ pub(in crate::card::sets) static DRAKE_HATCHLING: CardRecord = CardRecord::new(
 // MMQ 77 — Embargo
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EMBARGO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3fca3c65-f20e-4978-bfbb-ee7f9e1d829f"),
     "Embargo",
-    crate::card::CardArt::new("3fca3c65-f20e-4978-bfbb-ee7f9e1d829f", "Nelson DeCastro"),
+    "3fca3c65-f20e-4978-bfbb-ee7f9e1d829f",
+    "Nelson DeCastro",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 78 — Energy Flux (reprint)
-const ENERGY_FLUX_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_atq::ENERGY_FLUX)
-    .with_art("a77b22a0-d5cc-4dbb-aec3-763b8efaee7e", "Qiao Dafu");
+const ENERGY_FLUX_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_atq::ENERGY_FLUX,
+    "a77b22a0-d5cc-4dbb-aec3-763b8efaee7e",
+    "Qiao Dafu",
+);
 
 // MMQ 79 — Extravagant Spirit
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EXTRAVAGANT_SPIRIT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("99243564-9dbd-420c-922d-c17854c99d2a"),
     "Extravagant Spirit",
-    crate::card::CardArt::new(
-        "99243564-9dbd-420c-922d-c17854c99d2a",
-        "Edward P. Beard, Jr.",
-    ),
+    "99243564-9dbd-420c-922d-c17854c99d2a",
+    "Edward P. Beard, Jr.",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 80 — False Demise (reprint)
-const FALSE_DEMISE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_all::FALSE_DEMISE)
-    .with_art("48872422-895f-45f0-ba2a-7cd307285c7d", "Pat Lewis");
+const FALSE_DEMISE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_all::FALSE_DEMISE,
+    "48872422-895f-45f0-ba2a-7cd307285c7d",
+    "Pat Lewis",
+);
 
 // MMQ 81 — Glowing Anemone
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GLOWING_ANEMONE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("708593e6-787b-4f76-a86c-1d52857493ea"),
     "Glowing Anemone",
-    crate::card::CardArt::new("708593e6-787b-4f76-a86c-1d52857493ea", "Pete Venters"),
+    "708593e6-787b-4f76-a86c-1d52857493ea",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 82 — Gush
-pub(in crate::card::sets) static GUSH: CardRecord = CardRecord::new_with_legacy_id(
-    2045,
+pub(in crate::card::sets) static GUSH: CardRecord = CardRecord::new(
     "Gush",
-    CardArt::new("e755bbef-bf34-49c0-ae72-d70e3599de52", "Kev Walker"),
+    "e755bbef-bf34-49c0-ae72-d70e3599de52",
+    "Kev Walker",
     CardSet::MercadianMasques,
     CardRules::new_instant(mana_cost!("{4}{U}")).with_abilities(&[
         AbilityDef::spell(
@@ -859,12 +858,9 @@ pub(in crate::card::sets) static GUSH: CardRecord = CardRecord::new_with_legacy_
 
 // MMQ 83 — High Seas
 pub(in crate::card::sets) static HIGH_SEAS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f12eb6a6-14cc-4ad6-9684-ff33a39ba09f"),
     "High Seas",
-    crate::card::CardArt::new(
-        "f12eb6a6-14cc-4ad6-9684-ff33a39ba09f",
-        "Massimiliano Frezzato",
-    ),
+    "f12eb6a6-14cc-4ad6-9684-ff33a39ba09f",
+    "Massimiliano Frezzato",
     crate::card::CardSet::MercadianMasques,
     CardRules::new_enchantment(mana_cost!("{2}{U}")).with_ability(abilities::spell_cost_increase(
         "Red creature spells and green creature spells cost {1} more to cast.",
@@ -883,9 +879,9 @@ pub(in crate::card::sets) static HIGH_SEAS: CardRecord = CardRecord::new(
 // MMQ 84 — Hoodwink
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HOODWINK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8d505fbb-ec85-475b-a0e1-6670627ec017"),
     "Hoodwink",
-    crate::card::CardArt::new("8d505fbb-ec85-475b-a0e1-6670627ec017", "Arnie Swekel"),
+    "8d505fbb-ec85-475b-a0e1-6670627ec017",
+    "Arnie Swekel",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -893,9 +889,9 @@ pub(in crate::card::sets) static HOODWINK: CardRecord = CardRecord::new(
 // MMQ 85 — Indentured Djinn
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INDENTURED_DJINN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dae62ce7-852b-42c6-9cbe-4807d8bf5740"),
     "Indentured Djinn",
-    crate::card::CardArt::new("dae62ce7-852b-42c6-9cbe-4807d8bf5740", "Val Mayerik"),
+    "dae62ce7-852b-42c6-9cbe-4807d8bf5740",
+    "Val Mayerik",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -903,18 +899,18 @@ pub(in crate::card::sets) static INDENTURED_DJINN: CardRecord = CardRecord::new(
 // MMQ 86 — Karn's Touch
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KARN_S_TOUCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("07845861-f974-43b7-829c-79a4a41ac3e3"),
     "Karn's Touch",
-    crate::card::CardArt::new("07845861-f974-43b7-829c-79a4a41ac3e3", "Alan Pollack"),
+    "07845861-f974-43b7-829c-79a4a41ac3e3",
+    "Alan Pollack",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 87 — Misdirection
 pub(in crate::card::sets) static MISDIRECTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("581ad59c-29e9-4498-a6fd-33bf21e8e7c4"),
     "Misdirection",
-    crate::card::CardArt::new("581ad59c-29e9-4498-a6fd-33bf21e8e7c4", "Paolo Parente"),
+    "581ad59c-29e9-4498-a6fd-33bf21e8e7c4",
+    "Paolo Parente",
     crate::card::CardSet::MercadianMasques,
     CardRules::new_instant(mana_cost!("{3}{U}{U}")).with_abilities(&[
         AbilityDef::alternative_cast(
@@ -961,9 +957,9 @@ pub(in crate::card::sets) static MISDIRECTION: CardRecord = CardRecord::new(
 // MMQ 88 — Misstep
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MISSTEP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8e23f5a1-bf3e-41e0-875f-fc2f8508e69f"),
     "Misstep",
-    crate::card::CardArt::new("8e23f5a1-bf3e-41e0-875f-fc2f8508e69f", "Kev Walker"),
+    "8e23f5a1-bf3e-41e0-875f-fc2f8508e69f",
+    "Kev Walker",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -971,9 +967,9 @@ pub(in crate::card::sets) static MISSTEP: CardRecord = CardRecord::new(
 // MMQ 89 — Overtaker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static OVERTAKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8b916a20-84f2-4e91-8dfa-039658735f5e"),
     "Overtaker",
-    crate::card::CardArt::new("145903cb-9eaa-4f3c-a376-88dcd474ffda", "Clyde Caldwell"),
+    "145903cb-9eaa-4f3c-a376-88dcd474ffda",
+    "Clyde Caldwell",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -981,9 +977,9 @@ pub(in crate::card::sets) static OVERTAKER: CardRecord = CardRecord::new(
 // MMQ 90 — Port Inspector
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PORT_INSPECTOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ef25d969-68d9-4580-bb29-f72bd5646a3d"),
     "Port Inspector",
-    crate::card::CardArt::new("ef25d969-68d9-4580-bb29-f72bd5646a3d", "Dan Frazier"),
+    "ef25d969-68d9-4580-bb29-f72bd5646a3d",
+    "Dan Frazier",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -991,9 +987,9 @@ pub(in crate::card::sets) static PORT_INSPECTOR: CardRecord = CardRecord::new(
 // MMQ 91 — Rishadan Airship
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RISHADAN_AIRSHIP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5d8e596b-f5ef-405a-8910-c5d0b5c8c0fc"),
     "Rishadan Airship",
-    crate::card::CardArt::new("5d8e596b-f5ef-405a-8910-c5d0b5c8c0fc", "Kev Walker"),
+    "5d8e596b-f5ef-405a-8910-c5d0b5c8c0fc",
+    "Kev Walker",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1001,9 +997,9 @@ pub(in crate::card::sets) static RISHADAN_AIRSHIP: CardRecord = CardRecord::new(
 // MMQ 92 — Rishadan Brigand
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RISHADAN_BRIGAND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a6efb653-97d8-4bc7-af8f-0b09fda655ff"),
     "Rishadan Brigand",
-    crate::card::CardArt::new("a6efb653-97d8-4bc7-af8f-0b09fda655ff", "Scott Hampton"),
+    "a6efb653-97d8-4bc7-af8f-0b09fda655ff",
+    "Scott Hampton",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1011,12 +1007,9 @@ pub(in crate::card::sets) static RISHADAN_BRIGAND: CardRecord = CardRecord::new(
 // MMQ 93 — Rishadan Cutpurse
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RISHADAN_CUTPURSE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("947fc270-11e3-46cd-9086-e880a5845c79"),
     "Rishadan Cutpurse",
-    crate::card::CardArt::new(
-        "947fc270-11e3-46cd-9086-e880a5845c79",
-        "Christopher Moeller",
-    ),
+    "947fc270-11e3-46cd-9086-e880a5845c79",
+    "Christopher Moeller",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1024,9 +1017,9 @@ pub(in crate::card::sets) static RISHADAN_CUTPURSE: CardRecord = CardRecord::new
 // MMQ 94 — Rishadan Footpad
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RISHADAN_FOOTPAD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("493ee964-1a44-46a1-8606-90e215805483"),
     "Rishadan Footpad",
-    crate::card::CardArt::new("493ee964-1a44-46a1-8606-90e215805483", "Adam Rex"),
+    "493ee964-1a44-46a1-8606-90e215805483",
+    "Adam Rex",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1034,9 +1027,9 @@ pub(in crate::card::sets) static RISHADAN_FOOTPAD: CardRecord = CardRecord::new(
 // MMQ 95 — Sailmonger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAILMONGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("142479d8-8956-44a2-8c54-9dd6dc1774c0"),
     "Sailmonger",
-    crate::card::CardArt::new("142479d8-8956-44a2-8c54-9dd6dc1774c0", "Michael Sutfin"),
+    "142479d8-8956-44a2-8c54-9dd6dc1774c0",
+    "Michael Sutfin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1044,9 +1037,9 @@ pub(in crate::card::sets) static SAILMONGER: CardRecord = CardRecord::new(
 // MMQ 96 — Sand Squid
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAND_SQUID: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4efd7ce9-b920-409d-a4d2-a07fff280712"),
     "Sand Squid",
-    crate::card::CardArt::new("4efd7ce9-b920-409d-a4d2-a07fff280712", "Kev Walker"),
+    "4efd7ce9-b920-409d-a4d2-a07fff280712",
+    "Kev Walker",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1054,9 +1047,9 @@ pub(in crate::card::sets) static SAND_SQUID: CardRecord = CardRecord::new(
 // MMQ 97 — Saprazzan Bailiff
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAPRAZZAN_BAILIFF: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a9f50964-1b57-426a-ac46-c90c045c7e40"),
     "Saprazzan Bailiff",
-    crate::card::CardArt::new("a9f50964-1b57-426a-ac46-c90c045c7e40", "Ron Spencer"),
+    "a9f50964-1b57-426a-ac46-c90c045c7e40",
+    "Ron Spencer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1064,9 +1057,9 @@ pub(in crate::card::sets) static SAPRAZZAN_BAILIFF: CardRecord = CardRecord::new
 // MMQ 98 — Saprazzan Breaker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAPRAZZAN_BREAKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2de7bf0f-5ad5-467b-ad80-28517951bbe1"),
     "Saprazzan Breaker",
-    crate::card::CardArt::new("2de7bf0f-5ad5-467b-ad80-28517951bbe1", "Pete Venters"),
+    "2de7bf0f-5ad5-467b-ad80-28517951bbe1",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1074,9 +1067,9 @@ pub(in crate::card::sets) static SAPRAZZAN_BREAKER: CardRecord = CardRecord::new
 // MMQ 99 — Saprazzan Heir
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAPRAZZAN_HEIR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0e3d913d-2dcf-4747-8169-0c44ec895864"),
     "Saprazzan Heir",
-    crate::card::CardArt::new("0e3d913d-2dcf-4747-8169-0c44ec895864", "Terese Nielsen"),
+    "0e3d913d-2dcf-4747-8169-0c44ec895864",
+    "Terese Nielsen",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1084,9 +1077,9 @@ pub(in crate::card::sets) static SAPRAZZAN_HEIR: CardRecord = CardRecord::new(
 // MMQ 100 — Saprazzan Legate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAPRAZZAN_LEGATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("db9adf84-ee7e-472b-bd96-9abf853afa83"),
     "Saprazzan Legate",
-    crate::card::CardArt::new("db9adf84-ee7e-472b-bd96-9abf853afa83", "Andrew Goldhawk"),
+    "db9adf84-ee7e-472b-bd96-9abf853afa83",
+    "Andrew Goldhawk",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1094,9 +1087,9 @@ pub(in crate::card::sets) static SAPRAZZAN_LEGATE: CardRecord = CardRecord::new(
 // MMQ 101 — Saprazzan Outrigger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAPRAZZAN_OUTRIGGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b28048f1-4cf5-4389-9e69-9b5e1bc95396"),
     "Saprazzan Outrigger",
-    crate::card::CardArt::new("b28048f1-4cf5-4389-9e69-9b5e1bc95396", "Doug Chaffee"),
+    "b28048f1-4cf5-4389-9e69-9b5e1bc95396",
+    "Doug Chaffee",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1104,9 +1097,9 @@ pub(in crate::card::sets) static SAPRAZZAN_OUTRIGGER: CardRecord = CardRecord::n
 // MMQ 102 — Saprazzan Raider
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAPRAZZAN_RAIDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("62493f34-cea8-4d9f-8781-005947b69c9d"),
     "Saprazzan Raider",
-    crate::card::CardArt::new("62493f34-cea8-4d9f-8781-005947b69c9d", "Jeff Miracola"),
+    "62493f34-cea8-4d9f-8781-005947b69c9d",
+    "Jeff Miracola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1114,9 +1107,9 @@ pub(in crate::card::sets) static SAPRAZZAN_RAIDER: CardRecord = CardRecord::new(
 // MMQ 103 — Shoving Match
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHOVING_MATCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("aa9f4787-9b29-4f57-b105-1f9eb4bb8861"),
     "Shoving Match",
-    crate::card::CardArt::new("aa9f4787-9b29-4f57-b105-1f9eb4bb8861", "Dave Dorman"),
+    "aa9f4787-9b29-4f57-b105-1f9eb4bb8861",
+    "Dave Dorman",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1124,18 +1117,18 @@ pub(in crate::card::sets) static SHOVING_MATCH: CardRecord = CardRecord::new(
 // MMQ 104 — Soothsaying
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOOTHSAYING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("def384ff-1b6f-4c4f-8151-3c72c29b63ce"),
     "Soothsaying",
-    crate::card::CardArt::new("def384ff-1b6f-4c4f-8151-3c72c29b63ce", "Pat Lewis"),
+    "def384ff-1b6f-4c4f-8151-3c72c29b63ce",
+    "Pat Lewis",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 105 — Squeeze
 pub(in crate::card::sets) static SQUEEZE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bbe63220-992b-459c-81ca-d4e2de273ce1"),
     "Squeeze",
-    crate::card::CardArt::new("bbe63220-992b-459c-81ca-d4e2de273ce1", "DiTerlizzi"),
+    "bbe63220-992b-459c-81ca-d4e2de273ce1",
+    "DiTerlizzi",
     crate::card::CardSet::MercadianMasques,
     CardRules::new_enchantment(mana_cost!("{3}{U}")).with_ability(abilities::spell_cost_increase(
         "Sorcery spells cost {3} more to cast.",
@@ -1148,9 +1141,9 @@ pub(in crate::card::sets) static SQUEEZE: CardRecord = CardRecord::new(
 // MMQ 106 — Statecraft
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STATECRAFT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("76dcd19e-8daf-4d53-946b-c07d5eca3cc9"),
     "Statecraft",
-    crate::card::CardArt::new("76dcd19e-8daf-4d53-946b-c07d5eca3cc9", "Mike Ploog"),
+    "76dcd19e-8daf-4d53-946b-c07d5eca3cc9",
+    "Mike Ploog",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1158,18 +1151,18 @@ pub(in crate::card::sets) static STATECRAFT: CardRecord = CardRecord::new(
 // MMQ 107 — Stinging Barrier
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STINGING_BARRIER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ca7f7cd5-4e91-474a-9f60-a66f3f462b1c"),
     "Stinging Barrier",
-    crate::card::CardArt::new("ca7f7cd5-4e91-474a-9f60-a66f3f462b1c", "Pat Lewis"),
+    "ca7f7cd5-4e91-474a-9f60-a66f3f462b1c",
+    "Pat Lewis",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 108 — Thwart
-pub(in crate::card::sets) static THWART: CardRecord = CardRecord::new_with_legacy_id(
-    2046,
+pub(in crate::card::sets) static THWART: CardRecord = CardRecord::new(
     "Thwart",
-    CardArt::new("c12a0717-e9ea-4be3-a29f-179671ed4489", "Christopher Moeller"),
+    "c12a0717-e9ea-4be3-a29f-179671ed4489",
+    "Christopher Moeller",
     CardSet::MercadianMasques,
     CardRules::new_instant(mana_cost!("{2}{U}{U}")).with_abilities(&[
         AbilityDef::counter_target("Counter target spell.", &[AbilityTargetDef::exactly_one(
@@ -1196,9 +1189,9 @@ pub(in crate::card::sets) static THWART: CardRecord = CardRecord::new_with_legac
 // MMQ 109 — Tidal Bore
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TIDAL_BORE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f68fd547-59fb-41e6-be55-1ec17fe2840b"),
     "Tidal Bore",
-    crate::card::CardArt::new("f68fd547-59fb-41e6-be55-1ec17fe2840b", "Frank Kelly Freas"),
+    "f68fd547-59fb-41e6-be55-1ec17fe2840b",
+    "Frank Kelly Freas",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1206,29 +1199,26 @@ pub(in crate::card::sets) static TIDAL_BORE: CardRecord = CardRecord::new(
 // MMQ 110 — Tidal Kraken
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TIDAL_KRAKEN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("356a9dcd-1a4b-4371-8f1d-aa7cb65e97e8"),
     "Tidal Kraken",
-    crate::card::CardArt::new(
-        "356a9dcd-1a4b-4371-8f1d-aa7cb65e97e8",
-        "Christopher Moeller",
-    ),
+    "356a9dcd-1a4b-4371-8f1d-aa7cb65e97e8",
+    "Christopher Moeller",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 111 — Timid Drake (reprint)
-const TIMID_DRAKE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_wth::TIMID_DRAKE)
-    .with_art(
-        "9212f685-d7af-4279-b17e-7201d8f63813",
-        "Edward P. Beard, Jr.",
-    );
+const TIMID_DRAKE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_wth::TIMID_DRAKE,
+    "9212f685-d7af-4279-b17e-7201d8f63813",
+    "Edward P. Beard, Jr.",
+);
 
 // MMQ 112 — Trade Routes
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRADE_ROUTES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("eeaba189-b215-4d1c-9135-a86ce5ec955d"),
     "Trade Routes",
-    crate::card::CardArt::new("eeaba189-b215-4d1c-9135-a86ce5ec955d", "Matt Cavotta"),
+    "eeaba189-b215-4d1c-9135-a86ce5ec955d",
+    "Matt Cavotta",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1236,12 +1226,9 @@ pub(in crate::card::sets) static TRADE_ROUTES: CardRecord = CardRecord::new(
 // MMQ 113 — War Tax
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WAR_TAX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e7c15159-8466-43e5-9dc5-a8cc94619931"),
     "War Tax",
-    crate::card::CardArt::new(
-        "e7c15159-8466-43e5-9dc5-a8cc94619931",
-        "Greg Hildebrandt & Tim Hildebrandt",
-    ),
+    "e7c15159-8466-43e5-9dc5-a8cc94619931",
+    "Greg Hildebrandt & Tim Hildebrandt",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1249,9 +1236,9 @@ pub(in crate::card::sets) static WAR_TAX: CardRecord = CardRecord::new(
 // MMQ 114 — Waterfront Bouncer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WATERFRONT_BOUNCER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8dbdce9e-94fa-4ed5-9b97-d2026cffe7cb"),
     "Waterfront Bouncer",
-    crate::card::CardArt::new("8dbdce9e-94fa-4ed5-9b97-d2026cffe7cb", "Paolo Parente"),
+    "8dbdce9e-94fa-4ed5-9b97-d2026cffe7cb",
+    "Paolo Parente",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1259,9 +1246,9 @@ pub(in crate::card::sets) static WATERFRONT_BOUNCER: CardRecord = CardRecord::ne
 // MMQ 115 — Alley Grifters
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ALLEY_GRIFTERS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cfb648e3-f5ad-4b33-afa3-d4cda0d369a1"),
     "Alley Grifters",
-    crate::card::CardArt::new("cfb648e3-f5ad-4b33-afa3-d4cda0d369a1", "Paolo Parente"),
+    "cfb648e3-f5ad-4b33-afa3-d4cda0d369a1",
+    "Paolo Parente",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1269,9 +1256,9 @@ pub(in crate::card::sets) static ALLEY_GRIFTERS: CardRecord = CardRecord::new(
 // MMQ 116 — Black Market
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLACK_MARKET: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("05976e5c-b46c-431e-9dbd-1dc5fad3536c"),
     "Black Market",
-    crate::card::CardArt::new("05976e5c-b46c-431e-9dbd-1dc5fad3536c", "Jeff Easley"),
+    "05976e5c-b46c-431e-9dbd-1dc5fad3536c",
+    "Jeff Easley",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1279,9 +1266,9 @@ pub(in crate::card::sets) static BLACK_MARKET: CardRecord = CardRecord::new(
 // MMQ 117 — Bog Smugglers
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BOG_SMUGGLERS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c2103a44-87e5-40cd-a0de-cd19456a8366"),
     "Bog Smugglers",
-    crate::card::CardArt::new("c2103a44-87e5-40cd-a0de-cd19456a8366", "Mike Ploog"),
+    "c2103a44-87e5-40cd-a0de-cd19456a8366",
+    "Mike Ploog",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1289,9 +1276,9 @@ pub(in crate::card::sets) static BOG_SMUGGLERS: CardRecord = CardRecord::new(
 // MMQ 118 — Bog Witch
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BOG_WITCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6a926f9e-ee63-4b6e-8e5b-0650b74344a5"),
     "Bog Witch",
-    crate::card::CardArt::new("6a926f9e-ee63-4b6e-8e5b-0650b74344a5", "Gao Yan"),
+    "6a926f9e-ee63-4b6e-8e5b-0650b74344a5",
+    "Gao Yan",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1299,9 +1286,9 @@ pub(in crate::card::sets) static BOG_WITCH: CardRecord = CardRecord::new(
 // MMQ 119 — Cackling Witch
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CACKLING_WITCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cec755ee-b4c0-47fd-9e61-9a3161766de6"),
     "Cackling Witch",
-    crate::card::CardArt::new("cec755ee-b4c0-47fd-9e61-9a3161766de6", "Brian Despain"),
+    "cec755ee-b4c0-47fd-9e61-9a3161766de6",
+    "Brian Despain",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1309,12 +1296,9 @@ pub(in crate::card::sets) static CACKLING_WITCH: CardRecord = CardRecord::new(
 // MMQ 120 — Cateran Brute
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CATERAN_BRUTE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("73b6ce76-0ed0-4994-ae2c-d8e51ae09920"),
     "Cateran Brute",
-    crate::card::CardArt::new(
-        "73b6ce76-0ed0-4994-ae2c-d8e51ae09920",
-        "Edward P. Beard, Jr.",
-    ),
+    "73b6ce76-0ed0-4994-ae2c-d8e51ae09920",
+    "Edward P. Beard, Jr.",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1322,9 +1306,9 @@ pub(in crate::card::sets) static CATERAN_BRUTE: CardRecord = CardRecord::new(
 // MMQ 121 — Cateran Enforcer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CATERAN_ENFORCER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9e9b6da8-39da-4fce-89cf-ea972f981331"),
     "Cateran Enforcer",
-    crate::card::CardArt::new("9e9b6da8-39da-4fce-89cf-ea972f981331", "Mike Ploog"),
+    "9e9b6da8-39da-4fce-89cf-ea972f981331",
+    "Mike Ploog",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1332,9 +1316,9 @@ pub(in crate::card::sets) static CATERAN_ENFORCER: CardRecord = CardRecord::new(
 // MMQ 122 — Cateran Kidnappers
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CATERAN_KIDNAPPERS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3768bdc1-4055-423a-a1cc-69b4c620e3e6"),
     "Cateran Kidnappers",
-    crate::card::CardArt::new("3768bdc1-4055-423a-a1cc-69b4c620e3e6", "Carl Critchlow"),
+    "3768bdc1-4055-423a-a1cc-69b4c620e3e6",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1342,9 +1326,9 @@ pub(in crate::card::sets) static CATERAN_KIDNAPPERS: CardRecord = CardRecord::ne
 // MMQ 123 — Cateran Overlord
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CATERAN_OVERLORD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e8a1ffcb-40a7-423f-b28a-b5b4c1c9ffd0"),
     "Cateran Overlord",
-    crate::card::CardArt::new("e8a1ffcb-40a7-423f-b28a-b5b4c1c9ffd0", "Michael Sutfin"),
+    "e8a1ffcb-40a7-423f-b28a-b5b4c1c9ffd0",
+    "Michael Sutfin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1352,9 +1336,9 @@ pub(in crate::card::sets) static CATERAN_OVERLORD: CardRecord = CardRecord::new(
 // MMQ 124 — Cateran Persuader
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CATERAN_PERSUADER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a98bdbf1-32a6-4d9b-8e57-5d3aca6b05bc"),
     "Cateran Persuader",
-    crate::card::CardArt::new("a98bdbf1-32a6-4d9b-8e57-5d3aca6b05bc", "Carl Critchlow"),
+    "a98bdbf1-32a6-4d9b-8e57-5d3aca6b05bc",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1362,9 +1346,9 @@ pub(in crate::card::sets) static CATERAN_PERSUADER: CardRecord = CardRecord::new
 // MMQ 125 — Cateran Slaver
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CATERAN_SLAVER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2d293c51-714c-45b8-bfa4-fe35e8f3fbc1"),
     "Cateran Slaver",
-    crate::card::CardArt::new("2d293c51-714c-45b8-bfa4-fe35e8f3fbc1", "Carl Critchlow"),
+    "2d293c51-714c-45b8-bfa4-fe35e8f3fbc1",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1372,9 +1356,9 @@ pub(in crate::card::sets) static CATERAN_SLAVER: CardRecord = CardRecord::new(
 // MMQ 126 — Cateran Summons
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CATERAN_SUMMONS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("af3de1f9-9038-4352-b4bf-2e9c5c27495a"),
     "Cateran Summons",
-    crate::card::CardArt::new("af3de1f9-9038-4352-b4bf-2e9c5c27495a", "Alan Pollack"),
+    "af3de1f9-9038-4352-b4bf-2e9c5c27495a",
+    "Alan Pollack",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1382,9 +1366,9 @@ pub(in crate::card::sets) static CATERAN_SUMMONS: CardRecord = CardRecord::new(
 // MMQ 127 — Conspiracy
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CONSPIRACY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("411c9f22-2df0-4a63-b2be-fa02612a6ef8"),
     "Conspiracy",
-    crate::card::CardArt::new("411c9f22-2df0-4a63-b2be-fa02612a6ef8", "Jeff Easley"),
+    "411c9f22-2df0-4a63-b2be-fa02612a6ef8",
+    "Jeff Easley",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1392,26 +1376,26 @@ pub(in crate::card::sets) static CONSPIRACY: CardRecord = CardRecord::new(
 // MMQ 128 — Corrupt Official
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CORRUPT_OFFICIAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5cb652fc-5a21-4e02-a776-a38fb41ad18c"),
     "Corrupt Official",
-    crate::card::CardArt::new(
-        "5cb652fc-5a21-4e02-a776-a38fb41ad18c",
-        "Greg Hildebrandt & Tim Hildebrandt",
-    ),
+    "5cb652fc-5a21-4e02-a776-a38fb41ad18c",
+    "Greg Hildebrandt & Tim Hildebrandt",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 129 — Dark Ritual (reprint)
-const DARK_RITUAL_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::DARK_RITUAL)
-    .with_art("a6aacc3e-fe37-4a08-83e6-7ee8c0c0af74", "Rebecca Guay");
+const DARK_RITUAL_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::DARK_RITUAL,
+    "a6aacc3e-fe37-4a08-83e6-7ee8c0c0af74",
+    "Rebecca Guay",
+);
 
 // MMQ 130 — Deathgazer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEATHGAZER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d0fff328-704e-462d-9613-82d05371f544"),
     "Deathgazer",
-    crate::card::CardArt::new("d0fff328-704e-462d-9613-82d05371f544", "Donato Giancola"),
+    "d0fff328-704e-462d-9613-82d05371f544",
+    "Donato Giancola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1419,9 +1403,9 @@ pub(in crate::card::sets) static DEATHGAZER: CardRecord = CardRecord::new(
 // MMQ 131 — Deepwood Ghoul
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEEPWOOD_GHOUL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("29cd6685-37ca-47c7-8f64-1fb86e9610ca"),
     "Deepwood Ghoul",
-    crate::card::CardArt::new("29cd6685-37ca-47c7-8f64-1fb86e9610ca", "Alan Pollack"),
+    "29cd6685-37ca-47c7-8f64-1fb86e9610ca",
+    "Alan Pollack",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1429,9 +1413,9 @@ pub(in crate::card::sets) static DEEPWOOD_GHOUL: CardRecord = CardRecord::new(
 // MMQ 132 — Deepwood Legate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEEPWOOD_LEGATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("54f01925-7fd0-472d-91a4-3309e615f22f"),
     "Deepwood Legate",
-    crate::card::CardArt::new("54f01925-7fd0-472d-91a4-3309e615f22f", "Pete Venters"),
+    "54f01925-7fd0-472d-91a4-3309e615f22f",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1439,9 +1423,9 @@ pub(in crate::card::sets) static DEEPWOOD_LEGATE: CardRecord = CardRecord::new(
 // MMQ 133 — Delraich
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DELRAICH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("da64094f-df6e-4c43-b4ae-03aab6b92816"),
     "Delraich",
-    crate::card::CardArt::new("da64094f-df6e-4c43-b4ae-03aab6b92816", "Todd Lockwood"),
+    "da64094f-df6e-4c43-b4ae-03aab6b92816",
+    "Todd Lockwood",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1449,9 +1433,9 @@ pub(in crate::card::sets) static DELRAICH: CardRecord = CardRecord::new(
 // MMQ 134 — Enslaved Horror
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ENSLAVED_HORROR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dffca723-360d-48de-a0a8-32288627f3df"),
     "Enslaved Horror",
-    crate::card::CardArt::new("dffca723-360d-48de-a0a8-32288627f3df", "Mike Ploog"),
+    "dffca723-360d-48de-a0a8-32288627f3df",
+    "Mike Ploog",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1459,9 +1443,9 @@ pub(in crate::card::sets) static ENSLAVED_HORROR: CardRecord = CardRecord::new(
 // MMQ 135 — Extortion
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EXTORTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a66742db-4750-49ce-ad05-b825af7222c4"),
     "Extortion",
-    crate::card::CardArt::new("a66742db-4750-49ce-ad05-b825af7222c4", "Pete Venters"),
+    "a66742db-4750-49ce-ad05-b825af7222c4",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1469,12 +1453,9 @@ pub(in crate::card::sets) static EXTORTION: CardRecord = CardRecord::new(
 // MMQ 136 — Forced March
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FORCED_MARCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("36eae0e1-7100-449d-a259-7abfcd429117"),
     "Forced March",
-    crate::card::CardArt::new(
-        "36eae0e1-7100-449d-a259-7abfcd429117",
-        "Greg Hildebrandt & Tim Hildebrandt",
-    ),
+    "36eae0e1-7100-449d-a259-7abfcd429117",
+    "Greg Hildebrandt & Tim Hildebrandt",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1482,9 +1463,9 @@ pub(in crate::card::sets) static FORCED_MARCH: CardRecord = CardRecord::new(
 // MMQ 137 — Ghoul's Feast
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GHOUL_S_FEAST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6a0054c1-6510-41dd-8695-9bf50296b615"),
     "Ghoul's Feast",
-    crate::card::CardArt::new("6a0054c1-6510-41dd-8695-9bf50296b615", "Alan Pollack"),
+    "6a0054c1-6510-41dd-8695-9bf50296b615",
+    "Alan Pollack",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1492,9 +1473,9 @@ pub(in crate::card::sets) static GHOUL_S_FEAST: CardRecord = CardRecord::new(
 // MMQ 138 — Haunted Crossroads
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HAUNTED_CROSSROADS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3c065cae-1ed5-445e-ace3-e81cf4c773de"),
     "Haunted Crossroads",
-    crate::card::CardArt::new("3c065cae-1ed5-445e-ace3-e81cf4c773de", "Carl Critchlow"),
+    "3c065cae-1ed5-445e-ace3-e81cf4c773de",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1502,9 +1483,9 @@ pub(in crate::card::sets) static HAUNTED_CROSSROADS: CardRecord = CardRecord::ne
 // MMQ 139 — Highway Robber
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HIGHWAY_ROBBER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fc826c88-fe3c-4004-8283-27910c550fae"),
     "Highway Robber",
-    crate::card::CardArt::new("fc826c88-fe3c-4004-8283-27910c550fae", "Kev Walker"),
+    "fc826c88-fe3c-4004-8283-27910c550fae",
+    "Kev Walker",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1512,9 +1493,9 @@ pub(in crate::card::sets) static HIGHWAY_ROBBER: CardRecord = CardRecord::new(
 // MMQ 140 — Instigator
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INSTIGATOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2e3f57af-17d4-4a4c-ae46-fe37f97466fa"),
     "Instigator",
-    crate::card::CardArt::new("2e3f57af-17d4-4a4c-ae46-fe37f97466fa", "Fred Fields"),
+    "2e3f57af-17d4-4a4c-ae46-fe37f97466fa",
+    "Fred Fields",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1522,9 +1503,9 @@ pub(in crate::card::sets) static INSTIGATOR: CardRecord = CardRecord::new(
 // MMQ 141 — Insubordination
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INSUBORDINATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d2544c9d-adc2-4d67-8850-9af38e73ea1e"),
     "Insubordination",
-    crate::card::CardArt::new("d2544c9d-adc2-4d67-8850-9af38e73ea1e", "Andrew Goldhawk"),
+    "d2544c9d-adc2-4d67-8850-9af38e73ea1e",
+    "Andrew Goldhawk",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1532,9 +1513,9 @@ pub(in crate::card::sets) static INSUBORDINATION: CardRecord = CardRecord::new(
 // MMQ 142 — Intimidation
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INTIMIDATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1b9e1724-91cf-422e-909b-ddb69a6f9f76"),
     "Intimidation",
-    crate::card::CardArt::new("1b9e1724-91cf-422e-909b-ddb69a6f9f76", "Terese Nielsen"),
+    "1b9e1724-91cf-422e-909b-ddb69a6f9f76",
+    "Terese Nielsen",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1542,9 +1523,9 @@ pub(in crate::card::sets) static INTIMIDATION: CardRecord = CardRecord::new(
 // MMQ 143 — Larceny
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LARCENY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3a863da2-0639-4eed-8da9-2e9a38c04a23"),
     "Larceny",
-    crate::card::CardArt::new("3a863da2-0639-4eed-8da9-2e9a38c04a23", "Dave Dorman"),
+    "3a863da2-0639-4eed-8da9-2e9a38c04a23",
+    "Dave Dorman",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1552,12 +1533,9 @@ pub(in crate::card::sets) static LARCENY: CardRecord = CardRecord::new(
 // MMQ 144 — Liability
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIABILITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0b07c66d-5f37-4098-b7e6-03e6c684806b"),
     "Liability",
-    crate::card::CardArt::new(
-        "0b07c66d-5f37-4098-b7e6-03e6c684806b",
-        "Christopher Moeller",
-    ),
+    "0b07c66d-5f37-4098-b7e6-03e6c684806b",
+    "Christopher Moeller",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1565,9 +1543,9 @@ pub(in crate::card::sets) static LIABILITY: CardRecord = CardRecord::new(
 // MMQ 145 — Maggot Therapy
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MAGGOT_THERAPY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6ab963aa-2304-4ee6-a8c7-c485c5133b40"),
     "Maggot Therapy",
-    crate::card::CardArt::new("6ab963aa-2304-4ee6-a8c7-c485c5133b40", "Jeff Easley"),
+    "6ab963aa-2304-4ee6-a8c7-c485c5133b40",
+    "Jeff Easley",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1575,9 +1553,9 @@ pub(in crate::card::sets) static MAGGOT_THERAPY: CardRecord = CardRecord::new(
 // MMQ 146 — Midnight Ritual
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MIDNIGHT_RITUAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0e98c4f7-b0f4-48c6-b502-3dc5802d827f"),
     "Midnight Ritual",
-    crate::card::CardArt::new("0e98c4f7-b0f4-48c6-b502-3dc5802d827f", "Jeff Easley"),
+    "0e98c4f7-b0f4-48c6-b502-3dc5802d827f",
+    "Jeff Easley",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1585,9 +1563,9 @@ pub(in crate::card::sets) static MIDNIGHT_RITUAL: CardRecord = CardRecord::new(
 // MMQ 147 — Misshapen Fiend
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MISSHAPEN_FIEND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a43cf59e-7583-4651-968a-2a7201c69b6b"),
     "Misshapen Fiend",
-    crate::card::CardArt::new("a43cf59e-7583-4651-968a-2a7201c69b6b", "Adam Rex"),
+    "a43cf59e-7583-4651-968a-2a7201c69b6b",
+    "Adam Rex",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1595,9 +1573,9 @@ pub(in crate::card::sets) static MISSHAPEN_FIEND: CardRecord = CardRecord::new(
 // MMQ 148 — Molting Harpy
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOLTING_HARPY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ddfe33fb-71d5-4552-bcd3-f07e4e3847e1"),
     "Molting Harpy",
-    crate::card::CardArt::new("ddfe33fb-71d5-4552-bcd3-f07e4e3847e1", "Jeff Laubenstein"),
+    "ddfe33fb-71d5-4552-bcd3-f07e4e3847e1",
+    "Jeff Laubenstein",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1605,9 +1583,9 @@ pub(in crate::card::sets) static MOLTING_HARPY: CardRecord = CardRecord::new(
 // MMQ 149 — Nether Spirit
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NETHER_SPIRIT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("220217c5-408c-40df-8133-da16b13d4f21"),
     "Nether Spirit",
-    crate::card::CardArt::new("220217c5-408c-40df-8133-da16b13d4f21", "Alan Pollack"),
+    "220217c5-408c-40df-8133-da16b13d4f21",
+    "Alan Pollack",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1615,9 +1593,9 @@ pub(in crate::card::sets) static NETHER_SPIRIT: CardRecord = CardRecord::new(
 // MMQ 150 — Notorious Assassin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NOTORIOUS_ASSASSIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("239e48d8-e2ba-4e25-88ef-301420c796b4"),
     "Notorious Assassin",
-    crate::card::CardArt::new("239e48d8-e2ba-4e25-88ef-301420c796b4", "Heather Hudson"),
+    "239e48d8-e2ba-4e25-88ef-301420c796b4",
+    "Heather Hudson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1625,12 +1603,9 @@ pub(in crate::card::sets) static NOTORIOUS_ASSASSIN: CardRecord = CardRecord::ne
 // MMQ 151 — Pretender's Claim
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PRETENDER_S_CLAIM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2cc29dab-9211-46bc-a98c-a5dbd5b0980a"),
     "Pretender's Claim",
-    crate::card::CardArt::new(
-        "2cc29dab-9211-46bc-a98c-a5dbd5b0980a",
-        "Greg Hildebrandt & Tim Hildebrandt",
-    ),
+    "2cc29dab-9211-46bc-a98c-a5dbd5b0980a",
+    "Greg Hildebrandt & Tim Hildebrandt",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1638,9 +1613,9 @@ pub(in crate::card::sets) static PRETENDER_S_CLAIM: CardRecord = CardRecord::new
 // MMQ 152 — Primeval Shambler
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PRIMEVAL_SHAMBLER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5d6ed1fb-2f7d-4a21-bbf3-660cad631975"),
     "Primeval Shambler",
-    crate::card::CardArt::new("5d6ed1fb-2f7d-4a21-bbf3-660cad631975", "Chippy"),
+    "5d6ed1fb-2f7d-4a21-bbf3-660cad631975",
+    "Chippy",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1648,9 +1623,9 @@ pub(in crate::card::sets) static PRIMEVAL_SHAMBLER: CardRecord = CardRecord::new
 // MMQ 153 — Putrefaction
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PUTREFACTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("65104b23-58a6-41c0-b887-90a3fb959289"),
     "Putrefaction",
-    crate::card::CardArt::new("65104b23-58a6-41c0-b887-90a3fb959289", "DiTerlizzi"),
+    "65104b23-58a6-41c0-b887-90a3fb959289",
+    "DiTerlizzi",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1658,26 +1633,26 @@ pub(in crate::card::sets) static PUTREFACTION: CardRecord = CardRecord::new(
 // MMQ 154 — Quagmire Lamprey
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static QUAGMIRE_LAMPREY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3c91c44e-6bfc-4595-9cdb-17d73f912c09"),
     "Quagmire Lamprey",
-    crate::card::CardArt::new("3c91c44e-6bfc-4595-9cdb-17d73f912c09", "Glen Angus"),
+    "3c91c44e-6bfc-4595-9cdb-17d73f912c09",
+    "Glen Angus",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 155 — Rain of Tears (reprint)
-const RAIN_OF_TEARS_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1997::portal::RAIN_OF_TEARS).with_art(
-        "85bffa7f-919c-4c9b-9fdc-dde8204c61c2",
-        "Edward P. Beard, Jr.",
-    );
+const RAIN_OF_TEARS_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1997::portal::RAIN_OF_TEARS,
+    "85bffa7f-919c-4c9b-9fdc-dde8204c61c2",
+    "Edward P. Beard, Jr.",
+);
 
 // MMQ 156 — Rampart Crawler
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAMPART_CRAWLER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8b60f86f-c78a-4dfb-bb18-e9bcf21b26c4"),
     "Rampart Crawler",
-    crate::card::CardArt::new("8b60f86f-c78a-4dfb-bb18-e9bcf21b26c4", "Pete Venters"),
+    "8b60f86f-c78a-4dfb-bb18-e9bcf21b26c4",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1685,9 +1660,9 @@ pub(in crate::card::sets) static RAMPART_CRAWLER: CardRecord = CardRecord::new(
 // MMQ 157 — Rouse
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ROUSE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ad01a8e2-5dc5-49a3-ad1c-7d5bf006b774"),
     "Rouse",
-    crate::card::CardArt::new("ad01a8e2-5dc5-49a3-ad1c-7d5bf006b774", "Dave Dorman"),
+    "ad01a8e2-5dc5-49a3-ad1c-7d5bf006b774",
+    "Dave Dorman",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1695,9 +1670,9 @@ pub(in crate::card::sets) static ROUSE: CardRecord = CardRecord::new(
 // MMQ 158 — Scandalmonger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCANDALMONGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("10c97baa-9bc0-4894-867c-ad1f56c469fd"),
     "Scandalmonger",
-    crate::card::CardArt::new("10c97baa-9bc0-4894-867c-ad1f56c469fd", "Matt Cavotta"),
+    "10c97baa-9bc0-4894-867c-ad1f56c469fd",
+    "Matt Cavotta",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1705,9 +1680,9 @@ pub(in crate::card::sets) static SCANDALMONGER: CardRecord = CardRecord::new(
 // MMQ 159 — Sever Soul
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SEVER_SOUL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c2d84fec-18f1-4231-a293-0dc1ff868a40"),
     "Sever Soul",
-    crate::card::CardArt::new("c2d84fec-18f1-4231-a293-0dc1ff868a40", "Jeff Easley"),
+    "c2d84fec-18f1-4231-a293-0dc1ff868a40",
+    "Jeff Easley",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1715,9 +1690,9 @@ pub(in crate::card::sets) static SEVER_SOUL: CardRecord = CardRecord::new(
 // MMQ 160 — Silent Assassin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SILENT_ASSASSIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ba34034a-1150-41c8-a340-543f529ae07f"),
     "Silent Assassin",
-    crate::card::CardArt::new("ba34034a-1150-41c8-a340-543f529ae07f", "rk post"),
+    "ba34034a-1150-41c8-a340-543f529ae07f",
+    "rk post",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1725,18 +1700,18 @@ pub(in crate::card::sets) static SILENT_ASSASSIN: CardRecord = CardRecord::new(
 // MMQ 161 — Skulking Fugitive
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SKULKING_FUGITIVE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("175ed19c-9635-45ee-bb2c-32b96270a246"),
     "Skulking Fugitive",
-    crate::card::CardArt::new("175ed19c-9635-45ee-bb2c-32b96270a246", "Scott M. Fischer"),
+    "175ed19c-9635-45ee-bb2c-32b96270a246",
+    "Scott M. Fischer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 162 — Snuff Out
-pub(in crate::card::sets) static SNUFF_OUT: CardRecord = CardRecord::new_with_legacy_id(
-    2158,
+pub(in crate::card::sets) static SNUFF_OUT: CardRecord = CardRecord::new(
     "Snuff Out",
-    CardArt::new("18a3cca1-e50e-49b6-9e1a-f86640e3b177", "Mike Ploog"),
+    "18a3cca1-e50e-49b6-9e1a-f86640e3b177",
+    "Mike Ploog",
     CardSet::MercadianMasques,
     // Four life and no mana is why it is played: the answer costs nothing on
     // the turn it is needed, which is somebody else's.
@@ -1774,9 +1749,9 @@ pub(in crate::card::sets) static SNUFF_OUT: CardRecord = CardRecord::new_with_le
 // MMQ 163 — Soul Channeling
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOUL_CHANNELING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("55cd09ef-1655-4a62-b6c5-6eda33d2607a"),
     "Soul Channeling",
-    crate::card::CardArt::new("55cd09ef-1655-4a62-b6c5-6eda33d2607a", "DiTerlizzi"),
+    "55cd09ef-1655-4a62-b6c5-6eda33d2607a",
+    "DiTerlizzi",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1784,9 +1759,9 @@ pub(in crate::card::sets) static SOUL_CHANNELING: CardRecord = CardRecord::new(
 // MMQ 164 — Specter's Wail
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPECTER_S_WAIL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d1637b62-e364-4250-aad5-841c6a47a11e"),
     "Specter's Wail",
-    crate::card::CardArt::new("d1637b62-e364-4250-aad5-841c6a47a11e", "Randy Gallegos"),
+    "d1637b62-e364-4250-aad5-841c6a47a11e",
+    "Randy Gallegos",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1794,9 +1769,9 @@ pub(in crate::card::sets) static SPECTER_S_WAIL: CardRecord = CardRecord::new(
 // MMQ 165 — Strongarm Thug
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STRONGARM_THUG: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("20aa9108-470c-484d-908a-c31cf6935765"),
     "Strongarm Thug",
-    crate::card::CardArt::new("20aa9108-470c-484d-908a-c31cf6935765", "Rebecca Guay"),
+    "20aa9108-470c-484d-908a-c31cf6935765",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1804,9 +1779,9 @@ pub(in crate::card::sets) static STRONGARM_THUG: CardRecord = CardRecord::new(
 // MMQ 166 — Thrashing Wumpus
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THRASHING_WUMPUS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("86bc07c6-2ba7-41f8-90ab-f9bbac86dd08"),
     "Thrashing Wumpus",
-    crate::card::CardArt::new("86bc07c6-2ba7-41f8-90ab-f9bbac86dd08", "Jeff Miracola"),
+    "86bc07c6-2ba7-41f8-90ab-f9bbac86dd08",
+    "Jeff Miracola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1814,9 +1789,9 @@ pub(in crate::card::sets) static THRASHING_WUMPUS: CardRecord = CardRecord::new(
 // MMQ 167 — Undertaker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNDERTAKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f615f531-e8af-4f7b-a4ea-fb962149093f"),
     "Undertaker",
-    crate::card::CardArt::new("f615f531-e8af-4f7b-a4ea-fb962149093f", "Jeff Easley"),
+    "f615f531-e8af-4f7b-a4ea-fb962149093f",
+    "Jeff Easley",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1824,9 +1799,9 @@ pub(in crate::card::sets) static UNDERTAKER: CardRecord = CardRecord::new(
 // MMQ 168 — Unmask
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNMASK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2db7a0e6-eea5-4fa6-ac14-401411b106cc"),
     "Unmask",
-    crate::card::CardArt::new("2db7a0e6-eea5-4fa6-ac14-401411b106cc", "rk post"),
+    "2db7a0e6-eea5-4fa6-ac14-401411b106cc",
+    "rk post",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1834,9 +1809,9 @@ pub(in crate::card::sets) static UNMASK: CardRecord = CardRecord::new(
 // MMQ 169 — Unnatural Hunger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNNATURAL_HUNGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3985f240-4289-4d48-978c-bb2ce2b54c36"),
     "Unnatural Hunger",
-    crate::card::CardArt::new("3985f240-4289-4d48-978c-bb2ce2b54c36", "Jeff Miracola"),
+    "3985f240-4289-4d48-978c-bb2ce2b54c36",
+    "Jeff Miracola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1844,9 +1819,9 @@ pub(in crate::card::sets) static UNNATURAL_HUNGER: CardRecord = CardRecord::new(
 // MMQ 170 — Vendetta
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VENDETTA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("67ced38e-0f33-4bda-8e18-09f6ac03a3d7"),
     "Vendetta",
-    crate::card::CardArt::new("039fc76d-3b7e-4329-a997-07c25509e421", "Karl Kopinski"),
+    "67ced38e-0f33-4bda-8e18-09f6ac03a3d7",
+    "Dan Frazier",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1854,18 +1829,18 @@ pub(in crate::card::sets) static VENDETTA: CardRecord = CardRecord::new(
 // MMQ 171 — Wall of Distortion
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WALL_OF_DISTORTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d2b2d07a-9ea1-430d-b432-ae507f4fe73b"),
     "Wall of Distortion",
-    crate::card::CardArt::new("d2b2d07a-9ea1-430d-b432-ae507f4fe73b", "Mark Tedin"),
+    "d2b2d07a-9ea1-430d-b432-ae507f4fe73b",
+    "Mark Tedin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 172 — Arms Dealer
-pub(in crate::card::sets) static ARMS_DEALER: CardRecord = CardRecord::new_with_legacy_id(
-    1359,
+pub(in crate::card::sets) static ARMS_DEALER: CardRecord = CardRecord::new(
     "Arms Dealer",
-    CardArt::new("910d3c33-8cda-487b-8b44-87a9d06d6749", "Wayne Reynolds"),
+    "dafea45d-be00-428d-a127-70e6a14efe3f",
+    "Luca Zontini",
     CardSet::MercadianMasques,
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Rogue"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
@@ -1891,9 +1866,9 @@ pub(in crate::card::sets) static ARMS_DEALER: CardRecord = CardRecord::new_with_
 // MMQ 173 — Battle Rampart
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BATTLE_RAMPART: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f27f6658-0f00-4934-8d12-cd0dda3958c9"),
     "Battle Rampart",
-    crate::card::CardArt::new("f27f6658-0f00-4934-8d12-cd0dda3958c9", "Ron Spencer"),
+    "f27f6658-0f00-4934-8d12-cd0dda3958c9",
+    "Ron Spencer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1901,9 +1876,9 @@ pub(in crate::card::sets) static BATTLE_RAMPART: CardRecord = CardRecord::new(
 // MMQ 174 — Battle Squadron
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BATTLE_SQUADRON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("37d55504-ee04-4a5a-a952-9ec5dc2db413"),
     "Battle Squadron",
-    crate::card::CardArt::new("37d55504-ee04-4a5a-a952-9ec5dc2db413", "Mark Tedin"),
+    "37d55504-ee04-4a5a-a952-9ec5dc2db413",
+    "Mark Tedin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1911,9 +1886,9 @@ pub(in crate::card::sets) static BATTLE_SQUADRON: CardRecord = CardRecord::new(
 // MMQ 175 — Blaster Mage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLASTER_MAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("801b0fd1-bbb2-47c0-a4c3-4129a67473b9"),
     "Blaster Mage",
-    crate::card::CardArt::new("801b0fd1-bbb2-47c0-a4c3-4129a67473b9", "George Pratt"),
+    "801b0fd1-bbb2-47c0-a4c3-4129a67473b9",
+    "George Pratt",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1921,9 +1896,9 @@ pub(in crate::card::sets) static BLASTER_MAGE: CardRecord = CardRecord::new(
 // MMQ 176 — Blood Hound
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLOOD_HOUND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("baa1e796-809c-49af-a84e-ec088f7f48f8"),
     "Blood Hound",
-    crate::card::CardArt::new("baa1e796-809c-49af-a84e-ec088f7f48f8", "Bradley Williams"),
+    "baa1e796-809c-49af-a84e-ec088f7f48f8",
+    "Bradley Williams",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1931,9 +1906,9 @@ pub(in crate::card::sets) static BLOOD_HOUND: CardRecord = CardRecord::new(
 // MMQ 177 — Blood Oath
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLOOD_OATH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f1556a12-ff45-4a12-988a-63615b3799a9"),
     "Blood Oath",
-    crate::card::CardArt::new("f1556a12-ff45-4a12-988a-63615b3799a9", "Mike Ploog"),
+    "f1556a12-ff45-4a12-988a-63615b3799a9",
+    "Mike Ploog",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1941,12 +1916,9 @@ pub(in crate::card::sets) static BLOOD_OATH: CardRecord = CardRecord::new(
 // MMQ 178 — Brawl
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BRAWL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3f4e783c-0717-4127-bd7b-885ca617ca29"),
     "Brawl",
-    crate::card::CardArt::new(
-        "3f4e783c-0717-4127-bd7b-885ca617ca29",
-        "Edward P. Beard, Jr.",
-    ),
+    "3f4e783c-0717-4127-bd7b-885ca617ca29",
+    "Edward P. Beard, Jr.",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1954,9 +1926,9 @@ pub(in crate::card::sets) static BRAWL: CardRecord = CardRecord::new(
 // MMQ 179 — Cave Sense
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAVE_SENSE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2d718421-c742-489c-a243-3adb19f6716a"),
     "Cave Sense",
-    crate::card::CardArt::new("2d718421-c742-489c-a243-3adb19f6716a", "Mark Romanoski"),
+    "2d718421-c742-489c-a243-3adb19f6716a",
+    "Mark Romanoski",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1964,9 +1936,9 @@ pub(in crate::card::sets) static CAVE_SENSE: CardRecord = CardRecord::new(
 // MMQ 180 — Cave-In
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAVE_IN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("440d9d26-f304-467d-af79-914cc65f082e"),
     "Cave-In",
-    crate::card::CardArt::new("440d9d26-f304-467d-af79-914cc65f082e", "Mark Tedin"),
+    "440d9d26-f304-467d-af79-914cc65f082e",
+    "Mark Tedin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1974,9 +1946,9 @@ pub(in crate::card::sets) static CAVE_IN: CardRecord = CardRecord::new(
 // MMQ 181 — Cavern Crawler
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAVERN_CRAWLER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bd0a8af9-2e86-4639-a6c9-209f115e95f8"),
     "Cavern Crawler",
-    crate::card::CardArt::new("bd0a8af9-2e86-4639-a6c9-209f115e95f8", "Pete Venters"),
+    "bd0a8af9-2e86-4639-a6c9-209f115e95f8",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -1984,18 +1956,18 @@ pub(in crate::card::sets) static CAVERN_CRAWLER: CardRecord = CardRecord::new(
 // MMQ 182 — Ceremonial Guard
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CEREMONIAL_GUARD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4a6c69d1-5295-419f-bb8f-af826bf92cb3"),
     "Ceremonial Guard",
-    crate::card::CardArt::new("4a6c69d1-5295-419f-bb8f-af826bf92cb3", "Daren Bader"),
+    "4a6c69d1-5295-419f-bb8f-af826bf92cb3",
+    "Daren Bader",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 183 — Cinder Elemental
-pub(in crate::card::sets) static CINDER_ELEMENTAL: CardRecord = CardRecord::new_with_legacy_id(
-    1085,
+pub(in crate::card::sets) static CINDER_ELEMENTAL: CardRecord = CardRecord::new(
     "Cinder Elemental",
-    CardArt::new("8bbf10ce-69e0-4984-91a3-f65df919830d", "Svetlin Velinov"),
+    "80b39056-2ee8-4cfd-acbd-ba99f74e788d",
+    "Greg Staples",
     CardSet::MercadianMasques,
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Elemental"], 2, 2).with_ability(
         AbilityDef::activated_with_targets(
@@ -2019,9 +1991,9 @@ pub(in crate::card::sets) static CINDER_ELEMENTAL: CardRecord = CardRecord::new_
 // MMQ 184 — Close Quarters
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CLOSE_QUARTERS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1b9131c7-4e46-4c01-80b3-a6b055439346"),
     "Close Quarters",
-    crate::card::CardArt::new("1b9131c7-4e46-4c01-80b3-a6b055439346", "Ron Spencer"),
+    "1b9131c7-4e46-4c01-80b3-a6b055439346",
+    "Ron Spencer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2029,9 +2001,9 @@ pub(in crate::card::sets) static CLOSE_QUARTERS: CardRecord = CardRecord::new(
 // MMQ 185 — Crag Saurian
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRAG_SAURIAN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1f0907a5-938e-4ef4-aa85-e7c1ae4317a6"),
     "Crag Saurian",
-    crate::card::CardArt::new("1f0907a5-938e-4ef4-aa85-e7c1ae4317a6", "Matthew D. Wilson"),
+    "1f0907a5-938e-4ef4-aa85-e7c1ae4317a6",
+    "Matthew D. Wilson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2039,9 +2011,9 @@ pub(in crate::card::sets) static CRAG_SAURIAN: CardRecord = CardRecord::new(
 // MMQ 186 — Crash
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRASH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7a26bde3-8392-4476-b347-f223d52554a6"),
     "Crash",
-    crate::card::CardArt::new("7a26bde3-8392-4476-b347-f223d52554a6", "Doug Chaffee"),
+    "7a26bde3-8392-4476-b347-f223d52554a6",
+    "Doug Chaffee",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2049,9 +2021,9 @@ pub(in crate::card::sets) static CRASH: CardRecord = CardRecord::new(
 // MMQ 187 — Flailing Manticore
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLAILING_MANTICORE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6eee8c2e-bda7-4bf9-80fe-87d96024ca8b"),
     "Flailing Manticore",
-    crate::card::CardArt::new("6eee8c2e-bda7-4bf9-80fe-87d96024ca8b", "Roger Raupp"),
+    "6eee8c2e-bda7-4bf9-80fe-87d96024ca8b",
+    "Roger Raupp",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2059,9 +2031,9 @@ pub(in crate::card::sets) static FLAILING_MANTICORE: CardRecord = CardRecord::ne
 // MMQ 188 — Flailing Ogre
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLAILING_OGRE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e400e520-b2b8-4c13-a4ea-f8810c927bf7"),
     "Flailing Ogre",
-    crate::card::CardArt::new("e400e520-b2b8-4c13-a4ea-f8810c927bf7", "Daniel R. Horne"),
+    "e400e520-b2b8-4c13-a4ea-f8810c927bf7",
+    "Daniel R. Horne",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2069,9 +2041,9 @@ pub(in crate::card::sets) static FLAILING_OGRE: CardRecord = CardRecord::new(
 // MMQ 189 — Flailing Soldier
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLAILING_SOLDIER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fb44b0f6-0608-40d6-9eaa-48e5a834701f"),
     "Flailing Soldier",
-    crate::card::CardArt::new("fb44b0f6-0608-40d6-9eaa-48e5a834701f", "Dany Orizio"),
+    "fb44b0f6-0608-40d6-9eaa-48e5a834701f",
+    "Dany Orizio",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2079,9 +2051,9 @@ pub(in crate::card::sets) static FLAILING_SOLDIER: CardRecord = CardRecord::new(
 // MMQ 190 — Flaming Sword
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLAMING_SWORD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("17ecd9ff-8c30-4e17-8cff-dd40d653c4af"),
     "Flaming Sword",
-    crate::card::CardArt::new("17ecd9ff-8c30-4e17-8cff-dd40d653c4af", "Randy Gallegos"),
+    "17ecd9ff-8c30-4e17-8cff-dd40d653c4af",
+    "Randy Gallegos",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2089,9 +2061,9 @@ pub(in crate::card::sets) static FLAMING_SWORD: CardRecord = CardRecord::new(
 // MMQ 191 — Furious Assault
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FURIOUS_ASSAULT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("27a07fae-0f34-45e7-b22d-97eea9031022"),
     "Furious Assault",
-    crate::card::CardArt::new("27a07fae-0f34-45e7-b22d-97eea9031022", "Greg Staples"),
+    "27a07fae-0f34-45e7-b22d-97eea9031022",
+    "Greg Staples",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2099,9 +2071,9 @@ pub(in crate::card::sets) static FURIOUS_ASSAULT: CardRecord = CardRecord::new(
 // MMQ 192 — Gerrard's Irregulars
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GERRARD_S_IRREGULARS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8a88f507-3d78-4f7f-a91f-8489ad9250f2"),
     "Gerrard's Irregulars",
-    crate::card::CardArt::new("8a88f507-3d78-4f7f-a91f-8489ad9250f2", "Eric Peterson"),
+    "8a88f507-3d78-4f7f-a91f-8489ad9250f2",
+    "Eric Peterson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2109,9 +2081,9 @@ pub(in crate::card::sets) static GERRARD_S_IRREGULARS: CardRecord = CardRecord::
 // MMQ 193 — Hammer Mage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HAMMER_MAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b959d7ad-a78e-439f-9225-4dbb89f490d7"),
     "Hammer Mage",
-    crate::card::CardArt::new("b959d7ad-a78e-439f-9225-4dbb89f490d7", "Rebecca Guay"),
+    "b959d7ad-a78e-439f-9225-4dbb89f490d7",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2119,9 +2091,9 @@ pub(in crate::card::sets) static HAMMER_MAGE: CardRecord = CardRecord::new(
 // MMQ 194 — Hired Giant
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HIRED_GIANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dc33920a-f05c-46fa-b94b-278af0022b78"),
     "Hired Giant",
-    crate::card::CardArt::new("dc33920a-f05c-46fa-b94b-278af0022b78", "Ben Thompson"),
+    "dc33920a-f05c-46fa-b94b-278af0022b78",
+    "Ben Thompson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2129,9 +2101,9 @@ pub(in crate::card::sets) static HIRED_GIANT: CardRecord = CardRecord::new(
 // MMQ 195 — Kris Mage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KRIS_MAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4389fbcd-182a-4cac-b14f-aa971948cf8e"),
     "Kris Mage",
-    crate::card::CardArt::new("4389fbcd-182a-4cac-b14f-aa971948cf8e", "Matthew D. Wilson"),
+    "4389fbcd-182a-4cac-b14f-aa971948cf8e",
+    "Matthew D. Wilson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2139,9 +2111,9 @@ pub(in crate::card::sets) static KRIS_MAGE: CardRecord = CardRecord::new(
 // MMQ 196 — Kyren Glider
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KYREN_GLIDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0bc55e01-342e-4856-937e-14561b8d165b"),
     "Kyren Glider",
-    crate::card::CardArt::new("0bc55e01-342e-4856-937e-14561b8d165b", "Daren Bader"),
+    "0bc55e01-342e-4856-937e-14561b8d165b",
+    "Daren Bader",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2149,9 +2121,9 @@ pub(in crate::card::sets) static KYREN_GLIDER: CardRecord = CardRecord::new(
 // MMQ 197 — Kyren Legate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KYREN_LEGATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6f0e9806-be8c-4b88-a4be-0111d1be81d9"),
     "Kyren Legate",
-    crate::card::CardArt::new("6f0e9806-be8c-4b88-a4be-0111d1be81d9", "Dave Dorman"),
+    "6f0e9806-be8c-4b88-a4be-0111d1be81d9",
+    "Dave Dorman",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2159,9 +2131,9 @@ pub(in crate::card::sets) static KYREN_LEGATE: CardRecord = CardRecord::new(
 // MMQ 198 — Kyren Negotiations
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KYREN_NEGOTIATIONS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0c263a17-bbc2-433e-93f8-72e57b818322"),
     "Kyren Negotiations",
-    crate::card::CardArt::new("0c263a17-bbc2-433e-93f8-72e57b818322", "Scott Hampton"),
+    "0c263a17-bbc2-433e-93f8-72e57b818322",
+    "Scott Hampton",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2169,9 +2141,9 @@ pub(in crate::card::sets) static KYREN_NEGOTIATIONS: CardRecord = CardRecord::ne
 // MMQ 199 — Kyren Sniper
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KYREN_SNIPER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4df99e19-0b1e-48ec-a146-38cf147eab61"),
     "Kyren Sniper",
-    crate::card::CardArt::new("4df99e19-0b1e-48ec-a146-38cf147eab61", "Carl Critchlow"),
+    "4df99e19-0b1e-48ec-a146-38cf147eab61",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2179,9 +2151,9 @@ pub(in crate::card::sets) static KYREN_SNIPER: CardRecord = CardRecord::new(
 // MMQ 200 — Lava Runner
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LAVA_RUNNER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("09d0fbe6-6ce1-4b95-afb7-a7386b5033cf"),
     "Lava Runner",
-    crate::card::CardArt::new("09d0fbe6-6ce1-4b95-afb7-a7386b5033cf", "Donato Giancola"),
+    "09d0fbe6-6ce1-4b95-afb7-a7386b5033cf",
+    "Donato Giancola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2189,9 +2161,9 @@ pub(in crate::card::sets) static LAVA_RUNNER: CardRecord = CardRecord::new(
 // MMQ 201 — Lightning Hounds
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIGHTNING_HOUNDS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("38c82a1d-5db1-4090-b446-cc5bc6dc811d"),
     "Lightning Hounds",
-    crate::card::CardArt::new("38c82a1d-5db1-4090-b446-cc5bc6dc811d", "Andrew Robinson"),
+    "38c82a1d-5db1-4090-b446-cc5bc6dc811d",
+    "Andrew Robinson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2199,9 +2171,9 @@ pub(in crate::card::sets) static LIGHTNING_HOUNDS: CardRecord = CardRecord::new(
 // MMQ 202 — Lithophage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LITHOPHAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("98ee0f17-de64-4abb-afad-4005275f1a3c"),
     "Lithophage",
-    crate::card::CardArt::new("98ee0f17-de64-4abb-afad-4005275f1a3c", "Mike Ploog"),
+    "98ee0f17-de64-4abb-afad-4005275f1a3c",
+    "Mike Ploog",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2209,9 +2181,9 @@ pub(in crate::card::sets) static LITHOPHAGE: CardRecord = CardRecord::new(
 // MMQ 203 — Lunge
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LUNGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e9e43349-429c-43f7-b808-c4bf37370a9f"),
     "Lunge",
-    crate::card::CardArt::new("e9e43349-429c-43f7-b808-c4bf37370a9f", "Dan Frazier"),
+    "e9e43349-429c-43f7-b808-c4bf37370a9f",
+    "Dan Frazier",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2219,9 +2191,9 @@ pub(in crate::card::sets) static LUNGE: CardRecord = CardRecord::new(
 // MMQ 204 — Magistrate's Veto
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MAGISTRATE_S_VETO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2f83d39e-bf49-4968-829e-c0e9abf2fb86"),
     "Magistrate's Veto",
-    crate::card::CardArt::new("2f83d39e-bf49-4968-829e-c0e9abf2fb86", "Brian Snõddy"),
+    "2f83d39e-bf49-4968-829e-c0e9abf2fb86",
+    "Brian Snõddy",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2229,24 +2201,26 @@ pub(in crate::card::sets) static MAGISTRATE_S_VETO: CardRecord = CardRecord::new
 // MMQ 205 — Mercadia's Downfall
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MERCADIA_S_DOWNFALL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("14507fe6-80a9-4ed4-bf3e-4656f3d377c0"),
     "Mercadia's Downfall",
-    crate::card::CardArt::new("14507fe6-80a9-4ed4-bf3e-4656f3d377c0", "Pete Venters"),
+    "14507fe6-80a9-4ed4-bf3e-4656f3d377c0",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 206 — Ogre Taskmaster (reprint)
-const OGRE_TASKMASTER_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&catalog_p02::OGRE_TASKMASTER)
-        .with_art("186d6c28-6468-4bde-9738-eb51594fa7c1", "Dany Orizio");
+const OGRE_TASKMASTER_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_p02::OGRE_TASKMASTER,
+    "186d6c28-6468-4bde-9738-eb51594fa7c1",
+    "Dany Orizio",
+);
 
 // MMQ 207 — Pulverize
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PULVERIZE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("afbbc44d-60fb-45fc-a588-14aab0340134"),
     "Pulverize",
-    crate::card::CardArt::new("afbbc44d-60fb-45fc-a588-14aab0340134", "Scott M. Fischer"),
+    "afbbc44d-60fb-45fc-a588-14aab0340134",
+    "Scott M. Fischer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2254,12 +2228,9 @@ pub(in crate::card::sets) static PULVERIZE: CardRecord = CardRecord::new(
 // MMQ 208 — Puppet's Verdict
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PUPPET_S_VERDICT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("052b743a-456d-49c3-881e-4f30c7645fa5"),
     "Puppet's Verdict",
-    crate::card::CardArt::new(
-        "052b743a-456d-49c3-881e-4f30c7645fa5",
-        "Edward P. Beard, Jr.",
-    ),
+    "052b743a-456d-49c3-881e-4f30c7645fa5",
+    "Edward P. Beard, Jr.",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2267,9 +2238,9 @@ pub(in crate::card::sets) static PUPPET_S_VERDICT: CardRecord = CardRecord::new(
 // MMQ 209 — Robber Fly
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ROBBER_FLY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7d5cf073-2ba0-463e-bcd4-979ad18e28fc"),
     "Robber Fly",
-    crate::card::CardArt::new("7d5cf073-2ba0-463e-bcd4-979ad18e28fc", "John Matson"),
+    "7d5cf073-2ba0-463e-bcd4-979ad18e28fc",
+    "John Matson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2277,9 +2248,9 @@ pub(in crate::card::sets) static ROBBER_FLY: CardRecord = CardRecord::new(
 // MMQ 210 — Rock Badger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ROCK_BADGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dff05df8-76f5-48c6-ac96-7b4e6a7050f6"),
     "Rock Badger",
-    crate::card::CardArt::new("dff05df8-76f5-48c6-ac96-7b4e6a7050f6", "Heather Hudson"),
+    "dff05df8-76f5-48c6-ac96-7b4e6a7050f6",
+    "Heather Hudson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2287,9 +2258,9 @@ pub(in crate::card::sets) static ROCK_BADGER: CardRecord = CardRecord::new(
 // MMQ 211 — Seismic Mage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SEISMIC_MAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9524432a-3186-4c7b-a780-28bdbe36053f"),
     "Seismic Mage",
-    crate::card::CardArt::new("9524432a-3186-4c7b-a780-28bdbe36053f", "Pete Venters"),
+    "9524432a-3186-4c7b-a780-28bdbe36053f",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2297,9 +2268,9 @@ pub(in crate::card::sets) static SEISMIC_MAGE: CardRecord = CardRecord::new(
 // MMQ 212 — Shock Troops
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHOCK_TROOPS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e7a918ca-3e60-46de-9f29-56bdc6430a77"),
     "Shock Troops",
-    crate::card::CardArt::new("e7a918ca-3e60-46de-9f29-56bdc6430a77", "Jeff Miracola"),
+    "e7a918ca-3e60-46de-9f29-56bdc6430a77",
+    "Jeff Miracola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2307,9 +2278,9 @@ pub(in crate::card::sets) static SHOCK_TROOPS: CardRecord = CardRecord::new(
 // MMQ 213 — Sizzle
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SIZZLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f1ca1eee-d97d-48c6-84f1-7d1f972c3ca9"),
     "Sizzle",
-    crate::card::CardArt::new("f1ca1eee-d97d-48c6-84f1-7d1f972c3ca9", "Brian Snõddy"),
+    "f1ca1eee-d97d-48c6-84f1-7d1f972c3ca9",
+    "Brian Snõddy",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2317,23 +2288,26 @@ pub(in crate::card::sets) static SIZZLE: CardRecord = CardRecord::new(
 // MMQ 214 — Squee, Goblin Nabob
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SQUEE_GOBLIN_NABOB: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4ba8325a-1203-4125-9111-94d9e2b1f14b"),
     "Squee, Goblin Nabob",
-    crate::card::CardArt::new("4ba8325a-1203-4125-9111-94d9e2b1f14b", "David Monette"),
+    "4ba8325a-1203-4125-9111-94d9e2b1f14b",
+    "David Monette",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 215 — Stone Rain (reprint)
-const STONE_RAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::STONE_RAIN)
-    .with_art("29cd7ded-9249-42c8-bb17-4c6b8cd2a9cc", "Ben Thompson");
+const STONE_RAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::STONE_RAIN,
+    "29cd7ded-9249-42c8-bb17-4c6b8cd2a9cc",
+    "Ben Thompson",
+);
 
 // MMQ 216 — Tectonic Break
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TECTONIC_BREAK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9de0ee5d-10f6-4152-8416-1f2b749b439d"),
     "Tectonic Break",
-    crate::card::CardArt::new("9de0ee5d-10f6-4152-8416-1f2b749b439d", "Rebecca Guay"),
+    "9de0ee5d-10f6-4152-8416-1f2b749b439d",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2341,9 +2315,9 @@ pub(in crate::card::sets) static TECTONIC_BREAK: CardRecord = CardRecord::new(
 // MMQ 217 — Territorial Dispute
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TERRITORIAL_DISPUTE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4fa8a13a-f09f-4b10-8fab-3ea4fdc643d1"),
     "Territorial Dispute",
-    crate::card::CardArt::new("4fa8a13a-f09f-4b10-8fab-3ea4fdc643d1", "Mike Ploog"),
+    "4fa8a13a-f09f-4b10-8fab-3ea4fdc643d1",
+    "Mike Ploog",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2351,9 +2325,9 @@ pub(in crate::card::sets) static TERRITORIAL_DISPUTE: CardRecord = CardRecord::n
 // MMQ 218 — Thieves' Auction
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THIEVES_AUCTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b5708c87-108d-4ba1-a1e9-e83cb9b16b6c"),
     "Thieves' Auction",
-    crate::card::CardArt::new("b5708c87-108d-4ba1-a1e9-e83cb9b16b6c", "Kevin Murphy"),
+    "b5708c87-108d-4ba1-a1e9-e83cb9b16b6c",
+    "Kevin Murphy",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2361,23 +2335,26 @@ pub(in crate::card::sets) static THIEVES_AUCTION: CardRecord = CardRecord::new(
 // MMQ 219 — Thunderclap
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THUNDERCLAP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b3f8c5ee-2179-4c05-adc9-0b66d02b59ad"),
     "Thunderclap",
-    crate::card::CardArt::new("b3f8c5ee-2179-4c05-adc9-0b66d02b59ad", "Tom Wänerstrand"),
+    "b3f8c5ee-2179-4c05-adc9-0b66d02b59ad",
+    "Tom Wänerstrand",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 220 — Tremor (reprint)
-const TREMOR_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_vis::TREMOR)
-    .with_art("8531efb1-d77d-451a-8621-424fc278ccf9", "Mark Romanoski");
+const TREMOR_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_vis::TREMOR,
+    "8531efb1-d77d-451a-8621-424fc278ccf9",
+    "Mark Romanoski",
+);
 
 // MMQ 221 — Two-Headed Dragon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TWO_HEADED_DRAGON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("40fed2c7-c922-41c3-b86b-a8ed41a1308d"),
     "Two-Headed Dragon",
-    crate::card::CardArt::new("40fed2c7-c922-41c3-b86b-a8ed41a1308d", "Sam Wood"),
+    "40fed2c7-c922-41c3-b86b-a8ed41a1308d",
+    "Sam Wood",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2385,9 +2362,9 @@ pub(in crate::card::sets) static TWO_HEADED_DRAGON: CardRecord = CardRecord::new
 // MMQ 222 — Uphill Battle
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UPHILL_BATTLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("73fa3455-3ba0-41ad-aefd-40f183aed2a6"),
     "Uphill Battle",
-    crate::card::CardArt::new("73fa3455-3ba0-41ad-aefd-40f183aed2a6", "Pete Venters"),
+    "73fa3455-3ba0-41ad-aefd-40f183aed2a6",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2395,9 +2372,9 @@ pub(in crate::card::sets) static UPHILL_BATTLE: CardRecord = CardRecord::new(
 // MMQ 223 — Volcanic Wind
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VOLCANIC_WIND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3c69dd00-46ce-42b2-a2ed-43b4cf04a975"),
     "Volcanic Wind",
-    crate::card::CardArt::new("3c69dd00-46ce-42b2-a2ed-43b4cf04a975", "Rebecca Guay"),
+    "3c69dd00-46ce-42b2-a2ed-43b4cf04a975",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2405,9 +2382,9 @@ pub(in crate::card::sets) static VOLCANIC_WIND: CardRecord = CardRecord::new(
 // MMQ 224 — War Cadence
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WAR_CADENCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e030d2eb-70c5-4ff7-8f03-ad5495cf9c69"),
     "War Cadence",
-    crate::card::CardArt::new("e030d2eb-70c5-4ff7-8f03-ad5495cf9c69", "John Matson"),
+    "e030d2eb-70c5-4ff7-8f03-ad5495cf9c69",
+    "John Matson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2415,9 +2392,9 @@ pub(in crate::card::sets) static WAR_CADENCE: CardRecord = CardRecord::new(
 // MMQ 225 — Warmonger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WARMONGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2c4077d6-d98c-4fdd-ba57-0781aa21f68b"),
     "Warmonger",
-    crate::card::CardArt::new("5577ac30-ee84-4d3c-b407-82578779dc90", "Heather Hudson"),
+    "5577ac30-ee84-4d3c-b407-82578779dc90",
+    "Heather Hudson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2425,9 +2402,9 @@ pub(in crate::card::sets) static WARMONGER: CardRecord = CardRecord::new(
 // MMQ 226 — Warpath
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WARPATH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e031c819-1237-4911-8a1d-87d6095a5faa"),
     "Warpath",
-    crate::card::CardArt::new("e031c819-1237-4911-8a1d-87d6095a5faa", "Paolo Parente"),
+    "e031c819-1237-4911-8a1d-87d6095a5faa",
+    "Paolo Parente",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2435,27 +2412,26 @@ pub(in crate::card::sets) static WARPATH: CardRecord = CardRecord::new(
 // MMQ 227 — Wild Jhovall
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WILD_JHOVALL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("64bcc06a-de86-4387-882d-ead33e9c9e01"),
     "Wild Jhovall",
-    crate::card::CardArt::new("64bcc06a-de86-4387-882d-ead33e9c9e01", "Daren Bader"),
+    "64bcc06a-de86-4387-882d-ead33e9c9e01",
+    "Daren Bader",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 228 — Word of Blasting (reprint)
-const WORD_OF_BLASTING_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&catalog_ice::WORD_OF_BLASTING)
-        .with_art("c5362ead-9162-4160-bfa9-432f7d0e222d", "Eric Peterson");
+const WORD_OF_BLASTING_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_ice::WORD_OF_BLASTING,
+    "c5362ead-9162-4160-bfa9-432f7d0e222d",
+    "Eric Peterson",
+);
 
 // MMQ 229 — Ancestral Mask
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANCESTRAL_MASK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1203f98a-fb6e-4f16-88e3-553eba177450"),
     "Ancestral Mask",
-    crate::card::CardArt::new(
-        "1203f98a-fb6e-4f16-88e3-553eba177450",
-        "Massimiliano Frezzato",
-    ),
+    "1203f98a-fb6e-4f16-88e3-553eba177450",
+    "Massimiliano Frezzato",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2463,9 +2439,9 @@ pub(in crate::card::sets) static ANCESTRAL_MASK: CardRecord = CardRecord::new(
 // MMQ 230 — Bifurcate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BIFURCATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dedb483e-b2c6-46c6-b02b-a49599d33521"),
     "Bifurcate",
-    crate::card::CardArt::new("dedb483e-b2c6-46c6-b02b-a49599d33521", "John Matson"),
+    "dedb483e-b2c6-46c6-b02b-a49599d33521",
+    "John Matson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2473,9 +2449,9 @@ pub(in crate::card::sets) static BIFURCATE: CardRecord = CardRecord::new(
 // MMQ 231 — Boa Constrictor
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BOA_CONSTRICTOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f7369cbf-6986-4a39-b07c-a283b40aee40"),
     "Boa Constrictor",
-    crate::card::CardArt::new("f7369cbf-6986-4a39-b07c-a283b40aee40", "Carl Critchlow"),
+    "f7369cbf-6986-4a39-b07c-a283b40aee40",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2483,9 +2459,9 @@ pub(in crate::card::sets) static BOA_CONSTRICTOR: CardRecord = CardRecord::new(
 // MMQ 232 — Briar Patch
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BRIAR_PATCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b5913fc6-eeb0-411b-9264-1e75bea8489b"),
     "Briar Patch",
-    crate::card::CardArt::new("b5913fc6-eeb0-411b-9264-1e75bea8489b", "Rebecca Guay"),
+    "b5913fc6-eeb0-411b-9264-1e75bea8489b",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2493,9 +2469,9 @@ pub(in crate::card::sets) static BRIAR_PATCH: CardRecord = CardRecord::new(
 // MMQ 233 — Caller of the Hunt
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CALLER_OF_THE_HUNT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c0e8e1cf-0a47-4ce4-889a-091229d0e466"),
     "Caller of the Hunt",
-    crate::card::CardArt::new("c0e8e1cf-0a47-4ce4-889a-091229d0e466", "Clyde Caldwell"),
+    "c0e8e1cf-0a47-4ce4-889a-091229d0e466",
+    "Clyde Caldwell",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2503,9 +2479,9 @@ pub(in crate::card::sets) static CALLER_OF_THE_HUNT: CardRecord = CardRecord::ne
 // MMQ 234 — Caustic Wasps
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAUSTIC_WASPS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("59a46e20-2910-4287-a5e0-bccac8cbabcd"),
     "Caustic Wasps",
-    crate::card::CardArt::new("59a46e20-2910-4287-a5e0-bccac8cbabcd", "Glen Angus"),
+    "59a46e20-2910-4287-a5e0-bccac8cbabcd",
+    "Glen Angus",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2513,9 +2489,9 @@ pub(in crate::card::sets) static CAUSTIC_WASPS: CardRecord = CardRecord::new(
 // MMQ 235 — Clear the Land
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CLEAR_THE_LAND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b87f3579-f314-4207-a02c-14e9cb269b47"),
     "Clear the Land",
-    crate::card::CardArt::new("b87f3579-f314-4207-a02c-14e9cb269b47", "Bradley Williams"),
+    "b87f3579-f314-4207-a02c-14e9cb269b47",
+    "Bradley Williams",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2523,9 +2499,9 @@ pub(in crate::card::sets) static CLEAR_THE_LAND: CardRecord = CardRecord::new(
 // MMQ 236 — Collective Unconscious
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static COLLECTIVE_UNCONSCIOUS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8fa7d6a8-9190-403f-bbdd-ab71d9c89e4d"),
     "Collective Unconscious",
-    crate::card::CardArt::new("8fa7d6a8-9190-403f-bbdd-ab71d9c89e4d", "Andrew Goldhawk"),
+    "8fa7d6a8-9190-403f-bbdd-ab71d9c89e4d",
+    "Andrew Goldhawk",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2533,23 +2509,26 @@ pub(in crate::card::sets) static COLLECTIVE_UNCONSCIOUS: CardRecord = CardRecord
 // MMQ 237 — Dawnstrider
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DAWNSTRIDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2d193a35-8950-4a77-ace3-c4d4085727f4"),
     "Dawnstrider",
-    crate::card::CardArt::new("2d193a35-8950-4a77-ace3-c4d4085727f4", "rk post"),
+    "2d193a35-8950-4a77-ace3-c4d4085727f4",
+    "rk post",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 238 — Deadly Insect (reprint)
-const DEADLY_INSECT_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_all::DEADLY_INSECT)
-    .with_art("46be78e6-13bb-4500-87db-5ed5cae0145e", "Randy Gallegos");
+const DEADLY_INSECT_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_all::DEADLY_INSECT,
+    "46be78e6-13bb-4500-87db-5ed5cae0145e",
+    "Randy Gallegos",
+);
 
 // MMQ 239 — Deepwood Drummer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEEPWOOD_DRUMMER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("acbed0f5-2ac0-48d8-b5ab-b4cd7176fde2"),
     "Deepwood Drummer",
-    crate::card::CardArt::new("acbed0f5-2ac0-48d8-b5ab-b4cd7176fde2", "Ron Spears"),
+    "acbed0f5-2ac0-48d8-b5ab-b4cd7176fde2",
+    "Ron Spears",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2557,12 +2536,9 @@ pub(in crate::card::sets) static DEEPWOOD_DRUMMER: CardRecord = CardRecord::new(
 // MMQ 240 — Deepwood Elder
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEEPWOOD_ELDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d2a1ed74-027e-4c8e-ac7e-e58c5fccff14"),
     "Deepwood Elder",
-    crate::card::CardArt::new(
-        "d2a1ed74-027e-4c8e-ac7e-e58c5fccff14",
-        "Greg Hildebrandt & Tim Hildebrandt",
-    ),
+    "d2a1ed74-027e-4c8e-ac7e-e58c5fccff14",
+    "Greg Hildebrandt & Tim Hildebrandt",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2570,9 +2546,9 @@ pub(in crate::card::sets) static DEEPWOOD_ELDER: CardRecord = CardRecord::new(
 // MMQ 241 — Deepwood Tantiv
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEEPWOOD_TANTIV: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bfa2028e-4e73-4ff2-a9e2-9ac347d67893"),
     "Deepwood Tantiv",
-    crate::card::CardArt::new("bfa2028e-4e73-4ff2-a9e2-9ac347d67893", "Joel Biske"),
+    "bfa2028e-4e73-4ff2-a9e2-9ac347d67893",
+    "Joel Biske",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2580,24 +2556,26 @@ pub(in crate::card::sets) static DEEPWOOD_TANTIV: CardRecord = CardRecord::new(
 // MMQ 242 — Deepwood Wolverine
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEEPWOOD_WOLVERINE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("db9a9a76-741a-4ba3-bd4b-0eb87d678253"),
     "Deepwood Wolverine",
-    crate::card::CardArt::new("db9a9a76-741a-4ba3-bd4b-0eb87d678253", "Ray Lago"),
+    "db9a9a76-741a-4ba3-bd4b-0eb87d678253",
+    "Ray Lago",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 243 — Desert Twister (reprint)
-const DESERT_TWISTER_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&catalog_arn::DESERT_TWISTER)
-        .with_art("7d2437f2-1966-4e83-9f7e-6aaf76e21d11", "Kevin Murphy");
+const DESERT_TWISTER_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_arn::DESERT_TWISTER,
+    "7d2437f2-1966-4e83-9f7e-6aaf76e21d11",
+    "Kevin Murphy",
+);
 
 // MMQ 244 — Erithizon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ERITHIZON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ec4ea4e2-2102-4b99-bea5-6fc4203f2b26"),
     "Erithizon",
-    crate::card::CardArt::new("ec4ea4e2-2102-4b99-bea5-6fc4203f2b26", "Scott M. Fischer"),
+    "ec4ea4e2-2102-4b99-bea5-6fc4203f2b26",
+    "Scott M. Fischer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2605,9 +2583,9 @@ pub(in crate::card::sets) static ERITHIZON: CardRecord = CardRecord::new(
 // MMQ 245 — Ferocity
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FEROCITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4afda489-8397-4ad4-89dc-e8bad92db133"),
     "Ferocity",
-    crate::card::CardArt::new("4afda489-8397-4ad4-89dc-e8bad92db133", "Pete Venters"),
+    "4afda489-8397-4ad4-89dc-e8bad92db133",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2615,9 +2593,9 @@ pub(in crate::card::sets) static FEROCITY: CardRecord = CardRecord::new(
 // MMQ 246 — Food Chain
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FOOD_CHAIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("18a1bb9e-006c-495e-8f99-d451183d2669"),
     "Food Chain",
-    crate::card::CardArt::new("18a1bb9e-006c-495e-8f99-d451183d2669", "Val Mayerik"),
+    "18a1bb9e-006c-495e-8f99-d451183d2669",
+    "Val Mayerik",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2625,9 +2603,9 @@ pub(in crate::card::sets) static FOOD_CHAIN: CardRecord = CardRecord::new(
 // MMQ 247 — Foster
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FOSTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("be54e1d7-1388-4184-ad0d-dde4b0a3d02d"),
     "Foster",
-    crate::card::CardArt::new("be54e1d7-1388-4184-ad0d-dde4b0a3d02d", "Carl Critchlow"),
+    "be54e1d7-1388-4184-ad0d-dde4b0a3d02d",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2635,24 +2613,26 @@ pub(in crate::card::sets) static FOSTER: CardRecord = CardRecord::new(
 // MMQ 248 — Game Preserve
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GAME_PRESERVE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1bb62356-72bb-4dc1-a2f9-45a3aca62e41"),
     "Game Preserve",
-    crate::card::CardArt::new("1bb62356-72bb-4dc1-a2f9-45a3aca62e41", "Luca Zontini"),
+    "1bb62356-72bb-4dc1-a2f9-45a3aca62e41",
+    "Luca Zontini",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 249 — Giant Caterpillar (reprint)
-const GIANT_CATERPILLAR_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&catalog_vis::GIANT_CATERPILLAR)
-        .with_art("bdc5eb8a-4531-4408-90fe-9b352d71a052", "Arnie Swekel");
+const GIANT_CATERPILLAR_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_vis::GIANT_CATERPILLAR,
+    "bdc5eb8a-4531-4408-90fe-9b352d71a052",
+    "Arnie Swekel",
+);
 
 // MMQ 250 — Groundskeeper
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GROUNDSKEEPER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("31d9fe16-562a-4a86-84ed-15cd90b8afc0"),
     "Groundskeeper",
-    crate::card::CardArt::new("31d9fe16-562a-4a86-84ed-15cd90b8afc0", "Alan Rabinowitz"),
+    "31d9fe16-562a-4a86-84ed-15cd90b8afc0",
+    "Alan Rabinowitz",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2660,9 +2640,9 @@ pub(in crate::card::sets) static GROUNDSKEEPER: CardRecord = CardRecord::new(
 // MMQ 251 — Horned Troll
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HORNED_TROLL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7f2a6d10-054e-4d6f-aeb7-4204f02490c7"),
     "Horned Troll",
-    crate::card::CardArt::new("7f2a6d10-054e-4d6f-aeb7-4204f02490c7", "Heather Hudson"),
+    "7f2a6d10-054e-4d6f-aeb7-4204f02490c7",
+    "Heather Hudson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2670,9 +2650,9 @@ pub(in crate::card::sets) static HORNED_TROLL: CardRecord = CardRecord::new(
 // MMQ 252 — Howling Wolf
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HOWLING_WOLF: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7416c68a-5a6a-4d51-8dc7-5c62da81ec77"),
     "Howling Wolf",
-    crate::card::CardArt::new("7416c68a-5a6a-4d51-8dc7-5c62da81ec77", "Heather Hudson"),
+    "7416c68a-5a6a-4d51-8dc7-5c62da81ec77",
+    "Heather Hudson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2680,18 +2660,18 @@ pub(in crate::card::sets) static HOWLING_WOLF: CardRecord = CardRecord::new(
 // MMQ 253 — Hunted Wumpus
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HUNTED_WUMPUS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b21c8b2d-ef0f-4839-acfc-20fd248c62cf"),
     "Hunted Wumpus",
-    crate::card::CardArt::new("b21c8b2d-ef0f-4839-acfc-20fd248c62cf", "Brian Snõddy"),
+    "b21c8b2d-ef0f-4839-acfc-20fd248c62cf",
+    "Brian Snõddy",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 254 — Invigorate
 pub(in crate::card::sets) static INVIGORATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("406b343c-90b5-4a4d-91c3-2fddcc9a0e05"),
     "Invigorate",
-    CardArt::new("406b343c-90b5-4a4d-91c3-2fddcc9a0e05", "Dan Frazier"),
+    "406b343c-90b5-4a4d-91c3-2fddcc9a0e05",
+    "Dan Frazier",
     CardSet::MercadianMasques,
     CardRules::new_instant(mana_cost!("{2}{G}")).with_abilities(&[
         AbilityDef::alternative_cast(
@@ -2733,12 +2713,9 @@ pub(in crate::card::sets) static INVIGORATE: CardRecord = CardRecord::new(
 // MMQ 255 — Land Grant
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LAND_GRANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d6862005-32d1-473e-a28b-5dfc4b7782cd"),
     "Land Grant",
-    crate::card::CardArt::new(
-        "d6862005-32d1-473e-a28b-5dfc4b7782cd",
-        "D. Alexander Gregory",
-    ),
+    "d6862005-32d1-473e-a28b-5dfc4b7782cd",
+    "D. Alexander Gregory",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2746,9 +2723,9 @@ pub(in crate::card::sets) static LAND_GRANT: CardRecord = CardRecord::new(
 // MMQ 256 — Ley Line
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LEY_LINE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f8990efd-708a-4019-bce0-2d6409ecc004"),
     "Ley Line",
-    crate::card::CardArt::new("f8990efd-708a-4019-bce0-2d6409ecc004", "Terese Nielsen"),
+    "f8990efd-708a-4019-bce0-2d6409ecc004",
+    "Terese Nielsen",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2756,23 +2733,26 @@ pub(in crate::card::sets) static LEY_LINE: CardRecord = CardRecord::new(
 // MMQ 257 — Lumbering Satyr
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LUMBERING_SATYR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5d897088-0667-4864-91c3-5f0ac7f9b220"),
     "Lumbering Satyr",
-    crate::card::CardArt::new("5d897088-0667-4864-91c3-5f0ac7f9b220", "Alan Pollack"),
+    "5d897088-0667-4864-91c3-5f0ac7f9b220",
+    "Alan Pollack",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 258 — Lure (reprint)
-const LURE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::LURE)
-    .with_art("89e0015e-9b16-4787-8b4f-02d8bddb1b80", "DiTerlizzi");
+const LURE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::LURE,
+    "89e0015e-9b16-4787-8b4f-02d8bddb1b80",
+    "DiTerlizzi",
+);
 
 // MMQ 259 — Megatherium
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MEGATHERIUM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c58a1e43-a173-45d6-ac55-363664bf6e1b"),
     "Megatherium",
-    crate::card::CardArt::new("c58a1e43-a173-45d6-ac55-363664bf6e1b", "Paolo Parente"),
+    "c58a1e43-a173-45d6-ac55-363664bf6e1b",
+    "Paolo Parente",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2780,9 +2760,9 @@ pub(in crate::card::sets) static MEGATHERIUM: CardRecord = CardRecord::new(
 // MMQ 260 — Natural Affinity
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NATURAL_AFFINITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("69c6f647-f71b-4f61-9b16-774884ed52e2"),
     "Natural Affinity",
-    crate::card::CardArt::new("69c6f647-f71b-4f61-9b16-774884ed52e2", "Pete Venters"),
+    "69c6f647-f71b-4f61-9b16-774884ed52e2",
+    "Pete Venters",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2790,18 +2770,18 @@ pub(in crate::card::sets) static NATURAL_AFFINITY: CardRecord = CardRecord::new(
 // MMQ 261 — Pangosaur
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PANGOSAUR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0335d282-cd1a-4be3-8eb2-82aaee91401a"),
     "Pangosaur",
-    crate::card::CardArt::new("0335d282-cd1a-4be3-8eb2-82aaee91401a", "Mark Tedin"),
+    "0335d282-cd1a-4be3-8eb2-82aaee91401a",
+    "Mark Tedin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 262 — Revive
-pub(in crate::card::sets) static REVIVE: CardRecord = CardRecord::new_with_legacy_id(
-    1036,
+pub(in crate::card::sets) static REVIVE: CardRecord = CardRecord::new(
     "Revive",
-    CardArt::new("3a9aae03-f29b-4da6-a0cb-edd67bb111f5", "Matthew D. Wilson"),
+    "7b19b453-8393-424d-9578-3ab568c92882",
+    "Matthew D. Wilson",
     CardSet::MercadianMasques,
     CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell_with_targets(
         "Return target green card from your graveyard to your hand.",
@@ -2824,9 +2804,9 @@ pub(in crate::card::sets) static REVIVE: CardRecord = CardRecord::new_with_legac
 // MMQ 263 — Rushwood Dryad
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RUSHWOOD_DRYAD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("55367a94-b343-4a04-bfa9-47722e32cc45"),
     "Rushwood Dryad",
-    crate::card::CardArt::new("55367a94-b343-4a04-bfa9-47722e32cc45", "Todd Lockwood"),
+    "55367a94-b343-4a04-bfa9-47722e32cc45",
+    "Todd Lockwood",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2834,9 +2814,9 @@ pub(in crate::card::sets) static RUSHWOOD_DRYAD: CardRecord = CardRecord::new(
 // MMQ 264 — Rushwood Elemental
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RUSHWOOD_ELEMENTAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("52128694-d9f5-4acb-b684-bb02a4e766b8"),
     "Rushwood Elemental",
-    crate::card::CardArt::new("52128694-d9f5-4acb-b684-bb02a4e766b8", "Hannibal King"),
+    "52128694-d9f5-4acb-b684-bb02a4e766b8",
+    "Hannibal King",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2844,9 +2824,9 @@ pub(in crate::card::sets) static RUSHWOOD_ELEMENTAL: CardRecord = CardRecord::ne
 // MMQ 265 — Rushwood Herbalist
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RUSHWOOD_HERBALIST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9afde98f-a429-4eff-9d06-8582267ac74b"),
     "Rushwood Herbalist",
-    crate::card::CardArt::new("9afde98f-a429-4eff-9d06-8582267ac74b", "Terese Nielsen"),
+    "9afde98f-a429-4eff-9d06-8582267ac74b",
+    "Terese Nielsen",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2854,9 +2834,9 @@ pub(in crate::card::sets) static RUSHWOOD_HERBALIST: CardRecord = CardRecord::ne
 // MMQ 266 — Rushwood Legate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RUSHWOOD_LEGATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("827b9c99-87d7-493c-9dc3-0c6aa4a61b49"),
     "Rushwood Legate",
-    crate::card::CardArt::new("827b9c99-87d7-493c-9dc3-0c6aa4a61b49", "Mark Romanoski"),
+    "827b9c99-87d7-493c-9dc3-0c6aa4a61b49",
+    "Mark Romanoski",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2864,9 +2844,9 @@ pub(in crate::card::sets) static RUSHWOOD_LEGATE: CardRecord = CardRecord::new(
 // MMQ 267 — Saber Ants
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SABER_ANTS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e9269f52-1002-475d-a0f3-d652630591ca"),
     "Saber Ants",
-    crate::card::CardArt::new("e9269f52-1002-475d-a0f3-d652630591ca", "Greg Staples"),
+    "e9269f52-1002-475d-a0f3-d652630591ca",
+    "Greg Staples",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2874,9 +2854,9 @@ pub(in crate::card::sets) static SABER_ANTS: CardRecord = CardRecord::new(
 // MMQ 268 — Sacred Prey
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SACRED_PREY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e965d32c-3151-48e8-b256-0b7fa8a8a211"),
     "Sacred Prey",
-    crate::card::CardArt::new("e965d32c-3151-48e8-b256-0b7fa8a8a211", "Rebecca Guay"),
+    "e965d32c-3151-48e8-b256-0b7fa8a8a211",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2884,9 +2864,9 @@ pub(in crate::card::sets) static SACRED_PREY: CardRecord = CardRecord::new(
 // MMQ 269 — Silverglade Elemental
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SILVERGLADE_ELEMENTAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f222fe90-ac92-4ba9-b060-9b64075bf139"),
     "Silverglade Elemental",
-    crate::card::CardArt::new("f222fe90-ac92-4ba9-b060-9b64075bf139", "Chippy"),
+    "f222fe90-ac92-4ba9-b060-9b64075bf139",
+    "Chippy",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2894,9 +2874,9 @@ pub(in crate::card::sets) static SILVERGLADE_ELEMENTAL: CardRecord = CardRecord:
 // MMQ 270 — Silverglade Pathfinder
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SILVERGLADE_PATHFINDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9bc99b33-ce06-4a44-8b23-300b41b2b2fe"),
     "Silverglade Pathfinder",
-    crate::card::CardArt::new("9bc99b33-ce06-4a44-8b23-300b41b2b2fe", "rk post"),
+    "9bc99b33-ce06-4a44-8b23-300b41b2b2fe",
+    "rk post",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2904,9 +2884,9 @@ pub(in crate::card::sets) static SILVERGLADE_PATHFINDER: CardRecord = CardRecord
 // MMQ 271 — Snake Pit
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SNAKE_PIT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("059a70a5-d4fb-445e-af98-e81821df2c59"),
     "Snake Pit",
-    crate::card::CardArt::new("059a70a5-d4fb-445e-af98-e81821df2c59", "Carl Critchlow"),
+    "059a70a5-d4fb-445e-af98-e81821df2c59",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2914,9 +2894,9 @@ pub(in crate::card::sets) static SNAKE_PIT: CardRecord = CardRecord::new(
 // MMQ 272 — Snorting Gahr
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SNORTING_GAHR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e568503e-a886-4c8b-9d46-8520c2cdda48"),
     "Snorting Gahr",
-    crate::card::CardArt::new("e568503e-a886-4c8b-9d46-8520c2cdda48", "Andrew Goldhawk"),
+    "e568503e-a886-4c8b-9d46-8520c2cdda48",
+    "Andrew Goldhawk",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2924,9 +2904,9 @@ pub(in crate::card::sets) static SNORTING_GAHR: CardRecord = CardRecord::new(
 // MMQ 273 — Spidersilk Armor
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPIDERSILK_ARMOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9eb7694f-af4c-4152-b868-528257d05154"),
     "Spidersilk Armor",
-    crate::card::CardArt::new("9eb7694f-af4c-4152-b868-528257d05154", "Scott Hampton"),
+    "9eb7694f-af4c-4152-b868-528257d05154",
+    "Scott Hampton",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2934,24 +2914,26 @@ pub(in crate::card::sets) static SPIDERSILK_ARMOR: CardRecord = CardRecord::new(
 // MMQ 274 — Spontaneous Generation
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPONTANEOUS_GENERATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ce5765cb-00cd-4920-9fe8-68791048ec4a"),
     "Spontaneous Generation",
-    crate::card::CardArt::new("ce5765cb-00cd-4920-9fe8-68791048ec4a", "Alan Pollack"),
+    "ce5765cb-00cd-4920-9fe8-68791048ec4a",
+    "Alan Pollack",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 275 — Squall (reprint)
-const SQUALL_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1999::starter_1999::SQUALL)
-        .with_art("e5409b54-66ed-4add-bf43-cfeb074b1c50", "Val Mayerik");
+const SQUALL_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1999::starter_1999::SQUALL,
+    "e5409b54-66ed-4add-bf43-cfeb074b1c50",
+    "Val Mayerik",
+);
 
 // MMQ 276 — Squallmonger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SQUALLMONGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c845e1b8-6a39-456c-aa67-d180ae63e200"),
     "Squallmonger",
-    crate::card::CardArt::new("c845e1b8-6a39-456c-aa67-d180ae63e200", "Heather Hudson"),
+    "c845e1b8-6a39-456c-aa67-d180ae63e200",
+    "Heather Hudson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2959,9 +2941,9 @@ pub(in crate::card::sets) static SQUALLMONGER: CardRecord = CardRecord::new(
 // MMQ 277 — Stamina
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STAMINA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ed8abca3-6e31-49cd-b9bf-86ad68e1cc83"),
     "Stamina",
-    crate::card::CardArt::new("ed8abca3-6e31-49cd-b9bf-86ad68e1cc83", "Paolo Parente"),
+    "ed8abca3-6e31-49cd-b9bf-86ad68e1cc83",
+    "Paolo Parente",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2969,9 +2951,9 @@ pub(in crate::card::sets) static STAMINA: CardRecord = CardRecord::new(
 // MMQ 278 — Sustenance
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUSTENANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5a61db44-80dc-4058-9c9d-65cd18e63fd4"),
     "Sustenance",
-    crate::card::CardArt::new("5a61db44-80dc-4058-9c9d-65cd18e63fd4", "Qiao Dafu"),
+    "5a61db44-80dc-4058-9c9d-65cd18e63fd4",
+    "Qiao Dafu",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -2979,28 +2961,33 @@ pub(in crate::card::sets) static SUSTENANCE: CardRecord = CardRecord::new(
 // MMQ 279 — Tiger Claws
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TIGER_CLAWS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0146a689-4817-4849-a90d-4cc64566960d"),
     "Tiger Claws",
-    crate::card::CardArt::new("0146a689-4817-4849-a90d-4cc64566960d", "Adam Rex"),
+    "0146a689-4817-4849-a90d-4cc64566960d",
+    "Adam Rex",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 280 — Tranquility (reprint)
-const TRANQUILITY_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::TRANQUILITY)
-    .with_art("843e801e-1ceb-4e3f-82e6-3c092051ba8c", "Heather Hudson");
+const TRANQUILITY_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::TRANQUILITY,
+    "843e801e-1ceb-4e3f-82e6-3c092051ba8c",
+    "Heather Hudson",
+);
 
 // MMQ 281 — Venomous Breath (reprint)
-const VENOMOUS_BREATH_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&catalog_ice::VENOMOUS_BREATH)
-        .with_art("4797556c-df74-4e13-b8fb-8b0b58c92b4c", "DiTerlizzi");
+const VENOMOUS_BREATH_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_ice::VENOMOUS_BREATH,
+    "4797556c-df74-4e13-b8fb-8b0b58c92b4c",
+    "DiTerlizzi",
+);
 
 // MMQ 282 — Venomous Dragonfly
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VENOMOUS_DRAGONFLY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("479fc902-ce94-4a6b-af87-4645387a46c6"),
     "Venomous Dragonfly",
-    crate::card::CardArt::new("479fc902-ce94-4a6b-af87-4645387a46c6", "Tom Wänerstrand"),
+    "479fc902-ce94-4a6b-af87-4645387a46c6",
+    "Tom Wänerstrand",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3008,9 +2995,9 @@ pub(in crate::card::sets) static VENOMOUS_DRAGONFLY: CardRecord = CardRecord::ne
 // MMQ 283 — Vernal Equinox
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VERNAL_EQUINOX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3bed69d2-f5fb-4173-b939-5abdb48b82b4"),
     "Vernal Equinox",
-    crate::card::CardArt::new("3bed69d2-f5fb-4173-b939-5abdb48b82b4", "Rebecca Guay"),
+    "3bed69d2-f5fb-4173-b939-5abdb48b82b4",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3018,9 +3005,9 @@ pub(in crate::card::sets) static VERNAL_EQUINOX: CardRecord = CardRecord::new(
 // MMQ 284 — Vine Dryad
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VINE_DRYAD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fc9c9158-faed-42ae-9f6b-71dee49ff79f"),
     "Vine Dryad",
-    crate::card::CardArt::new("fc9c9158-faed-42ae-9f6b-71dee49ff79f", "Jeff Laubenstein"),
+    "fc9c9158-faed-42ae-9f6b-71dee49ff79f",
+    "Jeff Laubenstein",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3028,9 +3015,9 @@ pub(in crate::card::sets) static VINE_DRYAD: CardRecord = CardRecord::new(
 // MMQ 285 — Vine Trellis
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VINE_TRELLIS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e660241f-0976-4206-8149-7dac8466a2a3"),
     "Vine Trellis",
-    crate::card::CardArt::new("e660241f-0976-4206-8149-7dac8466a2a3", "DiTerlizzi"),
+    "e660241f-0976-4206-8149-7dac8466a2a3",
+    "DiTerlizzi",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3038,9 +3025,9 @@ pub(in crate::card::sets) static VINE_TRELLIS: CardRecord = CardRecord::new(
 // MMQ 286 — Assembly Hall
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ASSEMBLY_HALL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1676ccbb-91d2-4f26-b3a5-ccb1a21bdebf"),
     "Assembly Hall",
-    crate::card::CardArt::new("1676ccbb-91d2-4f26-b3a5-ccb1a21bdebf", "Val Mayerik"),
+    "1676ccbb-91d2-4f26-b3a5-ccb1a21bdebf",
+    "Val Mayerik",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3048,9 +3035,9 @@ pub(in crate::card::sets) static ASSEMBLY_HALL: CardRecord = CardRecord::new(
 // MMQ 287 — Barbed Wire
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BARBED_WIRE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("be9e2e59-1527-4c61-9cc9-dcaf1181bd43"),
     "Barbed Wire",
-    crate::card::CardArt::new("be9e2e59-1527-4c61-9cc9-dcaf1181bd43", "Ron Spencer"),
+    "be9e2e59-1527-4c61-9cc9-dcaf1181bd43",
+    "Ron Spencer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3058,9 +3045,9 @@ pub(in crate::card::sets) static BARBED_WIRE: CardRecord = CardRecord::new(
 // MMQ 288 — Bargaining Table
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BARGAINING_TABLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("85da9395-42e9-4408-832d-74ea4b01256b"),
     "Bargaining Table",
-    crate::card::CardArt::new("85da9395-42e9-4408-832d-74ea4b01256b", "Scott M. Fischer"),
+    "85da9395-42e9-4408-832d-74ea4b01256b",
+    "Scott M. Fischer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3068,12 +3055,9 @@ pub(in crate::card::sets) static BARGAINING_TABLE: CardRecord = CardRecord::new(
 // MMQ 289 — Credit Voucher
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CREDIT_VOUCHER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1ab65242-17ad-4c22-9c70-aac8076d1b4c"),
     "Credit Voucher",
-    crate::card::CardArt::new(
-        "1ab65242-17ad-4c22-9c70-aac8076d1b4c",
-        "D. Alexander Gregory",
-    ),
+    "1ab65242-17ad-4c22-9c70-aac8076d1b4c",
+    "D. Alexander Gregory",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3081,9 +3065,9 @@ pub(in crate::card::sets) static CREDIT_VOUCHER: CardRecord = CardRecord::new(
 // MMQ 290 — Crenellated Wall
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRENELLATED_WALL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d85ad08d-1120-411a-8bbe-ac93a56476bd"),
     "Crenellated Wall",
-    crate::card::CardArt::new("d85ad08d-1120-411a-8bbe-ac93a56476bd", "Arnie Swekel"),
+    "d85ad08d-1120-411a-8bbe-ac93a56476bd",
+    "Arnie Swekel",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3091,9 +3075,9 @@ pub(in crate::card::sets) static CRENELLATED_WALL: CardRecord = CardRecord::new(
 // MMQ 291 — Crooked Scales
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CROOKED_SCALES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fd7084ba-cca6-4fb9-b21b-b79e7d74c5c0"),
     "Crooked Scales",
-    crate::card::CardArt::new("fd7084ba-cca6-4fb9-b21b-b79e7d74c5c0", "Ron Spears"),
+    "fd7084ba-cca6-4fb9-b21b-b79e7d74c5c0",
+    "Ron Spears",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3101,9 +3085,9 @@ pub(in crate::card::sets) static CROOKED_SCALES: CardRecord = CardRecord::new(
 // MMQ 292 — Crumbling Sanctuary
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRUMBLING_SANCTUARY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d8fa6d6c-c1cd-46f3-8430-94f67be55bf7"),
     "Crumbling Sanctuary",
-    crate::card::CardArt::new("d8fa6d6c-c1cd-46f3-8430-94f67be55bf7", "Randy Gallegos"),
+    "d8fa6d6c-c1cd-46f3-8430-94f67be55bf7",
+    "Randy Gallegos",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3111,9 +3095,9 @@ pub(in crate::card::sets) static CRUMBLING_SANCTUARY: CardRecord = CardRecord::n
 // MMQ 293 — Distorting Lens
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DISTORTING_LENS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ab196d8d-5d1c-4f0e-a924-37774db02821"),
     "Distorting Lens",
-    crate::card::CardArt::new("ab196d8d-5d1c-4f0e-a924-37774db02821", "Glen Angus"),
+    "ab196d8d-5d1c-4f0e-a924-37774db02821",
+    "Glen Angus",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3121,9 +3105,9 @@ pub(in crate::card::sets) static DISTORTING_LENS: CardRecord = CardRecord::new(
 // MMQ 294 — Eye of Ramos
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EYE_OF_RAMOS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("78d22400-39f6-444d-b508-783a7df7e945"),
     "Eye of Ramos",
-    crate::card::CardArt::new("78d22400-39f6-444d-b508-783a7df7e945", "David Martin"),
+    "78d22400-39f6-444d-b508-783a7df7e945",
+    "David Martin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3131,9 +3115,9 @@ pub(in crate::card::sets) static EYE_OF_RAMOS: CardRecord = CardRecord::new(
 // MMQ 295 — General's Regalia
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GENERAL_S_REGALIA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fb99d982-8ab1-4d6a-ba24-58ac23a9b9e7"),
     "General's Regalia",
-    crate::card::CardArt::new("fb99d982-8ab1-4d6a-ba24-58ac23a9b9e7", "David Monette"),
+    "fb99d982-8ab1-4d6a-ba24-58ac23a9b9e7",
+    "David Monette",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3141,9 +3125,9 @@ pub(in crate::card::sets) static GENERAL_S_REGALIA: CardRecord = CardRecord::new
 // MMQ 296 — Heart of Ramos
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HEART_OF_RAMOS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a0046226-7563-4345-aa4b-a2c732c2780a"),
     "Heart of Ramos",
-    crate::card::CardArt::new("a0046226-7563-4345-aa4b-a2c732c2780a", "David Martin"),
+    "a0046226-7563-4345-aa4b-a2c732c2780a",
+    "David Martin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3151,9 +3135,9 @@ pub(in crate::card::sets) static HEART_OF_RAMOS: CardRecord = CardRecord::new(
 // MMQ 297 — Henge Guardian
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HENGE_GUARDIAN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("028e5e18-b639-4461-87e4-5306371440b5"),
     "Henge Guardian",
-    crate::card::CardArt::new("028e5e18-b639-4461-87e4-5306371440b5", "Chippy"),
+    "028e5e18-b639-4461-87e4-5306371440b5",
+    "Chippy",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3161,9 +3145,9 @@ pub(in crate::card::sets) static HENGE_GUARDIAN: CardRecord = CardRecord::new(
 // MMQ 298 — Horn of Plenty
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HORN_OF_PLENTY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d5e04462-1d10-47df-b456-211dd0a87891"),
     "Horn of Plenty",
-    crate::card::CardArt::new("d5e04462-1d10-47df-b456-211dd0a87891", "Brian Despain"),
+    "d5e04462-1d10-47df-b456-211dd0a87891",
+    "Brian Despain",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3171,9 +3155,9 @@ pub(in crate::card::sets) static HORN_OF_PLENTY: CardRecord = CardRecord::new(
 // MMQ 299 — Horn of Ramos
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HORN_OF_RAMOS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6b17f541-8e9d-43b0-b688-e3f2e7fa55c8"),
     "Horn of Ramos",
-    crate::card::CardArt::new("6b17f541-8e9d-43b0-b688-e3f2e7fa55c8", "David Martin"),
+    "6b17f541-8e9d-43b0-b688-e3f2e7fa55c8",
+    "David Martin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3181,9 +3165,9 @@ pub(in crate::card::sets) static HORN_OF_RAMOS: CardRecord = CardRecord::new(
 // MMQ 300 — Iron Lance
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static IRON_LANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("41f7d212-faf2-4a6f-a338-d9e5014b56d5"),
     "Iron Lance",
-    crate::card::CardArt::new("41f7d212-faf2-4a6f-a338-d9e5014b56d5", "Scott M. Fischer"),
+    "41f7d212-faf2-4a6f-a338-d9e5014b56d5",
+    "Scott M. Fischer",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3191,9 +3175,9 @@ pub(in crate::card::sets) static IRON_LANCE: CardRecord = CardRecord::new(
 // MMQ 301 — Jeweled Torque
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JEWELED_TORQUE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("eab076bc-e4c3-42a1-b701-9bc49bcc3cdd"),
     "Jeweled Torque",
-    crate::card::CardArt::new("eab076bc-e4c3-42a1-b701-9bc49bcc3cdd", "Mark Zug"),
+    "eab076bc-e4c3-42a1-b701-9bc49bcc3cdd",
+    "Mark Zug",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3201,9 +3185,9 @@ pub(in crate::card::sets) static JEWELED_TORQUE: CardRecord = CardRecord::new(
 // MMQ 302 — Kyren Archive
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KYREN_ARCHIVE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5e65a06a-e7af-422a-9481-446731009935"),
     "Kyren Archive",
-    crate::card::CardArt::new("5e65a06a-e7af-422a-9481-446731009935", "Roger Raupp"),
+    "5e65a06a-e7af-422a-9481-446731009935",
+    "Roger Raupp",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3211,9 +3195,9 @@ pub(in crate::card::sets) static KYREN_ARCHIVE: CardRecord = CardRecord::new(
 // MMQ 303 — Kyren Toy
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KYREN_TOY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7a8318bb-bc3c-45e9-bd57-60ae72b6f8b0"),
     "Kyren Toy",
-    crate::card::CardArt::new("7a8318bb-bc3c-45e9-bd57-60ae72b6f8b0", "Arnie Swekel"),
+    "7a8318bb-bc3c-45e9-bd57-60ae72b6f8b0",
+    "Arnie Swekel",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3221,9 +3205,9 @@ pub(in crate::card::sets) static KYREN_TOY: CardRecord = CardRecord::new(
 // MMQ 304 — Magistrate's Scepter
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MAGISTRATE_S_SCEPTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d4785ed7-c948-4ad2-b24d-2f45806d9fcc"),
     "Magistrate's Scepter",
-    crate::card::CardArt::new("d4785ed7-c948-4ad2-b24d-2f45806d9fcc", "Adam Rex"),
+    "d4785ed7-c948-4ad2-b24d-2f45806d9fcc",
+    "Adam Rex",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3231,9 +3215,9 @@ pub(in crate::card::sets) static MAGISTRATE_S_SCEPTER: CardRecord = CardRecord::
 // MMQ 305 — Mercadian Atlas
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MERCADIAN_ATLAS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("00ad3531-399c-4897-b0ee-ad2a26445a17"),
     "Mercadian Atlas",
-    crate::card::CardArt::new("00ad3531-399c-4897-b0ee-ad2a26445a17", "Dan Frazier"),
+    "00ad3531-399c-4897-b0ee-ad2a26445a17",
+    "Dan Frazier",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3241,9 +3225,9 @@ pub(in crate::card::sets) static MERCADIAN_ATLAS: CardRecord = CardRecord::new(
 // MMQ 306 — Mercadian Lift
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MERCADIAN_LIFT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("395a1a8a-785f-442b-8e95-8b4ca44af2a3"),
     "Mercadian Lift",
-    crate::card::CardArt::new("395a1a8a-785f-442b-8e95-8b4ca44af2a3", "Gary Ruddell"),
+    "395a1a8a-785f-442b-8e95-8b4ca44af2a3",
+    "Gary Ruddell",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3251,9 +3235,9 @@ pub(in crate::card::sets) static MERCADIAN_LIFT: CardRecord = CardRecord::new(
 // MMQ 307 — Monkey Cage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MONKEY_CAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("07f6be53-7a20-4e6b-a6ce-11cba06af8cb"),
     "Monkey Cage",
-    crate::card::CardArt::new("07f6be53-7a20-4e6b-a6ce-11cba06af8cb", "Carl Critchlow"),
+    "07f6be53-7a20-4e6b-a6ce-11cba06af8cb",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3261,9 +3245,9 @@ pub(in crate::card::sets) static MONKEY_CAGE: CardRecord = CardRecord::new(
 // MMQ 308 — Panacea
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PANACEA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("89414770-2a19-4baf-9b18-76104b7b0b9a"),
     "Panacea",
-    crate::card::CardArt::new("89414770-2a19-4baf-9b18-76104b7b0b9a", "Donato Giancola"),
+    "89414770-2a19-4baf-9b18-76104b7b0b9a",
+    "Donato Giancola",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3271,9 +3255,9 @@ pub(in crate::card::sets) static PANACEA: CardRecord = CardRecord::new(
 // MMQ 309 — Power Matrix
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static POWER_MATRIX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a578599c-7d90-4881-b59a-9cf64b90d917"),
     "Power Matrix",
-    crate::card::CardArt::new("a578599c-7d90-4881-b59a-9cf64b90d917", "Alan Pollack"),
+    "a578599c-7d90-4881-b59a-9cf64b90d917",
+    "Alan Pollack",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3281,9 +3265,9 @@ pub(in crate::card::sets) static POWER_MATRIX: CardRecord = CardRecord::new(
 // MMQ 310 — Puffer Extract
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PUFFER_EXTRACT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("83093cdf-0b12-419c-a748-21acf166e195"),
     "Puffer Extract",
-    crate::card::CardArt::new("83093cdf-0b12-419c-a748-21acf166e195", "Heather Hudson"),
+    "83093cdf-0b12-419c-a748-21acf166e195",
+    "Heather Hudson",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3291,9 +3275,9 @@ pub(in crate::card::sets) static PUFFER_EXTRACT: CardRecord = CardRecord::new(
 // MMQ 311 — Rishadan Pawnshop
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RISHADAN_PAWNSHOP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2c5fc9fc-a0f9-4f56-8368-2d7e1fec5ba0"),
     "Rishadan Pawnshop",
-    crate::card::CardArt::new("2c5fc9fc-a0f9-4f56-8368-2d7e1fec5ba0", "Joel Biske"),
+    "2c5fc9fc-a0f9-4f56-8368-2d7e1fec5ba0",
+    "Joel Biske",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3301,9 +3285,9 @@ pub(in crate::card::sets) static RISHADAN_PAWNSHOP: CardRecord = CardRecord::new
 // MMQ 312 — Skull of Ramos
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SKULL_OF_RAMOS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f071957c-9bea-4d00-9ffd-30f98d57b8d2"),
     "Skull of Ramos",
-    crate::card::CardArt::new("f071957c-9bea-4d00-9ffd-30f98d57b8d2", "David Martin"),
+    "f071957c-9bea-4d00-9ffd-30f98d57b8d2",
+    "David Martin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3311,9 +3295,9 @@ pub(in crate::card::sets) static SKULL_OF_RAMOS: CardRecord = CardRecord::new(
 // MMQ 313 — Tooth of Ramos
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TOOTH_OF_RAMOS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9a3b999d-8e63-4647-a921-15e169022096"),
     "Tooth of Ramos",
-    crate::card::CardArt::new("9a3b999d-8e63-4647-a921-15e169022096", "David Martin"),
+    "9a3b999d-8e63-4647-a921-15e169022096",
+    "David Martin",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3321,9 +3305,9 @@ pub(in crate::card::sets) static TOOTH_OF_RAMOS: CardRecord = CardRecord::new(
 // MMQ 314 — Toymaker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TOYMAKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("76f3992a-553c-4032-b144-55aad2f909f1"),
     "Toymaker",
-    crate::card::CardArt::new("76f3992a-553c-4032-b144-55aad2f909f1", "Frank Kelly Freas"),
+    "76f3992a-553c-4032-b144-55aad2f909f1",
+    "Frank Kelly Freas",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3331,18 +3315,18 @@ pub(in crate::card::sets) static TOYMAKER: CardRecord = CardRecord::new(
 // MMQ 315 — Worry Beads
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WORRY_BEADS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("400edfe9-9efa-43f9-b713-13ad4eae2fa4"),
     "Worry Beads",
-    crate::card::CardArt::new("400edfe9-9efa-43f9-b713-13ad4eae2fa4", "rk post"),
+    "400edfe9-9efa-43f9-b713-13ad4eae2fa4",
+    "rk post",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 316 — Dust Bowl
-pub(in crate::card::sets) static DUST_BOWL: CardRecord = CardRecord::new_with_legacy_id(
-    280,
+pub(in crate::card::sets) static DUST_BOWL: CardRecord = CardRecord::new(
     "Dust Bowl",
-    CardArt::new("75b03c30-c2b8-4207-b675-26c59c40a7e5", "Ben Thompson"),
+    "75b03c30-c2b8-4207-b675-26c59c40a7e5",
+    "Ben Thompson",
     CardSet::MercadianMasques,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
@@ -3370,9 +3354,9 @@ pub(in crate::card::sets) static DUST_BOWL: CardRecord = CardRecord::new_with_le
 // MMQ 317 — Fountain of Cho
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FOUNTAIN_OF_CHO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("41f352c3-4b63-4174-b2b4-6c19fb8c06ff"),
     "Fountain of Cho",
-    crate::card::CardArt::new("41f352c3-4b63-4174-b2b4-6c19fb8c06ff", "Scott Hampton"),
+    "41f352c3-4b63-4174-b2b4-6c19fb8c06ff",
+    "Scott Hampton",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3380,12 +3364,9 @@ pub(in crate::card::sets) static FOUNTAIN_OF_CHO: CardRecord = CardRecord::new(
 // MMQ 318 — Henge of Ramos
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HENGE_OF_RAMOS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0582b42f-5ae5-4be2-ba2d-ed62b3cb20c5"),
     "Henge of Ramos",
-    crate::card::CardArt::new(
-        "0582b42f-5ae5-4be2-ba2d-ed62b3cb20c5",
-        "Edward P. Beard, Jr.",
-    ),
+    "0582b42f-5ae5-4be2-ba2d-ed62b3cb20c5",
+    "Edward P. Beard, Jr.",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3393,9 +3374,9 @@ pub(in crate::card::sets) static HENGE_OF_RAMOS: CardRecord = CardRecord::new(
 // MMQ 319 — Hickory Woodlot
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HICKORY_WOODLOT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("af7aafb7-6870-4d09-a191-70786766c459"),
     "Hickory Woodlot",
-    crate::card::CardArt::new("af7aafb7-6870-4d09-a191-70786766c459", "Sean McConnell"),
+    "af7aafb7-6870-4d09-a191-70786766c459",
+    "Sean McConnell",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3403,9 +3384,9 @@ pub(in crate::card::sets) static HICKORY_WOODLOT: CardRecord = CardRecord::new(
 // MMQ 320 — High Market
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HIGH_MARKET: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f4c58683-65a6-4df9-8952-458e397b1374"),
     "High Market",
-    crate::card::CardArt::new("f4c58683-65a6-4df9-8952-458e397b1374", "Carl Critchlow"),
+    "f4c58683-65a6-4df9-8952-458e397b1374",
+    "Carl Critchlow",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3413,9 +3394,9 @@ pub(in crate::card::sets) static HIGH_MARKET: CardRecord = CardRecord::new(
 // MMQ 321 — Mercadian Bazaar
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MERCADIAN_BAZAAR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6f787cb6-78cb-4baa-a9cf-cee8b7d8d6b1"),
     "Mercadian Bazaar",
-    crate::card::CardArt::new("6f787cb6-78cb-4baa-a9cf-cee8b7d8d6b1", "Terese Nielsen"),
+    "6f787cb6-78cb-4baa-a9cf-cee8b7d8d6b1",
+    "Terese Nielsen",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3423,9 +3404,9 @@ pub(in crate::card::sets) static MERCADIAN_BAZAAR: CardRecord = CardRecord::new(
 // MMQ 322 — Peat Bog
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PEAT_BOG: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bcc9d1e0-c8f4-4bac-90d4-8167f7a1515a"),
     "Peat Bog",
-    crate::card::CardArt::new("bcc9d1e0-c8f4-4bac-90d4-8167f7a1515a", "Val Mayerik"),
+    "bcc9d1e0-c8f4-4bac-90d4-8167f7a1515a",
+    "Val Mayerik",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3433,18 +3414,18 @@ pub(in crate::card::sets) static PEAT_BOG: CardRecord = CardRecord::new(
 // MMQ 323 — Remote Farm
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static REMOTE_FARM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("115cab84-60d7-4bf2-9beb-b4ed7b5ceaf4"),
     "Remote Farm",
-    crate::card::CardArt::new("115cab84-60d7-4bf2-9beb-b4ed7b5ceaf4", "Rob Alexander"),
+    "115cab84-60d7-4bf2-9beb-b4ed7b5ceaf4",
+    "Rob Alexander",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 324 — Rishadan Port
-pub(in crate::card::sets) static RISHADAN_PORT: CardRecord = CardRecord::new_with_legacy_id(
-    281,
+pub(in crate::card::sets) static RISHADAN_PORT: CardRecord = CardRecord::new(
     "Rishadan Port",
-    CardArt::new("477a1f53-5cdf-4b45-b584-2e36b31a3fdb", "Jerry Tiritilli"),
+    "477a1f53-5cdf-4b45-b584-2e36b31a3fdb",
+    "Jerry Tiritilli",
     CardSet::MercadianMasques,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
@@ -3467,9 +3448,9 @@ pub(in crate::card::sets) static RISHADAN_PORT: CardRecord = CardRecord::new_wit
 // MMQ 325 — Rushwood Grove
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RUSHWOOD_GROVE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c315c72c-3e2f-4aff-b7d7-2f709ccec332"),
     "Rushwood Grove",
-    crate::card::CardArt::new("c315c72c-3e2f-4aff-b7d7-2f709ccec332", "George Pratt"),
+    "c315c72c-3e2f-4aff-b7d7-2f709ccec332",
+    "George Pratt",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3477,9 +3458,9 @@ pub(in crate::card::sets) static RUSHWOOD_GROVE: CardRecord = CardRecord::new(
 // MMQ 326 — Sandstone Needle
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SANDSTONE_NEEDLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("82bc7c6b-2e3d-42d1-b2bb-b37b6f34d33b"),
     "Sandstone Needle",
-    crate::card::CardArt::new("82bc7c6b-2e3d-42d1-b2bb-b37b6f34d33b", "Alan Rabinowitz"),
+    "82bc7c6b-2e3d-42d1-b2bb-b37b6f34d33b",
+    "Alan Rabinowitz",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3487,9 +3468,9 @@ pub(in crate::card::sets) static SANDSTONE_NEEDLE: CardRecord = CardRecord::new(
 // MMQ 327 — Saprazzan Cove
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAPRAZZAN_COVE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("52a69122-19c0-47ec-8bea-478511ba88e6"),
     "Saprazzan Cove",
-    crate::card::CardArt::new("52a69122-19c0-47ec-8bea-478511ba88e6", "Rebecca Guay"),
+    "52a69122-19c0-47ec-8bea-478511ba88e6",
+    "Rebecca Guay",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3497,9 +3478,9 @@ pub(in crate::card::sets) static SAPRAZZAN_COVE: CardRecord = CardRecord::new(
 // MMQ 328 — Saprazzan Skerry
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAPRAZZAN_SKERRY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("006871fd-2641-42cb-a2ac-a33d05fc5a35"),
     "Saprazzan Skerry",
-    crate::card::CardArt::new("006871fd-2641-42cb-a2ac-a33d05fc5a35", "Pat Lewis"),
+    "006871fd-2641-42cb-a2ac-a33d05fc5a35",
+    "Pat Lewis",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3507,9 +3488,9 @@ pub(in crate::card::sets) static SAPRAZZAN_SKERRY: CardRecord = CardRecord::new(
 // MMQ 329 — Subterranean Hangar
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUBTERRANEAN_HANGAR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("edc199d1-970b-489f-b713-8285151f16ae"),
     "Subterranean Hangar",
-    crate::card::CardArt::new("edc199d1-970b-489f-b713-8285151f16ae", "Matt Cavotta"),
+    "edc199d1-970b-489f-b713-8285151f16ae",
+    "Matt Cavotta",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
@@ -3517,95 +3498,167 @@ pub(in crate::card::sets) static SUBTERRANEAN_HANGAR: CardRecord = CardRecord::n
 // MMQ 330 — Tower of the Magistrate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TOWER_OF_THE_MAGISTRATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ee0481db-15ae-46b4-89a3-01c95a9626c7"),
     "Tower of the Magistrate",
-    crate::card::CardArt::new("ee0481db-15ae-46b4-89a3-01c95a9626c7", "Thomas Gianni"),
+    "ee0481db-15ae-46b4-89a3-01c95a9626c7",
+    "Thomas Gianni",
     crate::card::CardSet::MercadianMasques,
     crate::card::CardRules::unsupported(),
 );
 
 // MMQ 331 — Plains (reprint)
-const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::PLAINS)
-    .with_art("2edf5042-d185-424e-922d-c0bd4ce3e8b0", "Terry Springer");
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::PLAINS,
+    "2edf5042-d185-424e-922d-c0bd4ce3e8b0",
+    "Terry Springer",
+);
 
 // MMQ 332 — Plains (alternate printing)
-const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
-    .with_art("44214f36-8bb3-4a32-8046-3ecdfff8407b", "Scott Bailey");
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::PLAINS,
+    1,
+    "44214f36-8bb3-4a32-8046-3ecdfff8407b",
+    "Scott Bailey",
+);
 
 // MMQ 333 — Plains (alternate printing)
-const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 2)
-    .with_art("e3e536cc-e724-43d4-9fe3-dfb4952613cb", "Dana Knutson");
+const PLAINS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::PLAINS,
+    2,
+    "e3e536cc-e724-43d4-9fe3-dfb4952613cb",
+    "Dana Knutson",
+);
 
 // MMQ 334 — Plains (alternate printing)
-const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 3)
-    .with_art(
-        "3a8fd867-8be1-4ee7-bb67-32c3f22db59e",
-        "Edward P. Beard, Jr.",
-    );
+const PLAINS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::PLAINS,
+    3,
+    "3a8fd867-8be1-4ee7-bb67-32c3f22db59e",
+    "Edward P. Beard, Jr.",
+);
 
 // MMQ 335 — Island (reprint)
-const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::ISLAND)
-    .with_art("5bae77e8-1230-4a6e-8c75-c99d2741a509", "Terry Springer");
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::ISLAND,
+    "5bae77e8-1230-4a6e-8c75-c99d2741a509",
+    "Terry Springer",
+);
 
 // MMQ 336 — Island (alternate printing)
-const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
-    .with_art("9a38509a-2b74-42a0-af91-ed453e463b95", "Scott Bailey");
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::ISLAND,
+    1,
+    "9a38509a-2b74-42a0-af91-ed453e463b95",
+    "Scott Bailey",
+);
 
 // MMQ 337 — Island (alternate printing)
-const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 2)
-    .with_art("b2d83856-2201-4c30-bfcf-9cab62545201", "Scott Bailey");
+const ISLAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::ISLAND,
+    2,
+    "b2d83856-2201-4c30-bfcf-9cab62545201",
+    "Scott Bailey",
+);
 
 // MMQ 338 — Island (alternate printing)
-const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 3)
-    .with_art("e0fedd66-e547-492c-ad0d-9c7b527bdd17", "Tony Szczudlo");
+const ISLAND_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::ISLAND,
+    3,
+    "e0fedd66-e547-492c-ad0d-9c7b527bdd17",
+    "Tony Szczudlo",
+);
 
 // MMQ 339 — Swamp (reprint)
-const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::SWAMP)
-    .with_art("72020810-bfa3-42d5-ad0d-6d02a6fe1b31", "Jeff Easley");
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::SWAMP,
+    "72020810-bfa3-42d5-ad0d-6d02a6fe1b31",
+    "Jeff Easley",
+);
 
 // MMQ 340 — Swamp (alternate printing)
-const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
-    .with_art("c2436ceb-05c0-40e6-b370-a6f02f4adbe4", "Rob Alexander");
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::SWAMP,
+    1,
+    "c2436ceb-05c0-40e6-b370-a6f02f4adbe4",
+    "Rob Alexander",
+);
 
 // MMQ 341 — Swamp (alternate printing)
-const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 2)
-    .with_art("1017347b-6b1a-4a2f-9147-98acad779616", "Rob Alexander");
+const SWAMP_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::SWAMP,
+    2,
+    "1017347b-6b1a-4a2f-9147-98acad779616",
+    "Rob Alexander",
+);
 
 // MMQ 342 — Swamp (alternate printing)
-const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 3)
-    .with_art("4a0243d2-5fde-489f-8113-4ece0511cb5c", "Terry Springer");
+const SWAMP_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::SWAMP,
+    3,
+    "4a0243d2-5fde-489f-8113-4ece0511cb5c",
+    "Terry Springer",
+);
 
 // MMQ 343 — Mountain (reprint)
-const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
-    .with_art("19b5fff1-7a60-4e50-893a-8177cd62bf82", "Terry Springer");
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::MOUNTAIN,
+    "19b5fff1-7a60-4e50-893a-8177cd62bf82",
+    "Terry Springer",
+);
 
 // MMQ 344 — Mountain (alternate printing)
-const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
-    .with_art("4dbd12ed-e512-43d8-919d-478b18674deb", "Scott Bailey");
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::MOUNTAIN,
+    1,
+    "4dbd12ed-e512-43d8-919d-478b18674deb",
+    "Scott Bailey",
+);
 
 // MMQ 345 — Mountain (alternate printing)
-const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 2)
-    .with_art("1921ce16-8ed8-41d7-a2b4-9e62f44ac8d6", "Dana Knutson");
+const MOUNTAIN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::MOUNTAIN,
+    2,
+    "1921ce16-8ed8-41d7-a2b4-9e62f44ac8d6",
+    "Dana Knutson",
+);
 
 // MMQ 346 — Mountain (alternate printing)
-const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 3)
-    .with_art("423f4311-9feb-4c63-8b4c-32ddd38382e0", "Rob Alexander");
+const MOUNTAIN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::MOUNTAIN,
+    3,
+    "423f4311-9feb-4c63-8b4c-32ddd38382e0",
+    "Rob Alexander",
+);
 
 // MMQ 347 — Forest (reprint)
-const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::FOREST)
-    .with_art("695de19e-801f-4f08-b44c-b0726e4aced0", "Donato Giancola");
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::FOREST,
+    "695de19e-801f-4f08-b44c-b0726e4aced0",
+    "Donato Giancola",
+);
 
 // MMQ 348 — Forest (alternate printing)
-const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
-    .with_art("a38e4ee7-6965-4e12-95d4-c9de1dbb014c", "Rob Alexander");
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::FOREST,
+    1,
+    "a38e4ee7-6965-4e12-95d4-c9de1dbb014c",
+    "Rob Alexander",
+);
 
 // MMQ 349 — Forest (alternate printing)
-const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 2)
-    .with_art("c1973049-2d42-4091-9703-189ba374254d", "Rob Alexander");
+const FOREST_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::FOREST,
+    2,
+    "c1973049-2d42-4091-9703-189ba374254d",
+    "Rob Alexander",
+);
 
 // MMQ 350 — Forest (alternate printing)
-const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 3)
-    .with_art("98c4806b-a31a-4026-9876-eab4d0d1694b", "Terry Springer");
+const FOREST_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::FOREST,
+    3,
+    "98c4806b-a31a-4026-9876-eab4d0d1694b",
+    "Terry Springer",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ALABASTER_WALL,

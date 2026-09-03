@@ -1,11 +1,11 @@
 //! Shards of Alara cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::CostQuantityDef;
 use crate::card::SpellAdditionalCostDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
+    CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
     ObjectPredicateDef, ObjectRefDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef,
     TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
 };
@@ -13,10 +13,10 @@ use crate::ids::ParentBinding;
 use crate::{TargetIndex, mana_cost};
 
 // ALA 3 — Angelic Benediction
-pub(in crate::card::sets) static ANGELIC_BENEDICTION: CardRecord = CardRecord::new_with_legacy_id(
-    1501,
+pub(in crate::card::sets) static ANGELIC_BENEDICTION: CardRecord = CardRecord::new(
     "Angelic Benediction",
-    CardArt::new("22125507-31e3-424c-9527-d994e4525d75", "Michael Komarck"),
+    "dd1b9071-7dde-4128-8b18-1d7b07904638",
+    "Michael Komarck",
     CardSet::ShardsOfAlara,
     CardRules::new_enchantment(mana_cost!("{3}{W}")).with_abilities(&[
         abilities::exalted(),
@@ -42,9 +42,9 @@ pub(in crate::card::sets) static ANGELIC_BENEDICTION: CardRecord = CardRecord::n
 
 // ALA 9 — Elspeth, Knight-Errant
 pub(in crate::card::sets) static ELSPETH_KNIGHT_ERRANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("44c52e52-2b1c-4ca8-ab6d-20d97a342704"),
     "Elspeth, Knight-Errant",
-    CardArt::new("44c52e52-2b1c-4ca8-ab6d-20d97a342704", "Volkan Ba\u{11f}a"),
+    "44c52e52-2b1c-4ca8-ab6d-20d97a342704",
+    "Volkan Baǵa",
     CardSet::ShardsOfAlara,
     // Four mana, two plus abilities, and neither of them is the safe one:
     // she makes a blocker or she makes an attacker, and the ultimate ends
@@ -116,20 +116,20 @@ pub(in crate::card::sets) static ELSPETH_KNIGHT_ERRANT: CardRecord = CardRecord:
 );
 
 // ALA 12 — Guardians of Akrasa
-pub(in crate::card::sets) static GUARDIANS_OF_AKRASA: CardRecord = CardRecord::new_with_legacy_id(
-    1503,
+pub(in crate::card::sets) static GUARDIANS_OF_AKRASA: CardRecord = CardRecord::new(
     "Guardians of Akrasa",
-    CardArt::new("383c9aa5-30ad-4a2a-8b64-65d4b333c613", "Alan Pollack"),
+    "4f718030-cc41-4e0d-a1ca-a33f577dc1fb",
+    "Alan Pollack",
     CardSet::ShardsOfAlara,
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Soldier"], 0, 4)
         .with_abilities(&[abilities::defender(), abilities::exalted()]),
 );
 
 // ALA 67 — Bone Splinters
-pub(in crate::card::sets) static BONE_SPLINTERS: CardRecord = CardRecord::new_with_legacy_id(
-    1962,
+pub(in crate::card::sets) static BONE_SPLINTERS: CardRecord = CardRecord::new(
     "Bone Splinters",
-    CardArt::new("387eda28-f35b-48b0-ba59-773d82902327", "Nils Hamm"),
+    "d4a4b3a3-b7ae-4210-8037-098fdf5808d0",
+    "Cole Eastburn",
     CardSet::ShardsOfAlara,
     // The sacrifice is paid on the way to the stack, so the creature it eats
     // is gone before the target is destroyed -- and the spell can eat the
@@ -155,9 +155,9 @@ pub(in crate::card::sets) static BONE_SPLINTERS: CardRecord = CardRecord::new_wi
 // ALA 100 — Flameblast Dragon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLAMEBLAST_DRAGON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5544b26b-0bc4-4c1b-9616-613e9bf08557"),
     "Flameblast Dragon",
-    crate::card::CardArt::new("c01ab5c8-f9b7-482c-a900-1388b727b89f", "Jaime Jones"),
+    "5544b26b-0bc4-4c1b-9616-613e9bf08557",
+    "Jaime Jones",
     crate::card::CardSet::ShardsOfAlara,
     crate::card::CardRules::unsupported(),
 );
@@ -165,18 +165,18 @@ pub(in crate::card::sets) static FLAMEBLAST_DRAGON: CardRecord = CardRecord::new
 // ALA 104 — Hissing Iguanar
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HISSING_IGUANAR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4b8b8b90-cb6e-4910-bc40-d96b78b0d70c"),
     "Hissing Iguanar",
-    crate::card::CardArt::new("4b8b8b90-cb6e-4910-bc40-d96b78b0d70c", "Brandon Kitkouski"),
+    "4b8b8b90-cb6e-4910-bc40-d96b78b0d70c",
+    "Brandon Kitkouski",
     crate::card::CardSet::ShardsOfAlara,
     crate::card::CardRules::unsupported(),
 );
 
 // ALA 107 — Lightning Talons
-pub(in crate::card::sets) static LIGHTNING_TALONS: CardRecord = CardRecord::new_with_legacy_id(
-    1204,
+pub(in crate::card::sets) static LIGHTNING_TALONS: CardRecord = CardRecord::new(
     "Lightning Talons",
-    CardArt::new("87186a8a-45da-4cde-a167-c16a6abc4d24", "Johann Bodin"),
+    "8fc1ad4c-b394-48b9-9a5a-ec9f42bf6a00",
+    "Pete Venters",
     CardSet::ShardsOfAlara,
     CardRules::new_enchantment(mana_cost!("{2}{R}"))
         .with_subtypes(&["Aura"])
@@ -207,13 +207,10 @@ pub(in crate::card::sets) static LIGHTNING_TALONS: CardRecord = CardRecord::new_
 );
 
 // ALA 130 — Elvish Visionary
-pub(in crate::card::sets) static ELVISH_VISIONARY: CardRecord = CardRecord::new_with_legacy_id(
-    1034,
+pub(in crate::card::sets) static ELVISH_VISIONARY: CardRecord = CardRecord::new(
     "Elvish Visionary",
-    CardArt::new(
-        "65ea2998-ed91-43b8-bd81-b01a6c24a5b0",
-        "D. Alexander Gregory",
-    ),
+    "faccfa5f-4d89-4a86-92d7-36cb5a16c5c9",
+    "D. Alexander Gregory",
     CardSet::ShardsOfAlara,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Shaman"], 1, 1).with_ability(
         abilities::enters_trigger(
@@ -229,9 +226,9 @@ pub(in crate::card::sets) static ELVISH_VISIONARY: CardRecord = CardRecord::new_
 // ALA 156 — Blightning
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLIGHTNING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3c05e8a2-b7d0-4f24-b2ae-8e4db30e5842"),
     "Blightning",
-    crate::card::CardArt::new("3c05e8a2-b7d0-4f24-b2ae-8e4db30e5842", "Thomas M. Baxa"),
+    "3c05e8a2-b7d0-4f24-b2ae-8e4db30e5842",
+    "Thomas M. Baxa",
     crate::card::CardSet::ShardsOfAlara,
     crate::card::CardRules::unsupported(),
 );
@@ -239,18 +236,18 @@ pub(in crate::card::sets) static BLIGHTNING: CardRecord = CardRecord::new(
 // ALA 158 — Branching Bolt
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BRANCHING_BOLT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e7468876-f401-4a75-81c0-bed09cdda3e1"),
     "Branching Bolt",
-    crate::card::CardArt::new("e7468876-f401-4a75-81c0-bed09cdda3e1", "Vance Kovacs"),
+    "e7468876-f401-4a75-81c0-bed09cdda3e1",
+    "Vance Kovacs",
     crate::card::CardSet::ShardsOfAlara,
     crate::card::CardRules::unsupported(),
 );
 
 // ALA 202 — Tidehollow Sculler
-pub(in crate::card::sets) static TIDEHOLLOW_SCULLER: CardRecord = CardRecord::new_with_legacy_id(
-    2145,
+pub(in crate::card::sets) static TIDEHOLLOW_SCULLER: CardRecord = CardRecord::new(
     "Tidehollow Sculler",
-    CardArt::new("1abecc77-07f2-43e4-8585-0a8199cdcf01", "rk post"),
+    "1abecc77-07f2-43e4-8585-0a8199cdcf01",
+    "rk post",
     CardSet::ShardsOfAlara,
     CardRules::new_artifact_creature(mana_cost!("{W}{B}"), &["Zombie"], 2, 2)
         .with_abilities(&[

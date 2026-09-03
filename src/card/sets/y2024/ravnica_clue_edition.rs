@@ -1,11 +1,11 @@
 //! Ravnica: Clue Edition cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
-    CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef, ExilePlayDurationDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    AppliedRuleDef, CardRules, CardSet, CardSupertype, CardType, ComparisonDef, CounterKind,
+    DiscardSelectionDef, EffectDef, EffectRecipientDef, ExilePlayDurationDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
     ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
     ZoneKind, abilities, tokens,
 };
@@ -13,9 +13,9 @@ use crate::{TargetIndex, mana_cost};
 
 // CLU 4 — Headliner Scarlett
 pub(in crate::card::sets) static HEADLINER_SCARLETT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("be77b98a-dd79-477c-8ab2-7ebf5637a89e"),
     "Headliner Scarlett",
-    CardArt::new("be77b98a-dd79-477c-8ab2-7ebf5637a89e", "Heonhwa"),
+    "be77b98a-dd79-477c-8ab2-7ebf5637a89e",
+    "Heonhwa",
     CardSet::RavnicaClueEdition,
     // Four mana that attacks the turn it lands into a board that cannot
     // block, and then draws an extra card every turn it survives.
@@ -69,9 +69,9 @@ pub(in crate::card::sets) static HEADLINER_SCARLETT: CardRecord = CardRecord::ne
 
 // CLU 26 — Carnage Interpreter
 pub(in crate::card::sets) static CARNAGE_INTERPRETER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f6fb576e-a4a4-496b-b553-3f81cc651210"),
     "Carnage Interpreter",
-    CardArt::new("f6fb576e-a4a4-496b-b553-3f81cc651210", "Justine Cruz"),
+    "f6fb576e-a4a4-496b-b553-3f81cc651210",
+    "Justine Cruz",
     CardSet::RavnicaClueEdition,
     // Three mana for a 5/5 with menace and four cards' worth of Clues, paid
     // for with whatever was left in hand -- which is nothing, on the turn
@@ -124,10 +124,10 @@ pub(in crate::card::sets) static CARNAGE_INTERPRETER: CardRecord = CardRecord::n
 );
 
 // CLU 50 — Unruly Krasis
-pub(in crate::card::sets) static UNRULY_KRASIS: CardRecord = CardRecord::new_with_legacy_id(
-    2144,
+pub(in crate::card::sets) static UNRULY_KRASIS: CardRecord = CardRecord::new(
     "Unruly Krasis",
-    CardArt::new("a3b1b58d-b7f1-404f-aec6-b19cef4bebbd", "Billy Christian"),
+    "a3b1b58d-b7f1-404f-aec6-b19cef4bebbd",
+    "Billy Christian",
     CardSet::RavnicaClueEdition,
     CardRules::new_creature(
         mana_cost!("{1}{G}{U}"),
@@ -189,29 +189,39 @@ pub(in crate::card::sets) static UNRULY_KRASIS: CardRecord = CardRecord::new_wit
 );
 
 // CLU 94 — Repeal (reprint)
-const REPEAL_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2006::guildpact::REPEAL)
-        .with_art("265b80cd-2e9c-4e4b-a065-eafb29b3e07a", "Dan Murayama Scott");
+const REPEAL_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2006::guildpact::REPEAL,
+    "265b80cd-2e9c-4e4b-a065-eafb29b3e07a",
+    "Dan Murayama Scott",
+);
 
 // CLU 186 — Dimir Guildmage (reprint)
-const DIMIR_GUILDMAGE_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::DIMIR_GUILDMAGE)
-        .with_art("0b963389-6231-4095-a1f4-33457ce51ff2", "Adam Rex");
+const DIMIR_GUILDMAGE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2005::ravnica_city_of_guilds::DIMIR_GUILDMAGE,
+    "0b963389-6231-4095-a1f4-33457ce51ff2",
+    "Adam Rex",
+);
 
 // CLU 229 — Azorius Chancery (reprint)
-const AZORIUS_CHANCERY_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2006::dissension::AZORIUS_CHANCERY)
-        .with_art("a9d629f3-24b0-400c-b054-b66250696708", "John Avon");
+const AZORIUS_CHANCERY_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2006::dissension::AZORIUS_CHANCERY,
+    "a9d629f3-24b0-400c-b054-b66250696708",
+    "John Avon",
+);
 
 // CLU 241 — Orzhov Basilica (reprint)
-const ORZHOV_BASILICA_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2006::guildpact::ORZHOV_BASILICA)
-        .with_art("7c14375a-98c1-4e57-bf0d-1bea89a6bbd9", "John Avon");
+const ORZHOV_BASILICA_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2006::guildpact::ORZHOV_BASILICA,
+    "7c14375a-98c1-4e57-bf0d-1bea89a6bbd9",
+    "John Avon",
+);
 
 // CLU 246 — Selesnya Sanctuary (reprint)
-const SELESNYA_SANCTUARY_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::SELESNYA_SANCTUARY)
-        .with_art("fdc53c6a-8e28-4314-9bcf-b31b6c6f56d7", "John Avon");
+const SELESNYA_SANCTUARY_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2005::ravnica_city_of_guilds::SELESNYA_SANCTUARY,
+    "fdc53c6a-8e28-4314-9bcf-b31b6c6f56d7",
+    "John Avon",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =
     &[&HEADLINER_SCARLETT, &CARNAGE_INTERPRETER, &UNRULY_KRASIS];

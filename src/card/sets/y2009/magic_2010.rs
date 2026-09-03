@@ -1,6 +1,6 @@
 //! Magic 2010 card records.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::AbilityCostDef;
 use crate::AbilityDef;
 use crate::AbilityTargetDef;
@@ -36,10 +36,10 @@ use crate::card::abilities;
 use crate::mana_cost;
 
 // M10 2 — Angel's Mercy
-pub(in crate::card::sets) static ANGELS_MERCY: CardRecord = CardRecord::new_with_legacy_id(
-    750,
+pub(in crate::card::sets) static ANGELS_MERCY: CardRecord = CardRecord::new(
     "Angel's Mercy",
-    CardArt::new("7a437999-26ae-49fa-8647-c8c2b4640702", "Greg Staples"),
+    "9b911124-3646-4014-b574-13fee44bfad5",
+    "Andrew Robinson",
     CardSet::Magic2010,
     CardRules::new_instant(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::spell(
         "You gain 7 life.",
@@ -51,10 +51,10 @@ pub(in crate::card::sets) static ANGELS_MERCY: CardRecord = CardRecord::new_with
 );
 
 // M10 6 — Captain of the Watch
-pub(in crate::card::sets) static CAPTAIN_OF_THE_WATCH: CardRecord = CardRecord::new_with_legacy_id(
-    968,
+pub(in crate::card::sets) static CAPTAIN_OF_THE_WATCH: CardRecord = CardRecord::new(
     "Captain of the Watch",
-    CardArt::new("8e3c18f5-89cd-4d33-8d5b-12dacad9f9b3", "Greg Staples"),
+    "e6c26b98-790e-403b-b94b-261a4c92e721",
+    "Greg Staples",
     CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{4}{W}{W}"), &["Human", "Soldier"], 3, 3).with_abilities(
         &[
@@ -94,10 +94,10 @@ pub(in crate::card::sets) static CAPTAIN_OF_THE_WATCH: CardRecord = CardRecord::
 );
 
 // M10 8 — Divine Verdict
-pub(in crate::card::sets) static DIVINE_VERDICT: CardRecord = CardRecord::new_with_legacy_id(
-    972,
+pub(in crate::card::sets) static DIVINE_VERDICT: CardRecord = CardRecord::new(
     "Divine Verdict",
-    CardArt::new("cc52c269-d44f-449c-af59-4c425aa10bbf", "Kev Walker"),
+    "48444e14-c73b-47d1-9c55-0ff4dc3c6034",
+    "Kev Walker",
     CardSet::Magic2010,
     CardRules::new_instant(mana_cost!("{3}{W}")).with_ability(AbilityDef::destroy_target(
         "Destroy target attacking or blocking creature.",
@@ -111,18 +111,18 @@ pub(in crate::card::sets) static DIVINE_VERDICT: CardRecord = CardRecord::new_wi
 
 // M10 9 — Elite Vanguard
 pub(in crate::card::sets) static ELITE_VANGUARD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6bda0b4b-ab5a-4d91-9dd1-7a5a145b67f5"),
     "Elite Vanguard",
-    crate::card::CardArt::new("f03487e9-f584-4bbd-8335-4dd001a88b52", "Mark Tedin"),
+    "6bda0b4b-ab5a-4d91-9dd1-7a5a145b67f5",
+    "Mark Tedin",
     crate::card::CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 2, 1),
 );
 
 // M10 11 — Glorious Charge
-pub(in crate::card::sets) static GLORIOUS_CHARGE: CardRecord = CardRecord::new_with_legacy_id(
-    974,
+pub(in crate::card::sets) static GLORIOUS_CHARGE: CardRecord = CardRecord::new(
     "Glorious Charge",
-    CardArt::new("f8672cfd-e34b-4587-9e24-015e03c7574d", "Izzy"),
+    "8c6dfcf8-a09b-4402-af80-90fe15b2ce0a",
+    "Izzy",
     CardSet::Magic2010,
     CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell(
         "Creatures you control get +1/+1 until end of turn.",
@@ -142,10 +142,10 @@ pub(in crate::card::sets) static GLORIOUS_CHARGE: CardRecord = CardRecord::new_w
 );
 
 // M10 12 — Griffin Sentinel
-pub(in crate::card::sets) static GRIFFIN_SENTINEL: CardRecord = CardRecord::new_with_legacy_id(
-    1150,
+pub(in crate::card::sets) static GRIFFIN_SENTINEL: CardRecord = CardRecord::new(
     "Griffin Sentinel",
-    CardArt::new("b40d6626-a85f-4116-9721-19e39b83cba0", "Warren Mahy"),
+    "6784b663-b117-45a2-bde4-72e080058ea7",
+    "Warren Mahy",
     CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Griffin"], 1, 3)
         .with_abilities(&[abilities::flying(), abilities::vigilance()]),
@@ -153,9 +153,9 @@ pub(in crate::card::sets) static GRIFFIN_SENTINEL: CardRecord = CardRecord::new_
 
 // M10 16 — Honor of the Pure
 pub(in crate::card::sets) static HONOR_OF_THE_PURE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e09a2f0a-333a-4114-8b9b-f0011628cb90"),
     "Honor of the Pure",
-    crate::card::CardArt::new("650a6831-c352-4ca7-9f8f-43ea99a1cf33", "Greg Staples"),
+    "35a40f09-d16a-43c7-b4fd-244f45883a47",
+    "Greg Staples",
     crate::card::CardSet::Magic2010,
     CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(AbilityDef::static_ability(
         "White creatures you control get +1/+1.",
@@ -177,10 +177,10 @@ pub(in crate::card::sets) static HONOR_OF_THE_PURE: CardRecord = CardRecord::new
 );
 
 // M10 17 — Indestructibility
-pub(in crate::card::sets) static INDESTRUCTIBILITY: CardRecord = CardRecord::new_with_legacy_id(
-    1153,
+pub(in crate::card::sets) static INDESTRUCTIBILITY: CardRecord = CardRecord::new(
     "Indestructibility",
-    CardArt::new("e086a062-d39b-4e2a-bde0-f4d6d1797a5f", "Darrell Riche"),
+    "ef8765a0-c2ae-4b1a-a3f5-0243b43e6da0",
+    "Darrell Riche",
     CardSet::Magic2010,
     CardRules::new_enchantment(mana_cost!("{3}{W}"))
         .with_subtypes(&["Aura"])
@@ -206,9 +206,9 @@ pub(in crate::card::sets) static INDESTRUCTIBILITY: CardRecord = CardRecord::new
 
 // M10 18 — Lifelink
 pub(in crate::card::sets) static LIFELINK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f0d881c1-24e7-4ce7-8ab1-474cb040ddd7"),
     "Lifelink",
-    crate::card::CardArt::new("a8e207d4-9930-4aff-a7c8-b53bd1b5d566", "Terese Nielsen"),
+    "f0d881c1-24e7-4ce7-8ab1-474cb040ddd7",
+    "Terese Nielsen",
     crate::card::CardSet::Magic2010,
     CardRules::new_enchantment(mana_cost!("{W}"))
         .with_subtypes(&["Aura"])
@@ -225,10 +225,10 @@ pub(in crate::card::sets) static LIFELINK: CardRecord = CardRecord::new(
 );
 
 // M10 24 — Planar Cleansing
-pub(in crate::card::sets) static PLANAR_CLEANSING: CardRecord = CardRecord::new_with_legacy_id(
-    979,
+pub(in crate::card::sets) static PLANAR_CLEANSING: CardRecord = CardRecord::new(
     "Planar Cleansing",
-    CardArt::new("b5047b71-2359-4d9a-a168-a8eec43c5f1b", "Michael Komarck"),
+    "30ee0d57-e404-4599-9b6e-f8ab8a95f9fa",
+    "Michael Komarck",
     CardSet::Magic2010,
     CardRules::new_sorcery(mana_cost!("{3}{W}{W}{W}")).with_ability(AbilityDef::spell(
         "Destroy all nonland permanents.",
@@ -245,13 +245,10 @@ pub(in crate::card::sets) static PLANAR_CLEANSING: CardRecord = CardRecord::new_
 );
 
 // M10 28 — Safe Passage
-pub(in crate::card::sets) static SAFE_PASSAGE: CardRecord = CardRecord::new_with_legacy_id(
-    1498,
+pub(in crate::card::sets) static SAFE_PASSAGE: CardRecord = CardRecord::new(
     "Safe Passage",
-    CardArt::new(
-        "9fc65c3f-ad29-4368-bf45-8345a7ec6f31",
-        "Christopher Moeller",
-    ),
+    "4d8528ef-5e7d-46da-a454-395cd38c213f",
+    "Christopher Moeller",
     CardSet::Magic2010,
     CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell(
         "Prevent all damage that would be dealt to you and creatures you control this turn.",
@@ -267,10 +264,10 @@ pub(in crate::card::sets) static SAFE_PASSAGE: CardRecord = CardRecord::new_with
 );
 
 // M10 30 — Siege Mastodon
-pub(in crate::card::sets) static SIEGE_MASTODON: CardRecord = CardRecord::new_with_legacy_id(
-    1155,
+pub(in crate::card::sets) static SIEGE_MASTODON: CardRecord = CardRecord::new(
     "Siege Mastodon",
-    CardArt::new("40e7a30f-bb29-4c6b-bf70-53e9e4292814", "Matt Cavotta"),
+    "287d4c56-1b75-4ac4-8be8-333b1aba982a",
+    "Matt Cavotta",
     CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{4}{W}"), &["Elephant"], 3, 5),
 );
@@ -278,27 +275,27 @@ pub(in crate::card::sets) static SIEGE_MASTODON: CardRecord = CardRecord::new_wi
 // M10 31 — Silence
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SILENCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1559d660-8a9d-422b-95d3-710a046583dd"),
     "Silence",
-    crate::card::CardArt::new("37b70d17-e4ec-4731-8892-b444f82be7a2", "Wayne Reynolds"),
+    "1559d660-8a9d-422b-95d3-710a046583dd",
+    "Wayne Reynolds",
     crate::card::CardSet::Magic2010,
     crate::card::CardRules::unsupported(),
 );
 
 // M10 32 — Silvercoat Lion
-pub(in crate::card::sets) static SILVERCOAT_LION: CardRecord = CardRecord::new_with_legacy_id(
-    982,
+pub(in crate::card::sets) static SILVERCOAT_LION: CardRecord = CardRecord::new(
     "Silvercoat Lion",
-    CardArt::new("9d33e866-cfd8-44e6-8070-df8df1ce965d", "Terese Nielsen"),
+    "ea82996f-a05f-4831-9bbd-3281ebca9a61",
+    "Terese Nielsen",
     CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Cat"], 2, 2),
 );
 
 // M10 33 — Solemn Offering
-pub(in crate::card::sets) static SOLEMN_OFFERING: CardRecord = CardRecord::new_with_legacy_id(
-    1156,
+pub(in crate::card::sets) static SOLEMN_OFFERING: CardRecord = CardRecord::new(
     "Solemn Offering",
-    CardArt::new("9ca09fed-f9b3-49ee-be89-404581a4cbd2", "Sam Wood"),
+    "67aafbcc-113e-4816-95d2-a192f32ea9ea",
+    "Sam Wood",
     CardSet::Magic2010,
     CardRules::new_sorcery(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell_with_targets(
         "Destroy target artifact or enchantment. You gain 4 life.",
@@ -324,9 +321,9 @@ pub(in crate::card::sets) static SOLEMN_OFFERING: CardRecord = CardRecord::new_w
 
 // M10 35 — Stormfront Pegasus
 pub(in crate::card::sets) static STORMFRONT_PEGASUS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d2429a15-ccbe-463c-9218-968709d9e878"),
     "Stormfront Pegasus",
-    crate::card::CardArt::new("bf0ba2d2-09d5-4755-a18f-40cf19d88f25", "rk post"),
+    "d2429a15-ccbe-463c-9218-968709d9e878",
+    "rk post",
     crate::card::CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Pegasus"], 2, 1)
         .with_abilities(&[abilities::flying()]),
@@ -335,18 +332,18 @@ pub(in crate::card::sets) static STORMFRONT_PEGASUS: CardRecord = CardRecord::ne
 // M10 43 — Alluring Siren
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ALLURING_SIREN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("df4e1cc3-4e47-4eff-9047-c6d1cc84d635"),
     "Alluring Siren",
-    crate::card::CardArt::new("a6434841-6cca-4397-b1fa-5ce34dc0b7f3", "Chippy"),
+    "df4e1cc3-4e47-4eff-9047-c6d1cc84d635",
+    "Chippy",
     crate::card::CardSet::Magic2010,
     crate::card::CardRules::unsupported(),
 );
 
 // M10 49 — Divination
-pub(in crate::card::sets) static DIVINATION: CardRecord = CardRecord::new_with_legacy_id(
-    696,
+pub(in crate::card::sets) static DIVINATION: CardRecord = CardRecord::new(
     "Divination",
-    CardArt::new("4a1340f1-85a4-4551-9871-bb00db6d97a8", "Scott Chou"),
+    "3102cec9-1cdc-4946-a2dd-caf04eaa8b97",
+    "Howard Lyon",
     CardSet::Magic2010,
     CardRules::new_sorcery(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
         "Draw two cards.",
@@ -357,18 +354,18 @@ pub(in crate::card::sets) static DIVINATION: CardRecord = CardRecord::new_with_l
 // M10 50 — Djinn of Wishes
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DJINN_OF_WISHES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3e3b0949-17e1-4f12-8999-d4638d32dd3e"),
     "Djinn of Wishes",
-    crate::card::CardArt::new("74c621dd-9c60-4951-beaf-eb6b597c2f0f", "Kev Walker"),
+    "3e3b0949-17e1-4f12-8999-d4638d32dd3e",
+    "Kev Walker",
     crate::card::CardSet::Magic2010,
     crate::card::CardRules::unsupported(),
 );
 
 // M10 51 — Essence Scatter
-pub(in crate::card::sets) static ESSENCE_SCATTER: CardRecord = CardRecord::new_with_legacy_id(
-    162,
+pub(in crate::card::sets) static ESSENCE_SCATTER: CardRecord = CardRecord::new(
     "Essence Scatter",
-    CardArt::new("fcd965f9-bdaa-4434-a9c8-53fc57e997db", "Jon Foster"),
+    "c231101e-6620-46fc-a0ad-a53291d12dc2",
+    "Jon Foster",
     CardSet::Magic2010,
     CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::counter_target(
         "Counter target creature spell.",
@@ -387,9 +384,9 @@ pub(in crate::card::sets) static ESSENCE_SCATTER: CardRecord = CardRecord::new_w
 // M10 56 — Ice Cage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ICE_CAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4d18c4d7-c779-473b-9b41-f22b439bb501"),
     "Ice Cage",
-    crate::card::CardArt::new("a5e14b62-c050-4d43-aeee-873f46d1e295", "Mike Bierek"),
+    "4d18c4d7-c779-473b-9b41-f22b439bb501",
+    "Mike Bierek",
     crate::card::CardSet::Magic2010,
     crate::card::CardRules::unsupported(),
 );
@@ -397,9 +394,9 @@ pub(in crate::card::sets) static ICE_CAGE: CardRecord = CardRecord::new(
 // M10 63 — Mind Control
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MIND_CONTROL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("37151305-e489-4df1-9b0a-c5e11c77d2f1"),
     "Mind Control",
-    crate::card::CardArt::new("ec7f77af-17d7-4746-bc83-f455b9b6f9ea", "Ryan Pancoast"),
+    "37151305-e489-4df1-9b0a-c5e11c77d2f1",
+    "Mark Tedin",
     crate::card::CardSet::Magic2010,
     crate::card::CardRules::unsupported(),
 );
@@ -412,10 +409,10 @@ static SLEEP_THEIR_CREATURES: EffectRecipientDef = EffectRecipientDef::objects_c
     TargetIndex::PRIMARY,
 );
 
-pub(in crate::card::sets) static SLEEP: CardRecord = CardRecord::new_with_legacy_id(
-    1860,
+pub(in crate::card::sets) static SLEEP: CardRecord = CardRecord::new(
     "Sleep",
-    CardArt::new("1e352497-1454-4917-b38c-4cc45424d876", "Chris Rahn"),
+    "133be4f4-1daa-41b6-b509-9e64c6b00059",
+    "Chris Rahn",
     CardSet::Magic2010,
     CardRules::new_sorcery(mana_cost!("{2}{U}{U}")).with_ability(AbilityDef::spell_with_targets(
         "Tap all creatures target player controls. Those creatures don't untap during that \
@@ -436,10 +433,10 @@ pub(in crate::card::sets) static SLEEP: CardRecord = CardRecord::new_with_legacy
 );
 
 // M10 76 — Tome Scour
-pub(in crate::card::sets) static TOME_SCOUR: CardRecord = CardRecord::new_with_legacy_id(
-    1172,
+pub(in crate::card::sets) static TOME_SCOUR: CardRecord = CardRecord::new(
     "Tome Scour",
-    CardArt::new("aed4cfec-5cea-4987-890e-825b2802e9f9", "Steven Belledin"),
+    "fdbdf96b-e7c5-42e5-9a16-03daafde40af",
+    "Steven Belledin",
     CardSet::Magic2010,
     CardRules::new_sorcery(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
         "Target player mills five cards.",
@@ -454,10 +451,10 @@ pub(in crate::card::sets) static TOME_SCOUR: CardRecord = CardRecord::new_with_l
 );
 
 // M10 80 — Wall of Frost
-pub(in crate::card::sets) static WALL_OF_FROST: CardRecord = CardRecord::new_with_legacy_id(
-    1862,
+pub(in crate::card::sets) static WALL_OF_FROST: CardRecord = CardRecord::new(
     "Wall of Frost",
-    CardArt::new("d4000b46-7843-4c07-8332-a10f207e2cdc", "Mike Bierek"),
+    "17bc35a7-e38b-4c15-889a-d58c8b360315",
+    "Mike Bierek",
     CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Wall"], 0, 7).with_abilities(&[
         abilities::defender(),
@@ -480,31 +477,28 @@ pub(in crate::card::sets) static WALL_OF_FROST: CardRecord = CardRecord::new_wit
 // M10 87 — Cemetery Reaper
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CEMETERY_REAPER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("639b48f0-3426-46cf-b857-4611f7de4826"),
     "Cemetery Reaper",
-    crate::card::CardArt::new("56494d1e-0d7e-4c29-942c-b376ff07cdf8", "Dave Allsop"),
+    "639b48f0-3426-46cf-b857-4611f7de4826",
+    "Dave Allsop",
     crate::card::CardSet::Magic2010,
     crate::card::CardRules::unsupported(),
 );
 
 // M10 88 — Child of Night
-pub(in crate::card::sets) static CHILD_OF_NIGHT: CardRecord = CardRecord::new_with_legacy_id(
-    1180,
+pub(in crate::card::sets) static CHILD_OF_NIGHT: CardRecord = CardRecord::new(
     "Child of Night",
-    CardArt::new("c21b5476-5f5f-46b5-b627-398e9fcd04aa", "Ash Wood"),
+    "e1f7a9a7-3679-4a18-a52a-e3a8ab16ad32",
+    "Ash Wood",
     CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Vampire"], 2, 1)
         .with_abilities(&[abilities::lifelink()]),
 );
 
 // M10 92 — Disentomb
-pub(in crate::card::sets) static DISENTOMB: CardRecord = CardRecord::new_with_legacy_id(
-    1000,
+pub(in crate::card::sets) static DISENTOMB: CardRecord = CardRecord::new(
     "Disentomb",
-    CardArt::new(
-        "ce7473bb-d092-4d76-b3c3-5036222dbdf7",
-        "Alex Horley-Orlandelli",
-    ),
+    "99a329a0-a14a-49b9-adcd-397b566211ee",
+    "Alex Horley-Orlandelli",
     CardSet::Magic2010,
     CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
         "Return target creature card from your graveyard to your hand.",
@@ -525,10 +519,10 @@ pub(in crate::card::sets) static DISENTOMB: CardRecord = CardRecord::new_with_le
 );
 
 // M10 93 — Doom Blade
-pub(in crate::card::sets) static DOOM_BLADE: CardRecord = CardRecord::new_with_legacy_id(
-    158,
+pub(in crate::card::sets) static DOOM_BLADE: CardRecord = CardRecord::new(
     "Doom Blade",
-    CardArt::new("75d96a37-bdbe-46ae-926f-8742699a0b20", "Chippy"),
+    "6e19acff-f3dd-417a-a9ab-ea3e36c1ba61",
+    "Chippy",
     CardSet::Magic2010,
     CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::destroy_target(
         "Destroy target nonblack creature.",
@@ -541,10 +535,10 @@ pub(in crate::card::sets) static DOOM_BLADE: CardRecord = CardRecord::new_with_l
 );
 
 // M10 109 — Rise from the Grave
-pub(in crate::card::sets) static RISE_FROM_THE_GRAVE: CardRecord = CardRecord::new_with_legacy_id(
-    2002,
+pub(in crate::card::sets) static RISE_FROM_THE_GRAVE: CardRecord = CardRecord::new(
     "Rise from the Grave",
-    CardArt::new("5d2b187e-c489-4652-a638-390fc9ecef0e", "Vance Kovacs"),
+    "cb9dd0d9-8e35-4a8c-af6f-83c7d2a3ea7d",
+    "Vance Kovacs",
     CardSet::Magic2010,
     // Any graveyard, so it steals as readily as it recurs.
     CardRules::new_sorcery(mana_cost!("{4}{B}")).with_ability(AbilityDef::spell_with_targets(
@@ -587,10 +581,10 @@ pub(in crate::card::sets) static RISE_FROM_THE_GRAVE: CardRecord = CardRecord::n
 );
 
 // M10 111 — Sanguine Bond
-pub(in crate::card::sets) static SANGUINE_BOND: CardRecord = CardRecord::new_with_legacy_id(
-    1190,
+pub(in crate::card::sets) static SANGUINE_BOND: CardRecord = CardRecord::new(
     "Sanguine Bond",
-    CardArt::new("e50e807d-b2eb-4b62-8663-8ad17eed2a39", "Jaime Jones"),
+    "445d6a68-ed53-4c96-973a-c29282514f41",
+    "Jaime Jones",
     CardSet::Magic2010,
     CardRules::new_enchantment(mana_cost!("{3}{B}{B}")).with_ability(
         AbilityDef::triggered_with_targets(
@@ -608,10 +602,10 @@ pub(in crate::card::sets) static SANGUINE_BOND: CardRecord = CardRecord::new_wit
 );
 
 // M10 112 — Sign in Blood
-pub(in crate::card::sets) static SIGN_IN_BLOOD: CardRecord = CardRecord::new_with_legacy_id(
-    213,
+pub(in crate::card::sets) static SIGN_IN_BLOOD: CardRecord = CardRecord::new(
     "Sign in Blood",
-    CardArt::new("64f6600b-36c4-43bd-8c01-cfbca402ecd6", "Howard Lyon"),
+    "1975ed97-acb8-4bb6-804a-e5da725d876e",
+    "Howard Lyon",
     CardSet::Magic2010,
     CardRules::new_sorcery(mana_cost!("{B}{B}")).with_abilities(&[AbilityDef::spell_with_targets(
         "Target player draws two cards and loses 2 life.",
@@ -634,36 +628,36 @@ pub(in crate::card::sets) static SIGN_IN_BLOOD: CardRecord = CardRecord::new_wit
 // M10 118 — Vampire Nocturnus
 // Audit: unsupported — PlaysWithTopOfLibraryRevealed exists, but static conditions cannot inspect the top card's color for the Vampire mass bonus and flying grant.
 pub(in crate::card::sets) static VAMPIRE_NOCTURNUS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3194ae81-90fb-49e9-90de-9d161e296770"),
     "Vampire Nocturnus",
-    crate::card::CardArt::new("8daccbbb-6600-4467-810f-277f01a11771", "Raymond Swanland"),
+    "9df4f1ea-dbaa-456c-884c-97f03b64fa17",
+    "Raymond Swanland",
     crate::card::CardSet::Magic2010,
     crate::card::CardRules::unsupported(),
 );
 
 // M10 120 — Warpath Ghoul
 pub(in crate::card::sets) static WARPATH_GHOUL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2c6cc262-ba0c-4cca-ae9c-24a1824753e4"),
     "Warpath Ghoul",
-    crate::card::CardArt::new("94785274-fa79-47cc-9896-0f5f695abb21", "rk post"),
+    "2c6cc262-ba0c-4cca-ae9c-24a1824753e4",
+    "rk post",
     crate::card::CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Zombie"], 3, 2),
 );
 
 // M10 123 — Zombie Goliath
-pub(in crate::card::sets) static ZOMBIE_GOLIATH: CardRecord = CardRecord::new_with_legacy_id(
-    1008,
+pub(in crate::card::sets) static ZOMBIE_GOLIATH: CardRecord = CardRecord::new(
     "Zombie Goliath",
-    CardArt::new("8638edec-ddcd-4f50-9c2f-2e1668e3d175", "E. M. Gist"),
+    "cc295834-af33-45ae-be4d-7a1987f85561",
+    "E. M. Gist",
     CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{4}{B}"), &["Zombie", "Giant"], 4, 3),
 );
 
 // M10 124 — Act of Treason
-pub(in crate::card::sets) static ACT_OF_TREASON: CardRecord = CardRecord::new_with_legacy_id(
-    1084,
+pub(in crate::card::sets) static ACT_OF_TREASON: CardRecord = CardRecord::new(
     "Act of Treason",
-    CardArt::new("a04c8c6f-14e9-427c-918e-208ccd39ec4a", "Matt Stewart"),
+    "8b63bee5-d8e5-4c2f-8514-8c86d025f7c9",
+    "Eric Deschamps",
     CardSet::Magic2010,
     CardRules::new_sorcery(mana_cost!("{2}{R}")).with_ability(
         AbilityDef::spell_with_targets(
@@ -692,9 +686,9 @@ pub(in crate::card::sets) static ACT_OF_TREASON: CardRecord = CardRecord::new_wi
 
 // M10 135 — Fiery Hellhound
 pub(in crate::card::sets) static FIERY_HELLHOUND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6d6b2c8a-8019-4e4b-8f4e-058ab5284153"),
     "Fiery Hellhound",
-    crate::card::CardArt::new("7c96f7a0-99a3-4ba4-b0f0-9ea36c45d5d5", "Ted Galaday"),
+    "6d6b2c8a-8019-4e4b-8f4e-058ab5284153",
+    "Ted Galaday",
     crate::card::CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Elemental", "Dog"], 2, 2).with_ability(
         AbilityDef::activated(
@@ -715,18 +709,18 @@ pub(in crate::card::sets) static FIERY_HELLHOUND: CardRecord = CardRecord::new(
 // M10 139 — Goblin Chieftain
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOBLIN_CHIEFTAIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f5c8a4a4-1611-4188-9c59-8aefb016b5ad"),
     "Goblin Chieftain",
-    crate::card::CardArt::new("2540ec6b-9ffa-4ab0-bbd3-ddf1efd2db60", "Sam Wood"),
+    "f5c8a4a4-1611-4188-9c59-8aefb016b5ad",
+    "Sam Wood",
     crate::card::CardSet::Magic2010,
     crate::card::CardRules::unsupported(),
 );
 
 // M10 165 — Acidic Slime
-pub(in crate::card::sets) static ACIDIC_SLIME: CardRecord = CardRecord::new_with_legacy_id(
-    1028,
+pub(in crate::card::sets) static ACIDIC_SLIME: CardRecord = CardRecord::new(
     "Acidic Slime",
-    CardArt::new("bd7bef5a-e0ab-46d3-a802-620bf2a7546f", "Karl Kopinski"),
+    "f1377f45-edee-4922-825b-6f22163ff63d",
+    "Karl Kopinski",
     CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Ooze"], 2, 2).with_abilities(&[
         abilities::deathtouch(),
@@ -749,10 +743,10 @@ pub(in crate::card::sets) static ACIDIC_SLIME: CardRecord = CardRecord::new_with
 );
 
 // M10 169 — Borderland Ranger
-pub(in crate::card::sets) static BORDERLAND_RANGER: CardRecord = CardRecord::new_with_legacy_id(
-    820,
+pub(in crate::card::sets) static BORDERLAND_RANGER: CardRecord = CardRecord::new(
     "Borderland Ranger",
-    CardArt::new("8f067c26-c51d-44d0-a0af-106b5778f06a", "Zoltan Boros"),
+    "bdd0f8c8-1a1f-4d9b-a6e1-3654f3995012",
+    "Jesper Ejsing",
     CardSet::Magic2010,
     CardRules::new_creature(
         mana_cost!("{2}{G}"),
@@ -784,10 +778,10 @@ pub(in crate::card::sets) static BORDERLAND_RANGER: CardRecord = CardRecord::new
 );
 
 // M10 170 — Bountiful Harvest
-pub(in crate::card::sets) static BOUNTIFUL_HARVEST: CardRecord = CardRecord::new_with_legacy_id(
-    1030,
+pub(in crate::card::sets) static BOUNTIFUL_HARVEST: CardRecord = CardRecord::new(
     "Bountiful Harvest",
-    CardArt::new("8d7a4494-2ced-4405-9204-d2617961a1d6", "Jason Chan"),
+    "d225382c-cc6f-4224-82b5-4309b72feb0b",
+    "Jason Chan",
     CardSet::Magic2010,
     CardRules::new_sorcery(mana_cost!("{4}{G}")).with_ability(AbilityDef::spell(
         "You gain 1 life for each land you control.",
@@ -803,19 +797,19 @@ pub(in crate::card::sets) static BOUNTIFUL_HARVEST: CardRecord = CardRecord::new
 );
 
 // M10 172 — Centaur Courser
-pub(in crate::card::sets) static CENTAUR_COURSER: CardRecord = CardRecord::new_with_legacy_id(
-    1031,
+pub(in crate::card::sets) static CENTAUR_COURSER: CardRecord = CardRecord::new(
     "Centaur Courser",
-    CardArt::new("44a5f7db-ea4e-4af5-9d4a-0335db6ea0e9", "Vance Kovacs"),
+    "03354b67-7df2-4b4b-a996-a37550e58561",
+    "Vance Kovacs",
     CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{2}{G}"), &["Centaur", "Warrior"], 3, 3),
 );
 
 // M10 174 — Cudgel Troll
 pub(in crate::card::sets) static CUDGEL_TROLL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d779b14c-a100-4382-9e7c-0969efda73ec"),
     "Cudgel Troll",
-    crate::card::CardArt::new("e156b8d8-5309-494e-9709-44f98826a69f", "Jesper Ejsing"),
+    "d779b14c-a100-4382-9e7c-0969efda73ec",
+    "Jesper Ejsing",
     crate::card::CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Troll"], 4, 3).with_ability(
         abilities::regenerate_self(
@@ -826,20 +820,20 @@ pub(in crate::card::sets) static CUDGEL_TROLL: CardRecord = CardRecord::new(
 );
 
 // M10 175 — Deadly Recluse
-pub(in crate::card::sets) static DEADLY_RECLUSE: CardRecord = CardRecord::new_with_legacy_id(
-    1032,
+pub(in crate::card::sets) static DEADLY_RECLUSE: CardRecord = CardRecord::new(
     "Deadly Recluse",
-    CardArt::new("a32a5f77-7c1f-4da4-9ae6-3947504a8dea", "Warren Mahy"),
+    "6ab810f1-21d6-4a98-b77a-e455370aa6cc",
+    "Warren Mahy",
     CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Spider"], 1, 2)
         .with_abilities(&[abilities::reach(), abilities::deathtouch()]),
 );
 
 // M10 176 — Elvish Archdruid
-pub(in crate::card::sets) static ELVISH_ARCHDRUID: CardRecord = CardRecord::new_with_legacy_id(
-    1872,
+pub(in crate::card::sets) static ELVISH_ARCHDRUID: CardRecord = CardRecord::new(
     "Elvish Archdruid",
-    CardArt::new("bf8eba57-8c51-490b-995f-53eeb7ad574f", "Karl Kopinski"),
+    "544bc214-e32d-4370-a15f-62812a0420be",
+    "Karl Kopinski",
     CardSet::Magic2010,
     // The count includes the Archdruid itself, which is an Elf: a lone one
     // taps for a single green rather than none.
@@ -879,28 +873,28 @@ pub(in crate::card::sets) static ELVISH_ARCHDRUID: CardRecord = CardRecord::new_
 
 // M10 203 — Runeclaw Bear
 pub(in crate::card::sets) static RUNECLAW_BEAR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("268bd9d5-4da1-4cbf-83f9-47f7aac1cfc3"),
     "Runeclaw Bear",
-    crate::card::CardArt::new("6caf2b93-1971-4702-9aa5-bd223eb37a39", "Jesper Ejsing"),
+    "268bd9d5-4da1-4cbf-83f9-47f7aac1cfc3",
+    "Jesper Ejsing",
     crate::card::CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Bear"], 2, 2),
 );
 
 // M10 204 — Stampeding Rhino
 pub(in crate::card::sets) static STAMPEDING_RHINO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f5a33394-d26c-4dcd-948c-e7d370059b11"),
     "Stampeding Rhino",
-    crate::card::CardArt::new("09d34690-f7cc-4161-9a6f-bfc5393e40b2", "Steven Belledin"),
+    "f5a33394-d26c-4dcd-948c-e7d370059b11",
+    "Steven Belledin",
     crate::card::CardSet::Magic2010,
     CardRules::new_creature(mana_cost!("{4}{G}"), &["Rhino"], 4, 4)
         .with_abilities(&[abilities::trample()]),
 );
 
 // M10 205 — Windstorm
-pub(in crate::card::sets) static WINDSTORM: CardRecord = CardRecord::new_with_legacy_id(
-    1227,
+pub(in crate::card::sets) static WINDSTORM: CardRecord = CardRecord::new(
     "Windstorm",
-    CardArt::new("3cb7d122-34e8-48e1-a978-831c78a37d0c", "Rob Alexander"),
+    "ee3768ec-bb3b-44dc-9fa3-7cb3d3ee9f8c",
+    "Rob Alexander",
     CardSet::Magic2010,
     CardRules::new_instant(mana_cost!("{X}{G}")).with_ability(AbilityDef::spell(
         "Windstorm deals X damage to each creature with flying.",
@@ -919,10 +913,10 @@ pub(in crate::card::sets) static WINDSTORM: CardRecord = CardRecord::new_with_le
 );
 
 // M10 223 — Dragonskull Summit
-pub(in crate::card::sets) static DRAGONSKULL_SUMMIT: CardRecord = CardRecord::new_with_legacy_id(
-    1049,
+pub(in crate::card::sets) static DRAGONSKULL_SUMMIT: CardRecord = CardRecord::new(
     "Dragonskull Summit",
-    CardArt::new("5e49c561-570c-43dd-a369-48bc7ad7edac", "Jon Foster"),
+    "2d4998db-13c0-412f-b02c-9f041cc45c7e",
+    "Jon Foster",
     CardSet::Magic2010,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::check_land_enters(
@@ -941,10 +935,10 @@ pub(in crate::card::sets) static DRAGONSKULL_SUMMIT: CardRecord = CardRecord::ne
 );
 
 // M10 224 — Drowned Catacomb
-pub(in crate::card::sets) static DROWNED_CATACOMB: CardRecord = CardRecord::new_with_legacy_id(
-    1050,
+pub(in crate::card::sets) static DROWNED_CATACOMB: CardRecord = CardRecord::new(
     "Drowned Catacomb",
-    CardArt::new("8b41b86b-58e1-4601-b8ed-0ad31f03a78d", "Dave Kendall"),
+    "bdc6e950-38dd-46da-a1c3-58dc7495a9f9",
+    "Dave Kendall",
     CardSet::Magic2010,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::check_land_enters(
@@ -963,10 +957,10 @@ pub(in crate::card::sets) static DROWNED_CATACOMB: CardRecord = CardRecord::new_
 );
 
 // M10 226 — Glacial Fortress
-pub(in crate::card::sets) static GLACIAL_FORTRESS: CardRecord = CardRecord::new_with_legacy_id(
-    170,
+pub(in crate::card::sets) static GLACIAL_FORTRESS: CardRecord = CardRecord::new(
     "Glacial Fortress",
-    CardArt::new("bc9d29ee-1a21-4c3e-99c1-f815d40e8f19", "Franz Vohwinkel"),
+    "ee834e27-595d-4d12-8e69-e94e84ef337a",
+    "Franz Vohwinkel",
     CardSet::Magic2010,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::check_land_enters(
@@ -985,10 +979,10 @@ pub(in crate::card::sets) static GLACIAL_FORTRESS: CardRecord = CardRecord::new_
 );
 
 // M10 227 — Rootbound Crag
-pub(in crate::card::sets) static ROOTBOUND_CRAG: CardRecord = CardRecord::new_with_legacy_id(
-    205,
+pub(in crate::card::sets) static ROOTBOUND_CRAG: CardRecord = CardRecord::new(
     "Rootbound Crag",
-    CardArt::new("76364643-bfcb-4c50-9224-bf9e35648ddf", "Matt Stewart"),
+    "5433b11b-efe9-4d94-8f71-6bf7c403494d",
+    "Matt Stewart",
     CardSet::Magic2010,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::check_land_enters(
@@ -1007,10 +1001,10 @@ pub(in crate::card::sets) static ROOTBOUND_CRAG: CardRecord = CardRecord::new_wi
 );
 
 // M10 228 — Sunpetal Grove
-pub(in crate::card::sets) static SUNPETAL_GROVE: CardRecord = CardRecord::new_with_legacy_id(
-    221,
+pub(in crate::card::sets) static SUNPETAL_GROVE: CardRecord = CardRecord::new(
     "Sunpetal Grove",
-    CardArt::new("15663129-9deb-4c34-84a0-f94cf1a723f0", "Jason Chan"),
+    "9f4e8ead-8c82-4258-bc59-551f7a74e042",
+    "Jason Chan",
     CardSet::Magic2010,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::check_land_enters(

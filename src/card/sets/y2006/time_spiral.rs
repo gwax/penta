@@ -1,11 +1,11 @@
 //! TSP card records required by supported formats.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::AppliedEffectDef;
 use crate::ResolvedEffectDurationDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ComparisonDef, CounterKind,
+    CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ComparisonDef, CounterKind,
     CounterKindDef, CounterOperationDef, EffectChoiceDef, EffectDef, EffectRecipientDef,
     ObjectPredicateDef, PlayerRelation, PregameConditionDef, PrintedManaCost, TokenCountersDef,
     TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
@@ -13,13 +13,10 @@ use crate::card::{
 use crate::{TargetIndex, mana_cost};
 
 // TSP 19 — Fortify
-pub(in crate::card::sets) static FORTIFY: CardRecord = CardRecord::new_with_legacy_id(
-    1149,
+pub(in crate::card::sets) static FORTIFY: CardRecord = CardRecord::new(
     "Fortify",
-    CardArt::new(
-        "1eff4028-d4f9-4822-81d6-9f5e5e6f3011",
-        "Christopher Moeller",
-    ),
+    "fd063dc7-a35c-44c9-9f8d-b7bb2dc95bec",
+    "Christopher Moeller",
     CardSet::TimeSpiral,
     CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::modal_spell(
         "Choose one —",
@@ -61,9 +58,9 @@ pub(in crate::card::sets) static FORTIFY: CardRecord = CardRecord::new_with_lega
 // TSP 29 — Momentary Blink
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOMENTARY_BLINK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("032e072a-0630-472b-9106-5df554dff785"),
     "Momentary Blink",
-    crate::card::CardArt::new("032e072a-0630-472b-9106-5df554dff785", "Anthony S. Waters"),
+    "032e072a-0630-472b-9106-5df554dff785",
+    "Anthony S. Waters",
     crate::card::CardSet::TimeSpiral,
     crate::card::CardRules::unsupported(),
 );
@@ -71,18 +68,18 @@ pub(in crate::card::sets) static MOMENTARY_BLINK: CardRecord = CardRecord::new(
 // TSP 40 — Serra Avenger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SERRA_AVENGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9e9d7c1c-3bfd-4705-9bc2-5ca3f84cc32a"),
     "Serra Avenger",
-    crate::card::CardArt::new("9e9d7c1c-3bfd-4705-9bc2-5ca3f84cc32a", "Scott M. Fischer"),
+    "9e9d7c1c-3bfd-4705-9bc2-5ca3f84cc32a",
+    "Scott M. Fischer",
     crate::card::CardSet::TimeSpiral,
     crate::card::CardRules::unsupported(),
 );
 
 // TSP 48 — Ancestral Vision
 pub(in crate::card::sets) static ANCESTRAL_VISION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bccedc4d-38c7-4bf3-9ca7-4febd6c49d3d"),
     "Ancestral Vision",
-    CardArt::new("bccedc4d-38c7-4bf3-9ca7-4febd6c49d3d", "Mark Poole"),
+    "bccedc4d-38c7-4bf3-9ca7-4febd6c49d3d",
+    "Mark Poole",
     CardSet::TimeSpiral,
     CardRules::base(
         CardTypeSet::single(CardType::Sorcery),
@@ -104,10 +101,10 @@ pub(in crate::card::sets) static ANCESTRAL_VISION: CardRecord = CardRecord::new(
 );
 
 // TSP 51 — Cancel
-pub(in crate::card::sets) static CANCEL: CardRecord = CardRecord::new_with_legacy_id(
-    1252,
+pub(in crate::card::sets) static CANCEL: CardRecord = CardRecord::new(
     "Cancel",
-    CardArt::new("fd994a26-65ff-43be-8d52-476e887d3ed2", "Karl Kopinski"),
+    "b4e175f7-f649-451b-9ee5-ad1140b2e8a7",
+    "Mark Poole",
     CardSet::TimeSpiral,
     CardRules::new_instant(mana_cost!("{1}{U}{U}")).with_ability(AbilityDef::counter_target(
         "Counter target spell.",
@@ -122,9 +119,9 @@ pub(in crate::card::sets) static CANCEL: CardRecord = CardRecord::new_with_legac
 
 // TSP 53 — Clockspinning
 pub(in crate::card::sets) static CLOCKSPINNING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1323d548-e2fe-47c5-8df3-f181aed537c5"),
     "Clockspinning",
-    CardArt::new("1323d548-e2fe-47c5-8df3-f181aed537c5", "Zoltan Boros & Gabor Szikszai"),
+    "1323d548-e2fe-47c5-8df3-f181aed537c5",
+    "Zoltan Boros & Gabor Szikszai",
     CardSet::TimeSpiral,
     CardRules::new_instant(mana_cost!("{U}")).with_abilities(&[
         abilities::buyback(mana_cost!("{3}")),
@@ -178,9 +175,9 @@ pub(in crate::card::sets) static CLOCKSPINNING: CardRecord = CardRecord::new(
 
 // TSP 56 — Deep-Sea Kraken
 pub(in crate::card::sets) static DEEP_SEA_KRAKEN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8e050532-e245-4eea-90a5-03e3e410dcbe"),
     "Deep-Sea Kraken",
-    CardArt::new("8e050532-e245-4eea-90a5-03e3e410dcbe", "Christopher Moeller"),
+    "8e050532-e245-4eea-90a5-03e3e410dcbe",
+    "Christopher Moeller",
     CardSet::TimeSpiral,
     CardRules::new_creature(mana_cost!("{7}{U}{U}{U}"), &["Kraken"], 6, 6).with_abilities(&[
         abilities::cannot_be_blocked("This creature can't be blocked."),
@@ -202,18 +199,18 @@ pub(in crate::card::sets) static DEEP_SEA_KRAKEN: CardRecord = CardRecord::new(
 // TSP 66 — Looter il-Kor
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LOOTER_IL_KOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("368ee06f-9021-4b65-9f53-9c326bf3a27f"),
     "Looter il-Kor",
-    crate::card::CardArt::new("368ee06f-9021-4b65-9f53-9c326bf3a27f", "Mike Dringenberg"),
+    "368ee06f-9021-4b65-9f53-9c326bf3a27f",
+    "Mike Dringenberg",
     crate::card::CardSet::TimeSpiral,
     crate::card::CardRules::unsupported(),
 );
 
 // TSP 86 — Think Twice
-pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new_with_legacy_id(
-    226,
+pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new(
     "Think Twice",
-    CardArt::new("53e44060-a9a2-4095-9f5b-f60297525315", "Anthony Francisco"),
+    "352d99db-de6d-4405-90ec-b144abbaa5a4",
+    "Jim Nelson",
     CardSet::TimeSpiral,
     CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
         AbilityDef::spell("Draw a card.", abilities::draw_cards(ValueDef::Constant(1))),
@@ -224,9 +221,9 @@ pub(in crate::card::sets) static THINK_TWICE: CardRecord = CardRecord::new_with_
 // TSP 104 — Dread Return
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DREAD_RETURN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d7e304fc-0ace-459e-8d2f-376f1899639c"),
     "Dread Return",
-    crate::card::CardArt::new("d7e304fc-0ace-459e-8d2f-376f1899639c", "Kev Walker"),
+    "d7e304fc-0ace-459e-8d2f-376f1899639c",
+    "Kev Walker",
     crate::card::CardSet::TimeSpiral,
     crate::card::CardRules::unsupported(),
 );
@@ -234,18 +231,18 @@ pub(in crate::card::sets) static DREAD_RETURN: CardRecord = CardRecord::new(
 // TSP 131 — Smallpox
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SMALLPOX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("175d5a88-2597-4e85-aed6-7a65c0595fb4"),
     "Smallpox",
-    crate::card::CardArt::new("93c8159b-8c1d-480a-b517-dbd67bba1838", "Ryan Pancoast"),
+    "175d5a88-2597-4e85-aed6-7a65c0595fb4",
+    "Janine Johnston",
     crate::card::CardSet::TimeSpiral,
     crate::card::CardRules::unsupported(),
 );
 
 // TSP 143 — Ancient Grudge
-pub(in crate::card::sets) static ANCIENT_GRUDGE: CardRecord = CardRecord::new_with_legacy_id(
-    908,
+pub(in crate::card::sets) static ANCIENT_GRUDGE: CardRecord = CardRecord::new(
     "Ancient Grudge",
-    CardArt::new("e5e7b966-7c5b-44e6-a6df-4bd7af4edaa9", "Ryan Yee"),
+    "89cbad1f-4f16-4d5f-a485-5bf950565216",
+    "Jim Nelson",
     CardSet::TimeSpiral,
     CardRules::new_instant(mana_cost!("{1}{R}")).with_abilities(&[
         AbilityDef::destroy_target(
@@ -261,9 +258,9 @@ pub(in crate::card::sets) static ANCIENT_GRUDGE: CardRecord = CardRecord::new_wi
 
 // TSP 161 — Greater Gargadon
 pub(in crate::card::sets) static GREATER_GARGADON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("653ddfa0-2088-4503-a3ab-b0f1d55d8351"),
     "Greater Gargadon",
-    CardArt::new("653ddfa0-2088-4503-a3ab-b0f1d55d8351", "Rob Alexander"),
+    "653ddfa0-2088-4503-a3ab-b0f1d55d8351",
+    "Rob Alexander",
     CardSet::TimeSpiral,
     CardRules::new_creature(mana_cost!("{9}{R}"), &["Beast"], 9, 7).with_abilities(&[
         abilities::suspend("Suspend 10—{R}", 10, &mana_cost!("{R}")),
@@ -291,18 +288,18 @@ pub(in crate::card::sets) static GREATER_GARGADON: CardRecord = CardRecord::new(
 // TSP 170 — Mogg War Marshal
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOGG_WAR_MARSHAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8b9e0bdb-b615-447a-b80d-d7244c25c56e"),
     "Mogg War Marshal",
-    crate::card::CardArt::new("deed0a5a-6662-460c-bd78-e3d95e8bc83e", "Jesper Ejsing"),
+    "8b9e0bdb-b615-447a-b80d-d7244c25c56e",
+    "Wayne England",
     crate::card::CardSet::TimeSpiral,
     crate::card::CardRules::unsupported(),
 );
 
 // TSP 176 — Rift Bolt
 pub(in crate::card::sets) static RIFT_BOLT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("88dde96e-6824-4d26-9fb5-86b9f3c50959"),
     "Rift Bolt",
-    CardArt::new("88dde96e-6824-4d26-9fb5-86b9f3c50959", "Michael Sutfin"),
+    "88dde96e-6824-4d26-9fb5-86b9f3c50959",
+    "Michael Sutfin",
     CardSet::TimeSpiral,
     CardRules::new_sorcery(mana_cost!("{2}{R}")).with_abilities(&[
         abilities::suspend("Suspend 1—{R}", 1, &mana_cost!("{R}")),
@@ -322,18 +319,18 @@ pub(in crate::card::sets) static RIFT_BOLT: CardRecord = CardRecord::new(
 // TSP 180 — Sulfurous Blast
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SULFUROUS_BLAST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("67511e0e-be09-4f4e-9949-b9ecbdc7f536"),
     "Sulfurous Blast",
-    crate::card::CardArt::new("67511e0e-be09-4f4e-9949-b9ecbdc7f536", "Jeff Miracola"),
+    "67511e0e-be09-4f4e-9949-b9ecbdc7f536",
+    "Jeff Miracola",
     crate::card::CardSet::TimeSpiral,
     crate::card::CardRules::unsupported(),
 );
 
 // TSP 193 — Durkwood Baloth
 pub(in crate::card::sets) static DURKWOOD_BALOTH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("670521c3-df02-487d-a299-49419e41889f"),
     "Durkwood Baloth",
-    CardArt::new("670521c3-df02-487d-a299-49419e41889f", "Dan Frazier"),
+    "670521c3-df02-487d-a299-49419e41889f",
+    "Dan Frazier",
     CardSet::TimeSpiral,
     CardRules::new_creature(mana_cost!("{4}{G}{G}"), &["Beast"], 5, 5)
         .with_ability(abilities::suspend("Suspend 5—{G}", 5, &mana_cost!("{G}"))),
@@ -341,12 +338,9 @@ pub(in crate::card::sets) static DURKWOOD_BALOTH: CardRecord = CardRecord::new(
 
 // TSP 251 — Chromatic Star
 pub(in crate::card::sets) static CHROMATIC_STAR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1d7a1357-debd-49b0-9fd5-560d5b3f589e"),
     "Chromatic Star",
-    CardArt::new(
-        "1d7a1357-debd-49b0-9fd5-560d5b3f589e",
-        "Alex Horley-Orlandelli",
-    ),
+    "1d7a1357-debd-49b0-9fd5-560d5b3f589e",
+    "Alex Horley-Orlandelli",
     CardSet::TimeSpiral,
     // A card that fixes one mana and replaces itself, and does the second
     // half however it dies rather than only when it is spent.
@@ -381,9 +375,9 @@ pub(in crate::card::sets) static CHROMATIC_STAR: CardRecord = CardRecord::new(
 
 // TSP 257 — Jhoira's Timebug
 pub(in crate::card::sets) static JHOIRAS_TIMEBUG: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9ce2c6d7-505b-490b-9c6f-b5166c9ff71d"),
     "Jhoira's Timebug",
-    CardArt::new("9ce2c6d7-505b-490b-9c6f-b5166c9ff71d", "Dan Frazier"),
+    "9ce2c6d7-505b-490b-9c6f-b5166c9ff71d",
+    "Dan Frazier",
     CardSet::TimeSpiral,
     CardRules::new_artifact_creature(mana_cost!("{2}"), &["Insect"], 1, 2).with_ability(
         AbilityDef::activated_with_targets(
@@ -443,18 +437,18 @@ pub(in crate::card::sets) static JHOIRAS_TIMEBUG: CardRecord = CardRecord::new(
 // TSP 264 — Stuffy Doll
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STUFFY_DOLL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("14ca7425-a499-4864-b955-369ef2577849"),
     "Stuffy Doll",
-    crate::card::CardArt::new("14ca7425-a499-4864-b955-369ef2577849", "Dave Allsop"),
+    "14ca7425-a499-4864-b955-369ef2577849",
+    "Dave Allsop",
     crate::card::CardSet::TimeSpiral,
     crate::card::CardRules::unsupported(),
 );
 
 // TSP 274 — Gemstone Caverns
 pub(in crate::card::sets) static GEMSTONE_CAVERNS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("94d74254-4750-4fb3-9e53-473a5f98b315"),
     "Gemstone Caverns",
-    CardArt::new("94d74254-4750-4fb3-9e53-473a5f98b315", "Martina Pilcerova"),
+    "94d74254-4750-4fb3-9e53-473a5f98b315",
+    "Martina Pilcerova",
     CardSet::TimeSpiral,
     CardRules::new_land(&[])
         .with_supertype(CardSupertype::Legendary)

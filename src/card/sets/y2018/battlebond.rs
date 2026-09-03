@@ -1,17 +1,17 @@
 //! Battlebond cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
 // BBD 41 — Spellseeker
-pub(in crate::card::sets) static SPELLSEEKER: CardRecord = CardRecord::new_with_legacy_id(
-    2150,
+pub(in crate::card::sets) static SPELLSEEKER: CardRecord = CardRecord::new(
     "Spellseeker",
-    CardArt::new("74b4c336-5d4c-4bc5-b82a-35084a6ad808", "Igor Kieryluk"),
+    "74b4c336-5d4c-4bc5-b82a-35084a6ad808",
+    "Igor Kieryluk",
     CardSet::Battlebond,
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Human", "Wizard"], 1, 1).with_ability(
         abilities::enters_trigger("When this creature enters, you may search your library for an instant or sorcery card with mana value 2 or less, reveal it, put it into your hand, then shuffle.", EffectDef::May {
@@ -46,17 +46,19 @@ pub(in crate::card::sets) static SPELLSEEKER: CardRecord = CardRecord::new_with_
 // BBD 71 — Grothama, All-Devouring
 // Audit: unsupported — Needs per-recipient damage history grouped by each source's controller.
 pub(in crate::card::sets) static GROTHAMA_ALL_DEVOURING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ab8935b1-ec87-4330-9952-9ef8cd344531"),
     "Grothama, All-Devouring",
-    CardArt::new("ab8935b1-ec87-4330-9952-9ef8cd344531", "Mark Behm"),
+    "ab8935b1-ec87-4330-9952-9ef8cd344531",
+    "Mark Behm",
     CardSet::Battlebond,
     CardRules::unsupported(),
 );
 
 // BBD 209 — Pulse of Murasa (reprint)
-const PULSE_OF_MURASA_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2016::oath_of_the_gatewatch::PULSE_OF_MURASA)
-        .with_art("c591c615-69e8-4661-a089-8c4e152adac7", "Matt Stewart");
+const PULSE_OF_MURASA_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2016::oath_of_the_gatewatch::PULSE_OF_MURASA,
+    "c591c615-69e8-4661-a089-8c4e152adac7",
+    "Matt Stewart",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&SPELLSEEKER, &GROTHAMA_ALL_DEVOURING];
 

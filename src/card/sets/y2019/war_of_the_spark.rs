@@ -1,6 +1,6 @@
 //! War of the Spark cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules,
@@ -15,67 +15,66 @@ use crate::ids::ParentBinding;
 use crate::{TargetIndex, mana_cost};
 
 // WAR 54 — Jace, Wielder of Mysteries
-pub(in crate::card::sets) static JACE_WIELDER_OF_MYSTERIES: CardRecord =
-    CardRecord::new_with_legacy_id(
-        2160,
-        "Jace, Wielder of Mysteries",
-        CardArt::new("6adb7d73-4482-4930-8497-cffd169b57e2", "Anna Steinbauer"),
-        CardSet::WarOfTheSpark,
-        CardRules::new_planeswalker(mana_cost!("{1}{U}{U}{U}"), &["Jace"], 4)
-            .with_supertype(CardSupertype::Legendary)
-            .with_abilities(&[
-                abilities::empty_library_draw_wins(),
-                AbilityDef::activated_with_targets(
-                    "+1: Target player mills two cards. Draw a card.",
-                    &[AbilityCostDef::Loyalty(1)],
-                    &[AbilityTargetDef::exactly_one(
-                        AbilityTargetPredicate::Player(PlayerRelation::Any),
-                    )],
-                    EffectDef::Sequence(&[
-                        EffectDef::Mill {
-                            player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                            amount: ValueDef::Constant(2),
+pub(in crate::card::sets) static JACE_WIELDER_OF_MYSTERIES: CardRecord = CardRecord::new(
+    "Jace, Wielder of Mysteries",
+    "6adb7d73-4482-4930-8497-cffd169b57e2",
+    "Anna Steinbauer",
+    CardSet::WarOfTheSpark,
+    CardRules::new_planeswalker(mana_cost!("{1}{U}{U}{U}"), &["Jace"], 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::empty_library_draw_wins(),
+            AbilityDef::activated_with_targets(
+                "+1: Target player mills two cards. Draw a card.",
+                &[AbilityCostDef::Loyalty(1)],
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Player(PlayerRelation::Any),
+                )],
+                EffectDef::Sequence(&[
+                    EffectDef::Mill {
+                        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        amount: ValueDef::Constant(2),
+                    },
+                    EffectDef::DrawCards {
+                        recipient: EffectRecipientDef::Controller,
+                        amount: ValueDef::Constant(1),
+                    },
+                ]),
+            ),
+            AbilityDef::activated(
+                "−8: Draw seven cards. Then if your library has no cards in it, you win the game.",
+                &[AbilityCostDef::Loyalty(-8)],
+                EffectDef::Sequence(&[
+                    EffectDef::DrawCards {
+                        recipient: EffectRecipientDef::Controller,
+                        amount: ValueDef::Constant(7),
+                    },
+                    EffectDef::IfCondition {
+                        // Your own library, empty. Written as a count rather than a dedicated
+                        // question so the same shape answers "no cards in it" and any other bound.
+                        condition: &TriggerConditionDef::ObjectCount {
+                            query: ObjectQueryDef::matching(
+                                ObjectPredicateDef::Any,
+                                &[ZoneKind::Library],
+                                PlayerRelation::You,
+                            ),
+                            comparison: ComparisonDef::LessOrEqual,
+                            amount: 0,
                         },
-                        EffectDef::DrawCards {
-                            recipient: EffectRecipientDef::Controller,
-                            amount: ValueDef::Constant(1),
+                        then: &EffectDef::WinTheGame {
+                            player: EffectRecipientDef::Controller,
                         },
-                    ]),
-                ),
-                AbilityDef::activated(
-                    "−8: Draw seven cards. Then if your library has no cards in it, you win the game.",
-                    &[AbilityCostDef::Loyalty(-8)],
-                    EffectDef::Sequence(&[
-                        EffectDef::DrawCards {
-                            recipient: EffectRecipientDef::Controller,
-                            amount: ValueDef::Constant(7),
-                        },
-                        EffectDef::IfCondition {
-                            // Your own library, empty. Written as a count rather than a dedicated
-                            // question so the same shape answers "no cards in it" and any other bound.
-                            condition: &TriggerConditionDef::ObjectCount {
-                                query: ObjectQueryDef::matching(
-                                    ObjectPredicateDef::Any,
-                                    &[ZoneKind::Library],
-                                    PlayerRelation::You,
-                                ),
-                                comparison: ComparisonDef::LessOrEqual,
-                                amount: 0,
-                            },
-                            then: &EffectDef::WinTheGame {
-                                player: EffectRecipientDef::Controller,
-                            },
-                        },
-                    ]),
-                ),
-            ]),
-    );
+                    },
+                ]),
+            ),
+        ]),
+);
 
 // WAR 61 — Narset, Parter of Veils
 pub(in crate::card::sets) static NARSET_PARTER_OF_VEILS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8c39f9b4-02b9-4d44-b8d6-4fd02ebbb0c5"),
     "Narset, Parter of Veils",
-    CardArt::new("8c39f9b4-02b9-4d44-b8d6-4fd02ebbb0c5", "Magali Villeneuve"),
+    "8c39f9b4-02b9-4d44-b8d6-4fd02ebbb0c5",
+    "Magali Villeneuve",
     CardSet::WarOfTheSpark,
     // Three mana that finds the spell the deck is built around and turns
     // every draw spell the other player has into one card.
@@ -111,10 +110,10 @@ pub(in crate::card::sets) static NARSET_PARTER_OF_VEILS: CardRecord = CardRecord
 );
 
 // WAR 79 — Bolas's Citadel
-pub(in crate::card::sets) static BOLASS_CITADEL: CardRecord = CardRecord::new_with_legacy_id(
-    2253,
+pub(in crate::card::sets) static BOLASS_CITADEL: CardRecord = CardRecord::new(
     "Bolas's Citadel",
-    CardArt::new("d2124603-d20e-40eb-97f0-a66323397ac2", "Jonas De Ro"),
+    "d2124603-d20e-40eb-97f0-a66323397ac2",
+    "Jonas De Ro",
     CardSet::WarOfTheSpark,
     // Six mana to turn a library into a hand and a life total into mana.
     // The ten-permanent ability is the finish, not the plan.
@@ -161,9 +160,9 @@ pub(in crate::card::sets) static BOLASS_CITADEL: CardRecord = CardRecord::new_wi
 
 // WAR 115 — Bolt Bend
 pub(in crate::card::sets) static BOLT_BEND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("39b35408-3728-4e1b-9f58-b0775df914d6"),
     "Bolt Bend",
-    CardArt::new("39b35408-3728-4e1b-9f58-b0775df914d6", "Svetlin Velinov"),
+    "39b35408-3728-4e1b-9f58-b0775df914d6",
+    "Svetlin Velinov",
     CardSet::WarOfTheSpark,
     CardRules::new_instant(mana_cost!("{3}{R}")).with_abilities(&[
         AbilityDef::static_ability(
@@ -210,10 +209,10 @@ pub(in crate::card::sets) static BOLT_BEND: CardRecord = CardRecord::new(
 );
 
 // WAR 125 — Dreadhorde Arcanist
-pub(in crate::card::sets) static DREADHORDE_ARCANIST: CardRecord = CardRecord::new_with_legacy_id(
-    2279,
+pub(in crate::card::sets) static DREADHORDE_ARCANIST: CardRecord = CardRecord::new(
     "Dreadhorde Arcanist",
-    CardArt::new("fd97b3cf-924e-4f77-bb82-0bf19592389f", "G-host Lee"),
+    "fd97b3cf-924e-4f77-bb82-0bf19592389f",
+    "G-host Lee",
     CardSet::WarOfTheSpark,
     // A 1/3 that only buys back one-mana spells until something makes it
     // bigger, which in the cube is most of what the deck is doing anyway.
@@ -260,19 +259,19 @@ pub(in crate::card::sets) static DREADHORDE_ARCANIST: CardRecord = CardRecord::n
 // WAR 130 — Grim Initiate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRIM_INITIATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("29b6ec9d-3861-48bf-a198-dc7efba5d89c"),
     "Grim Initiate",
-    crate::card::CardArt::new("29b6ec9d-3861-48bf-a198-dc7efba5d89c", "Jason Felix"),
+    "29b6ec9d-3861-48bf-a198-dc7efba5d89c",
+    "Jason Felix",
     crate::card::CardSet::WarOfTheSpark,
     crate::card::CardRules::unsupported(),
 );
 
 // WAR 169 — Nissa, Who Shakes the World
 pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD: CardRecord =
-    CardRecord::new_with_legacy_id(
-        2172,
-        "Nissa, Who Shakes the World",
-        CardArt::new("41e108a5-4e2f-42cf-9ea1-87bf3c0a2b7f", "Chris Rallis"),
+    CardRecord::new(
+    "Nissa, Who Shakes the World",
+    "f857bbe4-5619-4733-a0c7-69700f2ef4f3",
+    "Chris Rallis",
         CardSet::WarOfTheSpark,
         // Doubling every Forest is the card: five mana becomes eight the turn
         // after, and the +1 turns the spare land into a 3/3 that attacks at once.
@@ -372,18 +371,14 @@ pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD: CardRecord =
                     ]),
                 ),
             ]),
-    )
-    .with_debut_art(CardArt::new(
-        "f857bbe4-5619-4733-a0c7-69700f2ef4f3",
-        "Chris Rallis",
-    ));
+    );
 
 // WAR 220 — Tamiyo, Collector of Tales
 pub(in crate::card::sets) static TAMIYO_COLLECTOR_OF_TALES: CardRecord =
-    CardRecord::new_with_legacy_id(
-        2186,
-        "Tamiyo, Collector of Tales",
-        CardArt::new("786d89de-da0c-47af-80ae-2734dc0514fc", "Chase Stone"),
+    CardRecord::new(
+    "Tamiyo, Collector of Tales",
+    "76776b24-a2e1-4590-88e7-8a421baf2fc4",
+    "Chase Stone",
         CardSet::WarOfTheSpark,
         // The static is what the card is played for: it turns off every
         // discard-based and sacrifice-based answer an opponent has, and the
@@ -438,17 +433,13 @@ pub(in crate::card::sets) static TAMIYO_COLLECTOR_OF_TALES: CardRecord =
                     },
                 ),
             ]),
-    )
-    .with_debut_art(CardArt::new(
-        "76776b24-a2e1-4590-88e7-8a421baf2fc4",
-        "Chase Stone",
-    ));
+    );
 
 // WAR 221 — Teferi, Time Raveler
 pub(in crate::card::sets) static TEFERI_TIME_RAVELER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5cb76266-ae50-4bbc-8f96-d98f309b02d3"),
     "Teferi, Time Raveler",
-    CardArt::new("5cb76266-ae50-4bbc-8f96-d98f309b02d3", "Chris Rallis"),
+    "5cb76266-ae50-4bbc-8f96-d98f309b02d3",
+    "Chris Rallis",
     CardSet::WarOfTheSpark,
     // Three mana that takes the other player's instant speed away and hands
     // it to you, with a bounce-and-draw underneath it.
@@ -523,22 +514,19 @@ pub(in crate::card::sets) static TEFERI_TIME_RAVELER: CardRecord = CardRecord::n
 // WAR 222 — Tenth District Legionnaire
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TENTH_DISTRICT_LEGIONNAIRE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("44f3090b-917b-4122-b522-27c30dca8e69"),
     "Tenth District Legionnaire",
-    crate::card::CardArt::new(
-        "44f3090b-917b-4122-b522-27c30dca8e69",
-        "Victor Adame Minguez",
-    ),
+    "44f3090b-917b-4122-b522-27c30dca8e69",
+    "Victor Adame Minguez",
     crate::card::CardSet::WarOfTheSpark,
     crate::card::CardRules::unsupported(),
 );
 
 // WAR 234 — Saheeli, Sublime Artificer
 pub(in crate::card::sets) static SAHEELI_SUBLIME_ARTIFICER: CardRecord =
-    CardRecord::new_with_legacy_id(
-        2247,
-        "Saheeli, Sublime Artificer",
-        CardArt::new("5a10b543-d5d4-42a8-9ee8-dada59a2ad7e", "Wesley Burt"),
+    CardRecord::new(
+    "Saheeli, Sublime Artificer",
+    "5a10b543-d5d4-42a8-9ee8-dada59a2ad7e",
+    "Wesley Burt",
         CardSet::WarOfTheSpark,
         // A planeswalker that never has to be activated: three mana, five
         // loyalty, and a body for every spell the deck was casting anyway.

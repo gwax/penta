@@ -5,4 +5,4 @@ pub(super) mod conflux;
 pub(super) mod magic_2010;
 pub(super) mod zendikar;
 
-pub(super) use super::{CardRecord, PrintingAnchor, PrintingRecord};
+pub(super) use super::{CardRecord, PrintingRecord};

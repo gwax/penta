@@ -1,6 +1,6 @@
 //! Kaldheim cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef, CardArt,
     CardRules, CardSet, CardSupertype, CardType, CopyExceptionsDef, EffectDef, EffectRecipientDef,
@@ -12,23 +12,25 @@ use crate::{TargetIndex, mana_cost};
 // KHM 46 — Behold the Multiverse
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BEHOLD_THE_MULTIVERSE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("27855a38-a682-4f97-ad22-ac625e86faec"),
     "Behold the Multiverse",
-    crate::card::CardArt::new("27855a38-a682-4f97-ad22-ac625e86faec", "Magali Villeneuve"),
+    "27855a38-a682-4f97-ad22-ac625e86faec",
+    "Magali Villeneuve",
     crate::card::CardSet::Kaldheim,
     crate::card::CardRules::unsupported(),
 );
 
 // KHM 117 — Village Rites (reprint)
-const VILLAGE_RITES_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2020::core_set_2021::VILLAGE_RITES)
-        .with_art("0fab9ee8-776a-48e5-b309-bcd381e67bf7", "Igor Kieryluk");
+const VILLAGE_RITES_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2020::core_set_2021::VILLAGE_RITES,
+    "0fab9ee8-776a-48e5-b309-bcd381e67bf7",
+    "Igor Kieryluk",
+);
 
 // KHM 139 — Goldspan Dragon
 pub(in crate::card::sets) static GOLDSPAN_DRAGON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9d914868-9000-4df2-a818-0ef8a7f636ae"),
     "Goldspan Dragon",
-    CardArt::new("9d914868-9000-4df2-a818-0ef8a7f636ae", "Andrew Mar"),
+    "9d914868-9000-4df2-a818-0ef8a7f636ae",
+    "Andrew Mar",
     CardSet::Kaldheim,
     // Five mana for a hasty 4/4 flier that attacks for four and pays for
     // itself: every attack and every removal spell aimed at him is two mana
@@ -76,10 +78,10 @@ pub(in crate::card::sets) static GOLDSPAN_DRAGON: CardRecord = CardRecord::new(
 );
 
 // KHM 142 — Magda, Brazen Outlaw
-pub(in crate::card::sets) static MAGDA_BRAZEN_OUTLAW: CardRecord = CardRecord::new_with_legacy_id(
-    2298,
+pub(in crate::card::sets) static MAGDA_BRAZEN_OUTLAW: CardRecord = CardRecord::new(
     "Magda, Brazen Outlaw",
-    CardArt::new("079e6263-e54c-4899-a336-5315909b9322", "Slawomir Maniak"),
+    "079e6263-e54c-4899-a336-5315909b9322",
+    "Slawomir Maniak",
     CardSet::Kaldheim,
     // Two mana that turns every tap into a Treasure, and five Treasures into
     // whatever artifact the deck is built around.
@@ -151,12 +153,9 @@ pub(in crate::card::sets) static MAGDA_BRAZEN_OUTLAW: CardRecord = CardRecord::n
 // KHM 157 — Tuskeri Firewalker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TUSKERI_FIREWALKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a54d0170-a375-4e65-b98d-3e94a3aeef90"),
     "Tuskeri Firewalker",
-    crate::card::CardArt::new(
-        "a54d0170-a375-4e65-b98d-3e94a3aeef90",
-        "Victor Adame Minguez",
-    ),
+    "a54d0170-a375-4e65-b98d-3e94a3aeef90",
+    "Victor Adame Minguez",
     crate::card::CardSet::Kaldheim,
     crate::card::CardRules::unsupported(),
 );
@@ -164,9 +163,9 @@ pub(in crate::card::sets) static TUSKERI_FIREWALKER: CardRecord = CardRecord::ne
 // KHM 192 — Sarulf's Packmate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SARULF_S_PACKMATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6061113e-7dd8-4739-b4dd-55bb7f9e39a2"),
     "Sarulf's Packmate",
-    crate::card::CardArt::new("6061113e-7dd8-4739-b4dd-55bb7f9e39a2", "Ilse Gort"),
+    "6061113e-7dd8-4739-b4dd-55bb7f9e39a2",
+    "Ilse Gort",
     crate::card::CardSet::Kaldheim,
     crate::card::CardRules::unsupported(),
 );
@@ -174,18 +173,18 @@ pub(in crate::card::sets) static SARULF_S_PACKMATE: CardRecord = CardRecord::new
 // KHM 194 — Snakeskin Veil
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SNAKESKIN_VEIL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e692c208-c171-4964-9207-43c2cbc62845"),
     "Snakeskin Veil",
-    crate::card::CardArt::new("e692c208-c171-4964-9207-43c2cbc62845", "Matt Stewart"),
+    "e692c208-c171-4964-9207-43c2cbc62845",
+    "Matt Stewart",
     crate::card::CardSet::Kaldheim,
     crate::card::CardRules::unsupported(),
 );
 
 // KHM 315 — Esika's Chariot
 pub(in crate::card::sets) static ESIKA_S_CHARIOT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("57a7d7e5-428d-4f42-8f13-9908fc65dcb4"),
     "Esika's Chariot",
-    CardArt::new("57a7d7e5-428d-4f42-8f13-9908fc65dcb4", "WolfSkullJack"),
+    "57a7d7e5-428d-4f42-8f13-9908fc65dcb4",
+    "WolfSkullJack",
     CardSet::Kaldheim,
     // Four mana for four power of Cats, which then crew the Chariot they
     // came with -- and every attack after that is another one of them.

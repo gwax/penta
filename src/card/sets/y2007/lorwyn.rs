@@ -1,23 +1,22 @@
 //! Lorwyn cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::CounterKind;
 use crate::TriggerEventDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef,
-    FreePlayDef, FreePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, TriggerConditionDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, FreePlayDef,
+    FreePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    TriggerConditionDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 // LRW 34 — Oblivion Ring
-pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new_with_legacy_id(
-    192,
+pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
     "Oblivion Ring",
-    CardArt::new("1e2a73ec-39be-4d23-8c25-17d7c174dcee", "Franz Vohwinkel"),
+    "1c7fffe8-709c-4cb4-bbad-e4a0c35b616a",
+    "Wayne England",
     CardSet::Lorwyn,
     CardRules::new_enchantment(mana_cost!("{2}{W}")).with_abilities(&[
         abilities::enters_trigger_with_targets("When this enchantment enters, exile another target nonland permanent.", &[AbilityTargetDef::exactly_one(
@@ -52,10 +51,10 @@ then: None,
 );
 
 // LRW 56 — Cryptic Command
-pub(in crate::card::sets) static CRYPTIC_COMMAND: CardRecord = CardRecord::new_with_legacy_id(
-    2272,
+pub(in crate::card::sets) static CRYPTIC_COMMAND: CardRecord = CardRecord::new(
     "Cryptic Command",
-    CardArt::new("829e3d6e-5d7c-4cc4-a7a6-7cbf5a7442ba", "Wayne England"),
+    "829e3d6e-5d7c-4cc4-a7a6-7cbf5a7442ba",
+    "Wayne England",
     CardSet::Lorwyn,
     // Four mana of triple blue that is never the wrong card: counter and
     // draw when they act, bounce and draw when they do not.
@@ -116,9 +115,9 @@ pub(in crate::card::sets) static CRYPTIC_COMMAND: CardRecord = CardRecord::new_w
 // LRW 76 — Mulldrifter
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MULLDRIFTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a97cfefa-ade7-49f6-b2aa-1118b9db4935"),
     "Mulldrifter",
-    crate::card::CardArt::new("a97cfefa-ade7-49f6-b2aa-1118b9db4935", "Eric Fortune"),
+    "a97cfefa-ade7-49f6-b2aa-1118b9db4935",
+    "Eric Fortune",
     crate::card::CardSet::Lorwyn,
     crate::card::CardRules::unsupported(),
 );
@@ -126,21 +125,18 @@ pub(in crate::card::sets) static MULLDRIFTER: CardRecord = CardRecord::new(
 // LRW 78 — Pestermite
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PESTERMITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f252ae53-443c-4a27-b8f0-639a9a2b8598"),
     "Pestermite",
-    crate::card::CardArt::new(
-        "4c8b4f64-244c-4944-b23f-c383039d9767",
-        "Christopher Moeller",
-    ),
+    "f252ae53-443c-4a27-b8f0-639a9a2b8598",
+    "Christopher Moeller",
     crate::card::CardSet::Lorwyn,
     crate::card::CardRules::unsupported(),
 );
 
 // LRW 79 — Ponder
-pub(in crate::card::sets) static PONDER: CardRecord = CardRecord::new_with_legacy_id(
-    2241,
+pub(in crate::card::sets) static PONDER: CardRecord = CardRecord::new(
     "Ponder",
-    CardArt::new("ba6b6fc5-5077-4812-b8e9-906783dbaf67", "Mark Tedin"),
+    "ba6b6fc5-5077-4812-b8e9-906783dbaf67",
+    "Mark Tedin",
     CardSet::Lorwyn,
     // One mana to see four cards deep and keep the best of them, which is
     // why the format has never been able to leave it legal for long.
@@ -167,10 +163,10 @@ pub(in crate::card::sets) static PONDER: CardRecord = CardRecord::new_with_legac
 );
 
 // LRW 145 — Thoughtseize
-pub(in crate::card::sets) static THOUGHTSEIZE: CardRecord = CardRecord::new_with_legacy_id(
-    2240,
+pub(in crate::card::sets) static THOUGHTSEIZE: CardRecord = CardRecord::new(
     "Thoughtseize",
-    CardArt::new("3df8c148-e87d-4043-9d8b-ec72bf8b6d5d", "Aleksi Briclot"),
+    "3df8c148-e87d-4043-9d8b-ec72bf8b6d5d",
+    "Aleksi Briclot",
     CardSet::Lorwyn,
     // One mana, any card, two life. The life is what keeps it honest and it
     // has never been enough.
@@ -197,13 +193,10 @@ pub(in crate::card::sets) static THOUGHTSEIZE: CardRecord = CardRecord::new_with
 );
 
 // LRW 173 — Hamletback Goliath
-pub(in crate::card::sets) static HAMLETBACK_GOLIATH: CardRecord = CardRecord::new_with_legacy_id(
-    1871,
+pub(in crate::card::sets) static HAMLETBACK_GOLIATH: CardRecord = CardRecord::new(
     "Hamletback Goliath",
-    CardArt::new(
-        "01ddeef1-f6f9-48c0-a93c-7bb3877c0e59",
-        "Paolo Parente & Brian Snõddy",
-    ),
+    "96f71692-6389-462f-933e-b18b5aa7d76b",
+    "Paolo Parente & Brian Snõddy",
     CardSet::Lorwyn,
     // "Another creature", with no controller clause: the opponent's arrivals
     // feed it too, which is what makes it worth its cost.
@@ -237,9 +230,9 @@ pub(in crate::card::sets) static HAMLETBACK_GOLIATH: CardRecord = CardRecord::ne
 /// still an instant, and it is a Goblin in every zone -- in the library
 /// where a Ringleader looks for one, and in the graveyard afterwards.
 pub(in crate::card::sets) static TARFIRE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d13a898e-6a97-4fd9-980e-3bfd8d755386"),
     "Tarfire",
-    CardArt::new("d13a898e-6a97-4fd9-980e-3bfd8d755386", "Omar Rayyan"),
+    "d13a898e-6a97-4fd9-980e-3bfd8d755386",
+    "Omar Rayyan",
     CardSet::Lorwyn,
     // Two damage for one mana is a fine rate and not why it is played: the
     // Goblin deck plays it because Ringleader draws it and Matron finds it.
@@ -260,9 +253,9 @@ pub(in crate::card::sets) static TARFIRE: CardRecord = CardRecord::new(
 
 // LRW 196 — Wild Ricochet
 pub(in crate::card::sets) static WILD_RICOCHET: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d76f09bc-b49a-4ad2-be2d-2a191d41b86d"),
     "Wild Ricochet",
-    crate::card::CardArt::new("d76f09bc-b49a-4ad2-be2d-2a191d41b86d", "Dan Murayama Scott"),
+    "d76f09bc-b49a-4ad2-be2d-2a191d41b86d",
+    "Dan Murayama Scott",
     crate::card::CardSet::Lorwyn,
     CardRules::new_instant(mana_cost!("{2}{R}{R}")).with_ability(
         AbilityDef::spell_with_targets(
@@ -304,9 +297,9 @@ pub(in crate::card::sets) static WILD_RICOCHET: CardRecord = CardRecord::new(
 
 // LRW 262 — Thorn of Amethyst
 pub(in crate::card::sets) static THORN_OF_AMETHYST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e472d4f5-add4-4de3-8718-31a47a35277c"),
     "Thorn of Amethyst",
-    CardArt::new("e472d4f5-add4-4de3-8718-31a47a35277c", "Chuck Lukacs"),
+    "e472d4f5-add4-4de3-8718-31a47a35277c",
+    "Chuck Lukacs",
     CardSet::Lorwyn,
     CardRules::new_artifact(mana_cost!("{2}")).with_ability(abilities::spell_cost_increase(
         "Noncreature spells cost {1} more to cast.",
@@ -318,9 +311,9 @@ pub(in crate::card::sets) static THORN_OF_AMETHYST: CardRecord = CardRecord::new
 
 // LRW 272 — Shelldock Isle
 pub(in crate::card::sets) static SHELLDOCK_ISLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4216656e-90e8-45fc-a0f6-0d0d79d0a021"),
     "Shelldock Isle",
-    CardArt::new("4216656e-90e8-45fc-a0f6-0d0d79d0a021", "Mark Tedin"),
+    "4216656e-90e8-45fc-a0f6-0d0d79d0a021",
+    "Mark Tedin",
     CardSet::Lorwyn,
     // A tapped Island that hides your best card until the game is nearly
     // over, and then plays it for nothing.
@@ -373,9 +366,9 @@ pub(in crate::card::sets) static SHELLDOCK_ISLE: CardRecord = CardRecord::new(
 // LRW 273 — Shimmering Grotto
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHIMMERING_GROTTO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b5e85acc-ed12-4036-8193-739721c3e178"),
     "Shimmering Grotto",
-    crate::card::CardArt::new("b5e85acc-ed12-4036-8193-739721c3e178", "Alan Pollack"),
+    "b5e85acc-ed12-4036-8193-739721c3e178",
+    "Alan Pollack",
     crate::card::CardSet::Lorwyn,
     crate::card::CardRules::unsupported(),
 );

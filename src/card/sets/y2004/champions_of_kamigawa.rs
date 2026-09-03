@@ -1,8 +1,8 @@
 //! Champions of Kamigawa cards cataloged for the Vintage Cube.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
+    AbilityCostDef, AbilityDef, AppliedEffectDef, CardChoiceSourceDef, CardRules, CardSet,
     CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRefDef, PlayerRelation,
     ResolvedEffectDurationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
     abilities,
@@ -13,18 +13,18 @@ use crate::mana_cost;
 // CHK 111 — Distress
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DISTRESS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8130a902-3a03-4473-a64f-84cf3590f4c6"),
     "Distress",
-    crate::card::CardArt::new("630d4080-8183-41fb-8091-740719083765", "Michael C. Hayes"),
+    "8130a902-3a03-4473-a64f-84cf3590f4c6",
+    "Michael Sutfin",
     crate::card::CardSet::ChampionsOfKamigawa,
     crate::card::CardRules::unsupported(),
 );
 
 // CHK 193 — Through the Breach
-pub(in crate::card::sets) static THROUGH_THE_BREACH: CardRecord = CardRecord::new_with_legacy_id(
-    2190,
+pub(in crate::card::sets) static THROUGH_THE_BREACH: CardRecord = CardRecord::new(
     "Through the Breach",
-    CardArt::new("6da09e6a-2965-4855-bd41-41b41ba188fb", "Hugh Jamieson"),
+    "6da09e6a-2965-4855-bd41-41b41ba188fb",
+    "Hugh Jamieson",
     CardSet::ChampionsOfKamigawa,
     CardRules::new_instant(mana_cost!("{4}{R}"))
         .with_subtypes(&["Arcane"])
@@ -89,18 +89,18 @@ pub(in crate::card::sets) static THROUGH_THE_BREACH: CardRecord = CardRecord::ne
 // CHK 239 — Sakura-Tribe Elder
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAKURA_TRIBE_ELDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("91c7707a-bae0-4196-bf26-d276f57b7369"),
     "Sakura-Tribe Elder",
-    crate::card::CardArt::new("91c7707a-bae0-4196-bf26-d276f57b7369", "Carl Critchlow"),
+    "91c7707a-bae0-4196-bf26-d276f57b7369",
+    "Carl Critchlow",
     crate::card::CardSet::ChampionsOfKamigawa,
     crate::card::CardRules::unsupported(),
 );
 
 // CHK 268 — Sensei's Divining Top
 pub(in crate::card::sets) static SENSEIS_DIVINING_TOP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4a08ca06-58db-4ce6-b490-be4bea8956a1"),
     "Sensei's Divining Top",
-    CardArt::new("4a08ca06-58db-4ce6-b490-be4bea8956a1", "Michael Sutfin"),
+    "4a08ca06-58db-4ce6-b490-be4bea8956a1",
+    "Michael Sutfin",
     CardSet::ChampionsOfKamigawa,
     // One mana that fixes every draw for the rest of the game: the tap
     // trades the card it just arranged for itself, and the {1} sets up the

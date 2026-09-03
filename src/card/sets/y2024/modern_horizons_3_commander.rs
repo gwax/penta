@@ -1,13 +1,13 @@
 //! Modern Horizons 3 Commander cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::sets::y2022::commander_legends_baldurs_gate as catalog_clb;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
-    EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef,
-    ObjectRefDef, ObjectSetDef, ObjectSetFilterDef, PlayerRefDef, PlayerRelation, SumValueDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectRefDef,
+    ObjectSetDef, ObjectSetFilterDef, PlayerRefDef, PlayerRelation, SumValueDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ParentBinding;
 use crate::{TargetIndex, mana_cost};
@@ -17,9 +17,9 @@ use super::super::y2020::theros_beyond_death::escape;
 // M3C 4 — Ulalek, Fused Atrocity
 // Audit: unsupported — Needs grouped copying of every controlled spell and nonmana stack ability with independent target reselection.
 pub(in crate::card::sets) static ULALEK_FUSED_ATROCITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fdad1b0e-d3cc-4d76-ae7e-fee12558cf2c"),
     "Ulalek, Fused Atrocity",
-    CardArt::new("fdad1b0e-d3cc-4d76-ae7e-fee12558cf2c", "Alex Konstad"),
+    "fdad1b0e-d3cc-4d76-ae7e-fee12558cf2c",
+    "Alex Konstad",
     CardSet::ModernHorizons3Commander,
     CardRules::unsupported(),
 );
@@ -34,10 +34,10 @@ static GOYF_TOUGHNESS_IN_ALL_GRAVEYARDS: SumValueDef = SumValueDef::new(
 // M3C 50 — Barrowgoyf
 /// Where the chosen card is saved, kept apart from the milled pile so that
 /// "them" and "the one you took" are two different sets.
-pub(in crate::card::sets) static BARROWGOYF: CardRecord = CardRecord::new_with_legacy_id(
-    2213,
+pub(in crate::card::sets) static BARROWGOYF: CardRecord = CardRecord::new(
     "Barrowgoyf",
-    CardArt::new("f979fc86-2c7e-49b3-965e-607a203cbfb1", "Igor Kieryluk"),
+    "f979fc86-2c7e-49b3-965e-607a203cbfb1",
+    "Igor Kieryluk",
     CardSet::ModernHorizons3Commander,
     // Deathtouch and lifelink on a body that grows with every graveyard,
     // and every hit digs for the next one.
@@ -100,10 +100,10 @@ pub(in crate::card::sets) static BARROWGOYF: CardRecord = CardRecord::new_with_l
 );
 
 // M3C 59 — Pyrogoyf
-pub(in crate::card::sets) static PYROGOYF: CardRecord = CardRecord::new_with_legacy_id(
-    2141,
+pub(in crate::card::sets) static PYROGOYF: CardRecord = CardRecord::new(
     "Pyrogoyf",
-    CardArt::new("f60be310-4461-4b84-95f0-b2095108bd79", "Xabi Gaztelua"),
+    "f60be310-4461-4b84-95f0-b2095108bd79",
+    "Xabi Gaztelua",
     CardSet::ModernHorizons3Commander,
     // The printed 0/1 is only what the corner says; the ability below is
     // what it is, wherever it is.
@@ -146,10 +146,10 @@ pub(in crate::card::sets) static PYROGOYF: CardRecord = CardRecord::new_with_leg
 );
 
 // M3C 70 — Bloodbraid Challenger
-pub(in crate::card::sets) static BLOODBRAID_CHALLENGER: CardRecord = CardRecord::new_with_legacy_id(
-    2255,
+pub(in crate::card::sets) static BLOODBRAID_CHALLENGER: CardRecord = CardRecord::new(
     "Bloodbraid Challenger",
-    CardArt::new("4b39d43d-2a02-4edb-915a-6a7c002c945f", "Lie Setiawan"),
+    "4b39d43d-2a02-4edb-915a-6a7c002c945f",
+    "Lie Setiawan",
     CardSet::ModernHorizons3Commander,
     // Five mana for a hasty 4/3 and a free spell, and the graveyard keeps
     // handing it back for five more.
@@ -167,9 +167,9 @@ pub(in crate::card::sets) static BLOODBRAID_CHALLENGER: CardRecord = CardRecord:
 
 // M3C 134 — Talon Gates of Madara
 pub(in crate::card::sets) static TALON_GATES_OF_MADARA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c565f8fe-acf7-40dd-8100-8f692d1e232c"),
     "Talon Gates of Madara",
-    CardArt::new("c565f8fe-acf7-40dd-8100-8f692d1e232c", "Steven Belledin"),
+    "c565f8fe-acf7-40dd-8100-8f692d1e232c",
+    "Steven Belledin",
     CardSet::ModernHorizons3Commander,
     // A land that answers a creature on the way in, and four mana that puts
     // it there on a turn the land drop is already spent.
@@ -219,8 +219,11 @@ pub(in crate::card::sets) static TALON_GATES_OF_MADARA: CardRecord = CardRecord:
 );
 
 // M3C 320 — Basilisk Gate (reprint)
-const BASILISK_GATE_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_clb::BASILISK_GATE)
-    .with_art("935f3dfa-7d8d-459a-8ac2-37892cb9545f", "Jorge Jacinto");
+const BASILISK_GATE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_clb::BASILISK_GATE,
+    "935f3dfa-7d8d-459a-8ac2-37892cb9545f",
+    "Jorge Jacinto",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ULALEK_FUSED_ATROCITY,

@@ -1,11 +1,10 @@
 //! Archenemy card records.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::AbilityCostDef;
 use crate::AbilityDef;
 use crate::AbilityTargetDef;
 use crate::BattlefieldEntryModificationDef;
-use crate::CardArt;
 use crate::CardRules;
 use crate::CardSet;
 use crate::CardType;
@@ -23,9 +22,9 @@ use crate::mana_cost;
 
 // ARC 22 — Reassembling Skeleton
 pub(in crate::card::sets) static REASSEMBLING_SKELETON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("655f983e-3b23-48ee-89d5-d01d469d5a6f"),
     "Reassembling Skeleton",
-    crate::card::CardArt::new("75c219bc-a140-4ecd-953a-eef2cc552d58", "Austin Hsu"),
+    "655f983e-3b23-48ee-89d5-d01d469d5a6f",
+    "Austin Hsu",
     crate::card::CardSet::Archenemy,
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Skeleton", "Warrior"], 1, 1).with_ability(
         AbilityDef::activated(
@@ -48,13 +47,10 @@ pub(in crate::card::sets) static REASSEMBLING_SKELETON: CardRecord = CardRecord:
 );
 
 // ARC 32 — Chandra's Outrage
-pub(in crate::card::sets) static CHANDRAS_OUTRAGE: CardRecord = CardRecord::new_with_legacy_id(
-    1199,
+pub(in crate::card::sets) static CHANDRAS_OUTRAGE: CardRecord = CardRecord::new(
     "Chandra's Outrage",
-    CardArt::new(
-        "65d1b479-f6f6-4fec-a5a6-1a74d426fb13",
-        "Christopher Moeller",
-    ),
+    "3282db18-8564-418e-8c26-62e610b160f2",
+    "Christopher Moeller",
     CardSet::Archenemy,
     CardRules::new_instant(mana_cost!("{2}{R}{R}")).with_ability(
         AbilityDef::spell_with_targets(
@@ -77,10 +73,10 @@ pub(in crate::card::sets) static CHANDRAS_OUTRAGE: CardRecord = CardRecord::new_
 );
 
 // ARC 65 — Plummet
-pub(in crate::card::sets) static PLUMMET: CardRecord = CardRecord::new_with_legacy_id(
-    1644,
+pub(in crate::card::sets) static PLUMMET: CardRecord = CardRecord::new(
     "Plummet",
-    CardArt::new("a96d7d96-5a86-45ef-a30b-b11ece22f060", "Pete Venters"),
+    "a67bb585-cc4f-4cbc-9a5a-d31df98c07ae",
+    "Pete Venters",
     CardSet::Archenemy,
     CardRules::new_instant(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell_with_targets(
         "Destroy target creature with flying.",

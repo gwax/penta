@@ -8,10 +8,10 @@ use crate::card::{
 use crate::{ParentBinding, mana_cost};
 
 // VOC 14 — Occult Epiphany
-pub(in crate::card::sets) static OCCULT_EPIPHANY: CardRecord = CardRecord::new_with_legacy_id(
-    2235,
+pub(in crate::card::sets) static OCCULT_EPIPHANY: CardRecord = CardRecord::new(
     "Occult Epiphany",
-    CardArt::new("6920c895-bc98-4871-a53f-219fa27a74e5", "Jason Rainville"),
+    "6920c895-bc98-4871-a53f-219fa27a74e5",
+    "Jason Rainville",
     CardSet::InnistradCrimsonVowCommander,
     // The draw is a wash and the Spirits are the card: a hand with five
     // types in it turns X of nothing into five fliers.

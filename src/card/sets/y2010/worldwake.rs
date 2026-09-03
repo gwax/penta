@@ -1,22 +1,22 @@
 //! Worldwake cards cataloged for the Vintage Cube.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef,
-    CardArt, CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
-    ColorSet, ComparisonDef, CounterKind, CreatureTypeSetDef, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ColorSet,
+    ComparisonDef, CounterKind, CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
     ReplacementEffectDef, ResolvedEffectDurationDef, SpellCastQueryDef, TokenCharacteristics,
     TriggerConditionDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{AdditionalCostIndex, TargetIndex, mana_cost};
 
 // WWK 20 — Stoneforge Mystic
-pub(in crate::card::sets) static STONEFORGE_MYSTIC: CardRecord = CardRecord::new_with_legacy_id(
-    2191,
+pub(in crate::card::sets) static STONEFORGE_MYSTIC: CardRecord = CardRecord::new(
     "Stoneforge Mystic",
-    CardArt::new("19557351-b65f-4b04-b971-66abdc07000a", "Mike Bierek"),
+    "19557351-b65f-4b04-b971-66abdc07000a",
+    "Mike Bierek",
     CardSet::Worldwake,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Kor", "Artificer"], 1, 2)
         .with_abilities(&[
@@ -64,10 +64,10 @@ pub(in crate::card::sets) static STONEFORGE_MYSTIC: CardRecord = CardRecord::new
 );
 
 // WWK 26 — Dispel
-pub(in crate::card::sets) static DISPEL: CardRecord = CardRecord::new_with_legacy_id(
-    155,
+pub(in crate::card::sets) static DISPEL: CardRecord = CardRecord::new(
     "Dispel",
-    CardArt::new("08d4a8d7-c136-472f-8146-a1100701ca4f", "Chase Stone"),
+    "f178d0cc-5dd1-41ab-a2e8-218ece6f2a86",
+    "Vance Kovacs",
     CardSet::Worldwake,
     CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::counter_target(
         "Counter target instant spell.",
@@ -89,10 +89,10 @@ static A_PLAYER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 )];
 
 pub(in crate::card::sets) static JACE_THE_MIND_SCULPTOR: CardRecord =
-    CardRecord::new_with_legacy_id(
-        2291,
-        "Jace, the Mind Sculptor",
-        CardArt::new("0e606072-a3aa-4300-ba90-ec92a721fa76", "Jason Chan"),
+    CardRecord::new(
+    "Jace, the Mind Sculptor",
+    "0e606072-a3aa-4300-ba90-ec92a721fa76",
+    "Jason Chan",
         CardSet::Worldwake,
         // Four abilities and three of them matter: the bounce buys the turn, the
         // zero rebuilds the hand, and the fateseal is what a Jace that is not
@@ -171,24 +171,18 @@ pub(in crate::card::sets) static JACE_THE_MIND_SCULPTOR: CardRecord =
 // WWK 52 — Brink of Disaster
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BRINK_OF_DISASTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0c841c3e-e0d1-49d7-bcec-3c45f73c13c5"),
     "Brink of Disaster",
-    crate::card::CardArt::new(
-        "dbab78cd-a899-4c5d-86b3-0666adadba87",
-        "Alex Horley-Orlandelli",
-    ),
+    "0c841c3e-e0d1-49d7-bcec-3c45f73c13c5",
+    "Alex Horley-Orlandelli",
     crate::card::CardSet::Worldwake,
     crate::card::CardRules::unsupported(),
 );
 
 // WWK 87 — Ricochet Trap
 pub(in crate::card::sets) static RICOCHET_TRAP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5d782375-9192-4ed0-bd79-f3404e5a1b01"),
     "Ricochet Trap",
-    CardArt::new(
-        "5d782375-9192-4ed0-bd79-f3404e5a1b01",
-        "Jaime Jones",
-    ),
+    "5d782375-9192-4ed0-bd79-f3404e5a1b01",
+    "Jaime Jones",
     CardSet::Worldwake,
     CardRules::new_instant(mana_cost!("{3}{R}")).with_subtypes(&["Trap"]).with_abilities(&[
         AbilityDef::alternative_cast(
@@ -236,10 +230,10 @@ pub(in crate::card::sets) static RICOCHET_TRAP: CardRecord = CardRecord::new(
 );
 
 // WWK 95 — Arbor Elf
-pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new_with_legacy_id(
-    132,
+pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new(
     "Arbor Elf",
-    CardArt::new("b7d6b117-0c14-4455-92fc-29555ee75d97", "rk post"),
+    "6d32a4ed-6b43-4473-91ec-08cd5414f2f0",
+    "rk post",
     CardSet::Worldwake,
     CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Druid"], 1, 1).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -262,9 +256,9 @@ pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new_with_le
 
 // WWK 118 — Wolfbriar Elemental
 pub(in crate::card::sets) static WOLFBRIAR_ELEMENTAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("35ffbd5e-113a-4f24-baa1-b65a5082d893"),
     "Wolfbriar Elemental",
-    CardArt::new("35ffbd5e-113a-4f24-baa1-b65a5082d893", "Chippy"),
+    "35ffbd5e-113a-4f24-baa1-b65a5082d893",
+    "Chippy",
     CardSet::Worldwake,
     CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Elemental"], 4, 4).with_abilities(&[
         abilities::multikicker(mana_cost!("{G}")),
@@ -285,9 +279,9 @@ pub(in crate::card::sets) static WOLFBRIAR_ELEMENTAL: CardRecord = CardRecord::n
 
 // WWK 123 — Everflowing Chalice
 pub(in crate::card::sets) static EVERFLOWING_CHALICE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1fdcc0c3-4029-4fc3-a486-5d7f45c910bd"),
     "Everflowing Chalice",
-    crate::card::CardArt::new("1fdcc0c3-4029-4fc3-a486-5d7f45c910bd", "Steve Argyle"),
+    "1fdcc0c3-4029-4fc3-a486-5d7f45c910bd",
+    "Steve Argyle",
     crate::card::CardSet::Worldwake,
     // A mana rock whose size is chosen as it is cast, which is why it is
     // played on turn two and on turn ten.
@@ -317,13 +311,10 @@ pub(in crate::card::sets) static EVERFLOWING_CHALICE: CardRecord = CardRecord::n
 );
 
 // WWK 126 — Kitesail
-pub(in crate::card::sets) static KITESAIL: CardRecord = CardRecord::new_with_legacy_id(
-    1923,
+pub(in crate::card::sets) static KITESAIL: CardRecord = CardRecord::new(
     "Kitesail",
-    CardArt::new(
-        "2f95cf4c-1845-4260-8571-91c03d582da3",
-        "Cyril Van Der Haegen",
-    ),
+    "217a05a7-557f-4879-8fd1-d6c003f1751e",
+    "Cyril Van Der Haegen",
     CardSet::Worldwake,
     CardRules::new_artifact(mana_cost!("{2}"))
         .with_subtypes(&["Equipment"])
@@ -350,10 +341,10 @@ pub(in crate::card::sets) static KITESAIL: CardRecord = CardRecord::new_with_leg
 );
 
 // WWK 133 — Celestial Colonnade
-pub(in crate::card::sets) static CELESTIAL_COLONNADE: CardRecord = CardRecord::new_with_legacy_id(
-    2239,
+pub(in crate::card::sets) static CELESTIAL_COLONNADE: CardRecord = CardRecord::new(
     "Celestial Colonnade",
-    CardArt::new("f6929259-2903-4f6f-9b06-42048fd55c6a", "Eric Deschamps"),
+    "f6929259-2903-4f6f-9b06-42048fd55c6a",
+    "Eric Deschamps",
     CardSet::Worldwake,
     // A land that costs you a turn and then wins the game on its own, which
     // is the trade every control deck in the format is happy to make.
@@ -397,9 +388,9 @@ pub(in crate::card::sets) static CELESTIAL_COLONNADE: CardRecord = CardRecord::n
 
 // WWK 134 — Creeping Tar Pit
 pub(in crate::card::sets) static CREEPING_TAR_PIT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0f427f0b-034c-4821-8758-e395c0042d8a"),
     "Creeping Tar Pit",
-    crate::card::CardArt::new("0f427f0b-034c-4821-8758-e395c0042d8a", "Jason Felix"),
+    "0f427f0b-034c-4821-8758-e395c0042d8a",
+    "Jason Felix",
     crate::card::CardSet::Worldwake,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::enters_tapped("This land enters tapped."),
@@ -429,9 +420,11 @@ pub(in crate::card::sets) static CREEPING_TAR_PIT: CardRecord = CardRecord::new(
 );
 
 // WWK 140 — Quicksand (reprint)
-const QUICKSAND_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1997::visions::QUICKSAND)
-        .with_art("4e396df7-9931-43f6-b009-27cf93c4a3e5", "Matt Stewart");
+const QUICKSAND_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1997::visions::QUICKSAND,
+    "4e396df7-9931-43f6-b009-27cf93c4a3e5",
+    "Matt Stewart",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STONEFORGE_MYSTIC,

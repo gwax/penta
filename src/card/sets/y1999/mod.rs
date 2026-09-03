@@ -7,4 +7,4 @@ pub(super) mod starter_1999;
 pub(super) mod urzas_destiny;
 pub(super) mod urzas_legacy;
 
-pub(super) use super::{CardRecord, PrintingAnchor, PrintingRecord};
+pub(super) use super::{CardRecord, PrintingRecord};

@@ -1,10 +1,10 @@
 //! Edge of Eternities cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CardTypeSet, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatureTypeSetDef,
+    AppliedEffectDef, AppliedRuleDef, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
+    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatureTypeSetDef,
     DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EmblemCharacteristics,
     GraveyardPlayPermissionDef, HalvedValueDef, ManaColor, ModalSpellDef, MoveObjectsDef,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayActionMatcherDef,
@@ -22,9 +22,9 @@ static AN_ARTIFACT_YOU_CONTROL: ObjectPredicateDef = ObjectPredicateDef::All(&[
 ]);
 
 pub(in crate::card::sets) static TEZZERET_CRUEL_CAPTAIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("02e8e540-8aa3-4e6a-9a11-c3949cab5f0f"),
     "Tezzeret, Cruel Captain",
-    CardArt::new("02e8e540-8aa3-4e6a-9a11-c3949cab5f0f", "Chris Rahn"),
+    "02e8e540-8aa3-4e6a-9a11-c3949cab5f0f",
+    "Chris Rahn",
     CardSet::EdgeOfEternities,
     // Three colourless for a planeswalker that an artifact deck keeps
     // topping up, and whose zero is free every turn.
@@ -145,9 +145,9 @@ pub(in crate::card::sets) static TEZZERET_CRUEL_CAPTAIN: CardRecord = CardRecord
 
 // EOE 9 — Cosmogrand Zenith
 pub(in crate::card::sets) static COSMOGRAND_ZENITH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b3c1e5e3-4e6b-456a-958c-7a75c38f8183"),
     "Cosmogrand Zenith",
-    CardArt::new("b3c1e5e3-4e6b-456a-958c-7a75c38f8183", "Anna Steinbauer"),
+    "b3c1e5e3-4e6b-456a-958c-7a75c38f8183",
+    "Anna Steinbauer",
     CardSet::EdgeOfEternities,
     // Three mana for a 2/4 that pays a second time every turn the hand has
     // two spells in it, and the choice is between going wider and going
@@ -197,9 +197,9 @@ pub(in crate::card::sets) static COSMOGRAND_ZENITH: CardRecord = CardRecord::new
 // EOE 18 — Focus Fire
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FOCUS_FIRE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a9ddfcbc-0f84-4315-aaa3-ca54ff64d7de"),
     "Focus Fire",
-    crate::card::CardArt::new("a9ddfcbc-0f84-4315-aaa3-ca54ff64d7de", "Borja Pindado"),
+    "a9ddfcbc-0f84-4315-aaa3-ca54ff64d7de",
+    "Borja Pindado",
     crate::card::CardSet::EdgeOfEternities,
     crate::card::CardRules::unsupported(),
 );
@@ -257,12 +257,9 @@ macro_rules! consult_choice {
 }
 
 pub(in crate::card::sets) static CONSULT_THE_STAR_CHARTS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a16a6555-2e3a-4587-aacd-0307d696b26c"),
     "Consult the Star Charts",
-    CardArt::new(
-        "a16a6555-2e3a-4587-aacd-0307d696b26c",
-        "Antonio José Manzanedo",
-    ),
+    "a16a6555-2e3a-4587-aacd-0307d696b26c",
+    "Antonio José Manzanedo",
     CardSet::EdgeOfEternities,
     // Two mana to dig as deep as your mana base, and four to keep twice as
     // much of what it finds.
@@ -306,9 +303,9 @@ pub(in crate::card::sets) static CONSULT_THE_STAR_CHARTS: CardRecord = CardRecor
 // EOE 52 — Cryogen Relic
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRYOGEN_RELIC: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7bfb33b6-e2bf-498f-8c58-ae21a840cf75"),
     "Cryogen Relic",
-    crate::card::CardArt::new("7bfb33b6-e2bf-498f-8c58-ae21a840cf75", "Eelis Kyttanen"),
+    "7bfb33b6-e2bf-498f-8c58-ae21a840cf75",
+    "Eelis Kyttanen",
     crate::card::CardSet::EdgeOfEternities,
     crate::card::CardRules::unsupported(),
 );
@@ -316,9 +313,9 @@ pub(in crate::card::sets) static CRYOGEN_RELIC: CardRecord = CardRecord::new(
 // EOE 53 — Cryoshatter
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRYOSHATTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7b62b1e2-9e43-4a66-a647-7e5de2871f2a"),
     "Cryoshatter",
-    crate::card::CardArt::new("7b62b1e2-9e43-4a66-a647-7e5de2871f2a", "Jeremy Wilson"),
+    "7b62b1e2-9e43-4a66-a647-7e5de2871f2a",
+    "Jeremy Wilson",
     crate::card::CardSet::EdgeOfEternities,
     crate::card::CardRules::unsupported(),
 );
@@ -326,18 +323,18 @@ pub(in crate::card::sets) static CRYOSHATTER: CardRecord = CardRecord::new(
 // EOE 66 — Mechanozoa
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MECHANOZOA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0cb8d8ce-329a-4a97-b3d8-796703ebcb37"),
     "Mechanozoa",
-    crate::card::CardArt::new("0cb8d8ce-329a-4a97-b3d8-796703ebcb37", "Daarken"),
+    "0cb8d8ce-329a-4a97-b3d8-796703ebcb37",
+    "Daarken",
     crate::card::CardSet::EdgeOfEternities,
     crate::card::CardRules::unsupported(),
 );
 
 // EOE 72 — Quantum Riddler
 pub(in crate::card::sets) static QUANTUM_RIDDLER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("120be808-ff3b-4fca-96a1-4db6b9825856"),
     "Quantum Riddler",
-    CardArt::new("120be808-ff3b-4fca-96a1-4db6b9825856", "Izzy"),
+    "120be808-ff3b-4fca-96a1-4db6b9825856",
+    "Izzy",
     CardSet::EdgeOfEternities,
     // Five mana for a 4/6 flier that draws a card, or two mana for the same
     // body until the end of turn and the card it comes back with later.
@@ -379,9 +376,9 @@ pub(in crate::card::sets) static QUANTUM_RIDDLER: CardRecord = CardRecord::new(
 // EOE 77 — Starbreach Whale
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STARBREACH_WHALE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8a1a0476-7145-4493-97e5-4fc05c85e476"),
     "Starbreach Whale",
-    crate::card::CardArt::new("8a1a0476-7145-4493-97e5-4fc05c85e476", "Sam Burley"),
+    "8a1a0476-7145-4493-97e5-4fc05c85e476",
+    "Sam Burley",
     crate::card::CardSet::EdgeOfEternities,
     crate::card::CardRules::unsupported(),
 );
@@ -389,18 +386,18 @@ pub(in crate::card::sets) static STARBREACH_WHALE: CardRecord = CardRecord::new(
 // EOE 152 — Plasma Bolt
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PLASMA_BOLT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a1a1834b-76c2-4496-b8c5-18b69ab34c4c"),
     "Plasma Bolt",
-    crate::card::CardArt::new("a1a1834b-76c2-4496-b8c5-18b69ab34c4c", "Viko Menezes"),
+    "a1a1834b-76c2-4496-b8c5-18b69ab34c4c",
+    "Viko Menezes",
     crate::card::CardSet::EdgeOfEternities,
     crate::card::CardRules::unsupported(),
 );
 
 // EOE 201 — Ouroboroid
 pub(in crate::card::sets) static OUROBOROID: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("209c591a-4ab2-4e89-9523-a7b766cf4e51"),
     "Ouroboroid",
-    CardArt::new("209c591a-4ab2-4e89-9523-a7b766cf4e51", "Samuel Perin"),
+    "209c591a-4ab2-4e89-9523-a7b766cf4e51",
+    "Samuel Perin",
     CardSet::EdgeOfEternities,
     // A 1/3 that doubles itself every combat and takes the rest of the board
     // with it: one counter each the first turn, two the next, four after
@@ -434,18 +431,18 @@ pub(in crate::card::sets) static OUROBOROID: CardRecord = CardRecord::new(
 // EOE 244 — Pinnacle Kill-Ship
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PINNACLE_KILL_SHIP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bf784de8-5ae2-4c07-92bb-a5b7f593b773"),
     "Pinnacle Kill-Ship",
-    crate::card::CardArt::new("bf784de8-5ae2-4c07-92bb-a5b7f593b773", "Alexandre Honoré"),
+    "bf784de8-5ae2-4c07-92bb-a5b7f593b773",
+    "Alexandre Honoré",
     crate::card::CardSet::EdgeOfEternities,
     crate::card::CardRules::unsupported(),
 );
 
 // EOE 297 — Mightform Harmonizer
 pub(in crate::card::sets) static MIGHTFORM_HARMONIZER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("29bc9be4-4fc3-440a-a851-0c7f8989c9b5"),
     "Mightform Harmonizer",
-    CardArt::new("29bc9be4-4fc3-440a-a851-0c7f8989c9b5", "Jessica Fong"),
+    "29bc9be4-4fc3-440a-a851-0c7f8989c9b5",
+    "Jessica Fong",
     CardSet::EdgeOfEternities,
     // Four mana for a 4/4 that makes every land drop a pump spell, or three
     // for one turn of it now and the whole card again later.
@@ -490,9 +487,9 @@ pub(in crate::card::sets) static MIGHTFORM_HARMONIZER: CardRecord = CardRecord::
 
 // EOE 362 — Icetill Explorer
 pub(in crate::card::sets) static ICETILL_EXPLORER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("895e5e9b-84dd-4741-8a2c-442165ea9b15"),
     "Icetill Explorer",
-    CardArt::new("895e5e9b-84dd-4741-8a2c-442165ea9b15", "Raimaru"),
+    "895e5e9b-84dd-4741-8a2c-442165ea9b15",
+    "Raimaru",
     CardSet::EdgeOfEternities,
     // Four mana for a 2/4 whose three clauses feed each other: the extra
     // land drop wants lands, the mill finds them, and the graveyard is
@@ -542,9 +539,9 @@ pub(in crate::card::sets) static ICETILL_EXPLORER: CardRecord = CardRecord::new(
 
 // EOE 391 — The Endstone
 pub(in crate::card::sets) static THE_ENDSTONE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1227eb7f-c2a5-4112-98d0-70275a63c26a"),
     "The Endstone",
-    CardArt::new("1227eb7f-c2a5-4112-98d0-70275a63c26a", "Hidetaka Tenjin"),
+    "1227eb7f-c2a5-4112-98d0-70275a63c26a",
+    "Hidetaka Tenjin",
     CardSet::EdgeOfEternities,
     // Seven mana that draws a card for everything you do and hands the ten
     // life back every end step, which is what makes the seven payable.

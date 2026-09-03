@@ -1,12 +1,11 @@
 //! Morningtide card records.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::AbilityCostDef;
 use crate::AbilityDef;
 use crate::AbilityTargetDef;
 use crate::AbilityTargetPredicate;
 use crate::AppliedEffectDef;
-use crate::CardArt;
 use crate::CardRules;
 use crate::CardSet;
 use crate::CardType;
@@ -26,10 +25,10 @@ use crate::card::abilities;
 use crate::mana_cost;
 
 // MOR 31 — Disperse
-pub(in crate::card::sets) static DISPERSE: CardRecord = CardRecord::new_with_legacy_id(
-    1164,
+pub(in crate::card::sets) static DISPERSE: CardRecord = CardRecord::new(
     "Disperse",
-    CardArt::new("e6b415d2-53fe-4540-aea6-9cd2c498134c", "Steve Ellis"),
+    "0ae239b2-1596-4906-9711-1d180a246d35",
+    "Steve Ellis",
     CardSet::Morningtide,
     CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
         "Return target nonland permanent to its owner's hand.",
@@ -45,10 +44,10 @@ pub(in crate::card::sets) static DISPERSE: CardRecord = CardRecord::new_with_leg
 );
 
 // MOR 43 — Negate
-pub(in crate::card::sets) static NEGATE: CardRecord = CardRecord::new_with_legacy_id(
-    191,
+pub(in crate::card::sets) static NEGATE: CardRecord = CardRecord::new(
     "Negate",
-    CardArt::new("8da17a86-3666-46b8-932e-daafd6a0cd69", "Jeremy Jarvis"),
+    "5a501252-e722-4ebf-bcf7-f53a42745fa7",
+    "Jeremy Jarvis",
     CardSet::Morningtide,
     CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::counter_target(
         "Counter target noncreature spell.",
@@ -65,10 +64,10 @@ pub(in crate::card::sets) static NEGATE: CardRecord = CardRecord::new_with_legac
 );
 
 // MOR 92 — Kindled Fury
-pub(in crate::card::sets) static KINDLED_FURY: CardRecord = CardRecord::new_with_legacy_id(
-    1018,
+pub(in crate::card::sets) static KINDLED_FURY: CardRecord = CardRecord::new(
     "Kindled Fury",
-    CardArt::new("35494897-b72b-46c4-8b36-b3b8865559bd", "Wayne Reynolds"),
+    "993956c9-30d8-41ee-84c2-c06d0512aea4",
+    "Shelly Wan",
     CardSet::Morningtide,
     CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
         "Target creature gets +1/+0 and gains first strike until end of turn.",
@@ -92,18 +91,18 @@ pub(in crate::card::sets) static KINDLED_FURY: CardRecord = CardRecord::new_with
 // MOR 143 — Door of Destinies
 // Audit: unsupported — Predicates cannot consume a stored creature-type choice for both spell triggers and a counter-scaled continuous bonus.
 pub(in crate::card::sets) static DOOR_OF_DESTINIES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d4ab817e-11d4-4444-b9e1-322624501619"),
     "Door of Destinies",
-    crate::card::CardArt::new("68a6bf1a-7152-496f-a4c7-e720ef4294d8", "Larry MacDougall"),
+    "ac4800be-5f77-42f5-914c-2a8e647e3af5",
+    "Larry MacDougall",
     crate::card::CardSet::Morningtide,
     crate::card::CardRules::unsupported(),
 );
 
 // MOR 148 — Mutavault
-pub(in crate::card::sets) static MUTAVAULT: CardRecord = CardRecord::new_with_legacy_id(
-    189,
+pub(in crate::card::sets) static MUTAVAULT: CardRecord = CardRecord::new(
     "Mutavault",
-    CardArt::new("927ed667-c228-4b96-a9f6-7cbadade8134", "Fred Fields"),
+    "8ca3c48b-f104-4292-9a4e-2ce87a65893c",
+    "Fred Fields",
     CardSet::Morningtide,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),

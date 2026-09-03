@@ -32,7 +32,9 @@ distinguishes snapshots of the covered source and build inputs.
   preserve that presentation choice in local and hosted replays, and fall back
   to debut artwork for cubes or missing metadata. Catalog JSON adds an optional
   `art` object to each printing; the additive field does not change protocol 29
-  or replay version 2.
+  or replay version 2. Card declarations now carry that exact debut UUID and
+  artist directly; historical numeric IDs are isolated in a compatibility
+  table rather than embedded in declarations.
 
 - **A clause that exiles several cards at once is one exile event.** Moving a
   set of cards out of a graveyard, library, or hand into exile now publishes a

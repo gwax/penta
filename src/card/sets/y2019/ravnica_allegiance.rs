@@ -1,11 +1,11 @@
 //! RNA card records required by supported formats.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::CostQuantityDef;
 use crate::card::{
-    AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    InstalledTriggerDef, ObjectPredicateDef, PlayerRelation, SpellAdditionalCostDef,
-    TriggerEventDef, TurnStepDef, ValueDef, abilities,
+    AbilityDef, AbilityTargetDef, CardRules, CardSet, CardType, EffectDef, InstalledTriggerDef,
+    ObjectPredicateDef, PlayerRelation, SpellAdditionalCostDef, TriggerEventDef, TurnStepDef,
+    ValueDef, abilities,
 };
 use crate::mana_cost;
 
@@ -20,9 +20,9 @@ static SPHINX_OPENING_TRIGGER: AbilityDef = AbilityDef::triggered(
 
 // RNA 55 — Sphinx of Foresight
 pub(in crate::card::sets) static SPHINX_OF_FORESIGHT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cf2386fd-edc0-4731-8f4e-7a7c45548bf3"),
     "Sphinx of Foresight",
-    CardArt::new("cf2386fd-edc0-4731-8f4e-7a7c45548bf3", "Titus Lunter"),
+    "cf2386fd-edc0-4731-8f4e-7a7c45548bf3",
+    "Titus Lunter",
     CardSet::RavnicaAllegiance,
     CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Sphinx"], 4, 4).with_abilities(&[
         AbilityDef::opening_hand_reveal(
@@ -44,21 +44,18 @@ pub(in crate::card::sets) static SPHINX_OF_FORESIGHT: CardRecord = CardRecord::n
 // RNA 115 — Skewer the Critics
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SKEWER_THE_CRITICS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("97295660-6bea-46ae-9a3b-0fc6abba407f"),
     "Skewer the Critics",
-    crate::card::CardArt::new("97295660-6bea-46ae-9a3b-0fc6abba407f", "Heonhwa"),
+    "97295660-6bea-46ae-9a3b-0fc6abba407f",
+    "Heonhwa",
     crate::card::CardSet::RavnicaAllegiance,
     crate::card::CardRules::unsupported(),
 );
 
 // RNA 171 — Final Payment
 pub(in crate::card::sets) static FINAL_PAYMENT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("49a21a8f-9c7b-4ae8-8635-f2ee2151c8de"),
     "Final Payment",
-    CardArt::new(
-        "49a21a8f-9c7b-4ae8-8635-f2ee2151c8de",
-        "Victor Adame Minguez",
-    ),
+    "49a21a8f-9c7b-4ae8-8635-f2ee2151c8de",
+    "Victor Adame Minguez",
     CardSet::RavnicaAllegiance,
     CardRules::new_instant(mana_cost!("{W}{B}")).with_ability(
         AbilityDef::spell_with_additional_cost(
@@ -85,9 +82,9 @@ pub(in crate::card::sets) static FINAL_PAYMENT: CardRecord = CardRecord::new(
 // RNA 172 — Fireblade Artist
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FIREBLADE_ARTIST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("21e1161f-bd2c-45a7-a86b-3b2e5210f148"),
     "Fireblade Artist",
-    crate::card::CardArt::new("21e1161f-bd2c-45a7-a86b-3b2e5210f148", "Steve Argyle"),
+    "21e1161f-bd2c-45a7-a86b-3b2e5210f148",
+    "Steve Argyle",
     crate::card::CardSet::RavnicaAllegiance,
     crate::card::CardRules::unsupported(),
 );
@@ -95,9 +92,9 @@ pub(in crate::card::sets) static FIREBLADE_ARTIST: CardRecord = CardRecord::new(
 // RNA 178 — Growth Spiral
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GROWTH_SPIRAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("288ed3e9-4485-44ad-8561-efa09ed96f34"),
     "Growth Spiral",
-    crate::card::CardArt::new("1e10e2b4-9639-41ae-8b8e-253224d3d513", "Nicholas Gregory"),
+    "7c77a6b1-ef06-4da5-8e86-a5204216cb77",
+    "Seb McKinnon",
     crate::card::CardSet::RavnicaAllegiance,
     crate::card::CardRules::unsupported(),
 );

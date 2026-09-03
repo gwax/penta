@@ -1,20 +1,20 @@
 //! The Brothers' War cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CharacteristicOperationDef, CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor,
-    ManaRestrictionDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
-    SetOperationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AppliedEffectDef, CardRules, CardSet, CardSupertype, CardType, CharacteristicOperationDef,
+    CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor, ManaRestrictionDef,
+    ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, SetOperationDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
 // BRO 12 — Loran of the Third Path
 pub(in crate::card::sets) static LORAN_OF_THE_THIRD_PATH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("59faa45d-868b-4bc7-934c-0e077642e129"),
     "Loran of the Third Path",
-    CardArt::new("59faa45d-868b-4bc7-934c-0e077642e129", "Steven Belledin"),
+    "59faa45d-868b-4bc7-934c-0e077642e129",
+    "Steven Belledin",
     CardSet::TheBrothersWar,
     // Three mana for an answer to an artifact, a body that blocks, and a
     // symmetrical draw nobody else gets to use as often as you do.
@@ -66,9 +66,9 @@ pub(in crate::card::sets) static LORAN_OF_THE_THIRD_PATH: CardRecord = CardRecor
 // BRO 72 — Weakstone's Subjugation
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WEAKSTONE_S_SUBJUGATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ef93ac79-8575-40f8-a222-63c2ffb30f60"),
     "Weakstone's Subjugation",
-    crate::card::CardArt::new("ef93ac79-8575-40f8-a222-63c2ffb30f60", "Igor Kieryluk"),
+    "ef93ac79-8575-40f8-a222-63c2ffb30f60",
+    "Igor Kieryluk",
     crate::card::CardSet::TheBrothersWar,
     crate::card::CardRules::unsupported(),
 );
@@ -76,9 +76,9 @@ pub(in crate::card::sets) static WEAKSTONE_S_SUBJUGATION: CardRecord = CardRecor
 // BRO 98 — Gixian Infiltrator
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GIXIAN_INFILTRATOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c94a3317-7d1f-4f29-8353-180f1ab48d18"),
     "Gixian Infiltrator",
-    crate::card::CardArt::new("c94a3317-7d1f-4f29-8353-180f1ab48d18", "Peter Polach"),
+    "c94a3317-7d1f-4f29-8353-180f1ab48d18",
+    "Peter Polach",
     crate::card::CardSet::TheBrothersWar,
     crate::card::CardRules::unsupported(),
 );
@@ -86,12 +86,9 @@ pub(in crate::card::sets) static GIXIAN_INFILTRATOR: CardRecord = CardRecord::ne
 // BRO 164 — Scrapwork Mutt
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCRAPWORK_MUTT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4742800a-4872-4c2d-b884-01e0ba16950c"),
     "Scrapwork Mutt",
-    crate::card::CardArt::new(
-        "4742800a-4872-4c2d-b884-01e0ba16950c",
-        "Sidharth Chaturvedi",
-    ),
+    "4742800a-4872-4c2d-b884-01e0ba16950c",
+    "Sidharth Chaturvedi",
     crate::card::CardSet::TheBrothersWar,
     crate::card::CardRules::unsupported(),
 );
@@ -99,18 +96,18 @@ pub(in crate::card::sets) static SCRAPWORK_MUTT: CardRecord = CardRecord::new(
 // BRO 174 — Bushwhack
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BUSHWHACK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("712a0640-d9c8-46fc-b38b-bf20a40fa902"),
     "Bushwhack",
-    crate::card::CardArt::new("f6b92766-1ab8-462d-bd45-ccd6f55cbe14", "Artur Nakhodkin"),
+    "712a0640-d9c8-46fc-b38b-bf20a40fa902",
+    "Artur Nakhodkin",
     crate::card::CardSet::TheBrothersWar,
     crate::card::CardRules::unsupported(),
 );
 
 // BRO 199 — Haywire Mite
 pub(in crate::card::sets) static HAYWIRE_MITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("847a175e-ead1-4596-baf3-5f7f57859e0b"),
     "Haywire Mite",
-    CardArt::new("847a175e-ead1-4596-baf3-5f7f57859e0b", "Izzy"),
+    "847a175e-ead1-4596-baf3-5f7f57859e0b",
+    "Izzy",
     CardSet::TheBrothersWar,
     // One mana for a body that is never dead: it answers whichever artifact
     // or enchantment the format is afraid of this week, and every deck can
@@ -159,9 +156,9 @@ pub(in crate::card::sets) static HAYWIRE_MITE: CardRecord = CardRecord::new(
 
 // BRO 223 — Third Path Iconoclast
 pub(in crate::card::sets) static THIRD_PATH_ICONOCLAST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f1a21287-e244-4960-84fb-c4f6e5c346d9"),
     "Third Path Iconoclast",
-    CardArt::new("f1a21287-e244-4960-84fb-c4f6e5c346d9", "Manuel Castañón"),
+    "f1a21287-e244-4960-84fb-c4f6e5c346d9",
+    "Manuel Castañón",
     CardSet::TheBrothersWar,
     // Two mana for a body that turns every cantrip into an artifact
     // creature, which is what the deck around it is counting.
@@ -183,9 +180,9 @@ pub(in crate::card::sets) static THIRD_PATH_ICONOCLAST: CardRecord = CardRecord:
 
 // BRO 238 — The Mightstone and Weakstone
 pub(in crate::card::sets) static THE_MIGHTSTONE_AND_WEAKSTONE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("02aea379-b444-46a3-82f4-3038f698d4f4"),
     "The Mightstone and Weakstone",
-    CardArt::new("02aea379-b444-46a3-82f4-3038f698d4f4", "Ryan Pancoast"),
+    "02aea379-b444-46a3-82f4-3038f698d4f4",
+    "Ryan Pancoast",
     CardSet::TheBrothersWar,
     // Five mana for two cards or a dead creature, and two mana a turn
     // afterwards. The meld is Urza's ability rather than this card's: the
@@ -247,9 +244,9 @@ pub(in crate::card::sets) static THE_MIGHTSTONE_AND_WEAKSTONE: CardRecord = Card
 
 // BRO 240 — Portal to Phyrexia
 pub(in crate::card::sets) static PORTAL_TO_PHYREXIA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5f608efc-0dbc-4cc3-aadd-ed473bfc29ab"),
     "Portal to Phyrexia",
-    CardArt::new("5f608efc-0dbc-4cc3-aadd-ed473bfc29ab", "Svetlin Velinov"),
+    "5f608efc-0dbc-4cc3-aadd-ed473bfc29ab",
+    "Svetlin Velinov",
     CardSet::TheBrothersWar,
     // Nine mana, and the game is over: three of their creatures die on the
     // way in and one comes back for you every upkeep afterwards.
@@ -318,9 +315,9 @@ pub(in crate::card::sets) static PORTAL_TO_PHYREXIA: CardRecord = CardRecord::ne
 // BRO 266 — Tocasia's Dig Site
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TOCASIA_S_DIG_SITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("23d4b90c-95b1-4828-bc08-7067da0d5364"),
     "Tocasia's Dig Site",
-    crate::card::CardArt::new("23d4b90c-95b1-4828-bc08-7067da0d5364", "Nadia Hurianova"),
+    "23d4b90c-95b1-4828-bc08-7067da0d5364",
+    "Nadia Hurianova",
     crate::card::CardSet::TheBrothersWar,
     crate::card::CardRules::unsupported(),
 );

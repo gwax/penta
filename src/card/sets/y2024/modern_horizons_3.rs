@@ -1,6 +1,6 @@
 //! Modern Horizons 3 cards cataloged as attachment edge cases.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AggregateOperationDef, AlternativeCastKindDef, AlternativeCastManaCostDef, AppliedEffectDef,
@@ -73,9 +73,9 @@ static DEVOURER_OPENING_TRIGGER: AbilityDef = AbilityDef::triggered(
 
 // MH3 2 — Devourer of Destiny
 pub(in crate::card::sets) static DEVOURER_OF_DESTINY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("560debcd-feb4-4534-991e-a7aa1cca2409"),
     "Devourer of Destiny",
-    CardArt::new("560debcd-feb4-4534-991e-a7aa1cca2409", "Raph Lomotan"),
+    "560debcd-feb4-4534-991e-a7aa1cca2409",
+    "Raph Lomotan",
     CardSet::ModernHorizons3,
     CardRules::new_creature(mana_cost!("{5}{C}{C}"), &["Eldrazi"], 6, 6).with_abilities(&[
         AbilityDef::opening_hand_reveal(
@@ -138,9 +138,9 @@ const fn landscape_abilities(
 // MH3 18 — Aerie Auxiliary
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AERIE_AUXILIARY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5e4c134b-a416-467e-a158-def84c92c6af"),
     "Aerie Auxiliary",
-    crate::card::CardArt::new("5e4c134b-a416-467e-a158-def84c92c6af", "Donato Giancola"),
+    "5e4c134b-a416-467e-a158-def84c92c6af",
+    "Donato Giancola",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -148,9 +148,9 @@ pub(in crate::card::sets) static AERIE_AUXILIARY: CardRecord = CardRecord::new(
 // MH3 22 — Dog Umbra
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DOG_UMBRA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8d4ba710-eddb-40ca-b2fe-0e4e778aab9c"),
     "Dog Umbra",
-    crate::card::CardArt::new("8d4ba710-eddb-40ca-b2fe-0e4e778aab9c", "Brian Valeza"),
+    "8d4ba710-eddb-40ca-b2fe-0e4e778aab9c",
+    "Brian Valeza",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -158,18 +158,18 @@ pub(in crate::card::sets) static DOG_UMBRA: CardRecord = CardRecord::new(
 // MH3 34 — Mandibular Kite
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MANDIBULAR_KITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6b922f71-18e6-4a74-b792-d477d4a1deca"),
     "Mandibular Kite",
-    crate::card::CardArt::new("6b922f71-18e6-4a74-b792-d477d4a1deca", "Bruno Biazotto"),
+    "6b922f71-18e6-4a74-b792-d477d4a1deca",
+    "Bruno Biazotto",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
 
 // MH3 38 — Ocelot Pride
-pub(in crate::card::sets) static OCELOT_PRIDE: CardRecord = CardRecord::new_with_legacy_id(
-    2225,
+pub(in crate::card::sets) static OCELOT_PRIDE: CardRecord = CardRecord::new(
     "Ocelot Pride",
-    CardArt::new("89cf6f57-230f-497e-a14e-ad1e8737fd42", "Chris Seaman"),
+    "89cf6f57-230f-497e-a14e-ad1e8737fd42",
+    "Chris Seaman",
     CardSet::ModernHorizons3,
     // Its own lifelink turns the trigger on, and once the board is wide
     // enough to ascend every Cat it ever made comes back doubled.
@@ -227,9 +227,9 @@ pub(in crate::card::sets) static OCELOT_PRIDE: CardRecord = CardRecord::new_with
 
 // MH3 40 — Phelia, Exuberant Shepherd
 pub(in crate::card::sets) static PHELIA_EXUBERANT_SHEPHERD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("55707746-da6e-46e5-a5ca-7ac843fdc38e"),
     "Phelia, Exuberant Shepherd",
-    CardArt::new("55707746-da6e-46e5-a5ca-7ac843fdc38e", "Rudy Siswanto"),
+    "55707746-da6e-46e5-a5ca-7ac843fdc38e",
+    "Rudy Siswanto",
     CardSet::ModernHorizons3,
     // Two mana that answers something for a turn or blinks something of
     // yours forever, and grows every time it does the second.
@@ -309,10 +309,10 @@ pub(in crate::card::sets) static PHELIA_EXUBERANT_SHEPHERD: CardRecord = CardRec
 );
 
 // MH3 44 — Static Prison
-pub(in crate::card::sets) static STATIC_PRISON: CardRecord = CardRecord::new_with_legacy_id(
-    2194,
+pub(in crate::card::sets) static STATIC_PRISON: CardRecord = CardRecord::new(
     "Static Prison",
-    CardArt::new("dd16222e-349c-4a2b-a7c8-8eb35a8ab332", "Jason A. Engle"),
+    "dd16222e-349c-4a2b-a7c8-8eb35a8ab332",
+    "Jason A. Engle",
     CardSet::ModernHorizons3,
     // One white answers anything, and the two energy it comes with buy two
     // more turns of holding it. After that the prison opens.
@@ -379,21 +379,18 @@ pub(in crate::card::sets) static STATIC_PRISON: CardRecord = CardRecord::new_wit
 // MH3 45 — Thraben Charm
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THRABEN_CHARM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dd28a646-f38f-4cdf-948c-969cd979e5e6"),
     "Thraben Charm",
-    crate::card::CardArt::new(
-        "dd28a646-f38f-4cdf-948c-969cd979e5e6",
-        "Carlos Palma Cruchaga",
-    ),
+    "dd28a646-f38f-4cdf-948c-969cd979e5e6",
+    "Carlos Palma Cruchaga",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
 
 // MH3 53 — Brainsurge
 pub(in crate::card::sets) static BRAINSURGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ed48f805-b57c-4d7f-a3c2-d16ae71bce2d"),
     "Brainsurge",
-    CardArt::new("ed48f805-b57c-4d7f-a3c2-d16ae71bce2d", "Liiga Smilshkalne"),
+    "ed48f805-b57c-4d7f-a3c2-d16ae71bce2d",
+    "Liiga Smilshkalne",
     CardSet::ModernHorizons3,
     // Two more cards than Brainstorm for two more mana, and the same catch:
     // what it really does is fix a hand, and without a shuffle the two that
@@ -425,9 +422,9 @@ pub(in crate::card::sets) static BRAINSURGE: CardRecord = CardRecord::new(
 // MH3 69 — Serum Visionary
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SERUM_VISIONARY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("08a587f5-5910-405e-8982-c889dbbc7f98"),
     "Serum Visionary",
-    crate::card::CardArt::new("08a587f5-5910-405e-8982-c889dbbc7f98", "Warren Mahy"),
+    "08a587f5-5910-405e-8982-c889dbbc7f98",
+    "Warren Mahy",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -435,19 +432,19 @@ pub(in crate::card::sets) static SERUM_VISIONARY: CardRecord = CardRecord::new(
 // MH3 80 — Accursed Marauder
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ACCURSED_MARAUDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("44a63029-1fb2-4fdc-bca9-0a530c7b42d9"),
     "Accursed Marauder",
-    crate::card::CardArt::new("5da14d86-0780-4821-a799-96f64b377df4", "Paolo Parente"),
+    "5da14d86-0780-4821-a799-96f64b377df4",
+    "Paolo Parente",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
 
 // MH3 90 — Emperor of Bones
 
-pub(in crate::card::sets) static EMPEROR_OF_BONES: CardRecord = CardRecord::new_with_legacy_id(
-    2269,
+pub(in crate::card::sets) static EMPEROR_OF_BONES: CardRecord = CardRecord::new(
     "Emperor of Bones",
-    CardArt::new("df9d9075-2d1e-4848-b661-816d539e05eb", "Josh Hass"),
+    "df9d9075-2d1e-4848-b661-816d539e05eb",
+    "Josh Hass",
     CardSet::ModernHorizons3,
     // Two mana that eats a graveyard one card a turn and then rents the best
     // of them back for an attack, which is what makes the adapt cost worth
@@ -561,9 +558,9 @@ pub(in crate::card::sets) static EMPEROR_OF_BONES: CardRecord = CardRecord::new_
 
 // MH3 103 — Nethergoyf
 pub(in crate::card::sets) static NETHERGOYF: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3ee3945e-5089-4751-b7b3-5961c39d2a33"),
     "Nethergoyf",
-    CardArt::new("3ee3945e-5089-4751-b7b3-5961c39d2a33", "Xavier Ribeiro"),
+    "3ee3945e-5089-4751-b7b3-5961c39d2a33",
+    "Xavier Ribeiro",
     CardSet::ModernHorizons3,
     // One mana for whatever the graveyard has made of it, and the graveyard
     // pays a second time to buy it back.
@@ -614,9 +611,9 @@ pub(in crate::card::sets) static NETHERGOYF: CardRecord = CardRecord::new(
 // MH3 106 — Retrofitted Transmogrant
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RETROFITTED_TRANSMOGRANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("12c1b83d-710b-4680-855a-02ba1f72abf0"),
     "Retrofitted Transmogrant",
-    crate::card::CardArt::new("12c1b83d-710b-4680-855a-02ba1f72abf0", "Kekai Kotaki"),
+    "12c1b83d-710b-4680-855a-02ba1f72abf0",
+    "Kekai Kotaki",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -624,9 +621,9 @@ pub(in crate::card::sets) static RETROFITTED_TRANSMOGRANT: CardRecord = CardReco
 // MH3 108 — Scurrilous Sentry
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCURRILOUS_SENTRY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("29e2805f-59fa-4a6d-97bc-266191b2aa8d"),
     "Scurrilous Sentry",
-    crate::card::CardArt::new("29e2805f-59fa-4a6d-97bc-266191b2aa8d", "Leonardo Santanna"),
+    "29e2805f-59fa-4a6d-97bc-266191b2aa8d",
+    "Leonardo Santanna",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -634,21 +631,18 @@ pub(in crate::card::sets) static SCURRILOUS_SENTRY: CardRecord = CardRecord::new
 // MH3 111 — Wither and Bloom
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WITHER_AND_BLOOM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("95c2390f-71f1-4e42-83da-d603ca86a8d0"),
     "Wither and Bloom",
-    crate::card::CardArt::new(
-        "95c2390f-71f1-4e42-83da-d603ca86a8d0",
-        "Richard Kane Ferguson",
-    ),
+    "95c2390f-71f1-4e42-83da-d603ca86a8d0",
+    "Richard Kane Ferguson",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
 
 // MH3 114 — Amped Raptor
-pub(in crate::card::sets) static AMPED_RAPTOR: CardRecord = CardRecord::new_with_legacy_id(
-    2221,
+pub(in crate::card::sets) static AMPED_RAPTOR: CardRecord = CardRecord::new(
     "Amped Raptor",
-    CardArt::new("1ac0e78b-0fdd-44f9-8b7b-c4f28a32782e", "Alex Konstad"),
+    "1ac0e78b-0fdd-44f9-8b7b-c4f28a32782e",
+    "Alex Konstad",
     CardSet::ModernHorizons3,
     // Two mana for a 2/1 first striker and a free spell off the top, as long
     // as the top of the deck is cheap enough for two energy to cover.
@@ -686,12 +680,9 @@ pub(in crate::card::sets) static AMPED_RAPTOR: CardRecord = CardRecord::new_with
 
 // MH3 116 — Detective's Phoenix
 pub(in crate::card::sets) static DETECTIVES_PHOENIX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e2a01edd-dbc0-4ed4-b827-9b608290e9a1"),
     "Detective's Phoenix",
-    CardArt::new(
-        "e2a01edd-dbc0-4ed4-b827-9b608290e9a1",
-        "Deruchenko Alexander",
-    ),
+    "e2a01edd-dbc0-4ed4-b827-9b608290e9a1",
+    "Deruchenko Alexander",
     CardSet::ModernHorizons3,
     // A three-mana hasty flier that never really dies: once the graveyard is
     // six mana deep it comes back out of it for {R}, as an Aura, and comes
@@ -752,9 +743,9 @@ pub(in crate::card::sets) static DETECTIVES_PHOENIX: CardRecord = CardRecord::ne
 
 // MH3 122 — Galvanic Discharge
 pub(in crate::card::sets) static GALVANIC_DISCHARGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("32aa6e33-221f-414c-9b51-850d97a7e051"),
     "Galvanic Discharge",
-    CardArt::new("32aa6e33-221f-414c-9b51-850d97a7e051", "Zoltan Boros"),
+    "32aa6e33-221f-414c-9b51-850d97a7e051",
+    "Zoltan Boros",
     CardSet::ModernHorizons3,
     // One mana that kills a three-toughness creature and leaves the energy
     // behind when it does not need all of it.
@@ -794,9 +785,9 @@ pub(in crate::card::sets) static GALVANIC_DISCHARGE: CardRecord = CardRecord::ne
 // MH3 128 — Molten Gatekeeper
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOLTEN_GATEKEEPER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9f5ba065-2806-4e99-a330-168cfe76250f"),
     "Molten Gatekeeper",
-    crate::card::CardArt::new("9f5ba065-2806-4e99-a330-168cfe76250f", "Joe Slucher"),
+    "9f5ba065-2806-4e99-a330-168cfe76250f",
+    "Joe Slucher",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -804,18 +795,18 @@ pub(in crate::card::sets) static MOLTEN_GATEKEEPER: CardRecord = CardRecord::new
 // MH3 145 — Basking Broodscale
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BASKING_BROODSCALE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5feba5d6-99a6-4e9b-8a7d-90d955868fc3"),
     "Basking Broodscale",
-    crate::card::CardArt::new("5feba5d6-99a6-4e9b-8a7d-90d955868fc3", "Caio Monteiro"),
+    "5feba5d6-99a6-4e9b-8a7d-90d955868fc3",
+    "Caio Monteiro",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
 
 // MH3 147 — Collective Resistance
 pub(in crate::card::sets) static COLLECTIVE_RESISTANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f260bd08-68b6-44f4-ace9-e298cb13d82e"),
     "Collective Resistance",
-    CardArt::new("f260bd08-68b6-44f4-ace9-e298cb13d82e", "Raoul Vitale"),
+    "f260bd08-68b6-44f4-ace9-e298cb13d82e",
+    "Raoul Vitale",
     CardSet::ModernHorizons3,
     CardRules::new_instant(mana_cost!("{1}{G}")).with_ability(AbilityDef::modal_escalate_spell(
         "Escalate {G} (Pay this cost for each mode chosen beyond the first.)",
@@ -854,10 +845,10 @@ pub(in crate::card::sets) static COLLECTIVE_RESISTANCE: CardRecord = CardRecord:
 );
 
 // MH3 148 — Colossal Dreadmask
-pub(in crate::card::sets) static COLOSSAL_DREADMASK: CardRecord = CardRecord::new_with_legacy_id(
-    1703,
+pub(in crate::card::sets) static COLOSSAL_DREADMASK: CardRecord = CardRecord::new(
     "Colossal Dreadmask",
-    CardArt::new("98164430-64c1-465f-b786-45753c965f44", "Caio Monteiro"),
+    "98164430-64c1-465f-b786-45753c965f44",
+    "Caio Monteiro",
     CardSet::ModernHorizons3,
     CardRules::new_artifact(mana_cost!("{4}{G}{G}"))
         .with_subtypes(&["Equipment"])
@@ -886,9 +877,9 @@ pub(in crate::card::sets) static COLOSSAL_DREADMASK: CardRecord = CardRecord::ne
 // MH3 150 — Eldrazi Repurposer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ELDRAZI_REPURPOSER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("37f79ba7-7b65-4387-b498-f770816ce8dd"),
     "Eldrazi Repurposer",
-    crate::card::CardArt::new("37f79ba7-7b65-4387-b498-f770816ce8dd", "Daren Bader"),
+    "37f79ba7-7b65-4387-b498-f770816ce8dd",
+    "Daren Bader",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -896,9 +887,9 @@ pub(in crate::card::sets) static ELDRAZI_REPURPOSER: CardRecord = CardRecord::ne
 // MH3 151 — Evolution Witness
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EVOLUTION_WITNESS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4b4ecfa6-5e38-4c0a-91e2-f93cb492f374"),
     "Evolution Witness",
-    crate::card::CardArt::new("4d89283e-9783-4006-9294-4ae0473d2ce6", "Nereida"),
+    "4d89283e-9783-4006-9294-4ae0473d2ce6",
+    "Nereida",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -907,9 +898,9 @@ static FANATIC_TAP: [AbilityCostDef; 1] = [AbilityCostDef::TapSource];
 
 // MH3 152 — Fanatic of Rhonas
 pub(in crate::card::sets) static FANATIC_OF_RHONAS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1f9fb33a-3b39-4aff-93b8-aedafe0ea694"),
     "Fanatic of Rhonas",
-    CardArt::new("1f9fb33a-3b39-4aff-93b8-aedafe0ea694", "Scott Murphy"),
+    "1f9fb33a-3b39-4aff-93b8-aedafe0ea694",
+    "Scott Murphy",
     CardSet::ModernHorizons3,
     // Two mana for a 1/4 that taps for one, and for four the moment anything
     // large is beside it -- and a 4/4 out of the graveyard afterwards.
@@ -952,21 +943,18 @@ pub(in crate::card::sets) static FANATIC_OF_RHONAS: CardRecord = CardRecord::new
 // MH3 157 — Horrific Assault
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HORRIFIC_ASSAULT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cfa6ed13-7bba-40c0-8e0e-4ffd3cea6241"),
     "Horrific Assault",
-    crate::card::CardArt::new("cfa6ed13-7bba-40c0-8e0e-4ffd3cea6241", "Justine Jones"),
+    "cfa6ed13-7bba-40c0-8e0e-4ffd3cea6241",
+    "Justine Jones",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
 
 // MH3 161 — Malevolent Rumble
 pub(in crate::card::sets) static MALEVOLENT_RUMBLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a178cfe8-f9fa-4255-88d0-54a0bed079f5"),
     "Malevolent Rumble",
-    CardArt::new(
-        "a178cfe8-f9fa-4255-88d0-54a0bed079f5",
-        "Néstor Ossandón Leal",
-    ),
+    "a178cfe8-f9fa-4255-88d0-54a0bed079f5",
+    "Néstor Ossandón Leal",
     CardSet::ModernHorizons3,
     // Two mana that finds a permanent, fills the graveyard with the three
     // it did not want, and leaves behind the mana that makes the next spell
@@ -1004,12 +992,9 @@ pub(in crate::card::sets) static MALEVOLENT_RUMBLE: CardRecord = CardRecord::new
 // MH3 164 — Nyxborn Hydra
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NYXBORN_HYDRA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("902a969e-9f22-4e92-93eb-9d4536ca82e5"),
     "Nyxborn Hydra",
-    crate::card::CardArt::new(
-        "902a969e-9f22-4e92-93eb-9d4536ca82e5",
-        "Vincent Christiaens",
-    ),
+    "902a969e-9f22-4e92-93eb-9d4536ca82e5",
+    "Vincent Christiaens",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -1018,9 +1003,9 @@ pub(in crate::card::sets) static NYXBORN_HYDRA: CardRecord = CardRecord::new(
 /// Where the taken land is saved, kept apart from the milled pile so that
 /// "them" and "the one you took" stay two different sets.
 pub(in crate::card::sets) static SIX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f9246b68-580f-4f53-883d-7900880e4b0d"),
     "Six",
-    CardArt::new("f9246b68-580f-4f53-883d-7900880e4b0d", "Andrew Mar"),
+    "f9246b68-580f-4f53-883d-7900880e4b0d",
+    "Andrew Mar",
     CardSet::ModernHorizons3,
     // A blocker that fills the graveyard and then plays out of it: every
     // land the attack finds is another permanent cast back from the pile.
@@ -1107,10 +1092,10 @@ pub(in crate::card::sets) static SIX: CardRecord = CardRecord::new(
 );
 
 // MH3 170 — Sowing Mycospawn
-pub(in crate::card::sets) static SOWING_MYCOSPAWN: CardRecord = CardRecord::new_with_legacy_id(
-    2176,
+pub(in crate::card::sets) static SOWING_MYCOSPAWN: CardRecord = CardRecord::new(
     "Sowing Mycospawn",
-    CardArt::new("cdfadb17-76ad-4d4d-9fa7-33c4b88b4c0a", "Slawomir Maniak"),
+    "cdfadb17-76ad-4d4d-9fa7-33c4b88b4c0a",
+    "Slawomir Maniak",
     CardSet::ModernHorizons3,
     // Four mana finds a land and six exiles one, and both happen on the cast
     // rather than on arrival -- so countering the creature does not stop
@@ -1167,9 +1152,9 @@ pub(in crate::card::sets) static SOWING_MYCOSPAWN: CardRecord = CardRecord::new_
 
 // MH3 171 — Springheart Nantuko
 pub(in crate::card::sets) static SPRINGHEART_NANTUKO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("54a3ea87-005e-4985-b2a5-21711d0b71c0"),
     "Springheart Nantuko",
-    CardArt::new("54a3ea87-005e-4985-b2a5-21711d0b71c0", "Valera Lutfullina"),
+    "54a3ea87-005e-4985-b2a5-21711d0b71c0",
+    "Valera Lutfullina",
     CardSet::ModernHorizons3,
     // Two mana for a 1/1, or four to bestow it onto something worth copying
     // -- and then every land is another one of that.
@@ -1243,9 +1228,9 @@ pub(in crate::card::sets) static SPRINGHEART_NANTUKO: CardRecord = CardRecord::n
 // MH3 172 — Temperamental Oozewagg
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TEMPERAMENTAL_OOZEWAGG: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6625df2e-7046-411a-ae86-c46ac0953a0b"),
     "Temperamental Oozewagg",
-    crate::card::CardArt::new("6625df2e-7046-411a-ae86-c46ac0953a0b", "Pete Venters"),
+    "6625df2e-7046-411a-ae86-c46ac0953a0b",
+    "Pete Venters",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -1253,9 +1238,9 @@ pub(in crate::card::sets) static TEMPERAMENTAL_OOZEWAGG: CardRecord = CardRecord
 // MH3 179 — Conduit Goblin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CONDUIT_GOBLIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5c9ad04d-c4d4-4d06-93bb-a881be733717"),
     "Conduit Goblin",
-    crate::card::CardArt::new("5c9ad04d-c4d4-4d06-93bb-a881be733717", "Bruno Biazotto"),
+    "5c9ad04d-c4d4-4d06-93bb-a881be733717",
+    "Bruno Biazotto",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -1263,9 +1248,9 @@ pub(in crate::card::sets) static CONDUIT_GOBLIN: CardRecord = CardRecord::new(
 // MH3 184 — Expanding Ooze
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EXPANDING_OOZE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bbdb095d-b826-4e3e-8c61-0d408e52d6b8"),
     "Expanding Ooze",
-    crate::card::CardArt::new("bbdb095d-b826-4e3e-8c61-0d408e52d6b8", "Randy Gallegos"),
+    "bbdb095d-b826-4e3e-8c61-0d408e52d6b8",
+    "Randy Gallegos",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -1273,19 +1258,19 @@ pub(in crate::card::sets) static EXPANDING_OOZE: CardRecord = CardRecord::new(
 // MH3 185 — Faithful Watchdog
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FAITHFUL_WATCHDOG: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b9afac99-a094-41a8-8323-90dec29691c4"),
     "Faithful Watchdog",
-    crate::card::CardArt::new("b9afac99-a094-41a8-8323-90dec29691c4", "Samuel Perin"),
+    "b9afac99-a094-41a8-8323-90dec29691c4",
+    "Samuel Perin",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
 
 // MH3 197 — Phlage, Titan of Fire's Fury
 pub(in crate::card::sets) static PHLAGE_TITAN_OF_FIRES_FURY: CardRecord =
-    CardRecord::new_with_legacy_id(
-        2227,
-        "Phlage, Titan of Fire's Fury",
-        CardArt::new("e419cd0b-2449-4cc5-9ead-b9e45e271700", "Lucas Graciano"),
+    CardRecord::new(
+    "Phlage, Titan of Fire's Fury",
+    "e419cd0b-2449-4cc5-9ead-b9e45e271700",
+    "Lucas Graciano",
         CardSet::ModernHorizons3,
         // A three-mana Lightning Helix that stays a Helix until the graveyard is
         // deep enough, and then is a 6/6 that helixes again every attack.
@@ -1350,10 +1335,10 @@ pub(in crate::card::sets) static PHLAGE_TITAN_OF_FIRES_FURY: CardRecord =
     );
 
 // MH3 199 — Psychic Frog
-pub(in crate::card::sets) static PSYCHIC_FROG: CardRecord = CardRecord::new_with_legacy_id(
-    2277,
+pub(in crate::card::sets) static PSYCHIC_FROG: CardRecord = CardRecord::new(
     "Psychic Frog",
-    CardArt::new("68924203-c3d9-41ce-8ca8-c6dd491eb3ca", "Pete Venters"),
+    "68924203-c3d9-41ce-8ca8-c6dd491eb3ca",
+    "Pete Venters",
     CardSet::ModernHorizons3,
     // Two mana that turns a full hand into a big evasive body and a full
     // graveyard into the evasion, and draws a card every time it connects.
@@ -1397,9 +1382,9 @@ pub(in crate::card::sets) static PSYCHIC_FROG: CardRecord = CardRecord::new_with
 // MH3 204 — Snapping Voidcraw
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SNAPPING_VOIDCRAW: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7ab3a5a5-9cb1-4ee5-b7b2-d870c9a56097"),
     "Snapping Voidcraw",
-    crate::card::CardArt::new("9185371c-2dde-48ad-ab27-08be04b3c522", "Camille Alquier"),
+    "9185371c-2dde-48ad-ab27-08be04b3c522",
+    "Camille Alquier",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -1407,18 +1392,18 @@ pub(in crate::card::sets) static SNAPPING_VOIDCRAW: CardRecord = CardRecord::new
 // MH3 208 — Writhing Chrysalis
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WRITHING_CHRYSALIS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f54dbeb1-51f8-40e2-912a-ec25457de5a2"),
     "Writhing Chrysalis",
-    crate::card::CardArt::new("f54dbeb1-51f8-40e2-912a-ec25457de5a2", "Domenico Cava"),
+    "f54dbeb1-51f8-40e2-912a-ec25457de5a2",
+    "Domenico Cava",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
 
 // MH3 209 — Disruptor Flute
 pub(in crate::card::sets) static DISRUPTOR_FLUTE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5cad8671-4761-4014-a8a3-af45627e6e79"),
     "Disruptor Flute",
-    crate::card::CardArt::new("5cad8671-4761-4014-a8a3-af45627e6e79", "Xavier Ribeiro"),
+    "5cad8671-4761-4014-a8a3-af45627e6e79",
+    "Xavier Ribeiro",
     crate::card::CardSet::ModernHorizons3,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         abilities::flash(),
@@ -1438,10 +1423,10 @@ pub(in crate::card::sets) static DISRUPTOR_FLUTE: CardRecord = CardRecord::new(
 );
 
 // MH3 217 — Bountiful Landscape
-pub(in crate::card::sets) static BOUNTIFUL_LANDSCAPE: CardRecord = CardRecord::new_with_legacy_id(
-    2265,
+pub(in crate::card::sets) static BOUNTIFUL_LANDSCAPE: CardRecord = CardRecord::new(
     "Bountiful Landscape",
-    CardArt::new("b277752b-430a-4f09-8a98-b72f813dd52e", "Mark Poole"),
+    "b277752b-430a-4f09-8a98-b72f813dd52e",
+    "Mark Poole",
     CardSet::ModernHorizons3,
     // A land that taps for nothing useful and fetches a tapped basic, which
     // is worth a slot only because it is also a cycling card and because
@@ -1468,9 +1453,9 @@ pub(in crate::card::sets) static BOUNTIFUL_LANDSCAPE: CardRecord = CardRecord::n
 // MH3 218 — Contaminated Landscape
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CONTAMINATED_LANDSCAPE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e2312c49-1627-47ad-8113-78a999a97d8d"),
     "Contaminated Landscape",
-    crate::card::CardArt::new("e2312c49-1627-47ad-8113-78a999a97d8d", "Donato Giancola"),
+    "e2312c49-1627-47ad-8113-78a999a97d8d",
+    "Donato Giancola",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -1478,9 +1463,9 @@ pub(in crate::card::sets) static CONTAMINATED_LANDSCAPE: CardRecord = CardRecord
 // MH3 219 — Deceptive Landscape
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DECEPTIVE_LANDSCAPE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2ae6828e-ff19-45db-8b59-61616353491f"),
     "Deceptive Landscape",
-    crate::card::CardArt::new("2ae6828e-ff19-45db-8b59-61616353491f", "Erikas Perl"),
+    "2ae6828e-ff19-45db-8b59-61616353491f",
+    "Erikas Perl",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -1488,9 +1473,9 @@ pub(in crate::card::sets) static DECEPTIVE_LANDSCAPE: CardRecord = CardRecord::n
 // MH3 221 — Foreboding Landscape
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FOREBODING_LANDSCAPE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("57fb0fa7-0c5c-4a75-9461-c51403c30282"),
     "Foreboding Landscape",
-    crate::card::CardArt::new("57fb0fa7-0c5c-4a75-9461-c51403c30282", "Erikas Perl"),
+    "57fb0fa7-0c5c-4a75-9461-c51403c30282",
+    "Erikas Perl",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -1498,9 +1483,9 @@ pub(in crate::card::sets) static FOREBODING_LANDSCAPE: CardRecord = CardRecord::
 // MH3 223 — Perilous Landscape
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PERILOUS_LANDSCAPE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4b0bd07e-cf80-4d64-af29-f4cec6632b3e"),
     "Perilous Landscape",
-    crate::card::CardArt::new("4b0bd07e-cf80-4d64-af29-f4cec6632b3e", "Alayna Danner"),
+    "4b0bd07e-cf80-4d64-af29-f4cec6632b3e",
+    "Alayna Danner",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -1508,9 +1493,9 @@ pub(in crate::card::sets) static PERILOUS_LANDSCAPE: CardRecord = CardRecord::ne
 // MH3 225 — Seething Landscape
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SEETHING_LANDSCAPE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("661fc907-7003-45c6-820c-9616e9a71c30"),
     "Seething Landscape",
-    crate::card::CardArt::new("661fc907-7003-45c6-820c-9616e9a71c30", "Piotr Dura"),
+    "661fc907-7003-45c6-820c-9616e9a71c30",
+    "Piotr Dura",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
@@ -1518,18 +1503,18 @@ pub(in crate::card::sets) static SEETHING_LANDSCAPE: CardRecord = CardRecord::ne
 // MH3 226 — Shattered Landscape
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHATTERED_LANDSCAPE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b3da28c7-6e92-439d-a163-91682d4f11dc"),
     "Shattered Landscape",
-    crate::card::CardArt::new("b3da28c7-6e92-439d-a163-91682d4f11dc", "Erikas Perl"),
+    "b3da28c7-6e92-439d-a163-91682d4f11dc",
+    "Erikas Perl",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
 
 // MH3 227 — Sheltering Landscape
 pub(in crate::card::sets) static SHELTERING_LANDSCAPE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0fe070f4-8877-4280-b8fd-869f3ac34ab6"),
     "Sheltering Landscape",
-    CardArt::new("0fe070f4-8877-4280-b8fd-869f3ac34ab6", "Erikas Perl"),
+    "0fe070f4-8877-4280-b8fd-869f3ac34ab6",
+    "Erikas Perl",
     CardSet::ModernHorizons3,
     // The same bargain as its Temur cousin: a colourless tap nobody wants, a
     // tapped basic when you have the land drop, and a card when you do not.
@@ -1573,9 +1558,9 @@ pub(in crate::card::sets) static SHELTERING_LANDSCAPE: CardRecord = CardRecord::
 
 // MH3 228 — Shifting Woodland
 pub(in crate::card::sets) static SHIFTING_WOODLAND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("059164e1-894d-4586-9800-e60d6fbd6eb6"),
     "Shifting Woodland",
-    CardArt::new("059164e1-894d-4586-9800-e60d6fbd6eb6", "Josu Hernaiz"),
+    "059164e1-894d-4586-9800-e60d6fbd6eb6",
+    "Josu Hernaiz",
     CardSet::ModernHorizons3,
     // A Forest that turns into the best thing you have already lost, once
     // the graveyard is deep enough to be worth reading.
@@ -1636,18 +1621,18 @@ pub(in crate::card::sets) static SHIFTING_WOODLAND: CardRecord = CardRecord::new
 // MH3 231 — Tranquil Landscape
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRANQUIL_LANDSCAPE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("113f48b9-a972-4e2c-af95-05ab078e01f2"),
     "Tranquil Landscape",
-    crate::card::CardArt::new("113f48b9-a972-4e2c-af95-05ab078e01f2", "Randy Gallegos"),
+    "113f48b9-a972-4e2c-af95-05ab078e01f2",
+    "Randy Gallegos",
     crate::card::CardSet::ModernHorizons3,
     crate::card::CardRules::unsupported(),
 );
 
 // MH3 232 — Twisted Landscape
 pub(in crate::card::sets) static TWISTED_LANDSCAPE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0d647d67-f963-43b4-ade8-6c90e91f65ac"),
     "Twisted Landscape",
-    CardArt::new("d0e3e7b3-7ba9-47a2-b46c-a40bffb445e2", "Piotr Dura"),
+    "d0e3e7b3-7ba9-47a2-b46c-a40bffb445e2",
+    "Piotr Dura",
     CardSet::ModernHorizons3,
     // The land drop it finds is the point; cycling is what it does on the
     // turns the deck already has enough of them.
@@ -1669,17 +1654,16 @@ pub(in crate::card::sets) static TWISTED_LANDSCAPE: CardRecord = CardRecord::new
 );
 
 // MH3 237 — Ajani, Nacatl Pariah // Ajani, Nacatl Avenger
-pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord =
-    CardRecord::new_dfc_with_legacy_id(
-        2199,
-        "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger",
-        CardArt::new("0d16e8e0-31b2-4389-afd6-783c501f6fa0", "Chris Rallis"),
-        CardSet::ModernHorizons3,
-        &[
-            (
-                "Ajani, Nacatl Pariah",
-                const {
-                    CardRules::new_creature(mana_cost!("{1}{W}"), &const { ["Cat", "Warrior"] }, 1, 2)
+pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::new_dfc(
+    "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger",
+    "0d16e8e0-31b2-4389-afd6-783c501f6fa0",
+    "Chris Rallis",
+    CardSet::ModernHorizons3,
+    &[
+        (
+            "Ajani, Nacatl Pariah",
+            const {
+                CardRules::new_creature(mana_cost!("{1}{W}"), &const { ["Cat", "Warrior"] }, 1, 2)
                     .with_supertype(CardSupertype::Legendary)
                     .with_abilities(&const { [
                         abilities::enters_trigger(
@@ -1729,12 +1713,12 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord =
                             },
                         ),
                     ] })
-                },
-            ),
-            (
-                "Ajani, Nacatl Avenger",
-                const {
-                    CardRules::new_planeswalker_without_mana_cost(&const { ["Ajani"] })
+            },
+        ),
+        (
+            "Ajani, Nacatl Avenger",
+            const {
+                CardRules::new_planeswalker_without_mana_cost(&const { ["Ajani"] })
                     .with_supertype(CardSupertype::Legendary)
                     .with_starting_loyalty(3)
                     .with_abilities(&const { [
@@ -1817,16 +1801,16 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord =
                             }),
                         ),
                     ] })
-                },
-            ),
-        ],
-    );
+            },
+        ),
+    ],
+);
 
 // MH3 239 — Witch Enchanter // Witch-Blessed Meadow
 pub(in crate::card::sets) static WITCH_ENCHANTER: CardRecord = CardRecord::new_mdfc(
-    PrintingAnchor::scryfall("62061e7c-cf19-4f03-b8fa-2bdba62d6b0b"),
     "Witch Enchanter // Witch-Blessed Meadow",
-    CardArt::new("62061e7c-cf19-4f03-b8fa-2bdba62d6b0b", "Tyler Walpole"),
+    "62061e7c-cf19-4f03-b8fa-2bdba62d6b0b",
+    "Tyler Walpole",
     CardSet::ModernHorizons3,
     &[
         (
@@ -1879,9 +1863,9 @@ pub(in crate::card::sets) static WITCH_ENCHANTER: CardRecord = CardRecord::new_m
 
 // MH3 241 — Sink into Stupor // Soporific Springs
 pub(in crate::card::sets) static SINK_INTO_STUPOR: CardRecord = CardRecord::new_mdfc(
-    PrintingAnchor::scryfall("5358b87a-1a29-426d-b165-40c97da2c14d"),
     "Sink into Stupor // Soporific Springs",
-    CardArt::new("5358b87a-1a29-426d-b165-40c97da2c14d", "Peter Polach"),
+    "5358b87a-1a29-426d-b165-40c97da2c14d",
+    "Peter Polach",
     CardSet::ModernHorizons3,
     &[
         (
@@ -1941,20 +1925,24 @@ pub(in crate::card::sets) static SINK_INTO_STUPOR: CardRecord = CardRecord::new_
 );
 
 // MH3 284 — Annoyed Altisaur (reprint)
-const ANNOYED_ALTISAUR_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2020::commander_legends::ANNOYED_ALTISAUR)
-        .with_art("4aa9354d-3496-47f4-81c9-aead15efb8bb", "Lars Grant-West");
+const ANNOYED_ALTISAUR_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2020::commander_legends::ANNOYED_ALTISAUR,
+    "4aa9354d-3496-47f4-81c9-aead15efb8bb",
+    "Lars Grant-West",
+);
 
 // MH3 286 — Priest of Titania (reprint)
-const PRIEST_OF_TITANIA_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1998::urzas_saga::PRIEST_OF_TITANIA)
-        .with_art("eb11921b-1b28-483f-a707-4de21a6daa31", "Rebecca Guay");
+const PRIEST_OF_TITANIA_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1998::urzas_saga::PRIEST_OF_TITANIA,
+    "eb11921b-1b28-483f-a707-4de21a6daa31",
+    "Rebecca Guay",
+);
 
 // MH3 351 — Arena of Glory
 pub(in crate::card::sets) static ARENA_OF_GLORY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3d7d07bb-b875-4a6d-8b87-4187e823af75"),
     "Arena of Glory",
-    crate::card::CardArt::new("3d7d07bb-b875-4a6d-8b87-4187e823af75", "Piotr Dura"),
+    "3d7d07bb-b875-4a6d-8b87-4187e823af75",
+    "Piotr Dura",
     crate::card::CardSet::ModernHorizons3,
     // A red source that costs nothing to play and turns one creature a game
     // into a surprise, which is what a haste land is for.
@@ -2000,9 +1988,9 @@ pub(in crate::card::sets) static ARENA_OF_GLORY: CardRecord = CardRecord::new(
 const NADU_LAND: Binding = Binding!("nadu_land");
 const NADU_NONLAND: Binding = Binding!("nadu_nonland");
 pub(in crate::card::sets) static NADU_WINGED_WISDOM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8281df8a-2fde-454a-813c-d9f86bb35d36"),
     "Nadu, Winged Wisdom",
-    CardArt::new("8281df8a-2fde-454a-813c-d9f86bb35d36", "Gossip Goblin"),
+    "8281df8a-2fde-454a-813c-d9f86bb35d36",
+    "Gossip Goblin",
     CardSet::ModernHorizons3,
     // Three mana for a 3/4 flier that turns every targeting spell you own
     // into a card, twice per creature per turn -- and Nadu is a creature you
@@ -2083,9 +2071,9 @@ pub(in crate::card::sets) static NADU_WINGED_WISDOM: CardRecord = CardRecord::ne
 
 // MH3 443 — Tamiyo, Inquisitive Student // Tamiyo, Seasoned Scholar
 pub(in crate::card::sets) static TAMIYO_INQUISITIVE_STUDENT: CardRecord = CardRecord::new_dfc(
-    PrintingAnchor::scryfall("1b234fee-a2b6-4661-9f98-4da6fc26aebc"),
     "Tamiyo, Inquisitive Student // Tamiyo, Seasoned Scholar",
-    CardArt::new("1b234fee-a2b6-4661-9f98-4da6fc26aebc", "Evyn Fong"),
+    "1b234fee-a2b6-4661-9f98-4da6fc26aebc",
+    "Evyn Fong",
     CardSet::ModernHorizons3,
     &[
         (
@@ -2234,9 +2222,9 @@ pub(in crate::card::sets) static TAMIYO_INQUISITIVE_STUDENT: CardRecord = CardRe
 
 // MH3 444 — Sorin of House Markov // Sorin, Ravenous Neonate
 pub(in crate::card::sets) static SORIN_OF_HOUSE_MARKOV: CardRecord = CardRecord::new_dfc(
-    PrintingAnchor::scryfall("0347bf13-1ccb-4d4d-a5f2-68181d494b85"),
     "Sorin of House Markov // Sorin, Ravenous Neonate",
-    crate::card::CardArt::new("0347bf13-1ccb-4d4d-a5f2-68181d494b85", "Livia Prima"),
+    "0347bf13-1ccb-4d4d-a5f2-68181d494b85",
+    "Livia Prima",
     crate::card::CardSet::ModernHorizons3,
     &[
         (
@@ -2374,9 +2362,9 @@ pub(in crate::card::sets) static SORIN_OF_HOUSE_MARKOV: CardRecord = CardRecord:
 
 // MH3 448 — Guide of Souls
 pub(in crate::card::sets) static GUIDE_OF_SOULS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("298de33f-cb39-47c5-9579-54d91eb34414"),
     "Guide of Souls",
-    CardArt::new("298de33f-cb39-47c5-9579-54d91eb34414", "Ryan Valle"),
+    "298de33f-cb39-47c5-9579-54d91eb34414",
+    "Ryan Valle",
     CardSet::ModernHorizons3,
     // A one-mana body that turns every other creature into a life and an
     // energy, and then spends the energy making one of them an Angel.
@@ -2460,19 +2448,20 @@ pub(in crate::card::sets) static GUIDE_OF_SOULS: CardRecord = CardRecord::new(
 // MH3 452 — Crabomination
 // Audit: unsupported — Needs one choice among the three cards exiled by its enter trigger before offering a free cast.
 pub(in crate::card::sets) static CRABOMINATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b6ac511f-6c28-45f9-968b-9ac72872641b"),
     "Crabomination",
-    CardArt::new("b6ac511f-6c28-45f9-968b-9ac72872641b", "Nicholas Gregory"),
+    "b6ac511f-6c28-45f9-968b-9ac72872641b",
+    "Nicholas Gregory",
     CardSet::ModernHorizons3,
     CardRules::unsupported(),
 );
 
 // MH3 457 — Detective's Phoenix (alternate printing)
-const DETECTIVES_PHOENIX_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&DETECTIVES_PHOENIX, 1).with_art(
-        "db16e02b-1b7f-4976-b9eb-41350337616c",
-        "Deruchenko Alexander",
-    );
+const DETECTIVES_PHOENIX_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &DETECTIVES_PHOENIX,
+    1,
+    "db16e02b-1b7f-4976-b9eb-41350337616c",
+    "Deruchenko Alexander",
+);
 
 // MH3 460 — Wight of the Reliquary
 /// Your own graveyard, which is what makes the sacrifice cost pay twice: the
@@ -2484,9 +2473,9 @@ static RELIQUARY_CREATURE_CARDS: ObjectQueryDef = ObjectQueryDef::matching(
 );
 
 pub(in crate::card::sets) static WIGHT_OF_THE_RELIQUARY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("915715f7-5487-47aa-ada5-de1bce282164"),
     "Wight of the Reliquary",
-    CardArt::new("915715f7-5487-47aa-ada5-de1bce282164", "Scott Murphy"),
+    "915715f7-5487-47aa-ada5-de1bce282164",
+    "Scott Murphy",
     CardSet::ModernHorizons3,
     // Two mana for a body that grows with the graveyard it is filling, and
     // turns every spare creature into whatever land the deck needs.
@@ -2535,8 +2524,12 @@ pub(in crate::card::sets) static WIGHT_OF_THE_RELIQUARY: CardRecord = CardRecord
 );
 
 // MH3 484 — Six (alternate printing)
-const SIX_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SIX, 1)
-    .with_art("8f3070e7-dce0-4121-bbef-c4357f8265ab", "Andrew Mar");
+const SIX_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &SIX,
+    1,
+    "8f3070e7-dce0-4121-bbef-c4357f8265ab",
+    "Andrew Mar",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEVOURER_OF_DESTINY,

@@ -1,6 +1,6 @@
 //! Dominaria United Commander card records required by supported formats.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef, ManaColor, ObjectPredicateDef,
     ValueDef, abilities,
@@ -9,9 +9,9 @@ use crate::mana_cost;
 
 // DMC 47 — Torsten, Founder of Benalia
 pub(in crate::card::sets) static TORSTEN_FOUNDER_OF_BENALIA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0783b426-a527-42c1-9271-be28b229e1c6"),
     "Torsten, Founder of Benalia",
-    CardArt::new("0783b426-a527-42c1-9271-be28b229e1c6", "Volkan Baǵa"),
+    "0783b426-a527-42c1-9271-be28b229e1c6",
+    "Volkan Baǵa",
     CardSet::DominariaUnitedCommander,
     // Seven mana, and the two halves answer the two ways it goes wrong: it
     // refills your hand the turn it lands, and leaves seven bodies behind if

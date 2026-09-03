@@ -37,7 +37,7 @@ mod y2024;
 mod y2025;
 mod y2026;
 
-use super::record::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::record::{CardRecord, PrintingRecord};
 use crate::card::{CardDefinition, CardPrinting, CardSet};
 
 #[cfg(test)]

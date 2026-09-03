@@ -1,6 +1,6 @@
 //! Kamigawa: Neon Dynasty attachment edge cases.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityCostList, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet,
@@ -17,18 +17,18 @@ use crate::mana_cost;
 // NEO 17 — Imperial Oath
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static IMPERIAL_OATH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3d6750dd-2303-493b-885d-1bfb5787b16c"),
     "Imperial Oath",
-    crate::card::CardArt::new("3d6750dd-2303-493b-885d-1bfb5787b16c", "Nicholas Elias"),
+    "3d6750dd-2303-493b-885d-1bfb5787b16c",
+    "Nicholas Elias",
     crate::card::CardSet::KamigawaNeonDynasty,
     crate::card::CardRules::unsupported(),
 );
 
 // NEO 26 — Lion Sash
-pub(in crate::card::sets) static LION_SASH: CardRecord = CardRecord::new_with_legacy_id(
-    2243,
+pub(in crate::card::sets) static LION_SASH: CardRecord = CardRecord::new(
     "Lion Sash",
-    CardArt::new("3e1766e9-2fa7-4446-a255-7beea1467ece", "Yongjae Choi"),
+    "3e1766e9-2fa7-4446-a255-7beea1467ece",
+    "Yongjae Choi",
     CardSet::KamigawaNeonDynasty,
     // Graveyard hate that grows into a threat, and reconfigure means the
     // two halves are the same card rather than a choice made on turn two.
@@ -103,9 +103,9 @@ static AN_ARTIFACT_OR_CREATURE: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&
 ]);
 
 pub(in crate::card::sets) static TOUCH_THE_SPIRIT_REALM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e16ab44e-4257-4c0c-b705-8ac1e9c1d835"),
     "Touch the Spirit Realm",
-    CardArt::new("e16ab44e-4257-4c0c-b705-8ac1e9c1d835", "Marta Nael"),
+    "e16ab44e-4257-4c0c-b705-8ac1e9c1d835",
+    "Marta Nael",
     CardSet::KamigawaNeonDynasty,
     // Three mana to answer something for as long as the enchantment lives,
     // or two from hand to blink one of yours -- which is why it is never
@@ -170,9 +170,9 @@ pub(in crate::card::sets) static TOUCH_THE_SPIRIT_REALM: CardRecord = CardRecord
 
 // NEO 42 — The Wandering Emperor
 pub(in crate::card::sets) static THE_WANDERING_EMPEROR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fab2d8a9-ab4c-4225-a570-22636293c17d"),
     "The Wandering Emperor",
-    CardArt::new("fab2d8a9-ab4c-4225-a570-22636293c17d", "Tommy Arnold"),
+    "fab2d8a9-ab4c-4225-a570-22636293c17d",
+    "Tommy Arnold",
     CardSet::KamigawaNeonDynasty,
     // A planeswalker you cast on their turn: she answers an attacker, makes
     // a blocker, or wins a fight, and she does it before they can respond by
@@ -264,9 +264,9 @@ pub(in crate::card::sets) static THE_WANDERING_EMPEROR: CardRecord = CardRecord:
 // NEO 63 — Mirrorshell Crab
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MIRRORSHELL_CRAB: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0394c8df-2e8a-4477-93b7-569934d7b936"),
     "Mirrorshell Crab",
-    crate::card::CardArt::new("0394c8df-2e8a-4477-93b7-569934d7b936", "Cristi Balanescu"),
+    "0394c8df-2e8a-4477-93b7-569934d7b936",
+    "Cristi Balanescu",
     crate::card::CardSet::KamigawaNeonDynasty,
     crate::card::CardRules::unsupported(),
 );
@@ -274,9 +274,9 @@ pub(in crate::card::sets) static MIRRORSHELL_CRAB: CardRecord = CardRecord::new(
 // NEO 67 — Moon-Circuit Hacker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOON_CIRCUIT_HACKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("75c43923-7280-4ccb-810b-e8c38dd8a26f"),
     "Moon-Circuit Hacker",
-    crate::card::CardArt::new("c6e466d1-943d-41e6-a47d-c9d951ca4262", "Tia Masic"),
+    "c6e466d1-943d-41e6-a47d-c9d951ca4262",
+    "Tia Masic",
     crate::card::CardSet::KamigawaNeonDynasty,
     crate::card::CardRules::unsupported(),
 );
@@ -284,9 +284,9 @@ pub(in crate::card::sets) static MOON_CIRCUIT_HACKER: CardRecord = CardRecord::n
 // NEO 91 — Clawing Torment
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CLAWING_TORMENT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("621fce96-5933-4e2b-98ec-2589940e24cb"),
     "Clawing Torment",
-    crate::card::CardArt::new("621fce96-5933-4e2b-98ec-2589940e24cb", "Rovina Cai"),
+    "621fce96-5933-4e2b-98ec-2589940e24cb",
+    "Rovina Cai",
     crate::card::CardSet::KamigawaNeonDynasty,
     crate::card::CardRules::unsupported(),
 );
@@ -294,12 +294,9 @@ pub(in crate::card::sets) static CLAWING_TORMENT: CardRecord = CardRecord::new(
 // NEO 117 — Okiba Reckoner Raid // Nezumi Road Captain
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static OKIBA_RECKONER_RAID: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4f0582b4-d951-4450-b158-4a34109e48cd"),
     "Okiba Reckoner Raid",
-    crate::card::CardArt::new(
-        "4f0582b4-d951-4450-b158-4a34109e48cd",
-        "Victor Adame Minguez",
-    ),
+    "4f0582b4-d951-4450-b158-4a34109e48cd",
+    "Victor Adame Minguez",
     crate::card::CardSet::KamigawaNeonDynasty,
     crate::card::CardRules::unsupported(),
 );
@@ -307,21 +304,18 @@ pub(in crate::card::sets) static OKIBA_RECKONER_RAID: CardRecord = CardRecord::n
 // NEO 148 — Ironhoof Boar
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static IRONHOOF_BOAR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("73abe574-6fb8-4809-9c18-0cf989f986f5"),
     "Ironhoof Boar",
-    crate::card::CardArt::new(
-        "73abe574-6fb8-4809-9c18-0cf989f986f5",
-        "Antonio José Manzanedo",
-    ),
+    "73abe574-6fb8-4809-9c18-0cf989f986f5",
+    "Antonio José Manzanedo",
     crate::card::CardSet::KamigawaNeonDynasty,
     crate::card::CardRules::unsupported(),
 );
 
 // NEO 157 — Rabbit Battery
-pub(in crate::card::sets) static RABBIT_BATTERY: CardRecord = CardRecord::new_with_legacy_id(
-    1706,
+pub(in crate::card::sets) static RABBIT_BATTERY: CardRecord = CardRecord::new(
     "Rabbit Battery",
-    CardArt::new("5d33a5b7-797b-4079-8d62-edd124c0fb5a", "Justyna Dura"),
+    "5d33a5b7-797b-4079-8d62-edd124c0fb5a",
+    "Justyna Dura",
     CardSet::KamigawaNeonDynasty,
     CardRules::new_artifact_creature(mana_cost!("{R}"), &["Equipment", "Rabbit"], 1, 1)
         .with_abilities(&[
@@ -349,9 +343,9 @@ pub(in crate::card::sets) static RABBIT_BATTERY: CardRecord = CardRecord::new_wi
 // NEO 189 — Greater Tanuki
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GREATER_TANUKI: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b4fbaee3-a10f-4b2d-b07e-d041a96a7e27"),
     "Greater Tanuki",
-    crate::card::CardArt::new("b4fbaee3-a10f-4b2d-b07e-d041a96a7e27", "Ilse Gort"),
+    "b4fbaee3-a10f-4b2d-b07e-d041a96a7e27",
+    "Ilse Gort",
     crate::card::CardSet::KamigawaNeonDynasty,
     crate::card::CardRules::unsupported(),
 );
@@ -359,18 +353,18 @@ pub(in crate::card::sets) static GREATER_TANUKI: CardRecord = CardRecord::new(
 // NEO 211 — Tamiyo's Safekeeping
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TAMIYO_S_SAFEKEEPING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fd4b7ee2-de65-4288-872d-486065a4f226"),
     "Tamiyo's Safekeeping",
-    crate::card::CardArt::new("fd4b7ee2-de65-4288-872d-486065a4f226", "Aurore Folny"),
+    "fd4b7ee2-de65-4288-872d-486065a4f226",
+    "Aurore Folny",
     crate::card::CardSet::KamigawaNeonDynasty,
     crate::card::CardRules::unsupported(),
 );
 
 // NEO 222 — Hinata, Dawn-Crowned
 pub(in crate::card::sets) static HINATA_DAWN_CROWNED: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f25aff90-56fd-4f70-bb3b-cabf2900c391"),
     "Hinata, Dawn-Crowned",
-    CardArt::new("f25aff90-56fd-4f70-bb3b-cabf2900c391", "Alexander Mokhov"),
+    "f25aff90-56fd-4f70-bb3b-cabf2900c391",
+    "Alexander Mokhov",
     CardSet::KamigawaNeonDynasty,
     CardRules::new_creature(mana_cost!("{1}{U}{R}{W}"), &["Kirin", "Spirit"], 4, 4)
         .with_supertype(CardSupertype::Legendary)
@@ -397,9 +391,9 @@ pub(in crate::card::sets) static HINATA_DAWN_CROWNED: CardRecord = CardRecord::n
 // NEO 238 — Tamiyo, Compleated Sage
 // Audit: unsupported — Needs variable loyalty costs and arbitrary graveyard-card copy tokens using last-known information.
 pub(in crate::card::sets) static TAMIYO_COMPLEATED_SAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("222a736e-d819-452d-aeda-eb848c4b2302"),
     "Tamiyo, Compleated Sage",
-    CardArt::new("222a736e-d819-452d-aeda-eb848c4b2302", "Chris Rahn"),
+    "222a736e-d819-452d-aeda-eb848c4b2302",
+    "Chris Rahn",
     CardSet::KamigawaNeonDynasty,
     CardRules::unsupported(),
 );
@@ -407,9 +401,9 @@ pub(in crate::card::sets) static TAMIYO_COMPLEATED_SAGE: CardRecord = CardRecord
 // NEO 248 — Iron Apprentice
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static IRON_APPRENTICE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("13d6d9fc-509b-42db-8ac1-85066eb6e9c4"),
     "Iron Apprentice",
-    crate::card::CardArt::new("13d6d9fc-509b-42db-8ac1-85066eb6e9c4", "Kekai Kotaki"),
+    "13d6d9fc-509b-42db-8ac1-85066eb6e9c4",
+    "Kekai Kotaki",
     crate::card::CardSet::KamigawaNeonDynasty,
     crate::card::CardRules::unsupported(),
 );
@@ -427,9 +421,9 @@ static LEGENDARY_CREATURES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matchin
 );
 
 pub(in crate::card::sets) static OTAWARA_SOARING_CITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("486d7edc-d983-41f0-8b78-c99aecd72996"),
     "Otawara, Soaring City",
-    CardArt::new("486d7edc-d983-41f0-8b78-c99aecd72996", "Alayna Danner"),
+    "486d7edc-d983-41f0-8b78-c99aecd72996",
+    "Alayna Danner",
     CardSet::KamigawaNeonDynasty,
     // A land that costs nothing to play and is never a dead draw, which is
     // the whole of why the cycle is in the cube.
@@ -475,9 +469,9 @@ pub(in crate::card::sets) static OTAWARA_SOARING_CITY: CardRecord = CardRecord::
 
 // NEO 357 — Fable of the Mirror-Breaker // Reflection of Kiki-Jiki
 pub(in crate::card::sets) static FABLE_OF_THE_MIRROR_BREAKER: CardRecord = CardRecord::new_dfc(
-    PrintingAnchor::scryfall("0b696cd1-0d72-4df5-bacc-dc77e62f9a13"),
     "Fable of the Mirror-Breaker // Reflection of Kiki-Jiki",
-    CardArt::new("0b696cd1-0d72-4df5-bacc-dc77e62f9a13", "akio"),
+    "0b696cd1-0d72-4df5-bacc-dc77e62f9a13",
+    "akio",
     CardSet::KamigawaNeonDynasty,
     // Three mana that pays for itself twice over: a body, a loot, and then
     // the half nobody reads the Saga for.
@@ -598,9 +592,9 @@ pub(in crate::card::sets) static FABLE_OF_THE_MIRROR_BREAKER: CardRecord = CardR
 
 // NEO 412 — Boseiju, Who Endures
 pub(in crate::card::sets) static BOSEIJU_WHO_ENDURES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0055ea30-20fb-4324-a632-8fed87628f05"),
     "Boseiju, Who Endures",
-    CardArt::new("0055ea30-20fb-4324-a632-8fed87628f05", "Esuthio"),
+    "0055ea30-20fb-4324-a632-8fed87628f05",
+    "Esuthio",
     CardSet::KamigawaNeonDynasty,
     // A Forest that answers the one artifact the deck could not otherwise
     // beat, and costs nothing to play when it does not have to.
@@ -684,9 +678,12 @@ pub(in crate::card::sets) static BOSEIJU_WHO_ENDURES: CardRecord = CardRecord::n
 );
 
 // NEO 418 — The Wandering Emperor (alternate printing)
-const THE_WANDERING_EMPEROR_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&THE_WANDERING_EMPEROR, 1)
-        .with_art("22edc832-993b-432a-8435-8d8a72799122", "Hisashi Momose");
+const THE_WANDERING_EMPEROR_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &THE_WANDERING_EMPEROR,
+    1,
+    "22edc832-993b-432a-8435-8d8a72799122",
+    "Hisashi Momose",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IMPERIAL_OATH,

@@ -1,8 +1,8 @@
 //! FDN card records required by supported formats.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype,
+    AbilityCostDef, AbilityDef, AppliedEffectDef, CardRules, CardSet, CardSupertype,
     CharacteristicOperationDef, CreatureTypeSetDef, EffectDef, EffectRecipientDef,
     ExilePlayDurationDef, ObjectPredicateDef, PowerToughnessOperationDef,
     ResolvedEffectDurationDef, SetOperationDef, TriggerConditionDef, TriggerEventDef, ValueDef,
@@ -13,9 +13,9 @@ use crate::mana_cost;
 // FDN 18 — Inspiring Paladin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INSPIRING_PALADIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0763be06-25b2-4d6b-ab33-a1af85aeb443"),
     "Inspiring Paladin",
-    crate::card::CardArt::new("0763be06-25b2-4d6b-ab33-a1af85aeb443", "Valera Lutfullina"),
+    "0763be06-25b2-4d6b-ab33-a1af85aeb443",
+    "Valera Lutfullina",
     crate::card::CardSet::MagicFoundations,
     crate::card::CardRules::unsupported(),
 );
@@ -23,18 +23,18 @@ pub(in crate::card::sets) static INSPIRING_PALADIN: CardRecord = CardRecord::new
 // FDN 114 — Treetop Snarespinner
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TREETOP_SNARESPINNER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("88e68fa3-159d-49a6-8ac6-afc9bd6f1718"),
     "Treetop Snarespinner",
-    crate::card::CardArt::new("88e68fa3-159d-49a6-8ac6-afc9bd6f1718", "Steve Ellis"),
+    "88e68fa3-159d-49a6-8ac6-afc9bd6f1718",
+    "Steve Ellis",
     crate::card::CardSet::MagicFoundations,
     crate::card::CardRules::unsupported(),
 );
 
 // FDN 129 — Leyline Axe
 pub(in crate::card::sets) static LEYLINE_AXE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b9c03336-a321-4c06-94d1-809f328fabd8"),
     "Leyline Axe",
-    CardArt::new("b9c03336-a321-4c06-94d1-809f328fabd8", "Edgar Sánchez Hidalgo"),
+    "b9c03336-a321-4c06-94d1-809f328fabd8",
+    "Edgar Sánchez Hidalgo",
     CardSet::MagicFoundations,
     CardRules::new_artifact(mana_cost!("{4}"))
         .with_subtypes(&["Equipment"])
@@ -56,25 +56,27 @@ pub(in crate::card::sets) static LEYLINE_AXE: CardRecord = CardRecord::new(
 );
 
 // FDN 195 — Fanatical Firebrand (reprint)
-const FANATICAL_FIREBRAND_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2018::rivals_of_ixalan::FANATICAL_FIREBRAND)
-        .with_art("d1296316-7781-4e98-95e6-7020648be6a5", "Wayne Reynolds");
+const FANATICAL_FIREBRAND_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2018::rivals_of_ixalan::FANATICAL_FIREBRAND,
+    "d1296316-7781-4e98-95e6-7020648be6a5",
+    "Wayne Reynolds",
+);
 
 // FDN 200 — Goblin Surprise
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOBLIN_SURPRISE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("527dd5d4-5f72-40bb-8a9d-1f5ac3f81e2e"),
     "Goblin Surprise",
-    crate::card::CardArt::new("527dd5d4-5f72-40bb-8a9d-1f5ac3f81e2e", "Kevin Sidharta"),
+    "527dd5d4-5f72-40bb-8a9d-1f5ac3f81e2e",
+    "Kevin Sidharta",
     crate::card::CardSet::MagicFoundations,
     crate::card::CardRules::unsupported(),
 );
 
 // FDN 330 — Kellan, Planar Trailblazer
 pub(in crate::card::sets) static KELLAN_PLANAR_TRAILBLAZER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0e413f37-b59a-4302-86d3-2abce81edc78"),
     "Kellan, Planar Trailblazer",
-    CardArt::new("0e413f37-b59a-4302-86d3-2abce81edc78", "Aaron J. Riley"),
+    "0e413f37-b59a-4302-86d3-2abce81edc78",
+    "Aaron J. Riley",
     CardSet::MagicFoundations,
     // One mana for a 2/1 that grows into what the rest of the turn's mana
     // has nothing better to do with.
@@ -154,14 +156,18 @@ pub(in crate::card::sets) static KELLAN_PLANAR_TRAILBLAZER: CardRecord = CardRec
 );
 
 // FDN 528 — Undying Malice (reprint)
-const UNDYING_MALICE_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2021::innistrad_crimson_vow::UNDYING_MALICE)
-        .with_art("97b3cf11-e352-4ee1-8c03-13898f576ef9", "Igor Kieryluk");
+const UNDYING_MALICE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2021::innistrad_crimson_vow::UNDYING_MALICE,
+    "97b3cf11-e352-4ee1-8c03-13898f576ef9",
+    "Igor Kieryluk",
+);
 
 // FDN 596 — Shipwreck Dowser (reprint)
-const SHIPWRECK_DOWSER_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2020::core_set_2021::SHIPWRECK_DOWSER)
-        .with_art("1f20fe3d-792a-4030-a25c-e81b48b2bcb4", "Caroline Gariba");
+const SHIPWRECK_DOWSER_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2020::core_set_2021::SHIPWRECK_DOWSER,
+    "1f20fe3d-792a-4030-a25c-e81b48b2bcb4",
+    "Caroline Gariba",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &INSPIRING_PALADIN,

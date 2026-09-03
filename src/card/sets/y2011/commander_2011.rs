@@ -5,7 +5,6 @@ use crate::AbilityCostDef;
 use crate::AbilityDef;
 use crate::AbilityTargetDef;
 use crate::AbilityTargetPredicate;
-use crate::CardArt;
 use crate::CardRules;
 use crate::CardSet;
 use crate::CardType;
@@ -30,10 +29,10 @@ static EXILED_A_CREATURE: TargetConditionDef = TargetConditionDef {
     otherwise: ValueDef::Constant(0),
 };
 
-pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new_with_legacy_id(
-    208,
+pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new(
     "Scavenging Ooze",
-    CardArt::new("ec30153a-36b5-42f8-beed-9efab09f1051", "Austin Hsu"),
+    "371ceb58-f498-4616-a7f0-eb118fe2e4ff",
+    "Austin Hsu",
     CardSet::Commander2011,
     CardRules::new_creature(
         mana_cost!("{1}{G}"),

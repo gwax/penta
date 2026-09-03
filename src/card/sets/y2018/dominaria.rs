@@ -1,8 +1,8 @@
 //! Dominaria cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardRules, CardSet,
     CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, CounterKind, DrawEventMatcherDef,
     EffectDef, EffectRecipientDef, InstalledTriggerDef, MoveObjectsDef, ObjectChoiceBindingDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
@@ -27,9 +27,9 @@ static ARTIFACTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
 );
 
 pub(in crate::card::sets) static KARN_SCION_OF_URZA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("07a3d9e8-8597-498b-869c-cff79e0df516"),
     "Karn, Scion of Urza",
-    CardArt::new("07a3d9e8-8597-498b-869c-cff79e0df516", "Chase Stone"),
+    "07a3d9e8-8597-498b-869c-cff79e0df516",
+    "Chase Stone",
     CardSet::Dominaria,
     // Colorless, so every deck can play him: a card every turn that the
     // other player picks, the pile of leftovers he can cash in later, and a
@@ -138,18 +138,18 @@ pub(in crate::card::sets) static KARN_SCION_OF_URZA: CardRecord = CardRecord::ne
 // DOM 81 — Cast Down
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAST_DOWN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("116ce944-6871-4f51-a889-d9c4a5d7cff2"),
     "Cast Down",
-    crate::card::CardArt::new("aba79021-39af-4e74-beb5-f2f508c865b2", "Tyler Walpole"),
+    "116ce944-6871-4f51-a889-d9c4a5d7cff2",
+    "Bastien L. Deharme",
     crate::card::CardSet::Dominaria,
     crate::card::CardRules::unsupported(),
 );
 
 // DOM 207 — Teferi, Hero of Dominaria
 pub(in crate::card::sets) static TEFERI_HERO_OF_DOMINARIA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5d10b752-d9cb-419d-a5c4-d4ee1acb655e"),
     "Teferi, Hero of Dominaria",
-    crate::card::CardArt::new("5d10b752-d9cb-419d-a5c4-d4ee1acb655e", "Chris Rallis"),
+    "5d10b752-d9cb-419d-a5c4-d4ee1acb655e",
+    "Chris Rallis",
     crate::card::CardSet::Dominaria,
     // Five mana that draws a card and leaves two lands up, so the turn he
     // lands is not the turn he costs you: the plus pays for the counterspell
@@ -237,9 +237,9 @@ pub(in crate::card::sets) static TEFERI_HERO_OF_DOMINARIA: CardRecord = CardReco
 // DOM 213 — Damping Sphere
 // Audit: unsupported — Needs a static replacement changing a land ability producing two or more mana into exactly {C}.
 pub(in crate::card::sets) static DAMPING_SPHERE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a5c7d16b-8f4e-42b9-be24-3cb091932d7c"),
     "Damping Sphere",
-    CardArt::new("a5c7d16b-8f4e-42b9-be24-3cb091932d7c", "Adam Paquette"),
+    "a5c7d16b-8f4e-42b9-be24-3cb091932d7c",
+    "Adam Paquette",
     CardSet::Dominaria,
     CardRules::unsupported(),
 );

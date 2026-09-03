@@ -677,32 +677,34 @@ fn validate_declaration<'a>(
                 index + 1
             )
         });
-    let identity = lines
-        .get(initializer_index + 1)
-        .map_or("", |line| line.trim());
-    assert!(
-        identity
-            .strip_suffix(',')
-            .unwrap_or(identity)
-            .replace('_', "")
-            .parse::<u64>()
-            .is_ok()
-            || identity.starts_with("PrintingAnchor::scryfall("),
-        "{}:{}: expected a legacy ID or immutable printing anchor",
-        path.display(),
-        initializer_index + 2
-    );
     let name = lines
-        .get(initializer_index + 2)
+        .get(initializer_index + 1)
         .and_then(|line| line.trim().strip_prefix('"'))
         .and_then(|line| line.strip_suffix("\","))
         .unwrap_or_else(|| {
             panic!(
                 "{}:{}: expected a one-line canonical card name",
                 path.display(),
+                initializer_index + 2
+            )
+        });
+    let scryfall_id = lines
+        .get(initializer_index + 2)
+        .and_then(|line| line.trim().strip_prefix('"'))
+        .and_then(|line| line.strip_suffix("\","))
+        .unwrap_or_else(|| {
+            panic!(
+                "{}:{}: expected a one-line debut-art Scryfall UUID",
+                path.display(),
                 initializer_index + 3
             )
         });
+    assert!(
+        super::is_uuid(scryfall_id),
+        "{}:{}: invalid debut-art Scryfall UUID: {scryfall_id}",
+        path.display(),
+        initializer_index + 3,
+    );
     assert!(
         header_name == name
             || header_name

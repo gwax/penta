@@ -1,11 +1,11 @@
 //! Wilds of Eldraine cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::PlayOptionDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityOperationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AlternateSpellKind, AppliedEffectDef, AppliedRuleDef, CardArt, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
+    AlternateSpellKind, AppliedEffectDef, AppliedRuleDef, CardComposition, CardEffectStatus,
+    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
     CharacteristicOperationDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, PlayerSetDef,
     ResolvedEffectDurationDef, SpellForm, SpellResolutionDestinationDef, TokenCharacteristics,
@@ -17,9 +17,9 @@ use crate::{CardPartId, PlayOptionId, mana_cost};
 // WOE 62 — Mocking Sprite
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOCKING_SPRITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e595014d-4ff4-4561-b7f2-a9bd56300b01"),
     "Mocking Sprite",
-    crate::card::CardArt::new("e595014d-4ff4-4561-b7f2-a9bd56300b01", "Ben Hill"),
+    "e595014d-4ff4-4561-b7f2-a9bd56300b01",
+    "Ben Hill",
     crate::card::CardSet::WildsOfEldraine,
     crate::card::CardRules::unsupported(),
 );
@@ -27,9 +27,9 @@ pub(in crate::card::sets) static MOCKING_SPRITE: CardRecord = CardRecord::new(
 // WOE 83 — Candy Grapple
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CANDY_GRAPPLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("190d97bc-dbef-496d-9bd1-b785bdf8a964"),
     "Candy Grapple",
-    crate::card::CardArt::new("190d97bc-dbef-496d-9bd1-b785bdf8a964", "Konstantin Porubov"),
+    "190d97bc-dbef-496d-9bd1-b785bdf8a964",
+    "Konstantin Porubov",
     crate::card::CardSet::WildsOfEldraine,
     crate::card::CardRules::unsupported(),
 );
@@ -37,9 +37,9 @@ pub(in crate::card::sets) static CANDY_GRAPPLE: CardRecord = CardRecord::new(
 // WOE 116 — Voracious Vermin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VORACIOUS_VERMIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8059be65-3c73-49bb-a3b6-c346ce2f9fa4"),
     "Voracious Vermin",
-    crate::card::CardArt::new("8059be65-3c73-49bb-a3b6-c346ce2f9fa4", "Milivoj Ćeran"),
+    "8059be65-3c73-49bb-a3b6-c346ce2f9fa4",
+    "Milivoj Ćeran",
     crate::card::CardSet::WildsOfEldraine,
     crate::card::CardRules::unsupported(),
 );
@@ -47,18 +47,18 @@ pub(in crate::card::sets) static VORACIOUS_VERMIN: CardRecord = CardRecord::new(
 // WOE 131 — Gnawing Crescendo
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GNAWING_CRESCENDO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("254fc64a-9734-44a6-8869-ab03512f1a99"),
     "Gnawing Crescendo",
-    crate::card::CardArt::new("254fc64a-9734-44a6-8869-ab03512f1a99", "Alexey Kruglov"),
+    "254fc64a-9734-44a6-8869-ab03512f1a99",
+    "Alexey Kruglov",
     crate::card::CardSet::WildsOfEldraine,
     crate::card::CardRules::unsupported(),
 );
 
 // WOE 142 — Monstrous Rage
 pub(in crate::card::sets) static MONSTROUS_RAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("eef5a0ae-5907-42c9-a097-3f973737e392"),
     "Monstrous Rage",
-    CardArt::new("eef5a0ae-5907-42c9-a097-3f973737e392", "Borja Pindado"),
+    "eef5a0ae-5907-42c9-a097-3f973737e392",
+    "Borja Pindado",
     CardSet::WildsOfEldraine,
     // One mana for three power and trample this turn, two of which stay
     // afterwards on the back of the Role.
@@ -123,10 +123,10 @@ pub(in crate::card::sets) static MONSTROUS_RAGE: CardRecord = CardRecord::new(
 );
 
 // WOE 242 — Agatha's Soul Cauldron
-pub(in crate::card::sets) static AGATHAS_SOUL_CAULDRON: CardRecord = CardRecord::new_with_legacy_id(
-    2251,
+pub(in crate::card::sets) static AGATHAS_SOUL_CAULDRON: CardRecord = CardRecord::new(
     "Agatha's Soul Cauldron",
-    CardArt::new("019b51b0-e5c6-4208-922b-7736686dddcd", "Jason A. Engle"),
+    "019b51b0-e5c6-4208-922b-7736686dddcd",
+    "Jason A. Engle",
     CardSet::WildsOfEldraine,
     CardRules::new_artifact(mana_cost!("{2}"))
         .with_supertype(CardSupertype::Legendary)
@@ -221,9 +221,9 @@ pub(in crate::card::sets) static AGATHAS_SOUL_CAULDRON: CardRecord = CardRecord:
 // WOE 243 — Candy Trail
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CANDY_TRAIL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1a860925-d912-49e5-9ddc-41ab26916bb3"),
     "Candy Trail",
-    crate::card::CardArt::new("1a860925-d912-49e5-9ddc-41ab26916bb3", "Alix Branwyn"),
+    "1a860925-d912-49e5-9ddc-41ab26916bb3",
+    "Alix Branwyn",
     crate::card::CardSet::WildsOfEldraine,
     crate::card::CardRules::unsupported(),
 );
@@ -317,9 +317,9 @@ fn virtue_of_loyalty_composition() -> CardComposition {
 }
 
 pub(in crate::card::sets) static VIRTUE_OF_LOYALTY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9622e597-dc7c-4198-9ce5-4df53bb0c96c"),
     "Virtue of Loyalty",
-    CardArt::new("9622e597-dc7c-4198-9ce5-4df53bb0c96c", "Keith Garletts"),
+    "9622e597-dc7c-4198-9ce5-4df53bb0c96c",
+    "Keith Garletts",
     CardSet::WildsOfEldraine,
     virtue_of_loyalty_rules(),
 )

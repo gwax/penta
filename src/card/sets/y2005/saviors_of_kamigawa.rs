@@ -1,8 +1,7 @@
 //! SOK card records required by supported formats.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::AbilityDef;
-use crate::CardArt;
 use crate::CardRules;
 use crate::CardSet;
 use crate::CardSupertype;
@@ -19,21 +18,18 @@ use crate::mana_cost;
 // SOK 63 — Death Denied
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEATH_DENIED: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8f66ddc5-f5e6-44de-8189-87b6521d1fea"),
     "Death Denied",
-    crate::card::CardArt::new("8f66ddc5-f5e6-44de-8189-87b6521d1fea", "Greg Hildebrandt"),
+    "8f66ddc5-f5e6-44de-8189-87b6521d1fea",
+    "Greg Hildebrandt",
     crate::card::CardSet::SaviorsOfKamigawa,
     crate::card::CardRules::unsupported(),
 );
 
 // SOK 147 — Seek the Horizon
-pub(in crate::card::sets) static SEEK_THE_HORIZON: CardRecord = CardRecord::new_with_legacy_id(
-    1367,
+pub(in crate::card::sets) static SEEK_THE_HORIZON: CardRecord = CardRecord::new(
     "Seek the Horizon",
-    CardArt::new(
-        "b6f52ac7-933f-4b31-8576-338f5dcf4285",
-        "Howard Lyon",
-    ),
+    "49f8a9e7-f505-4fc5-b820-0af1ee1960c7",
+    "Eric Polak",
     CardSet::SaviorsOfKamigawa,
     CardRules::new_sorcery(mana_cost!("{3}{G}")).with_ability(AbilityDef::spell(
         "Search your library for up to three basic land reveal them, put them into your hand, then shuffle.",
@@ -59,10 +55,10 @@ pub(in crate::card::sets) static SEEK_THE_HORIZON: CardRecord = CardRecord::new_
 );
 
 // SOK 158 — Pithing Needle
-pub(in crate::card::sets) static PITHING_NEEDLE: CardRecord = CardRecord::new_with_legacy_id(
-    196,
+pub(in crate::card::sets) static PITHING_NEEDLE: CardRecord = CardRecord::new(
     "Pithing Needle",
-    CardArt::new("786c1e91-9d75-46a3-9e0d-56d29fcb01a7", "Anthony Palumbo"),
+    "78eb9e1d-113e-45ff-8435-32ee42fa5631",
+    "Pete Venters",
     CardSet::SaviorsOfKamigawa,
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
         abilities::choose_card_name_as_enters(

@@ -10,10 +10,11 @@ philosophy, [implementing cards](implementing-cards.md) for extension guidance,
 ## Identities and zones
 
 A `CardDefinitionId` identifies one canonical card name and rules identity in
-the catalog. Existing numeric meanings remain fixed; new definitions derive a
-positive, JavaScript-safe 52-bit value from an explicitly frozen exact
-preferred-printing UUID: the first English-language paper printing when one
-exists, otherwise the first paper printing in any language. The values are
+the catalog. New definitions derive a positive, JavaScript-safe 52-bit value
+from their exact debut-art Scryfall UUID: the first English-language paper
+printing when one exists, otherwise the first paper printing in any language.
+Older numeric meanings remain fixed through a separate compatibility lookup,
+without appearing in current card declarations. The values are
 opaque and sparse, while the catalog keeps definitions dense internally behind
 an ID-to-index map. Copy limits, banned and restricted lists, and executable
 behavior all use that canonical identity. A `CardPrintingId` identifies one

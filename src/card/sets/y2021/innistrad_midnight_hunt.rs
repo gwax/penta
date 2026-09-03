@@ -1,6 +1,6 @@
 //! Innistrad: Midnight Hunt cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
     CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
@@ -10,10 +10,10 @@ use crate::{TargetIndex, mana_cost};
 
 // MID 1 — Adeline, Resplendent Cathar
 pub(in crate::card::sets) static ADELINE_RESPLENDENT_CATHAR: CardRecord =
-    CardRecord::new_with_legacy_id(
-        2280,
-        "Adeline, Resplendent Cathar",
-        CardArt::new("18092f68-b96e-4084-9eba-b240d2195d81", "Bryan Sola"),
+    CardRecord::new(
+    "Adeline, Resplendent Cathar",
+    "18092f68-b96e-4084-9eba-b240d2195d81",
+    "Bryan Sola",
         CardSet::InnistradMidnightHunt,
         // Three mana that attacks for four the turn after it lands and for more
         // every turn after that, because each token it makes makes it bigger.
@@ -63,10 +63,10 @@ pub(in crate::card::sets) static ADELINE_RESPLENDENT_CATHAR: CardRecord =
     );
 
 // MID 10 — Cathar Commando
-pub(in crate::card::sets) static CATHAR_COMMANDO: CardRecord = CardRecord::new_with_legacy_id(
-    2273,
+pub(in crate::card::sets) static CATHAR_COMMANDO: CardRecord = CardRecord::new(
     "Cathar Commando",
-    CardArt::new("98cbc1c2-b76e-4da3-aa43-00e10b2ce532", "Evyn Fong"),
+    "98cbc1c2-b76e-4da3-aa43-00e10b2ce532",
+    "Evyn Fong",
     CardSet::InnistradMidnightHunt,
     // Flash is what makes the two halves one card: it can be held up as
     // removal and cashed in as a 3/1 when nothing needs killing.
@@ -92,9 +92,9 @@ pub(in crate::card::sets) static CATHAR_COMMANDO: CardRecord = CardRecord::new_w
 // MID 24 — Homestead Courage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HOMESTEAD_COURAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("73a9c49f-fcd3-4572-bac7-6eb06fdc0815"),
     "Homestead Courage",
-    crate::card::CardArt::new("73a9c49f-fcd3-4572-bac7-6eb06fdc0815", "Colin Boyer"),
+    "73a9c49f-fcd3-4572-bac7-6eb06fdc0815",
+    "Colin Boyer",
     crate::card::CardSet::InnistradMidnightHunt,
     crate::card::CardRules::unsupported(),
 );
@@ -102,18 +102,18 @@ pub(in crate::card::sets) static HOMESTEAD_COURAGE: CardRecord = CardRecord::new
 // MID 32 — Search Party Captain
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SEARCH_PARTY_CAPTAIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cb9006c1-2e6f-4bca-a1c4-3cf2a8b6e964"),
     "Search Party Captain",
-    crate::card::CardArt::new("cb9006c1-2e6f-4bca-a1c4-3cf2a8b6e964", "Mike Bierek"),
+    "cb9006c1-2e6f-4bca-a1c4-3cf2a8b6e964",
+    "Mike Bierek",
     crate::card::CardSet::InnistradMidnightHunt,
     crate::card::CardRules::unsupported(),
 );
 
 // MID 44 — Consider
 pub(in crate::card::sets) static CONSIDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0b3f40a0-5f58-4157-aed9-b1a52e922c3c"),
     "Consider",
-    CardArt::new("a211d505-4d40-4914-a9da-220770d6ddbc", "Zezhou Chen"),
+    "a211d505-4d40-4914-a9da-220770d6ddbc",
+    "Zezhou Chen",
     CardSet::InnistradMidnightHunt,
     // One mana to see two cards deep and choose which of them the deck is
     // better off having in the graveyard.
@@ -133,9 +133,9 @@ pub(in crate::card::sets) static CONSIDER: CardRecord = CardRecord::new(
 // MID 96 — Diregraf Horde
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DIREGRAF_HORDE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("153be768-ddad-44f2-bcdd-c40353c807d7"),
     "Diregraf Horde",
-    crate::card::CardArt::new("153be768-ddad-44f2-bcdd-c40353c807d7", "Alex Negrea"),
+    "153be768-ddad-44f2-bcdd-c40353c807d7",
+    "Alex Negrea",
     crate::card::CardSet::InnistradMidnightHunt,
     crate::card::CardRules::unsupported(),
 );
@@ -143,18 +143,18 @@ pub(in crate::card::sets) static DIREGRAF_HORDE: CardRecord = CardRecord::new(
 // MID 100 — Ecstatic Awakener // Awoken Demon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ECSTATIC_AWAKENER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bbdad18e-e262-41f9-b252-1cbdcdd1b5f9"),
     "Ecstatic Awakener",
-    crate::card::CardArt::new("bbdad18e-e262-41f9-b252-1cbdcdd1b5f9", "Tuan Duong Chu"),
+    "bbdad18e-e262-41f9-b252-1cbdcdd1b5f9",
+    "Tuan Duong Chu",
     crate::card::CardSet::InnistradMidnightHunt,
     crate::card::CardRules::unsupported(),
 );
 
 // MID 107 — Infernal Grasp
 pub(in crate::card::sets) static INFERNAL_GRASP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("17824929-f131-4b8d-addb-66c25323155e"),
     "Infernal Grasp",
-    CardArt::new("17824929-f131-4b8d-addb-66c25323155e", "Naomi Baker"),
+    "17824929-f131-4b8d-addb-66c25323155e",
+    "Naomi Baker",
     CardSet::InnistradMidnightHunt,
     // Two mana, no restriction on what it answers, and the two life is the
     // whole of the price.
@@ -183,9 +183,9 @@ pub(in crate::card::sets) static INFERNAL_GRASP: CardRecord = CardRecord::new(
 // MID 128 — Ardent Elementalist
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARDENT_ELEMENTALIST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f58592f7-1df5-428d-9dde-e6acd9a5d1d5"),
     "Ardent Elementalist",
-    crate::card::CardArt::new("f58592f7-1df5-428d-9dde-e6acd9a5d1d5", "Miguel Mercado"),
+    "f58592f7-1df5-428d-9dde-e6acd9a5d1d5",
+    "Miguel Mercado",
     crate::card::CardSet::InnistradMidnightHunt,
     crate::card::CardRules::unsupported(),
 );

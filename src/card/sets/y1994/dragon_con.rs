@@ -2,17 +2,17 @@
 
 use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, ComparisonDef,
-    EffectDef, EffectRecipientDef, InstalledTriggerDef, PlayerRelation, ResolvedEffectDurationDef,
+    AbilityCostDef, AbilityDef, AppliedEffectDef, CardRules, CardSet, ComparisonDef, EffectDef,
+    EffectRecipientDef, InstalledTriggerDef, PlayerRelation, ResolvedEffectDurationDef,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, abilities,
 };
 use crate::mana_cost;
 
 // PDRC 1 — Nalathni Dragon
-pub(in crate::card::sets) static NALATHNI_DRAGON: CardRecord = CardRecord::new_with_legacy_id(
-    1781,
+pub(in crate::card::sets) static NALATHNI_DRAGON: CardRecord = CardRecord::new(
     "Nalathni Dragon",
-    CardArt::new("7f9c6be5-ec44-4c66-aad6-cf9eca765b6b", "Michael Whelan"),
+    "7f9c6be5-ec44-4c66-aad6-cf9eca765b6b",
+    "Michael Whelan",
     CardSet::DragonCon,
     CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Dragon"], 1, 1).with_abilities(&[
         abilities::flying(),

@@ -1,10 +1,10 @@
 //! Fifth Dawn cards cataloged for the Vintage Cube.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::ResolvedEffectDurationDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardRules, CardSet,
+    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardRules, CardSet,
     CardType, CounterKind, EffectDef, EffectRecipientDef, GraveyardPlayPermissionDef, ManaColor,
     ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation,
     ReplacementEffectDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
@@ -14,9 +14,9 @@ use crate::{TargetIndex, mana_cost};
 // 5DN 27 — Condescend
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CONDESCEND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e8303b80-e29a-46b8-90b0-c0cfe551b435"),
     "Condescend",
-    crate::card::CardArt::new("e8303b80-e29a-46b8-90b0-c0cfe551b435", "Ron Spears"),
+    "e8303b80-e29a-46b8-90b0-c0cfe551b435",
+    "Ron Spears",
     crate::card::CardSet::FifthDawn,
     crate::card::CardRules::unsupported(),
 );
@@ -24,18 +24,18 @@ pub(in crate::card::sets) static CONDESCEND: CardRecord = CardRecord::new(
 // 5DN 36 — Serum Visions
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SERUM_VISIONS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("77e241f0-4cdc-4e37-b5b1-6f47f385d381"),
     "Serum Visions",
-    crate::card::CardArt::new("4bc61952-88ba-447a-835a-f1e9643fcd0d", "Ben Thompson"),
+    "4bc61952-88ba-447a-835a-f1e9643fcd0d",
+    "Ben Thompson",
     crate::card::CardSet::FifthDawn,
     crate::card::CardRules::unsupported(),
 );
 
 // 5DN 39 — Trinket Mage
 pub(in crate::card::sets) static TRINKET_MAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4c5a41ab-1840-4abb-a8bb-f0b1e7d1b450"),
     "Trinket Mage",
-    crate::card::CardArt::new("cb52e7ba-5340-44e1-9b63-775e1f387925", "Scott Chou"),
+    "4c5a41ab-1840-4abb-a8bb-f0b1e7d1b450",
+    "Mark A. Nelson",
     crate::card::CardSet::FifthDawn,
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Human", "Wizard"], 2, 2).with_ability(
         abilities::enters_trigger(
@@ -63,10 +63,10 @@ pub(in crate::card::sets) static TRINKET_MAGE: CardRecord = CardRecord::new(
 );
 
 // 5DN 55 — Night's Whisper
-pub(in crate::card::sets) static NIGHTS_WHISPER: CardRecord = CardRecord::new_with_legacy_id(
-    2300,
+pub(in crate::card::sets) static NIGHTS_WHISPER: CardRecord = CardRecord::new(
     "Night's Whisper",
-    CardArt::new("61f0c6f6-b90d-4eb1-a5db-86e0a3997501", "David Martin"),
+    "61f0c6f6-b90d-4eb1-a5db-86e0a3997501",
+    "David Martin",
     CardSet::FifthDawn,
     // Two mana and two life for two which is the rate every black
     // deck in the cube is happy to pay and no other colour is offered.
@@ -89,10 +89,10 @@ pub(in crate::card::sets) static NIGHTS_WHISPER: CardRecord = CardRecord::new_wi
 );
 
 // 5DN 65 — Furnace Whelp
-pub(in crate::card::sets) static FURNACE_WHELP: CardRecord = CardRecord::new_with_legacy_id(
-    1016,
+pub(in crate::card::sets) static FURNACE_WHELP: CardRecord = CardRecord::new(
     "Furnace Whelp",
-    CardArt::new("41e73d9c-8c17-4c3c-b535-e21f03e577bc", "Matt Cavotta"),
+    "a1726eba-c471-40bd-a487-40d910b75d64",
+    "Matt Cavotta",
     CardSet::FifthDawn,
     CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Dragon"], 2, 2).with_abilities(&[
         abilities::flying(),
@@ -113,9 +113,9 @@ pub(in crate::card::sets) static FURNACE_WHELP: CardRecord = CardRecord::new_wit
 
 // 5DN 85 — Dawn's Reflection
 pub(in crate::card::sets) static DAWNS_REFLECTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("131a124f-f11e-4ea1-a7b2-b94eea988d4e"),
     "Dawn's Reflection",
-    CardArt::new("131a124f-f11e-4ea1-a7b2-b94eea988d4e", "John Avon"),
+    "131a124f-f11e-4ea1-a7b2-b94eea988d4e",
+    "John Avon",
     CardSet::FifthDawn,
     CardRules::new_enchantment(mana_cost!("{3}{G}"))
         .with_subtypes(&["Aura"])
@@ -133,10 +133,10 @@ pub(in crate::card::sets) static DAWNS_REFLECTION: CardRecord = CardRecord::new(
 );
 
 // 5DN 86 — Eternal Witness
-pub(in crate::card::sets) static ETERNAL_WITNESS: CardRecord = CardRecord::new_with_legacy_id(
-    2266,
+pub(in crate::card::sets) static ETERNAL_WITNESS: CardRecord = CardRecord::new(
     "Eternal Witness",
-    CardArt::new("c7e10ca7-1e5d-4224-82cf-798a4d436d72", "Terese Nielsen"),
+    "c7e10ca7-1e5d-4224-82cf-798a4d436d72",
+    "Terese Nielsen",
     CardSet::FifthDawn,
     // A 2/1 body nobody plays it for. What it is worth is the card, and
     // every way of making it enter again is worth another one.
@@ -174,21 +174,18 @@ pub(in crate::card::sets) static ETERNAL_WITNESS: CardRecord = CardRecord::new_w
 // 5DN 110 — Clock of Omens
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CLOCK_OF_OMENS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0ffce71b-eb60-4649-a62b-a1b4acaa9d2d"),
     "Clock of Omens",
-    crate::card::CardArt::new(
-        "0ffce71b-eb60-4649-a62b-a1b4acaa9d2d",
-        "Alex Horley-Orlandelli",
-    ),
+    "0ffce71b-eb60-4649-a62b-a1b4acaa9d2d",
+    "Alex Horley-Orlandelli",
     crate::card::CardSet::FifthDawn,
     crate::card::CardRules::unsupported(),
 );
 
 // 5DN 114 — Crucible of Worlds
-pub(in crate::card::sets) static CRUCIBLE_OF_WORLDS: CardRecord = CardRecord::new_with_legacy_id(
-    2203,
+pub(in crate::card::sets) static CRUCIBLE_OF_WORLDS: CardRecord = CardRecord::new(
     "Crucible of Worlds",
-    CardArt::new("312a6058-de08-487d-95bd-b3c56807fdd6", "Ron Spencer"),
+    "312a6058-de08-487d-95bd-b3c56807fdd6",
+    "Ron Spencer",
     CardSet::FifthDawn,
     // One line, and it turns every fetchland, every Wasteland, and every
     // land anything made you discard back into a land drop.
@@ -209,10 +206,10 @@ pub(in crate::card::sets) static CRUCIBLE_OF_WORLDS: CardRecord = CardRecord::ne
 );
 
 // 5DN 115 — Door to Nothingness
-pub(in crate::card::sets) static DOOR_TO_NOTHINGNESS: CardRecord = CardRecord::new_with_legacy_id(
-    1045,
+pub(in crate::card::sets) static DOOR_TO_NOTHINGNESS: CardRecord = CardRecord::new(
     "Door to Nothingness",
-    CardArt::new("57877b1c-e91d-4941-81bd-008dff1272ed", "Svetlin Velinov"),
+    "c92ffeae-6b51-4426-a080-b1b065b1290d",
+    "Puddnhead",
     CardSet::FifthDawn,
     CardRules::new_artifact(mana_cost!("{5}")).with_abilities(&[
         abilities::enters_tapped("This artifact enters tapped."),
@@ -235,9 +232,9 @@ pub(in crate::card::sets) static DOOR_TO_NOTHINGNESS: CardRecord = CardRecord::n
 
 // 5DN 118 — Engineered Explosives
 pub(in crate::card::sets) static ENGINEERED_EXPLOSIVES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8492a272-e595-4f94-a6eb-08d29f211fd6"),
     "Engineered Explosives",
-    CardArt::new("8492a272-e595-4f94-a6eb-08d29f211fd6", "Ron Spears"),
+    "8492a272-e595-4f94-a6eb-08d29f211fd6",
+    "Ron Spears",
     CardSet::FifthDawn,
     CardRules::new_artifact(mana_cost!("{X}")).with_abilities(&[
             AbilityDef::as_enters(
@@ -276,18 +273,18 @@ pub(in crate::card::sets) static ENGINEERED_EXPLOSIVES: CardRecord = CardRecord:
 // 5DN 128 — Guardian Idol
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GUARDIAN_IDOL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a6a62a73-b7db-47ec-9b68-65dd7c1a06a5"),
     "Guardian Idol",
-    crate::card::CardArt::new("1537f377-64c3-4c3b-a276-28d8234c029b", "Igor Kieryluk"),
+    "a6a62a73-b7db-47ec-9b68-65dd7c1a06a5",
+    "Edward P. Beard, Jr.",
     crate::card::CardSet::FifthDawn,
     crate::card::CardRules::unsupported(),
 );
 
 // 5DN 143 — Pentad Prism
 pub(in crate::card::sets) static PENTAD_PRISM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("672b9b16-daef-44e6-9a3a-cfd9f3c78bc7"),
     "Pentad Prism",
-    CardArt::new("672b9b16-daef-44e6-9a3a-cfd9f3c78bc7", "David Martin"),
+    "672b9b16-daef-44e6-9a3a-cfd9f3c78bc7",
+    "David Martin",
     CardSet::FifthDawn,
     // Two mana of two colours for two mana of any colours, later: a ritual
     // that waits, which is why it wants a deck already casting things in

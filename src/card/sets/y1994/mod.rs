@@ -8,4 +8,4 @@ pub(super) mod legends;
 pub(super) mod revised;
 pub(super) mod the_dark;
 
-pub(super) use super::{CardRecord, PrintingAnchor, PrintingRecord};
+pub(super) use super::{CardRecord, PrintingRecord};

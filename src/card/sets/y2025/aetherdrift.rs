@@ -1,19 +1,18 @@
 //! Aetherdrift cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, BasicLandType, CardArt, CardRules, CardSet,
-    CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, TriggerConditionDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, BasicLandType, CardRules, CardSet, CardType,
+    ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef,
+    PlayerRelation, TriggerConditionDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
 // DFT 67 — Stock Up
-pub(in crate::card::sets) static STOCK_UP: CardRecord = CardRecord::new_with_legacy_id(
-    2179,
+pub(in crate::card::sets) static STOCK_UP: CardRecord = CardRecord::new(
     "Stock Up",
-    CardArt::new("0a786855-6eb4-42c0-a528-4842db46809d", "Izzy"),
+    "0a786855-6eb4-42c0-a528-4842db46809d",
+    "Izzy",
     CardSet::Aetherdrift,
     // Two cards for three mana at sorcery speed is unremarkable; seeing five
     // to find them is what puts it in a deck built around one or two cards.
@@ -31,9 +30,9 @@ pub(in crate::card::sets) static STOCK_UP: CardRecord = CardRecord::new_with_leg
 // DFT 79 — Chitin Gravestalker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHITIN_GRAVESTALKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("903b4141-04a3-44c4-9d3e-aa2a773d9883"),
     "Chitin Gravestalker",
-    crate::card::CardArt::new("903b4141-04a3-44c4-9d3e-aa2a773d9883", "Slawomir Maniak"),
+    "903b4141-04a3-44c4-9d3e-aa2a773d9883",
+    "Slawomir Maniak",
     crate::card::CardSet::Aetherdrift,
     crate::card::CardRules::unsupported(),
 );
@@ -41,18 +40,18 @@ pub(in crate::card::sets) static CHITIN_GRAVESTALKER: CardRecord = CardRecord::n
 // DFT 88 — Grim Bauble
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRIM_BAUBLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9bfdf60a-6f67-4872-8961-d63776b192c3"),
     "Grim Bauble",
-    crate::card::CardArt::new("9bfdf60a-6f67-4872-8961-d63776b192c3", "Wero Gallo"),
+    "9bfdf60a-6f67-4872-8961-d63776b192c3",
+    "Wero Gallo",
     crate::card::CardSet::Aetherdrift,
     crate::card::CardRules::unsupported(),
 );
 
 // DFT 191 — Brightglass Gearhulk
-pub(in crate::card::sets) static BRIGHTGLASS_GEARHULK: CardRecord = CardRecord::new_with_legacy_id(
-    2301,
+pub(in crate::card::sets) static BRIGHTGLASS_GEARHULK: CardRecord = CardRecord::new(
     "Brightglass Gearhulk",
-    CardArt::new("3dea5b45-925c-4732-8e9d-fa8232792736", "José Parodi"),
+    "3dea5b45-925c-4732-8e9d-fa8232792736",
+    "José Parodi",
     CardSet::Aetherdrift,
     // A 4/4 first striker with trample that also finds the two one-drops the
     // deck is built around, which is what four coloured pips buy.
@@ -103,9 +102,9 @@ pub(in crate::card::sets) static BRIGHTGLASS_GEARHULK: CardRecord = CardRecord::
 
 // DFT 250 — Bleachbone Verge
 pub(in crate::card::sets) static BLEACHBONE_VERGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("52dcdabd-a186-45fe-9fee-6c0f1afeaf16"),
     "Bleachbone Verge",
-    CardArt::new("52dcdabd-a186-45fe-9fee-6c0f1afeaf16", "Mark Tedin"),
+    "52dcdabd-a186-45fe-9fee-6c0f1afeaf16",
+    "Mark Tedin",
     CardSet::Aetherdrift,
     // Untapped and free either way: the black is unconditional, and the
     // white is what the rest of the mana base is for.
@@ -140,18 +139,18 @@ pub(in crate::card::sets) static BLEACHBONE_VERGE: CardRecord = CardRecord::new(
 // DFT 258 — Night Market
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NIGHT_MARKET: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a8c1dce3-6136-4294-9d2b-5ef8527d733b"),
     "Night Market",
-    crate::card::CardArt::new("a8c1dce3-6136-4294-9d2b-5ef8527d733b", "David Álvarez"),
+    "a8c1dce3-6136-4294-9d2b-5ef8527d733b",
+    "David Álvarez",
     crate::card::CardSet::Aetherdrift,
     crate::card::CardRules::unsupported(),
 );
 
 // DFT 260 — Riverpyre Verge
 pub(in crate::card::sets) static RIVERPYRE_VERGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("57a93a71-d77c-417f-85d0-cd420f573331"),
     "Riverpyre Verge",
-    CardArt::new("57a93a71-d77c-417f-85d0-cd420f573331", "Titus Lunter"),
+    "57a93a71-d77c-417f-85d0-cd420f573331",
+    "Titus Lunter",
     CardSet::Aetherdrift,
     // Untapped and free either way: the red is unconditional, and the blue
     // is what the second land in the deck is for.
@@ -185,9 +184,9 @@ pub(in crate::card::sets) static RIVERPYRE_VERGE: CardRecord = CardRecord::new(
 
 // DFT 264 — Sunbillow Verge
 pub(in crate::card::sets) static SUNBILLOW_VERGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("94ed132f-b818-4dbf-9b4a-e5acb067e0a4"),
     "Sunbillow Verge",
-    CardArt::new("94ed132f-b818-4dbf-9b4a-e5acb067e0a4", "Pete Venters"),
+    "94ed132f-b818-4dbf-9b4a-e5acb067e0a4",
+    "Pete Venters",
     CardSet::Aetherdrift,
     // Untapped and free either way: the white is unconditional, and the red
     // is what the rest of the mana base is for.
@@ -220,10 +219,10 @@ pub(in crate::card::sets) static SUNBILLOW_VERGE: CardRecord = CardRecord::new(
 );
 
 // DFT 268 — Wastewood Verge
-pub(in crate::card::sets) static WASTEWOOD_VERGE: CardRecord = CardRecord::new_with_legacy_id(
-    2196,
+pub(in crate::card::sets) static WASTEWOOD_VERGE: CardRecord = CardRecord::new(
     "Wastewood Verge",
-    CardArt::new("5ceacc7d-d407-4f82-af58-9bdf8426924e", "Bartek Fedyczak"),
+    "5ceacc7d-d407-4f82-af58-9bdf8426924e",
+    "Bartek Fedyczak",
     CardSet::Aetherdrift,
     // Untapped and free either way: the green is unconditional, and the
     // black is what the second land in the deck is for.

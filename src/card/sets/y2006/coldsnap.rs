@@ -1,24 +1,24 @@
 //! Coldsnap card records required by supported formats.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::CardType;
 use crate::ObjectPredicateDef;
 use crate::ZoneKind;
 use crate::ZonePlacement;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
-    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, ComparisonDef,
-    CounterKind, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, PlayerRefDef,
-    PlayerRelation, ReplacementEffectDef, TokenCharacteristics, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, abilities,
+    BattlefieldEntryModificationDef, CardRules, CardSet, CardSupertype, ComparisonDef, CounterKind,
+    EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, PlayerRefDef, PlayerRelation,
+    ReplacementEffectDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
 // CSP 33 — Flashfreeze
 pub(in crate::card::sets) static FLASHFREEZE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cefd9955-a195-4855-a00e-3809b96ca92b"),
     "Flashfreeze",
-    crate::card::CardArt::new("c425a629-371f-4624-b7a1-b34818ecccad", "Brian Despain"),
+    "cefd9955-a195-4855-a00e-3809b96ca92b",
+    "Brian Despain",
     crate::card::CardSet::Coldsnap,
     CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
         "Counter target red or green spell.",
@@ -46,9 +46,9 @@ pub(in crate::card::sets) static FLASHFREEZE: CardRecord = CardRecord::new(
 
 // CSP 54 — Deathmark
 pub(in crate::card::sets) static DEATHMARK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e72e8728-d0a0-4ee5-87c3-092ca94225e0"),
     "Deathmark",
-    crate::card::CardArt::new("b101ff4a-8617-4c0a-8503-ed8c857ad000", "Steven Belledin"),
+    "e72e8728-d0a0-4ee5-87c3-092ca94225e0",
+    "Jeremy Jarvis",
     crate::card::CardSet::Coldsnap,
     CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
         "Destroy target green or white creature.",
@@ -71,9 +71,9 @@ pub(in crate::card::sets) static DEATHMARK: CardRecord = CardRecord::new(
 
 // CSP 138 — Mishra's Bauble
 pub(in crate::card::sets) static MISHRA_S_BAUBLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8a720448-017f-4f4a-9501-678245eaed17"),
     "Mishra's Bauble",
-    CardArt::new("8a720448-017f-4f4a-9501-678245eaed17", "Chippy"),
+    "8a720448-017f-4f4a-9501-678245eaed17",
+    "Chippy",
     CardSet::Coldsnap,
     // A free artifact that replaces itself a turn later. The looking is
     // incidental; what the card is played for is being an artifact that cost
@@ -107,9 +107,9 @@ pub(in crate::card::sets) static MISHRA_S_BAUBLE: CardRecord = CardRecord::new(
 
 // CSP 145 — Dark Depths
 pub(in crate::card::sets) static DARK_DEPTHS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("92409c3a-fb1a-4205-9fe1-0f5affc7b21d"),
     "Dark Depths",
-    CardArt::new("92409c3a-fb1a-4205-9fe1-0f5affc7b21d", "Stephan Martiniere"),
+    "92409c3a-fb1a-4205-9fe1-0f5affc7b21d",
+    "Stephan Martiniere",
     CardSet::Coldsnap,
     // Thirty mana the long way round, or none at all if something else takes
     // the counters off.

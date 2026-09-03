@@ -1,6 +1,6 @@
 //! Eventide cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::AbilityTargetPredicate;
 use crate::ManaColor;
 use crate::ZoneKind;
@@ -15,9 +15,9 @@ use crate::mana_cost;
 
 // EVE 1 — Archon of Justice
 pub(in crate::card::sets) static ARCHON_OF_JUSTICE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ab707e7f-8ab5-43f1-9428-6a17c1b672fa"),
     "Archon of Justice",
-    crate::card::CardArt::new("dcaee06f-edc1-4c3a-9ecc-97882c1b911e", "Jason Chan"),
+    "ab707e7f-8ab5-43f1-9428-6a17c1b672fa",
+    "Jason Chan",
     crate::card::CardSet::Eventide,
     CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Archon"], 4, 4).with_abilities(&[
         abilities::flying(),
@@ -37,9 +37,9 @@ pub(in crate::card::sets) static ARCHON_OF_JUSTICE: CardRecord = CardRecord::new
 
 // EVE 6 — Flickerwisp
 pub(in crate::card::sets) static FLICKERWISP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5bb3cb5c-8d66-4f5e-a9a9-917e6045f024"),
     "Flickerwisp",
-    CardArt::new("5bb3cb5c-8d66-4f5e-a9a9-917e6045f024", "Jeremy Enecio"),
+    "5bb3cb5c-8d66-4f5e-a9a9-917e6045f024",
+    "Jeremy Enecio",
     CardSet::Eventide,
     // Three mana for a 3/1 flier that also answers something for a turn:
     // an attacker, a blocker, a land on the turn it matters, or one of your
@@ -63,28 +63,28 @@ pub(in crate::card::sets) static FLICKERWISP: CardRecord = CardRecord::new(
 // EVE 41 — Raven's Crime
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAVEN_S_CRIME: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7ced5797-5de0-43ca-9dc9-e48912333a70"),
     "Raven's Crime",
-    crate::card::CardArt::new("7ced5797-5de0-43ca-9dc9-e48912333a70", "Warren Mahy"),
+    "7ced5797-5de0-43ca-9dc9-e48912333a70",
+    "Warren Mahy",
     crate::card::CardSet::Eventide,
     crate::card::CardRules::unsupported(),
 );
 
 // EVE 67 — Duskdale Wurm
-pub(in crate::card::sets) static DUSKDALE_WURM: CardRecord = CardRecord::new_with_legacy_id(
-    1033,
+pub(in crate::card::sets) static DUSKDALE_WURM: CardRecord = CardRecord::new(
     "Duskdale Wurm",
-    CardArt::new("7d1a2d9a-e14c-4c44-8cf1-a2ce09bdae27", "Dan Dos Santos"),
+    "8d10736d-047b-423f-9017-f59732d446bf",
+    "Dan Dos Santos",
     CardSet::Eventide,
     CardRules::new_creature(mana_cost!("{5}{G}{G}"), &["Wurm"], 7, 7)
         .with_abilities(&[abilities::trample()]),
 );
 
 // EVE 82 — Beckon Apparition
-pub(in crate::card::sets) static BECKON_APPARITION: CardRecord = CardRecord::new_with_legacy_id(
-    1127,
+pub(in crate::card::sets) static BECKON_APPARITION: CardRecord = CardRecord::new(
     "Beckon Apparition",
-    CardArt::new("8b2ef9c5-ca6f-4243-bd38-2b325257831c", "Cliff Childs"),
+    "3bae1a3b-881b-4b10-ac5f-822c809edc36",
+    "Larry MacDougall",
     CardSet::Eventide,
     CardRules::new_instant(mana_cost!("{W/B}")).with_ability(
         AbilityDef::spell_with_targets(
@@ -110,18 +110,18 @@ pub(in crate::card::sets) static BECKON_APPARITION: CardRecord = CardRecord::new
 // EVE 119 — Desecrator Hag
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DESECRATOR_HAG: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("74d2e092-c805-447c-b784-1896b69524e0"),
     "Desecrator Hag",
-    crate::card::CardArt::new("74d2e092-c805-447c-b784-1896b69524e0", "Fred Harper"),
+    "74d2e092-c805-447c-b784-1896b69524e0",
+    "Fred Harper",
     crate::card::CardSet::Eventide,
     crate::card::CardRules::unsupported(),
 );
 
 // EVE 139 — Figure of Destiny
-pub(in crate::card::sets) static FIGURE_OF_DESTINY: CardRecord = CardRecord::new_with_legacy_id(
-    2260,
+pub(in crate::card::sets) static FIGURE_OF_DESTINY: CardRecord = CardRecord::new(
     "Figure of Destiny",
-    CardArt::new("0da69523-cece-425a-b08a-fb27fac29374", "Scott M. Fischer"),
+    "0da69523-cece-425a-b08a-fb27fac29374",
+    "Scott M. Fischer",
     CardSet::Eventide,
     // A one-drop that is never a dead draw: it is a 1/1 on turn one and an
     // 8/8 flier on turn six, and every point of mana in between goes into it.

@@ -1,6 +1,6 @@
 //! Tarkir: Dragonstorm cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
@@ -36,9 +36,9 @@ static UGIN_EXILES_IT: EffectDef = EffectDef::MoveToZone {
 };
 
 pub(in crate::card::sets) static UGIN_EYE_OF_THE_STORMS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("64a5d494-efa1-446b-bebe-2ad36e154376"),
     "Ugin, Eye of the Storms",
-    CardArt::new("64a5d494-efa1-446b-bebe-2ad36e154376", "Joshua Raphael"),
+    "64a5d494-efa1-446b-bebe-2ad36e154376",
+    "Joshua Raphael",
     CardSet::TarkirDragonstorm,
     // Seven mana that answers something the moment it is cast and again for
     // every colorless spell after it, pays for the next one itself, and
@@ -128,9 +128,9 @@ pub(in crate::card::sets) static UGIN_EYE_OF_THE_STORMS: CardRecord = CardRecord
 
 // TDM 8 — Descendant of Storms
 pub(in crate::card::sets) static DESCENDANT_OF_STORMS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f632be90-9e7f-41f8-a52e-a2952354d730"),
     "Descendant of Storms",
-    CardArt::new("f632be90-9e7f-41f8-a52e-a2952354d730", "Lie Setiawan"),
+    "f632be90-9e7f-41f8-a52e-a2952354d730",
+    "Lie Setiawan",
     CardSet::TarkirDragonstorm,
     // A one-mana 2/1 that attacks well early and has somewhere to put mana
     // late. Which half of endure you want changes with the board: the
@@ -158,9 +158,9 @@ pub(in crate::card::sets) static DESCENDANT_OF_STORMS: CardRecord = CardRecord::
 // TDM 12 — Fortress Kin-Guard
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FORTRESS_KIN_GUARD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b647a018-1d70-43a1-a265-928bcd863689"),
     "Fortress Kin-Guard",
-    crate::card::CardArt::new("b647a018-1d70-43a1-a265-928bcd863689", "Daneen Wilkerson"),
+    "b647a018-1d70-43a1-a265-928bcd863689",
+    "Daneen Wilkerson",
     crate::card::CardSet::TarkirDragonstorm,
     crate::card::CardRules::unsupported(),
 );
@@ -168,9 +168,9 @@ pub(in crate::card::sets) static FORTRESS_KIN_GUARD: CardRecord = CardRecord::ne
 // TDM 21 — Riling Dawnbreaker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RILING_DAWNBREAKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("312f7072-3bf8-449f-bfb7-93727ef26c66"),
     "Riling Dawnbreaker",
-    crate::card::CardArt::new("312f7072-3bf8-449f-bfb7-93727ef26c66", "Tuan Duong Chu"),
+    "312f7072-3bf8-449f-bfb7-93727ef26c66",
+    "Tuan Duong Chu",
     crate::card::CardSet::TarkirDragonstorm,
     crate::card::CardRules::unsupported(),
 );
@@ -178,18 +178,18 @@ pub(in crate::card::sets) static RILING_DAWNBREAKER: CardRecord = CardRecord::ne
 // TDM 23 — Salt Road Packbeast
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SALT_ROAD_PACKBEAST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("98d548c9-42bc-4155-8211-0aea801c3724"),
     "Salt Road Packbeast",
-    crate::card::CardArt::new("98d548c9-42bc-4155-8211-0aea801c3724", "Ben Wootten"),
+    "98d548c9-42bc-4155-8211-0aea801c3724",
+    "Ben Wootten",
     crate::card::CardSet::TarkirDragonstorm,
     crate::card::CardRules::unsupported(),
 );
 
 // TDM 33 — Voice of Victory
-pub(in crate::card::sets) static VOICE_OF_VICTORY: CardRecord = CardRecord::new_with_legacy_id(
-    2282,
+pub(in crate::card::sets) static VOICE_OF_VICTORY: CardRecord = CardRecord::new(
     "Voice of Victory",
-    CardArt::new("ec3de5f4-bb55-4ab9-995f-f3e0dc22c1bb", "Joshua Cairos"),
+    "ec3de5f4-bb55-4ab9-995f-f3e0dc22c1bb",
+    "Joshua Cairos",
     CardSet::TarkirDragonstorm,
     // Two mana that adds two power to every attack and turns off every
     // instant your opponent was holding for the turn you attack.
@@ -249,12 +249,9 @@ pub(in crate::card::sets) static VOICE_OF_VICTORY: CardRecord = CardRecord::new_
 // TDM 119 — Seize Opportunity
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SEIZE_OPPORTUNITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f7818d28-b9a5-4341-9adc-666070b8878d"),
     "Seize Opportunity",
-    crate::card::CardArt::new(
-        "f7818d28-b9a5-4341-9adc-666070b8878d",
-        "Josiah \"Jo\" Cameron",
-    ),
+    "f7818d28-b9a5-4341-9adc-666070b8878d",
+    "Josiah \"Jo\" Cameron",
     crate::card::CardSet::TarkirDragonstorm,
     crate::card::CardRules::unsupported(),
 );
@@ -262,18 +259,18 @@ pub(in crate::card::sets) static SEIZE_OPPORTUNITY: CardRecord = CardRecord::new
 // TDM 120 — Shock Brigade
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHOCK_BRIGADE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("66940466-8e9d-4a85-bfb0-e92189b7a121"),
     "Shock Brigade",
-    crate::card::CardArt::new("66940466-8e9d-4a85-bfb0-e92189b7a121", "Fajareka Setiawan"),
+    "66940466-8e9d-4a85-bfb0-e92189b7a121",
+    "Fajareka Setiawan",
     crate::card::CardSet::TarkirDragonstorm,
     crate::card::CardRules::unsupported(),
 );
 
 // TDM 127 — Tersa Lightshatter
 pub(in crate::card::sets) static TERSA_LIGHTSHATTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("39f07b5b-d764-4c88-920b-36b0ba1c62b0"),
     "Tersa Lightshatter",
-    CardArt::new("39f07b5b-d764-4c88-920b-36b0ba1c62b0", "Olivier Bernard"),
+    "99e96b34-b1c4-4647-a38e-2cf1aedaaace",
+    "Olivier Bernard",
     CardSet::TarkirDragonstorm,
     // Three mana for a 3/3 that attacks immediately and turns a spent hand
     // into a card a turn. What she asks for is the graveyard the deck was
@@ -349,9 +346,9 @@ pub(in crate::card::sets) static TERSA_LIGHTSHATTER: CardRecord = CardRecord::ne
 // TDM 134 — Ainok Wayfarer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AINOK_WAYFARER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("57695a9b-8f72-4ccc-a946-5d5037b09b8f"),
     "Ainok Wayfarer",
-    crate::card::CardArt::new("57695a9b-8f72-4ccc-a946-5d5037b09b8f", "Filipe Pagliuso"),
+    "57695a9b-8f72-4ccc-a946-5d5037b09b8f",
+    "Filipe Pagliuso",
     crate::card::CardSet::TarkirDragonstorm,
     crate::card::CardRules::unsupported(),
 );
@@ -359,9 +356,9 @@ pub(in crate::card::sets) static AINOK_WAYFARER: CardRecord = CardRecord::new(
 // TDM 137 — Champion of Dusan
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHAMPION_OF_DUSAN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c51dcdab-38ee-4804-8859-09adc353c182"),
     "Champion of Dusan",
-    crate::card::CardArt::new("c51dcdab-38ee-4804-8859-09adc353c182", "Bastien L. Deharme"),
+    "c51dcdab-38ee-4804-8859-09adc353c182",
+    "Bastien L. Deharme",
     crate::card::CardSet::TarkirDragonstorm,
     crate::card::CardRules::unsupported(),
 );
@@ -369,18 +366,18 @@ pub(in crate::card::sets) static CHAMPION_OF_DUSAN: CardRecord = CardRecord::new
 // TDM 157 — Sagu Wildling
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAGU_WILDLING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b72ee8f9-5e79-4f77-ae7e-e4c274f78187"),
     "Sagu Wildling",
-    crate::card::CardArt::new("d8b43b00-f4d1-436c-bf3f-6d414cd4ce38", "Gaboleps"),
+    "d8b43b00-f4d1-436c-bf3f-6d414cd4ce38",
+    "Gaboleps",
     crate::card::CardSet::TarkirDragonstorm,
     crate::card::CardRules::unsupported(),
 );
 
 // TDM 343 — Cori-Steel Cutter
 pub(in crate::card::sets) static CORI_STEEL_CUTTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("470dd3c8-07c9-42ef-aa9e-3c73b23607ff"),
     "Cori-Steel Cutter",
-    CardArt::new("470dd3c8-07c9-42ef-aa9e-3c73b23607ff", "Tomas Duchek"),
+    "470dd3c8-07c9-42ef-aa9e-3c73b23607ff",
+    "Tomas Duchek",
     CardSet::TarkirDragonstorm,
     // Two mana that turns every second spell into a hasty attacker, and
     // moves itself onto the new one for free every time.
@@ -449,9 +446,9 @@ static ELSPETH_CREATURES: ObjectQueryDef = ObjectQueryDef::matching(
 
 // TDM 398 — Elspeth, Storm Slayer
 pub(in crate::card::sets) static ELSPETH_STORM_SLAYER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1fdf9438-fd5f-4638-8f41-dae35ae8f257"),
     "Elspeth, Storm Slayer",
-    CardArt::new("1fdf9438-fd5f-4638-8f41-dae35ae8f257", "Jeremy Wilson"),
+    "1fdf9438-fd5f-4638-8f41-dae35ae8f257",
+    "Jeremy Wilson",
     CardSet::TarkirDragonstorm,
     // Five mana whose first line is worth more than the three below it: in a
     // deck that makes tokens at all, everything it was already doing happens
@@ -518,9 +515,12 @@ pub(in crate::card::sets) static ELSPETH_STORM_SLAYER: CardRecord = CardRecord::
 );
 
 // TDM 409 — Ugin, Eye of the Storms (alternate printing)
-const UGIN_EYE_OF_THE_STORMS_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&UGIN_EYE_OF_THE_STORMS, 1)
-        .with_art("2e7cb37b-3ab5-42d0-860a-0c0760924850", "Joshua Raphael");
+const UGIN_EYE_OF_THE_STORMS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &UGIN_EYE_OF_THE_STORMS,
+    1,
+    "2e7cb37b-3ab5-42d0-860a-0c0760924850",
+    "Joshua Raphael",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &UGIN_EYE_OF_THE_STORMS,

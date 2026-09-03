@@ -1,9 +1,9 @@
 //! Ikoria: Lair of Behemoths cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CompanionConditionDef,
+    AppliedRuleDef, CardRules, CardSet, CardSupertype, CardType, CompanionConditionDef,
     CostModificationDef, DeckConstructionDef, EffectDef, EffectRecipientDef,
     GraveyardPlayPermissionDef, ObjectPredicateDef, PlayActionMatcherDef, PlayRestrictionDef,
     PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
@@ -30,9 +30,9 @@ const fn triome(types: &'static [&'static str]) -> CardRules {
 // IKO 137 — Spelleater Wolverine
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPELLEATER_WOLVERINE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a5f03ffd-dcdb-441c-8dfc-4fe06a289b22"),
     "Spelleater Wolverine",
-    crate::card::CardArt::new("a5f03ffd-dcdb-441c-8dfc-4fe06a289b22", "Uriah Voth"),
+    "a5f03ffd-dcdb-441c-8dfc-4fe06a289b22",
+    "Uriah Voth",
     crate::card::CardSet::Ikoria,
     crate::card::CardRules::unsupported(),
 );
@@ -40,18 +40,18 @@ pub(in crate::card::sets) static SPELLEATER_WOLVERINE: CardRecord = CardRecord::
 // IKO 170 — Ram Through
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAM_THROUGH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ac0b24e7-14e7-45ee-b5d8-bdb8674b669c"),
     "Ram Through",
-    crate::card::CardArt::new("ac0b24e7-14e7-45ee-b5d8-bdb8674b669c", "Zoltan Boros"),
+    "ac0b24e7-14e7-45ee-b5d8-bdb8674b669c",
+    "Zoltan Boros",
     crate::card::CardSet::Ikoria,
     crate::card::CardRules::unsupported(),
 );
 
 // IKO 226 — Lurrus of the Dream-Den
 pub(in crate::card::sets) static LURRUS_OF_THE_DREAM_DEN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5ad36fb2-c44e-4085-ba0d-54277841ad3a"),
     "Lurrus of the Dream-Den",
-    CardArt::new("5ad36fb2-c44e-4085-ba0d-54277841ad3a", "Slawomir Maniak"),
+    "5ad36fb2-c44e-4085-ba0d-54277841ad3a",
+    "Slawomir Maniak",
     CardSet::Ikoria,
     // Three mana for a lifelinking body that turns every cheap permanent in
     // the graveyard back into a card, one a turn -- which is why the decks
@@ -99,9 +99,9 @@ pub(in crate::card::sets) static LURRUS_OF_THE_DREAM_DEN: CardRecord = CardRecor
 
 // IKO 233 — Zirda, the Dawnwaker
 pub(in crate::card::sets) static ZIRDA_THE_DAWNWAKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1bd8e61c-2ee8-4243-a848-7008810db8a0"),
     "Zirda, the Dawnwaker",
-    CardArt::new("1bd8e61c-2ee8-4243-a848-7008810db8a0", "Jesper Ejsing"),
+    "1bd8e61c-2ee8-4243-a848-7008810db8a0",
+    "Jesper Ejsing",
     CardSet::Ikoria,
     // Three mana for a 3/3 that makes every activated ability on the board
     // two cheaper, which is what a deck full of equipment and pingers is
@@ -153,60 +153,63 @@ pub(in crate::card::sets) static ZIRDA_THE_DAWNWAKER: CardRecord = CardRecord::n
 );
 
 // IKO 248 — Indatha Triome
-pub(in crate::card::sets) static INDATHA_TRIOME: CardRecord = CardRecord::new_with_legacy_id(
-    2096,
+pub(in crate::card::sets) static INDATHA_TRIOME: CardRecord = CardRecord::new(
     "Indatha Triome",
-    CardArt::new("2b74bb81-fb9a-40e5-a941-e517430b52f5", "Noah Bradley"),
+    "2b74bb81-fb9a-40e5-a941-e517430b52f5",
+    "Noah Bradley",
     CardSet::Ikoria,
     triome(&["Plains", "Swamp", "Forest"]),
 );
 
 // IKO 250 — Ketria Triome
-pub(in crate::card::sets) static KETRIA_TRIOME: CardRecord = CardRecord::new_with_legacy_id(
-    2097,
+pub(in crate::card::sets) static KETRIA_TRIOME: CardRecord = CardRecord::new(
     "Ketria Triome",
-    CardArt::new("a249b1f4-2b22-4b67-a207-e0c4ae95d2e1", "Sam Burley"),
+    "a249b1f4-2b22-4b67-a207-e0c4ae95d2e1",
+    "Sam Burley",
     CardSet::Ikoria,
     triome(&["Forest", "Island", "Mountain"]),
 );
 
 // IKO 251 — Raugrin Triome
-pub(in crate::card::sets) static RAUGRIN_TRIOME: CardRecord = CardRecord::new_with_legacy_id(
-    2098,
+pub(in crate::card::sets) static RAUGRIN_TRIOME: CardRecord = CardRecord::new(
     "Raugrin Triome",
-    CardArt::new("02138fbb-3962-4348-8d31-faaefba0b8b2", "Jonas De Ro"),
+    "02138fbb-3962-4348-8d31-faaefba0b8b2",
+    "Jonas De Ro",
     CardSet::Ikoria,
     triome(&["Island", "Mountain", "Plains"]),
 );
 
 // IKO 253 — Savai Triome
-pub(in crate::card::sets) static SAVAI_TRIOME: CardRecord = CardRecord::new_with_legacy_id(
-    2099,
+pub(in crate::card::sets) static SAVAI_TRIOME: CardRecord = CardRecord::new(
     "Savai Triome",
-    CardArt::new("748e6a61-9c1f-4225-9f04-e54002f63ac3", "Titus Lunter"),
+    "748e6a61-9c1f-4225-9f04-e54002f63ac3",
+    "Titus Lunter",
     CardSet::Ikoria,
     triome(&["Mountain", "Plains", "Swamp"]),
 );
 
 // IKO 259 — Zagoth Triome
-pub(in crate::card::sets) static ZAGOTH_TRIOME: CardRecord = CardRecord::new_with_legacy_id(
-    2100,
+pub(in crate::card::sets) static ZAGOTH_TRIOME: CardRecord = CardRecord::new(
     "Zagoth Triome",
-    CardArt::new("cc520518-2063-4b57-a0d4-10cf62a7175e", "Eytan Zana"),
+    "cc520518-2063-4b57-a0d4-10cf62a7175e",
+    "Eytan Zana",
     CardSet::Ikoria,
     triome(&["Swamp", "Forest", "Island"]),
 );
 
 // IKO 355 — Lurrus of the Dream-Den (alternate printing)
-const LURRUS_OF_THE_DREAM_DEN_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&LURRUS_OF_THE_DREAM_DEN, 1)
-        .with_art("2c89beb2-3467-4be0-a066-919f54331942", "Slawomir Maniak");
+const LURRUS_OF_THE_DREAM_DEN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &LURRUS_OF_THE_DREAM_DEN,
+    1,
+    "2c89beb2-3467-4be0-a066-919f54331942",
+    "Slawomir Maniak",
+);
 
 // IKO 356 — Lutri, the Spellchaser
 pub(in crate::card::sets) static LUTRI_THE_SPELLCHASER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("12c01a00-2128-4b6c-874f-a206eca3a756"),
     "Lutri, the Spellchaser",
-    CardArt::new("12c01a00-2128-4b6c-874f-a206eca3a756", "Lie Setiawan"),
+    "12c01a00-2128-4b6c-874f-a206eca3a756",
+    "Lie Setiawan",
     CardSet::Ikoria,
     // Three mana at instant speed for a body and a copy of whatever you were
     // already casting -- and in a singleton cube the companion clause costs

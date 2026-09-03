@@ -1,8 +1,8 @@
 //! Streets of New Capenna cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, ComparisonDef, ObjectPredicateDef, PlayerRelation,
+    AbilityDef, CardRules, CardSet, ComparisonDef, ObjectPredicateDef, PlayerRelation,
     QuantifierDef, TriggerConditionDef, TriggerEventDef, abilities,
 };
 use crate::mana_cost;
@@ -25,9 +25,9 @@ const fn triome(types: &'static [&'static str]) -> CardRules {
 // SNC 18 — Inspiring Overseer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INSPIRING_OVERSEER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("35d9da1d-8678-4252-b0f8-9960795642f0"),
     "Inspiring Overseer",
-    crate::card::CardArt::new("be1c0c41-cd92-49b2-be07-0c44219bcb6a", "Irina Nordsol"),
+    "35d9da1d-8678-4252-b0f8-9960795642f0",
+    "Irina Nordsol",
     crate::card::CardSet::StreetsOfNewCapenna,
     crate::card::CardRules::unsupported(),
 );
@@ -35,18 +35,18 @@ pub(in crate::card::sets) static INSPIRING_OVERSEER: CardRecord = CardRecord::ne
 // SNC 26 — Raffine's Informant
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAFFINE_S_INFORMANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4e64ff87-2099-4360-94f6-164277b7b514"),
     "Raffine's Informant",
-    crate::card::CardArt::new("4e64ff87-2099-4360-94f6-164277b7b514", "John Stanko"),
+    "4e64ff87-2099-4360-94f6-164277b7b514",
+    "John Stanko",
     crate::card::CardSet::StreetsOfNewCapenna,
     crate::card::CardRules::unsupported(),
 );
 
 // SNC 46 — Ledger Shredder
-pub(in crate::card::sets) static LEDGER_SHREDDER: CardRecord = CardRecord::new_with_legacy_id(
-    2286,
+pub(in crate::card::sets) static LEDGER_SHREDDER: CardRecord = CardRecord::new(
     "Ledger Shredder",
-    CardArt::new("7ea4b5bc-18a4-45db-a56a-ab3f8bd2fb0d", "Mila Pesic"),
+    "7ea4b5bc-18a4-45db-a56a-ab3f8bd2fb0d",
+    "Mila Pesic",
     CardSet::StreetsOfNewCapenna,
     // Two mana that filters a hand and gets bigger for it, and does both on
     // the opponent's turn too.
@@ -78,9 +78,9 @@ pub(in crate::card::sets) static LEDGER_SHREDDER: CardRecord = CardRecord::new_w
 // SNC 66 — Witness Protection
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WITNESS_PROTECTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a2be6f2c-8ad0-402d-a7ca-9fe817e83b72"),
     "Witness Protection",
-    crate::card::CardArt::new("a2be6f2c-8ad0-402d-a7ca-9fe817e83b72", "Dominik Mayer"),
+    "a2be6f2c-8ad0-402d-a7ca-9fe817e83b72",
+    "Dominik Mayer",
     crate::card::CardSet::StreetsOfNewCapenna,
     crate::card::CardRules::unsupported(),
 );
@@ -88,9 +88,9 @@ pub(in crate::card::sets) static WITNESS_PROTECTION: CardRecord = CardRecord::ne
 // SNC 114 — Mayhem Patrol
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MAYHEM_PATROL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("50162cdd-ba30-48df-93ff-197c7f4a2913"),
     "Mayhem Patrol",
-    crate::card::CardArt::new("50162cdd-ba30-48df-93ff-197c7f4a2913", "Johan Grenier"),
+    "50162cdd-ba30-48df-93ff-197c7f4a2913",
+    "Johan Grenier",
     crate::card::CardSet::StreetsOfNewCapenna,
     crate::card::CardRules::unsupported(),
 );
@@ -98,9 +98,9 @@ pub(in crate::card::sets) static MAYHEM_PATROL: CardRecord = CardRecord::new(
 // SNC 131 — Witty Roastmaster
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WITTY_ROASTMASTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("71d13f19-482b-4a2e-9692-b7d7caf2f9f5"),
     "Witty Roastmaster",
-    crate::card::CardArt::new("71d13f19-482b-4a2e-9692-b7d7caf2f9f5", "Joe Slucher"),
+    "71d13f19-482b-4a2e-9692-b7d7caf2f9f5",
+    "Joe Slucher",
     crate::card::CardSet::StreetsOfNewCapenna,
     crate::card::CardRules::unsupported(),
 );
@@ -108,9 +108,9 @@ pub(in crate::card::sets) static WITTY_ROASTMASTER: CardRecord = CardRecord::new
 // SNC 151 — Jewel Thief
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JEWEL_THIEF: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("736e498e-1245-40c1-96a4-c9bcfd1cfe1f"),
     "Jewel Thief",
-    crate::card::CardArt::new("736e498e-1245-40c1-96a4-c9bcfd1cfe1f", "Joe Slucher"),
+    "736e498e-1245-40c1-96a4-c9bcfd1cfe1f",
+    "Joe Slucher",
     crate::card::CardSet::StreetsOfNewCapenna,
     crate::card::CardRules::unsupported(),
 );
@@ -118,61 +118,57 @@ pub(in crate::card::sets) static JEWEL_THIEF: CardRecord = CardRecord::new(
 // SNC 168 — Body Dropper
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BODY_DROPPER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0fcb6d47-dccb-4b69-aed4-7a6215857606"),
     "Body Dropper",
-    crate::card::CardArt::new("0fcb6d47-dccb-4b69-aed4-7a6215857606", "Jakub Kasper"),
+    "0fcb6d47-dccb-4b69-aed4-7a6215857606",
+    "Jakub Kasper",
     crate::card::CardSet::StreetsOfNewCapenna,
     crate::card::CardRules::unsupported(),
 );
 
 // SNC 250 — Jetmir's Garden
-pub(in crate::card::sets) static JETMIRS_GARDEN: CardRecord = CardRecord::new_with_legacy_id(
-    2101,
+pub(in crate::card::sets) static JETMIRS_GARDEN: CardRecord = CardRecord::new(
     "Jetmir's Garden",
-    CardArt::new(
-        "26d40e03-6de4-4373-9fbf-04c1dd79e995",
-        "Kasia 'Kafis' Zielińska",
-    ),
+    "26d40e03-6de4-4373-9fbf-04c1dd79e995",
+    "Kasia 'Kafis' Zielińska",
     CardSet::StreetsOfNewCapenna,
     triome(&["Mountain", "Forest", "Plains"]),
 );
 
 // SNC 254 — Raffine's Tower
-pub(in crate::card::sets) static RAFFINES_TOWER: CardRecord = CardRecord::new_with_legacy_id(
-    2102,
+pub(in crate::card::sets) static RAFFINES_TOWER: CardRecord = CardRecord::new(
     "Raffine's Tower",
-    CardArt::new("a2c56479-4bee-4edb-80d7-4af010b7c793", "Sam White"),
+    "a2c56479-4bee-4edb-80d7-4af010b7c793",
+    "Sam White",
     CardSet::StreetsOfNewCapenna,
     triome(&["Plains", "Island", "Swamp"]),
 );
 
 // SNC 257 — Spara's Headquarters
-pub(in crate::card::sets) static SPARAS_HEADQUARTERS: CardRecord = CardRecord::new_with_legacy_id(
-    2103,
+pub(in crate::card::sets) static SPARAS_HEADQUARTERS: CardRecord = CardRecord::new(
     "Spara's Headquarters",
-    CardArt::new("7363f1fb-9af3-4212-921f-d59533faf0e5", "Kieran Yanner"),
+    "7363f1fb-9af3-4212-921f-d59533faf0e5",
+    "Kieran Yanner",
     CardSet::StreetsOfNewCapenna,
     triome(&["Forest", "Plains", "Island"]),
 );
 
 // SNC 260 — Xander's Lounge
-pub(in crate::card::sets) static XANDERS_LOUNGE: CardRecord = CardRecord::new_with_legacy_id(
-    2104,
+pub(in crate::card::sets) static XANDERS_LOUNGE: CardRecord = CardRecord::new(
     "Xander's Lounge",
-    CardArt::new("54f449ff-4025-465e-9ec5-a5cf42c4c9d3", "James Paick"),
+    "54f449ff-4025-465e-9ec5-a5cf42c4c9d3",
+    "James Paick",
     CardSet::StreetsOfNewCapenna,
     triome(&["Island", "Swamp", "Mountain"]),
 );
 
 // SNC 261 — Ziatora's Proving Ground
-pub(in crate::card::sets) static ZIATORAS_PROVING_GROUND: CardRecord =
-    CardRecord::new_with_legacy_id(
-        2105,
-        "Ziatora's Proving Ground",
-        CardArt::new("75fdce80-e338-4a50-bdc6-786511feaeef", "Viko Menezes"),
-        CardSet::StreetsOfNewCapenna,
-        triome(&["Swamp", "Mountain", "Forest"]),
-    );
+pub(in crate::card::sets) static ZIATORAS_PROVING_GROUND: CardRecord = CardRecord::new(
+    "Ziatora's Proving Ground",
+    "75fdce80-e338-4a50-bdc6-786511feaeef",
+    "Viko Menezes",
+    CardSet::StreetsOfNewCapenna,
+    triome(&["Swamp", "Mountain", "Forest"]),
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &INSPIRING_OVERSEER,

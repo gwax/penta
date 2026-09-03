@@ -1,6 +1,6 @@
 //! New Phyrexia cards used to exercise Phyrexian mana.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::CostQuantityDef;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::sets::y2010::scars_of_mirrodin::METALCRAFT;
@@ -8,14 +8,14 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AggregateOperationDef, AlternativeCastKindDef, AppliedEffectDef,
     AppliedRuleDef, AttackDefenderScopeDef, AttackRestrictionDef, BasicLandType,
-    BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CardTypeSet, ControlDurationDef, CopyExceptionsDef, CounterKind, DiscardSelectionDef,
-    EffectDef, EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
-    ManaRestrictionDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    ObjectValueAggregateDef, ObjectValueDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef,
-    SpellAdditionalCostDef, SumValueDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    BattlefieldEntryModificationDef, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
+    ControlDurationDef, CopyExceptionsDef, CounterKind, DiscardSelectionDef, EffectDef,
+    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ManaRestrictionDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, ObjectValueAggregateDef,
+    ObjectValueDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ReplacementEventDef, ResolvedEffectDurationDef, SacrificedAmountDef, SpellAdditionalCostDef,
+    SumValueDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::ids::AdditionalCostObjectIndex;
 use crate::{TargetIndex, mana_cost};
@@ -23,9 +23,9 @@ use crate::{TargetIndex, mana_cost};
 // NPH 1 — Karn Liberated
 // Audit: unsupported — Needs a restart-game procedure that preserves the non-Aura permanent cards linked in exile and puts them onto the restarted battlefield.
 pub(in crate::card::sets) static KARN_LIBERATED: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f9287151-95df-4f5a-b32a-4b0aea825452"),
     "Karn Liberated",
-    crate::card::CardArt::new("f9287151-95df-4f5a-b32a-4b0aea825452", "Jason Chan"),
+    "f9287151-95df-4f5a-b32a-4b0aea825452",
+    "Jason Chan",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
@@ -33,9 +33,9 @@ pub(in crate::card::sets) static KARN_LIBERATED: CardRecord = CardRecord::new(
 // NPH 2 — Apostle's Blessing
 // Audit: unsupported — Needs one resolution choice whose alternatives are protection from artifacts or protection from a dynamically chosen color; the color-choice effect cannot express the artifact branch.
 pub(in crate::card::sets) static APOSTLE_S_BLESSING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9f7c3571-925d-486e-80dd-bac47aa48283"),
     "Apostle's Blessing",
-    crate::card::CardArt::new("9f7c3571-925d-486e-80dd-bac47aa48283", "Brad Rigney"),
+    "9f7c3571-925d-486e-80dd-bac47aa48283",
+    "Brad Rigney",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
@@ -43,18 +43,18 @@ pub(in crate::card::sets) static APOSTLE_S_BLESSING: CardRecord = CardRecord::ne
 // NPH 3 — Auriok Survivors
 // Audit: unsupported — MoveToZone can force an arriving Equipment to attach, but it cannot bind that successor into a second, independently optional attach choice after the optional return succeeds.
 pub(in crate::card::sets) static AURIOK_SURVIVORS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("deffb601-6a53-4d88-a6af-686ce97eb4f0"),
     "Auriok Survivors",
-    crate::card::CardArt::new("deffb601-6a53-4d88-a6af-686ce97eb4f0", "James Ryman"),
+    "deffb601-6a53-4d88-a6af-686ce97eb4f0",
+    "James Ryman",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 4 — Blade Splicer
 pub(in crate::card::sets) static BLADE_SPLICER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b8e56a28-713b-4a13-a601-1128cf117539"),
     "Blade Splicer",
-    crate::card::CardArt::new("b8e56a28-713b-4a13-a601-1128cf117539", "Greg Staples"),
+    "b8e56a28-713b-4a13-a601-1128cf117539",
+    "Greg Staples",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Phyrexian", "Human", "Artificer"], 1, 1).with_abilities(&[
         abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3)),
@@ -71,18 +71,18 @@ pub(in crate::card::sets) static BLADE_SPLICER: CardRecord = CardRecord::new(
 // NPH 5 — Cathedral Membrane
 // Audit: unsupported — Needs a dies-during-combat event plus last-known access to every creature the source blocked; the blocker relation alone cannot gate the death trigger.
 pub(in crate::card::sets) static CATHEDRAL_MEMBRANE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("07592731-68be-4218-bb2c-c2523c5a27f1"),
     "Cathedral Membrane",
-    crate::card::CardArt::new("07592731-68be-4218-bb2c-c2523c5a27f1", "Richard Whitters"),
+    "07592731-68be-4218-bb2c-c2523c5a27f1",
+    "Richard Whitters",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 6 — Chancellor of the Annex
 pub(in crate::card::sets) static CHANCELLOR_OF_THE_ANNEX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("be1b482a-badb-4b9a-ab63-2e7944826aa0"),
     "Chancellor of the Annex",
-    crate::card::CardArt::new("be1b482a-badb-4b9a-ab63-2e7944826aa0", "Min Yum"),
+    "be1b482a-badb-4b9a-ab63-2e7944826aa0",
+    "Min Yum",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{W}{W}{W}"), &["Phyrexian", "Angel"], 5, 6)
         .with_abilities(&[
@@ -127,9 +127,9 @@ pub(in crate::card::sets) static CHANCELLOR_OF_THE_ANNEX: CardRecord = CardRecor
 
 // NPH 7 — Dispatch
 pub(in crate::card::sets) static DISPATCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("496634f9-1271-4be7-bad5-364bb87a6962"),
     "Dispatch",
-    crate::card::CardArt::new("496634f9-1271-4be7-bad5-364bb87a6962", "Erica Yang"),
+    "496634f9-1271-4be7-bad5-364bb87a6962",
+    "Erica Yang",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
         "Tap target creature.\nMetalcraft — If you control three or more artifacts, exile that creature.",
@@ -155,18 +155,18 @@ pub(in crate::card::sets) static DISPATCH: CardRecord = CardRecord::new(
 // NPH 8 — Due Respect
 // Audit: unsupported — Needs a turn-scoped global battlefield-entry replacement that makes every permanent enter tapped; temporary effects cannot currently install entry replacements.
 pub(in crate::card::sets) static DUE_RESPECT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a7159850-964b-4f12-957f-614eb0570544"),
     "Due Respect",
-    crate::card::CardArt::new("a7159850-964b-4f12-957f-614eb0570544", "James Ryman"),
+    "a7159850-964b-4f12-957f-614eb0570544",
+    "James Ryman",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 9 — Elesh Norn, Grand Cenobite
 pub(in crate::card::sets) static ELESH_NORN_GRAND_CENOBITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b66390d6-1649-4bfa-92d3-77664650d552"),
     "Elesh Norn, Grand Cenobite",
-    crate::card::CardArt::new("b66390d6-1649-4bfa-92d3-77664650d552", "Igor Kieryluk"),
+    "b66390d6-1649-4bfa-92d3-77664650d552",
+    "Igor Kieryluk",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{5}{W}{W}"), &["Phyrexian", "Praetor"], 4, 7)
         .with_supertype(CardSupertype::Legendary)
@@ -209,18 +209,18 @@ pub(in crate::card::sets) static ELESH_NORN_GRAND_CENOBITE: CardRecord = CardRec
 // NPH 10 — Exclusion Ritual
 // Audit: unsupported — Needs a cast prohibition whose name predicate is read from the permanent card linked in exile rather than from a chosen name or the source's own name.
 pub(in crate::card::sets) static EXCLUSION_RITUAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9e3b826a-7349-45ae-89bf-675fea7ce8e3"),
     "Exclusion Ritual",
-    crate::card::CardArt::new("9e3b826a-7349-45ae-89bf-675fea7ce8e3", "Daniel Ljunggren"),
+    "9e3b826a-7349-45ae-89bf-675fea7ce8e3",
+    "Daniel Ljunggren",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 11 — Forced Worship
 pub(in crate::card::sets) static FORCED_WORSHIP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e050701d-4609-470d-85ff-4b7638893c6a"),
     "Forced Worship",
-    crate::card::CardArt::new("e050701d-4609-470d-85ff-4b7638893c6a", "Karl Kopinski"),
+    "e050701d-4609-470d-85ff-4b7638893c6a",
+    "Karl Kopinski",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_enchantment(mana_cost!("{1}{W}"))
         .with_subtypes(&["Aura"])
@@ -247,9 +247,9 @@ pub(in crate::card::sets) static FORCED_WORSHIP: CardRecord = CardRecord::new(
 
 // NPH 12 — Inquisitor Exarch
 pub(in crate::card::sets) static INQUISITOR_EXARCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("49e241a0-a027-494b-8187-6ecb006d1d33"),
     "Inquisitor Exarch",
-    crate::card::CardArt::new("49e241a0-a027-494b-8187-6ecb006d1d33", "Igor Kieryluk"),
+    "49e241a0-a027-494b-8187-6ecb006d1d33",
+    "Igor Kieryluk",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{W}{W}"), &["Phyrexian", "Cleric"], 2, 2).with_ability(
         AbilityDef::modal_triggered(
@@ -284,9 +284,9 @@ pub(in crate::card::sets) static INQUISITOR_EXARCH: CardRecord = CardRecord::new
 
 // NPH 13 — Lost Leonin
 pub(in crate::card::sets) static LOST_LEONIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8209fa5d-2c0e-4827-813b-fff123533f16"),
     "Lost Leonin",
-    crate::card::CardArt::new("8209fa5d-2c0e-4827-813b-fff123533f16", "Min Yum"),
+    "8209fa5d-2c0e-4827-813b-fff123533f16",
+    "Min Yum",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Phyrexian", "Cat", "Soldier"], 2, 1)
         .with_abilities(&[abilities::infect()]),
@@ -294,9 +294,9 @@ pub(in crate::card::sets) static LOST_LEONIN: CardRecord = CardRecord::new(
 
 // NPH 14 — Loxodon Convert
 pub(in crate::card::sets) static LOXODON_CONVERT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("00c050c3-4f50-4bb6-8477-6737887ca10d"),
     "Loxodon Convert",
-    crate::card::CardArt::new("00c050c3-4f50-4bb6-8477-6737887ca10d", "Adrian Smith"),
+    "00c050c3-4f50-4bb6-8477-6737887ca10d",
+    "Adrian Smith",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(
         mana_cost!("{3}{W}"),
@@ -308,9 +308,9 @@ pub(in crate::card::sets) static LOXODON_CONVERT: CardRecord = CardRecord::new(
 
 // NPH 15 — Marrow Shards
 pub(in crate::card::sets) static MARROW_SHARDS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("53ca60ee-e54b-4a28-b6a6-7bf3503c35b4"),
     "Marrow Shards",
-    crate::card::CardArt::new("53ca60ee-e54b-4a28-b6a6-7bf3503c35b4", "Raymond Swanland"),
+    "53ca60ee-e54b-4a28-b6a6-7bf3503c35b4",
+    "Raymond Swanland",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{W/P}")).with_ability(AbilityDef::spell(
         "This spell deals 1 damage to each attacking creature.",
@@ -330,9 +330,9 @@ pub(in crate::card::sets) static MARROW_SHARDS: CardRecord = CardRecord::new(
 
 // NPH 16 — Master Splicer
 pub(in crate::card::sets) static MASTER_SPLICER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("859d2b91-63af-4700-8ca5-b1756aa6639b"),
     "Master Splicer",
-    crate::card::CardArt::new("859d2b91-63af-4700-8ca5-b1756aa6639b", "Chippy"),
+    "859d2b91-63af-4700-8ca5-b1756aa6639b",
+    "Chippy",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Phyrexian", "Human", "Artificer"], 1, 1).with_abilities(&[
         abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3)),
@@ -348,9 +348,9 @@ pub(in crate::card::sets) static MASTER_SPLICER: CardRecord = CardRecord::new(
 
 // NPH 17 — Norn's Annex
 pub(in crate::card::sets) static NORN_S_ANNEX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a64073f2-99f5-4dc7-9403-e7cb94ce0e60"),
     "Norn's Annex",
-    crate::card::CardArt::new("a64073f2-99f5-4dc7-9403-e7cb94ce0e60", "James Paick"),
+    "a64073f2-99f5-4dc7-9403-e7cb94ce0e60",
+    "James Paick",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{3}{W/P}{W/P}")).with_ability(
         AbilityDef::static_ability(
@@ -372,18 +372,18 @@ pub(in crate::card::sets) static NORN_S_ANNEX: CardRecord = CardRecord::new(
 // NPH 18 — Phyrexian Unlife
 // Audit: unsupported — Needs suppression of the state-based loss at 0 life plus a conditional damage replacement that gives damage infect only while that player's life is nonpositive.
 pub(in crate::card::sets) static PHYREXIAN_UNLIFE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b4a1e16a-39f0-47ab-aba8-73e82ba9ab18"),
     "Phyrexian Unlife",
-    crate::card::CardArt::new("b4a1e16a-39f0-47ab-aba8-73e82ba9ab18", "Jason Chan"),
+    "b4a1e16a-39f0-47ab-aba8-73e82ba9ab18",
+    "Jason Chan",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 19 — Porcelain Legionnaire
 pub(in crate::card::sets) static PORCELAIN_LEGIONNAIRE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2616aa0e-8413-4e63-877c-bffd5263f552"),
     "Porcelain Legionnaire",
-    crate::card::CardArt::new("2616aa0e-8413-4e63-877c-bffd5263f552", "Eric Deschamps"),
+    "2616aa0e-8413-4e63-877c-bffd5263f552",
+    "Eric Deschamps",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{2}{W/P}"), &["Phyrexian", "Soldier"], 3, 1)
         .with_abilities(&[abilities::first_strike()]),
@@ -391,9 +391,9 @@ pub(in crate::card::sets) static PORCELAIN_LEGIONNAIRE: CardRecord = CardRecord:
 
 // NPH 20 — Puresteel Paladin
 pub(in crate::card::sets) static PURESTEEL_PALADIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ca100248-fcd6-41ed-8d75-bcb473845edd"),
     "Puresteel Paladin",
-    crate::card::CardArt::new("ca100248-fcd6-41ed-8d75-bcb473845edd", "Jason Chan"),
+    "ca100248-fcd6-41ed-8d75-bcb473845edd",
+    "Jason Chan",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{W}{W}"), &["Human", "Knight"], 2, 2).with_abilities(&[
         AbilityDef::triggered(
@@ -436,9 +436,9 @@ pub(in crate::card::sets) static PURESTEEL_PALADIN: CardRecord = CardRecord::new
 
 // NPH 21 — Remember the Fallen
 pub(in crate::card::sets) static REMEMBER_THE_FALLEN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6d9b8325-2a28-4312-b778-40087f8ea778"),
     "Remember the Fallen",
-    crate::card::CardArt::new("6d9b8325-2a28-4312-b778-40087f8ea778", "Eric Deschamps"),
+    "6d9b8325-2a28-4312-b778-40087f8ea778",
+    "Eric Deschamps",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{2}{W}")).with_ability(
         AbilityDef::modal_spell(
@@ -484,9 +484,9 @@ pub(in crate::card::sets) static REMEMBER_THE_FALLEN: CardRecord = CardRecord::n
 
 // NPH 22 — Sensor Splicer
 pub(in crate::card::sets) static SENSOR_SPLICER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("79076264-d71c-4b30-aac9-702a4d229933"),
     "Sensor Splicer",
-    crate::card::CardArt::new("79076264-d71c-4b30-aac9-702a4d229933", "Izzy"),
+    "79076264-d71c-4b30-aac9-702a4d229933",
+    "Izzy",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{W}"), &["Phyrexian", "Artificer"], 1, 1).with_abilities(&[
         abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3)),
@@ -502,9 +502,9 @@ pub(in crate::card::sets) static SENSOR_SPLICER: CardRecord = CardRecord::new(
 
 // NPH 23 — Shattered Angel
 pub(in crate::card::sets) static SHATTERED_ANGEL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("012f94e9-91cd-48da-873f-2da2b03a4965"),
     "Shattered Angel",
-    crate::card::CardArt::new("012f94e9-91cd-48da-873f-2da2b03a4965", "Kev Walker"),
+    "012f94e9-91cd-48da-873f-2da2b03a4965",
+    "Kev Walker",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Phyrexian", "Angel"], 3, 3).with_abilities(
         &[
@@ -533,9 +533,9 @@ pub(in crate::card::sets) static SHATTERED_ANGEL: CardRecord = CardRecord::new(
 
 // NPH 24 — Shriek Raptor
 pub(in crate::card::sets) static SHRIEK_RAPTOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("73071a3b-9329-418e-9285-fa4765463d1f"),
     "Shriek Raptor",
-    crate::card::CardArt::new("73071a3b-9329-418e-9285-fa4765463d1f", "Efrem Palacios"),
+    "73071a3b-9329-418e-9285-fa4765463d1f",
+    "Efrem Palacios",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Phyrexian", "Bird"], 2, 3)
         .with_abilities(&[abilities::flying(), abilities::infect()]),
@@ -543,9 +543,9 @@ pub(in crate::card::sets) static SHRIEK_RAPTOR: CardRecord = CardRecord::new(
 
 // NPH 25 — Suture Priest
 pub(in crate::card::sets) static SUTURE_PRIEST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("31432e98-86cd-42ea-ad37-eb4383dc6a81"),
     "Suture Priest",
-    crate::card::CardArt::new("31432e98-86cd-42ea-ad37-eb4383dc6a81", "Igor Kieryluk"),
+    "31432e98-86cd-42ea-ad37-eb4383dc6a81",
+    "Igor Kieryluk",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Phyrexian", "Cleric"], 1, 1).with_abilities(&[
         AbilityDef::triggered(
@@ -563,9 +563,9 @@ pub(in crate::card::sets) static SUTURE_PRIEST: CardRecord = CardRecord::new(
 
 // NPH 26 — War Report
 pub(in crate::card::sets) static WAR_REPORT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6d837262-cd5d-4fc9-96dd-39ed04166883"),
     "War Report",
-    crate::card::CardArt::new("6d837262-cd5d-4fc9-96dd-39ed04166883", "Mike Bierek"),
+    "6d837262-cd5d-4fc9-96dd-39ed04166883",
+    "Mike Bierek",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{3}{W}")).with_ability(AbilityDef::spell(
         "You gain life equal to the number of creatures on the battlefield plus the number of artifacts on the battlefield.",
@@ -587,12 +587,9 @@ pub(in crate::card::sets) static WAR_REPORT: CardRecord = CardRecord::new(
 
 // NPH 27 — Argent Mutation
 pub(in crate::card::sets) static ARGENT_MUTATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("507fa5fd-2aa5-4721-a059-2c8c3056a4ca"),
     "Argent Mutation",
-    crate::card::CardArt::new(
-        "507fa5fd-2aa5-4721-a059-2c8c3056a4ca",
-        "Jana Schirmer & Johannes Voss",
-    ),
+    "507fa5fd-2aa5-4721-a059-2c8c3056a4ca",
+    "Jana Schirmer & Johannes Voss",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
         "Target permanent becomes an artifact in addition to its other types until end of turn.\nDraw a card.",
@@ -613,9 +610,9 @@ pub(in crate::card::sets) static ARGENT_MUTATION: CardRecord = CardRecord::new(
 
 // NPH 28 — Arm with Aether
 pub(in crate::card::sets) static ARM_WITH_AETHER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a0878b20-315d-49fa-a4d7-232ba1ed6b0d"),
     "Arm with Aether",
-    crate::card::CardArt::new("a0878b20-315d-49fa-a4d7-232ba1ed6b0d", "Austin Hsu"),
+    "a0878b20-315d-49fa-a4d7-232ba1ed6b0d",
+    "Austin Hsu",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
         "Until end of turn, creatures you control gain \"Whenever this creature deals damage to an opponent, you may return target creature that player controls to its owner's hand.\"",
@@ -652,9 +649,9 @@ pub(in crate::card::sets) static ARM_WITH_AETHER: CardRecord = CardRecord::new(
 
 // NPH 29 — Blighted Agent
 pub(in crate::card::sets) static BLIGHTED_AGENT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cddaebde-a060-4510-8c97-68432d931987"),
     "Blighted Agent",
-    crate::card::CardArt::new("cddaebde-a060-4510-8c97-68432d931987", "Anthony Francisco"),
+    "cddaebde-a060-4510-8c97-68432d931987",
+    "Anthony Francisco",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Phyrexian", "Human", "Rogue"], 1, 1)
         .with_abilities(&[
@@ -666,18 +663,18 @@ pub(in crate::card::sets) static BLIGHTED_AGENT: CardRecord = CardRecord::new(
 // NPH 30 — Chained Throatseeker
 // Audit: unsupported — Needs an attack restriction that reads poison counters on each prospective defending player; attack predicates cannot currently inspect player counters.
 pub(in crate::card::sets) static CHAINED_THROATSEEKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3a7bb447-c2b0-429e-bf82-02d6a966fe73"),
     "Chained Throatseeker",
-    crate::card::CardArt::new("3a7bb447-c2b0-429e-bf82-02d6a966fe73", "Stephan Martiniere"),
+    "3a7bb447-c2b0-429e-bf82-02d6a966fe73",
+    "Stephan Martiniere",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 31 — Chancellor of the Spires
 pub(in crate::card::sets) static CHANCELLOR_OF_THE_SPIRES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b1e06e16-96fa-4611-b4a9-512eeeeddd3c"),
     "Chancellor of the Spires",
-    crate::card::CardArt::new("b1e06e16-96fa-4611-b4a9-512eeeeddd3c", "Nils Hamm"),
+    "b1e06e16-96fa-4611-b4a9-512eeeeddd3c",
+    "Nils Hamm",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{U}{U}{U}"), &["Phyrexian", "Sphinx"], 5, 7)
         .with_abilities(&[
@@ -725,18 +722,18 @@ pub(in crate::card::sets) static CHANCELLOR_OF_THE_SPIRES: CardRecord = CardReco
 // NPH 32 — Corrupted Resolve
 // Audit: unsupported — Needs a counterspell condition that reads poison counters on the targeted spell's controller; spell predicates cannot currently inspect controller counters.
 pub(in crate::card::sets) static CORRUPTED_RESOLVE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("28432161-023b-4a98-b92a-55dc6d936cd1"),
     "Corrupted Resolve",
-    crate::card::CardArt::new("28432161-023b-4a98-b92a-55dc6d936cd1", "Greg Staples"),
+    "28432161-023b-4a98-b92a-55dc6d936cd1",
+    "Greg Staples",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 33 — Deceiver Exarch
 pub(in crate::card::sets) static DECEIVER_EXARCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1f123ad6-fe84-4fed-9c0f-6b41921e9c26"),
     "Deceiver Exarch",
-    crate::card::CardArt::new("1f123ad6-fe84-4fed-9c0f-6b41921e9c26", "Izzy"),
+    "1f123ad6-fe84-4fed-9c0f-6b41921e9c26",
+    "Izzy",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Phyrexian", "Cleric"], 1, 4)
         .with_abilities(&[
@@ -784,9 +781,9 @@ pub(in crate::card::sets) static DECEIVER_EXARCH: CardRecord = CardRecord::new(
 
 // NPH 34 — Defensive Stance
 pub(in crate::card::sets) static DEFENSIVE_STANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d0670653-d4fe-4fac-b769-d19ca4698c97"),
     "Defensive Stance",
-    crate::card::CardArt::new("d0670653-d4fe-4fac-b769-d19ca4698c97", "Dan Murayama Scott"),
+    "d0670653-d4fe-4fac-b769-d19ca4698c97",
+    "Dan Murayama Scott",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_enchantment(mana_cost!("{U}"))
         .with_subtypes(&["Aura"])
@@ -807,9 +804,9 @@ pub(in crate::card::sets) static DEFENSIVE_STANCE: CardRecord = CardRecord::new(
 
 // NPH 35 — Gitaxian Probe
 pub(in crate::card::sets) static GITAXIAN_PROBE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("995486ce-58bb-4753-a812-0ca73ef1a235"),
     "Gitaxian Probe",
-    CardArt::new("995486ce-58bb-4753-a812-0ca73ef1a235", "Chippy"),
+    "995486ce-58bb-4753-a812-0ca73ef1a235",
+    "Chippy",
     CardSet::NewPhyrexia,
     // Two life for a cantrip and a look at their hand -- and in a deck that
     // counts spells cast, the look is beside the point.
@@ -835,9 +832,9 @@ pub(in crate::card::sets) static GITAXIAN_PROBE: CardRecord = CardRecord::new(
 
 // NPH 36 — Impaler Shrike
 pub(in crate::card::sets) static IMPALER_SHRIKE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("91e1f8b5-4792-457d-b3de-1d4874ddf72e"),
     "Impaler Shrike",
-    crate::card::CardArt::new("91e1f8b5-4792-457d-b3de-1d4874ddf72e", "Nils Hamm"),
+    "91e1f8b5-4792-457d-b3de-1d4874ddf72e",
+    "Nils Hamm",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Phyrexian", "Bird"], 3, 1)
         .with_abilities(&[
@@ -863,9 +860,9 @@ pub(in crate::card::sets) static IMPALER_SHRIKE: CardRecord = CardRecord::new(
 
 // NPH 37 — Jin-Gitaxias, Core Augur
 pub(in crate::card::sets) static JIN_GITAXIAS_CORE_AUGUR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bd46fc9f-5b92-44d7-8940-2f39b0962b8f"),
     "Jin-Gitaxias, Core Augur",
-    crate::card::CardArt::new("bd46fc9f-5b92-44d7-8940-2f39b0962b8f", "Eric Deschamps"),
+    "bd46fc9f-5b92-44d7-8940-2f39b0962b8f",
+    "Eric Deschamps",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{8}{U}{U}"), &["Phyrexian", "Praetor"], 5, 4)
         .with_supertype(CardSupertype::Legendary)
@@ -896,9 +893,9 @@ pub(in crate::card::sets) static JIN_GITAXIAS_CORE_AUGUR: CardRecord = CardRecor
 
 // NPH 38 — Mental Misstep
 pub(in crate::card::sets) static MENTAL_MISSTEP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("61e9c6df-1c84-4eab-9076-a4feb6347c10"),
     "Mental Misstep",
-    crate::card::CardArt::new("61e9c6df-1c84-4eab-9076-a4feb6347c10", "Erica Yang"),
+    "61e9c6df-1c84-4eab-9076-a4feb6347c10",
+    "Erica Yang",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{U/P}")).with_ability(AbilityDef::spell_with_targets(
         "Counter target spell with mana value 1.",
@@ -923,9 +920,9 @@ pub(in crate::card::sets) static MENTAL_MISSTEP: CardRecord = CardRecord::new(
 
 // NPH 39 — Mindculling
 pub(in crate::card::sets) static MINDCULLING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6faf4372-6fb5-48aa-9b94-b0e77c867116"),
     "Mindculling",
-    crate::card::CardArt::new("6faf4372-6fb5-48aa-9b94-b0e77c867116", "Cos Koniotis"),
+    "6faf4372-6fb5-48aa-9b94-b0e77c867116",
+    "Cos Koniotis",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{5}{U}")).with_ability(AbilityDef::spell_with_targets(
         "You draw two cards and target opponent discards two cards.",
@@ -949,9 +946,9 @@ pub(in crate::card::sets) static MINDCULLING: CardRecord = CardRecord::new(
 
 // NPH 40 — Numbing Dose
 pub(in crate::card::sets) static NUMBING_DOSE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8f28a0f4-43e1-46df-8b6a-d588c5cceb88"),
     "Numbing Dose",
-    crate::card::CardArt::new("8f28a0f4-43e1-46df-8b6a-d588c5cceb88", "Brad Rigney"),
+    "8f28a0f4-43e1-46df-8b6a-d588c5cceb88",
+    "Brad Rigney",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_enchantment(mana_cost!("{3}{U}{U}"))
         .with_subtypes(&["Aura"])
@@ -988,9 +985,9 @@ pub(in crate::card::sets) static NUMBING_DOSE: CardRecord = CardRecord::new(
 
 // NPH 41 — Phyrexian Ingester
 pub(in crate::card::sets) static PHYREXIAN_INGESTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("376e9829-23eb-4b43-9ec7-246cb3156e95"),
     "Phyrexian Ingester",
-    crate::card::CardArt::new("376e9829-23eb-4b43-9ec7-246cb3156e95", "Chris Rahn"),
+    "376e9829-23eb-4b43-9ec7-246cb3156e95",
+    "Chris Rahn",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{6}{U}"), &["Phyrexian", "Beast"], 3, 3)
         .with_abilities(&[
@@ -1038,12 +1035,9 @@ pub(in crate::card::sets) static PHYREXIAN_INGESTER: CardRecord = CardRecord::ne
 
 // NPH 42 — Phyrexian Metamorph
 pub(in crate::card::sets) static PHYREXIAN_METAMORPH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8903546d-4f9a-4e90-8dd8-5ab068d40907"),
     "Phyrexian Metamorph",
-    CardArt::new(
-        "d2e27911-87cb-49a0-a34f-6afe4bddd592",
-        "Jana Schirmer & Johannes Voss",
-    ),
+    "d2e27911-87cb-49a0-a34f-6afe4bddd592",
+    "Jana Schirmer & Johannes Voss",
     CardSet::NewPhyrexia,
     // A 0/0 that is never a 0/0: it copies something or it dies, and the
     // artifact it adds to its own types is what a copy of a creature keeps
@@ -1068,9 +1062,9 @@ pub(in crate::card::sets) static PHYREXIAN_METAMORPH: CardRecord = CardRecord::n
 
 // NPH 43 — Psychic Barrier
 pub(in crate::card::sets) static PSYCHIC_BARRIER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1cba7d67-5c6c-4738-8907-7cce503e3180"),
     "Psychic Barrier",
-    crate::card::CardArt::new("1cba7d67-5c6c-4738-8907-7cce503e3180", "Dan Murayama Scott"),
+    "1cba7d67-5c6c-4738-8907-7cce503e3180",
+    "Dan Murayama Scott",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{U}{U}")).with_ability(AbilityDef::spell_with_targets(
         "Counter target creature spell. Its controller loses 1 life.",
@@ -1104,18 +1098,18 @@ pub(in crate::card::sets) static PSYCHIC_BARRIER: CardRecord = CardRecord::new(
 // NPH 44 — Psychic Surgery
 // Audit: unsupported — Needs a library-shuffled trigger event plus an optional exile stage and an arrangement stage over the unchosen cards of another player's library.
 pub(in crate::card::sets) static PSYCHIC_SURGERY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("51ea9a6d-d6ca-48cb-adac-958ad0e7440c"),
     "Psychic Surgery",
-    crate::card::CardArt::new("51ea9a6d-d6ca-48cb-adac-958ad0e7440c", "Anthony Francisco"),
+    "51ea9a6d-d6ca-48cb-adac-958ad0e7440c",
+    "Anthony Francisco",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 45 — Spined Thopter
 pub(in crate::card::sets) static SPINED_THOPTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bd27f71a-cd22-4b5e-9536-3e160111875a"),
     "Spined Thopter",
-    crate::card::CardArt::new("bd27f71a-cd22-4b5e-9536-3e160111875a", "Pete Venters"),
+    "bd27f71a-cd22-4b5e-9536-3e160111875a",
+    "Pete Venters",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{2}{U/P}"), &["Phyrexian", "Thopter"], 2, 1)
         .with_abilities(&[abilities::flying()]),
@@ -1123,9 +1117,9 @@ pub(in crate::card::sets) static SPINED_THOPTER: CardRecord = CardRecord::new(
 
 // NPH 46 — Spire Monitor
 pub(in crate::card::sets) static SPIRE_MONITOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("189f83aa-264b-4d09-b45f-099597a789d4"),
     "Spire Monitor",
-    crate::card::CardArt::new("189f83aa-264b-4d09-b45f-099597a789d4", "Daniel Ljunggren"),
+    "189f83aa-264b-4d09-b45f-099597a789d4",
+    "Daniel Ljunggren",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{U}"), &["Phyrexian", "Drake"], 3, 3)
         .with_abilities(&[abilities::flash(), abilities::flying()]),
@@ -1133,9 +1127,9 @@ pub(in crate::card::sets) static SPIRE_MONITOR: CardRecord = CardRecord::new(
 
 // NPH 47 — Tezzeret's Gambit
 pub(in crate::card::sets) static TEZZERET_S_GAMBIT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fff5a09e-9276-44b8-b374-4b84aebd47cc"),
     "Tezzeret's Gambit",
-    crate::card::CardArt::new("fff5a09e-9276-44b8-b374-4b84aebd47cc", "Karl Kopinski"),
+    "fff5a09e-9276-44b8-b374-4b84aebd47cc",
+    "Karl Kopinski",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{3}{U/P}")).with_ability(AbilityDef::spell(
         "Draw two cards, then proliferate.",
@@ -1151,9 +1145,9 @@ pub(in crate::card::sets) static TEZZERET_S_GAMBIT: CardRecord = CardRecord::new
 
 // NPH 48 — Vapor Snag
 pub(in crate::card::sets) static VAPOR_SNAG: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("70305148-23bd-41dd-9de5-13cf5ae591ae"),
     "Vapor Snag",
-    crate::card::CardArt::new("70305148-23bd-41dd-9de5-13cf5ae591ae", "Raymond Swanland"),
+    "70305148-23bd-41dd-9de5-13cf5ae591ae",
+    "Raymond Swanland",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
         "Return target creature to its owner's hand. Its controller loses 1 life.",
@@ -1178,9 +1172,9 @@ pub(in crate::card::sets) static VAPOR_SNAG: CardRecord = CardRecord::new(
 
 // NPH 49 — Viral Drake
 pub(in crate::card::sets) static VIRAL_DRAKE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d89b312b-cc90-4f08-ae2e-043a79e51156"),
     "Viral Drake",
-    crate::card::CardArt::new("d89b312b-cc90-4f08-ae2e-043a79e51156", "Lars Grant-West"),
+    "d89b312b-cc90-4f08-ae2e-043a79e51156",
+    "Lars Grant-West",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{U}"), &["Phyrexian", "Drake"], 1, 4).with_abilities(&[
         abilities::flying(),
@@ -1195,9 +1189,9 @@ pub(in crate::card::sets) static VIRAL_DRAKE: CardRecord = CardRecord::new(
 
 // NPH 50 — Wing Splicer
 pub(in crate::card::sets) static WING_SPLICER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e2dbfb1b-092c-44a3-932d-a8b27be0a72b"),
     "Wing Splicer",
-    crate::card::CardArt::new("e2dbfb1b-092c-44a3-932d-a8b27be0a72b", "Kev Walker"),
+    "e2dbfb1b-092c-44a3-932d-a8b27be0a72b",
+    "Kev Walker",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{U}"), &["Phyrexian", "Human", "Artificer"], 1, 1).with_abilities(&[
         abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3)),
@@ -1214,21 +1208,18 @@ pub(in crate::card::sets) static WING_SPLICER: CardRecord = CardRecord::new(
 // NPH 51 — Xenograft
 // Audit: unsupported — Needs a persistent creature-type choice made as this enters and a continuous type effect that consumes that stored choice.
 pub(in crate::card::sets) static XENOGRAFT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f52f08e1-b234-42e4-8f1f-485a4f6edb3b"),
     "Xenograft",
-    crate::card::CardArt::new("f52f08e1-b234-42e4-8f1f-485a4f6edb3b", "Daniel Ljunggren"),
+    "f52f08e1-b234-42e4-8f1f-485a4f6edb3b",
+    "Daniel Ljunggren",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 52 — Blind Zealot
 pub(in crate::card::sets) static BLIND_ZEALOT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9bd04df1-5131-455d-b497-fcce4f9af552"),
     "Blind Zealot",
-    crate::card::CardArt::new(
-        "9bd04df1-5131-455d-b497-fcce4f9af552",
-        "Jana Schirmer & Johannes Voss",
-    ),
+    "9bd04df1-5131-455d-b497-fcce4f9af552",
+    "Jana Schirmer & Johannes Voss",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Phyrexian", "Human", "Cleric"], 2, 2)
         .with_abilities(&[
@@ -1263,9 +1254,9 @@ pub(in crate::card::sets) static BLIND_ZEALOT: CardRecord = CardRecord::new(
 
 // NPH 53 — Caress of Phyrexia
 pub(in crate::card::sets) static CARESS_OF_PHYREXIA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5ef987ad-a3dc-4ef5-90ec-9a8cfa95965b"),
     "Caress of Phyrexia",
-    crate::card::CardArt::new("5ef987ad-a3dc-4ef5-90ec-9a8cfa95965b", "Karl Kopinski"),
+    "5ef987ad-a3dc-4ef5-90ec-9a8cfa95965b",
+    "Karl Kopinski",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{3}{B}{B}")).with_ability(AbilityDef::spell_with_targets(
         "Target player draws three cards, loses 3 life, and gets three poison counters.",
@@ -1292,9 +1283,9 @@ pub(in crate::card::sets) static CARESS_OF_PHYREXIA: CardRecord = CardRecord::ne
 
 // NPH 54 — Chancellor of the Dross
 pub(in crate::card::sets) static CHANCELLOR_OF_THE_DROSS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("eec6d85e-6263-44b4-a91f-d51585c561c2"),
     "Chancellor of the Dross",
-    crate::card::CardArt::new("eec6d85e-6263-44b4-a91f-d51585c561c2", "Stephan Martiniere"),
+    "eec6d85e-6263-44b4-a91f-d51585c561c2",
+    "Stephan Martiniere",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{B}{B}{B}"), &["Phyrexian", "Vampire"], 6, 6)
         .with_abilities(&[
@@ -1325,9 +1316,9 @@ pub(in crate::card::sets) static CHANCELLOR_OF_THE_DROSS: CardRecord = CardRecor
 
 // NPH 55 — Dementia Bat
 pub(in crate::card::sets) static DEMENTIA_BAT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("72ae22c3-2dea-463e-894a-188657849909"),
     "Dementia Bat",
-    crate::card::CardArt::new("72ae22c3-2dea-463e-894a-188657849909", "Daarken"),
+    "72ae22c3-2dea-463e-894a-188657849909",
+    "Daarken",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{B}"), &["Phyrexian", "Bat"], 2, 2).with_abilities(&[
         abilities::flying(),
@@ -1352,9 +1343,9 @@ pub(in crate::card::sets) static DEMENTIA_BAT: CardRecord = CardRecord::new(
 
 // NPH 56 — Despise
 pub(in crate::card::sets) static DESPISE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ee7bfcd3-9f2b-41f5-93b4-8c1ee6ba4d88"),
     "Despise",
-    crate::card::CardArt::new("ee7bfcd3-9f2b-41f5-93b4-8c1ee6ba4d88", "Terese Nielsen"),
+    "ee7bfcd3-9f2b-41f5-93b4-8c1ee6ba4d88",
+    "Terese Nielsen",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
         "Target opponent reveals their hand. You choose a creature or planeswalker card from it. That player discards that card.",
@@ -1373,9 +1364,9 @@ pub(in crate::card::sets) static DESPISE: CardRecord = CardRecord::new(
 
 // NPH 57 — Dismember
 pub(in crate::card::sets) static DISMEMBER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("064dfdeb-485f-473e-9fa0-8fdb7638cdc6"),
     "Dismember",
-    crate::card::CardArt::new("064dfdeb-485f-473e-9fa0-8fdb7638cdc6", "Terese Nielsen"),
+    "064dfdeb-485f-473e-9fa0-8fdb7638cdc6",
+    "Terese Nielsen",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{1}{B/P}{B/P}")).with_ability(
         AbilityDef::spell_with_targets(
@@ -1396,15 +1387,17 @@ pub(in crate::card::sets) static DISMEMBER: CardRecord = CardRecord::new(
 );
 
 // NPH 58 — Enslave (reprint)
-const ENSLAVE_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2007::planar_chaos::ENSLAVE)
-        .with_art("17c2f5f0-1f37-4f51-9c10-c02e2ef7d4ee", "Chris Rahn");
+const ENSLAVE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2007::planar_chaos::ENSLAVE,
+    "17c2f5f0-1f37-4f51-9c10-c02e2ef7d4ee",
+    "Chris Rahn",
+);
 
 // NPH 59 — Entomber Exarch
 pub(in crate::card::sets) static ENTOMBER_EXARCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7f58020e-6d4d-474d-8d4b-cfb7d5a5e9a8"),
     "Entomber Exarch",
-    crate::card::CardArt::new("7f58020e-6d4d-474d-8d4b-cfb7d5a5e9a8", "Svetlin Velinov"),
+    "7f58020e-6d4d-474d-8d4b-cfb7d5a5e9a8",
+    "Svetlin Velinov",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Phyrexian", "Cleric"], 2, 2)
         .with_ability(AbilityDef::modal_triggered(
@@ -1446,15 +1439,17 @@ pub(in crate::card::sets) static ENTOMBER_EXARCH: CardRecord = CardRecord::new(
 );
 
 // NPH 60 — Evil Presence (reprint)
-const EVIL_PRESENCE_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::EVIL_PRESENCE)
-        .with_art("4dd00bc5-234c-4ded-b0b7-1181bc16cb28", "Scott Chou");
+const EVIL_PRESENCE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1993::alpha::EVIL_PRESENCE,
+    "4dd00bc5-234c-4ded-b0b7-1181bc16cb28",
+    "Scott Chou",
+);
 
 // NPH 61 — Geth's Verdict
 pub(in crate::card::sets) static GETH_S_VERDICT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7a20b5a2-8613-49ed-b5cc-7cae9d0e0850"),
     "Geth's Verdict",
-    crate::card::CardArt::new("7a20b5a2-8613-49ed-b5cc-7cae9d0e0850", "Whit Brachna"),
+    "7a20b5a2-8613-49ed-b5cc-7cae9d0e0850",
+    "Whit Brachna",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{B}{B}")).with_ability(AbilityDef::spell_with_targets(
         "Target player sacrifices a creature and loses 1 life.",
@@ -1481,9 +1476,9 @@ pub(in crate::card::sets) static GETH_S_VERDICT: CardRecord = CardRecord::new(
 
 // NPH 62 — Glistening Oil
 pub(in crate::card::sets) static GLISTENING_OIL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("483e99fd-7e48-400d-9817-451089089e0c"),
     "Glistening Oil",
-    crate::card::CardArt::new("483e99fd-7e48-400d-9817-451089089e0c", "Steven Belledin"),
+    "483e99fd-7e48-400d-9817-451089089e0c",
+    "Steven Belledin",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_enchantment(mana_cost!("{B}{B}"))
         .with_subtypes(&["Aura"])
@@ -1521,9 +1516,9 @@ pub(in crate::card::sets) static GLISTENING_OIL: CardRecord = CardRecord::new(
 
 // NPH 63 — Grim Affliction
 pub(in crate::card::sets) static GRIM_AFFLICTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9d5c8ba8-d9f4-440c-8e0b-93699df6343e"),
     "Grim Affliction",
-    crate::card::CardArt::new("9d5c8ba8-d9f4-440c-8e0b-93699df6343e", "Erica Yang"),
+    "9d5c8ba8-d9f4-440c-8e0b-93699df6343e",
+    "Erica Yang",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{2}{B}")).with_ability(AbilityDef::spell_with_targets(
         "Put a -1/-1 counter on target creature, then proliferate.",
@@ -1547,9 +1542,9 @@ static NEGATIVE_ADDITIONAL_COST_POWER: ValueDef = ValueDef::Negate(&ValueDef::Ob
 ));
 
 pub(in crate::card::sets) static ICHOR_EXPLOSION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0b207e2f-4604-43c5-bb35-a877e35ddd81"),
     "Ichor Explosion",
-    crate::card::CardArt::new("0b207e2f-4604-43c5-bb35-a877e35ddd81", "James Ryman"),
+    "0b207e2f-4604-43c5-bb35-a877e35ddd81",
+    "James Ryman",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{5}{B}{B}")).with_ability(
         AbilityDef::spell_with_additional_cost(
@@ -1577,9 +1572,9 @@ pub(in crate::card::sets) static ICHOR_EXPLOSION: CardRecord = CardRecord::new(
 
 // NPH 65 — Life's Finale
 pub(in crate::card::sets) static LIFE_S_FINALE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ffd3fbd2-87c7-4f08-baaa-91d61c1114da"),
     "Life's Finale",
-    crate::card::CardArt::new("ffd3fbd2-87c7-4f08-baaa-91d61c1114da", "Svetlin Velinov"),
+    "ffd3fbd2-87c7-4f08-baaa-91d61c1114da",
+    "Svetlin Velinov",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{4}{B}{B}")).with_ability(
         AbilityDef::spell_with_targets(
@@ -1619,9 +1614,9 @@ pub(in crate::card::sets) static LIFE_S_FINALE: CardRecord = CardRecord::new(
 
 // NPH 66 — Mortis Dogs
 pub(in crate::card::sets) static MORTIS_DOGS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3cae1f40-0e43-41d8-bc5c-aa9873f7d7d5"),
     "Mortis Dogs",
-    crate::card::CardArt::new("3cae1f40-0e43-41d8-bc5c-aa9873f7d7d5", "Chippy"),
+    "3cae1f40-0e43-41d8-bc5c-aa9873f7d7d5",
+    "Chippy",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{B}"), &["Phyrexian", "Dog"], 2, 2).with_abilities(&[
         AbilityDef::triggered(
@@ -1651,9 +1646,9 @@ pub(in crate::card::sets) static MORTIS_DOGS: CardRecord = CardRecord::new(
 
 // NPH 67 — Parasitic Implant
 pub(in crate::card::sets) static PARASITIC_IMPLANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e34f1bf3-9f3a-47f0-9761-8b2356328a39"),
     "Parasitic Implant",
-    crate::card::CardArt::new("e34f1bf3-9f3a-47f0-9761-8b2356328a39", "Jason Felix"),
+    "e34f1bf3-9f3a-47f0-9761-8b2356328a39",
+    "Jason Felix",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_enchantment(mana_cost!("{3}{B}"))
         .with_subtypes(&["Aura"])
@@ -1682,9 +1677,9 @@ pub(in crate::card::sets) static PARASITIC_IMPLANT: CardRecord = CardRecord::new
 
 // NPH 68 — Phyrexian Obliterator
 pub(in crate::card::sets) static PHYREXIAN_OBLITERATOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("44c4476d-58f9-420d-9545-f5d580c589de"),
     "Phyrexian Obliterator",
-    crate::card::CardArt::new("44c4476d-58f9-420d-9545-f5d580c589de", "Todd Lockwood"),
+    "44c4476d-58f9-420d-9545-f5d580c589de",
+    "Todd Lockwood",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{B}{B}{B}{B}"), &["Phyrexian", "Horror"], 5, 5)
         .with_ability(AbilityDef::triggered(
@@ -1704,9 +1699,9 @@ pub(in crate::card::sets) static PHYREXIAN_OBLITERATOR: CardRecord = CardRecord:
 
 // NPH 69 — Pith Driller
 pub(in crate::card::sets) static PITH_DRILLER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("28e960c6-6da0-4679-87eb-55bac890e0c6"),
     "Pith Driller",
-    crate::card::CardArt::new("28e960c6-6da0-4679-87eb-55bac890e0c6", "Nils Hamm"),
+    "28e960c6-6da0-4679-87eb-55bac890e0c6",
+    "Nils Hamm",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{4}{B/P}"), &["Phyrexian", "Horror"], 2, 4)
         .with_ability(abilities::enters_trigger_with_targets(
@@ -1725,9 +1720,9 @@ pub(in crate::card::sets) static PITH_DRILLER: CardRecord = CardRecord::new(
 // NPH 70 — Postmortem Lunge
 // Audit: unsupported — Chosen-X targeting and an arrival haste effect are supported, but MoveToZone cannot bind the returned successor into a one-shot delayed exile at the beginning of the next end step.
 pub(in crate::card::sets) static POSTMORTEM_LUNGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d5f8b46e-1ad3-4c6e-aa63-376f2d222d46"),
     "Postmortem Lunge",
-    crate::card::CardArt::new("d5f8b46e-1ad3-4c6e-aa63-376f2d222d46", "Daarken"),
+    "d5f8b46e-1ad3-4c6e-aa63-376f2d222d46",
+    "Daarken",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
@@ -1735,18 +1730,18 @@ pub(in crate::card::sets) static POSTMORTEM_LUNGE: CardRecord = CardRecord::new(
 // NPH 71 — Praetor's Grasp
 // Audit: unsupported — SearchZone cannot compose its hidden-library choice with face-down exile; the face-down linked-exile and durable exile-play permissions are separate operations and cannot grant this spell's controller private access to the searched successor.
 pub(in crate::card::sets) static PRAETOR_S_GRASP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9588be49-d9b5-4491-a5a0-10bcadc9f8b3"),
     "Praetor's Grasp",
-    crate::card::CardArt::new("9588be49-d9b5-4491-a5a0-10bcadc9f8b3", "Steve Argyle"),
+    "9588be49-d9b5-4491-a5a0-10bcadc9f8b3",
+    "Steve Argyle",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 72 — Reaper of Sheoldred
 pub(in crate::card::sets) static REAPER_OF_SHEOLDRED: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a300a645-aec6-4cda-8c11-1e8a6af056ff"),
     "Reaper of Sheoldred",
-    crate::card::CardArt::new("a300a645-aec6-4cda-8c11-1e8a6af056ff", "Stephan Martiniere"),
+    "a300a645-aec6-4cda-8c11-1e8a6af056ff",
+    "Stephan Martiniere",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{B}"), &["Phyrexian", "Horror"], 2, 5)
         .with_abilities(&[
@@ -1765,12 +1760,9 @@ pub(in crate::card::sets) static REAPER_OF_SHEOLDRED: CardRecord = CardRecord::n
 
 // NPH 73 — Sheoldred, Whispering One
 pub(in crate::card::sets) static SHEOLDRED_WHISPERING_ONE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("72ddbbac-9914-44ff-b4d4-60989031744e"),
     "Sheoldred, Whispering One",
-    crate::card::CardArt::new(
-        "3bb8347b-8663-40b8-bdfb-411236d2efc8",
-        "Jana Schirmer & Johannes Voss",
-    ),
+    "3bb8347b-8663-40b8-bdfb-411236d2efc8",
+    "Jana Schirmer & Johannes Voss",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{5}{B}{B}"), &["Phyrexian", "Praetor"], 6, 6)
         .with_supertype(CardSupertype::Legendary)
@@ -1816,18 +1808,18 @@ pub(in crate::card::sets) static SHEOLDRED_WHISPERING_ONE: CardRecord = CardReco
 // NPH 74 — Surgical Extraction
 // Audit: unsupported — SharingNameWithBinding can find every copy, but this needs the spell's controller to choose any number across the target owner's public graveyard and private hand/library before the final shuffle; SearchZone gives the hidden-zone decision to that zone's owner.
 pub(in crate::card::sets) static SURGICAL_EXTRACTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("114834d8-4da5-48b9-9ac7-5e3e4b7ddf2d"),
     "Surgical Extraction",
-    crate::card::CardArt::new("dca7e072-edb5-4f7e-bdec-a3a393053c80", "Steven Belledin"),
+    "dca7e072-edb5-4f7e-bdec-a3a393053c80",
+    "Steven Belledin",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 75 — Toxic Nim
 pub(in crate::card::sets) static TOXIC_NIM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5823990c-8d40-4352-8d34-74332934adb2"),
     "Toxic Nim",
-    crate::card::CardArt::new("5823990c-8d40-4352-8d34-74332934adb2", "Karl Kopinski"),
+    "5823990c-8d40-4352-8d34-74332934adb2",
+    "Karl Kopinski",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{B}{B}"), &["Phyrexian", "Zombie"], 4, 1)
         .with_abilities(&[
@@ -1841,9 +1833,9 @@ pub(in crate::card::sets) static TOXIC_NIM: CardRecord = CardRecord::new(
 
 // NPH 76 — Vault Skirge
 pub(in crate::card::sets) static VAULT_SKIRGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f254239c-c07a-4c41-98f7-8f4de539c73e"),
     "Vault Skirge",
-    crate::card::CardArt::new("f254239c-c07a-4c41-98f7-8f4de539c73e", "Brad Rigney"),
+    "f254239c-c07a-4c41-98f7-8f4de539c73e",
+    "Brad Rigney",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{1}{B/P}"), &["Phyrexian", "Imp"], 1, 1)
         .with_abilities(&[abilities::flying(), abilities::lifelink()]),
@@ -1851,9 +1843,9 @@ pub(in crate::card::sets) static VAULT_SKIRGE: CardRecord = CardRecord::new(
 
 // NPH 77 — Whispering Specter
 pub(in crate::card::sets) static WHISPERING_SPECTER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bcb1b486-e336-4e88-b635-b6ff18cb4841"),
     "Whispering Specter",
-    crate::card::CardArt::new("bcb1b486-e336-4e88-b635-b6ff18cb4841", "Jason Felix"),
+    "bcb1b486-e336-4e88-b635-b6ff18cb4841",
+    "Jason Felix",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Phyrexian", "Specter"], 1, 1)
         .with_abilities(&[
@@ -1885,9 +1877,9 @@ pub(in crate::card::sets) static WHISPERING_SPECTER: CardRecord = CardRecord::ne
 
 // NPH 78 — Act of Aggression
 pub(in crate::card::sets) static ACT_OF_AGGRESSION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("61a9f30b-d154-49a4-ad6b-f05601992de3"),
     "Act of Aggression",
-    crate::card::CardArt::new("61a9f30b-d154-49a4-ad6b-f05601992de3", "Whit Brachna"),
+    "61a9f30b-d154-49a4-ad6b-f05601992de3",
+    "Whit Brachna",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{3}{R/P}{R/P}")).with_ability(
         AbilityDef::spell_with_targets(
@@ -1919,9 +1911,9 @@ pub(in crate::card::sets) static ACT_OF_AGGRESSION: CardRecord = CardRecord::new
 
 // NPH 79 — Artillerize
 pub(in crate::card::sets) static ARTILLERIZE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("034522ae-f531-44d9-b186-ada046ce0abc"),
     "Artillerize",
-    crate::card::CardArt::new("034522ae-f531-44d9-b186-ada046ce0abc", "Johann Bodin"),
+    "034522ae-f531-44d9-b186-ada046ce0abc",
+    "Johann Bodin",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{3}{R}")).with_ability(
         AbilityDef::spell_with_additional_cost(
@@ -1945,18 +1937,18 @@ pub(in crate::card::sets) static ARTILLERIZE: CardRecord = CardRecord::new(
 // NPH 80 — Bludgeon Brawl
 // Audit: unsupported — Needs per-object dynamic equip abilities whose equip cost and granted power bonus both read each affected artifact's mana value.
 pub(in crate::card::sets) static BLUDGEON_BRAWL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a30fa96d-64d1-423e-a62e-d43453ea838d"),
     "Bludgeon Brawl",
-    crate::card::CardArt::new("a30fa96d-64d1-423e-a62e-d43453ea838d", "Kev Walker"),
+    "a30fa96d-64d1-423e-a62e-d43453ea838d",
+    "Kev Walker",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 81 — Chancellor of the Forge
 pub(in crate::card::sets) static CHANCELLOR_OF_THE_FORGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dd3520a7-a55f-4c00-b4f1-c1c154adfc8f"),
     "Chancellor of the Forge",
-    crate::card::CardArt::new("dd3520a7-a55f-4c00-b4f1-c1c154adfc8f", "Chippy"),
+    "dd3520a7-a55f-4c00-b4f1-c1c154adfc8f",
+    "Chippy",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{R}{R}{R}"), &["Phyrexian", "Giant"], 5, 5)
         .with_abilities(&[
@@ -1994,9 +1986,9 @@ pub(in crate::card::sets) static CHANCELLOR_OF_THE_FORGE: CardRecord = CardRecor
 
 // NPH 82 — Fallen Ferromancer
 pub(in crate::card::sets) static FALLEN_FERROMANCER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7b200986-f553-4156-8f5e-37678db09687"),
     "Fallen Ferromancer",
-    crate::card::CardArt::new("7b200986-f553-4156-8f5e-37678db09687", "David Rapoza"),
+    "7b200986-f553-4156-8f5e-37678db09687",
+    "David Rapoza",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(
         mana_cost!("{3}{R}"),
@@ -2025,18 +2017,18 @@ pub(in crate::card::sets) static FALLEN_FERROMANCER: CardRecord = CardRecord::ne
 
 // NPH 83 — Flameborn Viron
 pub(in crate::card::sets) static FLAMEBORN_VIRON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9601ea62-a609-4bc5-a2f0-f7615b4dd5fa"),
     "Flameborn Viron",
-    crate::card::CardArt::new("9601ea62-a609-4bc5-a2f0-f7615b4dd5fa", "Svetlin Velinov"),
+    "9601ea62-a609-4bc5-a2f0-f7615b4dd5fa",
+    "Svetlin Velinov",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{R}{R}"), &["Phyrexian", "Insect"], 6, 4),
 );
 
 // NPH 84 — Furnace Scamp
 pub(in crate::card::sets) static FURNACE_SCAMP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("97538294-058c-47d4-b7a8-4db3753a6628"),
     "Furnace Scamp",
-    crate::card::CardArt::new("97538294-058c-47d4-b7a8-4db3753a6628", "Karl Kopinski"),
+    "97538294-058c-47d4-b7a8-4db3753a6628",
+    "Karl Kopinski",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{R}"), &["Phyrexian", "Beast"], 1, 1).with_ability(
         AbilityDef::triggered(
@@ -2061,9 +2053,9 @@ pub(in crate::card::sets) static FURNACE_SCAMP: CardRecord = CardRecord::new(
 
 // NPH 85 — Geosurge
 pub(in crate::card::sets) static GEOSURGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("118b7aa3-bb05-4691-978e-51486435bf05"),
     "Geosurge",
-    crate::card::CardArt::new("118b7aa3-bb05-4691-978e-51486435bf05", "Igor Kieryluk"),
+    "118b7aa3-bb05-4691-978e-51486435bf05",
+    "Igor Kieryluk",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{R}{R}{R}{R}")).with_ability(AbilityDef::spell(
         "Add {R}{R}{R}{R}{R}{R}{R}. Spend this mana only to cast artifact or creature spells.",
@@ -2080,9 +2072,9 @@ pub(in crate::card::sets) static GEOSURGE: CardRecord = CardRecord::new(
 
 // NPH 86 — Gut Shot
 pub(in crate::card::sets) static GUT_SHOT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a54a2a30-b96a-49c7-9151-1f4b0d4a4413"),
     "Gut Shot",
-    CardArt::new("a54a2a30-b96a-49c7-9151-1f4b0d4a4413", "Greg Staples"),
+    "a54a2a30-b96a-49c7-9151-1f4b0d4a4413",
+    "Greg Staples",
     CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{R/P}")).with_ability(AbilityDef::spell_with_targets(
         "Gut Shot deals 1 damage to any target.",
@@ -2099,18 +2091,18 @@ pub(in crate::card::sets) static GUT_SHOT: CardRecord = CardRecord::new(
 // NPH 87 — Invader Parasite
 // Audit: unsupported — Needs a later land-entry trigger to compare the entering land's name with the land card linked in exile by the enters ability.
 pub(in crate::card::sets) static INVADER_PARASITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("89a8c53f-2cb0-41ea-8391-c32667f17c30"),
     "Invader Parasite",
-    crate::card::CardArt::new("89a8c53f-2cb0-41ea-8391-c32667f17c30", "Volkan Baǵa"),
+    "89a8c53f-2cb0-41ea-8391-c32667f17c30",
+    "Volkan Baǵa",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 88 — Moltensteel Dragon
 pub(in crate::card::sets) static MOLTENSTEEL_DRAGON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("13b78018-bfbe-43fa-809f-9b52a155e11c"),
     "Moltensteel Dragon",
-    crate::card::CardArt::new("13b78018-bfbe-43fa-809f-9b52a155e11c", "James Ryman"),
+    "13b78018-bfbe-43fa-809f-9b52a155e11c",
+    "James Ryman",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{4}{R/P}{R/P}"), &["Phyrexian", "Dragon"], 4, 4)
         .with_abilities(&[
@@ -2132,9 +2124,9 @@ pub(in crate::card::sets) static MOLTENSTEEL_DRAGON: CardRecord = CardRecord::ne
 
 // NPH 89 — Ogre Menial
 pub(in crate::card::sets) static OGRE_MENIAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6271c5c1-5f39-4908-b838-0f34c74e912e"),
     "Ogre Menial",
-    crate::card::CardArt::new("6271c5c1-5f39-4908-b838-0f34c74e912e", "David Rapoza"),
+    "6271c5c1-5f39-4908-b838-0f34c74e912e",
+    "David Rapoza",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Phyrexian", "Ogre"], 0, 4).with_abilities(&[
         abilities::infect(),
@@ -2155,9 +2147,9 @@ pub(in crate::card::sets) static OGRE_MENIAL: CardRecord = CardRecord::new(
 
 // NPH 90 — Priest of Urabrask
 pub(in crate::card::sets) static PRIEST_OF_URABRASK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d0a9f49c-f15c-4b2d-b6a5-8efc3c430d87"),
     "Priest of Urabrask",
-    crate::card::CardArt::new("d0a9f49c-f15c-4b2d-b6a5-8efc3c430d87", "Kev Walker"),
+    "d0a9f49c-f15c-4b2d-b6a5-8efc3c430d87",
+    "Kev Walker",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(
         mana_cost!("{2}{R}"),
@@ -2174,18 +2166,18 @@ pub(in crate::card::sets) static PRIEST_OF_URABRASK: CardRecord = CardRecord::ne
 // NPH 91 — Rage Extractor
 // Audit: unsupported — Needs a spell predicate that detects Phyrexian mana symbols in the triggering spell's printed mana cost.
 pub(in crate::card::sets) static RAGE_EXTRACTOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d8cebc2c-a46b-4459-b62b-7fce1a744b11"),
     "Rage Extractor",
-    crate::card::CardArt::new("d8cebc2c-a46b-4459-b62b-7fce1a744b11", "Raymond Swanland"),
+    "d8cebc2c-a46b-4459-b62b-7fce1a744b11",
+    "Raymond Swanland",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 92 — Razor Swine
 pub(in crate::card::sets) static RAZOR_SWINE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2fb022a3-5f9e-491e-8340-087e33f927d6"),
     "Razor Swine",
-    crate::card::CardArt::new("2fb022a3-5f9e-491e-8340-087e33f927d6", "Dave Allsop"),
+    "2fb022a3-5f9e-491e-8340-087e33f927d6",
+    "Dave Allsop",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Phyrexian", "Boar"], 2, 1)
         .with_abilities(&[abilities::first_strike(), abilities::infect()]),
@@ -2193,9 +2185,9 @@ pub(in crate::card::sets) static RAZOR_SWINE: CardRecord = CardRecord::new(
 
 // NPH 93 — Ruthless Invasion
 pub(in crate::card::sets) static RUTHLESS_INVASION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bc2bbff9-af57-4858-9351-d148b8c4bc3a"),
     "Ruthless Invasion",
-    crate::card::CardArt::new("bc2bbff9-af57-4858-9351-d148b8c4bc3a", "Svetlin Velinov"),
+    "bc2bbff9-af57-4858-9351-d148b8c4bc3a",
+    "Svetlin Velinov",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{3}{R/P}")).with_ability(AbilityDef::spell(
         "Nonartifact creatures can't block this turn.",
@@ -2216,9 +2208,9 @@ pub(in crate::card::sets) static RUTHLESS_INVASION: CardRecord = CardRecord::new
 
 // NPH 94 — Scrapyard Salvo
 pub(in crate::card::sets) static SCRAPYARD_SALVO: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3a4874eb-635b-47f0-bbee-6bd8b26e2f10"),
     "Scrapyard Salvo",
-    crate::card::CardArt::new("3a4874eb-635b-47f0-bbee-6bd8b26e2f10", "Austin Hsu"),
+    "3a4874eb-635b-47f0-bbee-6bd8b26e2f10",
+    "Austin Hsu",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{1}{R}{R}")).with_ability(
         AbilityDef::spell_with_targets(
@@ -2245,9 +2237,9 @@ static ARTIFACT_CARDS_IN_ALL_GRAVEYARDS: ObjectQueryDef = ObjectQueryDef::new(
 );
 
 pub(in crate::card::sets) static SLAG_FIEND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c0d1ee33-e247-4ada-bb01-518611cd7d00"),
     "Slag Fiend",
-    crate::card::CardArt::new("c0d1ee33-e247-4ada-bb01-518611cd7d00", "Mike Bierek"),
+    "c0d1ee33-e247-4ada-bb01-518611cd7d00",
+    "Mike Bierek",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{R}"), &["Phyrexian", "Construct"], 0, 0)
         .with_ability(AbilityDef::static_ability(
@@ -2264,9 +2256,9 @@ pub(in crate::card::sets) static SLAG_FIEND: CardRecord = CardRecord::new(
 
 // NPH 96 — Slash Panther
 pub(in crate::card::sets) static SLASH_PANTHER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2f510946-34de-4c12-8998-f61887d1a0e1"),
     "Slash Panther",
-    crate::card::CardArt::new("2f510946-34de-4c12-8998-f61887d1a0e1", "Matt Stewart"),
+    "2f510946-34de-4c12-8998-f61887d1a0e1",
+    "Matt Stewart",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{4}{R/P}"), &["Phyrexian", "Cat"], 4, 2)
         .with_abilities(&[abilities::haste()]),
@@ -2274,9 +2266,9 @@ pub(in crate::card::sets) static SLASH_PANTHER: CardRecord = CardRecord::new(
 
 // NPH 97 — Tormentor Exarch
 pub(in crate::card::sets) static TORMENTOR_EXARCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4886eb6a-0f6a-4ea7-8e85-4a27d1a6f03b"),
     "Tormentor Exarch",
-    crate::card::CardArt::new("4886eb6a-0f6a-4ea7-8e85-4a27d1a6f03b", "Brad Rigney"),
+    "4886eb6a-0f6a-4ea7-8e85-4a27d1a6f03b",
+    "Brad Rigney",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Phyrexian", "Cleric"], 2, 2).with_ability(
         AbilityDef::modal_triggered(
@@ -2322,9 +2314,9 @@ pub(in crate::card::sets) static TORMENTOR_EXARCH: CardRecord = CardRecord::new(
 
 // NPH 98 — Urabrask the Hidden
 pub(in crate::card::sets) static URABRASK_THE_HIDDEN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b06fcab2-891e-4fa3-8583-068ba56c2e27"),
     "Urabrask the Hidden",
-    crate::card::CardArt::new("b06fcab2-891e-4fa3-8583-068ba56c2e27", "Brad Rigney"),
+    "b06fcab2-891e-4fa3-8583-068ba56c2e27",
+    "Brad Rigney",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Phyrexian", "Praetor"], 4, 4)
         .with_supertype(CardSupertype::Legendary)
@@ -2356,9 +2348,9 @@ pub(in crate::card::sets) static URABRASK_THE_HIDDEN: CardRecord = CardRecord::n
 
 // NPH 99 — Victorious Destruction
 pub(in crate::card::sets) static VICTORIOUS_DESTRUCTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7b81cb30-e9f8-41f3-a10b-26e0ba2503aa"),
     "Victorious Destruction",
-    crate::card::CardArt::new("7b81cb30-e9f8-41f3-a10b-26e0ba2503aa", "Jung Park"),
+    "7b81cb30-e9f8-41f3-a10b-26e0ba2503aa",
+    "Jung Park",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{4}{R}")).with_ability(AbilityDef::spell_with_targets(
         "Destroy target artifact or land. Its controller loses 1 life.",
@@ -2386,12 +2378,9 @@ pub(in crate::card::sets) static VICTORIOUS_DESTRUCTION: CardRecord = CardRecord
 
 // NPH 100 — Volt Charge
 pub(in crate::card::sets) static VOLT_CHARGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("aa88011c-a19d-4faa-8da6-86b9980cd571"),
     "Volt Charge",
-    crate::card::CardArt::new(
-        "aa88011c-a19d-4faa-8da6-86b9980cd571",
-        "Jana Schirmer & Johannes Voss",
-    ),
+    "aa88011c-a19d-4faa-8da6-86b9980cd571",
+    "Jana Schirmer & Johannes Voss",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{2}{R}")).with_ability(AbilityDef::spell_with_targets(
         "This spell deals 3 damage to any target. Proliferate.",
@@ -2410,9 +2399,9 @@ pub(in crate::card::sets) static VOLT_CHARGE: CardRecord = CardRecord::new(
 
 // NPH 101 — Vulshok Refugee
 pub(in crate::card::sets) static VULSHOK_REFUGEE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0b1615ec-21b3-4575-8b02-fd2bccb930ba"),
     "Vulshok Refugee",
-    crate::card::CardArt::new("0b1615ec-21b3-4575-8b02-fd2bccb930ba", "Wayne Reynolds"),
+    "0b1615ec-21b3-4575-8b02-fd2bccb930ba",
+    "Wayne Reynolds",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Human", "Warrior"], 3, 2)
         .with_ability(abilities::protection_from_color(ManaColor::Red)),
@@ -2420,9 +2409,9 @@ pub(in crate::card::sets) static VULSHOK_REFUGEE: CardRecord = CardRecord::new(
 
 // NPH 102 — Whipflare
 pub(in crate::card::sets) static WHIPFLARE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5a7e6c10-d066-4967-932f-5b6c8d74568b"),
     "Whipflare",
-    crate::card::CardArt::new("5a7e6c10-d066-4967-932f-5b6c8d74568b", "Johann Bodin"),
+    "5a7e6c10-d066-4967-932f-5b6c8d74568b",
+    "Johann Bodin",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell(
         "This spell deals 2 damage to each nonartifact creature.",
@@ -2442,9 +2431,9 @@ pub(in crate::card::sets) static WHIPFLARE: CardRecord = CardRecord::new(
 
 // NPH 103 — Beast Within
 pub(in crate::card::sets) static BEAST_WITHIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ce5b6d19-22e3-4f57-8f4d-a17e982286c7"),
     "Beast Within",
-    crate::card::CardArt::new("ce5b6d19-22e3-4f57-8f4d-a17e982286c7", "Dave Allsop"),
+    "ce5b6d19-22e3-4f57-8f4d-a17e982286c7",
+    "Dave Allsop",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{2}{G}")).with_ability(AbilityDef::spell_with_targets(
         "Destroy target permanent. Its controller creates a 3/3 green Beast creature token.",
@@ -2467,9 +2456,9 @@ pub(in crate::card::sets) static BEAST_WITHIN: CardRecord = CardRecord::new(
 
 // NPH 104 — Birthing Pod
 pub(in crate::card::sets) static BIRTHING_POD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b768efa2-e56b-4a7e-ace8-d673f10e0714"),
     "Birthing Pod",
-    crate::card::CardArt::new("b768efa2-e56b-4a7e-ace8-d673f10e0714", "Daarken"),
+    "b768efa2-e56b-4a7e-ace8-d673f10e0714",
+    "Daarken",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{3}{G/P}")).with_ability(
         AbilityDef::activated(
@@ -2507,9 +2496,9 @@ pub(in crate::card::sets) static BIRTHING_POD: CardRecord = CardRecord::new(
 
 // NPH 105 — Brutalizer Exarch
 pub(in crate::card::sets) static BRUTALIZER_EXARCH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9ddfa4ed-70fb-4e25-875d-df0f973f7294"),
     "Brutalizer Exarch",
-    crate::card::CardArt::new("9ddfa4ed-70fb-4e25-875d-df0f973f7294", "Mark Zug"),
+    "9ddfa4ed-70fb-4e25-875d-df0f973f7294",
+    "Mark Zug",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{5}{G}"), &["Phyrexian", "Cleric"], 3, 3).with_ability(
         AbilityDef::modal_triggered(
@@ -2556,9 +2545,9 @@ pub(in crate::card::sets) static BRUTALIZER_EXARCH: CardRecord = CardRecord::new
 
 // NPH 106 — Chancellor of the Tangle
 pub(in crate::card::sets) static CHANCELLOR_OF_THE_TANGLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6d129aa8-b637-451e-8123-5221e08cc2cc"),
     "Chancellor of the Tangle",
-    crate::card::CardArt::new("6d129aa8-b637-451e-8123-5221e08cc2cc", "Steve Prescott"),
+    "6d129aa8-b637-451e-8123-5221e08cc2cc",
+    "Steve Prescott",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{G}{G}{G}"), &["Phyrexian", "Beast"], 6, 7)
         .with_abilities(&[
@@ -2580,9 +2569,9 @@ pub(in crate::card::sets) static CHANCELLOR_OF_THE_TANGLE: CardRecord = CardReco
 
 // NPH 107 — Corrosive Gale
 pub(in crate::card::sets) static CORROSIVE_GALE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("04a13825-ab9b-4ffd-9b59-6198181891b9"),
     "Corrosive Gale",
-    crate::card::CardArt::new("04a13825-ab9b-4ffd-9b59-6198181891b9", "Dan Murayama Scott"),
+    "04a13825-ab9b-4ffd-9b59-6198181891b9",
+    "Dan Murayama Scott",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{X}{G/P}")).with_ability(AbilityDef::spell(
         "This spell deals X damage to each creature with flying.",
@@ -2602,9 +2591,9 @@ pub(in crate::card::sets) static CORROSIVE_GALE: CardRecord = CardRecord::new(
 
 // NPH 108 — Death-Hood Cobra
 pub(in crate::card::sets) static DEATH_HOOD_COBRA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5279ac25-8175-44ad-ab7b-dfa17e359a10"),
     "Death-Hood Cobra",
-    crate::card::CardArt::new("5279ac25-8175-44ad-ab7b-dfa17e359a10", "Jason Felix"),
+    "5279ac25-8175-44ad-ab7b-dfa17e359a10",
+    "Jason Felix",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Phyrexian", "Snake"], 2, 2).with_abilities(&[
         AbilityDef::activated(
@@ -2631,18 +2620,18 @@ pub(in crate::card::sets) static DEATH_HOOD_COBRA: CardRecord = CardRecord::new(
 // NPH 109 — Fresh Meat
 // Audit: unsupported — Needs controller-scoped creature-death history; CreaturesDiedThisTurn is global and would count creatures put into other players' graveyards.
 pub(in crate::card::sets) static FRESH_MEAT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("000ce65b-5347-4a88-81af-be9053e4d3f3"),
     "Fresh Meat",
-    crate::card::CardArt::new("000ce65b-5347-4a88-81af-be9053e4d3f3", "Dave Allsop"),
+    "000ce65b-5347-4a88-81af-be9053e4d3f3",
+    "Dave Allsop",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 110 — Glissa's Scorn
 pub(in crate::card::sets) static GLISSA_S_SCORN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f11187c1-de35-4e85-87c3-656f978b2d7e"),
     "Glissa's Scorn",
-    crate::card::CardArt::new("f11187c1-de35-4e85-87c3-656f978b2d7e", "Nils Hamm"),
+    "f11187c1-de35-4e85-87c3-656f978b2d7e",
+    "Nils Hamm",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell_with_targets(
         "Destroy target artifact. Its controller loses 1 life.",
@@ -2667,9 +2656,9 @@ pub(in crate::card::sets) static GLISSA_S_SCORN: CardRecord = CardRecord::new(
 
 // NPH 111 — Glistener Elf
 pub(in crate::card::sets) static GLISTENER_ELF: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8b94f4c6-b518-43b3-be52-e889d1f3ea38"),
     "Glistener Elf",
-    crate::card::CardArt::new("8b94f4c6-b518-43b3-be52-e889d1f3ea38", "Steve Argyle"),
+    "8b94f4c6-b518-43b3-be52-e889d1f3ea38",
+    "Steve Argyle",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{G}"), &["Phyrexian", "Elf", "Warrior"], 1, 1)
         .with_abilities(&[abilities::infect()]),
@@ -2677,9 +2666,9 @@ pub(in crate::card::sets) static GLISTENER_ELF: CardRecord = CardRecord::new(
 
 // NPH 112 — Greenhilt Trainee
 pub(in crate::card::sets) static GREENHILT_TRAINEE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("370f8ef5-c809-43cc-903a-077fad33cd30"),
     "Greenhilt Trainee",
-    crate::card::CardArt::new("370f8ef5-c809-43cc-903a-077fad33cd30", "Chris Rahn"),
+    "370f8ef5-c809-43cc-903a-077fad33cd30",
+    "Chris Rahn",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{G}"), &["Elf", "Warrior"], 2, 3).with_ability(
         AbilityDef::activated_with_targets(
@@ -2705,9 +2694,9 @@ pub(in crate::card::sets) static GREENHILT_TRAINEE: CardRecord = CardRecord::new
 
 // NPH 113 — Leeching Bite
 pub(in crate::card::sets) static LEECHING_BITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1c3bdbeb-c376-42bd-af2a-251cd7ac704c"),
     "Leeching Bite",
-    crate::card::CardArt::new("1c3bdbeb-c376-42bd-af2a-251cd7ac704c", "Cos Koniotis"),
+    "1c3bdbeb-c376-42bd-af2a-251cd7ac704c",
+    "Cos Koniotis",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell_with_targets(
         "Target creature gets +1/+1 until end of turn. Another target creature gets -1/-1 until end of turn.",
@@ -2742,9 +2731,9 @@ pub(in crate::card::sets) static LEECHING_BITE: CardRecord = CardRecord::new(
 
 // NPH 114 — Maul Splicer
 pub(in crate::card::sets) static MAUL_SPLICER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2d2c6a6d-5b59-47d7-b290-df3640d9555f"),
     "Maul Splicer",
-    crate::card::CardArt::new("2d2c6a6d-5b59-47d7-b290-df3640d9555f", "Jason Chan"),
+    "2d2c6a6d-5b59-47d7-b290-df3640d9555f",
+    "Jason Chan",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{6}{G}"), &["Phyrexian", "Human", "Artificer"], 1, 1).with_abilities(&[
         abilities::enters_trigger("When this creature enters, create two 3/3 colorless Phyrexian Golem artifact creature tokens.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3).with_amount(2)),
@@ -2761,18 +2750,18 @@ pub(in crate::card::sets) static MAUL_SPLICER: CardRecord = CardRecord::new(
 // NPH 115 — Melira, Sylvok Outcast
 // Audit: unsupported — Needs player poison-counter placement prevention, creature -1/-1-counter placement prevention, and a continuous removal of infect from creatures opponents control.
 pub(in crate::card::sets) static MELIRA_SYLVOK_OUTCAST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e83851a1-e4e8-49ec-af5c-4efe86fa51ad"),
     "Melira, Sylvok Outcast",
-    crate::card::CardArt::new("e83851a1-e4e8-49ec-af5c-4efe86fa51ad", "Min Yum"),
+    "e83851a1-e4e8-49ec-af5c-4efe86fa51ad",
+    "Min Yum",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 116 — Mutagenic Growth
 pub(in crate::card::sets) static MUTAGENIC_GROWTH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("af2d23da-70a1-49ba-91bf-c110cc4bbedc"),
     "Mutagenic Growth",
-    crate::card::CardArt::new("af2d23da-70a1-49ba-91bf-c110cc4bbedc", "Dave Kendall"),
+    "af2d23da-70a1-49ba-91bf-c110cc4bbedc",
+    "Dave Kendall",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{G/P}")).with_ability(AbilityDef::spell_with_targets(
         "Target creature gets +2/+2 until end of turn.",
@@ -2793,18 +2782,18 @@ pub(in crate::card::sets) static MUTAGENIC_GROWTH: CardRecord = CardRecord::new(
 // NPH 117 — Mycosynth Fiend
 // Audit: unsupported — Needs a continuous power/toughness value that reads poison counters across opponents; player-counter values are not supported in static effects.
 pub(in crate::card::sets) static MYCOSYNTH_FIEND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bdcd1b8e-9f1f-48a3-b7a1-43a32cc03bb1"),
     "Mycosynth Fiend",
-    crate::card::CardArt::new("bdcd1b8e-9f1f-48a3-b7a1-43a32cc03bb1", "Kev Walker"),
+    "bdcd1b8e-9f1f-48a3-b7a1-43a32cc03bb1",
+    "Kev Walker",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 118 — Noxious Revival
 pub(in crate::card::sets) static NOXIOUS_REVIVAL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1bdd1243-1d14-496a-9b7a-0c5b34461361"),
     "Noxious Revival",
-    crate::card::CardArt::new("1bdd1243-1d14-496a-9b7a-0c5b34461361", "Matt Stewart"),
+    "1bdd1243-1d14-496a-9b7a-0c5b34461361",
+    "Matt Stewart",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_instant(mana_cost!("{G/P}")).with_ability(AbilityDef::spell_with_targets(
         "Put target card from a graveyard on top of its owner's library.",
@@ -2826,9 +2815,9 @@ pub(in crate::card::sets) static NOXIOUS_REVIVAL: CardRecord = CardRecord::new(
 
 // NPH 119 — Phyrexian Swarmlord
 pub(in crate::card::sets) static PHYREXIAN_SWARMLORD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8a91dea7-9792-4714-82b0-ba2c06cef304"),
     "Phyrexian Swarmlord",
-    crate::card::CardArt::new("8a91dea7-9792-4714-82b0-ba2c06cef304", "Svetlin Velinov"),
+    "8a91dea7-9792-4714-82b0-ba2c06cef304",
+    "Svetlin Velinov",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(
         mana_cost!("{4}{G}{G}"),
@@ -2861,9 +2850,9 @@ pub(in crate::card::sets) static PHYREXIAN_SWARMLORD: CardRecord = CardRecord::n
 
 // NPH 120 — Rotted Hystrix
 pub(in crate::card::sets) static ROTTED_HYSTRIX: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7bcae97d-468a-4e16-bfed-d2946f64784c"),
     "Rotted Hystrix",
-    crate::card::CardArt::new("7bcae97d-468a-4e16-bfed-d2946f64784c", "Dave Allsop"),
+    "7bcae97d-468a-4e16-bfed-d2946f64784c",
+    "Dave Allsop",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{4}{G}"), &["Phyrexian", "Beast"], 3, 6),
 );
@@ -2871,18 +2860,18 @@ pub(in crate::card::sets) static ROTTED_HYSTRIX: CardRecord = CardRecord::new(
 // NPH 121 — Spinebiter
 // Audit: unsupported — Needs a combat-damage assignment option that lets the attacker assign damage as though it were unblocked without actually becoming unblocked.
 pub(in crate::card::sets) static SPINEBITER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cfc79ac6-ffc6-4506-9dea-e20176f960ea"),
     "Spinebiter",
-    crate::card::CardArt::new("cfc79ac6-ffc6-4506-9dea-e20176f960ea", "Jaime Jones"),
+    "cfc79ac6-ffc6-4506-9dea-e20176f960ea",
+    "Jaime Jones",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 122 — Thundering Tanadon
 pub(in crate::card::sets) static THUNDERING_TANADON: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e2fab443-0f4b-45ea-8a6d-435b93803409"),
     "Thundering Tanadon",
-    crate::card::CardArt::new("e2fab443-0f4b-45ea-8a6d-435b93803409", "Dan Murayama Scott"),
+    "e2fab443-0f4b-45ea-8a6d-435b93803409",
+    "Dan Murayama Scott",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{4}{G/P}{G/P}"), &["Phyrexian", "Beast"], 5, 4)
         .with_abilities(&[abilities::trample()]),
@@ -2890,9 +2879,9 @@ pub(in crate::card::sets) static THUNDERING_TANADON: CardRecord = CardRecord::ne
 
 // NPH 123 — Triumph of the Hordes
 pub(in crate::card::sets) static TRIUMPH_OF_THE_HORDES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c16b90ff-d256-4ac6-b687-3430b8c80dd7"),
     "Triumph of the Hordes",
-    crate::card::CardArt::new("c16b90ff-d256-4ac6-b687-3430b8c80dd7", "Izzy"),
+    "c16b90ff-d256-4ac6-b687-3430b8c80dd7",
+    "Izzy",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_sorcery(mana_cost!("{2}{G}{G}")).with_ability(AbilityDef::spell(
         "Until end of turn, creatures you control get +1/+1 and gain trample and infect.",
@@ -2918,18 +2907,18 @@ pub(in crate::card::sets) static TRIUMPH_OF_THE_HORDES: CardRecord = CardRecord:
 // NPH 124 — Viridian Betrayers
 // Audit: unsupported — Player-counter comparisons work for resolving and intervening-if conditions, but the static-condition runtime rejects PlayerCounters because its live layer walk has no supported player-counter value path.
 pub(in crate::card::sets) static VIRIDIAN_BETRAYERS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cc6ea52f-4b24-45ff-99e1-4d0e1bd42875"),
     "Viridian Betrayers",
-    crate::card::CardArt::new("cc6ea52f-4b24-45ff-99e1-4d0e1bd42875", "Karl Kopinski"),
+    "cc6ea52f-4b24-45ff-99e1-4d0e1bd42875",
+    "Karl Kopinski",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 125 — Viridian Harvest
 pub(in crate::card::sets) static VIRIDIAN_HARVEST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("666eb9a5-b105-45c1-be3e-7ac5cc650338"),
     "Viridian Harvest",
-    crate::card::CardArt::new("666eb9a5-b105-45c1-be3e-7ac5cc650338", "Johann Bodin"),
+    "666eb9a5-b105-45c1-be3e-7ac5cc650338",
+    "Johann Bodin",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_enchantment(mana_cost!("{G}"))
         .with_subtypes(&["Aura"])
@@ -2952,9 +2941,9 @@ pub(in crate::card::sets) static VIRIDIAN_HARVEST: CardRecord = CardRecord::new(
 
 // NPH 126 — Vital Splicer
 pub(in crate::card::sets) static VITAL_SPLICER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("273b982d-bca2-4418-8618-c711d28fc901"),
     "Vital Splicer",
-    crate::card::CardArt::new("273b982d-bca2-4418-8618-c711d28fc901", "Daarken"),
+    "273b982d-bca2-4418-8618-c711d28fc901",
+    "Daarken",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{G}"), &["Phyrexian", "Human", "Artificer"], 1, 1)
         .with_abilities(&[
@@ -2986,18 +2975,18 @@ pub(in crate::card::sets) static VITAL_SPLICER: CardRecord = CardRecord::new(
 // NPH 127 — Vorinclex, Voice of Hunger
 // Audit: unsupported — Needs a mana trigger that reproduces the exact type of mana the triggering land produced plus a turn-based rule that skips that land's controller's next untap of it.
 pub(in crate::card::sets) static VORINCLEX_VOICE_OF_HUNGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0806adab-6a08-411b-b249-e1c58ade354b"),
     "Vorinclex, Voice of Hunger",
-    crate::card::CardArt::new("0806adab-6a08-411b-b249-e1c58ade354b", "Karl Kopinski"),
+    "0806adab-6a08-411b-b249-e1c58ade354b",
+    "Karl Kopinski",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 128 — Jor Kadeen, the Prevailer
 pub(in crate::card::sets) static JOR_KADEEN_THE_PREVAILER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bfd8d7de-a2e1-4f83-85f9-7057eebf0c37"),
     "Jor Kadeen, the Prevailer",
-    crate::card::CardArt::new("bfd8d7de-a2e1-4f83-85f9-7057eebf0c37", "Austin Hsu"),
+    "bfd8d7de-a2e1-4f83-85f9-7057eebf0c37",
+    "Austin Hsu",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_creature(mana_cost!("{3}{R}{W}"), &["Human", "Warrior"], 5, 4)
         .with_supertype(CardSupertype::Legendary)
@@ -3022,9 +3011,9 @@ pub(in crate::card::sets) static JOR_KADEEN_THE_PREVAILER: CardRecord = CardReco
 
 // NPH 129 — Alloy Myr
 pub(in crate::card::sets) static ALLOY_MYR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("abd3350b-89fb-40b4-a942-28e0c8c274aa"),
     "Alloy Myr",
-    crate::card::CardArt::new("abd3350b-89fb-40b4-a942-28e0c8c274aa", "Matt Cavotta"),
+    "abd3350b-89fb-40b4-a942-28e0c8c274aa",
+    "Matt Cavotta",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{3}"), &["Myr"], 2, 2).with_ability(
         AbilityDef::activated_mana(
@@ -3037,9 +3026,9 @@ pub(in crate::card::sets) static ALLOY_MYR: CardRecord = CardRecord::new(
 
 // NPH 130 — Batterskull
 pub(in crate::card::sets) static BATTERSKULL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cd114ec3-d286-4c70-a122-3043bc53cc88"),
     "Batterskull",
-    crate::card::CardArt::new("cd114ec3-d286-4c70-a122-3043bc53cc88", "Mark Zug"),
+    "cd114ec3-d286-4c70-a122-3043bc53cc88",
+    "Mark Zug",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{5}"))
         .with_subtypes(&["Equipment"])
@@ -3074,9 +3063,9 @@ pub(in crate::card::sets) static BATTERSKULL: CardRecord = CardRecord::new(
 
 // NPH 131 — Blinding Souleater
 pub(in crate::card::sets) static BLINDING_SOULEATER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2220e9dd-f1d8-4a69-9df9-1322e4a5cdc7"),
     "Blinding Souleater",
-    crate::card::CardArt::new("2220e9dd-f1d8-4a69-9df9-1322e4a5cdc7", "Igor Kieryluk"),
+    "2220e9dd-f1d8-4a69-9df9-1322e4a5cdc7",
+    "Igor Kieryluk",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{3}"), &["Phyrexian", "Cleric"], 1, 3)
         .with_ability(AbilityDef::activated_with_targets(
@@ -3097,18 +3086,18 @@ pub(in crate::card::sets) static BLINDING_SOULEATER: CardRecord = CardRecord::ne
 // NPH 132 — Caged Sun
 // Audit: unsupported — Needs one persistent color choice consumed by both a creature-color continuous effect and a land-mana trigger that reproduces the chosen color.
 pub(in crate::card::sets) static CAGED_SUN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("506597cc-48f9-4098-a229-2b3b3c0de944"),
     "Caged Sun",
-    crate::card::CardArt::new("506597cc-48f9-4098-a229-2b3b3c0de944", "Scott Chou"),
+    "506597cc-48f9-4098-a229-2b3b3c0de944",
+    "Scott Chou",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 133 — Conversion Chamber
 pub(in crate::card::sets) static CONVERSION_CHAMBER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("14d5a8f3-05b6-4bb7-bbe1-e753e22cbb50"),
     "Conversion Chamber",
-    crate::card::CardArt::new("14d5a8f3-05b6-4bb7-bbe1-e753e22cbb50", "Anthony Francisco"),
+    "14d5a8f3-05b6-4bb7-bbe1-e753e22cbb50",
+    "Anthony Francisco",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -3153,18 +3142,18 @@ pub(in crate::card::sets) static CONVERSION_CHAMBER: CardRecord = CardRecord::ne
 
 // NPH 134 — Darksteel Relic
 pub(in crate::card::sets) static DARKSTEEL_RELIC: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0fd8c918-62d9-41be-a3e1-32ddac71b7e7"),
     "Darksteel Relic",
-    crate::card::CardArt::new("0fd8c918-62d9-41be-a3e1-32ddac71b7e7", "Daniel Ljunggren"),
+    "0fd8c918-62d9-41be-a3e1-32ddac71b7e7",
+    "Daniel Ljunggren",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{0}")).with_ability(abilities::indestructible()),
 );
 
 // NPH 135 — Etched Monstrosity
 pub(in crate::card::sets) static ETCHED_MONSTROSITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ff9c4451-dd17-4859-a31d-62ed2430c63c"),
     "Etched Monstrosity",
-    crate::card::CardArt::new("ff9c4451-dd17-4859-a31d-62ed2430c63c", "Steven Belledin"),
+    "ff9c4451-dd17-4859-a31d-62ed2430c63c",
+    "Steven Belledin",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{5}"), &["Phyrexian", "Golem"], 10, 10)
         .with_abilities(&[
@@ -3199,9 +3188,9 @@ pub(in crate::card::sets) static ETCHED_MONSTROSITY: CardRecord = CardRecord::ne
 
 // NPH 136 — Gremlin Mine
 pub(in crate::card::sets) static GREMLIN_MINE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("ccde7ebb-90de-4174-a1c5-75fc9384deaa"),
     "Gremlin Mine",
-    crate::card::CardArt::new("ccde7ebb-90de-4174-a1c5-75fc9384deaa", "Matt Stewart"),
+    "ccde7ebb-90de-4174-a1c5-75fc9384deaa",
+    "Matt Stewart",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -3248,18 +3237,18 @@ pub(in crate::card::sets) static GREMLIN_MINE: CardRecord = CardRecord::new(
 // NPH 137 — Hex Parasite
 // Audit: unsupported — Counter-count predicates and fixed-kind removal exist, but this needs a variable payment tied to an independently chosen number, a choice across arbitrary counter kinds, and a pump based on the number actually removed.
 pub(in crate::card::sets) static HEX_PARASITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("43502078-5349-4e29-8e7d-277654a9a71e"),
     "Hex Parasite",
-    crate::card::CardArt::new("43502078-5349-4e29-8e7d-277654a9a71e", "Raymond Swanland"),
+    "43502078-5349-4e29-8e7d-277654a9a71e",
+    "Raymond Swanland",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 138 — Hovermyr
 pub(in crate::card::sets) static HOVERMYR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("95e4e445-8333-4cb4-b4fb-80957fae0b97"),
     "Hovermyr",
-    crate::card::CardArt::new("95e4e445-8333-4cb4-b4fb-80957fae0b97", "Dan Murayama Scott"),
+    "95e4e445-8333-4cb4-b4fb-80957fae0b97",
+    "Dan Murayama Scott",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{2}"), &["Myr"], 1, 2)
         .with_abilities(&[abilities::flying(), abilities::vigilance()]),
@@ -3267,9 +3256,9 @@ pub(in crate::card::sets) static HOVERMYR: CardRecord = CardRecord::new(
 
 // NPH 139 — Immolating Souleater
 pub(in crate::card::sets) static IMMOLATING_SOULEATER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("abbaf916-067d-4834-a55c-b400fe0d8c1f"),
     "Immolating Souleater",
-    crate::card::CardArt::new("abbaf916-067d-4834-a55c-b400fe0d8c1f", "Austin Hsu"),
+    "abbaf916-067d-4834-a55c-b400fe0d8c1f",
+    "Austin Hsu",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{2}"), &["Phyrexian", "Dog"], 1, 1).with_ability(
         AbilityDef::activated(
@@ -3289,9 +3278,9 @@ pub(in crate::card::sets) static IMMOLATING_SOULEATER: CardRecord = CardRecord::
 
 // NPH 140 — Insatiable Souleater
 pub(in crate::card::sets) static INSATIABLE_SOULEATER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("171d5213-5bb4-4f5b-9ddd-e2a7ac092ec6"),
     "Insatiable Souleater",
-    crate::card::CardArt::new("171d5213-5bb4-4f5b-9ddd-e2a7ac092ec6", "Dave Kendall"),
+    "171d5213-5bb4-4f5b-9ddd-e2a7ac092ec6",
+    "Dave Kendall",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{4}"), &["Phyrexian", "Beast"], 5, 1)
         .with_ability(AbilityDef::activated(
@@ -3307,9 +3296,9 @@ pub(in crate::card::sets) static INSATIABLE_SOULEATER: CardRecord = CardRecord::
 
 // NPH 141 — Isolation Cell
 pub(in crate::card::sets) static ISOLATION_CELL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c5e72c64-cb0e-4a04-97d0-3537bb0420cd"),
     "Isolation Cell",
-    crate::card::CardArt::new("c5e72c64-cb0e-4a04-97d0-3537bb0420cd", "Adrian Smith"),
+    "c5e72c64-cb0e-4a04-97d0-3537bb0420cd",
+    "Adrian Smith",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::triggered(
         "Whenever an opponent casts a creature spell, that player loses 2 life unless they pay {2}.",
@@ -3332,9 +3321,9 @@ pub(in crate::card::sets) static ISOLATION_CELL: CardRecord = CardRecord::new(
 
 // NPH 142 — Kiln Walker
 pub(in crate::card::sets) static KILN_WALKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("91678632-ebe6-41b6-9250-cd3ffd63663b"),
     "Kiln Walker",
-    crate::card::CardArt::new("91678632-ebe6-41b6-9250-cd3ffd63663b", "Volkan Baǵa"),
+    "91678632-ebe6-41b6-9250-cd3ffd63663b",
+    "Volkan Baǵa",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{3}"), &["Phyrexian", "Construct"], 0, 3)
         .with_ability(AbilityDef::triggered(
@@ -3356,9 +3345,9 @@ static SWAMPS_YOU_CONTROL: ObjectQueryDef =
     ObjectQueryDef::controlled_basic_land_type(PlayerRelation::You, BasicLandType::Swamp);
 
 pub(in crate::card::sets) static LASHWRITHE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8c418159-b5d1-48e9-9a31-707f49d6733b"),
     "Lashwrithe",
-    crate::card::CardArt::new("8c418159-b5d1-48e9-9a31-707f49d6733b", "Jason Felix"),
+    "8c418159-b5d1-48e9-9a31-707f49d6733b",
+    "Jason Felix",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{4}"))
         .with_subtypes(&["Equipment"])
@@ -3384,18 +3373,18 @@ pub(in crate::card::sets) static LASHWRITHE: CardRecord = CardRecord::new(
 // NPH 144 — Mindcrank
 // Audit: unsupported — Needs a life-loss trigger event carrying the exact amount lost for both damage and non-damage life loss.
 pub(in crate::card::sets) static MINDCRANK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d13a5ae0-d76a-4430-98c1-47a19e615e2c"),
     "Mindcrank",
-    crate::card::CardArt::new("d13a5ae0-d76a-4430-98c1-47a19e615e2c", "Chris Rahn"),
+    "d13a5ae0-d76a-4430-98c1-47a19e615e2c",
+    "Chris Rahn",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 145 — Mycosynth Wellspring
 pub(in crate::card::sets) static MYCOSYNTH_WELLSPRING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("097f7ab8-01fa-4699-943a-32075aecebc2"),
     "Mycosynth Wellspring",
-    crate::card::CardArt::new("097f7ab8-01fa-4699-943a-32075aecebc2", "David Rapoza"),
+    "097f7ab8-01fa-4699-943a-32075aecebc2",
+    "David Rapoza",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::triggered(
         "When this artifact enters or is put into a graveyard from the battlefield, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.",
@@ -3415,21 +3404,18 @@ pub(in crate::card::sets) static MYCOSYNTH_WELLSPRING: CardRecord = CardRecord::
 // NPH 146 — Myr Superion
 // Audit: unsupported — Needs casting-payment legality that restricts accepted mana by the producing permanent's creature type; mana restrictions currently constrain spend purpose instead.
 pub(in crate::card::sets) static MYR_SUPERION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("290c6036-02a3-43fa-b0d4-af3818794c3c"),
     "Myr Superion",
-    crate::card::CardArt::new(
-        "290c6036-02a3-43fa-b0d4-af3818794c3c",
-        "Jana Schirmer & Johannes Voss",
-    ),
+    "290c6036-02a3-43fa-b0d4-af3818794c3c",
+    "Jana Schirmer & Johannes Voss",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 147 — Necropouncer
 pub(in crate::card::sets) static NECROPOUNCER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4ed51dbc-bbec-4c78-a71e-26322a8d2439"),
     "Necropouncer",
-    crate::card::CardArt::new("4ed51dbc-bbec-4c78-a71e-26322a8d2439", "Cos Koniotis"),
+    "4ed51dbc-bbec-4c78-a71e-26322a8d2439",
+    "Cos Koniotis",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{6}"))
         .with_subtypes(&["Equipment"])
@@ -3455,18 +3441,18 @@ pub(in crate::card::sets) static NECROPOUNCER: CardRecord = CardRecord::new(
 // NPH 148 — Omen Machine
 // Audit: unsupported — Needs a draw prohibition plus a draw-step replacement that branches on the exiled top card's type and grants a resolution-time free-cast permission.
 pub(in crate::card::sets) static OMEN_MACHINE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0ff4e35f-2a82-4d3c-86c5-ae05a5abc4d7"),
     "Omen Machine",
-    crate::card::CardArt::new("0ff4e35f-2a82-4d3c-86c5-ae05a5abc4d7", "David Rapoza"),
+    "0ff4e35f-2a82-4d3c-86c5-ae05a5abc4d7",
+    "David Rapoza",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 149 — Pestilent Souleater
 pub(in crate::card::sets) static PESTILENT_SOULEATER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a069cc07-55eb-4ddb-a548-cbf463d078d3"),
     "Pestilent Souleater",
-    crate::card::CardArt::new("a069cc07-55eb-4ddb-a548-cbf463d078d3", "Matt Stewart"),
+    "a069cc07-55eb-4ddb-a548-cbf463d078d3",
+    "Matt Stewart",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{5}"), &["Phyrexian", "Insect"], 3, 3)
         .with_ability(AbilityDef::activated(
@@ -3481,25 +3467,27 @@ pub(in crate::card::sets) static PESTILENT_SOULEATER: CardRecord = CardRecord::n
 );
 
 // NPH 150 — Phyrexian Hulk (reprint)
-const PHYREXIAN_HULK_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1997::tempest::PHYREXIAN_HULK)
-        .with_art("1687b5a7-7013-409a-ba8d-9cd8b5bb08f3", "Steven Belledin");
+const PHYREXIAN_HULK_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1997::tempest::PHYREXIAN_HULK,
+    "1687b5a7-7013-409a-ba8d-9cd8b5bb08f3",
+    "Steven Belledin",
+);
 
 // NPH 151 — Pristine Talisman
 // Audit: unsupported — Shared mana-ability execution cannot sequence the printed life gain after adding mana.
 pub(in crate::card::sets) static PRISTINE_TALISMAN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e30e622d-1e82-4954-8f7d-ee256d5606bf"),
     "Pristine Talisman",
-    crate::card::CardArt::new("b31d96cf-7276-46c4-ad17-d6a5c85f1315", "Matt Cavotta"),
+    "b31d96cf-7276-46c4-ad17-d6a5c85f1315",
+    "Matt Cavotta",
     crate::card::CardSet::NewPhyrexia,
     CardRules::unsupported(),
 );
 
 // NPH 152 — Shrine of Boundless Growth
 pub(in crate::card::sets) static SHRINE_OF_BOUNDLESS_GROWTH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b2ec7b95-667f-43ed-b310-b657befd55a2"),
     "Shrine of Boundless Growth",
-    crate::card::CardArt::new("b2ec7b95-667f-43ed-b310-b657befd55a2", "Karl Kopinski"),
+    "b2ec7b95-667f-43ed-b310-b657befd55a2",
+    "Karl Kopinski",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::triggered(
@@ -3536,9 +3524,9 @@ pub(in crate::card::sets) static SHRINE_OF_BOUNDLESS_GROWTH: CardRecord = CardRe
 
 // NPH 153 — Shrine of Burning Rage
 pub(in crate::card::sets) static SHRINE_OF_BURNING_RAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d1a8afef-fa50-4aeb-94de-a4d90b1e5631"),
     "Shrine of Burning Rage",
-    crate::card::CardArt::new("d1a8afef-fa50-4aeb-94de-a4d90b1e5631", "Dave Kendall"),
+    "d1a8afef-fa50-4aeb-94de-a4d90b1e5631",
+    "Dave Kendall",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::triggered(
@@ -3578,9 +3566,9 @@ pub(in crate::card::sets) static SHRINE_OF_BURNING_RAGE: CardRecord = CardRecord
 
 // NPH 154 — Shrine of Limitless Power
 pub(in crate::card::sets) static SHRINE_OF_LIMITLESS_POWER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("61873223-f378-4478-9cf3-f1326eb76834"),
     "Shrine of Limitless Power",
-    crate::card::CardArt::new("61873223-f378-4478-9cf3-f1326eb76834", "Min Yum"),
+    "61873223-f378-4478-9cf3-f1326eb76834",
+    "Min Yum",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::triggered(
@@ -3623,9 +3611,9 @@ pub(in crate::card::sets) static SHRINE_OF_LIMITLESS_POWER: CardRecord = CardRec
 
 // NPH 155 — Shrine of Loyal Legions
 pub(in crate::card::sets) static SHRINE_OF_LOYAL_LEGIONS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d13563c7-abe0-4760-9b4c-841de47dbc46"),
     "Shrine of Loyal Legions",
-    crate::card::CardArt::new("d13563c7-abe0-4760-9b4c-841de47dbc46", "Igor Kieryluk"),
+    "d13563c7-abe0-4760-9b4c-841de47dbc46",
+    "Igor Kieryluk",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::triggered(
@@ -3666,12 +3654,9 @@ pub(in crate::card::sets) static SHRINE_OF_LOYAL_LEGIONS: CardRecord = CardRecor
 
 // NPH 156 — Shrine of Piercing Vision
 pub(in crate::card::sets) static SHRINE_OF_PIERCING_VISION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9b150924-f83c-410e-aaab-ff2d06c9d356"),
     "Shrine of Piercing Vision",
-    crate::card::CardArt::new(
-        "9b150924-f83c-410e-aaab-ff2d06c9d356",
-        "Jana Schirmer & Johannes Voss",
-    ),
+    "9b150924-f83c-410e-aaab-ff2d06c9d356",
+    "Jana Schirmer & Johannes Voss",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::triggered(
@@ -3710,9 +3695,9 @@ pub(in crate::card::sets) static SHRINE_OF_PIERCING_VISION: CardRecord = CardRec
 
 // NPH 157 — Sickleslicer
 pub(in crate::card::sets) static SICKLESLICER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d44746d5-3d34-4480-b4cd-c66de72f0622"),
     "Sickleslicer",
-    crate::card::CardArt::new("d44746d5-3d34-4480-b4cd-c66de72f0622", "Jason Felix"),
+    "d44746d5-3d34-4480-b4cd-c66de72f0622",
+    "Jason Felix",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{3}"))
         .with_subtypes(&["Equipment"])
@@ -3735,18 +3720,18 @@ pub(in crate::card::sets) static SICKLESLICER: CardRecord = CardRecord::new(
 // NPH 158 — Soul Conduit
 // Audit: unsupported — Needs a simultaneous exchange operation that sets two targeted players' life totals to each other's captured values.
 pub(in crate::card::sets) static SOUL_CONDUIT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("aa7e4989-cba7-4e0c-bb9d-140af6c006c3"),
     "Soul Conduit",
-    crate::card::CardArt::new("aa7e4989-cba7-4e0c-bb9d-140af6c006c3", "Brad Rigney"),
+    "aa7e4989-cba7-4e0c-bb9d-140af6c006c3",
+    "Brad Rigney",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 159 — Spellskite
 pub(in crate::card::sets) static SPELLSKITE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1a84bada-ed6a-4e97-8a0c-05b7cb32d66f"),
     "Spellskite",
-    crate::card::CardArt::new("1a84bada-ed6a-4e97-8a0c-05b7cb32d66f", "Chippy"),
+    "1a84bada-ed6a-4e97-8a0c-05b7cb32d66f",
+    "Chippy",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(
         mana_cost!("{2}"),
@@ -3777,9 +3762,9 @@ pub(in crate::card::sets) static SPELLSKITE: CardRecord = CardRecord::new(
 
 // NPH 160 — Surge Node
 pub(in crate::card::sets) static SURGE_NODE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("12414fc0-bb24-4244-baf4-adad0125376e"),
     "Surge Node",
-    crate::card::CardArt::new("12414fc0-bb24-4244-baf4-adad0125376e", "Lars Grant-West"),
+    "12414fc0-bb24-4244-baf4-adad0125376e",
+    "Lars Grant-West",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
         AbilityDef::as_enters(
@@ -3815,9 +3800,9 @@ pub(in crate::card::sets) static SURGE_NODE: CardRecord = CardRecord::new(
 
 // NPH 161 — Sword of War and Peace
 pub(in crate::card::sets) static SWORD_OF_WAR_AND_PEACE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fab5bc6c-8943-4078-866a-5d02f9be0eef"),
     "Sword of War and Peace",
-    crate::card::CardArt::new("fab5bc6c-8943-4078-866a-5d02f9be0eef", "Chris Rahn"),
+    "fab5bc6c-8943-4078-866a-5d02f9be0eef",
+    "Chris Rahn",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact(mana_cost!("{3}"))
         .with_subtypes(&["Equipment"])
@@ -3867,18 +3852,18 @@ pub(in crate::card::sets) static SWORD_OF_WAR_AND_PEACE: CardRecord = CardRecord
 // NPH 162 — Torpor Orb
 // Audit: unsupported — Needs a player rule that suppresses triggered abilities caused by creatures entering the battlefield without suppressing other entry events.
 pub(in crate::card::sets) static TORPOR_ORB: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("953610f6-ea96-4e71-969f-50ecac09c091"),
     "Torpor Orb",
-    crate::card::CardArt::new("953610f6-ea96-4e71-969f-50ecac09c091", "Svetlin Velinov"),
+    "953610f6-ea96-4e71-969f-50ecac09c091",
+    "Svetlin Velinov",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 163 — Trespassing Souleater
 pub(in crate::card::sets) static TRESPASSING_SOULEATER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b5263269-9f64-43de-9e82-408644dbc628"),
     "Trespassing Souleater",
-    crate::card::CardArt::new("b5263269-9f64-43de-9e82-408644dbc628", "Scott Chou"),
+    "b5263269-9f64-43de-9e82-408644dbc628",
+    "Scott Chou",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_artifact_creature(mana_cost!("{3}"), &["Phyrexian", "Construct"], 2, 2)
         .with_ability(AbilityDef::activated(
@@ -3895,18 +3880,18 @@ pub(in crate::card::sets) static TRESPASSING_SOULEATER: CardRecord = CardRecord:
 // NPH 164 — Unwinding Clock
 // Audit: unsupported — Needs a turn-based untap rule that untaps the controller's artifacts during each other player's untap step.
 pub(in crate::card::sets) static UNWINDING_CLOCK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("495d520b-7560-4ecb-ae62-143eeec5682f"),
     "Unwinding Clock",
-    crate::card::CardArt::new("495d520b-7560-4ecb-ae62-143eeec5682f", "Mike Bierek"),
+    "495d520b-7560-4ecb-ae62-143eeec5682f",
+    "Mike Bierek",
     crate::card::CardSet::NewPhyrexia,
     crate::card::CardRules::unsupported(),
 );
 
 // NPH 165 — Phyrexia's Core
 pub(in crate::card::sets) static PHYREXIA_S_CORE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("db36c8e7-0c13-4f0d-9947-68cb0e9ea239"),
     "Phyrexia's Core",
-    crate::card::CardArt::new("db36c8e7-0c13-4f0d-9947-68cb0e9ea239", "Franz Vohwinkel"),
+    "db36c8e7-0c13-4f0d-9947-68cb0e9ea239",
+    "Franz Vohwinkel",
     crate::card::CardSet::NewPhyrexia,
     CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::activated_mana(
@@ -3933,49 +3918,79 @@ pub(in crate::card::sets) static PHYREXIA_S_CORE: CardRecord = CardRecord::new(
 );
 
 // NPH 166 — Plains (reprint)
-const PLAINS_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::PLAINS)
-        .with_art("db0c6f01-42be-40a1-becb-085f54750830", "James Paick");
+const PLAINS_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1993::alpha::PLAINS,
+    "db0c6f01-42be-40a1-becb-085f54750830",
+    "James Paick",
+);
 
 // NPH 167 — Plains (alternate printing)
-const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::PLAINS, 1)
-    .with_art("9129628e-ee2b-450b-a3d6-fc94e9bf477d", "James Paick");
+const PLAINS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::PLAINS,
+    1,
+    "9129628e-ee2b-450b-a3d6-fc94e9bf477d",
+    "James Paick",
+);
 
 // NPH 168 — Island (reprint)
-const ISLAND_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::ISLAND)
-        .with_art("61a25790-29ac-4fc6-afd8-9c4063f4284d", "Jung Park");
+const ISLAND_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1993::alpha::ISLAND,
+    "61a25790-29ac-4fc6-afd8-9c4063f4284d",
+    "Jung Park",
+);
 
 // NPH 169 — Island (alternate printing)
-const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::ISLAND, 1)
-    .with_art("3aba057e-11db-432b-a39c-a2845868bccd", "Jung Park");
+const ISLAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::ISLAND,
+    1,
+    "3aba057e-11db-432b-a39c-a2845868bccd",
+    "Jung Park",
+);
 
 // NPH 170 — Swamp (reprint)
-const SWAMP_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::SWAMP)
-        .with_art("267d4321-4411-499c-a476-70c805abf02a", "Lars Grant-West");
+const SWAMP_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1993::alpha::SWAMP,
+    "267d4321-4411-499c-a476-70c805abf02a",
+    "Lars Grant-West",
+);
 
 // NPH 171 — Swamp (alternate printing)
-const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::SWAMP, 1)
-    .with_art("c1f11dc9-cedd-4691-9615-0ed65b5398ba", "Lars Grant-West");
+const SWAMP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::SWAMP,
+    1,
+    "c1f11dc9-cedd-4691-9615-0ed65b5398ba",
+    "Lars Grant-West",
+);
 
 // NPH 172 — Mountain (reprint)
-const MOUNTAIN_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::MOUNTAIN)
-        .with_art("9af1a73f-e2ab-4832-b9a0-5bd9643f4fd3", "Tomasz Jedruszek");
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1993::alpha::MOUNTAIN,
+    "9af1a73f-e2ab-4832-b9a0-5bd9643f4fd3",
+    "Tomasz Jedruszek",
+);
 
 // NPH 173 — Mountain (alternate printing)
-const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::MOUNTAIN, 1)
-    .with_art("d5d68279-a6fd-4cf3-afb3-1ba4e26a78a3", "Tomasz Jedruszek");
+const MOUNTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::MOUNTAIN,
+    1,
+    "d5d68279-a6fd-4cf3-afb3-1ba4e26a78a3",
+    "Tomasz Jedruszek",
+);
 
 // NPH 174 — Forest (reprint)
-const FOREST_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y1993::alpha::FOREST)
-        .with_art("37a8d9ff-291a-4862-b2e8-3db520cc9ae4", "Mark Tedin");
+const FOREST_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y1993::alpha::FOREST,
+    "37a8d9ff-291a-4862-b2e8-3db520cc9ae4",
+    "Mark Tedin",
+);
 
 // NPH 175 — Forest (alternate printing)
-const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&catalog_lea::FOREST, 1)
-    .with_art("4ebd9027-5b48-42c0-9533-afe50bb101e6", "Mark Tedin");
+const FOREST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &catalog_lea::FOREST,
+    1,
+    "4ebd9027-5b48-42c0-9533-afe50bb101e6",
+    "Mark Tedin",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KARN_LIBERATED,

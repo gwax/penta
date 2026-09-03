@@ -6,4 +6,4 @@ pub(super) mod tempest;
 pub(super) mod visions;
 pub(super) mod weatherlight;
 
-pub(super) use super::{CardRecord, PrintingAnchor, PrintingRecord};
+pub(super) use super::{CardRecord, PrintingRecord};

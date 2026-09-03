@@ -7,4 +7,4 @@ pub(super) mod ikoria;
 pub(super) mod theros_beyond_death;
 pub(super) mod zendikar_rising;
 
-pub(super) use super::{CardRecord, PrintingAnchor, PrintingRecord};
+pub(super) use super::{CardRecord, PrintingRecord};

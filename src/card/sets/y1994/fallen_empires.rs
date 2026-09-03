@@ -1,4 +1,4 @@
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, BasicLandType,
@@ -14,13 +14,10 @@ use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 // FEM 1a — Combat Medic
-pub(in crate::card::sets) static COMBAT_MEDIC: CardRecord = CardRecord::new_with_legacy_id(
-    1444,
+pub(in crate::card::sets) static COMBAT_MEDIC: CardRecord = CardRecord::new(
     "Combat Medic",
-    CardArt::new(
-        "9cfd96cb-03d6-4845-8595-50bf17b35726",
-        "Edward P. Beard, Jr.",
-    ),
+    "9cfd96cb-03d6-4845-8595-50bf17b35726",
+    "Edward P. Beard, Jr.",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Cleric", "Soldier"], 0, 2)
         .with_ability(AbilityDef::activated_with_targets(
@@ -40,32 +37,44 @@ pub(in crate::card::sets) static COMBAT_MEDIC: CardRecord = CardRecord::new_with
 );
 
 // FEM 1b — Combat Medic (alternate printing)
-const COMBAT_MEDIC_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&COMBAT_MEDIC, 1)
-    .with_art("2a324a98-31c2-470a-b792-96b6b098a58c", "Susan Van Camp");
+const COMBAT_MEDIC_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &COMBAT_MEDIC,
+    1,
+    "2a324a98-31c2-470a-b792-96b6b098a58c",
+    "Susan Van Camp",
+);
 
 // FEM 1c — Combat Medic (alternate printing)
-const COMBAT_MEDIC_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&COMBAT_MEDIC, 2)
-    .with_art("ee9d1eac-3ac2-4881-a984-e40d87f60784", "Anson Maddocks");
+const COMBAT_MEDIC_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &COMBAT_MEDIC,
+    2,
+    "ee9d1eac-3ac2-4881-a984-e40d87f60784",
+    "Anson Maddocks",
+);
 
 // FEM 1d — Combat Medic (alternate printing)
-const COMBAT_MEDIC_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&COMBAT_MEDIC, 3)
-    .with_art("8f26c079-61ea-436d-89ae-2f1c6f863e91", "Liz Danforth");
+const COMBAT_MEDIC_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &COMBAT_MEDIC,
+    3,
+    "8f26c079-61ea-436d-89ae-2f1c6f863e91",
+    "Liz Danforth",
+);
 
 // FEM 2 — Farrel's Mantle
 // Audit: unsupported — Needs a combat declaration or damage-assignment constraint for “Whenever enchanted creature attacks and isn't blocked, its controller may have it deal damage equal to its power plus 2 to another target creature. If that player does, the attacking…”.
 pub(in crate::card::sets) static FARREL_S_MANTLE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("af092da3-8713-4a59-86d3-827b942d6456"),
     "Farrel's Mantle",
-    crate::card::CardArt::new("af092da3-8713-4a59-86d3-827b942d6456", "Anthony S. Waters"),
+    "af092da3-8713-4a59-86d3-827b942d6456",
+    "Anthony S. Waters",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 3a — Farrel's Zealot
-pub(in crate::card::sets) static FARRELS_ZEALOT: CardRecord = CardRecord::new_with_legacy_id(
-    1720,
+pub(in crate::card::sets) static FARRELS_ZEALOT: CardRecord = CardRecord::new(
     "Farrel's Zealot",
-    CardArt::new("3b3204be-33b9-41be-b952-081c1ba7e133", "Melissa A. Benson"),
+    "0401bd23-9f81-40b7-a6c2-e3f9847d175c",
+    "Melissa A. Benson",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human"], 2, 2).with_ability(
         AbilityDef::triggered_with_targets(
@@ -101,25 +110,27 @@ pub(in crate::card::sets) static FARRELS_ZEALOT: CardRecord = CardRecord::new_wi
 );
 
 // FEM 3b — Farrel's Zealot (alternate printing)
-const FARRELS_ZEALOT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&FARRELS_ZEALOT, 1)
-    .with_art(
-        "9e3aeee7-975c-419a-bfb3-45bb48ba6918",
-        "Richard Kane Ferguson",
-    );
+const FARRELS_ZEALOT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &FARRELS_ZEALOT,
+    1,
+    "9e3aeee7-975c-419a-bfb3-45bb48ba6918",
+    "Richard Kane Ferguson",
+);
 
 // FEM 3c — Farrel's Zealot (alternate printing)
-const FARRELS_ZEALOT_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&FARRELS_ZEALOT, 2)
-    .with_art(
-        "54252fd2-21a6-40d1-8515-697f18c78a06",
-        "Edward P. Beard, Jr.",
-    );
+const FARRELS_ZEALOT_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &FARRELS_ZEALOT,
+    2,
+    "54252fd2-21a6-40d1-8515-697f18c78a06",
+    "Edward P. Beard, Jr.",
+);
 
 // FEM 4 — Farrelite Priest
 // Audit: unsupported — Needs the mana-ability runtime to pay this ability's mana activation cost for “{1}: Add {W}. If this ability has been activated four or more times this turn, sacrifice this creature at the beginning of the next end step”.
 pub(in crate::card::sets) static FARRELITE_PRIEST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e11bf79b-a951-4d0c-acdf-d8ba5290a648"),
     "Farrelite Priest",
-    crate::card::CardArt::new("e11bf79b-a951-4d0c-acdf-d8ba5290a648", "Phil Foglio"),
+    "e11bf79b-a951-4d0c-acdf-d8ba5290a648",
+    "Phil Foglio",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
@@ -127,9 +138,9 @@ pub(in crate::card::sets) static FARRELITE_PRIEST: CardRecord = CardRecord::new(
 // FEM 5 — Hand of Justice
 // Audit: unsupported — Needs a persistent tap/untap restriction or event relation for “{T}, Tap three untapped white creatures you control: Destroy target creature”.
 pub(in crate::card::sets) static HAND_OF_JUSTICE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7a899b2d-825c-4929-a769-f4df70bf6a17"),
     "Hand of Justice",
-    crate::card::CardArt::new("7a899b2d-825c-4929-a769-f4df70bf6a17", "Melissa A. Benson"),
+    "7a899b2d-825c-4929-a769-f4df70bf6a17",
+    "Melissa A. Benson",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
@@ -137,21 +148,18 @@ pub(in crate::card::sets) static HAND_OF_JUSTICE: CardRecord = CardRecord::new(
 // FEM 6 — Heroism
 // Audit: unsupported — Needs a per-creature optional payment offered to the opposing controller, repeated for each attacking red creature; preventing one creature's combat damage is already expressible.
 pub(in crate::card::sets) static HEROISM: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("08ee87a0-a7eb-4472-9045-85d11e8a1501"),
     "Heroism",
-    crate::card::CardArt::new("08ee87a0-a7eb-4472-9045-85d11e8a1501", "Mark Poole"),
+    "08ee87a0-a7eb-4472-9045-85d11e8a1501",
+    "Mark Poole",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 7a — Icatian Infantry
-pub(in crate::card::sets) static ICATIAN_INFANTRY: CardRecord = CardRecord::new_with_legacy_id(
-    1779,
+pub(in crate::card::sets) static ICATIAN_INFANTRY: CardRecord = CardRecord::new(
     "Icatian Infantry",
-    CardArt::new(
-        "f95d42d8-ba75-43bf-81b8-b02374f03e83",
-        "Edward P. Beard, Jr.",
-    ),
+    "f95d42d8-ba75-43bf-81b8-b02374f03e83",
+    "Edward P. Beard, Jr.",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 1, 1).with_abilities(&[
         AbilityDef::activated(
@@ -176,25 +184,34 @@ pub(in crate::card::sets) static ICATIAN_INFANTRY: CardRecord = CardRecord::new_
 );
 
 // FEM 7b — Icatian Infantry (alternate printing)
-const ICATIAN_INFANTRY_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&ICATIAN_INFANTRY, 1)
-        .with_art("e0e4a9d2-ea43-46ac-8b8b-00496a478103", "Christopher Rush");
+const ICATIAN_INFANTRY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ICATIAN_INFANTRY,
+    1,
+    "e0e4a9d2-ea43-46ac-8b8b-00496a478103",
+    "Christopher Rush",
+);
 
 // FEM 7c — Icatian Infantry (alternate printing)
-const ICATIAN_INFANTRY_ALTERNATE_2: PrintingRecord =
-    PrintingRecord::alternate(&ICATIAN_INFANTRY, 2)
-        .with_art("efac583d-a492-45ee-8c52-60a6422b2168", "Douglas Shuler");
+const ICATIAN_INFANTRY_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ICATIAN_INFANTRY,
+    2,
+    "efac583d-a492-45ee-8c52-60a6422b2168",
+    "Douglas Shuler",
+);
 
 // FEM 7d — Icatian Infantry (alternate printing)
-const ICATIAN_INFANTRY_ALTERNATE_3: PrintingRecord =
-    PrintingRecord::alternate(&ICATIAN_INFANTRY, 3)
-        .with_art("96b2a8d4-7c06-454c-9923-553294aada4f", "Drew Tucker");
+const ICATIAN_INFANTRY_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &ICATIAN_INFANTRY,
+    3,
+    "96b2a8d4-7c06-454c-9923-553294aada4f",
+    "Drew Tucker",
+);
 
 // FEM 8a — Icatian Javelineers
-pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::new_with_legacy_id(
-    77,
+pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::new(
     "Icatian Javelineers",
-    CardArt::new("f04b8356-2384-4743-80dd-f15ca7ec65f7", "Melissa A. Benson"),
+    "f04b8356-2384-4743-80dd-f15ca7ec65f7",
+    "Melissa A. Benson",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 1, 1).with_abilities(&[
         AbilityDef::as_enters(
@@ -227,22 +244,26 @@ pub(in crate::card::sets) static ICATIAN_JAVELINEERS: CardRecord = CardRecord::n
 );
 
 // FEM 8b — Icatian Javelineers (alternate printing)
-const ICATIAN_JAVELINEERS_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&ICATIAN_JAVELINEERS, 1).with_art(
-        "c70f8f50-866a-4889-b986-48636225638a",
-        "Edward P. Beard, Jr.",
-    );
+const ICATIAN_JAVELINEERS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ICATIAN_JAVELINEERS,
+    1,
+    "c70f8f50-866a-4889-b986-48636225638a",
+    "Edward P. Beard, Jr.",
+);
 
 // FEM 8c — Icatian Javelineers (alternate printing)
-const ICATIAN_JAVELINEERS_ALTERNATE_2: PrintingRecord =
-    PrintingRecord::alternate(&ICATIAN_JAVELINEERS, 2)
-        .with_art("2be5ab7a-e7db-4c09-8df2-6fe55fa4a116", "Scott Kirschner");
+const ICATIAN_JAVELINEERS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ICATIAN_JAVELINEERS,
+    2,
+    "2be5ab7a-e7db-4c09-8df2-6fe55fa4a116",
+    "Scott Kirschner",
+);
 
 // FEM 9 — Icatian Lieutenant
-pub(in crate::card::sets) static ICATIAN_LIEUTENANT: CardRecord = CardRecord::new_with_legacy_id(
-    579,
+pub(in crate::card::sets) static ICATIAN_LIEUTENANT: CardRecord = CardRecord::new(
     "Icatian Lieutenant",
-    CardArt::new("39fec59a-4ade-4c6f-ae7d-911fbe6da26d", "Pete Venters"),
+    "39fec59a-4ade-4c6f-ae7d-911fbe6da26d",
+    "Pete Venters",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{W}{W}"), &["Human", "Soldier"], 1, 2).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -267,10 +288,10 @@ pub(in crate::card::sets) static ICATIAN_LIEUTENANT: CardRecord = CardRecord::ne
 );
 
 // FEM 10a — Icatian Moneychanger
-pub(in crate::card::sets) static ICATIAN_MONEYCHANGER: CardRecord = CardRecord::new_with_legacy_id(
-    1587,
+pub(in crate::card::sets) static ICATIAN_MONEYCHANGER: CardRecord = CardRecord::new(
     "Icatian Moneychanger",
-    CardArt::new("b3d502d4-4a96-47b3-ae26-8b2c9f36623d", "Drew Tucker"),
+    "b3d502d4-4a96-47b3-ae26-8b2c9f36623d",
+    "Drew Tucker",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{W}"), &["Human"], 0, 2).with_abilities(&[
         AbilityDef::as_enters(
@@ -315,32 +336,36 @@ pub(in crate::card::sets) static ICATIAN_MONEYCHANGER: CardRecord = CardRecord::
 );
 
 // FEM 10b — Icatian Moneychanger (alternate printing)
-const ICATIAN_MONEYCHANGER_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&ICATIAN_MONEYCHANGER, 1).with_art(
-        "cbf9194c-8e50-4f50-9a87-3b339a5bc279",
-        "Edward P. Beard, Jr.",
-    );
+const ICATIAN_MONEYCHANGER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ICATIAN_MONEYCHANGER,
+    1,
+    "cbf9194c-8e50-4f50-9a87-3b339a5bc279",
+    "Edward P. Beard, Jr.",
+);
 
 // FEM 10c — Icatian Moneychanger (alternate printing)
-const ICATIAN_MONEYCHANGER_ALTERNATE_2: PrintingRecord =
-    PrintingRecord::alternate(&ICATIAN_MONEYCHANGER, 2)
-        .with_art("cf9521ae-6fac-4d86-9c60-adecaae5687d", "Melissa A. Benson");
+const ICATIAN_MONEYCHANGER_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ICATIAN_MONEYCHANGER,
+    2,
+    "cf9521ae-6fac-4d86-9c60-adecaae5687d",
+    "Melissa A. Benson",
+);
 
 // FEM 11 — Icatian Phalanx
-pub(in crate::card::sets) static ICATIAN_PHALANX: CardRecord = CardRecord::new_with_legacy_id(
-    1776,
+pub(in crate::card::sets) static ICATIAN_PHALANX: CardRecord = CardRecord::new(
     "Icatian Phalanx",
-    CardArt::new("7bc02d30-3eef-4a48-8b11-b4f37219ab3a", "Kaja Foglio"),
+    "7bc02d30-3eef-4a48-8b11-b4f37219ab3a",
+    "Kaja Foglio",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{4}{W}"), &["Human", "Soldier"], 2, 4)
         .with_abilities(&[abilities::banding()]),
 );
 
 // FEM 12 — Icatian Priest
-pub(in crate::card::sets) static ICATIAN_PRIEST: CardRecord = CardRecord::new_with_legacy_id(
-    580,
+pub(in crate::card::sets) static ICATIAN_PRIEST: CardRecord = CardRecord::new(
     "Icatian Priest",
-    CardArt::new("d7690cdd-6610-4310-9e93-60dc4db2ae8d", "Drew Tucker"),
+    "d7690cdd-6610-4310-9e93-60dc4db2ae8d",
+    "Drew Tucker",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{W}"), &["Human", "Cleric"], 1, 1).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -362,13 +387,10 @@ pub(in crate::card::sets) static ICATIAN_PRIEST: CardRecord = CardRecord::new_wi
 );
 
 // FEM 13a — Icatian Scout
-pub(in crate::card::sets) static ICATIAN_SCOUT: CardRecord = CardRecord::new_with_legacy_id(
-    581,
+pub(in crate::card::sets) static ICATIAN_SCOUT: CardRecord = CardRecord::new(
     "Icatian Scout",
-    CardArt::new(
-        "86bf4aaa-a9b1-4798-a96b-c3e35afb77f7",
-        "Richard Kane Ferguson",
-    ),
+    "86bf4aaa-a9b1-4798-a96b-c3e35afb77f7",
+    "Richard Kane Ferguson",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier", "Scout"], 1, 1)
         .with_abilities(&[AbilityDef::activated_with_targets(
@@ -389,22 +411,34 @@ pub(in crate::card::sets) static ICATIAN_SCOUT: CardRecord = CardRecord::new_wit
 );
 
 // FEM 13b — Icatian Scout (alternate printing)
-const ICATIAN_SCOUT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ICATIAN_SCOUT, 1)
-    .with_art("e9db3442-01cb-4db2-ac33-8eca6880c315", "Douglas Shuler");
+const ICATIAN_SCOUT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ICATIAN_SCOUT,
+    1,
+    "e9db3442-01cb-4db2-ac33-8eca6880c315",
+    "Douglas Shuler",
+);
 
 // FEM 13c — Icatian Scout (alternate printing)
-const ICATIAN_SCOUT_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ICATIAN_SCOUT, 2)
-    .with_art("6c461655-a05d-4eed-85b2-04d554f5ec50", "Rob Alexander");
+const ICATIAN_SCOUT_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ICATIAN_SCOUT,
+    2,
+    "6c461655-a05d-4eed-85b2-04d554f5ec50",
+    "Rob Alexander",
+);
 
 // FEM 13d — Icatian Scout (alternate printing)
-const ICATIAN_SCOUT_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&ICATIAN_SCOUT, 3)
-    .with_art("db63ad7f-6dc4-4249-b360-46ec5569a5a9", "Phil Foglio");
+const ICATIAN_SCOUT_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &ICATIAN_SCOUT,
+    3,
+    "db63ad7f-6dc4-4249-b360-46ec5569a5a9",
+    "Phil Foglio",
+);
 
 // FEM 14 — Icatian Skirmishers
-pub(in crate::card::sets) static ICATIAN_SKIRMISHERS: CardRecord = CardRecord::new_with_legacy_id(
-    1782,
+pub(in crate::card::sets) static ICATIAN_SKIRMISHERS: CardRecord = CardRecord::new(
     "Icatian Skirmishers",
-    CardArt::new("15f6d115-c02d-45a3-aa6d-402964df47dd", "Heather Hudson"),
+    "15f6d115-c02d-45a3-aa6d-402964df47dd",
+    "Heather Hudson",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Human", "Soldier"], 1, 1).with_abilities(&[
         abilities::first_strike(),
@@ -427,10 +461,10 @@ pub(in crate::card::sets) static ICATIAN_SKIRMISHERS: CardRecord = CardRecord::n
 );
 
 // FEM 15 — Icatian Town
-pub(in crate::card::sets) static ICATIAN_TOWN: CardRecord = CardRecord::new_with_legacy_id(
-    582,
+pub(in crate::card::sets) static ICATIAN_TOWN: CardRecord = CardRecord::new(
     "Icatian Town",
-    CardArt::new("cbb7c28d-0366-4d01-84a2-f1bc9f38aa4a", "Tom Wänerstrand"),
+    "cbb7c28d-0366-4d01-84a2-f1bc9f38aa4a",
+    "Tom Wänerstrand",
     CardSet::FallenEmpires,
     CardRules::new_sorcery(mana_cost!("{5}{W}")).with_abilities(&[AbilityDef::spell(
         "Create four 1/1 white Citizen creature tokens.",
@@ -444,10 +478,10 @@ pub(in crate::card::sets) static ICATIAN_TOWN: CardRecord = CardRecord::new_with
 );
 
 // FEM 16a — Order of Leitbur
-pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new_with_legacy_id(
-    85,
+pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new(
     "Order of Leitbur",
-    CardArt::new("ebd6e51e-f042-4673-a898-291607105829", "Bryon Wackwitz"),
+    "ebd6e51e-f042-4673-a898-291607105829",
+    "Bryon Wackwitz",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{W}{W}"), &["Human", "Cleric", "Knight"], 2, 1)
         .with_abilities(&[
@@ -477,22 +511,26 @@ pub(in crate::card::sets) static ORDER_OF_LEITBUR: CardRecord = CardRecord::new_
 );
 
 // FEM 16b — Order of Leitbur (alternate printing)
-const ORDER_OF_LEITBUR_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&ORDER_OF_LEITBUR, 1)
-        .with_art("fb537b5a-d725-420d-bc15-0d54ba23331c", "Bryon Wackwitz");
+const ORDER_OF_LEITBUR_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ORDER_OF_LEITBUR,
+    1,
+    "fb537b5a-d725-420d-bc15-0d54ba23331c",
+    "Bryon Wackwitz",
+);
 
 // FEM 16c — Order of Leitbur (alternate printing)
-const ORDER_OF_LEITBUR_ALTERNATE_2: PrintingRecord =
-    PrintingRecord::alternate(&ORDER_OF_LEITBUR, 2).with_art(
-        "1373dea4-3565-4612-8505-ab8fba3ddb67",
-        "Randy Asplund-Faith",
-    );
+const ORDER_OF_LEITBUR_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ORDER_OF_LEITBUR,
+    2,
+    "1373dea4-3565-4612-8505-ab8fba3ddb67",
+    "Randy Asplund-Faith",
+);
 
 // FEM 17 — Deep Spawn
-pub(in crate::card::sets) static DEEP_SPAWN: CardRecord = CardRecord::new_with_legacy_id(
-    1834,
+pub(in crate::card::sets) static DEEP_SPAWN: CardRecord = CardRecord::new(
     "Deep Spawn",
-    CardArt::new("69c9e4a5-735f-471c-ab1a-6e6d50ba5724", "Mark Tedin"),
+    "69c9e4a5-735f-471c-ab1a-6e6d50ba5724",
+    "Mark Tedin",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{5}{U}{U}{U}"), &["Homarid"], 6, 6).with_abilities(&[
         abilities::trample(),
@@ -544,26 +582,34 @@ pub(in crate::card::sets) static DEEP_SPAWN: CardRecord = CardRecord::new_with_l
 // FEM 18a — High Tide
 // Audit: unsupported — Needs cost/mana provenance or dynamic payment support for “Until end of turn, whenever a player taps an Island for mana, that player adds an additional {U}”.
 pub(in crate::card::sets) static HIGH_TIDE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4686bbb9-517f-4cce-aa7a-5db41e22c02b"),
     "High Tide",
-    crate::card::CardArt::new("4686bbb9-517f-4cce-aa7a-5db41e22c02b", "Drew Tucker"),
+    "4686bbb9-517f-4cce-aa7a-5db41e22c02b",
+    "Drew Tucker",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 18b — High Tide (alternate printing)
-const HIGH_TIDE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HIGH_TIDE, 1)
-    .with_art("c2813677-91cc-4c8b-a8ea-403fa776c9f0", "Anson Maddocks");
+const HIGH_TIDE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &HIGH_TIDE,
+    1,
+    "c2813677-91cc-4c8b-a8ea-403fa776c9f0",
+    "Anson Maddocks",
+);
 
 // FEM 18c — High Tide (alternate printing)
-const HIGH_TIDE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&HIGH_TIDE, 2)
-    .with_art("4af611e3-45d6-4aee-bf48-56598b14a242", "Amy Weber");
+const HIGH_TIDE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &HIGH_TIDE,
+    2,
+    "4af611e3-45d6-4aee-bf48-56598b14a242",
+    "Amy Weber",
+);
 
 // FEM 19a — Homarid
-pub(in crate::card::sets) static HOMARID: CardRecord = CardRecord::new_with_legacy_id(
-    1588,
+pub(in crate::card::sets) static HOMARID: CardRecord = CardRecord::new(
     "Homarid",
-    CardArt::new("d6ffeab4-83b1-4414-ae72-e59a2354ea15", "Quinton Hoover"),
+    "d6ffeab4-83b1-4414-ae72-e59a2354ea15",
+    "Quinton Hoover",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Homarid"], 2, 2).with_abilities(&[
         AbilityDef::as_enters(
@@ -639,22 +685,34 @@ pub(in crate::card::sets) static HOMARID: CardRecord = CardRecord::new_with_lega
 );
 
 // FEM 19b — Homarid (alternate printing)
-const HOMARID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HOMARID, 1)
-    .with_art("cbb6c13f-6019-4ad5-9de6-07844c361b41", "Heather Hudson");
+const HOMARID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &HOMARID,
+    1,
+    "cbb6c13f-6019-4ad5-9de6-07844c361b41",
+    "Heather Hudson",
+);
 
 // FEM 19c — Homarid (alternate printing)
-const HOMARID_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&HOMARID, 2)
-    .with_art("33536b0a-1cff-481f-b695-eadaf6897bf0", "Mark Tedin");
+const HOMARID_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &HOMARID,
+    2,
+    "33536b0a-1cff-481f-b695-eadaf6897bf0",
+    "Mark Tedin",
+);
 
 // FEM 19d — Homarid (alternate printing)
-const HOMARID_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&HOMARID, 3)
-    .with_art("18f1cc24-a5fc-43cc-b558-ac7901c48b81", "Bryon Wackwitz");
+const HOMARID_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &HOMARID,
+    3,
+    "18f1cc24-a5fc-43cc-b558-ac7901c48b81",
+    "Bryon Wackwitz",
+);
 
 // FEM 20 — Homarid Shaman
-pub(in crate::card::sets) static HOMARID_SHAMAN: CardRecord = CardRecord::new_with_legacy_id(
-    583,
+pub(in crate::card::sets) static HOMARID_SHAMAN: CardRecord = CardRecord::new(
     "Homarid Shaman",
-    CardArt::new("c17c6416-86d6-46ea-aea1-41b98a66b250", "Amy Weber"),
+    "c17c6416-86d6-46ea-aea1-41b98a66b250",
+    "Amy Weber",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Homarid", "Shaman"], 2, 1).with_abilities(
         &[AbilityDef::activated_with_targets(
@@ -676,18 +734,18 @@ pub(in crate::card::sets) static HOMARID_SHAMAN: CardRecord = CardRecord::new_wi
 // FEM 21 — Homarid Spawning Bed
 // Audit: unsupported — Needs Camarid token creation whose count is the sacrificed creature's mana value.
 pub(in crate::card::sets) static HOMARID_SPAWNING_BED: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2cbb62fc-3cd9-41a6-804a-4ff9a766897f"),
     "Homarid Spawning Bed",
-    crate::card::CardArt::new("2cbb62fc-3cd9-41a6-804a-4ff9a766897f", "Douglas Shuler"),
+    "2cbb62fc-3cd9-41a6-804a-4ff9a766897f",
+    "Douglas Shuler",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 22a — Homarid Warrior
-pub(in crate::card::sets) static HOMARID_WARRIOR: CardRecord = CardRecord::new_with_legacy_id(
-    1658,
+pub(in crate::card::sets) static HOMARID_WARRIOR: CardRecord = CardRecord::new(
     "Homarid Warrior",
-    CardArt::new("627ca588-917f-4768-a69d-3d93c1210390", "Daniel Gelon"),
+    "627ca588-917f-4768-a69d-3d93c1210390",
+    "Daniel Gelon",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{4}{U}"), &["Homarid", "Warrior"], 3, 3).with_ability(
         AbilityDef::activated(
@@ -713,22 +771,33 @@ pub(in crate::card::sets) static HOMARID_WARRIOR: CardRecord = CardRecord::new_w
 );
 
 // FEM 22b — Homarid Warrior (alternate printing)
-const HOMARID_WARRIOR_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HOMARID_WARRIOR, 1)
-    .with_art(
-        "c9a9bdcf-543b-4140-b836-9e222a4a9233",
-        "Randy Asplund-Faith",
-    );
+const HOMARID_WARRIOR_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &HOMARID_WARRIOR,
+    1,
+    "c9a9bdcf-543b-4140-b836-9e222a4a9233",
+    "Randy Asplund-Faith",
+);
 
 // FEM 22c — Homarid Warrior (alternate printing)
-const HOMARID_WARRIOR_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&HOMARID_WARRIOR, 2)
-    .with_art("fb1cccdc-9c4d-4ef3-807b-278e6fd23230", "Douglas Shuler");
+const HOMARID_WARRIOR_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &HOMARID_WARRIOR,
+    2,
+    "fb1cccdc-9c4d-4ef3-807b-278e6fd23230",
+    "Douglas Shuler",
+);
 
 // FEM 23a — Merseine (alternate printing)
-const MERSEINE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&MERSEINE, 1)
-    .with_art("b1e96895-ef1d-44fa-b263-bce833fc3109", "Heather Hudson");
+const MERSEINE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &MERSEINE,
+    1,
+    "b1e96895-ef1d-44fa-b263-bce833fc3109",
+    "Heather Hudson",
+);
 
 // FEM 23b — Merseine (alternate printing)
-const MERSEINE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&MERSEINE, 2).with_art(
+const MERSEINE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &MERSEINE,
+    2,
     "5c7fb804-65ba-477e-93e8-eea101c1521e",
     "Margaret Organ-Kean",
 );
@@ -736,22 +805,26 @@ const MERSEINE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&MERSEINE
 // FEM 23c — Merseine
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MERSEINE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2dd197f8-ced0-461a-9672-2720a7b70803"),
     "Merseine",
-    crate::card::CardArt::new("2dd197f8-ced0-461a-9672-2720a7b70803", "Drew Tucker"),
+    "2dd197f8-ced0-461a-9672-2720a7b70803",
+    "Drew Tucker",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 23d — Merseine (alternate printing)
-const MERSEINE_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&MERSEINE, 3)
-    .with_art("ae7a9e9a-d1f8-44c5-9f79-a1201acfb5fc", "Pete Venters");
+const MERSEINE_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &MERSEINE,
+    3,
+    "ae7a9e9a-d1f8-44c5-9f79-a1201acfb5fc",
+    "Pete Venters",
+);
 
 // FEM 24 — River Merfolk
-pub(in crate::card::sets) static RIVER_MERFOLK: CardRecord = CardRecord::new_with_legacy_id(
-    584,
+pub(in crate::card::sets) static RIVER_MERFOLK: CardRecord = CardRecord::new(
     "River Merfolk",
-    CardArt::new("27d7fa54-4b89-4a9a-b088-4b89c525c1ea", "Douglas Shuler"),
+    "27d7fa54-4b89-4a9a-b088-4b89c525c1ea",
+    "Douglas Shuler",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{U}{U}"), &["Merfolk"], 2, 1).with_abilities(&[
         AbilityDef::activated(
@@ -769,18 +842,18 @@ pub(in crate::card::sets) static RIVER_MERFOLK: CardRecord = CardRecord::new_wit
 // FEM 25 — Seasinger
 // Audit: unsupported — Needs duration-aware control-changing continuous effects for “{T}: Gain control of target creature whose controller controls an Island for as long as you control this creature and this creature remains tapped”.
 pub(in crate::card::sets) static SEASINGER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c5266aa1-e2ea-46b9-91ab-b94a7bb7e9f9"),
     "Seasinger",
-    crate::card::CardArt::new("c5266aa1-e2ea-46b9-91ab-b94a7bb7e9f9", "Amy Weber"),
+    "c5266aa1-e2ea-46b9-91ab-b94a7bb7e9f9",
+    "Amy Weber",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 26 — Svyelunite Priest
-pub(in crate::card::sets) static SVYELUNITE_PRIEST: CardRecord = CardRecord::new_with_legacy_id(
-    1459,
+pub(in crate::card::sets) static SVYELUNITE_PRIEST: CardRecord = CardRecord::new(
     "Svyelunite Priest",
-    CardArt::new("316d25ae-7ac6-4f5b-93ab-0e0e28ec104b", "Ron Spencer"),
+    "316d25ae-7ac6-4f5b-93ab-0e0e28ec104b",
+    "Ron Spencer",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Merfolk", "Cleric"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
@@ -806,36 +879,44 @@ pub(in crate::card::sets) static SVYELUNITE_PRIEST: CardRecord = CardRecord::new
 // FEM 27a — Tidal Flats
 // Audit: unsupported — Needs a combat declaration or damage-assignment constraint for “{U}{U}: For each attacking creature without flying, its controller may pay {1}. If that player doesn't, creatures you control blocking that creature gain first strike until end of turn”.
 pub(in crate::card::sets) static TIDAL_FLATS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2e820f3f-434e-4d09-91b9-0ebd6966b393"),
     "Tidal Flats",
-    crate::card::CardArt::new("2e820f3f-434e-4d09-91b9-0ebd6966b393", "Rob Alexander"),
+    "2e820f3f-434e-4d09-91b9-0ebd6966b393",
+    "Rob Alexander",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 27b — Tidal Flats (alternate printing)
-const TIDAL_FLATS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&TIDAL_FLATS, 1)
-    .with_art("50e7d376-3e22-44aa-9c96-a3b8eb1568fe", "Rob Alexander");
+const TIDAL_FLATS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &TIDAL_FLATS,
+    1,
+    "50e7d376-3e22-44aa-9c96-a3b8eb1568fe",
+    "Rob Alexander",
+);
 
 // FEM 27c — Tidal Flats (alternate printing)
-const TIDAL_FLATS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&TIDAL_FLATS, 2)
-    .with_art("445c4767-6261-449c-bb57-713e2a2bb0bf", "Sandra Everingham");
+const TIDAL_FLATS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &TIDAL_FLATS,
+    2,
+    "445c4767-6261-449c-bb57-713e2a2bb0bf",
+    "Sandra Everingham",
+);
 
 // FEM 28 — Tidal Influence
 // Audit: unsupported — Needs card-specific counter state and counter-consuming effects for “As long as there are exactly three tide counters on this enchantment, all blue creatures get +2/+0”.
 pub(in crate::card::sets) static TIDAL_INFLUENCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b2192c7b-ef6f-4ff6-9017-b1a125340517"),
     "Tidal Influence",
-    crate::card::CardArt::new("b2192c7b-ef6f-4ff6-9017-b1a125340517", "Tom Wänerstrand"),
+    "b2192c7b-ef6f-4ff6-9017-b1a125340517",
+    "Tom Wänerstrand",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 29 — Vodalian Knights
-pub(in crate::card::sets) static VODALIAN_KNIGHTS: CardRecord = CardRecord::new_with_legacy_id(
-    1403,
+pub(in crate::card::sets) static VODALIAN_KNIGHTS: CardRecord = CardRecord::new(
     "Vodalian Knights",
-    CardArt::new("68d97e1b-2526-4740-b354-f158734d1f72", "Susan Van Camp"),
+    "68d97e1b-2526-4740-b354-f158734d1f72",
+    "Susan Van Camp",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Merfolk", "Knight"], 2, 2).with_abilities(
         &[
@@ -869,10 +950,10 @@ pub(in crate::card::sets) static VODALIAN_KNIGHTS: CardRecord = CardRecord::new_
 );
 
 // FEM 30a — Vodalian Mage
-pub(in crate::card::sets) static VODALIAN_MAGE: CardRecord = CardRecord::new_with_legacy_id(
-    585,
+pub(in crate::card::sets) static VODALIAN_MAGE: CardRecord = CardRecord::new(
     "Vodalian Mage",
-    CardArt::new("c107e82b-134a-4f2b-98c2-6537fae6a50d", "Susan Van Camp"),
+    "c107e82b-134a-4f2b-98c2-6537fae6a50d",
+    "Susan Van Camp",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Merfolk", "Wizard"], 1, 1).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -895,54 +976,69 @@ pub(in crate::card::sets) static VODALIAN_MAGE: CardRecord = CardRecord::new_wit
 );
 
 // FEM 30b — Vodalian Mage (alternate printing)
-const VODALIAN_MAGE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&VODALIAN_MAGE, 1)
-    .with_art("a47beac4-161d-4f8e-9778-78293ff9b383", "Mark Poole");
+const VODALIAN_MAGE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &VODALIAN_MAGE,
+    1,
+    "a47beac4-161d-4f8e-9778-78293ff9b383",
+    "Mark Poole",
+);
 
 // FEM 30c — Vodalian Mage (alternate printing)
-const VODALIAN_MAGE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&VODALIAN_MAGE, 2)
-    .with_art("2b3cc91d-6f87-4f2e-b3c7-8181d19a1f0b", "Quinton Hoover");
+const VODALIAN_MAGE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &VODALIAN_MAGE,
+    2,
+    "2b3cc91d-6f87-4f2e-b3c7-8181d19a1f0b",
+    "Quinton Hoover",
+);
 
 // FEM 31a — Vodalian Soldiers
-pub(in crate::card::sets) static VODALIAN_SOLDIERS: CardRecord = CardRecord::new_with_legacy_id(
-    586,
+pub(in crate::card::sets) static VODALIAN_SOLDIERS: CardRecord = CardRecord::new(
     "Vodalian Soldiers",
-    CardArt::new("7eb50256-9113-4b03-bcef-9aea24be8493", "Melissa A. Benson"),
+    "7eb50256-9113-4b03-bcef-9aea24be8493",
+    "Melissa A. Benson",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Merfolk", "Soldier"], 1, 2),
 );
 
 // FEM 31b — Vodalian Soldiers (alternate printing)
-const VODALIAN_SOLDIERS_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&VODALIAN_SOLDIERS, 1)
-        .with_art("bc85a68c-14d6-4447-a894-0e48d1662bc3", "Jeff A. Menges");
+const VODALIAN_SOLDIERS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &VODALIAN_SOLDIERS,
+    1,
+    "bc85a68c-14d6-4447-a894-0e48d1662bc3",
+    "Jeff A. Menges",
+);
 
 // FEM 31c — Vodalian Soldiers (alternate printing)
-const VODALIAN_SOLDIERS_ALTERNATE_2: PrintingRecord =
-    PrintingRecord::alternate(&VODALIAN_SOLDIERS, 2).with_art(
-        "d8d1ceac-bb75-4c46-9ab4-1ef623ed3027",
-        "Richard Kane Ferguson",
-    );
+const VODALIAN_SOLDIERS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &VODALIAN_SOLDIERS,
+    2,
+    "d8d1ceac-bb75-4c46-9ab4-1ef623ed3027",
+    "Richard Kane Ferguson",
+);
 
 // FEM 31d — Vodalian Soldiers (alternate printing)
-const VODALIAN_SOLDIERS_ALTERNATE_3: PrintingRecord =
-    PrintingRecord::alternate(&VODALIAN_SOLDIERS, 3)
-        .with_art("99d22f83-1171-4b5c-8a72-956db26d7c60", "Susan Van Camp");
+const VODALIAN_SOLDIERS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &VODALIAN_SOLDIERS,
+    3,
+    "99d22f83-1171-4b5c-8a72-956db26d7c60",
+    "Susan Van Camp",
+);
 
 // FEM 32 — Vodalian War Machine
 // Audit: unsupported — Needs the permanents tapped to pay this card's own costs recorded for the turn, for “When this creature dies, destroy all Merfolk tapped this turn to pay for its abilities”. Tapping another creature as a cost and attacking despite defender are both available.
 pub(in crate::card::sets) static VODALIAN_WAR_MACHINE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("cd962ff0-4aa6-453e-931e-bd36fc034273"),
     "Vodalian War Machine",
-    crate::card::CardArt::new("cd962ff0-4aa6-453e-931e-bd36fc034273", "Amy Weber"),
+    "cd962ff0-4aa6-453e-931e-bd36fc034273",
+    "Amy Weber",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 33a — Armor Thrull
-pub(in crate::card::sets) static ARMOR_THRULL: CardRecord = CardRecord::new_with_legacy_id(
-    1585,
+pub(in crate::card::sets) static ARMOR_THRULL: CardRecord = CardRecord::new(
     "Armor Thrull",
-    CardArt::new("a98384d1-8e7d-4c41-9f23-47bc2ae2ad6a", "Pete Venters"),
+    "a98384d1-8e7d-4c41-9f23-47bc2ae2ad6a",
+    "Pete Venters",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Thrull"], 1, 3).with_ability(
         AbilityDef::activated_with_targets(
@@ -961,22 +1057,34 @@ pub(in crate::card::sets) static ARMOR_THRULL: CardRecord = CardRecord::new_with
 );
 
 // FEM 33b — Armor Thrull (alternate printing)
-const ARMOR_THRULL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ARMOR_THRULL, 1)
-    .with_art("9c6120e6-ceb8-4eab-86b0-18d38ed97d8f", "Ron Spencer");
+const ARMOR_THRULL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ARMOR_THRULL,
+    1,
+    "9c6120e6-ceb8-4eab-86b0-18d38ed97d8f",
+    "Ron Spencer",
+);
 
 // FEM 33c — Armor Thrull (alternate printing)
-const ARMOR_THRULL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ARMOR_THRULL, 2)
-    .with_art("18a91ed4-131e-455b-a3bd-0bd42aa754e5", "Jeff A. Menges");
+const ARMOR_THRULL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ARMOR_THRULL,
+    2,
+    "18a91ed4-131e-455b-a3bd-0bd42aa754e5",
+    "Jeff A. Menges",
+);
 
 // FEM 33d — Armor Thrull (alternate printing)
-const ARMOR_THRULL_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&ARMOR_THRULL, 3)
-    .with_art("3d653ca4-c21f-4594-b900-2526a912001b", "Scott Kirschner");
+const ARMOR_THRULL_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &ARMOR_THRULL,
+    3,
+    "3d653ca4-c21f-4594-b900-2526a912001b",
+    "Scott Kirschner",
+);
 
 // FEM 34a — Basal Thrull
-pub(in crate::card::sets) static BASAL_THRULL: CardRecord = CardRecord::new_with_legacy_id(
-    587,
+pub(in crate::card::sets) static BASAL_THRULL: CardRecord = CardRecord::new(
     "Basal Thrull",
-    CardArt::new("0c1d5d13-0160-48cb-8fac-dd86102569b4", "Kaja Foglio"),
+    "0c1d5d13-0160-48cb-8fac-dd86102569b4",
+    "Kaja Foglio",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{B}{B}"), &["Thrull"], 1, 2).with_abilities(&[
         AbilityDef::activated_mana(
@@ -988,25 +1096,34 @@ pub(in crate::card::sets) static BASAL_THRULL: CardRecord = CardRecord::new_with
 );
 
 // FEM 34b — Basal Thrull (alternate printing)
-const BASAL_THRULL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&BASAL_THRULL, 1)
-    .with_art("fcf60db5-4f69-4db4-9dc2-1a6fbdec0429", "Phil Foglio");
+const BASAL_THRULL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &BASAL_THRULL,
+    1,
+    "fcf60db5-4f69-4db4-9dc2-1a6fbdec0429",
+    "Phil Foglio",
+);
 
 // FEM 34c — Basal Thrull (alternate printing)
-const BASAL_THRULL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&BASAL_THRULL, 2)
-    .with_art(
-        "a86d9647-3a87-4620-aa07-26f996fc6fa3",
-        "Richard Kane Ferguson",
-    );
+const BASAL_THRULL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &BASAL_THRULL,
+    2,
+    "a86d9647-3a87-4620-aa07-26f996fc6fa3",
+    "Richard Kane Ferguson",
+);
 
 // FEM 34d — Basal Thrull (alternate printing)
-const BASAL_THRULL_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&BASAL_THRULL, 3)
-    .with_art("b6908e4c-f94d-4b0d-b9a5-64c04751f108", "Christopher Rush");
+const BASAL_THRULL_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &BASAL_THRULL,
+    3,
+    "b6908e4c-f94d-4b0d-b9a5-64c04751f108",
+    "Christopher Rush",
+);
 
 // FEM 35 — Breeding Pit
-pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new_with_legacy_id(
-    588,
+pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new(
     "Breeding Pit",
-    CardArt::new("a0d7e85f-eba5-4fc5-9fc0-109109d368aa", "Anson Maddocks"),
+    "a0d7e85f-eba5-4fc5-9fc0-109109d368aa",
+    "Anson Maddocks",
     CardSet::FallenEmpires,
     CardRules::new_enchantment(mana_cost!("{3}{B}")).with_abilities(&[
         AbilityDef::triggered(
@@ -1036,10 +1153,10 @@ pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new_with
 );
 
 // FEM 36 — Derelor
-pub(in crate::card::sets) static DERELOR: CardRecord = CardRecord::new_with_legacy_id(
-    1844,
+pub(in crate::card::sets) static DERELOR: CardRecord = CardRecord::new(
     "Derelor",
-    CardArt::new("9eb2b79f-f09a-49dc-8e0f-7d711ba78981", "Anson Maddocks"),
+    "9eb2b79f-f09a-49dc-8e0f-7d711ba78981",
+    "Anson Maddocks",
     CardSet::FallenEmpires,
     // The tax is coloured, which is the whole joke: a 4/4 for four that makes
     // every black spell after it harder to cast, including itself if a second
@@ -1059,21 +1176,18 @@ pub(in crate::card::sets) static DERELOR: CardRecord = CardRecord::new_with_lega
 // FEM 37 — Ebon Praetor
 // Audit: unsupported — Needs card-specific counter state and counter-consuming effects for “Sacrifice a creature: Remove a -2/-2 counter from this creature. If the sacrificed creature was a Thrull, put a +1/+0 counter on this creature. Activate only during your upkeep and only…”.
 pub(in crate::card::sets) static EBON_PRAETOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("40451f7a-692a-422d-99d3-d93a4d9315e0"),
     "Ebon Praetor",
-    crate::card::CardArt::new(
-        "40451f7a-692a-422d-99d3-d93a4d9315e0",
-        "Randy Asplund-Faith",
-    ),
+    "40451f7a-692a-422d-99d3-d93a4d9315e0",
+    "Randy Asplund-Faith",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 38a — Hymn to Tourach
-pub(in crate::card::sets) static HYMN_TO_TOURACH: CardRecord = CardRecord::new_with_legacy_id(
-    75,
+pub(in crate::card::sets) static HYMN_TO_TOURACH: CardRecord = CardRecord::new(
     "Hymn to Tourach",
-    CardArt::new("eb9273ea-9a41-42e3-8c9c-0d50b127a818", "Susan Van Camp"),
+    "eb9273ea-9a41-42e3-8c9c-0d50b127a818",
+    "Susan Van Camp",
     CardSet::FallenEmpires,
     CardRules::new_sorcery(mana_cost!("{B}{B}")).with_abilities(&[AbilityDef::spell_with_targets(
         "Target player discards two cards at random.",
@@ -1090,45 +1204,60 @@ pub(in crate::card::sets) static HYMN_TO_TOURACH: CardRecord = CardRecord::new_w
 );
 
 // FEM 38b — Hymn to Tourach (alternate printing)
-const HYMN_TO_TOURACH_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HYMN_TO_TOURACH, 1)
-    .with_art("8601f082-7e43-44ef-97d0-dead272b7eb4", "Liz Danforth");
+const HYMN_TO_TOURACH_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &HYMN_TO_TOURACH,
+    1,
+    "8601f082-7e43-44ef-97d0-dead272b7eb4",
+    "Liz Danforth",
+);
 
 // FEM 38c — Hymn to Tourach (alternate printing)
-const HYMN_TO_TOURACH_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&HYMN_TO_TOURACH, 2)
-    .with_art("58e125c6-81dc-4907-aad2-2ccd1cb166f0", "Quinton Hoover");
+const HYMN_TO_TOURACH_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &HYMN_TO_TOURACH,
+    2,
+    "58e125c6-81dc-4907-aad2-2ccd1cb166f0",
+    "Quinton Hoover",
+);
 
 // FEM 38d — Hymn to Tourach (alternate printing)
-const HYMN_TO_TOURACH_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&HYMN_TO_TOURACH, 3)
-    .with_art("5bc50e08-dd6f-4ea7-87f8-cce72bafb928", "Scott Kirschner");
+const HYMN_TO_TOURACH_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &HYMN_TO_TOURACH,
+    3,
+    "5bc50e08-dd6f-4ea7-87f8-cce72bafb928",
+    "Scott Kirschner",
+);
 
 // FEM 39a — Initiates of the Ebon Hand (alternate printing)
-const INITIATES_OF_THE_EBON_HAND_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&INITIATES_OF_THE_EBON_HAND, 1)
-        .with_art("5be87527-3b8f-4529-afdb-a61ad4e787e1", "Heather Hudson");
+const INITIATES_OF_THE_EBON_HAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &INITIATES_OF_THE_EBON_HAND,
+    1,
+    "5be87527-3b8f-4529-afdb-a61ad4e787e1",
+    "Heather Hudson",
+);
 
 // FEM 39b — Initiates of the Ebon Hand
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INITIATES_OF_THE_EBON_HAND: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("03c7dc01-46d0-42be-a1a9-48f69c846d12"),
     "Initiates of the Ebon Hand",
-    crate::card::CardArt::new("03c7dc01-46d0-42be-a1a9-48f69c846d12", "Liz Danforth"),
+    "03c7dc01-46d0-42be-a1a9-48f69c846d12",
+    "Liz Danforth",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 39c — Initiates of the Ebon Hand (alternate printing)
-const INITIATES_OF_THE_EBON_HAND_ALTERNATE_2: PrintingRecord =
-    PrintingRecord::alternate(&INITIATES_OF_THE_EBON_HAND, 2)
-        .with_art("62982970-e8b8-4659-bcf0-21aab662d89d", "Kaja Foglio");
+const INITIATES_OF_THE_EBON_HAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &INITIATES_OF_THE_EBON_HAND,
+    2,
+    "62982970-e8b8-4659-bcf0-21aab662d89d",
+    "Kaja Foglio",
+);
 
 // FEM 40a — Mindstab Thrull
-pub(in crate::card::sets) static MINDSTAB_THRULL: CardRecord = CardRecord::new_with_legacy_id(
-    1579,
+pub(in crate::card::sets) static MINDSTAB_THRULL: CardRecord = CardRecord::new(
     "Mindstab Thrull",
-    CardArt::new(
-        "499a791f-ac4f-4a96-b59b-37043686a79a",
-        "Richard Kane Ferguson",
-    ),
+    "499a791f-ac4f-4a96-b59b-37043686a79a",
+    "Richard Kane Ferguson",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Thrull"], 2, 2).with_ability(
         AbilityDef::triggered(
@@ -1156,18 +1285,26 @@ pub(in crate::card::sets) static MINDSTAB_THRULL: CardRecord = CardRecord::new_w
 );
 
 // FEM 40b — Mindstab Thrull (alternate printing)
-const MINDSTAB_THRULL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&MINDSTAB_THRULL, 1)
-    .with_art("781e4b62-3910-4ba1-9e72-e99de8523a94", "Heather Hudson");
+const MINDSTAB_THRULL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &MINDSTAB_THRULL,
+    1,
+    "781e4b62-3910-4ba1-9e72-e99de8523a94",
+    "Heather Hudson",
+);
 
 // FEM 40c — Mindstab Thrull (alternate printing)
-const MINDSTAB_THRULL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&MINDSTAB_THRULL, 2)
-    .with_art("923189c6-d407-4cc4-a062-2f09a4c7c1e3", "Mark Tedin");
+const MINDSTAB_THRULL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &MINDSTAB_THRULL,
+    2,
+    "923189c6-d407-4cc4-a062-2f09a4c7c1e3",
+    "Mark Tedin",
+);
 
 // FEM 41a — Necrite
-pub(in crate::card::sets) static NECRITE: CardRecord = CardRecord::new_with_legacy_id(
-    1580,
+pub(in crate::card::sets) static NECRITE: CardRecord = CardRecord::new(
     "Necrite",
-    CardArt::new("311d752a-ce8a-44cb-8aeb-1ed66705eb09", "Ron Spencer"),
+    "311d752a-ce8a-44cb-8aeb-1ed66705eb09",
+    "Ron Spencer",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Thrull"], 2, 2).with_ability(
         AbilityDef::triggered_with_targets(
@@ -1204,73 +1341,84 @@ pub(in crate::card::sets) static NECRITE: CardRecord = CardRecord::new_with_lega
 );
 
 // FEM 41b — Necrite (alternate printing)
-const NECRITE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&NECRITE, 1)
-    .with_art("e19a4d41-e7b0-48b3-8e2e-9ac00f119ce2", "Christopher Rush");
+const NECRITE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &NECRITE,
+    1,
+    "e19a4d41-e7b0-48b3-8e2e-9ac00f119ce2",
+    "Christopher Rush",
+);
 
 // FEM 41c — Necrite (alternate printing)
-const NECRITE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&NECRITE, 2)
-    .with_art("660ae99f-4e61-45fd-9436-855a38289c8b", "Drew Tucker");
+const NECRITE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &NECRITE,
+    2,
+    "660ae99f-4e61-45fd-9436-855a38289c8b",
+    "Drew Tucker",
+);
 
 // FEM 42a — Order of the Ebon Hand
-pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord =
-    CardRecord::new_with_legacy_id(
-        86,
-        "Order of the Ebon Hand",
-        CardArt::new("9e51f5d8-a7cc-4720-8af5-e002bcfd78a0", "Melissa A. Benson"),
-        CardSet::FallenEmpires,
-        CardRules::new_creature(mana_cost!("{B}{B}"), &["Cleric", "Knight"], 2, 1).with_abilities(
-            &[
-                abilities::protection_from_color(ManaColor::White),
-                AbilityDef::activated(
-                    "{B}: This creature gains first strike until end of turn.",
-                    &[AbilityCostDef::Mana(mana_cost!("{B}"))],
-                    EffectDef::Apply {
-                        recipient: EffectRecipientDef::Source,
-                        effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
-                        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-                    },
-                ),
-                AbilityDef::activated(
-                    "{B}{B}: This creature gets +1/+0 until end of turn.",
-                    &[AbilityCostDef::Mana(mana_cost!("{B}{B}"))],
-                    EffectDef::Apply {
-                        recipient: EffectRecipientDef::Source,
-                        effect: AppliedEffectDef::modify_power_toughness(
-                            ValueDef::Constant(1),
-                            ValueDef::Constant(0),
-                        ),
-                        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-                    },
-                ),
-            ],
+pub(in crate::card::sets) static ORDER_OF_THE_EBON_HAND: CardRecord = CardRecord::new(
+    "Order of the Ebon Hand",
+    "9e51f5d8-a7cc-4720-8af5-e002bcfd78a0",
+    "Melissa A. Benson",
+    CardSet::FallenEmpires,
+    CardRules::new_creature(mana_cost!("{B}{B}"), &["Cleric", "Knight"], 2, 1).with_abilities(&[
+        abilities::protection_from_color(ManaColor::White),
+        AbilityDef::activated(
+            "{B}: This creature gains first strike until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
         ),
-    );
+        AbilityDef::activated(
+            "{B}{B}: This creature gets +1/+0 until end of turn.",
+            &[AbilityCostDef::Mana(mana_cost!("{B}{B}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // FEM 42b — Order of the Ebon Hand (alternate printing)
-const ORDER_OF_THE_EBON_HAND_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&ORDER_OF_THE_EBON_HAND, 1)
-        .with_art("60ffbb40-13c1-4d01-9421-95b2410d0d3b", "Christopher Rush");
+const ORDER_OF_THE_EBON_HAND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ORDER_OF_THE_EBON_HAND,
+    1,
+    "60ffbb40-13c1-4d01-9421-95b2410d0d3b",
+    "Christopher Rush",
+);
 
 // FEM 42c — Order of the Ebon Hand (alternate printing)
-const ORDER_OF_THE_EBON_HAND_ALTERNATE_2: PrintingRecord =
-    PrintingRecord::alternate(&ORDER_OF_THE_EBON_HAND, 2)
-        .with_art("22c32774-5507-4a60-9ed2-2a570f6ff8e3", "Ron Spencer");
+const ORDER_OF_THE_EBON_HAND_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ORDER_OF_THE_EBON_HAND,
+    2,
+    "22c32774-5507-4a60-9ed2-2a570f6ff8e3",
+    "Ron Spencer",
+);
 
 // FEM 43 — Soul Exchange
 // Audit: unsupported — Needs a zone-object query and identity-preserving continuation for “As an additional cost to cast this spell, exile a creature you control”.
 pub(in crate::card::sets) static SOUL_EXCHANGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9f73597d-f453-4d37-b2ef-c54ef683a884"),
     "Soul Exchange",
-    crate::card::CardArt::new("9f73597d-f453-4d37-b2ef-c54ef683a884", "Anthony S. Waters"),
+    "9f73597d-f453-4d37-b2ef-c54ef683a884",
+    "Anthony S. Waters",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 44 — Thrull Champion
-pub(in crate::card::sets) static THRULL_CHAMPION: CardRecord = CardRecord::new_with_legacy_id(
-    1473,
+pub(in crate::card::sets) static THRULL_CHAMPION: CardRecord = CardRecord::new(
     "Thrull Champion",
-    CardArt::new("4d3cafdd-a03b-4b08-b9c1-c776f8450d3a", "Daniel Gelon"),
+    "4d3cafdd-a03b-4b08-b9c1-c776f8450d3a",
+    "Daniel Gelon",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{4}{B}"), &["Thrull"], 2, 2).with_abilities(&[
         AbilityDef::static_ability(
@@ -1308,10 +1456,10 @@ pub(in crate::card::sets) static THRULL_CHAMPION: CardRecord = CardRecord::new_w
 );
 
 // FEM 45 — Thrull Retainer
-pub(in crate::card::sets) static THRULL_RETAINER: CardRecord = CardRecord::new_with_legacy_id(
-    1425,
+pub(in crate::card::sets) static THRULL_RETAINER: CardRecord = CardRecord::new(
     "Thrull Retainer",
-    CardArt::new("d800512b-1492-41d2-931d-57c625044454", "Ron Spencer"),
+    "d800512b-1492-41d2-931d-57c625044454",
+    "Ron Spencer",
     CardSet::FallenEmpires,
     CardRules::new_enchantment(mana_cost!("{B}"))
         .with_subtypes(&["Aura"])
@@ -1340,9 +1488,9 @@ pub(in crate::card::sets) static THRULL_RETAINER: CardRecord = CardRecord::new_w
 // FEM 46 — Thrull Wizard
 // Audit: unsupported — Needs an unless-payment offering a choice between two mana costs. Reading a spell's color is available.
 pub(in crate::card::sets) static THRULL_WIZARD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c4e732fb-cbef-4fd8-b704-e4d513a6cf2d"),
     "Thrull Wizard",
-    crate::card::CardArt::new("c4e732fb-cbef-4fd8-b704-e4d513a6cf2d", "Anson Maddocks"),
+    "c4e732fb-cbef-4fd8-b704-e4d513a6cf2d",
+    "Anson Maddocks",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
@@ -1350,12 +1498,9 @@ pub(in crate::card::sets) static THRULL_WIZARD: CardRecord = CardRecord::new(
 // FEM 47 — Tourach's Chant
 // Audit: unsupported — Needs card-specific counter state and counter-consuming effects for “Whenever a player puts a Forest onto the battlefield, this enchantment deals 3 damage to that player unless they put a -1/-1 counter on a creature they control”.
 pub(in crate::card::sets) static TOURACH_S_CHANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("06883fd2-eccd-47c6-8c34-10d95e923685"),
     "Tourach's Chant",
-    crate::card::CardArt::new(
-        "06883fd2-eccd-47c6-8c34-10d95e923685",
-        "Richard Kane Ferguson",
-    ),
+    "06883fd2-eccd-47c6-8c34-10d95e923685",
+    "Richard Kane Ferguson",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
@@ -1363,18 +1508,18 @@ pub(in crate::card::sets) static TOURACH_S_CHANT: CardRecord = CardRecord::new(
 // FEM 48 — Tourach's Gate
 // Audit: unsupported — Needs the clause's conditional recipient set or dynamic modifier value for “Tap enchanted land: Attacking creatures you control get +2/-1 until end of turn. Activate only if enchanted land is untapped”.
 pub(in crate::card::sets) static TOURACH_S_GATE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d77f6401-a9fb-449c-b511-6fb837055bb4"),
     "Tourach's Gate",
-    crate::card::CardArt::new("d77f6401-a9fb-449c-b511-6fb837055bb4", "Sandra Everingham"),
+    "d77f6401-a9fb-449c-b511-6fb837055bb4",
+    "Sandra Everingham",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 49a — Brassclaw Orcs
-pub(in crate::card::sets) static BRASSCLAW_ORCS: CardRecord = CardRecord::new_with_legacy_id(
-    1729,
+pub(in crate::card::sets) static BRASSCLAW_ORCS: CardRecord = CardRecord::new(
     "Brassclaw Orcs",
-    CardArt::new("146a0b1b-c92a-4d0d-a9c7-22037dc8bd21", "Rob Alexander"),
+    "fc0cb8f6-6ba7-402c-9829-251f7443e871",
+    "Rob Alexander",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Orc"], 3, 2).with_ability(
         AbilityDef::static_ability(
@@ -1390,23 +1535,35 @@ pub(in crate::card::sets) static BRASSCLAW_ORCS: CardRecord = CardRecord::new_wi
 );
 
 // FEM 49b — Brassclaw Orcs (alternate printing)
-const BRASSCLAW_ORCS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&BRASSCLAW_ORCS, 1)
-    .with_art("ac9d0354-9ddd-4fe1-8174-9d3686ca564c", "Dan Frazier");
+const BRASSCLAW_ORCS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &BRASSCLAW_ORCS,
+    1,
+    "ac9d0354-9ddd-4fe1-8174-9d3686ca564c",
+    "Dan Frazier",
+);
 
 // FEM 49c — Brassclaw Orcs (alternate printing)
-const BRASSCLAW_ORCS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&BRASSCLAW_ORCS, 2)
-    .with_art("a2c1e461-f74e-436c-a9df-aff197cf48e1", "Rob Alexander");
+const BRASSCLAW_ORCS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &BRASSCLAW_ORCS,
+    2,
+    "a2c1e461-f74e-436c-a9df-aff197cf48e1",
+    "Rob Alexander",
+);
 
 // FEM 49d — Brassclaw Orcs (alternate printing)
-const BRASSCLAW_ORCS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&BRASSCLAW_ORCS, 3)
-    .with_art("50f0f4fe-2dd0-42c1-8f68-5d24a8a9d07d", "Heather Hudson");
+const BRASSCLAW_ORCS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &BRASSCLAW_ORCS,
+    3,
+    "50f0f4fe-2dd0-42c1-8f68-5d24a8a9d07d",
+    "Heather Hudson",
+);
 
 // FEM 50 — Dwarven Armorer
 // Audit: unsupported — Needs card-specific counter state and counter-consuming effects for “{R}, {T}, Discard a card: Put a +0/+1 counter or a +1/+0 counter on target creature”.
 pub(in crate::card::sets) static DWARVEN_ARMORER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("1d50bf06-97ab-4874-a484-9289f41dc98e"),
     "Dwarven Armorer",
-    crate::card::CardArt::new("1d50bf06-97ab-4874-a484-9289f41dc98e", "Bryon Wackwitz"),
+    "1d50bf06-97ab-4874-a484-9289f41dc98e",
+    "Bryon Wackwitz",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
@@ -1414,18 +1571,18 @@ pub(in crate::card::sets) static DWARVEN_ARMORER: CardRecord = CardRecord::new(
 // FEM 51 — Dwarven Catapult
 // Audit: unsupported — Needs damage divided evenly with downward rounding across a dynamically counted opponent creature set.
 pub(in crate::card::sets) static DWARVEN_CATAPULT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8c1c6932-638a-4df7-bf9b-8d921f7484d9"),
     "Dwarven Catapult",
-    crate::card::CardArt::new("8c1c6932-638a-4df7-bf9b-8d921f7484d9", "Jeff A. Menges"),
+    "8c1c6932-638a-4df7-bf9b-8d921f7484d9",
+    "Jeff A. Menges",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 52 — Dwarven Lieutenant
-pub(in crate::card::sets) static DWARVEN_LIEUTENANT: CardRecord = CardRecord::new_with_legacy_id(
-    591,
+pub(in crate::card::sets) static DWARVEN_LIEUTENANT: CardRecord = CardRecord::new(
     "Dwarven Lieutenant",
-    CardArt::new("ea9a38b1-4676-425a-b40d-4fb478966024", "Jeff A. Menges"),
+    "ea9a38b1-4676-425a-b40d-4fb478966024",
+    "Jeff A. Menges",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{R}{R}"), &["Dwarf", "Soldier"], 1, 2).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -1450,10 +1607,10 @@ pub(in crate::card::sets) static DWARVEN_LIEUTENANT: CardRecord = CardRecord::ne
 );
 
 // FEM 53a — Dwarven Soldier
-pub(in crate::card::sets) static DWARVEN_SOLDIER: CardRecord = CardRecord::new_with_legacy_id(
-    1796,
+pub(in crate::card::sets) static DWARVEN_SOLDIER: CardRecord = CardRecord::new(
     "Dwarven Soldier",
-    CardArt::new("6fe77608-0b33-43f5-83fb-ae993ca1bf7c", "Rob Alexander"),
+    "6fe77608-0b33-43f5-83fb-ae993ca1bf7c",
+    "Rob Alexander",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Dwarf", "Soldier"], 2, 1).with_ability(
         AbilityDef::triggered(
@@ -1476,21 +1633,26 @@ pub(in crate::card::sets) static DWARVEN_SOLDIER: CardRecord = CardRecord::new_w
 );
 
 // FEM 53b — Dwarven Soldier (alternate printing)
-const DWARVEN_SOLDIER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&DWARVEN_SOLDIER, 1)
-    .with_art(
-        "ea7e4c52-dfe1-4b15-a0d6-4f26c294426d",
-        "Randy Asplund-Faith",
-    );
+const DWARVEN_SOLDIER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &DWARVEN_SOLDIER,
+    1,
+    "ea7e4c52-dfe1-4b15-a0d6-4f26c294426d",
+    "Randy Asplund-Faith",
+);
 
 // FEM 53c — Dwarven Soldier (alternate printing)
-const DWARVEN_SOLDIER_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&DWARVEN_SOLDIER, 2)
-    .with_art("872c5601-f356-4873-adf9-9a39536e7d4a", "Douglas Shuler");
+const DWARVEN_SOLDIER_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &DWARVEN_SOLDIER,
+    2,
+    "872c5601-f356-4873-adf9-9a39536e7d4a",
+    "Douglas Shuler",
+);
 
 // FEM 54a — Goblin Chirurgeon
-pub(in crate::card::sets) static GOBLIN_CHIRURGEON: CardRecord = CardRecord::new_with_legacy_id(
-    1431,
+pub(in crate::card::sets) static GOBLIN_CHIRURGEON: CardRecord = CardRecord::new(
     "Goblin Chirurgeon",
-    CardArt::new("2b710c21-e9f5-4660-80f6-2104ec65f63f", "Daniel Gelon"),
+    "2b710c21-e9f5-4660-80f6-2104ec65f63f",
+    "Daniel Gelon",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{R}"), &["Goblin", "Shaman"], 0, 2).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -1510,30 +1672,36 @@ pub(in crate::card::sets) static GOBLIN_CHIRURGEON: CardRecord = CardRecord::new
 );
 
 // FEM 54b — Goblin Chirurgeon (alternate printing)
-const GOBLIN_CHIRURGEON_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&GOBLIN_CHIRURGEON, 1)
-        .with_art("982115b2-e1e7-4b2f-8eb6-a1633477d4a8", "Phil Foglio");
+const GOBLIN_CHIRURGEON_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &GOBLIN_CHIRURGEON,
+    1,
+    "982115b2-e1e7-4b2f-8eb6-a1633477d4a8",
+    "Phil Foglio",
+);
 
 // FEM 54c — Goblin Chirurgeon (alternate printing)
-const GOBLIN_CHIRURGEON_ALTERNATE_2: PrintingRecord =
-    PrintingRecord::alternate(&GOBLIN_CHIRURGEON, 2)
-        .with_art("c9740842-7955-4cf9-8f76-a426858360b1", "Dan Frazier");
+const GOBLIN_CHIRURGEON_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &GOBLIN_CHIRURGEON,
+    2,
+    "c9740842-7955-4cf9-8f76-a426858360b1",
+    "Dan Frazier",
+);
 
 // FEM 55 — Goblin Flotilla
 // Audit: unsupported — Needs a combat declaration or damage-assignment constraint for “At the beginning of each combat, unless you pay {R}, whenever this creature blocks or becomes blocked by a creature this combat, that creature gains first strike until end of turn”.
 pub(in crate::card::sets) static GOBLIN_FLOTILLA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("87024efe-4a74-49fe-a43a-480bed0a650a"),
     "Goblin Flotilla",
-    crate::card::CardArt::new("87024efe-4a74-49fe-a43a-480bed0a650a", "Tom Wänerstrand"),
+    "87024efe-4a74-49fe-a43a-480bed0a650a",
+    "Tom Wänerstrand",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 56a — Goblin Grenade
-pub(in crate::card::sets) static GOBLIN_GRENADE: CardRecord = CardRecord::new_with_legacy_id(
-    26,
+pub(in crate::card::sets) static GOBLIN_GRENADE: CardRecord = CardRecord::new(
     "Goblin Grenade",
-    CardArt::new("8837eaba-9602-4f63-9897-85583fcdcf51", "Ron Spencer"),
+    "8837eaba-9602-4f63-9897-85583fcdcf51",
+    "Ron Spencer",
     CardSet::FallenEmpires,
     CardRules::new_sorcery(mana_cost!("{R}")).with_abilities(&[
         AbilityDef::spell_with_additional_cost(
@@ -1552,18 +1720,26 @@ pub(in crate::card::sets) static GOBLIN_GRENADE: CardRecord = CardRecord::new_wi
 );
 
 // FEM 56b — Goblin Grenade (alternate printing)
-const GOBLIN_GRENADE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&GOBLIN_GRENADE, 1)
-    .with_art("dee262da-3002-4c08-8043-4e40e1b46822", "Dan Frazier");
+const GOBLIN_GRENADE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &GOBLIN_GRENADE,
+    1,
+    "dee262da-3002-4c08-8043-4e40e1b46822",
+    "Dan Frazier",
+);
 
 // FEM 56c — Goblin Grenade (alternate printing)
-const GOBLIN_GRENADE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&GOBLIN_GRENADE, 2)
-    .with_art("1befdfc7-a1e3-4a2a-ad68-7d0fee170f3f", "Christopher Rush");
+const GOBLIN_GRENADE_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &GOBLIN_GRENADE,
+    2,
+    "1befdfc7-a1e3-4a2a-ad68-7d0fee170f3f",
+    "Christopher Rush",
+);
 
 // FEM 57 — Goblin Kites
-pub(in crate::card::sets) static GOBLIN_KITES: CardRecord = CardRecord::new_with_legacy_id(
-    1800,
+pub(in crate::card::sets) static GOBLIN_KITES: CardRecord = CardRecord::new(
     "Goblin Kites",
-    CardArt::new("a0a27ac3-2273-469a-92ba-3f4a3d55de6f", "Anson Maddocks"),
+    "a0a27ac3-2273-469a-92ba-3f4a3d55de6f",
+    "Anson Maddocks",
     CardSet::FallenEmpires,
     CardRules::new_enchantment(mana_cost!("{1}{R}")).with_ability(
         AbilityDef::activated_with_targets(
@@ -1613,10 +1789,10 @@ pub(in crate::card::sets) static GOBLIN_KITES: CardRecord = CardRecord::new_with
 );
 
 // FEM 58a — Goblin War Drums
-pub(in crate::card::sets) static GOBLIN_WAR_DRUMS: CardRecord = CardRecord::new_with_legacy_id(
-    1801,
+pub(in crate::card::sets) static GOBLIN_WAR_DRUMS: CardRecord = CardRecord::new(
     "Goblin War Drums",
-    CardArt::new("2a2c4e4b-e9a7-4180-927b-589514c21876", "Dan Frazier"),
+    "2a2c4e4b-e9a7-4180-927b-589514c21876",
+    "Dan Frazier",
     CardSet::FallenEmpires,
     CardRules::new_enchantment(mana_cost!("{2}{R}")).with_ability(AbilityDef::static_ability(
         "Creatures you control have menace.",
@@ -1632,28 +1808,35 @@ pub(in crate::card::sets) static GOBLIN_WAR_DRUMS: CardRecord = CardRecord::new_
 );
 
 // FEM 58b — Goblin War Drums (alternate printing)
-const GOBLIN_WAR_DRUMS_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&GOBLIN_WAR_DRUMS, 1).with_art(
-        "5988a3d2-748f-4642-9e33-293ddc568111",
-        "Richard Kane Ferguson",
-    );
+const GOBLIN_WAR_DRUMS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &GOBLIN_WAR_DRUMS,
+    1,
+    "5988a3d2-748f-4642-9e33-293ddc568111",
+    "Richard Kane Ferguson",
+);
 
 // FEM 58c — Goblin War Drums (alternate printing)
-const GOBLIN_WAR_DRUMS_ALTERNATE_2: PrintingRecord =
-    PrintingRecord::alternate(&GOBLIN_WAR_DRUMS, 2)
-        .with_art("2232386e-986d-41b5-8b70-e086264f3277", "Heather Hudson");
+const GOBLIN_WAR_DRUMS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &GOBLIN_WAR_DRUMS,
+    2,
+    "2232386e-986d-41b5-8b70-e086264f3277",
+    "Heather Hudson",
+);
 
 // FEM 58d — Goblin War Drums (alternate printing)
-const GOBLIN_WAR_DRUMS_ALTERNATE_3: PrintingRecord =
-    PrintingRecord::alternate(&GOBLIN_WAR_DRUMS, 3)
-        .with_art("2a0185f3-fbc0-44d7-b933-30627cda1bf9", "Jeff A. Menges");
+const GOBLIN_WAR_DRUMS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &GOBLIN_WAR_DRUMS,
+    3,
+    "2a0185f3-fbc0-44d7-b933-30627cda1bf9",
+    "Jeff A. Menges",
+);
 
 // FEM 59 — Goblin Warrens
 // Audit: unsupported — Needs an activated cost that selects and sacrifices two Goblins; only one chosen permanent can currently be sacrificed as a cost.
 pub(in crate::card::sets) static GOBLIN_WARRENS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bbec4aa5-3319-43dc-8347-5633edbd7018"),
     "Goblin Warrens",
-    crate::card::CardArt::new("bbec4aa5-3319-43dc-8347-5633edbd7018", "Dan Frazier"),
+    "bbec4aa5-3319-43dc-8347-5633edbd7018",
+    "Dan Frazier",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
@@ -1670,10 +1853,10 @@ const fn orcish_captain_pump(power: i32, toughness: i32) -> EffectDef {
     }
 }
 
-pub(in crate::card::sets) static ORCISH_CAPTAIN: CardRecord = CardRecord::new_with_legacy_id(
-    1482,
+pub(in crate::card::sets) static ORCISH_CAPTAIN: CardRecord = CardRecord::new(
     "Orcish Captain",
-    CardArt::new("e43cf61d-b4d6-4461-a228-47fd8b026d33", "Mark Tedin"),
+    "e43cf61d-b4d6-4461-a228-47fd8b026d33",
+    "Mark Tedin",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{R}"), &["Orc", "Warrior"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
@@ -1698,10 +1881,10 @@ pub(in crate::card::sets) static ORCISH_CAPTAIN: CardRecord = CardRecord::new_wi
 );
 
 // FEM 61a — Orcish Spy
-pub(in crate::card::sets) static ORCISH_SPY: CardRecord = CardRecord::new_with_legacy_id(
-    1725,
+pub(in crate::card::sets) static ORCISH_SPY: CardRecord = CardRecord::new(
     "Orcish Spy",
-    CardArt::new("a7d0ae40-0dd1-4230-a7aa-2c2f832159b7", "Susan Van Camp"),
+    "cd3890d1-563d-4519-ab8c-913031d71918",
+    "Susan Van Camp",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{R}"), &["Orc", "Rogue"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
@@ -1719,18 +1902,26 @@ pub(in crate::card::sets) static ORCISH_SPY: CardRecord = CardRecord::new_with_l
 );
 
 // FEM 61b — Orcish Spy (alternate printing)
-const ORCISH_SPY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ORCISH_SPY, 1)
-    .with_art("8b931cfd-b952-416c-ab2c-271ecaee8e0c", "Daniel Gelon");
+const ORCISH_SPY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ORCISH_SPY,
+    1,
+    "8b931cfd-b952-416c-ab2c-271ecaee8e0c",
+    "Daniel Gelon",
+);
 
 // FEM 61c — Orcish Spy (alternate printing)
-const ORCISH_SPY_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ORCISH_SPY, 2)
-    .with_art("28e08767-7e92-4ff4-b0d8-196565fbc23c", "Pete Venters");
+const ORCISH_SPY_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ORCISH_SPY,
+    2,
+    "28e08767-7e92-4ff4-b0d8-196565fbc23c",
+    "Pete Venters",
+);
 
 // FEM 62a — Orcish Veteran
-pub(in crate::card::sets) static ORCISH_VETERAN: CardRecord = CardRecord::new_with_legacy_id(
-    1730,
+pub(in crate::card::sets) static ORCISH_VETERAN: CardRecord = CardRecord::new(
     "Orcish Veteran",
-    CardArt::new("af5d1e3e-2efa-4804-9c89-5c71e7b8f0cc", "Douglas Shuler"),
+    "1dbca765-8756-4e28-9faf-25714c9b8838",
+    "Douglas Shuler",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Orc"], 2, 2).with_abilities(&[
         AbilityDef::static_ability(
@@ -1760,22 +1951,34 @@ pub(in crate::card::sets) static ORCISH_VETERAN: CardRecord = CardRecord::new_wi
 );
 
 // FEM 62b — Orcish Veteran (alternate printing)
-const ORCISH_VETERAN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ORCISH_VETERAN, 1)
-    .with_art("bc37db83-9efc-4d58-90c9-78eef9073ec2", "Dan Frazier");
+const ORCISH_VETERAN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ORCISH_VETERAN,
+    1,
+    "bc37db83-9efc-4d58-90c9-78eef9073ec2",
+    "Dan Frazier",
+);
 
 // FEM 62c — Orcish Veteran (alternate printing)
-const ORCISH_VETERAN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ORCISH_VETERAN, 2)
-    .with_art("334004e6-bf8c-4a4e-a30c-1537a99819c9", "Quinton Hoover");
+const ORCISH_VETERAN_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ORCISH_VETERAN,
+    2,
+    "334004e6-bf8c-4a4e-a30c-1537a99819c9",
+    "Quinton Hoover",
+);
 
 // FEM 62d — Orcish Veteran (alternate printing)
-const ORCISH_VETERAN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&ORCISH_VETERAN, 3)
-    .with_art("4990dd4b-2b18-4e4c-81d4-1cd8d746a7dc", "Melissa A. Benson");
+const ORCISH_VETERAN_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &ORCISH_VETERAN,
+    3,
+    "4990dd4b-2b18-4e4c-81d4-1cd8d746a7dc",
+    "Melissa A. Benson",
+);
 
 // FEM 63 — Orgg
-pub(in crate::card::sets) static ORGG: CardRecord = CardRecord::new_with_legacy_id(
-    1713,
+pub(in crate::card::sets) static ORGG: CardRecord = CardRecord::new(
     "Orgg",
-    CardArt::new("5af19ab0-4bd0-4d5f-8d2e-507e4fe87c18", "Daniel Gelon"),
+    "5af19ab0-4bd0-4d5f-8d2e-507e4fe87c18",
+    "Daniel Gelon",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Orgg"], 6, 6).with_abilities(&[
         abilities::trample(),
@@ -1808,18 +2011,18 @@ pub(in crate::card::sets) static ORGG: CardRecord = CardRecord::new_with_legacy_
 // FEM 64 — Raiding Party
 // Audit: unsupported — Needs a persistent tap/untap restriction or event relation for “Sacrifice an Orc: Each player may tap any number of untapped white creatures they control. For each creature tapped this way, that player chooses up to two Plains. Then destroy all…”.
 pub(in crate::card::sets) static RAIDING_PARTY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("907a3396-706b-4ca2-9973-bca758986032"),
     "Raiding Party",
-    crate::card::CardArt::new("907a3396-706b-4ca2-9973-bca758986032", "Quinton Hoover"),
+    "907a3396-706b-4ca2-9973-bca758986032",
+    "Quinton Hoover",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 65a — Elven Fortress
-pub(in crate::card::sets) static ELVEN_FORTRESS: CardRecord = CardRecord::new_with_legacy_id(
-    592,
+pub(in crate::card::sets) static ELVEN_FORTRESS: CardRecord = CardRecord::new(
     "Elven Fortress",
-    CardArt::new("9387105d-46d0-4db0-8980-dd0fded15eef", "Pete Venters"),
+    "9387105d-46d0-4db0-8980-dd0fded15eef",
+    "Pete Venters",
     CardSet::FallenEmpires,
     CardRules::new_enchantment(mana_cost!("{G}")).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -1845,28 +2048,34 @@ pub(in crate::card::sets) static ELVEN_FORTRESS: CardRecord = CardRecord::new_wi
 );
 
 // FEM 65b — Elven Fortress (alternate printing)
-const ELVEN_FORTRESS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ELVEN_FORTRESS, 1)
-    .with_art(
-        "091b5ed4-91f5-47c1-b1a1-5443f7346078",
-        "Randy Asplund-Faith",
-    );
+const ELVEN_FORTRESS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ELVEN_FORTRESS,
+    1,
+    "091b5ed4-91f5-47c1-b1a1-5443f7346078",
+    "Randy Asplund-Faith",
+);
 
 // FEM 65c — Elven Fortress (alternate printing)
-const ELVEN_FORTRESS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ELVEN_FORTRESS, 2)
-    .with_art("960b542f-cb24-4f74-92da-d31559d87c2d", "Mark Poole");
+const ELVEN_FORTRESS_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ELVEN_FORTRESS,
+    2,
+    "960b542f-cb24-4f74-92da-d31559d87c2d",
+    "Mark Poole",
+);
 
 // FEM 65d — Elven Fortress (alternate printing)
-const ELVEN_FORTRESS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&ELVEN_FORTRESS, 3)
-    .with_art("c52743f0-5c5b-46b9-bbbd-67950d4c89e5", "Tom Wänerstrand");
+const ELVEN_FORTRESS_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &ELVEN_FORTRESS,
+    3,
+    "c52743f0-5c5b-46b9-bbbd-67950d4c89e5",
+    "Tom Wänerstrand",
+);
 
 // FEM 66 — Elvish Farmer
-pub(in crate::card::sets) static ELVISH_FARMER: CardRecord = CardRecord::new_with_legacy_id(
-    1455,
+pub(in crate::card::sets) static ELVISH_FARMER: CardRecord = CardRecord::new(
     "Elvish Farmer",
-    CardArt::new(
-        "40a9710e-b2f8-4746-8640-d450f58a6e49",
-        "Richard Kane Ferguson",
-    ),
+    "40a9710e-b2f8-4746-8640-d450f58a6e49",
+    "Richard Kane Ferguson",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf"], 0, 2).with_abilities(&[
             AbilityDef::triggered(
@@ -1913,10 +2122,10 @@ pub(in crate::card::sets) static ELVISH_FARMER: CardRecord = CardRecord::new_wit
 );
 
 // FEM 67a — Elvish Hunter
-pub(in crate::card::sets) static ELVISH_HUNTER: CardRecord = CardRecord::new_with_legacy_id(
-    1669,
+pub(in crate::card::sets) static ELVISH_HUNTER: CardRecord = CardRecord::new(
     "Elvish Hunter",
-    CardArt::new("e00455ac-c7ce-4916-98ed-cca9354e3f22", "Mark Poole"),
+    "e00455ac-c7ce-4916-98ed-cca9354e3f22",
+    "Mark Poole",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Archer"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
@@ -1937,18 +2146,26 @@ pub(in crate::card::sets) static ELVISH_HUNTER: CardRecord = CardRecord::new_wit
 );
 
 // FEM 67b — Elvish Hunter (alternate printing)
-const ELVISH_HUNTER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ELVISH_HUNTER, 1)
-    .with_art("51ff096c-487f-42f9-a394-a298503391da", "Anson Maddocks");
+const ELVISH_HUNTER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ELVISH_HUNTER,
+    1,
+    "51ff096c-487f-42f9-a394-a298503391da",
+    "Anson Maddocks",
+);
 
 // FEM 67c — Elvish Hunter (alternate printing)
-const ELVISH_HUNTER_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ELVISH_HUNTER, 2)
-    .with_art("204c8aff-b103-4606-b86b-d794bc5dcde1", "Susan Van Camp");
+const ELVISH_HUNTER_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ELVISH_HUNTER,
+    2,
+    "204c8aff-b103-4606-b86b-d794bc5dcde1",
+    "Susan Van Camp",
+);
 
 // FEM 68a — Elvish Scout
-pub(in crate::card::sets) static ELVISH_SCOUT: CardRecord = CardRecord::new_with_legacy_id(
-    1737,
+pub(in crate::card::sets) static ELVISH_SCOUT: CardRecord = CardRecord::new(
     "Elvish Scout",
-    CardArt::new("5477e674-ea0e-400f-bfe3-38465f6a52cc", "Mark Poole"),
+    "689cd2ed-be81-4769-a8ec-287946301396",
+    "Mark Poole",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Scout"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
@@ -1994,18 +2211,26 @@ pub(in crate::card::sets) static ELVISH_SCOUT: CardRecord = CardRecord::new_with
 );
 
 // FEM 68b — Elvish Scout (alternate printing)
-const ELVISH_SCOUT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ELVISH_SCOUT, 1)
-    .with_art("1faff88d-594e-473c-a2d1-cd60f51b2ee7", "Pete Venters");
+const ELVISH_SCOUT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ELVISH_SCOUT,
+    1,
+    "1faff88d-594e-473c-a2d1-cd60f51b2ee7",
+    "Pete Venters",
+);
 
 // FEM 68c — Elvish Scout (alternate printing)
-const ELVISH_SCOUT_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&ELVISH_SCOUT, 2)
-    .with_art("d414bf5a-2604-426c-8c68-5c1696557b57", "Christopher Rush");
+const ELVISH_SCOUT_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &ELVISH_SCOUT,
+    2,
+    "d414bf5a-2604-426c-8c68-5c1696557b57",
+    "Christopher Rush",
+);
 
 // FEM 69 — Feral Thallid
-pub(in crate::card::sets) static FERAL_THALLID: CardRecord = CardRecord::new_with_legacy_id(
-    1414,
+pub(in crate::card::sets) static FERAL_THALLID: CardRecord = CardRecord::new(
     "Feral Thallid",
-    CardArt::new("e585241e-c647-456d-b3b1-3d48dd78c372", "Rob Alexander"),
+    "e585241e-c647-456d-b3b1-3d48dd78c372",
+    "Rob Alexander",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{3}{G}{G}{G}"), &["Fungus"], 6, 3).with_abilities(&[
         AbilityDef::triggered(
@@ -2034,10 +2259,10 @@ pub(in crate::card::sets) static FERAL_THALLID: CardRecord = CardRecord::new_wit
 );
 
 // FEM 70 — Fungal Bloom
-pub(in crate::card::sets) static FUNGAL_BLOOM: CardRecord = CardRecord::new_with_legacy_id(
-    1416,
+pub(in crate::card::sets) static FUNGAL_BLOOM: CardRecord = CardRecord::new(
     "Fungal Bloom",
-    CardArt::new("cf1a2cb2-9a6b-41f7-96f7-ec457c69c16c", "Daniel Gelon"),
+    "cf1a2cb2-9a6b-41f7-96f7-ec457c69c16c",
+    "Daniel Gelon",
     CardSet::FallenEmpires,
     CardRules::new_enchantment(mana_cost!("{G}{G}")).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -2058,26 +2283,34 @@ pub(in crate::card::sets) static FUNGAL_BLOOM: CardRecord = CardRecord::new_with
 // FEM 71a — Night Soil
 // Audit: unsupported — Needs a zone-object query and identity-preserving continuation for “{1}, Exile two creature cards from a single graveyard: Create a 1/1 green Saproling creature token”.
 pub(in crate::card::sets) static NIGHT_SOIL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4cda6d18-d4b1-4b8a-a72e-f90115adf4c3"),
     "Night Soil",
-    crate::card::CardArt::new("4cda6d18-d4b1-4b8a-a72e-f90115adf4c3", "Sandra Everingham"),
+    "4cda6d18-d4b1-4b8a-a72e-f90115adf4c3",
+    "Sandra Everingham",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 71b — Night Soil (alternate printing)
-const NIGHT_SOIL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&NIGHT_SOIL, 1)
-    .with_art("4f25a497-46dc-47aa-8586-d514578a6d25", "Heather Hudson");
+const NIGHT_SOIL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &NIGHT_SOIL,
+    1,
+    "4f25a497-46dc-47aa-8586-d514578a6d25",
+    "Heather Hudson",
+);
 
 // FEM 71c — Night Soil (alternate printing)
-const NIGHT_SOIL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&NIGHT_SOIL, 2)
-    .with_art("ee3eb61b-698c-42b1-8a33-0ce7c3829e07", "Drew Tucker");
+const NIGHT_SOIL_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &NIGHT_SOIL,
+    2,
+    "ee3eb61b-698c-42b1-8a33-0ce7c3829e07",
+    "Drew Tucker",
+);
 
 // FEM 72a — Spore Cloud
-pub(in crate::card::sets) static SPORE_CLOUD: CardRecord = CardRecord::new_with_legacy_id(
-    1842,
+pub(in crate::card::sets) static SPORE_CLOUD: CardRecord = CardRecord::new(
     "Spore Cloud",
-    CardArt::new("1691a9f4-4ea7-440f-9bdc-4214ab3c90f0", "Susan Van Camp"),
+    "1691a9f4-4ea7-440f-9bdc-4214ab3c90f0",
+    "Susan Van Camp",
     CardSet::FallenEmpires,
     CardRules::new_instant(mana_cost!("{1}{G}{G}")).with_ability(AbilityDef::spell(
         "Tap all blocking creatures. Prevent all combat damage that would be dealt this turn. \
@@ -2114,18 +2347,26 @@ pub(in crate::card::sets) static SPORE_CLOUD: CardRecord = CardRecord::new_with_
 );
 
 // FEM 72b — Spore Cloud (alternate printing)
-const SPORE_CLOUD_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&SPORE_CLOUD, 1)
-    .with_art("2c3070f8-6dae-4f22-b186-e2a3a9647cc5", "Jesper Myrfors");
+const SPORE_CLOUD_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &SPORE_CLOUD,
+    1,
+    "2c3070f8-6dae-4f22-b186-e2a3a9647cc5",
+    "Jesper Myrfors",
+);
 
 // FEM 72c — Spore Cloud (alternate printing)
-const SPORE_CLOUD_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&SPORE_CLOUD, 2)
-    .with_art("17fe098c-c9b5-4bba-92b5-5720d6919073", "Amy Weber");
+const SPORE_CLOUD_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &SPORE_CLOUD,
+    2,
+    "17fe098c-c9b5-4bba-92b5-5720d6919073",
+    "Amy Weber",
+);
 
 // FEM 73 — Spore Flower
-pub(in crate::card::sets) static SPORE_FLOWER: CardRecord = CardRecord::new_with_legacy_id(
-    1415,
+pub(in crate::card::sets) static SPORE_FLOWER: CardRecord = CardRecord::new(
     "Spore Flower",
-    CardArt::new("f9681dc0-d0fc-4d5b-a23c-63ec1cc8343d", "Margaret Organ-Kean"),
+    "f9681dc0-d0fc-4d5b-a23c-63ec1cc8343d",
+    "Margaret Organ-Kean",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{G}{G}"), &["Fungus"], 0, 1)
         .with_abilities(&[
@@ -2156,10 +2397,10 @@ pub(in crate::card::sets) static SPORE_FLOWER: CardRecord = CardRecord::new_with
 );
 
 // FEM 74a — Thallid
-pub(in crate::card::sets) static THALLID: CardRecord = CardRecord::new_with_legacy_id(
-    1412,
+pub(in crate::card::sets) static THALLID: CardRecord = CardRecord::new(
     "Thallid",
-    CardArt::new("4caaf31b-86a9-485b-8da7-d5b526ed1233", "Edward P. Beard, Jr."),
+    "4caaf31b-86a9-485b-8da7-d5b526ed1233",
+    "Edward P. Beard, Jr.",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{G}"), &["Fungus"], 1, 1)
         .with_abilities(&[
@@ -2196,22 +2437,34 @@ pub(in crate::card::sets) static THALLID: CardRecord = CardRecord::new_with_lega
 );
 
 // FEM 74b — Thallid (alternate printing)
-const THALLID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&THALLID, 1)
-    .with_art("80f8f778-ae31-45cd-b27f-f93a07853ede", "Jesper Myrfors");
+const THALLID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &THALLID,
+    1,
+    "80f8f778-ae31-45cd-b27f-f93a07853ede",
+    "Jesper Myrfors",
+);
 
 // FEM 74c — Thallid (alternate printing)
-const THALLID_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&THALLID, 2)
-    .with_art("2cf2f3da-9101-439d-8caa-910ff40bfbb3", "Ron Spencer");
+const THALLID_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &THALLID,
+    2,
+    "2cf2f3da-9101-439d-8caa-910ff40bfbb3",
+    "Ron Spencer",
+);
 
 // FEM 74d — Thallid (alternate printing)
-const THALLID_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&THALLID, 3)
-    .with_art("01827286-b104-41c5-bac9-7c38414bc40e", "Daniel Gelon");
+const THALLID_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &THALLID,
+    3,
+    "01827286-b104-41c5-bac9-7c38414bc40e",
+    "Daniel Gelon",
+);
 
 // FEM 75 — Thallid Devourer
-pub(in crate::card::sets) static THALLID_DEVOURER: CardRecord = CardRecord::new_with_legacy_id(
-    1456,
+pub(in crate::card::sets) static THALLID_DEVOURER: CardRecord = CardRecord::new(
     "Thallid Devourer",
-    CardArt::new("aa533845-4c4b-4072-aa39-8e56ce7ec325", "Ron Spencer"),
+    "aa533845-4c4b-4072-aa39-8e56ce7ec325",
+    "Ron Spencer",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Fungus"], 2, 2).with_abilities(&[
             AbilityDef::triggered(
@@ -2261,9 +2514,9 @@ pub(in crate::card::sets) static THALLID_DEVOURER: CardRecord = CardRecord::new_
 // FEM 76 — Thelon's Chant
 // Audit: unsupported — Needs card-specific counter state and counter-consuming effects for “Whenever a player puts a Swamp onto the battlefield, this enchantment deals 3 damage to that player unless the player puts a -1/-1 counter on a creature they control”.
 pub(in crate::card::sets) static THELON_S_CHANT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9d970195-0a09-4cb4-a2c0-c16fcab5c859"),
     "Thelon's Chant",
-    crate::card::CardArt::new("9d970195-0a09-4cb4-a2c0-c16fcab5c859", "Melissa A. Benson"),
+    "9d970195-0a09-4cb4-a2c0-c16fcab5c859",
+    "Melissa A. Benson",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
@@ -2271,21 +2524,18 @@ pub(in crate::card::sets) static THELON_S_CHANT: CardRecord = CardRecord::new(
 // FEM 77 — Thelon's Curse
 // Audit: unsupported — Needs a persistent tap/untap restriction or event relation for “At the beginning of each player's upkeep, that player may choose any number of tapped blue creatures they control and pay {U} for each creature chosen this way. If the player does, untap…”.
 pub(in crate::card::sets) static THELON_S_CURSE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("9b868846-cc3c-4756-a5dd-2335bb380567"),
     "Thelon's Curse",
-    crate::card::CardArt::new("9b868846-cc3c-4756-a5dd-2335bb380567", "Pete Venters"),
+    "9b868846-cc3c-4756-a5dd-2335bb380567",
+    "Pete Venters",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 78 — Thelonite Druid
-pub(in crate::card::sets) static THELONITE_DRUID: CardRecord = CardRecord::new_with_legacy_id(
-    601,
+pub(in crate::card::sets) static THELONITE_DRUID: CardRecord = CardRecord::new(
     "Thelonite Druid",
-    CardArt::new(
-        "cd8772dd-513d-4dd0-a5db-5214dc8da4e0",
-        "Margaret Organ-Kean",
-    ),
+    "cd8772dd-513d-4dd0-a5db-5214dc8da4e0",
+    "Margaret Organ-Kean",
     CardSet::FallenEmpires,
     CardRules::new_creature(
         mana_cost!("{2}{G}"),
@@ -2317,18 +2567,18 @@ pub(in crate::card::sets) static THELONITE_DRUID: CardRecord = CardRecord::new_w
 // FEM 79 — Thelonite Monk
 // Audit: unsupported — Needs its permanent-duration target-land characteristic effect and green-creature sacrifice cost authored and tested.
 pub(in crate::card::sets) static THELONITE_MONK: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5400ff25-c70e-4095-a228-190601b86043"),
     "Thelonite Monk",
-    crate::card::CardArt::new("5400ff25-c70e-4095-a228-190601b86043", "Bryon Wackwitz"),
+    "5400ff25-c70e-4095-a228-190601b86043",
+    "Bryon Wackwitz",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 80a — Thorn Thallid
-pub(in crate::card::sets) static THORN_THALLID: CardRecord = CardRecord::new_with_legacy_id(
-    1413,
+pub(in crate::card::sets) static THORN_THALLID: CardRecord = CardRecord::new(
     "Thorn Thallid",
-    CardArt::new("16e61c00-3e94-4f6f-8515-65b430829e91", "Daniel Gelon"),
+    "16e61c00-3e94-4f6f-8515-65b430829e91",
+    "Daniel Gelon",
     CardSet::FallenEmpires,
     CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Fungus"], 2, 2).with_abilities(&[
         AbilityDef::triggered(
@@ -2361,22 +2611,34 @@ pub(in crate::card::sets) static THORN_THALLID: CardRecord = CardRecord::new_wit
 );
 
 // FEM 80b — Thorn Thallid (alternate printing)
-const THORN_THALLID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&THORN_THALLID, 1)
-    .with_art("84283348-789b-4236-b406-7fc6338a867d", "Heather Hudson");
+const THORN_THALLID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &THORN_THALLID,
+    1,
+    "84283348-789b-4236-b406-7fc6338a867d",
+    "Heather Hudson",
+);
 
 // FEM 80c — Thorn Thallid (alternate printing)
-const THORN_THALLID_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(&THORN_THALLID, 2)
-    .with_art("1537a338-3b68-4a41-bac6-554e8e530e46", "Jesper Myrfors");
+const THORN_THALLID_ALTERNATE_2: PrintingRecord = PrintingRecord::alternate(
+    &THORN_THALLID,
+    2,
+    "1537a338-3b68-4a41-bac6-554e8e530e46",
+    "Jesper Myrfors",
+);
 
 // FEM 80d — Thorn Thallid (alternate printing)
-const THORN_THALLID_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(&THORN_THALLID, 3)
-    .with_art("1e8f50be-1629-40eb-8916-019903d2e6a4", "Mark Tedin");
+const THORN_THALLID_ALTERNATE_3: PrintingRecord = PrintingRecord::alternate(
+    &THORN_THALLID,
+    3,
+    "1e8f50be-1629-40eb-8916-019903d2e6a4",
+    "Mark Tedin",
+);
 
 // FEM 81 — Aeolipile
-pub(in crate::card::sets) static AEOLIPILE: CardRecord = CardRecord::new_with_legacy_id(
-    593,
+pub(in crate::card::sets) static AEOLIPILE: CardRecord = CardRecord::new(
     "Aeolipile",
-    CardArt::new("a09030ee-415c-45af-bf08-7623197a314f", "Heather Hudson"),
+    "a09030ee-415c-45af-bf08-7623197a314f",
+    "Heather Hudson",
     CardSet::FallenEmpires,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -2400,12 +2662,9 @@ pub(in crate::card::sets) static AEOLIPILE: CardRecord = CardRecord::new_with_le
 // FEM 82 — Balm of Restoration
 // Audit: unsupported — Needs modal activated abilities: modes are chosen only while casting a spell, so an activated ability has no mode selection to freeze. Both of its modes are available.
 pub(in crate::card::sets) static BALM_OF_RESTORATION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7f95de4a-7fae-42bc-9660-39ea7685ca02"),
     "Balm of Restoration",
-    crate::card::CardArt::new(
-        "7f95de4a-7fae-42bc-9660-39ea7685ca02",
-        "Margaret Organ-Kean",
-    ),
+    "7f95de4a-7fae-42bc-9660-39ea7685ca02",
+    "Margaret Organ-Kean",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
@@ -2413,9 +2672,9 @@ pub(in crate::card::sets) static BALM_OF_RESTORATION: CardRecord = CardRecord::n
 // FEM 83 — Conch Horn
 // Audit: unsupported — Needs ordered-library inspection, selection, and visibility handling for “{1}, {T}, Sacrifice this artifact: Draw two cards, then put a card from your hand on top of your library”.
 pub(in crate::card::sets) static CONCH_HORN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("860a9ba3-e4c4-4af9-bdfe-1ada39289fd5"),
     "Conch Horn",
-    crate::card::CardArt::new("860a9ba3-e4c4-4af9-bdfe-1ada39289fd5", "Phil Foglio"),
+    "860a9ba3-e4c4-4af9-bdfe-1ada39289fd5",
+    "Phil Foglio",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
@@ -2423,9 +2682,9 @@ pub(in crate::card::sets) static CONCH_HORN: CardRecord = CardRecord::new(
 // FEM 84 — Delif's Cone
 // Audit: unsupported — Needs a combat declaration or damage-assignment constraint for “{T}, Sacrifice this artifact: This turn, when target creature you control attacks and isn't blocked, you may gain life equal to its power. If you do, it assigns no combat damage this turn”.
 pub(in crate::card::sets) static DELIF_S_CONE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("262b8788-c5a0-4c8e-9d58-b769b1b0a2ff"),
     "Delif's Cone",
-    crate::card::CardArt::new("262b8788-c5a0-4c8e-9d58-b769b1b0a2ff", "Mark Tedin"),
+    "262b8788-c5a0-4c8e-9d58-b769b1b0a2ff",
+    "Mark Tedin",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
@@ -2433,21 +2692,18 @@ pub(in crate::card::sets) static DELIF_S_CONE: CardRecord = CardRecord::new(
 // FEM 85 — Delif's Cube
 // Audit: unsupported — Needs a combat declaration or damage-assignment constraint for “{2}, {T}: This turn, when target creature you control attacks and isn't blocked, it assigns no combat damage this turn and you put a cube counter on this artifact”.
 pub(in crate::card::sets) static DELIF_S_CUBE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("14749600-9eca-4122-b04f-30ddda091b74"),
     "Delif's Cube",
-    crate::card::CardArt::new("14749600-9eca-4122-b04f-30ddda091b74", "Mark Tedin"),
+    "14749600-9eca-4122-b04f-30ddda091b74",
+    "Mark Tedin",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 86 — Draconian Cylix
-pub(in crate::card::sets) static DRACONIAN_CYLIX: CardRecord = CardRecord::new_with_legacy_id(
-    1808,
+pub(in crate::card::sets) static DRACONIAN_CYLIX: CardRecord = CardRecord::new(
     "Draconian Cylix",
-    CardArt::new(
-        "a419c9e3-5615-44f9-9256-94a3022bb69f",
-        "Edward P. Beard, Jr.",
-    ),
+    "a419c9e3-5615-44f9-9256-94a3022bb69f",
+    "Edward P. Beard, Jr.",
     CardSet::FallenEmpires,
     CardRules::new_artifact(mana_cost!("{3}")).with_ability(AbilityDef::activated_with_targets(
         "{2}, {T}, Discard a card at random: Regenerate target creature.",
@@ -2466,10 +2722,10 @@ pub(in crate::card::sets) static DRACONIAN_CYLIX: CardRecord = CardRecord::new_w
 );
 
 // FEM 87 — Elven Lyre
-pub(in crate::card::sets) static ELVEN_LYRE: CardRecord = CardRecord::new_with_legacy_id(
-    594,
+pub(in crate::card::sets) static ELVEN_LYRE: CardRecord = CardRecord::new(
     "Elven Lyre",
-    CardArt::new("c3a8cd72-04c0-46f7-a249-f1cecddfdc26", "Kaja Foglio"),
+    "c3a8cd72-04c0-46f7-a249-f1cecddfdc26",
+    "Kaja Foglio",
     CardSet::FallenEmpires,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -2495,31 +2751,27 @@ pub(in crate::card::sets) static ELVEN_LYRE: CardRecord = CardRecord::new_with_l
 );
 
 // FEM 88 — Implements of Sacrifice
-pub(in crate::card::sets) static IMPLEMENTS_OF_SACRIFICE: CardRecord =
-    CardRecord::new_with_legacy_id(
-        1638,
-        "Implements of Sacrifice",
-        CardArt::new(
-            "aa5deb95-79a6-4398-b82a-c1df169550d9",
-            "Margaret Organ-Kean",
-        ),
-        CardSet::FallenEmpires,
-        CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::activated_mana(
-            "{1}, {T}, Sacrifice this artifact: Add two mana of any one color.",
-            &[
-                AbilityCostDef::Mana(mana_cost!("{1}")),
-                AbilityCostDef::TapSource,
-                AbilityCostDef::SacrificeSource,
-            ],
-            EffectDef::AddMana(AddManaEffectDef::any_color().with_amount(2)),
-        )),
-    );
+pub(in crate::card::sets) static IMPLEMENTS_OF_SACRIFICE: CardRecord = CardRecord::new(
+    "Implements of Sacrifice",
+    "aa5deb95-79a6-4398-b82a-c1df169550d9",
+    "Margaret Organ-Kean",
+    CardSet::FallenEmpires,
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::activated_mana(
+        "{1}, {T}, Sacrifice this artifact: Add two mana of any one color.",
+        &[
+            AbilityCostDef::Mana(mana_cost!("{1}")),
+            AbilityCostDef::TapSource,
+            AbilityCostDef::SacrificeSource,
+        ],
+        EffectDef::AddMana(AddManaEffectDef::any_color().with_amount(2)),
+    )),
+);
 
 // FEM 89 — Ring of Renewal
-pub(in crate::card::sets) static RING_OF_RENEWAL: CardRecord = CardRecord::new_with_legacy_id(
-    595,
+pub(in crate::card::sets) static RING_OF_RENEWAL: CardRecord = CardRecord::new(
     "Ring of Renewal",
-    CardArt::new("a532d38a-809b-4132-8690-be15fe23afab", "Douglas Shuler"),
+    "a532d38a-809b-4132-8690-be15fe23afab",
+    "Douglas Shuler",
     CardSet::FallenEmpires,
     CardRules::new_artifact(mana_cost!("{5}")).with_abilities(&[AbilityDef::activated(
         "{5}, {T}: Discard a card at random, then draw two cards.",
@@ -2543,10 +2795,10 @@ pub(in crate::card::sets) static RING_OF_RENEWAL: CardRecord = CardRecord::new_w
 );
 
 // FEM 90 — Spirit Shield
-pub(in crate::card::sets) static SPIRIT_SHIELD: CardRecord = CardRecord::new_with_legacy_id(
-    1666,
+pub(in crate::card::sets) static SPIRIT_SHIELD: CardRecord = CardRecord::new(
     "Spirit Shield",
-    CardArt::new("213d6e0d-5ec9-441e-a38d-50ce44583e4b", "Scott Kirschner"),
+    "213d6e0d-5ec9-441e-a38d-50ce44583e4b",
+    "Scott Kirschner",
     CardSet::FallenEmpires,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::static_ability(
@@ -2579,10 +2831,10 @@ pub(in crate::card::sets) static SPIRIT_SHIELD: CardRecord = CardRecord::new_wit
 );
 
 // FEM 91 — Zelyon Sword
-pub(in crate::card::sets) static ZELYON_SWORD: CardRecord = CardRecord::new_with_legacy_id(
-    1667,
+pub(in crate::card::sets) static ZELYON_SWORD: CardRecord = CardRecord::new(
     "Zelyon Sword",
-    CardArt::new("4137160b-5248-4fbd-8ae8-25e9afd8fb5c", "Scott Kirschner"),
+    "4137160b-5248-4fbd-8ae8-25e9afd8fb5c",
+    "Scott Kirschner",
     CardSet::FallenEmpires,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::static_ability(
@@ -2615,10 +2867,10 @@ pub(in crate::card::sets) static ZELYON_SWORD: CardRecord = CardRecord::new_with
 );
 
 // FEM 92 — Bottomless Vault
-pub(in crate::card::sets) static BOTTOMLESS_VAULT: CardRecord = CardRecord::new_with_legacy_id(
-    1983,
+pub(in crate::card::sets) static BOTTOMLESS_VAULT: CardRecord = CardRecord::new(
     "Bottomless Vault",
-    CardArt::new("639ae988-d1d1-4ead-b0f8-47fc39eb64a0", "Pat Lewis"),
+    "639ae988-d1d1-4ead-b0f8-47fc39eb64a0",
+    "Pat Lewis",
     CardSet::FallenEmpires,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::enters_tapped("This land enters tapped."),
@@ -2654,10 +2906,10 @@ pub(in crate::card::sets) static BOTTOMLESS_VAULT: CardRecord = CardRecord::new_
 );
 
 // FEM 93 — Dwarven Hold
-pub(in crate::card::sets) static DWARVEN_HOLD: CardRecord = CardRecord::new_with_legacy_id(
-    1984,
+pub(in crate::card::sets) static DWARVEN_HOLD: CardRecord = CardRecord::new(
     "Dwarven Hold",
-    CardArt::new("a3142ded-ff62-4817-aa54-75a7ea4498a6", "Pat Lewis"),
+    "a3142ded-ff62-4817-aa54-75a7ea4498a6",
+    "Pat Lewis",
     CardSet::FallenEmpires,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::enters_tapped("This land enters tapped."),
@@ -2693,10 +2945,10 @@ pub(in crate::card::sets) static DWARVEN_HOLD: CardRecord = CardRecord::new_with
 );
 
 // FEM 94 — Dwarven Ruins
-pub(in crate::card::sets) static DWARVEN_RUINS: CardRecord = CardRecord::new_with_legacy_id(
-    596,
+pub(in crate::card::sets) static DWARVEN_RUINS: CardRecord = CardRecord::new(
     "Dwarven Ruins",
-    CardArt::new("0dfe1352-27be-4c99-a58f-b961f911f270", "Mark Poole"),
+    "0dfe1352-27be-4c99-a58f-b961f911f270",
+    "Mark Poole",
     CardSet::FallenEmpires,
     CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::as_enters(
@@ -2717,10 +2969,10 @@ pub(in crate::card::sets) static DWARVEN_RUINS: CardRecord = CardRecord::new_wit
 );
 
 // FEM 95 — Ebon Stronghold
-pub(in crate::card::sets) static EBON_STRONGHOLD: CardRecord = CardRecord::new_with_legacy_id(
-    597,
+pub(in crate::card::sets) static EBON_STRONGHOLD: CardRecord = CardRecord::new(
     "Ebon Stronghold",
-    CardArt::new("3fb2a11f-a8e4-4acf-871a-11171e3304ef", "Mark Poole"),
+    "3fb2a11f-a8e4-4acf-871a-11171e3304ef",
+    "Mark Poole",
     CardSet::FallenEmpires,
     CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::as_enters(
@@ -2741,37 +2993,34 @@ pub(in crate::card::sets) static EBON_STRONGHOLD: CardRecord = CardRecord::new_w
 );
 
 // FEM 96 — Havenwood Battleground
-pub(in crate::card::sets) static HAVENWOOD_BATTLEGROUND: CardRecord =
-    CardRecord::new_with_legacy_id(
-        598,
-        "Havenwood Battleground",
-        CardArt::new("9028f200-80dd-4c53-877f-ea380ff417cb", "Mark Poole"),
-        CardSet::FallenEmpires,
-        CardRules::new_land(&[]).with_abilities(&[
-            AbilityDef::as_enters(
-                "This land enters tapped.",
-                ReplacementEffectDef::ModifyBattlefieldEntry(
-                    BattlefieldEntryModificationDef::Tapped,
-                ),
-            ),
-            AbilityDef::activated_mana(
-                "{T}: Add {G}.",
-                &[AbilityCostDef::TapSource],
-                EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
-            ),
-            AbilityDef::activated_mana(
-                "{T}, Sacrifice this land: Add {G}{G}.",
-                &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
-                EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green).with_amount(2)),
-            ),
-        ]),
-    );
+pub(in crate::card::sets) static HAVENWOOD_BATTLEGROUND: CardRecord = CardRecord::new(
+    "Havenwood Battleground",
+    "9028f200-80dd-4c53-877f-ea380ff417cb",
+    "Mark Poole",
+    CardSet::FallenEmpires,
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::as_enters(
+            "This land enters tapped.",
+            ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+        ),
+        AbilityDef::activated_mana(
+            "{T}, Sacrifice this land: Add {G}{G}.",
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green).with_amount(2)),
+        ),
+    ]),
+);
 
 // FEM 97 — Hollow Trees
-pub(in crate::card::sets) static HOLLOW_TREES: CardRecord = CardRecord::new_with_legacy_id(
-    1985,
+pub(in crate::card::sets) static HOLLOW_TREES: CardRecord = CardRecord::new(
     "Hollow Trees",
-    CardArt::new("90845410-e09a-4753-ad4c-bf2b2f3c95ac", "Pat Lewis"),
+    "90845410-e09a-4753-ad4c-bf2b2f3c95ac",
+    "Pat Lewis",
     CardSet::FallenEmpires,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::enters_tapped("This land enters tapped."),
@@ -2807,10 +3056,10 @@ pub(in crate::card::sets) static HOLLOW_TREES: CardRecord = CardRecord::new_with
 );
 
 // FEM 98 — Icatian Store
-pub(in crate::card::sets) static ICATIAN_STORE: CardRecord = CardRecord::new_with_legacy_id(
-    1986,
+pub(in crate::card::sets) static ICATIAN_STORE: CardRecord = CardRecord::new(
     "Icatian Store",
-    CardArt::new("d7cd8d8c-52c7-402f-92e1-5e5866f2555a", "Pat Lewis"),
+    "d7cd8d8c-52c7-402f-92e1-5e5866f2555a",
+    "Pat Lewis",
     CardSet::FallenEmpires,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::enters_tapped("This land enters tapped."),
@@ -2848,18 +3097,18 @@ pub(in crate::card::sets) static ICATIAN_STORE: CardRecord = CardRecord::new_wit
 // FEM 99 — Rainbow Vale
 // Audit: unsupported — Needs duration-aware control-changing continuous effects for “{T}: Add one mana of any color. An opponent gains control of this land at the beginning of the next end step”.
 pub(in crate::card::sets) static RAINBOW_VALE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c1b138e1-f8fc-435c-9aed-98004768479c"),
     "Rainbow Vale",
-    crate::card::CardArt::new("c1b138e1-f8fc-435c-9aed-98004768479c", "Kaja Foglio"),
+    "c1b138e1-f8fc-435c-9aed-98004768479c",
+    "Kaja Foglio",
     crate::card::CardSet::FallenEmpires,
     crate::card::CardRules::unsupported(),
 );
 
 // FEM 100 — Ruins of Trokair
-pub(in crate::card::sets) static RUINS_OF_TROKAIR: CardRecord = CardRecord::new_with_legacy_id(
-    599,
+pub(in crate::card::sets) static RUINS_OF_TROKAIR: CardRecord = CardRecord::new(
     "Ruins of Trokair",
-    CardArt::new("4ce2e734-8cff-4bfe-85f8-17b3e1903f18", "Mark Poole"),
+    "4ce2e734-8cff-4bfe-85f8-17b3e1903f18",
+    "Mark Poole",
     CardSet::FallenEmpires,
     CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::as_enters(
@@ -2880,10 +3129,10 @@ pub(in crate::card::sets) static RUINS_OF_TROKAIR: CardRecord = CardRecord::new_
 );
 
 // FEM 101 — Sand Silos
-pub(in crate::card::sets) static SAND_SILOS: CardRecord = CardRecord::new_with_legacy_id(
-    1987,
+pub(in crate::card::sets) static SAND_SILOS: CardRecord = CardRecord::new(
     "Sand Silos",
-    CardArt::new("3f6f1fcb-d903-4a31-abab-40488569eef6", "Pat Lewis"),
+    "3f6f1fcb-d903-4a31-abab-40488569eef6",
+    "Pat Lewis",
     CardSet::FallenEmpires,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::enters_tapped("This land enters tapped."),
@@ -2919,10 +3168,10 @@ pub(in crate::card::sets) static SAND_SILOS: CardRecord = CardRecord::new_with_l
 );
 
 // FEM 102 — Svyelunite Temple
-pub(in crate::card::sets) static SVYELUNITE_TEMPLE: CardRecord = CardRecord::new_with_legacy_id(
-    600,
+pub(in crate::card::sets) static SVYELUNITE_TEMPLE: CardRecord = CardRecord::new(
     "Svyelunite Temple",
-    CardArt::new("8b3fde62-ab21-459b-9c5d-01aa6fe1d08e", "Mark Poole"),
+    "8b3fde62-ab21-459b-9c5d-01aa6fe1d08e",
+    "Mark Poole",
     CardSet::FallenEmpires,
     CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::as_enters(

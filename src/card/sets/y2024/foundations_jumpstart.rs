@@ -1,6 +1,6 @@
 //! Foundations Jumpstart cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::sets::y2005::ravnica_city_of_guilds as catalog_rav;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
@@ -15,18 +15,18 @@ use crate::mana_cost;
 // J25 19 — Scholar of Combustion
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCHOLAR_OF_COMBUSTION: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("23660e44-8546-438d-a2c4-e1cef6e50855"),
     "Scholar of Combustion",
-    crate::card::CardArt::new("23660e44-8546-438d-a2c4-e1cef6e50855", "Nereida"),
+    "23660e44-8546-438d-a2c4-e1cef6e50855",
+    "Nereida",
     crate::card::CardSet::FoundationsJumpstart,
     crate::card::CardRules::unsupported(),
 );
 
 // J25 24 — Scythecat Cub
 pub(in crate::card::sets) static SCYTHECAT_CUB: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b3dd3c7d-4685-4579-b483-14ddaaaddf5b"),
     "Scythecat Cub",
-    CardArt::new("b3dd3c7d-4685-4579-b483-14ddaaaddf5b", "Gabor Szikszai"),
+    "b3dd3c7d-4685-4579-b483-14ddaaaddf5b",
+    "Gabor Szikszai",
     CardSet::FoundationsJumpstart,
     // Two mana that turns a land drop into a counter and the second land of
     // the turn into all of them at once -- and trample, so what it grows
@@ -83,18 +83,18 @@ pub(in crate::card::sets) static SCYTHECAT_CUB: CardRecord = CardRecord::new(
 // J25 28 — Shardless Outlander
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHARDLESS_OUTLANDER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fccb51a4-cb78-4437-b9ab-cc77736af561"),
     "Shardless Outlander",
-    crate::card::CardArt::new("fccb51a4-cb78-4437-b9ab-cc77736af561", "Leon Tukker"),
+    "fccb51a4-cb78-4437-b9ab-cc77736af561",
+    "Leon Tukker",
     crate::card::CardSet::FoundationsJumpstart,
     crate::card::CardRules::unsupported(),
 );
 
 // J25 37 — Plagon, Lord of the Beach
 pub(in crate::card::sets) static PLAGON_LORD_OF_THE_BEACH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7f8a6bfe-6033-4f6b-ab45-6b553f8b51a1"),
     "Plagon, Lord of the Beach",
-    CardArt::new("7f8a6bfe-6033-4f6b-ab45-6b553f8b51a1", "GOSSAN"),
+    "7f8a6bfe-6033-4f6b-ab45-6b553f8b51a1",
+    "GOSSAN",
     CardSet::FoundationsJumpstart,
     // A 0/3 that pays for itself in a deck of walls and then turns them into
     // an offense: the numbers stay what they are, and only the combat
@@ -144,10 +144,10 @@ pub(in crate::card::sets) static PLAGON_LORD_OF_THE_BEACH: CardRecord = CardReco
 );
 
 // J25 50 — Ivora, Insatiable Heir
-pub(in crate::card::sets) static IVORA_INSATIABLE_HEIR: CardRecord = CardRecord::new_with_legacy_id(
-    2148,
+pub(in crate::card::sets) static IVORA_INSATIABLE_HEIR: CardRecord = CardRecord::new(
     "Ivora, Insatiable Heir",
-    CardArt::new("2ba70366-b6ae-423a-a8d8-29d2b8afd939", "Canata Katana"),
+    "2ba70366-b6ae-423a-a8d8-29d2b8afd939",
+    "Canata Katana",
     CardSet::FoundationsJumpstart,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Vampire", "Warrior"], 1, 1)
         .with_supertype(CardSupertype::Legendary)
@@ -186,43 +186,53 @@ pub(in crate::card::sets) static IVORA_INSATIABLE_HEIR: CardRecord = CardRecord:
 );
 
 // J25 114 — Dark Confidant (reprint)
-const DARK_CONFIDANT_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&catalog_rav::DARK_CONFIDANT).with_art(
-        "c74e9388-460d-4dbf-934e-f3ecb48af6e8",
-        "Victor Adame Minguez",
-    );
+const DARK_CONFIDANT_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_rav::DARK_CONFIDANT,
+    "c74e9388-460d-4dbf-934e-f3ecb48af6e8",
+    "Victor Adame Minguez",
+);
 
 // J25 212 — Inspiring Overseer (reprint)
-const INSPIRING_OVERSEER_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2022::streets_of_new_capenna::INSPIRING_OVERSEER)
-        .with_art("be1c0c41-cd92-49b2-be07-0c44219bcb6a", "Irina Nordsol");
+const INSPIRING_OVERSEER_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2022::streets_of_new_capenna::INSPIRING_OVERSEER,
+    "be1c0c41-cd92-49b2-be07-0c44219bcb6a",
+    "Irina Nordsol",
+);
 
 // J25 343 — Pestermite (reprint)
-const PESTERMITE_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2007::lorwyn::PESTERMITE).with_art(
-        "4c8b4f64-244c-4944-b23f-c383039d9767",
-        "Christopher Moeller",
-    );
+const PESTERMITE_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2007::lorwyn::PESTERMITE,
+    "4c8b4f64-244c-4944-b23f-c383039d9767",
+    "Christopher Moeller",
+);
 
 // J25 349 — Remand (reprint)
-const REMAND_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2005::ravnica_city_of_guilds::REMAND)
-        .with_art("36de9999-8d0a-4174-8e38-549bacdc128b", "Mark A. Nelson");
+const REMAND_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2005::ravnica_city_of_guilds::REMAND,
+    "36de9999-8d0a-4174-8e38-549bacdc128b",
+    "Mark A. Nelson",
+);
 
 // J25 641 — Bushwhack (reprint)
-const BUSHWHACK_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2022::the_brothers_war::BUSHWHACK)
-        .with_art("f6b92766-1ab8-462d-bd45-ccd6f55cbe14", "Artur Nakhodkin");
+const BUSHWHACK_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2022::the_brothers_war::BUSHWHACK,
+    "f6b92766-1ab8-462d-bd45-ccd6f55cbe14",
+    "Artur Nakhodkin",
+);
 
 // J25 684 — Llanowar Visionary (reprint)
-const LLANOWAR_VISIONARY_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2020::core_set_2021::LLANOWAR_VISIONARY)
-        .with_art("c2635b0c-c990-4cce-9ac4-97602a757cf0", "Cristi Balanescu");
+const LLANOWAR_VISIONARY_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2020::core_set_2021::LLANOWAR_VISIONARY,
+    "c2635b0c-c990-4cce-9ac4-97602a757cf0",
+    "Cristi Balanescu",
+);
 
 // J25 753 — Guardian Idol (reprint)
-const GUARDIAN_IDOL_REPRINT: PrintingRecord =
-    PrintingRecord::reprint(&crate::card::sets::y2004::fifth_dawn::GUARDIAN_IDOL)
-        .with_art("1537f377-64c3-4c3b-a276-28d8234c029b", "Igor Kieryluk");
+const GUARDIAN_IDOL_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &crate::card::sets::y2004::fifth_dawn::GUARDIAN_IDOL,
+    "1537f377-64c3-4c3b-a276-28d8234c029b",
+    "Igor Kieryluk",
+);
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCHOLAR_OF_COMBUSTION,

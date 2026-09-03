@@ -57,12 +57,17 @@ fn built_in_printings_record_exact_art() {
 }
 
 #[test]
-fn legacy_definitions_use_debut_art_without_losing_reprint_art() {
+fn historical_ids_use_debut_art_without_losing_reprint_art() {
     let catalog = crate::card::catalog().expect("built-in catalog builds");
     let sedge_troll = catalog
         .get(crate::card::cards::SEDGE_TROLL)
         .expect("Sedge Troll is cataloged");
 
+    assert_eq!(
+        crate::card::cards::SEDGE_TROLL,
+        CardDefinitionId::new(123),
+        "the compatibility shim must preserve the historical definition ID",
+    );
     assert_eq!(sedge_troll.debut_set, CardSet::Alpha);
     assert_eq!(
         sedge_troll.art.map(|art| art.scryfall_id),

@@ -57,34 +57,27 @@ identity header, or promote generally reusable behavior to `card::abilities` as
 appropriate. Do not leave card-local helpers in the shared preamble or between
 other cards' blocks.
 
-Existing definitions use `CardRecord::new_with_legacy_id`, with their historic
-numeric value written beside the record. Never allocate another sequential
-legacy value. If its existing artwork came from a later printing, use
-`with_debut_art` to supply the exact debut UUID and artist. A new definition
-uses `CardRecord::new` with an explicitly frozen
-exact preferred-printing Scryfall UUID through `PrintingAnchor::scryfall`: the
-first English-language paper printing when possible, otherwise the first paper
-printing in any language. The build derives a stable 52-bit ID and rejects
-collisions across the whole corpus. Do not recompute the preferred printing
-later: the committed anchor is the identity.
-If the
-vanishingly unlikely collision occurs, commit
-`PrintingAnchor::scryfall_with_nonce` for the newcomer rather than changing any
-existing record. The ordinary `card::cards::*` constants are compatibility
-output generated from these declarations, not an independently authored ID
-registry. A compact build fingerprint prevents any migrated legacy assignment
-from moving. Presentation art for later printings belongs on their
-`PrintingRecord` rather than the canonical definition.
+Every `CardRecord` constructor takes the exact debut printing's Scryfall UUID
+and artist directly: the first English-language paper printing when possible,
+otherwise the first paper printing in any language. The build normally derives
+the stable 52-bit definition ID from that UUID and rejects collisions across
+the whole corpus. Historical ID assignments that cannot be derived from the
+debut UUID live exclusively in `src/card/compatibility/definition_ids.txt`;
+never copy them back into card declarations or allocate another sequential ID.
+That compatibility table is fingerprinted so existing assignments cannot move.
+The ordinary `card::cards::*` constants remain generated compatibility output,
+not an independently authored ID registry. Art for later printings belongs on
+their `PrintingRecord` rather than the canonical definition.
 
 Keep `ADDITIONAL_PRINTINGS` in natural order by the collector number in that
 module's set, including for reprint-only modules with an empty `CARDS`
 registry. Declare each printing as a card-derived constant immediately below
 its collector-ordered header, such as `SAVANNAH_LIONS_REPRINT` or
 `URZA_S_MINE_ALTERNATE_2`, and put only those constants in the bottom
-registry. Attach the exact printing's Scryfall UUID and artist to the adjacent
-constant with `PrintingRecord::reprint(...).with_art(...)` or
-`PrintingRecord::alternate(...).with_art(...)`; this presentation metadata
-does not change which canonical definition owns the card's rules. Empty
+registry. Pass the exact printing's Scryfall UUID and artist directly to the
+adjacent `PrintingRecord::reprint(...)` or `PrintingRecord::alternate(...)`
+constant; this presentation metadata does not change which canonical
+definition owns the card's rules. Empty
 registries need no comments. Creator-owned token and emblem
 characteristics and rules-owned face-down characteristics are built by the
 effect or mechanism that creates them, are not card definitions, and remain
@@ -172,7 +165,7 @@ will be implemented later:
    set. Work in natural collector-number order and keep alternate-art collector
    numbers distinct. For a cube card, resolve its earliest English-language
    paper printing when possible, otherwise its earliest paper printing, and
-   freeze that exact UUID as its identity anchor.
+   use that exact UUID and artist in its `CardRecord` constructor.
 3. Leave an existing `CardRecord` unchanged. If the identity is already
    declared elsewhere, add a `PrintingRecord::reprint` (and `alternate` records
    for further variants) plus the corresponding ordered upper comments.
@@ -183,8 +176,8 @@ will be implemented later:
    explanation. When there was no row, add the same unsupported declaration
    with `Card rules have not been implemented.` as its honest initial audit.
 5. Put a new identity in the module for its first English-language paper set
-   when possible, otherwise its earliest paper set, and anchor it to that exact
-   preferred printing. Add a `CardSet`, set module, registry entry, source-code
+   when possible, otherwise its earliest paper set, using that exact debut
+   printing's UUID and artist. Add a `CardSet`, set module, registry entry, source-code
    mapping, and catalog JSON code when no modeled set can truthfully own the
    declaration. Append-only catalog growth does not require a protocol-version
    bump.

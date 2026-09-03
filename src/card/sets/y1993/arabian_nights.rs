@@ -1,4 +1,4 @@
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::Format;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::card::{
@@ -33,10 +33,10 @@ static YOU_CONTROL_NO_ISLANDS: TriggerConditionDef = TriggerConditionDef::Object
 };
 
 // ARN 1 — Abu Ja'far
-pub(in crate::card::sets) static ABU_JAFAR: CardRecord = CardRecord::new_with_legacy_id(
-    1736,
+pub(in crate::card::sets) static ABU_JAFAR: CardRecord = CardRecord::new(
     "Abu Ja'far",
-    CardArt::new("949634bd-2f5a-4be7-ad24-d7039a57b6d6", "Ken Meyer, Jr."),
+    "0e9ad288-d164-44a6-96ec-4185a1587f1a",
+    "Ken Meyer, Jr.",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{W}"), &["Human"], 0, 1).with_ability(
         abilities::dies_trigger(
@@ -65,10 +65,10 @@ pub(in crate::card::sets) static ABU_JAFAR: CardRecord = CardRecord::new_with_le
 );
 
 // ARN 2 — Army of Allah
-pub(in crate::card::sets) static ARMY_OF_ALLAH: CardRecord = CardRecord::new_with_legacy_id(
-    354,
+pub(in crate::card::sets) static ARMY_OF_ALLAH: CardRecord = CardRecord::new(
     "Army of Allah",
-    CardArt::new("3d170015-b125-49a6-a15e-8fd116bbcb14", "Brian Snõddy"),
+    "3d170015-b125-49a6-a15e-8fd116bbcb14",
+    "Brian Snõddy",
     CardSet::ArabianNights,
     CardRules::new_instant(mana_cost!("{1}{W}{W}")).with_abilities(&[AbilityDef::spell(
         "Attacking creatures get +2/+0 until end of turn.",
@@ -88,15 +88,19 @@ pub(in crate::card::sets) static ARMY_OF_ALLAH: CardRecord = CardRecord::new_wit
 );
 
 // ARN 2† — Army of Allah (alternate printing)
-const ARMY_OF_ALLAH_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ARMY_OF_ALLAH, 1)
-    .with_art("9899352a-a4c9-47bf-b9cb-0c34060ae1c4", "Brian Snõddy");
+const ARMY_OF_ALLAH_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ARMY_OF_ALLAH,
+    1,
+    "9899352a-a4c9-47bf-b9cb-0c34060ae1c4",
+    "Brian Snõddy",
+);
 
 // ARN 3 — Camel
 // Audit: unsupported — Needs a prevention that lives on the permanent and reads its combat state, for “As long as this creature is attacking, prevent all damage Deserts would deal to this creature and to creatures banded with this creature”. Deserts and band membership are both readable now.
 pub(in crate::card::sets) static CAMEL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e0078aa8-bfb8-43b0-a6b7-1991596c21e1"),
     "Camel",
-    crate::card::CardArt::new("e0078aa8-bfb8-43b0-a6b7-1991596c21e1", "Sandra Everingham"),
+    "e0078aa8-bfb8-43b0-a6b7-1991596c21e1",
+    "Sandra Everingham",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
@@ -104,9 +108,9 @@ pub(in crate::card::sets) static CAMEL: CardRecord = CardRecord::new(
 // ARN 4 — Eye for an Eye
 // Audit: unsupported — Needs a shield keyed to a source chosen as the ability resolves; prevention shields attach to a recipient and spend on the next damage from any source, not from one named source for “The next time a source of your choice would deal damage to you this turn, instead that source deals that much damage to you and Eye for an Eye deals that much damage to that source's…”.
 pub(in crate::card::sets) static EYE_FOR_AN_EYE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2933ca2a-097b-44f4-ae56-ad524d26fd06"),
     "Eye for an Eye",
-    crate::card::CardArt::new("2933ca2a-097b-44f4-ae56-ad524d26fd06", "Mark Poole"),
+    "2933ca2a-097b-44f4-ae56-ad524d26fd06",
+    "Mark Poole",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
@@ -114,18 +118,18 @@ pub(in crate::card::sets) static EYE_FOR_AN_EYE: CardRecord = CardRecord::new(
 // ARN 5 — Jihad
 // Audit: unsupported — Needs a persistent dynamic characteristic choice and predicates that consume it for “White creatures get +2/+1 as long as the chosen player controls a nontoken permanent of the chosen color”.
 pub(in crate::card::sets) static JIHAD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b6c7705a-2987-4ef1-92b1-2c55d989ec6f"),
     "Jihad",
-    crate::card::CardArt::new("b6c7705a-2987-4ef1-92b1-2c55d989ec6f", "Brian Snõddy"),
+    "b6c7705a-2987-4ef1-92b1-2c55d989ec6f",
+    "Brian Snõddy",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 6 — King Suleiman
-pub(in crate::card::sets) static KING_SULEIMAN: CardRecord = CardRecord::new_with_legacy_id(
-    355,
+pub(in crate::card::sets) static KING_SULEIMAN: CardRecord = CardRecord::new(
     "King Suleiman",
-    CardArt::new("4d3dce0f-2168-4f63-b2f9-156a11beeea7", "Mark Poole"),
+    "4d3dce0f-2168-4f63-b2f9-156a11beeea7",
+    "Mark Poole",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Noble"], 1, 1).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -147,24 +151,28 @@ pub(in crate::card::sets) static KING_SULEIMAN: CardRecord = CardRecord::new_wit
 );
 
 // ARN 7 — Moorish Cavalry
-pub(in crate::card::sets) static MOORISH_CAVALRY: CardRecord = CardRecord::new_with_legacy_id(
-    356,
+pub(in crate::card::sets) static MOORISH_CAVALRY: CardRecord = CardRecord::new(
     "Moorish Cavalry",
-    CardArt::new("f86f0781-7614-4779-a58d-f13ce96bdf33", "Dameon Willich"),
+    "f86f0781-7614-4779-a58d-f13ce96bdf33",
+    "Dameon Willich",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Human", "Knight"], 3, 3)
         .with_abilities(&[abilities::trample()]),
 );
 
 // ARN 7† — Moorish Cavalry (alternate printing)
-const MOORISH_CAVALRY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&MOORISH_CAVALRY, 1)
-    .with_art("113a6b31-3748-48c1-a915-ab0b613eabb3", "Dameon Willich");
+const MOORISH_CAVALRY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &MOORISH_CAVALRY,
+    1,
+    "113a6b31-3748-48c1-a915-ab0b613eabb3",
+    "Dameon Willich",
+);
 
 // ARN 8 — Piety
-pub(in crate::card::sets) static PIETY: CardRecord = CardRecord::new_with_legacy_id(
-    357,
+pub(in crate::card::sets) static PIETY: CardRecord = CardRecord::new(
     "Piety",
-    CardArt::new("f649c571-d7ec-4ebc-9e18-b0657cab495b", "Mark Poole"),
+    "f649c571-d7ec-4ebc-9e18-b0657cab495b",
+    "Mark Poole",
     CardSet::ArabianNights,
     CardRules::new_instant(mana_cost!("{2}{W}")).with_abilities(&[AbilityDef::spell(
         "Blocking creatures get +0/+3 until end of turn.",
@@ -188,14 +196,18 @@ pub(in crate::card::sets) static PIETY: CardRecord = CardRecord::new_with_legacy
 );
 
 // ARN 8† — Piety (alternate printing)
-const PIETY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&PIETY, 1)
-    .with_art("8a5a1a13-dfc8-49b7-9b17-3f0c5ca1b8be", "Mark Poole");
+const PIETY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &PIETY,
+    1,
+    "8a5a1a13-dfc8-49b7-9b17-3f0c5ca1b8be",
+    "Mark Poole",
+);
 
 // ARN 9 — Repentant Blacksmith
-pub(in crate::card::sets) static REPENTANT_BLACKSMITH: CardRecord = CardRecord::new_with_legacy_id(
-    358,
+pub(in crate::card::sets) static REPENTANT_BLACKSMITH: CardRecord = CardRecord::new(
     "Repentant Blacksmith",
-    CardArt::new("61fc30b6-1355-425b-a86f-18f59f83141c", "Drew Tucker"),
+    "61fc30b6-1355-425b-a86f-18f59f83141c",
+    "Drew Tucker",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Human"], 1, 2)
         .with_abilities(&[abilities::protection_from_color(ManaColor::Red)]),
@@ -204,32 +216,36 @@ pub(in crate::card::sets) static REPENTANT_BLACKSMITH: CardRecord = CardRecord::
 // ARN 10 — Shahrazad
 // Audit: unsupported — Needs nested-game setup, execution, and result propagation for Shahrazad's library-backed subgame.
 pub(in crate::card::sets) static SHAHRAZAD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0014def3-4063-4929-ac51-76aef1bb2a68"),
     "Shahrazad",
-    crate::card::CardArt::new("0014def3-4063-4929-ac51-76aef1bb2a68", "Kaja Foglio"),
+    "0014def3-4063-4929-ac51-76aef1bb2a68",
+    "Kaja Foglio",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 11 — War Elephant
-pub(in crate::card::sets) static WAR_ELEPHANT: CardRecord = CardRecord::new_with_legacy_id(
-    1774,
+pub(in crate::card::sets) static WAR_ELEPHANT: CardRecord = CardRecord::new(
     "War Elephant",
-    CardArt::new("7416c366-95cc-4799-b6c6-34d8fad8c202", "Kristen Bishop"),
+    "7416c366-95cc-4799-b6c6-34d8fad8c202",
+    "Kristen Bishop",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Elephant"], 2, 2)
         .with_abilities(&[abilities::trample(), abilities::banding()]),
 );
 
 // ARN 11† — War Elephant (alternate printing)
-const WAR_ELEPHANT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&WAR_ELEPHANT, 1)
-    .with_art("cd87344d-9113-4fec-9a93-38bc1abe2af5", "Kristen Bishop");
+const WAR_ELEPHANT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &WAR_ELEPHANT,
+    1,
+    "cd87344d-9113-4fec-9a93-38bc1abe2af5",
+    "Kristen Bishop",
+);
 
 // ARN 12 — Dandân
-pub(in crate::card::sets) static DANDAN: CardRecord = CardRecord::new_with_legacy_id(
-    1402,
+pub(in crate::card::sets) static DANDAN: CardRecord = CardRecord::new(
     "Dandân",
-    CardArt::new("414d3cae-b8cf-4d53-bd6b-1aa83a828ba9", "Drew Tucker"),
+    "414d3cae-b8cf-4d53-bd6b-1aa83a828ba9",
+    "Drew Tucker",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{U}{U}"), &["Fish"], 4, 1).with_abilities(&[
         AbilityDef::static_ability(
@@ -248,10 +264,10 @@ pub(in crate::card::sets) static DANDAN: CardRecord = CardRecord::new_with_legac
 );
 
 // ARN 13 — Fishliver Oil
-pub(in crate::card::sets) static FISHLIVER_OIL: CardRecord = CardRecord::new_with_legacy_id(
-    1387,
+pub(in crate::card::sets) static FISHLIVER_OIL: CardRecord = CardRecord::new(
     "Fishliver Oil",
-    CardArt::new("deb6ed87-aa07-4b5e-ac40-1e16dc2a817a", "Anson Maddocks"),
+    "deb6ed87-aa07-4b5e-ac40-1e16dc2a817a",
+    "Anson Maddocks",
     CardSet::ArabianNights,
     CardRules::new_enchantment(mana_cost!("{1}{U}"))
         .with_subtypes(&["Aura"])
@@ -270,24 +286,28 @@ pub(in crate::card::sets) static FISHLIVER_OIL: CardRecord = CardRecord::new_wit
 );
 
 // ARN 13† — Fishliver Oil (alternate printing)
-const FISHLIVER_OIL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&FISHLIVER_OIL, 1)
-    .with_art("c066c452-1d87-4946-8d3b-6cc160a82282", "Anson Maddocks");
+const FISHLIVER_OIL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &FISHLIVER_OIL,
+    1,
+    "c066c452-1d87-4946-8d3b-6cc160a82282",
+    "Anson Maddocks",
+);
 
 // ARN 14 — Flying Men
-pub(in crate::card::sets) static FLYING_MEN: CardRecord = CardRecord::new_with_legacy_id(
-    359,
+pub(in crate::card::sets) static FLYING_MEN: CardRecord = CardRecord::new(
     "Flying Men",
-    CardArt::new("25ab9a2b-e248-4ae2-aac3-b49fdb3e260a", "Christopher Rush"),
+    "25ab9a2b-e248-4ae2-aac3-b49fdb3e260a",
+    "Christopher Rush",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{U}"), &["Human"], 1, 1)
         .with_abilities(&[abilities::flying()]),
 );
 
 // ARN 15 — Giant Tortoise
-pub(in crate::card::sets) static GIANT_TORTOISE: CardRecord = CardRecord::new_with_legacy_id(
-    1668,
+pub(in crate::card::sets) static GIANT_TORTOISE: CardRecord = CardRecord::new(
     "Giant Tortoise",
-    CardArt::new("096f7ac8-c639-4347-9767-7305eaf490ba", "Kaja Foglio"),
+    "096f7ac8-c639-4347-9767-7305eaf490ba",
+    "Kaja Foglio",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Turtle"], 1, 1).with_ability(
         AbilityDef::static_ability(
@@ -313,14 +333,18 @@ pub(in crate::card::sets) static GIANT_TORTOISE: CardRecord = CardRecord::new_wi
 );
 
 // ARN 15† — Giant Tortoise (alternate printing)
-const GIANT_TORTOISE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&GIANT_TORTOISE, 1)
-    .with_art("170fa026-c17b-4731-b520-455c39ccbe6d", "Kaja Foglio");
+const GIANT_TORTOISE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &GIANT_TORTOISE,
+    1,
+    "170fa026-c17b-4731-b520-455c39ccbe6d",
+    "Kaja Foglio",
+);
 
 // ARN 16 — Island Fish Jasconius
-pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord::new_with_legacy_id(
-    1428,
+pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord::new(
     "Island Fish Jasconius",
-    CardArt::new("8537cb0f-4821-417b-80cc-ea57d51ee9b8", "Jesper Myrfors"),
+    "8537cb0f-4821-417b-80cc-ea57d51ee9b8",
+    "Jesper Myrfors",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{4}{U}{U}{U}"), &["Fish"], 6, 8).with_abilities(&[
         AbilityDef::static_ability(
@@ -362,10 +386,10 @@ pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord:
 );
 
 // ARN 17 — Merchant Ship
-pub(in crate::card::sets) static MERCHANT_SHIP: CardRecord = CardRecord::new_with_legacy_id(
-    1586,
+pub(in crate::card::sets) static MERCHANT_SHIP: CardRecord = CardRecord::new(
     "Merchant Ship",
-    CardArt::new("2b827094-fb2c-46db-b898-02e0c308601f", "Tom Wänerstrand"),
+    "2b827094-fb2c-46db-b898-02e0c308601f",
+    "Tom Wänerstrand",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{U}"), &["Human"], 0, 2).with_abilities(&[
         AbilityDef::static_ability(
@@ -396,9 +420,9 @@ pub(in crate::card::sets) static MERCHANT_SHIP: CardRecord = CardRecord::new_wit
 // ARN 18 — Old Man of the Sea
 // Audit: unsupported — Needs duration-aware control-changing continuous effects for “{T}: Gain control of target creature with power less than or equal to this creature's power for as long as this creature remains tapped and that creature's power remains less than or…”.
 pub(in crate::card::sets) static OLD_MAN_OF_THE_SEA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d10f8a05-78b0-42a7-adcd-83f6bafe5417"),
     "Old Man of the Sea",
-    crate::card::CardArt::new("d10f8a05-78b0-42a7-adcd-83f6bafe5417", "Susan Van Camp"),
+    "d10f8a05-78b0-42a7-adcd-83f6bafe5417",
+    "Susan Van Camp",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
@@ -406,18 +430,18 @@ pub(in crate::card::sets) static OLD_MAN_OF_THE_SEA: CardRecord = CardRecord::ne
 // ARN 19 — Serendib Djinn
 // Audit: unsupported — Needs a chosen-land sacrifice whose sacrificed land subtype controls the follow-up damage branch.
 pub(in crate::card::sets) static SERENDIB_DJINN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("0458b733-d689-4cb5-8970-3b675c67fc4d"),
     "Serendib Djinn",
-    crate::card::CardArt::new("0458b733-d689-4cb5-8970-3b675c67fc4d", "Anson Maddocks"),
+    "0458b733-d689-4cb5-8970-3b675c67fc4d",
+    "Anson Maddocks",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 20 — Serendib Efreet
-pub(in crate::card::sets) static SERENDIB_EFREET: CardRecord = CardRecord::new_with_legacy_id(
-    94,
+pub(in crate::card::sets) static SERENDIB_EFREET: CardRecord = CardRecord::new(
     "Serendib Efreet",
-    CardArt::new("cf56e862-3169-4f63-acd0-731080fa32f2", "Anson Maddocks"),
+    "cf56e862-3169-4f63-acd0-731080fa32f2",
+    "Anson Maddocks",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Efreet"], 3, 4).with_abilities(&[
         abilities::flying(),
@@ -438,18 +462,18 @@ pub(in crate::card::sets) static SERENDIB_EFREET: CardRecord = CardRecord::new_w
 // ARN 21 — Sindbad
 // Audit: unsupported — Needs ordered-library inspection, selection, and visibility handling for “{T}: Draw a card and reveal it. If it isn't a land card, discard it”.
 pub(in crate::card::sets) static SINDBAD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7b112a10-ac40-4353-bbdd-e5efd4546330"),
     "Sindbad",
-    crate::card::CardArt::new("7b112a10-ac40-4353-bbdd-e5efd4546330", "Julie Baroh"),
+    "7b112a10-ac40-4353-bbdd-e5efd4546330",
+    "Julie Baroh",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 22 — Unstable Mutation
-pub(in crate::card::sets) static UNSTABLE_MUTATION: CardRecord = CardRecord::new_with_legacy_id(
-    1584,
+pub(in crate::card::sets) static UNSTABLE_MUTATION: CardRecord = CardRecord::new(
     "Unstable Mutation",
-    CardArt::new("a79e9236-a39e-471a-b18a-2c2ba16e7774", "Douglas Shuler"),
+    "a79e9236-a39e-471a-b18a-2c2ba16e7774",
+    "Douglas Shuler",
     CardSet::ArabianNights,
     CardRules::new_enchantment(mana_cost!("{U}"))
         .with_subtypes(&["Aura"])
@@ -480,18 +504,18 @@ pub(in crate::card::sets) static UNSTABLE_MUTATION: CardRecord = CardRecord::new
 // ARN 23 — Cuombajj Witches
 // Audit: unsupported — Needs resolution to pause for an opponent-controlled second target choice after the controller's target is fixed.
 pub(in crate::card::sets) static CUOMBAJJ_WITCHES: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("7995c3f9-a147-43c9-9f82-470924818a4c"),
     "Cuombajj Witches",
-    crate::card::CardArt::new("7995c3f9-a147-43c9-9f82-470924818a4c", "Kaja Foglio"),
+    "7995c3f9-a147-43c9-9f82-470924818a4c",
+    "Kaja Foglio",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 24 — El-Hajjâj
-pub(in crate::card::sets) static EL_HAJJAJ: CardRecord = CardRecord::new_with_legacy_id(
-    1478,
+pub(in crate::card::sets) static EL_HAJJAJ: CardRecord = CardRecord::new(
     "El-Hajjâj",
-    CardArt::new("c4b610d3-2005-4347-bcda-c30b5b7972e5", "Dameon Willich"),
+    "c4b610d3-2005-4347-bcda-c30b5b7972e5",
+    "Dameon Willich",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Human", "Wizard"], 1, 1).with_ability(
         AbilityDef::triggered(
@@ -506,10 +530,10 @@ pub(in crate::card::sets) static EL_HAJJAJ: CardRecord = CardRecord::new_with_le
 );
 
 // ARN 25 — Erg Raiders
-pub(in crate::card::sets) static ERG_RAIDERS: CardRecord = CardRecord::new_with_legacy_id(
-    1813,
+pub(in crate::card::sets) static ERG_RAIDERS: CardRecord = CardRecord::new(
     "Erg Raiders",
-    CardArt::new("35c73a97-531d-4dd5-8236-39b89c183c38", "Dameon Willich"),
+    "35c73a97-531d-4dd5-8236-39b89c183c38",
+    "Dameon Willich",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Human", "Warrior"], 2, 3).with_ability(
         AbilityDef::triggered_if(
@@ -538,14 +562,18 @@ pub(in crate::card::sets) static ERG_RAIDERS: CardRecord = CardRecord::new_with_
 );
 
 // ARN 25† — Erg Raiders (alternate printing)
-const ERG_RAIDERS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&ERG_RAIDERS, 1)
-    .with_art("2717b2e2-bea8-4ba8-9ad1-abb60abf6e4c", "Dameon Willich");
+const ERG_RAIDERS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &ERG_RAIDERS,
+    1,
+    "2717b2e2-bea8-4ba8-9ad1-abb60abf6e4c",
+    "Dameon Willich",
+);
 
 // ARN 26 — Guardian Beast
-pub(in crate::card::sets) static GUARDIAN_BEAST: CardRecord = CardRecord::new_with_legacy_id(
-    606,
+pub(in crate::card::sets) static GUARDIAN_BEAST: CardRecord = CardRecord::new(
     "Guardian Beast",
-    CardArt::new("9941f83b-2903-4eab-ac6d-5313e3978fa3", "Ken Meyer, Jr."),
+    "9941f83b-2903-4eab-ac6d-5313e3978fa3",
+    "Ken Meyer, Jr.",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{3}{B}"), &["Beast"], 2, 4).with_abilities(&[
         AbilityDef::static_ability(
@@ -573,10 +601,10 @@ pub(in crate::card::sets) static GUARDIAN_BEAST: CardRecord = CardRecord::new_wi
 );
 
 // ARN 27 — Hasran Ogress
-pub(in crate::card::sets) static HASRAN_OGRESS: CardRecord = CardRecord::new_with_legacy_id(
-    360,
+pub(in crate::card::sets) static HASRAN_OGRESS: CardRecord = CardRecord::new(
     "Hasran Ogress",
-    CardArt::new("9f310cf5-0985-4826-9779-19a713089d6d", "Dan Frazier"),
+    "9f310cf5-0985-4826-9779-19a713089d6d",
+    "Dan Frazier",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{B}{B}"), &["Ogre"], 3, 2).with_abilities(&[
         AbilityDef::triggered(
@@ -594,14 +622,18 @@ pub(in crate::card::sets) static HASRAN_OGRESS: CardRecord = CardRecord::new_wit
 );
 
 // ARN 27† — Hasran Ogress (alternate printing)
-const HASRAN_OGRESS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&HASRAN_OGRESS, 1)
-    .with_art("d8fcc83f-c67f-46a2-bb0e-dafbf0a2bfc0", "Dan Frazier");
+const HASRAN_OGRESS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &HASRAN_OGRESS,
+    1,
+    "d8fcc83f-c67f-46a2-bb0e-dafbf0a2bfc0",
+    "Dan Frazier",
+);
 
 // ARN 28 — Junún Efreet
-pub(in crate::card::sets) static JUNUN_EFREET: CardRecord = CardRecord::new_with_legacy_id(
-    361,
+pub(in crate::card::sets) static JUNUN_EFREET: CardRecord = CardRecord::new(
     "Junún Efreet",
-    CardArt::new("5f46783a-b91e-4829-a173-5515b09ca615", "Christopher Rush"),
+    "5f46783a-b91e-4829-a173-5515b09ca615",
+    "Christopher Rush",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Efreet"], 3, 3).with_abilities(&[
         abilities::flying(),
@@ -622,10 +654,10 @@ pub(in crate::card::sets) static JUNUN_EFREET: CardRecord = CardRecord::new_with
 );
 
 // ARN 29 — Juzám Djinn
-pub(in crate::card::sets) static JUZAM_DJINN: CardRecord = CardRecord::new_with_legacy_id(
-    78,
+pub(in crate::card::sets) static JUZAM_DJINN: CardRecord = CardRecord::new(
     "Juzám Djinn",
-    CardArt::new("31bf3f14-b5df-498b-a1bb-965885c82401", "Mark Tedin"),
+    "31bf3f14-b5df-498b-a1bb-965885c82401",
+    "Mark Tedin",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Djinn"], 5, 5).with_abilities(&[
         AbilityDef::triggered(
@@ -643,10 +675,10 @@ pub(in crate::card::sets) static JUZAM_DJINN: CardRecord = CardRecord::new_with_
 );
 
 // ARN 30 — Khabál Ghoul
-pub(in crate::card::sets) static KHABAL_GHOUL: CardRecord = CardRecord::new_with_legacy_id(
-    1838,
+pub(in crate::card::sets) static KHABAL_GHOUL: CardRecord = CardRecord::new(
     "Khabál Ghoul",
-    CardArt::new("18607bf6-ce11-41cb-b001-0c9538406ba0", "Douglas Shuler"),
+    "18607bf6-ce11-41cb-b001-0c9538406ba0",
+    "Douglas Shuler",
     CardSet::ArabianNights,
     // Each end step, not just yours, so a creature that dies on either turn
     // feeds it. The count is of deaths this turn rather than of bodies in a
@@ -671,22 +703,26 @@ pub(in crate::card::sets) static KHABAL_GHOUL: CardRecord = CardRecord::new_with
 // ARN 31 — Oubliette
 // Audit: unsupported — Needs a persistent tap/untap restriction or event relation for “When this enchantment enters, target creature phases out until this enchantment leaves the battlefield. Tap that creature as it phases in this way”.
 pub(in crate::card::sets) static OUBLIETTE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("30d1450f-2909-410e-9920-731278fa74de"),
     "Oubliette",
-    crate::card::CardArt::new("30d1450f-2909-410e-9920-731278fa74de", "Douglas Shuler"),
+    "30d1450f-2909-410e-9920-731278fa74de",
+    "Douglas Shuler",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 31† — Oubliette (alternate printing)
-const OUBLIETTE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&OUBLIETTE, 1)
-    .with_art("58d74d1d-3f68-4cab-903e-e146a33258f3", "Douglas Shuler");
+const OUBLIETTE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &OUBLIETTE,
+    1,
+    "58d74d1d-3f68-4cab-903e-e146a33258f3",
+    "Douglas Shuler",
+);
 
 // ARN 32 — Sorceress Queen
-pub(in crate::card::sets) static SORCERESS_QUEEN: CardRecord = CardRecord::new_with_legacy_id(
-    589,
+pub(in crate::card::sets) static SORCERESS_QUEEN: CardRecord = CardRecord::new(
     "Sorceress Queen",
-    CardArt::new("94742003-f0f1-4483-b1a0-e7163995db1b", "Kaja Foglio"),
+    "94742003-f0f1-4483-b1a0-e7163995db1b",
+    "Kaja Foglio",
     CardSet::ArabianNights,
     CardRules::new_creature(
         mana_cost!("{1}{B}{B}"),
@@ -715,25 +751,28 @@ pub(in crate::card::sets) static SORCERESS_QUEEN: CardRecord = CardRecord::new_w
 );
 
 // ARN 33 — Stone-Throwing Devils
-pub(in crate::card::sets) static STONE_THROWING_DEVILS: CardRecord = CardRecord::new_with_legacy_id(
-    362,
+pub(in crate::card::sets) static STONE_THROWING_DEVILS: CardRecord = CardRecord::new(
     "Stone-Throwing Devils",
-    CardArt::new("d1c387dd-1347-4443-91ce-b71f7ccdceba", "Ken Meyer, Jr."),
+    "d1c387dd-1347-4443-91ce-b71f7ccdceba",
+    "Ken Meyer, Jr.",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{B}"), &["Devil"], 1, 1)
         .with_abilities(&[abilities::first_strike()]),
 );
 
 // ARN 33† — Stone-Throwing Devils (alternate printing)
-const STONE_THROWING_DEVILS_ALTERNATE_1: PrintingRecord =
-    PrintingRecord::alternate(&STONE_THROWING_DEVILS, 1)
-        .with_art("cb0b28ac-144e-43c5-84f3-d4a2a229f49b", "Ken Meyer, Jr.");
+const STONE_THROWING_DEVILS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &STONE_THROWING_DEVILS,
+    1,
+    "cb0b28ac-144e-43c5-84f3-d4a2a229f49b",
+    "Ken Meyer, Jr.",
+);
 
 // ARN 34 — Aladdin
-pub(in crate::card::sets) static ALADDIN: CardRecord = CardRecord::new_with_legacy_id(
-    1472,
+pub(in crate::card::sets) static ALADDIN: CardRecord = CardRecord::new(
     "Aladdin",
-    CardArt::new("db52bad2-a3ec-4f6f-9418-12e8c40703f6", "Julie Baroh"),
+    "db52bad2-a3ec-4f6f-9418-12e8c40703f6",
+    "Julie Baroh",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Human", "Rogue"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
@@ -758,10 +797,10 @@ pub(in crate::card::sets) static ALADDIN: CardRecord = CardRecord::new_with_lega
 );
 
 // ARN 35 — Ali Baba
-pub(in crate::card::sets) static ALI_BABA: CardRecord = CardRecord::new_with_legacy_id(
-    363,
+pub(in crate::card::sets) static ALI_BABA: CardRecord = CardRecord::new(
     "Ali Baba",
-    CardArt::new("29cd7064-3703-43e0-8702-d1ba13703fd8", "Julie Baroh"),
+    "29cd7064-3703-43e0-8702-d1ba13703fd8",
+    "Julie Baroh",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{R}"), &["Human", "Rogue"], 1, 1).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -778,10 +817,10 @@ pub(in crate::card::sets) static ALI_BABA: CardRecord = CardRecord::new_with_leg
 );
 
 // ARN 36 — Ali from Cairo
-pub(in crate::card::sets) static ALI_FROM_CAIRO: CardRecord = CardRecord::new_with_legacy_id(
-    1716,
+pub(in crate::card::sets) static ALI_FROM_CAIRO: CardRecord = CardRecord::new(
     "Ali from Cairo",
-    CardArt::new("42027613-d261-4ce2-8ba1-7a2480c660f8", "Mark Poole"),
+    "42027613-d261-4ce2-8ba1-7a2480c660f8",
+    "Mark Poole",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Human"], 0, 1).with_ability(
         AbilityDef::static_ability(
@@ -803,34 +842,38 @@ pub(in crate::card::sets) static ALI_FROM_CAIRO: CardRecord = CardRecord::new_wi
 );
 
 // ARN 37 — Bird Maiden
-pub(in crate::card::sets) static BIRD_MAIDEN: CardRecord = CardRecord::new_with_legacy_id(
-    364,
+pub(in crate::card::sets) static BIRD_MAIDEN: CardRecord = CardRecord::new(
     "Bird Maiden",
-    CardArt::new("5c1ba0b9-db01-447f-90cc-a2fc2c24146e", "Kaja Foglio"),
+    "5c1ba0b9-db01-447f-90cc-a2fc2c24146e",
+    "Kaja Foglio",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Bird"], 1, 2)
         .with_abilities(&[abilities::flying()]),
 );
 
 // ARN 37† — Bird Maiden (alternate printing)
-const BIRD_MAIDEN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&BIRD_MAIDEN, 1)
-    .with_art("709532d8-cd3e-4844-b580-e6925ce837ff", "Kaja Foglio");
+const BIRD_MAIDEN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &BIRD_MAIDEN,
+    1,
+    "709532d8-cd3e-4844-b580-e6925ce837ff",
+    "Kaja Foglio",
+);
 
 // ARN 38 — Desert Nomads
 // Audit: unsupported — Needs a landwalk naming a land subtype, and a prevention that lives on the permanent rather than being created by a resolving effect, for “Prevent all damage that would be dealt to this creature by Deserts”. Desert itself is now cataloged, so the land type the walk reads exists.
 pub(in crate::card::sets) static DESERT_NOMADS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e46d0c10-ec09-48ba-9e93-1392dca8111a"),
     "Desert Nomads",
-    crate::card::CardArt::new("e46d0c10-ec09-48ba-9e93-1392dca8111a", "Christopher Rush"),
+    "e46d0c10-ec09-48ba-9e93-1392dca8111a",
+    "Christopher Rush",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 39 — Hurr Jackal
-pub(in crate::card::sets) static HURR_JACKAL: CardRecord = CardRecord::new_with_legacy_id(
-    1476,
+pub(in crate::card::sets) static HURR_JACKAL: CardRecord = CardRecord::new(
     "Hurr Jackal",
-    CardArt::new("f4aadda8-8577-480d-8186-532d2b173c15", "Drew Tucker"),
+    "f4aadda8-8577-480d-8186-532d2b173c15",
+    "Drew Tucker",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{R}"), &["Jackal"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
@@ -849,10 +892,10 @@ pub(in crate::card::sets) static HURR_JACKAL: CardRecord = CardRecord::new_with_
 );
 
 // ARN 40 — Kird Ape
-pub(in crate::card::sets) static KIRD_APE: CardRecord = CardRecord::new_with_legacy_id(
-    117,
+pub(in crate::card::sets) static KIRD_APE: CardRecord = CardRecord::new(
     "Kird Ape",
-    CardArt::new("ebe8845e-df1c-481c-949c-aab84af99a05", "Ken Meyer, Jr."),
+    "ebe8845e-df1c-481c-949c-aab84af99a05",
+    "Ken Meyer, Jr.",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{R}"), &["Ape"], 1, 1).with_ability(
         AbilityDef::static_ability(
@@ -877,18 +920,18 @@ pub(in crate::card::sets) static KIRD_APE: CardRecord = CardRecord::new_with_leg
 // ARN 41 — Magnetic Mountain
 // Audit: unsupported — Needs a persistent tap/untap restriction or event relation for “At the beginning of each player's upkeep, that player may choose any number of tapped blue creatures they control and pay {4} for each creature chosen this way. If the player does, untap…”.
 pub(in crate::card::sets) static MAGNETIC_MOUNTAIN: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("95fde48b-e40a-4183-b324-1ec276dde015"),
     "Magnetic Mountain",
-    crate::card::CardArt::new("95fde48b-e40a-4183-b324-1ec276dde015", "Susan Van Camp"),
+    "95fde48b-e40a-4183-b324-1ec276dde015",
+    "Susan Van Camp",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 42 — Mijae Djinn
-pub(in crate::card::sets) static MIJAE_DJINN: CardRecord = CardRecord::new_with_legacy_id(
-    1662,
+pub(in crate::card::sets) static MIJAE_DJINN: CardRecord = CardRecord::new(
     "Mijae Djinn",
-    CardArt::new("d3ddbe51-cd1a-4b2c-849a-7c82d622122a", "Susan Van Camp"),
+    "d3ddbe51-cd1a-4b2c-849a-7c82d622122a",
+    "Susan Van Camp",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{R}{R}{R}"), &["Djinn"], 6, 3).with_ability(
         AbilityDef::triggered(
@@ -913,10 +956,10 @@ pub(in crate::card::sets) static MIJAE_DJINN: CardRecord = CardRecord::new_with_
 );
 
 // ARN 43 — Rukh Egg
-pub(in crate::card::sets) static RUKH_EGG: CardRecord = CardRecord::new_with_legacy_id(
-    554,
+pub(in crate::card::sets) static RUKH_EGG: CardRecord = CardRecord::new(
     "Rukh Egg",
-    CardArt::new("b28f9e63-e5e4-44b5-a17e-8301ff17c623", "Christopher Rush"),
+    "b28f9e63-e5e4-44b5-a17e-8301ff17c623",
+    "Christopher Rush",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Bird", "Egg"], 0, 3).with_abilities(&[
         abilities::dies_trigger("When this creature dies, create a 4/4 red Bird creature token with flying at the beginning of the next end step.", EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
@@ -936,24 +979,28 @@ pub(in crate::card::sets) static RUKH_EGG: CardRecord = CardRecord::new_with_leg
 );
 
 // ARN 43† — Rukh Egg (alternate printing)
-const RUKH_EGG_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&RUKH_EGG, 1)
-    .with_art("9c4defc2-b1a2-4ae2-bda0-24ecd4ff8181", "Christopher Rush");
+const RUKH_EGG_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &RUKH_EGG,
+    1,
+    "9c4defc2-b1a2-4ae2-bda0-24ecd4ff8181",
+    "Christopher Rush",
+);
 
 // ARN 44 — Ydwen Efreet
 // Audit: unsupported — Needs attackers this creature had blocked alone to become unblocked, which reverses the ordinary rule that removing a blocker leaves them blocked. The flip and the combat removal are available.
 pub(in crate::card::sets) static YDWEN_EFREET: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("efdba2a9-d171-45ed-8dd4-9d0046128f68"),
     "Ydwen Efreet",
-    crate::card::CardArt::new("efdba2a9-d171-45ed-8dd4-9d0046128f68", "Drew Tucker"),
+    "efdba2a9-d171-45ed-8dd4-9d0046128f68",
+    "Drew Tucker",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 45 — Cyclone
-pub(in crate::card::sets) static CYCLONE: CardRecord = CardRecord::new_with_legacy_id(
-    1840,
+pub(in crate::card::sets) static CYCLONE: CardRecord = CardRecord::new(
     "Cyclone",
-    CardArt::new("f11684d6-5b74-47a7-a2d0-256c9e437aa6", "Mark Tedin"),
+    "f11684d6-5b74-47a7-a2d0-256c9e437aa6",
+    "Mark Tedin",
     CardSet::ArabianNights,
     CardRules::new_enchantment(mana_cost!("{2}{G}{G}")).with_ability(AbilityDef::triggered(
         "At the beginning of your upkeep, put a wind counter on this enchantment, then \
@@ -1007,10 +1054,10 @@ pub(in crate::card::sets) static CYCLONE: CardRecord = CardRecord::new_with_lega
 );
 
 // ARN 46 — Desert Twister
-pub(in crate::card::sets) static DESERT_TWISTER: CardRecord = CardRecord::new_with_legacy_id(
-    365,
+pub(in crate::card::sets) static DESERT_TWISTER: CardRecord = CardRecord::new(
     "Desert Twister",
-    CardArt::new("0d77c149-cca2-45c7-bc83-5ba1872ad5e0", "Susan Van Camp"),
+    "0d77c149-cca2-45c7-bc83-5ba1872ad5e0",
+    "Susan Van Camp",
     CardSet::ArabianNights,
     CardRules::new_sorcery(mana_cost!("{4}{G}{G}")).with_abilities(&[AbilityDef::destroy_target(
         "Destroy target permanent.",
@@ -1022,18 +1069,18 @@ pub(in crate::card::sets) static DESERT_TWISTER: CardRecord = CardRecord::new_wi
 // ARN 47 — Drop of Honey
 // Audit: unsupported — Needs a duration-scoped prohibition on creating or applying regeneration shields for “At the beginning of your upkeep, destroy the creature with the least power. It can't be regenerated. If two or more creatures are tied for least power, you choose one of them”.
 pub(in crate::card::sets) static DROP_OF_HONEY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("26e090d4-e7fe-403c-9aca-05c1b45ed238"),
     "Drop of Honey",
-    crate::card::CardArt::new("26e090d4-e7fe-403c-9aca-05c1b45ed238", "Anson Maddocks"),
+    "26e090d4-e7fe-403c-9aca-05c1b45ed238",
+    "Anson Maddocks",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 48 — Erhnam Djinn
-pub(in crate::card::sets) static ERHNAM_DJINN: CardRecord = CardRecord::new_with_legacy_id(
-    73,
+pub(in crate::card::sets) static ERHNAM_DJINN: CardRecord = CardRecord::new(
     "Erhnam Djinn",
-    CardArt::new("42bc0c3f-0a52-4bdc-83da-6484bf3102f3", "Ken Meyer, Jr."),
+    "42bc0c3f-0a52-4bdc-83da-6484bf3102f3",
+    "Ken Meyer, Jr.",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{3}{G}"), &["Djinn"], 4, 5)
     .with_abilities(&[AbilityDef::triggered_with_targets(
@@ -1066,18 +1113,18 @@ pub(in crate::card::sets) static ERHNAM_DJINN: CardRecord = CardRecord::new_with
 // ARN 49 — Ghazbán Ogre
 // Audit: unsupported — Needs duration-aware control-changing continuous effects for “At the beginning of your upkeep, if a player has more life than each other player, the player with the most life gains control of this creature”.
 pub(in crate::card::sets) static GHAZBAN_OGRE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f9d613d5-36a2-4633-b5af-64511bb29cc2"),
     "Ghazbán Ogre",
-    crate::card::CardArt::new("f9d613d5-36a2-4633-b5af-64511bb29cc2", "Jesper Myrfors"),
+    "f9d613d5-36a2-4633-b5af-64511bb29cc2",
+    "Jesper Myrfors",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 50 — Ifh-Bíff Efreet
-pub(in crate::card::sets) static IFH_BIFF_EFREET: CardRecord = CardRecord::new_with_legacy_id(
-    1816,
+pub(in crate::card::sets) static IFH_BIFF_EFREET: CardRecord = CardRecord::new(
     "Ifh-Bíff Efreet",
-    CardArt::new("c0b10fb7-8667-42bf-aeb6-35767a82917b", "Jesper Myrfors"),
+    "c0b10fb7-8667-42bf-aeb6-35767a82917b",
+    "Jesper Myrfors",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Efreet"], 3, 3).with_abilities(&[
         abilities::flying(),
@@ -1112,32 +1159,36 @@ pub(in crate::card::sets) static IFH_BIFF_EFREET: CardRecord = CardRecord::new_w
 // ARN 51 — Metamorphosis
 // Audit: unsupported — Needs cost/mana provenance or dynamic payment support for “Add X mana of any one color, where X is 1 plus the sacrificed creature's mana value. Spend this mana only to cast creature spells”.
 pub(in crate::card::sets) static METAMORPHOSIS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("fbc6cfc3-b232-40bf-bc0c-4618f6f5c9a5"),
     "Metamorphosis",
-    crate::card::CardArt::new("fbc6cfc3-b232-40bf-bc0c-4618f6f5c9a5", "Christopher Rush"),
+    "fbc6cfc3-b232-40bf-bc0c-4618f6f5c9a5",
+    "Christopher Rush",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 52 — Nafs Asp (alternate printing)
-const NAFS_ASP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&NAFS_ASP, 1)
-    .with_art("965f722c-2b18-4c22-8c30-12552def5940", "Christopher Rush");
+const NAFS_ASP_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &NAFS_ASP,
+    1,
+    "965f722c-2b18-4c22-8c30-12552def5940",
+    "Christopher Rush",
+);
 
 // ARN 52† — Nafs Asp
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NAFS_ASP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("3ecc8d7c-c64f-4ada-b389-756728401b64"),
     "Nafs Asp",
-    crate::card::CardArt::new("3ecc8d7c-c64f-4ada-b389-756728401b64", "Christopher Rush"),
+    "3ecc8d7c-c64f-4ada-b389-756728401b64",
+    "Christopher Rush",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 53 — Sandstorm
-pub(in crate::card::sets) static SANDSTORM: CardRecord = CardRecord::new_with_legacy_id(
-    366,
+pub(in crate::card::sets) static SANDSTORM: CardRecord = CardRecord::new(
     "Sandstorm",
-    CardArt::new("73cba9cd-73d9-442e-bd99-9cba9f398b64", "Brian Snõddy"),
+    "73cba9cd-73d9-442e-bd99-9cba9f398b64",
+    "Brian Snõddy",
     CardSet::ArabianNights,
     CardRules::new_instant(mana_cost!("{G}")).with_abilities(&[AbilityDef::spell(
         "Sandstorm deals 1 damage to each attacking creature.",
@@ -1156,10 +1207,10 @@ pub(in crate::card::sets) static SANDSTORM: CardRecord = CardRecord::new_with_le
 );
 
 // ARN 54 — Singing Tree
-pub(in crate::card::sets) static SINGING_TREE: CardRecord = CardRecord::new_with_legacy_id(
-    1798,
+pub(in crate::card::sets) static SINGING_TREE: CardRecord = CardRecord::new(
     "Singing Tree",
-    CardArt::new("3003bf1e-8085-45d8-882b-c449109e7631", "Rob Alexander"),
+    "3003bf1e-8085-45d8-882b-c449109e7631",
+    "Rob Alexander",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{3}{G}"), &["Plant"], 0, 3).with_ability(
         AbilityDef::activated_with_targets(
@@ -1181,10 +1232,10 @@ pub(in crate::card::sets) static SINGING_TREE: CardRecord = CardRecord::new_with
 );
 
 // ARN 55 — Wyluli Wolf
-pub(in crate::card::sets) static WYLULI_WOLF: CardRecord = CardRecord::new_with_legacy_id(
-    367,
+pub(in crate::card::sets) static WYLULI_WOLF: CardRecord = CardRecord::new(
     "Wyluli Wolf",
-    CardArt::new("15ccebe1-ef08-4805-a65f-a1c57abed9f2", "Susan Van Camp"),
+    "15ccebe1-ef08-4805-a65f-a1c57abed9f2",
+    "Susan Van Camp",
     CardSet::ArabianNights,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Wolf"], 1, 1).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -1206,24 +1257,28 @@ pub(in crate::card::sets) static WYLULI_WOLF: CardRecord = CardRecord::new_with_
 );
 
 // ARN 55† — Wyluli Wolf (alternate printing)
-const WYLULI_WOLF_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(&WYLULI_WOLF, 1)
-    .with_art("1cc1188c-4331-41dc-a577-bd4bedd7ca76", "Susan Van Camp");
+const WYLULI_WOLF_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
+    &WYLULI_WOLF,
+    1,
+    "1cc1188c-4331-41dc-a577-bd4bedd7ca76",
+    "Susan Van Camp",
+);
 
 // ARN 56 — Aladdin's Lamp
 // Audit: unsupported — Needs seeded random selection with replay-visible provenance for “{X}, {T}: The next time you would draw a card this turn, instead look at the top X cards of your library, put all but one of them on the bottom of your library in a random order, then…”.
 pub(in crate::card::sets) static ALADDIN_S_LAMP: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8fecc5d2-5298-4d47-b085-f160603f220e"),
     "Aladdin's Lamp",
-    crate::card::CardArt::new("8fecc5d2-5298-4d47-b085-f160603f220e", "Mark Tedin"),
+    "8fecc5d2-5298-4d47-b085-f160603f220e",
+    "Mark Tedin",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 57 — Aladdin's Ring
-pub(in crate::card::sets) static ALADDINS_RING: CardRecord = CardRecord::new_with_legacy_id(
-    368,
+pub(in crate::card::sets) static ALADDINS_RING: CardRecord = CardRecord::new(
     "Aladdin's Ring",
-    CardArt::new("bb2b74a2-cb74-4b54-b9c6-78c63f14cf5b", "Dan Frazier"),
+    "bb2b74a2-cb74-4b54-b9c6-78c63f14cf5b",
+    "Dan Frazier",
     CardSet::ArabianNights,
     CardRules::new_artifact(mana_cost!("{8}")).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -1244,10 +1299,10 @@ pub(in crate::card::sets) static ALADDINS_RING: CardRecord = CardRecord::new_wit
 );
 
 // ARN 58 — Bottle of Suleiman
-pub(in crate::card::sets) static BOTTLE_OF_SULEIMAN: CardRecord = CardRecord::new_with_legacy_id(
-    1483,
+pub(in crate::card::sets) static BOTTLE_OF_SULEIMAN: CardRecord = CardRecord::new(
     "Bottle of Suleiman",
-    CardArt::new("c474cd6b-5610-49eb-ac98-918d900efe8b", "Jesper Myrfors"),
+    "c474cd6b-5610-49eb-ac98-918d900efe8b",
+    "Jesper Myrfors",
     CardSet::ArabianNights,
     CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::activated(
         "{1}, Sacrifice this artifact: Flip a coin. If you win the flip, create a 5/5 colorless \
@@ -1270,10 +1325,10 @@ pub(in crate::card::sets) static BOTTLE_OF_SULEIMAN: CardRecord = CardRecord::ne
 );
 
 // ARN 59 — Brass Man
-pub(in crate::card::sets) static BRASS_MAN: CardRecord = CardRecord::new_with_legacy_id(
-    369,
+pub(in crate::card::sets) static BRASS_MAN: CardRecord = CardRecord::new(
     "Brass Man",
-    CardArt::new("1a364362-e42b-415c-9d95-b6ec7139f5e7", "Christopher Rush"),
+    "1a364362-e42b-415c-9d95-b6ec7139f5e7",
+    "Christopher Rush",
     CardSet::ArabianNights,
     CardRules::new_artifact_creature(mana_cost!("{1}"), &["Construct"], 1, 3).with_abilities(&[
         AbilityDef::static_ability(
@@ -1310,10 +1365,10 @@ static BOTTLED: ObjectPredicateDef = ObjectPredicateDef::All(&[
     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
 ]);
 
-pub(in crate::card::sets) static CITY_IN_A_BOTTLE: CardRecord = CardRecord::new_with_legacy_id(
-    110,
+pub(in crate::card::sets) static CITY_IN_A_BOTTLE: CardRecord = CardRecord::new(
     "City in a Bottle",
-    CardArt::new("9598b346-a47d-4c4c-9571-156824e86b9c", "Drew Tucker"),
+    "9598b346-a47d-4c4c-9571-156824e86b9c",
+    "Drew Tucker",
     CardSet::ArabianNights,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::triggered_if(
@@ -1343,20 +1398,20 @@ pub(in crate::card::sets) static CITY_IN_A_BOTTLE: CardRecord = CardRecord::new_
 );
 
 // ARN 61 — Dancing Scimitar
-pub(in crate::card::sets) static DANCING_SCIMITAR: CardRecord = CardRecord::new_with_legacy_id(
-    370,
+pub(in crate::card::sets) static DANCING_SCIMITAR: CardRecord = CardRecord::new(
     "Dancing Scimitar",
-    CardArt::new("1eb2e494-1414-4d1f-91d2-7cb20acdb128", "Anson Maddocks"),
+    "1eb2e494-1414-4d1f-91d2-7cb20acdb128",
+    "Anson Maddocks",
     CardSet::ArabianNights,
     CardRules::new_artifact_creature(mana_cost!("{4}"), &["Spirit"], 1, 5)
         .with_abilities(&[abilities::flying()]),
 );
 
 // ARN 62 — Ebony Horse
-pub(in crate::card::sets) static EBONY_HORSE: CardRecord = CardRecord::new_with_legacy_id(
-    371,
+pub(in crate::card::sets) static EBONY_HORSE: CardRecord = CardRecord::new(
     "Ebony Horse",
-    CardArt::new("9ae81ec7-2b7d-4301-8114-032be5e6b663", "Dameon Willich"),
+    "9ae81ec7-2b7d-4301-8114-032be5e6b663",
+    "Dameon Willich",
     CardSet::ArabianNights,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -1404,10 +1459,10 @@ pub(in crate::card::sets) static EBONY_HORSE: CardRecord = CardRecord::new_with_
 );
 
 // ARN 63 — Flying Carpet
-pub(in crate::card::sets) static FLYING_CARPET: CardRecord = CardRecord::new_with_legacy_id(
-    372,
+pub(in crate::card::sets) static FLYING_CARPET: CardRecord = CardRecord::new(
     "Flying Carpet",
-    CardArt::new("4b71ff49-ee0a-4065-9131-380468d62a30", "Mark Tedin"),
+    "4b71ff49-ee0a-4065-9131-380468d62a30",
+    "Mark Tedin",
     CardSet::ArabianNights,
     CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -1431,18 +1486,18 @@ pub(in crate::card::sets) static FLYING_CARPET: CardRecord = CardRecord::new_wit
 // ARN 64 — Jandor's Ring
 // Audit: unsupported — Needs a hidden-zone decision and continuation for “{2}, {T}, Discard the last card you drew this turn: Draw a card”.
 pub(in crate::card::sets) static JANDOR_S_RING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("71504078-a16f-4dc4-9626-0ecc42b1e93b"),
     "Jandor's Ring",
-    crate::card::CardArt::new("71504078-a16f-4dc4-9626-0ecc42b1e93b", "Dan Frazier"),
+    "71504078-a16f-4dc4-9626-0ecc42b1e93b",
+    "Dan Frazier",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 65 — Jandor's Saddlebags
-pub(in crate::card::sets) static JANDORS_SADDLEBAGS: CardRecord = CardRecord::new_with_legacy_id(
-    373,
+pub(in crate::card::sets) static JANDORS_SADDLEBAGS: CardRecord = CardRecord::new(
     "Jandor's Saddlebags",
-    CardArt::new("bc4f4b92-7d4e-4b03-8cb4-e6b356c338b4", "Dameon Willich"),
+    "bc4f4b92-7d4e-4b03-8cb4-e6b356c338b4",
+    "Dameon Willich",
     CardSet::ArabianNights,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         AbilityDef::activated_with_targets(
@@ -1464,9 +1519,9 @@ pub(in crate::card::sets) static JANDORS_SADDLEBAGS: CardRecord = CardRecord::ne
 // ARN 66 — Jeweled Bird
 // Audit: unsupported — Needs an ante zone, ante ownership queries, and the source-moving ante procedure for “Ante this artifact. If you do, put all other cards you own from the ante into your graveyard, then draw a card”.
 pub(in crate::card::sets) static JEWELED_BIRD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bfffb65d-851d-4dc9-9233-d53abf955dcd"),
     "Jeweled Bird",
-    crate::card::CardArt::new("bfffb65d-851d-4dc9-9233-d53abf955dcd", "Amy Weber"),
+    "bfffb65d-851d-4dc9-9233-d53abf955dcd",
+    "Amy Weber",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
@@ -1474,18 +1529,18 @@ pub(in crate::card::sets) static JEWELED_BIRD: CardRecord = CardRecord::new(
 // ARN 67 — Pyramids
 // Audit: unsupported — Needs a duration-scoped replacement/prevention effect for “• The next time target land would be destroyed this turn, remove all damage marked on it instead”.
 pub(in crate::card::sets) static PYRAMIDS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d2e9decf-47b7-44e0-b380-8055b6011021"),
     "Pyramids",
-    crate::card::CardArt::new("d2e9decf-47b7-44e0-b380-8055b6011021", "Amy Weber"),
+    "d2e9decf-47b7-44e0-b380-8055b6011021",
+    "Amy Weber",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 68 — Ring of Ma'rûf
-pub(in crate::card::sets) static RING_OF_MARUF: CardRecord = CardRecord::new_with_legacy_id(
-    1362,
+pub(in crate::card::sets) static RING_OF_MARUF: CardRecord = CardRecord::new(
     "Ring of Ma'rûf",
-    CardArt::new("fcc1004f-7cee-420a-9f0e-2986ed3ab852", "Dan Frazier"),
+    "fcc1004f-7cee-420a-9f0e-2986ed3ab852",
+    "Dan Frazier",
     CardSet::ArabianNights,
     CardRules::new_artifact(mana_cost!("{5}")).with_ability(AbilityDef::activated(
         "{5}, {T}, Exile this artifact: The next time you would draw a card this turn, instead put a card you own from outside the game into your hand.",
@@ -1537,18 +1592,18 @@ pub(in crate::card::sets) static RING_OF_MARUF: CardRecord = CardRecord::new_wit
 // ARN 69 — Sandals of Abdallah
 // Audit: unsupported — Needs a delayed trigger armed on the granted creature dying later this turn; granting islandwalk itself is available.
 pub(in crate::card::sets) static SANDALS_OF_ABDALLAH: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8f99a520-b8a9-40b0-9854-48aac297c5ee"),
     "Sandals of Abdallah",
-    crate::card::CardArt::new("8f99a520-b8a9-40b0-9854-48aac297c5ee", "Dan Frazier"),
+    "8f99a520-b8a9-40b0-9854-48aac297c5ee",
+    "Dan Frazier",
     crate::card::CardSet::ArabianNights,
     crate::card::CardRules::unsupported(),
 );
 
 // ARN 70 — Bazaar of Baghdad
-pub(in crate::card::sets) static BAZAAR_OF_BAGHDAD: CardRecord = CardRecord::new_with_legacy_id(
-    374,
+pub(in crate::card::sets) static BAZAAR_OF_BAGHDAD: CardRecord = CardRecord::new(
     "Bazaar of Baghdad",
-    CardArt::new("ff37b863-f8c4-4584-8cc2-ac0e096e583f", "Jeff A. Menges"),
+    "ff37b863-f8c4-4584-8cc2-ac0e096e583f",
+    "Jeff A. Menges",
     CardSet::ArabianNights,
     CardRules::new_land(&[]).with_abilities(&[AbilityDef::activated(
         "{T}: Draw two cards, then discard three cards.",
@@ -1569,10 +1624,10 @@ pub(in crate::card::sets) static BAZAAR_OF_BAGHDAD: CardRecord = CardRecord::new
 );
 
 // ARN 71 — City of Brass
-pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new_with_legacy_id(
-    66,
+pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new(
     "City of Brass",
-    CardArt::new("f4e32327-380d-471e-813b-4c27477787ce", "Mark Tedin"),
+    "f4e32327-380d-471e-813b-4c27477787ce",
+    "Mark Tedin",
     CardSet::ArabianNights,
     CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::triggered(
@@ -1592,10 +1647,10 @@ pub(in crate::card::sets) static CITY_OF_BRASS: CardRecord = CardRecord::new_wit
 );
 
 // ARN 72 — Desert
-pub(in crate::card::sets) static DESERT: CardRecord = CardRecord::new_with_legacy_id(
-    1805,
+pub(in crate::card::sets) static DESERT: CardRecord = CardRecord::new(
     "Desert",
-    CardArt::new("201155ea-f474-4e13-acda-cb071a6ca977", "Jesper Myrfors"),
+    "201155ea-f474-4e13-acda-cb071a6ca977",
+    "Jesper Myrfors",
     CardSet::ArabianNights,
     CardRules::new_land(&[])
         .with_subtypes(&["Desert"])
@@ -1624,10 +1679,10 @@ pub(in crate::card::sets) static DESERT: CardRecord = CardRecord::new_with_legac
 );
 
 // ARN 73 — Diamond Valley
-pub(in crate::card::sets) static DIAMOND_VALLEY: CardRecord = CardRecord::new_with_legacy_id(
-    1764,
+pub(in crate::card::sets) static DIAMOND_VALLEY: CardRecord = CardRecord::new(
     "Diamond Valley",
-    CardArt::new("16674f11-6cd8-41f6-ae6a-f8578187287c", "Brian Snõddy"),
+    "e85f6f21-15a0-4a36-be95-5a0299cd01a5",
+    "Brian Snõddy",
     CardSet::ArabianNights,
     CardRules::new_land(&[]).with_ability(AbilityDef::activated(
         "{T}, Sacrifice a creature: You gain life equal to the sacrificed creature's toughness.",
@@ -1650,10 +1705,10 @@ pub(in crate::card::sets) static DIAMOND_VALLEY: CardRecord = CardRecord::new_wi
 );
 
 // ARN 74 — Elephant Graveyard
-pub(in crate::card::sets) static ELEPHANT_GRAVEYARD: CardRecord = CardRecord::new_with_legacy_id(
-    1422,
+pub(in crate::card::sets) static ELEPHANT_GRAVEYARD: CardRecord = CardRecord::new(
     "Elephant Graveyard",
-    CardArt::new("18348df2-9037-4db4-bddb-76dc933229bf", "Rob Alexander"),
+    "18348df2-9037-4db4-bddb-76dc933229bf",
+    "Rob Alexander",
     CardSet::ArabianNights,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
@@ -1671,10 +1726,10 @@ pub(in crate::card::sets) static ELEPHANT_GRAVEYARD: CardRecord = CardRecord::ne
 );
 
 // ARN 75 — Island of Wak-Wak
-pub(in crate::card::sets) static ISLAND_OF_WAK_WAK: CardRecord = CardRecord::new_with_legacy_id(
-    1806,
+pub(in crate::card::sets) static ISLAND_OF_WAK_WAK: CardRecord = CardRecord::new(
     "Island of Wak-Wak",
-    CardArt::new("f09cbd18-79f1-49a0-a3bd-b380ff5ecf03", "Douglas Shuler"),
+    "f09cbd18-79f1-49a0-a3bd-b380ff5ecf03",
+    "Douglas Shuler",
     CardSet::ArabianNights,
     CardRules::new_land(&[]).with_ability(AbilityDef::activated_with_targets(
         "{T}: Target creature with flying has base power 0 until end of turn.",
@@ -1694,10 +1749,10 @@ pub(in crate::card::sets) static ISLAND_OF_WAK_WAK: CardRecord = CardRecord::new
 );
 
 // ARN 76 — Library of Alexandria
-pub(in crate::card::sets) static LIBRARY_OF_ALEXANDRIA: CardRecord = CardRecord::new_with_legacy_id(
-    79,
+pub(in crate::card::sets) static LIBRARY_OF_ALEXANDRIA: CardRecord = CardRecord::new(
     "Library of Alexandria",
-    CardArt::new("ee266113-34ce-4189-84e7-ee2c86a2722c", "Mark Poole"),
+    "ee266113-34ce-4189-84e7-ee2c86a2722c",
+    "Mark Poole",
     CardSet::ArabianNights,
     // A land that draws a card a turn for as long as the hand it draws into
     // is exactly the hand it started with.
@@ -1726,14 +1781,17 @@ pub(in crate::card::sets) static LIBRARY_OF_ALEXANDRIA: CardRecord = CardRecord:
 );
 
 // ARN 77 — Mountain (reprint)
-const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(&catalog_lea::MOUNTAIN)
-    .with_art("c321d0e1-ff30-4424-979b-25e1a33e45d5", "Douglas Shuler");
+const MOUNTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(
+    &catalog_lea::MOUNTAIN,
+    "c321d0e1-ff30-4424-979b-25e1a33e45d5",
+    "Douglas Shuler",
+);
 
 // ARN 78 — Oasis
-pub(in crate::card::sets) static OASIS: CardRecord = CardRecord::new_with_legacy_id(
-    1439,
+pub(in crate::card::sets) static OASIS: CardRecord = CardRecord::new(
     "Oasis",
-    CardArt::new("6f38565e-88b9-433d-b0e9-a3b9734f183f", "Brian Snõddy"),
+    "6f38565e-88b9-433d-b0e9-a3b9734f183f",
+    "Brian Snõddy",
     CardSet::ArabianNights,
     CardRules::new_land(&[]).with_ability(AbilityDef::activated_with_targets(
         "{T}: Prevent the next 1 damage that would be dealt to target creature this turn.",

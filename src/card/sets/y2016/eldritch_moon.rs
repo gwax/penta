@@ -1,21 +1,21 @@
 //! Eldritch Moon cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt, CardRules,
-    CardSet, CardType, CostQuantityDef, CounterKind, DiscardFollowUpDef, DiscardSelectionDef,
-    EffectDef, EffectRecipientDef, InstalledTriggerDef, ObjectPredicateDef, PlayerRefDef,
-    PlayerRelation, ResolvedEffectDurationDef, SacrificedAmountDef, SpellAdditionalCostDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardRules, CardSet,
+    CardType, CostQuantityDef, CounterKind, DiscardFollowUpDef, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, InstalledTriggerDef, ObjectPredicateDef, PlayerRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, SacrificedAmountDef, SpellAdditionalCostDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities,
 };
 use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
 
 // EMN 13 — Blessed Alliance
 pub(in crate::card::sets) static BLESSED_ALLIANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b5805eab-9a32-4c0c-9015-7bdb74ad7634"),
     "Blessed Alliance",
-    CardArt::new("b5805eab-9a32-4c0c-9015-7bdb74ad7634", "Johann Bodin"),
+    "b5805eab-9a32-4c0c-9015-7bdb74ad7634",
+    "Johann Bodin",
     CardSet::EldritchMoon,
     CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::modal_escalate_spell(
         "Escalate {2} (Pay this cost for each mode chosen beyond the first.)",
@@ -70,9 +70,9 @@ pub(in crate::card::sets) static BLESSED_ALLIANCE: CardRecord = CardRecord::new(
 
 // EMN 14 — Borrowed Grace
 pub(in crate::card::sets) static BORROWED_GRACE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("f0067567-3434-4c12-9d4d-04ffc98d012c"),
     "Borrowed Grace",
-    CardArt::new("f0067567-3434-4c12-9d4d-04ffc98d012c", "Volkan Baǵa"),
+    "f0067567-3434-4c12-9d4d-04ffc98d012c",
+    "Volkan Baǵa",
     CardSet::EldritchMoon,
     CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::modal_escalate_spell(
         "Escalate {1}{W} (Pay this cost for each mode chosen beyond the first.)",
@@ -114,9 +114,9 @@ pub(in crate::card::sets) static BORROWED_GRACE: CardRecord = CardRecord::new(
 
 // EMN 17 — Collective Effort
 pub(in crate::card::sets) static COLLECTIVE_EFFORT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d85a6369-c07f-47d5-8448-72d8ec7e7898"),
     "Collective Effort",
-    CardArt::new("d85a6369-c07f-47d5-8448-72d8ec7e7898", "Eric Deschamps"),
+    "d85a6369-c07f-47d5-8448-72d8ec7e7898",
+    "Eric Deschamps",
     CardSet::EldritchMoon,
     CardRules::new_sorcery(mana_cost!("{1}{W}{W}")).with_ability(
         AbilityDef::modal_escalate_spell(
@@ -162,9 +162,9 @@ pub(in crate::card::sets) static COLLECTIVE_EFFORT: CardRecord = CardRecord::new
 
 // EMN 37 — Providence
 pub(in crate::card::sets) static PROVIDENCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2e5edd8d-8e10-4414-a326-95a672dfcff7"),
     "Providence",
-    CardArt::new("2e5edd8d-8e10-4414-a326-95a672dfcff7", "Zack Stella"),
+    "2e5edd8d-8e10-4414-a326-95a672dfcff7",
+    "Zack Stella",
     CardSet::EldritchMoon,
     CardRules::new_sorcery(mana_cost!("{5}{W}{W}")).with_abilities(&[
         AbilityDef::opening_hand_reveal(
@@ -194,18 +194,18 @@ pub(in crate::card::sets) static PROVIDENCE: CardRecord = CardRecord::new(
 // EMN 55 — Displace
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DISPLACE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8ab850c5-6f5e-41b7-ab52-094579caca12"),
     "Displace",
-    crate::card::CardArt::new("8ab850c5-6f5e-41b7-ab52-094579caca12", "Clint Cearley"),
+    "8ab850c5-6f5e-41b7-ab52-094579caca12",
+    "Clint Cearley",
     crate::card::CardSet::EldritchMoon,
     crate::card::CardRules::unsupported(),
 );
 
 // EMN 82 — Borrowed Malevolence
 pub(in crate::card::sets) static BORROWED_MALEVOLENCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("a71f123e-aad9-4f3e-9f43-1d1be359affb"),
     "Borrowed Malevolence",
-    CardArt::new("a71f123e-aad9-4f3e-9f43-1d1be359affb", "Volkan Baǵa"),
+    "a71f123e-aad9-4f3e-9f43-1d1be359affb",
+    "Volkan Baǵa",
     CardSet::EldritchMoon,
     CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::modal_escalate_spell(
         "Escalate {2} (Pay this cost for each mode chosen beyond the first.)",
@@ -248,10 +248,10 @@ static AN_OPPONENT: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
     AbilityTargetPredicate::Player(PlayerRelation::Opponent),
 )];
 
-pub(in crate::card::sets) static COLLECTIVE_BRUTALITY: CardRecord = CardRecord::new_with_legacy_id(
-    2244,
+pub(in crate::card::sets) static COLLECTIVE_BRUTALITY: CardRecord = CardRecord::new(
     "Collective Brutality",
-    CardArt::new("cb94a02f-4660-45b6-8a39-941b710cf8f3", "Johann Bodin"),
+    "cb94a02f-4660-45b6-8a39-941b710cf8f3",
+    "Johann Bodin",
     CardSet::EldritchMoon,
     // Two mana that answers three different decks, and the escalate cost is
     // paid in the cards those decks least want you to have anyway.
@@ -314,9 +314,9 @@ pub(in crate::card::sets) static COLLECTIVE_BRUTALITY: CardRecord = CardRecord::
 
 // EMN 121 — Borrowed Hostility
 pub(in crate::card::sets) static BORROWED_HOSTILITY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("dd91a194-6043-4c2d-afc8-427c38996ef4"),
     "Borrowed Hostility",
-    CardArt::new("dd91a194-6043-4c2d-afc8-427c38996ef4", "Volkan Baǵa"),
+    "dd91a194-6043-4c2d-afc8-427c38996ef4",
+    "Volkan Baǵa",
     CardSet::EldritchMoon,
     CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::modal_escalate_spell(
         "Escalate {3} (Pay this cost for each mode chosen beyond the first.)",
@@ -353,9 +353,9 @@ pub(in crate::card::sets) static BORROWED_HOSTILITY: CardRecord = CardRecord::ne
 
 // EMN 123 — Collective Defiance
 pub(in crate::card::sets) static COLLECTIVE_DEFIANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("8960883f-3813-412b-9a5b-f8cf8d566fac"),
     "Collective Defiance",
-    CardArt::new("8960883f-3813-412b-9a5b-f8cf8d566fac", "Kieran Yanner"),
+    "8960883f-3813-412b-9a5b-f8cf8d566fac",
+    "Kieran Yanner",
     CardSet::EldritchMoon,
     CardRules::new_sorcery(mana_cost!("{1}{R}{R}")).with_ability(AbilityDef::modal_escalate_spell(
         "Escalate {1} (Pay this cost for each mode chosen beyond the first.)",
@@ -406,9 +406,9 @@ pub(in crate::card::sets) static COLLECTIVE_DEFIANCE: CardRecord = CardRecord::n
 
 // EMN 140 — Savage Alliance
 pub(in crate::card::sets) static SAVAGE_ALLIANCE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b5255da8-8511-48a7-98e5-ba43ca6e8681"),
     "Savage Alliance",
-    CardArt::new("b5255da8-8511-48a7-98e5-ba43ca6e8681", "Johann Bodin"),
+    "b5255da8-8511-48a7-98e5-ba43ca6e8681",
+    "Johann Bodin",
     CardSet::EldritchMoon,
     CardRules::new_instant(mana_cost!("{2}{R}")).with_ability(AbilityDef::modal_escalate_spell(
         "Escalate {1} (Pay this cost for each mode chosen beyond the first.)",
@@ -458,9 +458,9 @@ pub(in crate::card::sets) static SAVAGE_ALLIANCE: CardRecord = CardRecord::new(
 // EMN 160 — Grapple with the Past
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRAPPLE_WITH_THE_PAST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d44a77a6-e8a1-4706-886f-8ab3af56b342"),
     "Grapple with the Past",
-    crate::card::CardArt::new("d44a77a6-e8a1-4706-886f-8ab3af56b342", "Howard Lyon"),
+    "d44a77a6-e8a1-4706-886f-8ab3af56b342",
+    "Howard Lyon",
     crate::card::CardSet::EldritchMoon,
     crate::card::CardRules::unsupported(),
 );

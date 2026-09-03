@@ -1,6 +1,6 @@
 //! Zendikar cards cataloged for the Vintage Cube pool.
 
-use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use super::{CardRecord, PrintingRecord};
 use crate::ControlDurationDef;
 use crate::CounterKind;
 use crate::KeywordAbility;
@@ -9,8 +9,8 @@ use crate::ResolvedEffectDurationDef;
 use crate::card::ColorChoiceOperationDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AdditionalCostValueDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules,
-    CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
+    AdditionalCostValueDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardRules, CardSet,
+    CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
     ObjectRefDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, ValueComparisonDef,
     ValueDef, ZoneKind, ZonePlacement, abilities,
 };
@@ -28,10 +28,10 @@ const fn fetch_land(text: &'static str, land_types: &'static [BasicLandType]) ->
 }
 
 // ZEN 4 — Brave the Elements
-pub(in crate::card::sets) static BRAVE_THE_ELEMENTS: CardRecord = CardRecord::new_with_legacy_id(
-    1996,
+pub(in crate::card::sets) static BRAVE_THE_ELEMENTS: CardRecord = CardRecord::new(
     "Brave the Elements",
-    CardArt::new("097d7838-ae58-4306-ba0f-e914601b31b6", "Goran Josic"),
+    "c14c492d-3fd7-4b2a-910e-bfcb33752eba",
+    "Goran Josic",
     CardSet::Zendikar,
     // One mana that makes a white board unblockable, or immune to a sweeper:
     // the group is settled first and the colour named afterwards.
@@ -55,9 +55,9 @@ pub(in crate::card::sets) static BRAVE_THE_ELEMENTS: CardRecord = CardRecord::ne
 
 // ZEN 9 — Day of Judgment
 pub(in crate::card::sets) static DAY_OF_JUDGMENT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("6ba873f7-a7a4-44aa-84a6-44501424dc7a"),
     "Day of Judgment",
-    crate::card::CardArt::new("1ed43ed8-9490-4433-843f-9020cd3470a1", "Vincent Proce"),
+    "2aa98fca-972b-46c2-bdec-6ace35c988d5",
+    "Vincent Proce",
     crate::card::CardSet::Zendikar,
     CardRules::new_sorcery(mana_cost!("{2}{W}{W}")).with_ability(AbilityDef::spell(
         "Destroy all creatures.",
@@ -76,9 +76,9 @@ pub(in crate::card::sets) static DAY_OF_JUDGMENT: CardRecord = CardRecord::new(
 // ZEN 14 — Journey to Nowhere
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JOURNEY_TO_NOWHERE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("09cfe585-8a55-4b27-89e0-dfb6946fe1f3"),
     "Journey to Nowhere",
-    crate::card::CardArt::new("09cfe585-8a55-4b27-89e0-dfb6946fe1f3", "Warren Mahy"),
+    "09cfe585-8a55-4b27-89e0-dfb6946fe1f3",
+    "Warren Mahy",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
@@ -86,18 +86,18 @@ pub(in crate::card::sets) static JOURNEY_TO_NOWHERE: CardRecord = CardRecord::ne
 // ZEN 23 — Kor Skyfisher
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KOR_SKYFISHER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("bb2e9465-f5ba-4c7b-9f03-d40dc8394acd"),
     "Kor Skyfisher",
-    crate::card::CardArt::new("bb2e9465-f5ba-4c7b-9f03-d40dc8394acd", "Dan Murayama Scott"),
+    "bb2e9465-f5ba-4c7b-9f03-d40dc8394acd",
+    "Dan Murayama Scott",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 31 — Pillarfield Ox
-pub(in crate::card::sets) static PILLARFIELD_OX: CardRecord = CardRecord::new_with_legacy_id(
-    978,
+pub(in crate::card::sets) static PILLARFIELD_OX: CardRecord = CardRecord::new(
     "Pillarfield Ox",
-    CardArt::new("33e2f3ae-bf92-478b-9c63-acc3f175f02a", "Andrew Robinson"),
+    "d70a8ff1-f0cf-4aef-ad90-06902f98d434",
+    "Andrew Robinson",
     CardSet::Zendikar,
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Ox"], 2, 4),
 );
@@ -105,27 +105,27 @@ pub(in crate::card::sets) static PILLARFIELD_OX: CardRecord = CardRecord::new_wi
 // ZEN 48 — Into the Roil
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INTO_THE_ROIL: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("5dba9972-dd8b-407b-9374-a8f0ed1a96db"),
     "Into the Roil",
-    crate::card::CardArt::new("5dba9972-dd8b-407b-9374-a8f0ed1a96db", "Kieran Yanner"),
+    "5dba9972-dd8b-407b-9374-a8f0ed1a96db",
+    "Kieran Yanner",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 50 — Kraken Hatchling
-pub(in crate::card::sets) static KRAKEN_HATCHLING: CardRecord = CardRecord::new_with_legacy_id(
-    989,
+pub(in crate::card::sets) static KRAKEN_HATCHLING: CardRecord = CardRecord::new(
     "Kraken Hatchling",
-    CardArt::new("59a50590-9091-4632-bf8c-792e1e0a75a8", "Jason Felix"),
+    "45d100a3-93f2-428c-8f54-8807e71f2638",
+    "Jason Felix",
     CardSet::Zendikar,
     CardRules::new_creature(mana_cost!("{U}"), &["Kraken"], 0, 4),
 );
 
 // ZEN 58 — Paralyzing Grasp
-pub(in crate::card::sets) static PARALYZING_GRASP: CardRecord = CardRecord::new_with_legacy_id(
-    1260,
+pub(in crate::card::sets) static PARALYZING_GRASP: CardRecord = CardRecord::new(
     "Paralyzing Grasp",
-    CardArt::new("3dfd97b3-d83e-406f-af45-40eec6347462", "Scott Chou"),
+    "4af35801-9280-4ec1-9399-e34501919a8f",
+    "Izzy",
     CardSet::Zendikar,
     CardRules::new_enchantment(mana_cost!("{2}{U}"))
         .with_subtypes(&["Aura"])
@@ -150,10 +150,10 @@ pub(in crate::card::sets) static PARALYZING_GRASP: CardRecord = CardRecord::new_
 );
 
 // ZEN 67 — Spell Pierce
-pub(in crate::card::sets) static SPELL_PIERCE: CardRecord = CardRecord::new_with_legacy_id(
-    2115,
+pub(in crate::card::sets) static SPELL_PIERCE: CardRecord = CardRecord::new(
     "Spell Pierce",
-    CardArt::new("cb3d3901-e4a6-45ab-a7b5-c65d91e1875e", "Vance Kovacs"),
+    "cb3d3901-e4a6-45ab-a7b5-c65d91e1875e",
+    "Vance Kovacs",
     CardSet::Zendikar,
     CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
         "Counter target noncreature spell unless its controller pays {2}.",
@@ -173,10 +173,10 @@ pub(in crate::card::sets) static SPELL_PIERCE: CardRecord = CardRecord::new_with
 );
 
 // ZEN 76 — Welkin Tern
-pub(in crate::card::sets) static WELKIN_TERN: CardRecord = CardRecord::new_with_legacy_id(
-    1748,
+pub(in crate::card::sets) static WELKIN_TERN: CardRecord = CardRecord::new(
     "Welkin Tern",
-    CardArt::new("ddfd4f37-3630-4770-bfad-83623c11be19", "Austin Hsu"),
+    "357931d0-8ba6-4857-9db9-7f42d81514a5",
+    "Austin Hsu",
     CardSet::Zendikar,
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Bird"], 2, 1).with_abilities(&[
         abilities::flying(),
@@ -195,18 +195,18 @@ pub(in crate::card::sets) static WELKIN_TERN: CardRecord = CardRecord::new_with_
 // ZEN 80 — Blood Seeker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLOOD_SEEKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("d1abc9e8-9ecf-4665-9ea5-ee18ab83c148"),
     "Blood Seeker",
-    crate::card::CardArt::new("8033de8d-a396-4097-aedd-f9facb800b33", "Greg Staples"),
+    "d1abc9e8-9ecf-4665-9ea5-ee18ab83c148",
+    "Greg Staples",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 83 — Bloodghast
 pub(in crate::card::sets) static BLOODGHAST: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("63870c81-63bf-4a9a-aeb5-74c6eaded9f1"),
     "Bloodghast",
-    CardArt::new("63870c81-63bf-4a9a-aeb5-74c6eaded9f1", "Daarken"),
+    "63870c81-63bf-4a9a-aeb5-74c6eaded9f1",
+    "Daarken",
     CardSet::Zendikar,
     CardRules::new_creature(mana_cost!("{B}{B}"), &["Vampire", "Spirit"], 2, 1)
         .with_abilities(&[
@@ -257,18 +257,18 @@ pub(in crate::card::sets) static BLOODGHAST: CardRecord = CardRecord::new(
 // ZEN 87 — Disfigure
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DISFIGURE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("b3842ad2-a449-4963-8c96-276554125757"),
     "Disfigure",
-    crate::card::CardArt::new("b3842ad2-a449-4963-8c96-276554125757", "Justin Sweet"),
+    "b3842ad2-a449-4963-8c96-276554125757",
+    "Justin Sweet",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 90 — Giant Scorpion
-pub(in crate::card::sets) static GIANT_SCORPION: CardRecord = CardRecord::new_with_legacy_id(
-    1002,
+pub(in crate::card::sets) static GIANT_SCORPION: CardRecord = CardRecord::new(
     "Giant Scorpion",
-    CardArt::new("4097d5dc-46d3-4054-818f-a4ad8d7effe2", "Raymond Swanland"),
+    "c27221df-ec7a-4c51-b3a8-34b65b236b49",
+    "Raymond Swanland",
     CardSet::Zendikar,
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Scorpion"], 1, 3)
         .with_abilities(&[abilities::deathtouch()]),
@@ -277,18 +277,18 @@ pub(in crate::card::sets) static GIANT_SCORPION: CardRecord = CardRecord::new_wi
 // ZEN 111 — Sorin Markov
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SORIN_MARKOV: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("29606aca-f23f-4dfe-b685-2065193109c8"),
     "Sorin Markov",
-    crate::card::CardArt::new("e25b3a89-3a99-4e02-bf0c-a3cf450da1a1", "Michael Komarck"),
+    "29606aca-f23f-4dfe-b685-2065193109c8",
+    "Michael Komarck",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 114 — Vampire Hexmage
 pub(in crate::card::sets) static VAMPIRE_HEXMAGE: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("93d2c4d1-6205-404a-b03d-995b90a3a33a"),
     "Vampire Hexmage",
-    CardArt::new("93d2c4d1-6205-404a-b03d-995b90a3a33a", "Eric Deschamps"),
+    "93d2c4d1-6205-404a-b03d-995b90a3a33a",
+    "Eric Deschamps",
     CardSet::Zendikar,
     // A two-mana first striker that is never a dead card: it answers a
     // planeswalker outright, and everything else it might name is a bonus.
@@ -319,18 +319,18 @@ pub(in crate::card::sets) static VAMPIRE_HEXMAGE: CardRecord = CardRecord::new(
 // ZEN 115 — Vampire Lacerator
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VAMPIRE_LACERATOR: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("114eca6c-76de-4b87-8174-78e2d17ad0e3"),
     "Vampire Lacerator",
-    crate::card::CardArt::new("114eca6c-76de-4b87-8174-78e2d17ad0e3", "Steve Argyle"),
+    "114eca6c-76de-4b87-8174-78e2d17ad0e3",
+    "Steve Argyle",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 116 — Vampire Nighthawk
-pub(in crate::card::sets) static VAMPIRE_NIGHTHAWK: CardRecord = CardRecord::new_with_legacy_id(
-    236,
+pub(in crate::card::sets) static VAMPIRE_NIGHTHAWK: CardRecord = CardRecord::new(
     "Vampire Nighthawk",
-    CardArt::new("9ba96d96-8d9e-47c8-ab39-17479564aadf", "Jason Chan"),
+    "44f19fe3-7a17-4c45-adfa-590f73dfebfa",
+    "Jason Chan",
     CardSet::Zendikar,
     CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Vampire", "Shaman"], 2, 3).with_abilities(
         &[
@@ -342,10 +342,10 @@ pub(in crate::card::sets) static VAMPIRE_NIGHTHAWK: CardRecord = CardRecord::new
 );
 
 // ZEN 118 — Bladetusk Boar
-pub(in crate::card::sets) static BLADETUSK_BOAR: CardRecord = CardRecord::new_with_legacy_id(
-    1009,
+pub(in crate::card::sets) static BLADETUSK_BOAR: CardRecord = CardRecord::new(
     "Bladetusk Boar",
-    CardArt::new("d28442f9-06cf-4273-80a3-2b054f5881a4", "Paul Bonner"),
+    "1558dfaf-15ed-4220-9051-bf0bf442b2e9",
+    "Paul Bonner",
     CardSet::Zendikar,
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Boar"], 3, 2)
         .with_abilities(&[abilities::intimidate()]),
@@ -353,9 +353,9 @@ pub(in crate::card::sets) static BLADETUSK_BOAR: CardRecord = CardRecord::new_wi
 
 // ZEN 119 — Burst Lightning
 pub(in crate::card::sets) static BURST_LIGHTNING: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("2dc16614-5cf8-444d-a5ae-cac25018af68"),
     "Burst Lightning",
-    CardArt::new("2dc16614-5cf8-444d-a5ae-cac25018af68", "Vance Kovacs"),
+    "2dc16614-5cf8-444d-a5ae-cac25018af68",
+    "Vance Kovacs",
     CardSet::Zendikar,
     // One mana to answer what a one-drop deck leads with, and five to point
     // the same card at anything later.
@@ -381,18 +381,18 @@ pub(in crate::card::sets) static BURST_LIGHTNING: CardRecord = CardRecord::new(
 // ZEN 125 — Goblin Bushwhacker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOBLIN_BUSHWHACKER: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4085a5bf-a71b-4c73-9b39-0dcc328fe11b"),
     "Goblin Bushwhacker",
-    crate::card::CardArt::new("4085a5bf-a71b-4c73-9b39-0dcc328fe11b", "Mark Tedin"),
+    "4085a5bf-a71b-4c73-9b39-0dcc328fe11b",
+    "Mark Tedin",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 128 — Goblin Shortcutter
-pub(in crate::card::sets) static GOBLIN_SHORTCUTTER: CardRecord = CardRecord::new_with_legacy_id(
-    1747,
+pub(in crate::card::sets) static GOBLIN_SHORTCUTTER: CardRecord = CardRecord::new(
     "Goblin Shortcutter",
-    CardArt::new("71bccbec-6e1e-43d5-b0dc-eddf942fa798", "Jesper Ejsing"),
+    "5daeaa2e-68e5-4f49-9220-58c0c9b1a3d0",
+    "Jesper Ejsing",
     CardSet::Zendikar,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Scout"], 2, 1).with_ability(
         abilities::enters_trigger_with_targets(
@@ -412,18 +412,18 @@ pub(in crate::card::sets) static GOBLIN_SHORTCUTTER: CardRecord = CardRecord::ne
 // ZEN 129 — Goblin War Paint
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOBLIN_WAR_PAINT: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("4388e57e-0c87-4d66-a862-58261d76c5ac"),
     "Goblin War Paint",
-    crate::card::CardArt::new("fde711c9-fdef-4024-8269-a59ee0748f95", "Austin Hsu"),
+    "4388e57e-0c87-4d66-a862-58261d76c5ac",
+    "Austin Hsu",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 137 — Mark of Mutiny
-pub(in crate::card::sets) static MARK_OF_MUTINY: CardRecord = CardRecord::new_with_legacy_id(
-    1021,
+pub(in crate::card::sets) static MARK_OF_MUTINY: CardRecord = CardRecord::new(
     "Mark of Mutiny",
-    CardArt::new("0b7c6e09-3a14-4cc4-ba6b-f1f45e7d9f2a", "Mike Bierek"),
+    "58a0a019-239d-428e-85a2-e19cae8f4b58",
+    "Mike Bierek",
     CardSet::Zendikar,
     CardRules::new_sorcery(mana_cost!("{2}{R}")).with_ability(AbilityDef::spell_with_targets(
         "Gain control of target creature until end of turn. Put a +1/+1 counter on it and untap it. That creature gains haste until end of turn.",
@@ -456,18 +456,18 @@ pub(in crate::card::sets) static MARK_OF_MUTINY: CardRecord = CardRecord::new_wi
 // ZEN 149 — Slaughter Cry
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SLAUGHTER_CRY: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("c93b0eda-693e-4a17-be1d-1df162702146"),
     "Slaughter Cry",
-    crate::card::CardArt::new("65ec8b61-e602-41f2-ac1a-64e150b2ce18", "Matt Cavotta"),
+    "c93b0eda-693e-4a17-be1d-1df162702146",
+    "Matt Cavotta",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 168 — Lotus Cobra
 pub(in crate::card::sets) static LOTUS_COBRA: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("19adde22-e5eb-4815-beb6-c520b3274cc9"),
     "Lotus Cobra",
-    CardArt::new("19adde22-e5eb-4815-beb6-c520b3274cc9", "Chippy"),
+    "19adde22-e5eb-4815-beb6-c520b3274cc9",
+    "Chippy",
     CardSet::Zendikar,
     // Two mana that turns every land after it into a Lotus Petal, which is
     // what makes a fetchland a ritual.
@@ -498,10 +498,10 @@ pub(in crate::card::sets) static LOTUS_COBRA: CardRecord = CardRecord::new(
 );
 
 // ZEN 192 — Vastwood Gorger
-pub(in crate::card::sets) static VASTWOOD_GORGER: CardRecord = CardRecord::new_with_legacy_id(
-    1042,
+pub(in crate::card::sets) static VASTWOOD_GORGER: CardRecord = CardRecord::new(
     "Vastwood Gorger",
-    CardArt::new("70fc4a5f-1c59-4139-a506-72baebb1168f", "Kieran Yanner"),
+    "bc5daf96-ceae-4c9a-95cd-f6d706e9b1fa",
+    "Kieran Yanner",
     CardSet::Zendikar,
     CardRules::new_creature(mana_cost!("{5}{G}"), &["Wurm"], 5, 6),
 );
@@ -509,21 +509,18 @@ pub(in crate::card::sets) static VASTWOOD_GORGER: CardRecord = CardRecord::new_w
 // ZEN 193 — Vines of Vastwood
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VINES_OF_VASTWOOD: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e8bd8b10-de86-4bb6-b49f-6ccb5297c81c"),
     "Vines of Vastwood",
-    crate::card::CardArt::new(
-        "e8bd8b10-de86-4bb6-b49f-6ccb5297c81c",
-        "Christopher Moeller",
-    ),
+    "e8bd8b10-de86-4bb6-b49f-6ccb5297c81c",
+    "Christopher Moeller",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 197 — Blazing Torch
-pub(in crate::card::sets) static BLAZING_TORCH: CardRecord = CardRecord::new_with_legacy_id(
-    2314,
+pub(in crate::card::sets) static BLAZING_TORCH: CardRecord = CardRecord::new(
     "Blazing Torch",
-    CardArt::new("1e9d1ff2-9ce3-4737-af1d-9fc82e4dffe6", "Vance Kovacs"),
+    "1e9d1ff2-9ce3-4737-af1d-9fc82e4dffe6",
+    "Vance Kovacs",
     CardSet::Zendikar,
     CardRules::new_artifact(mana_cost!("{1}"))
         .with_subtypes(&["Equipment"])
@@ -569,10 +566,10 @@ pub(in crate::card::sets) static BLAZING_TORCH: CardRecord = CardRecord::new_wit
 );
 
 // ZEN 201 — Expedition Map
-pub(in crate::card::sets) static EXPEDITION_MAP: CardRecord = CardRecord::new_with_legacy_id(
-    2245,
+pub(in crate::card::sets) static EXPEDITION_MAP: CardRecord = CardRecord::new(
     "Expedition Map",
-    CardArt::new("c55bee97-593f-441f-b96c-a998d5212a55", "Franz Vohwinkel"),
+    "c55bee97-593f-441f-b96c-a998d5212a55",
+    "Franz Vohwinkel",
     CardSet::Zendikar,
     // Three mana over two turns for any land in the deck, which is a
     // terrible rate and exactly what a deck built around one land wants.
@@ -603,10 +600,10 @@ pub(in crate::card::sets) static EXPEDITION_MAP: CardRecord = CardRecord::new_wi
 );
 
 // ZEN 211 — Arid Mesa
-pub(in crate::card::sets) static ARID_MESA: CardRecord = CardRecord::new_with_legacy_id(
-    2091,
+pub(in crate::card::sets) static ARID_MESA: CardRecord = CardRecord::new(
     "Arid Mesa",
-    CardArt::new("16c8d2fa-54a7-46e8-980c-905258497c90", "Raymond Swanland"),
+    "16c8d2fa-54a7-46e8-980c-905258497c90",
+    "Raymond Swanland",
     CardSet::Zendikar,
     fetch_land(
         "{T}, Pay 1 life, Sacrifice this land: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle.",
@@ -615,10 +612,10 @@ pub(in crate::card::sets) static ARID_MESA: CardRecord = CardRecord::new_with_le
 );
 
 // ZEN 219 — Marsh Flats
-pub(in crate::card::sets) static MARSH_FLATS: CardRecord = CardRecord::new_with_legacy_id(
-    2092,
+pub(in crate::card::sets) static MARSH_FLATS: CardRecord = CardRecord::new(
     "Marsh Flats",
-    CardArt::new("45026d57-0324-4312-8b86-2e7d4f581ee9", "Izzy"),
+    "45026d57-0324-4312-8b86-2e7d4f581ee9",
+    "Izzy",
     CardSet::Zendikar,
     fetch_land(
         "{T}, Pay 1 life, Sacrifice this land: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle.",
@@ -627,10 +624,10 @@ pub(in crate::card::sets) static MARSH_FLATS: CardRecord = CardRecord::new_with_
 );
 
 // ZEN 220 — Misty Rainforest
-pub(in crate::card::sets) static MISTY_RAINFOREST: CardRecord = CardRecord::new_with_legacy_id(
-    2093,
+pub(in crate::card::sets) static MISTY_RAINFOREST: CardRecord = CardRecord::new(
     "Misty Rainforest",
-    CardArt::new("24a5cc2c-0fbf-4a5f-b175-6e0ffd0d0787", "Shelly Wan"),
+    "24a5cc2c-0fbf-4a5f-b175-6e0ffd0d0787",
+    "Shelly Wan",
     CardSet::Zendikar,
     fetch_land(
         "{T}, Pay 1 life, Sacrifice this land: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle.",
@@ -639,10 +636,10 @@ pub(in crate::card::sets) static MISTY_RAINFOREST: CardRecord = CardRecord::new_
 );
 
 // ZEN 223 — Scalding Tarn
-pub(in crate::card::sets) static SCALDING_TARN: CardRecord = CardRecord::new_with_legacy_id(
-    2094,
+pub(in crate::card::sets) static SCALDING_TARN: CardRecord = CardRecord::new(
     "Scalding Tarn",
-    CardArt::new("327cf118-cc92-4073-85d0-94d2a0a6989a", "Philip Straub"),
+    "327cf118-cc92-4073-85d0-94d2a0a6989a",
+    "Philip Straub",
     CardSet::Zendikar,
     fetch_land(
         "{T}, Pay 1 life, Sacrifice this land: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle.",
@@ -653,18 +650,18 @@ pub(in crate::card::sets) static SCALDING_TARN: CardRecord = CardRecord::new_wit
 // ZEN 226 — Teetering Peaks
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TEETERING_PEAKS: CardRecord = CardRecord::new(
-    PrintingAnchor::scryfall("e56aca36-bb51-45e3-9ef9-9f9f2aa1e088"),
     "Teetering Peaks",
-    crate::card::CardArt::new("e56aca36-bb51-45e3-9ef9-9f9f2aa1e088", "Fred Fields"),
+    "e56aca36-bb51-45e3-9ef9-9f9f2aa1e088",
+    "Fred Fields",
     crate::card::CardSet::Zendikar,
     crate::card::CardRules::unsupported(),
 );
 
 // ZEN 229 — Verdant Catacombs
-pub(in crate::card::sets) static VERDANT_CATACOMBS: CardRecord = CardRecord::new_with_legacy_id(
-    2095,
+pub(in crate::card::sets) static VERDANT_CATACOMBS: CardRecord = CardRecord::new(
     "Verdant Catacombs",
-    CardArt::new("7abd2723-2851-4f1a-b2d0-dfcb526472c3", "Vance Kovacs"),
+    "7abd2723-2851-4f1a-b2d0-dfcb526472c3",
+    "Vance Kovacs",
     CardSet::Zendikar,
     fetch_land(
         "{T}, Pay 1 life, Sacrifice this land: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle.",

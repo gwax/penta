@@ -7,4 +7,4 @@ pub(super) mod dominaria;
 pub(super) mod guilds_of_ravnica;
 pub(super) mod rivals_of_ixalan;
 
-pub(super) use super::{CardRecord, PrintingAnchor, PrintingRecord};
+pub(super) use super::{CardRecord, PrintingRecord};
