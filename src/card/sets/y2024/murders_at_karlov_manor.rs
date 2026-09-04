@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
-    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, ColorSet, ComparisonDef,
-    CostModificationDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    PlayerRelation, PlayerSetDef, SumValueDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueComparisonDef, ValueDef, ZoneKind, abilities, tokens,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    AppliedRuleDef, BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, ColorSet,
+    ComparisonDef, CostModificationDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, SumValueDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities, tokens,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -195,16 +196,58 @@ pub(in crate::card::sets) static COMMERCIAL_DISTRICT: CardRecord = CardRecord::n
 );
 
 // MKM 261 — Escape Tunnel
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ESCAPE_TUNNEL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("93ddde4f-d35e-4128-8f43-d0eadbd715de"),
     "Escape Tunnel",
-    crate::card::CardArt::new(
+    CardArt::new(
         "93ddde4f-d35e-4128-8f43-d0eadbd715de",
         "Carlos Palma Cruchaga",
     ),
-    crate::card::CardSet::MurdersAtKarlovManor,
-    crate::card::CardRules::unsupported(),
+    CardSet::MurdersAtKarlovManor,
+    // A land that taps for nothing: both halves spend the land itself, so
+    // playing it is a decision about which one the deck wants later.
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::activated(
+            "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                ]),
+                // A qualified library search may legally fail to find.
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: false,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: true,
+                attachment: None,
+                binding: None,
+                then: None,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice this land: Target creature with power 2 or less can't be blocked this turn.",
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    // The predicate reads power only upwards, so the cap is
+                    // the complement of three or more.
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::PowerAtLeast(3)),
+                ]),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BE_BLOCKED),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 // MKM 262 — Hedge Maze
