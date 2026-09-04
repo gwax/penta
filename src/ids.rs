@@ -322,6 +322,8 @@ const BINDING_LABELS: &[&str] = &[
     "objects",
     "objects_2",
     "optional_card",
+    "oracle_land",
+    "oracle_nonland",
     "oracle_rest",
     "oracle_top",
     "outcome_owned_by_you",

@@ -5,9 +5,10 @@ use crate::card::sets::y2011::innistrad as catalog_isd;
 use crate::card::sets::y2011::magic_2012 as catalog_m12;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    AddManaEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    ManaColor, MillUntilDef, ObjectPredicateDef, ObjectSetPredicateDef, PlayerRelation,
-    TriggerEventDef, TurnStepDef, ZoneKind, ZonePlacement, abilities,
+    AddManaEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectPaymentDef,
+    EffectRecipientDef, ManaColor, MillUntilDef, ObjectPredicateDef, ObjectSetPredicateDef,
+    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerEventDef, TurnStepDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -528,13 +529,28 @@ pub(in crate::card::sets) static WHIPTONGUE_FROG: CardRecord = CardRecord::new(
 );
 
 // EXO 53 — Carnophage
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CARNOPHAGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d17c057f-cb1b-4895-831a-fb35c75d3845"),
     "Carnophage",
-    crate::card::CardArt::new("d17c057f-cb1b-4895-831a-fb35c75d3845", "Pete Venters"),
-    crate::card::CardSet::Exodus,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d17c057f-cb1b-4895-831a-fb35c75d3845", "Pete Venters"),
+    CardSet::Exodus,
+    // A 2/2 for one that costs a life every turn it attacks; declining the
+    // payment is a real line once the race has been won.
+    CardRules::new_creature(mana_cost!("{B}"), &["Zombie"], 2, 2).with_ability(
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, tap this creature unless you pay 1 life.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::PayOr(PayOrDef::unless(
+                EffectPaymentDef::life(PlayerSetDef::One(PlayerRefDef::EffectController), 1),
+                &EffectDef::Tap {
+                    object: EffectRecipientDef::Source,
+                },
+            )),
+        ),
+    ),
 );
 
 // EXO 54 — Cat Burglar

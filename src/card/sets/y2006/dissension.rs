@@ -2,9 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    KeywordAbility, ManaColor, ObjectPredicateDef, abilities,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, CardType,
+    ClassifyObjectsDef, EffectDef, KeywordAbility, ManaColor, MoveObjectsDef, ObjectPredicateDef,
+    ObjectSetDef, PlayerRefDef, RevealObjectsDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
+use crate::ids::{Binding, ParentBinding};
 use crate::mana_cost;
 
 // DIS 10 — Guardian of the Guildpact
@@ -46,13 +48,63 @@ pub(in crate::card::sets) static AZORIUS_FIRST_WING: CardRecord = CardRecord::ne
 );
 
 // DIS 107 — Coiling Oracle
-// Audit: unsupported — Card rules have not been implemented.
+const ORACLE_LAND: Binding = Binding!("oracle_land");
+const ORACLE_NONLAND: Binding = Binding!("oracle_nonland");
+
 pub(in crate::card::sets) static COILING_ORACLE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0c7b0fa1-bfc2-4b15-80ea-47e41a17aa2c"),
     "Coiling Oracle",
-    crate::card::CardArt::new("55a6ba2a-b372-4b15-9a1e-09b41316eab7", "Mark Zug"),
-    crate::card::CardSet::Dissension,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("55a6ba2a-b372-4b15-9a1e-09b41316eab7", "Mark Zug"),
+    CardSet::Dissension,
+    // Either a land drop or a card, decided by the top of the library
+    // rather than by its controller -- which is why it is a ramp spell in a
+    // land-heavy deck and a cantrip in every other one.
+    CardRules::new_creature(mana_cost!("{G}{U}"), &["Snake", "Elf", "Druid"], 1, 1).with_ability(
+        abilities::enters_trigger(
+            "When this creature enters, reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put that card into your hand.",
+            abilities::bind_top_cards_then(
+                PlayerRefDef::EffectController,
+                ValueDef::Constant(1),
+                &const {
+                    EffectDef::Sequence(&[
+                        EffectDef::RevealObjects(RevealObjectsDef {
+                            input: ObjectSetDef::Binding(ParentBinding),
+                            then: &EffectDef::None,
+                        }),
+                        // One card split into two bindings, exactly one of
+                        // which is nonempty, so both moves below can run
+                        // unconditionally.
+                        EffectDef::ClassifyObjects(ClassifyObjectsDef {
+                            input: ObjectSetDef::Binding(ParentBinding),
+                            object: ObjectPredicateDef::HasType(CardType::Land),
+                            matching: ORACLE_LAND,
+                            remainder: ORACLE_NONLAND,
+                            then: &const {
+                                EffectDef::Sequence(&[
+                                    EffectDef::MoveObjects(MoveObjectsDef {
+                                        input: ObjectSetDef::Binding(ORACLE_LAND),
+                                        from: Some(ZoneKind::Library),
+                                        zone: ZoneKind::Battlefield,
+                                        placement: ZonePlacement::Top,
+                                        moved: None,
+                                        then: &EffectDef::None,
+                                    }),
+                                    EffectDef::MoveObjects(MoveObjectsDef {
+                                        input: ObjectSetDef::Binding(ORACLE_NONLAND),
+                                        from: Some(ZoneKind::Library),
+                                        zone: ZoneKind::Hand,
+                                        placement: ZonePlacement::Top,
+                                        moved: None,
+                                        then: &EffectDef::None,
+                                    }),
+                                ])
+                            },
+                        }),
+                    ])
+                },
+            ),
+        ),
+    ),
 );
 
 // DIS 178 — Rakdos Carnarium
