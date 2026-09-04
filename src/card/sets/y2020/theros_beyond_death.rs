@@ -9,8 +9,8 @@ use crate::card::{
     ChooseDef, ComparisonDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor,
     MoveObjectsDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectSetDef, PlayerRefDef,
     PlayerRelation, PlayerSetDef, RandomizeObjectOrderDef, ReplacementConditionDef,
-    ReplacementEffectDef, SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{Binding, ParentBinding, TargetIndex};
 use crate::mana_cost;
@@ -176,13 +176,59 @@ pub(in crate::card::sets) static UNDERWORLD_CHARGER: CardRecord = CardRecord::ne
 );
 
 // THB 128 — Blood Aspirant
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLOOD_ASPIRANT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8d4f3fa3-ba1f-48dc-a56b-738936f1bf86"),
     "Blood Aspirant",
-    crate::card::CardArt::new("8d4f3fa3-ba1f-48dc-a56b-738936f1bf86", "Tyler Walpole"),
-    crate::card::CardSet::TherosBeyondDeath,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("8d4f3fa3-ba1f-48dc-a56b-738936f1bf86", "Tyler Walpole"),
+    CardSet::TherosBeyondDeath,
+    // Its own activation feeds its own trigger, so each use both shrinks the
+    // opposing board and grows this one.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Satyr", "Berserker"], 1, 1).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever you sacrifice a permanent, put a +1/+1 counter on this creature.",
+            // Any permanent, not only creatures, so a sacrificed enchantment
+            // counts twice with the ability below.
+            TriggerEventDef::Sacrificed {
+                object: ObjectPredicateDef::Any,
+                player: PlayerRelation::You,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{1}{R}, {T}, Sacrifice a creature or enchantment: This creature deals 1 damage to target creature. That creature can't block this turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}{R}")),
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificePermanent {
+                    object: ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::HasType(CardType::Enchantment),
+                    ]),
+                    controller: PlayerRelation::You,
+                },
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(1),
+                },
+                // "That creature" is the same target, so a creature that
+                // survived the point still cannot block.
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BLOCK),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ]),
+        ),
+    ]),
 );
 
 // THB 161 — Underworld Breach
