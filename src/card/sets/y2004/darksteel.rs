@@ -121,13 +121,28 @@ pub(in crate::card::sets) static SKULLCLAMP: CardRecord = CardRecord::new_with_l
 );
 
 // DST 157 — Vulshok Morningstar
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VULSHOK_MORNINGSTAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("acf00de0-af24-4ef9-8ac2-135e6b53a8fd"),
     "Vulshok Morningstar",
-    crate::card::CardArt::new("acf00de0-af24-4ef9-8ac2-135e6b53a8fd", "David Martin"),
-    crate::card::CardSet::Darksteel,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("acf00de0-af24-4ef9-8ac2-135e6b53a8fd", "David Martin"),
+    CardSet::Darksteel,
+    // Four mana across two turns for +2/+2, and the toughness is what
+    // separates it from Bonesplitter in a deck that has to block.
+    CardRules::new_artifact(mana_cost!("{2}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +2/+2.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(2),
+                        ValueDef::Constant(2),
+                    ),
+                },
+            ),
+            abilities::equip(&[AbilityCostDef::Mana(mana_cost!("{2}"))], "Equip {2}"),
+        ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

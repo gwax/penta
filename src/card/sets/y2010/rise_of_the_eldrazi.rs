@@ -144,13 +144,35 @@ pub(in crate::card::sets) static INQUISITION_OF_KOZILEK: CardRecord = CardRecord
 );
 
 // ROE 130 — Vendetta
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VENDETTA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("67ced38e-0f33-4bda-8e18-09f6ac03a3d7"),
     "Vendetta",
-    crate::card::CardArt::new("039fc76d-3b7e-4329-a997-07c25509e421", "Karl Kopinski"),
-    crate::card::CardSet::RiseOfTheEldrazi,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("039fc76d-3b7e-4329-a997-07c25509e421", "Karl Kopinski"),
+    CardSet::RiseOfTheEldrazi,
+    // One mana kills almost anything; the life is what makes killing the big
+    // thing a real decision rather than a free one.
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Destroy target nonblack creature. It can't be regenerated. You lose life equal to that creature's toughness.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Color(ManaColor::Black)),
+            ]),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: false,
+                then: None,
+            },
+            // Read off the target rather than off the board, so the
+            // toughness charged is the one it had as it died.
+            EffectDef::LoseLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::TargetToughness(TargetIndex::PRIMARY),
+            },
+        ]),
+    )),
 );
 
 // ROE 145 — Flame Slash

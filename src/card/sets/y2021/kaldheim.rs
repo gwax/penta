@@ -3,9 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef, CardArt,
-    CardRules, CardSet, CardSupertype, CardType, CopyExceptionsDef, EffectDef, EffectRecipientDef,
-    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    CardRules, CardSet, CardSupertype, CardType, CopyExceptionsDef, CostQuantityDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
+    PlayerRelation, SpellAdditionalCostDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, tokens,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -33,13 +34,26 @@ pub(in crate::card::sets) static BEHOLD_THE_MULTIVERSE: CardRecord = CardRecord:
 );
 
 // KHM 117 — Village Rites
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VILLAGE_RITES: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9c0f60a6-b5c8-4704-8b61-94e8fc463e5d"),
     "Village Rites",
-    crate::card::CardArt::new("0fab9ee8-776a-48e5-b309-bcd381e67bf7", "Igor Kieryluk"),
-    crate::card::CardSet::Kaldheim,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("0fab9ee8-776a-48e5-b309-bcd381e67bf7", "Igor Kieryluk"),
+    CardSet::Kaldheim,
+    // The sacrifice is a cost rather than an effect, so it happens on the
+    // way to the stack: a creature already dying to removal can be cashed
+    // in before it goes.
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_additional_cost(
+        "As an additional cost to cast this spell, sacrifice a creature.\nDraw two cards.",
+        &[],
+        SpellAdditionalCostDef::sacrifice(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            CostQuantityDef::Fixed(1),
+        ),
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(2),
+        },
+    )),
 );
 
 // KHM 139 — Goldspan Dragon
