@@ -2,20 +2,48 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType,
-    EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef,
-    ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
+    CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    TriggerEventDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
 // AKH 75 — Vizier of Tumbling Sands
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VIZIER_OF_TUMBLING_SANDS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ce4ff0f5-abee-4f3e-89ae-1b7ee771ec68"),
     "Vizier of Tumbling Sands",
-    crate::card::CardArt::new("ce4ff0f5-abee-4f3e-89ae-1b7ee771ec68", "Josu Hernaiz"),
-    crate::card::CardSet::Amonkhet,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("ce4ff0f5-abee-4f3e-89ae-1b7ee771ec68", "Josu Hernaiz"),
+    CardSet::Amonkhet,
+    // Two ways to untap something out of one card: the body unlocks a land
+    // every turn, and cycling unlocks one the turn you gave up on the body.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Human", "Cleric"], 1, 3).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{T}: Untap another target permanent.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+            )],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+        abilities::cycling(
+            "Cycling {1}{U} ({1}{U}, Discard this card: Draw a card.)",
+            mana_cost!("{1}{U}"),
+        ),
+        AbilityDef::triggered_with_targets(
+            "When you cycle this card, untap target permanent.",
+            TriggerEventDef::Cycled,
+            // No "another" here: the Vizier is in the graveyard by now, so
+            // any permanent is a legal choice.
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::Any,
+            )],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
 );
 
 // AKH 81 — Bone Picker

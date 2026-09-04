@@ -3,10 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AttackEventMatcherDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectSetDef, PlayerRelation, TargetChooserDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    AttackEventMatcherDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind,
+    DiscardSelectionDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
+    ManaColor, ObjectPredicateDef, ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, TargetChooserDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::ParentBinding;
 use crate::{TargetIndex, mana_cost};
@@ -155,13 +155,40 @@ pub(in crate::card::sets) static CHANDRA_TORCH_OF_DEFIANCE: CardRecord =
     );
 
 // KLD 138 — Thriving Grubs
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THRIVING_GRUBS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("bbc3184a-eeda-4f22-92de-257c20cff6e2"),
     "Thriving Grubs",
-    crate::card::CardArt::new("bbc3184a-eeda-4f22-92de-257c20cff6e2", "Steve Prescott"),
-    crate::card::CardSet::Kaladesh,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("bbc3184a-eeda-4f22-92de-257c20cff6e2", "Steve Prescott"),
+    CardSet::Kaladesh,
+    // The two energy it brings pay for exactly one attack, and everything
+    // after that has to come from somewhere else on the board.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Gremlin"], 2, 1).with_abilities(&[
+        abilities::enters_trigger(
+            "When this creature enters, you get {E}{E} (two energy counters).",
+            EffectDef::AddPlayerCounters {
+                recipient: EffectRecipientDef::Controller,
+                kind: CounterKind::named("energy"),
+                amount: ValueDef::Constant(2),
+            },
+        ),
+        AbilityDef::triggered(
+            "Whenever this creature attacks, you may pay {E}{E}. If you do, put a +1/+1 counter on it.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            EffectDef::PayOr(PayOrDef::optional(
+                EffectPaymentDef {
+                    payer: PlayerSetDef::One(PlayerRefDef::EffectController),
+                    cost: EffectPaymentCostDef::Energy(2),
+                },
+                &const {
+                    EffectDef::AddCounters {
+                        object: EffectRecipientDef::Source,
+                        kind: CounterKind::PlusOnePlusOne,
+                        amount: ValueDef::Constant(1),
+                    }
+                },
+            )),
+        ),
+    ]),
 );
 
 // KLD 212 — Filigree Familiar
