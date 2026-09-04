@@ -38,13 +38,37 @@ pub(in crate::card::sets) static AVEN_WARCRAFT: CardRecord = CardRecord::new(
 );
 
 // JUD 3 — Battle Screech
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BATTLE_SCREECH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c3c38264-0d79-47d4-bca2-a20a991bbac9"),
     "Battle Screech",
-    crate::card::CardArt::new("c3c38264-0d79-47d4-bca2-a20a991bbac9", "Randy Gallegos"),
-    crate::card::CardSet::Judgment,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("c3c38264-0d79-47d4-bca2-a20a991bbac9", "Randy Gallegos"),
+    CardSet::Judgment,
+    // The first two Birds pay for the flashback themselves, which is why
+    // four fliers for three mana is the realistic line rather than the
+    // optimistic one.
+    CardRules::new_sorcery(mana_cost!("{2}{W}")).with_abilities(&[
+        AbilityDef::spell(
+            "Create two 1/1 white Bird creature tokens with flying.",
+            EffectDef::create_creature_token(&["Bird"], &[ManaColor::White], 1, 1)
+                .with_abilities(&[abilities::flying()])
+                .with_amount(2),
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::Flashback,
+            Some("Flashback—Tap three untapped white creatures you control."),
+            EffectDef::None,
+        )
+        // Untapped and yours are what tapping as a cost already asks for, so
+        // the predicate only has to add the colour.
+        .with_alternative_additional_cost(&SpellAdditionalCostDef::tap(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::Color(ManaColor::White),
+            ]),
+            CostQuantityDef::Fixed(3),
+        )),
+    ]),
 );
 
 // JUD 4 — Battlewise Aven

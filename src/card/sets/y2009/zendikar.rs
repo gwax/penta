@@ -5,8 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AdditionalCostValueDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules,
     CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectRefDef, PlayerRelation, TriggerConditionDef, TriggerEventDef, ValueComparisonDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    ObjectRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -127,13 +127,27 @@ pub(in crate::card::sets) static BLOODGHAST: CardRecord = CardRecord::new(
 );
 
 // ZEN 87 — Disfigure
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DISFIGURE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b3842ad2-a449-4963-8c96-276554125757"),
     "Disfigure",
-    crate::card::CardArt::new("b3842ad2-a449-4963-8c96-276554125757", "Justin Sweet"),
-    crate::card::CardSet::Zendikar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("b3842ad2-a449-4963-8c96-276554125757", "Justin Sweet"),
+    CardSet::Zendikar,
+    // A one-mana answer that shrinks rather than destroys, so it also wins a
+    // combat outright instead of only trading after damage.
+    CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Target creature gets -2/-2 until end of turn.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-2),
+                ValueDef::Constant(-2),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // ZEN 114 — Vampire Hexmage

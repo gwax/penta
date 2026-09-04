@@ -64,13 +64,38 @@ pub(in crate::card::sets) static ELITE_SPELLBINDER: CardRecord = CardRecord::new
 );
 
 // STX 43 — Frost Trickster
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FROST_TRICKSTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("fd79c9cc-0a8c-4d88-96e2-cb177134a18d"),
     "Frost Trickster",
-    crate::card::CardArt::new("fd79c9cc-0a8c-4d88-96e2-cb177134a18d", "Uriah Voth"),
-    crate::card::CardSet::StrixhavenSchoolOfMages,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("fd79c9cc-0a8c-4d88-96e2-cb177134a18d", "Uriah Voth"),
+    CardSet::StrixhavenSchoolOfMages,
+    // A Frost Lynx with wings: the tap buys the turn the flier needs to
+    // start attacking through an empty board.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Bird", "Wizard"], 2, 2).with_abilities(&[
+        abilities::flying(),
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, tap target creature an opponent controls. That creature doesn't untap during its controller's next untap step.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::Tap {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                },
+                // One step rather than a duration: a creature already tapped
+                // when this resolves still misses its next untap.
+                EffectDef::SkipNextUntapSteps {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    count: 1,
+                },
+            ]),
+        ),
+    ]),
 );
 
 // STX 64 — Baleful Mastery

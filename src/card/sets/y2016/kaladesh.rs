@@ -172,13 +172,29 @@ pub(in crate::card::sets) static THRIVING_GRUBS: CardRecord = CardRecord::new(
 );
 
 // KLD 212 — Filigree Familiar
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FILIGREE_FAMILIAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9cc9ecfd-6cf0-4488-a14a-afec1bc0d253"),
     "Filigree Familiar",
-    crate::card::CardArt::new("9cc9ecfd-6cf0-4488-a14a-afec1bc0d253", "Izzy"),
-    crate::card::CardSet::Kaladesh,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("9cc9ecfd-6cf0-4488-a14a-afec1bc0d253", "Izzy"),
+    CardSet::Kaladesh,
+    // Colourless, so any deck plays it, and it is never a blank: the life
+    // comes in and the card comes out whatever else happens to it.
+    CardRules::new_artifact_creature(mana_cost!("{3}"), &["Fox"], 2, 2).with_abilities(&[
+        abilities::enters_trigger(
+            "When this creature enters, you gain 2 life.",
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+        abilities::dies_trigger(
+            "When this creature dies, draw a card.",
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // KLD 230 — Renegade Freighter
