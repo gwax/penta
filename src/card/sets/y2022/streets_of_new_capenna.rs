@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, PlayerSetDef, QuantifierDef,
-    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
+    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
+    ComparisonDef, CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    PlayerSetDef, QuantifierDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
+    ValueDef, ZoneKind, abilities, tokens,
 };
 use crate::mana_cost;
 
@@ -135,13 +136,48 @@ pub(in crate::card::sets) static JEWEL_THIEF: CardRecord = CardRecord::new(
 );
 
 // SNC 168 — Body Dropper
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BODY_DROPPER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0fcb6d47-dccb-4b69-aed4-7a6215857606"),
     "Body Dropper",
-    crate::card::CardArt::new("0fcb6d47-dccb-4b69-aed4-7a6215857606", "Jakub Kasper"),
-    crate::card::CardSet::StreetsOfNewCapenna,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("0fcb6d47-dccb-4b69-aed4-7a6215857606", "Jakub Kasper"),
+    CardSet::StreetsOfNewCapenna,
+    // Its own activation feeds its own trigger: the sacrifice pays for
+    // menace and leaves a counter behind at the same time.
+    CardRules::new_creature(mana_cost!("{B}{R}"), &["Devil", "Warrior"], 2, 2).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever you sacrifice another creature, put a +1/+1 counter on this creature.",
+            TriggerEventDef::Sacrificed {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                player: PlayerRelation::You,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated(
+            "{B}{R}, Sacrifice another creature: This creature gains menace until end of turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{B}{R}")),
+                AbilityCostDef::SacrificePermanent {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                    ]),
+                    controller: PlayerRelation::You,
+                },
+            ],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::add_ability(&abilities::menace()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 // SNC 250 — Jetmir's Garden
