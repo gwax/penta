@@ -3,8 +3,8 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType,
-    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ZoneKind, abilities,
+    AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -51,13 +51,23 @@ pub(in crate::card::sets) static YOU_HEAR_SOMETHING_ON_WATCH: CardRecord = CardR
 );
 
 // AFR 198 — Owlbear
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static OWLBEAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("12b19309-a7f6-44da-b856-d12da11156e8"),
     "Owlbear",
-    crate::card::CardArt::new("30e8a00f-8131-470d-8072-4c23b812281a", "Ilse Gort"),
-    crate::card::CardSet::AdventuresInTheForgottenRealms,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("30e8a00f-8131-470d-8072-4c23b812281a", "Ilse Gort"),
+    CardSet::AdventuresInTheForgottenRealms,
+    // "Keen Senses" is an ability word: flavour on the front of the clause
+    // that changes nothing about how it works.
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Bird", "Bear"], 4, 4).with_abilities(&[
+        abilities::trample(),
+        abilities::enters_trigger(
+            "Keen Senses — When this creature enters, draw a card.",
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =

@@ -4,8 +4,8 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AlternativeCastKindDef, CardArt, CardRules, CardSet, CostQuantityDef, EffectDef,
-    EffectRecipientDef, LikelihoodDef, ManaColor, PlayerRelation, SpellAdditionalCostDef,
-    TriggerEventDef, TurnStepDef, ValueDef, abilities,
+    EffectRecipientDef, LikelihoodDef, ManaColor, ObjectPredicateDef, PlayerRelation,
+    SpellAdditionalCostDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -67,13 +67,37 @@ pub(in crate::card::sets) static BEETLEBACK_CHIEF: CardRecord = CardRecord::new(
 );
 
 // EMA 139 — Mogg War Marshal
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOGG_WAR_MARSHAL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8b9e0bdb-b615-447a-b80d-d7244c25c56e"),
     "Mogg War Marshal",
-    crate::card::CardArt::new("deed0a5a-6662-460c-bd78-e3d95e8bc83e", "Jesper Ejsing"),
-    crate::card::CardSet::EternalMasters,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("deed0a5a-6662-460c-bd78-e3d95e8bc83e", "Jesper Ejsing"),
+    CardSet::EternalMasters,
+    // Letting the echo go unpaid is the normal line: three bodies for two
+    // mana, and the last one arrives because the Marshal died.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Warrior"], 1, 1).with_abilities(&[
+        abilities::echo(
+            "Echo {1}{R} (At the beginning of your upkeep, if this came under your control since the beginning of your last upkeep, sacrifice it unless you pay its echo cost.)",
+            mana_cost!("{1}{R}"),
+        ),
+        AbilityDef::triggered(
+            "When this creature enters or dies, create a 1/1 red Goblin creature token.",
+            // One printed sentence with two ways in, so it is one ability
+            // watching both zone changes rather than two abilities.
+            TriggerEventDef::AnyOf(&[
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    Some(ZoneKind::Battlefield),
+                    Some(ZoneKind::Graveyard),
+                ),
+            ]),
+            EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1),
+        ),
+    ]),
 );
 
 // EMA 191 — Werebear

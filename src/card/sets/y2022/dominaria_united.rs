@@ -168,13 +168,23 @@ pub(in crate::card::sets) static SHEOLDRED_THE_APOCALYPSE: CardRecord =
     );
 
 // DMU 137 — Lightning Strike
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIGHTNING_STRIKE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("bbb03f2e-2b92-4aa1-afae-301ed5d151d3"),
     "Lightning Strike",
-    crate::card::CardArt::new("7d541125-bfb8-4f88-8bf3-ad7b6af7ad1d", "Marta Nael"),
-    crate::card::CardSet::DominariaUnited,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("7d541125-bfb8-4f88-8bf3-ad7b6af7ad1d", "Marta Nael"),
+    CardSet::DominariaUnited,
+    // Lightning Bolt at two mana, which is the rate every later red burn
+    // spell is measured against.
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Lightning Strike deals 3 damage to any target.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::AnyTarget,
+        )],
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(3),
+        },
+    )),
 );
 
 // DMU 183 — Tear Asunder

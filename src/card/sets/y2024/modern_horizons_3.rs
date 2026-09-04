@@ -1953,13 +1953,26 @@ pub(in crate::card::sets) static ANNOYED_ALTISAUR: CardRecord = CardRecord::new(
 );
 
 // MH3 286 — Priest of Titania
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PRIEST_OF_TITANIA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("965c33c3-0c68-4516-b8b0-5a0552ed44b6"),
     "Priest of Titania",
-    crate::card::CardArt::new("eb11921b-1b28-483f-a707-4de21a6daa31", "Rebecca Guay"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("eb11921b-1b28-483f-a707-4de21a6daa31", "Rebecca Guay"),
+    CardSet::ModernHorizons3,
+    // Every Elf on the battlefield, not only yours, and the Priest is an Elf
+    // herself -- so she taps for at least one the turn she can.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Druid"], 1, 1).with_ability(
+        AbilityDef::activated_mana(
+            "{T}: Add {G} for each Elf on the battlefield.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddManaEqualTo {
+                color: ManaColor::Green,
+                amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::new(
+                    ObjectPredicateDef::Subtype("Elf"),
+                    &[ZoneKind::Battlefield],
+                )),
+            },
+        ),
+    ),
 );
 
 // MH3 351 — Arena of Glory
