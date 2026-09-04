@@ -63,23 +63,40 @@ pub(in crate::card::sets) static PALACE_JAILER: CardRecord = CardRecord::new_wit
 );
 
 // CN2 19 — Palace Sentinels
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PALACE_SENTINELS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3e002a99-eb2b-4cc3-992e-f3ee42245dba"),
     "Palace Sentinels",
-    crate::card::CardArt::new("3e002a99-eb2b-4cc3-992e-f3ee42245dba", "Aaron Miller"),
-    crate::card::CardSet::ConspiracyTakeTheCrown,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("3e002a99-eb2b-4cc3-992e-f3ee42245dba", "Aaron Miller"),
+    CardSet::ConspiracyTakeTheCrown,
+    // A 2/4 wall attached to a card every turn, which is why the crown is
+    // worth four mana on a body that does nothing else.
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Human", "Soldier"], 2, 4).with_ability(
+        abilities::enters_trigger(
+            "When this creature enters, you become the monarch.",
+            EffectDef::BecomeMonarch {
+                player: PlayerRefDef::EffectController,
+            },
+        ),
+    ),
 );
 
 // CN2 48 — Thorn of the Black Rose
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THORN_OF_THE_BLACK_ROSE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("2e4829c6-50d4-4602-af78-59249486a97c"),
     "Thorn of the Black Rose",
-    crate::card::CardArt::new("2e4829c6-50d4-4602-af78-59249486a97c", "David Gaillet"),
-    crate::card::CardSet::ConspiracyTakeTheCrown,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("2e4829c6-50d4-4602-af78-59249486a97c", "David Gaillet"),
+    CardSet::ConspiracyTakeTheCrown,
+    // Deathtouch is what defends the crown: nothing profitably attacks
+    // through it, which is the whole reason the body is worth four mana.
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Human", "Assassin"], 1, 3).with_abilities(&[
+        abilities::deathtouch(),
+        abilities::enters_trigger(
+            "When this creature enters, you become the monarch.",
+            EffectDef::BecomeMonarch {
+                player: PlayerRefDef::EffectController,
+            },
+        ),
+    ]),
 );
 
 // CN2 64 — Entourage of Trest
