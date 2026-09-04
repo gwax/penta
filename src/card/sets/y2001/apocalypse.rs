@@ -119,13 +119,29 @@ pub(in crate::card::sets) static DEGAVOLVER: CardRecord = CardRecord::new(
 );
 
 // APC 7 — Diversionary Tactics
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DIVERSIONARY_TACTICS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1e5061e4-a76d-4a7c-b196-96c81f94e0e5"),
     "Diversionary Tactics",
-    crate::card::CardArt::new("1e5061e4-a76d-4a7c-b196-96c81f94e0e5", "Jerry Tiritilli"),
-    crate::card::CardSet::Apocalypse,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("1e5061e4-a76d-4a7c-b196-96c81f94e0e5", "Jerry Tiritilli"),
+    CardSet::Apocalypse,
+    // Two of your creatures to tap one of theirs, and the tapped pair are
+    // not attacking either -- so it defends a board it has already emptied.
+    CardRules::new_enchantment(mana_cost!("{3}{W}")).with_ability(
+        AbilityDef::activated_with_targets(
+            "Tap two untapped creatures you control: Tap target creature.",
+            &[AbilityCostDef::TapPermanents {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                controller: PlayerRelation::You,
+                count: 2,
+            }],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Tap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ),
 );
 
 // APC 8 — Divine Light

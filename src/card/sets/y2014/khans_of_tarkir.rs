@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardSupertype, EffectDef, EffectRecipientDef,
-    PlayerRelation, ReplacementEffectDef, ReplacementEventDef, TurnKindDef, ValueDef, ZoneKind,
-    ZoneMoveCauseDef, abilities,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, CardSupertype,
+    CardType, EffectDef, EffectRecipientDef, ManaColor, PlayerRelation, ReplacementEffectDef,
+    ReplacementEventDef, TurnKindDef, ValueDef, ZoneKind, ZoneMoveCauseDef, abilities,
 };
 use crate::mana_cost;
 
@@ -133,13 +133,31 @@ pub(in crate::card::sets) static SCOURED_BARRENS: CardRecord = CardRecord::new(
 );
 
 // KTK 246 — Tranquil Cove
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRANQUIL_COVE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0f840bd2-c4f5-4ac4-918c-91b4feeb8783"),
     "Tranquil Cove",
-    crate::card::CardArt::new("0f840bd2-c4f5-4ac4-918c-91b4feeb8783", "John Avon"),
-    crate::card::CardSet::KhansOfTarkir,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("0f840bd2-c4f5-4ac4-918c-91b4feeb8783", "John Avon"),
+    CardSet::KhansOfTarkir,
+    // A gain land: the tempo is the whole cost, and the life is what makes
+    // the tapped land bearable in a slow deck.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::enters_trigger(
+            "When this land enters, you gain 1 life.",
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {W} or {U}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::White,
+                ManaColor::Blue,
+            ])),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
