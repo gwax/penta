@@ -47,5 +47,7 @@ pub(super) fn stack_payload_matches(
     };
     payload.text == Some(candidate.text)
         && payload.condition == condition
-        && payload.resolver == Game::ability_resolver(payload.origin, candidate)
+        && payload
+            .resolver
+            .matches_program(Game::ability_resolver(payload.origin, candidate))
 }

@@ -28,9 +28,13 @@ pub(super) fn installed_trigger_snapshot(
     ) {
         return None;
     }
-    let StackAbilityResolver::Declarative(resolver) = capture.resolver else {
-        return None;
-    };
+    // Declarative or prepared: the prepared engine compiles some programs and
+    // not others, and an installed trigger records the form it was built with
+    // while the locator below re-derives one from the catalog. Comparing the
+    // forms rather than the programs they carry made a delayed trigger
+    // unaddressable -- Portent's "draw a card at the beginning of the next
+    // turn's upkeep" is stored declaratively and re-derives as prepared.
+    let resolver = capture.resolver.declarative_reference()?;
     if resolver.effect != capture.effect {
         return None;
     }
@@ -42,11 +46,9 @@ pub(super) fn installed_trigger_snapshot(
             && ability.text == capture.text
             && ability.declarative_effect() == Some(capture.effect)
             && definition.condition == capture.condition
-            && matches!(
-                Game::ability_resolver(capture.source.ability, ability),
-                StackAbilityResolver::Declarative(candidate)
-                    if candidate.effect == capture.effect
-            )
+            && Game::ability_resolver(capture.source.ability, ability)
+                .declarative_reference()
+                .is_some_and(|candidate| candidate.effect == capture.effect)
     })?;
     Some(InstalledTriggerSnapshot {
         id: trigger.id,

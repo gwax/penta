@@ -4,6 +4,80 @@
 // file next door covers pending decisions, and this covers what a rebuilt
 // game carries alongside them. Included textually into the same test module.
 
+/// A delayed trigger installed by a spell is addressable in the catalog.
+///
+/// Portent's second sentence is a triggered ability nested inside its own
+/// effect, and `install_trigger_from` records the resolver it was built with
+/// while the checkpoint's locator re-derives one from the printed card. Those
+/// two disagreed once the prepared engine started compiling simple programs:
+/// one said declarative, the other prepared, and the same ability failed to
+/// match itself. The nightly broad audit was stopping here.
+#[test]
+fn a_delayed_trigger_installed_by_a_spell_reconstructs() {
+    let mut game = crate::game::tests::ready_game();
+    let spell = crate::game::tests::card(88_100, crate::card::cards::PORTENT, PlayerId::One);
+    let spell_id = spell.id;
+    game.players[PlayerId::One.index()].hand.push(spell);
+    game.players[PlayerId::One.index()].mana_pool.blue = 1;
+    game.priority = PlayerId::One;
+    game.apply(
+        PlayerId::One,
+        crate::game::tests::cast_action(
+            spell_id,
+            vec![Target::Player(PlayerId::One)],
+            Vec::new(),
+            0,
+        ),
+    )
+    .expect("Portent is cast");
+    crate::game::tests::pass_priority_pair(&mut game);
+
+    // Answer the look-at-three arrangement so the spell finishes resolving and
+    // leaves its delayed trigger behind.
+    let decision = game
+        .observe(PlayerId::One)
+        .decision
+        .expect("Portent asks for an arrangement");
+    let options = decision.options.iter().map(|option| option.id).collect();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: decision.id,
+            options,
+        },
+    )
+    .expect("the arrangement is accepted");
+    while game.observe(PlayerId::One).decision.is_some() {
+        let decision = game.observe(PlayerId::One).decision.expect("a decision");
+        game.apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options: decision
+                    .options
+                    .iter()
+                    .take(decision.minimum.max(1))
+                    .map(|option| option.id)
+                    .collect(),
+            },
+        )
+        .expect("Portent's remaining choices are answerable");
+    }
+
+    assert_eq!(
+        game.installed_triggers.len(),
+        1,
+        "Portent leaves its draw behind as an installed trigger",
+    );
+    let (checkpoint, rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 6_101);
+    assert_eq!(checkpoint["checkpoint"]["hasDeferredState"], false);
+    assert_eq!(rebuilt.installed_triggers.len(), 1);
+    assert_eq!(
+        rebuilt.installed_triggers[0].event,
+        game.installed_triggers[0].event,
+    );
+}
+
 #[test]
 fn a_hand_search_checkpoint_preserves_duplicate_card_object_ids() {
     let catalog = crate::poc::catalog().expect("catalog builds");

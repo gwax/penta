@@ -98,6 +98,42 @@ enum StackAbilityResolver {
 }
 
 impl StackAbilityResolver {
+    /// The scoped effect a declarative resolver runs, whether or not the
+    /// prepared engine has compiled it.
+    ///
+    /// `Prepared` is that same program in executable form: its `reference` is
+    /// the `ScopedEffect` a `Declarative` resolver would carry, and the
+    /// compiled body is a cache of it. Anything addressing the catalog rather
+    /// than running the ability wants the reference and does not care which
+    /// form the engine chose, which can differ between two descriptions of
+    /// one ability -- an installed trigger records the resolver it was built
+    /// with, while a locator re-derives one from the printed definition.
+    pub(super) const fn declarative_reference(self) -> Option<ScopedEffect> {
+        match self {
+            Self::Declarative(scoped)
+            | Self::Prepared {
+                reference: scoped, ..
+            } => Some(scoped),
+            Self::DeclarativeIgnoringTargetFizzle(_) | Self::CastOffer(_) => None,
+        }
+    }
+
+    /// Whether two resolvers describe the same program.
+    ///
+    /// Declarative and prepared are one program in two forms, so comparing
+    /// the forms rejects a match that is really there. The compiled body is
+    /// left out of the comparison deliberately: it is derived from the
+    /// reference, so equal references already mean equal programs. Resolvers
+    /// that run no declarative program of their own -- a fizzle-ignoring
+    /// trigger, a linked cast offer -- still have to match exactly.
+    pub(super) fn matches_program(self, other: Self) -> bool {
+        match (self.declarative_reference(), other.declarative_reference()) {
+            (Some(left), Some(right)) => left == right,
+            (None, None) => self == other,
+            _ => false,
+        }
+    }
+
     fn linked_cast_offer(ability: &AbilityDef) -> Option<Self> {
         match ability.definition {
             DeclarativeAbilityDef::AlternativeCast(alternative)
