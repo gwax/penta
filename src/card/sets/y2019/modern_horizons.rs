@@ -696,13 +696,27 @@ pub(in crate::card::sets) static KROSAN_TUSKER: CardRecord = CardRecord::new(
 );
 
 // MH1 171 — Mother Bear
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MOTHER_BEAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("efae4d84-8134-461a-a352-a5bdff7259a7"),
     "Mother Bear",
-    crate::card::CardArt::new("efae4d84-8134-461a-a352-a5bdff7259a7", "Winona Nelson"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("efae4d84-8134-461a-a352-a5bdff7259a7", "Winona Nelson"),
+    CardSet::ModernHorizons1,
+    // Two mana now and five later out of the same card, which is why the
+    // graveyard half is worth holding rather than a consolation prize.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Bear"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "{3}{G}{G}, Exile this card from your graveyard: Create two 2/2 green Bear creature tokens. Activate only as a sorcery.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{3}{G}{G}")),
+                AbilityCostDef::ExileSource,
+            ],
+            EffectDef::create_creature_token(&["Bear"], &[ManaColor::Green], 2, 2).with_amount(2),
+        )
+        // Activated from the graveyard rather than the battlefield, the same
+        // way scavenge is, and at sorcery speed.
+        .with_source_zones(&[ZoneKind::Graveyard])
+        .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+    ),
 );
 
 // MH1 187 — Trumpeting Herd

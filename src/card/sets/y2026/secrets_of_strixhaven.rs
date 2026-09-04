@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::CostQuantityDef;
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRelation, SpellAdditionalCostDef, ValueDef, ZoneKind,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, SpellAdditionalCostDef,
+    ValueDef, ZoneKind, abilities,
 };
 use crate::mana_cost;
 
@@ -123,16 +124,36 @@ pub(in crate::card::sets) static SPECTACLE_SUMMIT: CardRecord = CardRecord::new(
 );
 
 // SOS 266 — Titan's Grave
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TITAN_S_GRAVE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a9ab41c8-3ee2-4676-9b8b-20c34d9f5f21"),
     "Titan's Grave",
-    crate::card::CardArt::new(
+    CardArt::new(
         "a9ab41c8-3ee2-4676-9b8b-20c34d9f5f21",
         "Lorenzo Lanfranconi",
     ),
-    crate::card::CardSet::SecretsOfStrixhaven,
-    crate::card::CardRules::unsupported(),
+    CardSet::SecretsOfStrixhaven,
+    // A tapped dual whose late-game half costs more than the land itself,
+    // which is the point: it is a land first and a mana sink only when the
+    // draw step has nothing better.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        AbilityDef::activated_mana(
+            "{T}: Add {B} or {G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::Black,
+                ManaColor::Green,
+            ])),
+        ),
+        AbilityDef::activated(
+            "{2}{B}{G}, {T}: Surveil 1.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}{B}{G}")),
+                AbilityCostDef::TapSource,
+            ],
+            abilities::surveil(ValueDef::Constant(1)),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
