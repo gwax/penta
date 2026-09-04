@@ -67,13 +67,15 @@ pub(in crate::card::sets) static HORDELING_OUTBURST: CardRecord = CardRecord::ne
 );
 
 // KTK 118 — Monastery Swiftspear
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MONASTERY_SWIFTSPEAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b81c6c8b-a9cf-4866-89ba-7f8ad077b836"),
     "Monastery Swiftspear",
-    crate::card::CardArt::new("b81c6c8b-a9cf-4866-89ba-7f8ad077b836", "Steve Argyle"),
-    crate::card::CardSet::KhansOfTarkir,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("b81c6c8b-a9cf-4866-89ba-7f8ad077b836", "Steve Argyle"),
+    CardSet::KhansOfTarkir,
+    // Haste is what makes prowess pay on the turn it lands rather than the
+    // turn after, which is the whole card.
+    CardRules::new_creature(mana_cost!("{R}"), &["Human", "Monk"], 1, 2)
+        .with_abilities(&[abilities::haste(), abilities::prowess()]),
 );
 
 // KTK 137 — Hooting Mandrills

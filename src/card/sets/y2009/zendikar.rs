@@ -4,12 +4,13 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
     AdditionalCostValueDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef,
-    BasicLandType, CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, PlayerRelation,
+    BasicLandType, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
+    ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
     ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef,
     ZoneKind, ZonePlacement, abilities,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
 
 /// The five allied fetchlands of Onslaught got an enemy-coloured cycle here,
@@ -33,13 +34,37 @@ pub(in crate::card::sets) static JOURNEY_TO_NOWHERE: CardRecord = CardRecord::ne
 );
 
 // ZEN 23 — Kor Skyfisher
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KOR_SKYFISHER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("bb2e9465-f5ba-4c7b-9f03-d40dc8394acd"),
     "Kor Skyfisher",
-    crate::card::CardArt::new("bb2e9465-f5ba-4c7b-9f03-d40dc8394acd", "Dan Murayama Scott"),
-    crate::card::CardSet::Zendikar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("bb2e9465-f5ba-4c7b-9f03-d40dc8394acd", "Dan Murayama Scott"),
+    CardSet::Zendikar,
+    // The bounce is a cost rather than a bonus, and with nothing else out it
+    // has to pick itself up -- which is what pairs it with enters triggers
+    // worth replaying rather than with an empty board.
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Kor", "Soldier"], 2, 3).with_abilities(&[
+        abilities::flying(),
+        abilities::enters_trigger(
+            "When this creature enters, return a permanent you control to its owner's hand.",
+            // Chosen as this resolves rather than targeted, the same way the
+            // karoo lands pick the land they give back.
+            EffectDef::Choose(ChooseDef {
+                binding: ObjectChoiceBindingDef::Objects(ParentBinding),
+                unchosen: None,
+                chooser: PlayerRefDef::EffectController,
+                candidates: ObjectSetDef::PermanentsControlledBy(PlayerRefDef::EffectController),
+                exclude: None,
+                minimum: 1,
+                maximum: 1,
+                visibility: ChoiceVisibilityDef::Public,
+                then: &EffectDef::MoveToZone {
+                    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
+                    zone: ZoneKind::Hand,
+                    placement: ZonePlacement::Top,
+                },
+            }),
+        ),
+    ]),
 );
 
 // ZEN 48 — Into the Roil

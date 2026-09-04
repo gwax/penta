@@ -3,10 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef,
-    FreePlayDef, FreePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectSetDef, PlayerRefDef,
-    PlayerRelation, TriggerConditionDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    AlternativeCastKindDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef,
+    EffectRecipientDef, FreePlayDef, FreePlayDurationDef, ManaColor, ObjectPredicateDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, TriggerConditionDef, ValueComparisonDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -74,13 +74,33 @@ pub(in crate::card::sets) static CRYPTIC_COMMAND: CardRecord = CardRecord::new_w
 );
 
 // LRW 76 — Mulldrifter
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MULLDRIFTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a97cfefa-ade7-49f6-b2aa-1118b9db4935"),
     "Mulldrifter",
-    crate::card::CardArt::new("a97cfefa-ade7-49f6-b2aa-1118b9db4935", "Eric Fortune"),
-    crate::card::CardSet::Lorwyn,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a97cfefa-ade7-49f6-b2aa-1118b9db4935", "Eric Fortune"),
+    CardSet::Lorwyn,
+    // Five mana for a flier and two cards, or three mana for just the two
+    // cards: the evoke half is a Divination that leaves a body behind only
+    // if you paid full price.
+    CardRules::new_creature(mana_cost!("{4}{U}"), &["Elemental"], 2, 2).with_abilities(&[
+        abilities::flying(),
+        abilities::enters_trigger(
+            "When this creature enters, draw two cards.",
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{2}{U}"),
+            AlternativeCastKindDef::AlternativeCost,
+            Some("Evoke {2}{U} (You may cast this spell for its evoke cost. If you do, it's sacrificed when it enters.)"),
+            EffectDef::None,
+        ),
+        // The draw still happens: the sacrifice is its own trigger and goes
+        // on the stack alongside the arrival, not instead of it.
+        abilities::evoke_sacrifice(),
+    ]),
 );
 
 // LRW 79 — Ponder
