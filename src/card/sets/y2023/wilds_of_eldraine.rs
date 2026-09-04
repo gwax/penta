@@ -4,9 +4,9 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::PlayOptionDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityOperationDef, AbilityTargetDef, AbilityTargetPredicate,
-    AlternateSpellKind, AppliedEffectDef, AppliedRuleDef, CardArt, CardComposition,
-    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
-    CharacteristicOperationDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor,
+    AlternateSpellKind, AppliedEffectDef, AppliedRuleDef, BlockRestrictionDef, CardArt,
+    CardComposition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype,
+    CardType, CharacteristicOperationDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor,
     ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, PlayerSetDef,
     ResolvedEffectDurationDef, SpellForm, SpellResolutionDestinationDef, TokenCharacteristics,
     TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
@@ -35,13 +35,46 @@ pub(in crate::card::sets) static CANDY_GRAPPLE: CardRecord = CardRecord::new(
 );
 
 // WOE 116 — Voracious Vermin
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VORACIOUS_VERMIN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8059be65-3c73-49bb-a3b6-c346ce2f9fa4"),
     "Voracious Vermin",
-    crate::card::CardArt::new("8059be65-3c73-49bb-a3b6-c346ce2f9fa4", "Milivoj Ćeran"),
-    crate::card::CardSet::WildsOfEldraine,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("8059be65-3c73-49bb-a3b6-c346ce2f9fa4", "Milivoj Ćeran"),
+    CardSet::WildsOfEldraine,
+    // The Rat it brings is also the first thing to feed it: a sacrifice
+    // outlet turns the token into a counter.
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Rat"], 2, 1).with_abilities(&[
+        abilities::enters_trigger(
+            "When this creature enters, create a 1/1 black Rat creature token with \"This token can't block.\"",
+            EffectDef::create_creature_token(&["Rat"], &[ManaColor::Black], 1, 1).with_abilities(
+                &[AbilityDef::static_ability(
+                    "This token can't block.",
+                    EffectDef::StaticApply {
+                        recipient: EffectRecipientDef::Source,
+                        effect: AppliedEffectDef::Rule(AppliedRuleDef::BlockRestriction(
+                            BlockRestrictionDef::CANNOT_BLOCK,
+                        )),
+                    },
+                )],
+            ),
+        ),
+        AbilityDef::triggered(
+            "Whenever another creature you control dies, put a +1/+1 counter on this creature.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                Some(ZoneKind::Battlefield),
+                Some(ZoneKind::Graveyard),
+            ),
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // WOE 131 — Gnawing Crescendo
