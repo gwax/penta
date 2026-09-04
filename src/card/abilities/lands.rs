@@ -225,3 +225,25 @@ pub const fn campus_scry() -> AbilityDef {
         scry(ValueDef::Constant(1)),
     )
 }
+
+/// The Desert cycle's shared arrival: "When this land enters, it deals 1
+/// damage to target opponent."
+///
+/// Ten lands print it word for word, differing only in the two colours their
+/// mana ability adds -- so the colours stay on each card and this, which
+/// names none of them, does not.
+#[must_use]
+pub const fn desert_entry_ping() -> AbilityDef {
+    enters_trigger_with_targets(
+        "When this land enters, it deals 1 damage to target opponent.",
+        &const {
+            [AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+                PlayerRelation::Opponent,
+            ))]
+        },
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            amount: ValueDef::Constant(1),
+        },
+    )
+}

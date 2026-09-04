@@ -489,13 +489,24 @@ pub(in crate::card::sets) static LAVASPUR_BOOTS: CardRecord = CardRecord::new_wi
 );
 
 // OTJ 251 — Abraded Bluffs
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ABRADED_BLUFFS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("19e96521-b4ce-4a36-a887-200e05ccc804"),
     "Abraded Bluffs",
-    crate::card::CardArt::new("19e96521-b4ce-4a36-a887-200e05ccc804", "Piotr Dura"),
-    crate::card::CardSet::OutlawsOfThunderJunction,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("19e96521-b4ce-4a36-a887-200e05ccc804", "Piotr Dura"),
+    CardSet::OutlawsOfThunderJunction,
+    // The red-white Desert; only the two colours below are its own.
+    CardRules::new_land(&["Desert"]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::desert_entry_ping(),
+        AbilityDef::activated_mana(
+            "{T}: Add {R} or {W}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::Red,
+                ManaColor::White,
+            ])),
+        ),
+    ]),
 );
 
 // OTJ 253 — Bristling Backwoods
@@ -508,16 +519,7 @@ pub(in crate::card::sets) static BRISTLING_BACKWOODS: CardRecord = CardRecord::n
     // for whatever cares about that.
     CardRules::new_land(&["Desert"]).with_abilities(&[
         abilities::enters_tapped(CardType::Land),
-        abilities::enters_trigger_with_targets(
-            "When this land enters, it deals 1 damage to target opponent.",
-            &[AbilityTargetDef::exactly_one(
-                AbilityTargetPredicate::Player(PlayerRelation::Opponent),
-            )],
-            EffectDef::DealDamage {
-                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                amount: ValueDef::Constant(1),
-            },
-        ),
+        abilities::desert_entry_ping(),
         AbilityDef::activated_mana(
             "{T}: Add {R} or {G}.",
             &[AbilityCostDef::TapSource],
