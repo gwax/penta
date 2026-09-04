@@ -187,7 +187,7 @@ use continuous_state::{
     ResolvedAttackRestriction, ResolvedContinuousEffect, ResolvedContinuousEffectKind,
     ResolvedOngoingEffect, ResolvedPlayPermission, ResolvedPlayRestriction,
     ResolvedPlayerProtection, ResolvedPlayerRule, ResolvedPowerToughnessOperation,
-    StaticAppliedEffect, StaticEffectTraversal,
+    StaticAffectedObject, StaticAppliedEffect, StaticEffectTraversal,
 };
 use decision_state::{
     ApplicableBeginTurnReplacement, CounteredSpellZone, DecisionContinuation,
