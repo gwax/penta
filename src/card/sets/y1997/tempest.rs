@@ -547,13 +547,27 @@ pub(in crate::card::sets) static BENTHIC_BEHEMOTH: CardRecord = CardRecord::new(
 );
 
 // TMP 55 — Capsize
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAPSIZE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("e538b359-d893-422d-9d60-5f3e8ee0fa9e"),
     "Capsize",
-    crate::card::CardArt::new("e538b359-d893-422d-9d60-5f3e8ee0fa9e", "Tom Wänerstrand"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("e538b359-d893-422d-9d60-5f3e8ee0fa9e", "Tom Wänerstrand"),
+    CardSet::Tempest,
+    // Six mana a turn to bounce anything forever: the buyback is the card,
+    // and the unbought half is only what you cast when tapped out.
+    CardRules::new_instant(mana_cost!("{1}{U}{U}")).with_abilities(&[
+        abilities::buyback(mana_cost!("{3}")),
+        AbilityDef::spell_with_targets(
+            "Return target permanent to its owner's hand.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::Any,
+            )],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+            },
+        ),
+    ]),
 );
 
 // TMP 56 — Chill

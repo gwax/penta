@@ -32,16 +32,28 @@ pub(in crate::card::sets) static RAISE_THE_ALARM: CardRecord = CardRecord::new(
 );
 
 // M20 54 — Cloudkin Seer
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CLOUDKIN_SEER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("e2111753-a930-403f-9d94-a86dfcb069da"),
     "Cloudkin Seer",
-    crate::card::CardArt::new(
+    CardArt::new(
         "e2111753-a930-403f-9d94-a86dfcb069da",
         "Anastasia Ovchinnikova",
     ),
-    crate::card::CardSet::Magic2020,
-    crate::card::CardRules::unsupported(),
+    CardSet::Magic2020,
+    // A flier that replaces itself, which is the rate every blue common
+    // three-drop is measured against.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Elemental", "Wizard"], 2, 1).with_abilities(
+        &[
+            abilities::flying(),
+            abilities::enters_trigger(
+                "When this creature enters, draw a card.",
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ],
+    ),
 );
 
 // M20 148 — Leyline of Combustion
