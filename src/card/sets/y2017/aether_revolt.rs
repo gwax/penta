@@ -2,12 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CounterKind, CreatedTokensDef, EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaColor,
-    ObjectPredicateDef, ObjectSetDef, PlayerRelation, ReplacementEffectDef, TokenCharacteristics,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities,
+    ControlDurationDef, CounterKind, CreatedTokensDef, EffectDef, EffectRecipientDef,
+    InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    ReplacementEffectDef, ResolvedEffectDurationDef, TokenCharacteristics, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
@@ -131,13 +131,39 @@ pub(in crate::card::sets) static KARI_ZEV_SKYSHIP_RAIDER: CardRecord = CardRecor
 );
 
 // AER 101 — Wrangle
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WRANGLE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5ea93a49-5a7c-4d15-8548-a57c9460e0f0"),
     "Wrangle",
-    crate::card::CardArt::new("5ea93a49-5a7c-4d15-8548-a57c9460e0f0", "Jason Rainville"),
-    crate::card::CardSet::AetherRevolt,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5ea93a49-5a7c-4d15-8548-a57c9460e0f0", "Jason Rainville"),
+    CardSet::AetherRevolt,
+    // A Threaten capped at power four, which is what keeps it from simply
+    // stealing the thing the opponent spent their turn on.
+    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Gain control of target creature with power 4 or less until end of turn. Untap that creature. It gains haste until end of turn.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                // "Power 4 or less" is the complement of "power 5 or
+                // greater", which is the only direction the predicate reads.
+                ObjectPredicateDef::Not(&ObjectPredicateDef::PowerAtLeast(5)),
+            ]),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::GainControl {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                duration: ControlDurationDef::UntilEndOfTurn,
+                controller: PlayerRefDef::EffectController,
+            },
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ]),
+    )),
 );
 
 // AER 151 — Foundry Assembler
