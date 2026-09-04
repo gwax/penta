@@ -468,13 +468,24 @@ pub(in crate::card::sets) static LOATHSOME_CURATOR: CardRecord = CardRecord::new
 );
 
 // MH2 95 — Nested Shambler
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NESTED_SHAMBLER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9851f290-f502-49f8-9b48-67f7966d4e34"),
     "Nested Shambler",
-    crate::card::CardArt::new("9851f290-f502-49f8-9b48-67f7966d4e34", "Nicholas Gregory"),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("9851f290-f502-49f8-9b48-67f7966d4e34", "Nicholas Gregory"),
+    CardSet::ModernHorizons2,
+    // Its own power is the payout, so pumping it before it dies is the
+    // whole deck the card asks for.
+    CardRules::new_creature(mana_cost!("{B}"), &["Zombie"], 1, 1).with_ability(
+        abilities::dies_trigger(
+            "When this creature dies, create X tapped 1/1 green Squirrel creature tokens, where X is this creature's power.",
+            // Last-known power: it is already in the graveyard by the time
+            // the trigger resolves, so a pump that resolved first still
+            // counts.
+            EffectDef::create_creature_token(&["Squirrel"], &[ManaColor::Green], 1, 1)
+                .with_count(ValueDef::SourcePower)
+                .entering_tapped(),
+        ),
+    ),
 );
 
 // MH2 107 — Vermin Gorger

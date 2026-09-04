@@ -424,13 +424,15 @@ pub(in crate::card::sets) static FIRST_SPHERE_GARGANTUA: CardRecord = CardRecord
 );
 
 // MH1 101 — Putrid Goblin
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PUTRID_GOBLIN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("333406d5-abcc-4629-a33b-395d0662ba1b"),
     "Putrid Goblin",
-    crate::card::CardArt::new("333406d5-abcc-4629-a33b-395d0662ba1b", "Winona Nelson"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("333406d5-abcc-4629-a33b-395d0662ba1b", "Winona Nelson"),
+    CardSet::ModernHorizons1,
+    // A two-drop that has to be killed twice, and the second body is a 1/1 --
+    // which is what makes it a sacrifice engine rather than a beater.
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Zombie", "Goblin"], 2, 2)
+        .with_ability(abilities::persist()),
 );
 
 // MH1 120 — Bogardan Dragonheart
