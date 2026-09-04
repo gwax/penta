@@ -3,22 +3,45 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind, DrawEventMatcherDef,
-    EffectDef, EffectRecipientDef, ExiledCastPermissionDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, ObjectSetDef, PlayerRelation, PlayerSetDef, TokenCountersDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    BasicLandType, CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind,
+    DrawEventMatcherDef, EffectDef, EffectRecipientDef, ExiledCastPermissionDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, PlayerSetDef,
+    TokenCountersDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
 
 // MOM 3 — Alabaster Host Intercessor
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ALABASTER_HOST_INTERCESSOR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("165357cc-ec74-490f-aec3-7048bb43c8f9"),
     "Alabaster Host Intercessor",
-    crate::card::CardArt::new("165357cc-ec74-490f-aec3-7048bb43c8f9", "Konstantin Porubov"),
-    crate::card::CardSet::MarchOfTheMachine,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("165357cc-ec74-490f-aec3-7048bb43c8f9", "Konstantin Porubov"),
+    CardSet::MarchOfTheMachine,
+    // Six mana for removal on a body, or two for a land: the cycling half is
+    // what keeps it from being a dead card in the early game.
+    CardRules::new_creature(mana_cost!("{5}{W}"), &["Phyrexian", "Samurai"], 3, 4).with_abilities(
+        &[
+            abilities::enters_trigger_with_targets(
+                "When this creature enters, exile target creature an opponent controls until this creature leaves the battlefield.",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+                    ]),
+                )],
+                // The modern one-clause "until" wording, so the return is
+                // installed by this same resolution.
+                abilities::exile_until_source_leaves(EffectRecipientDef::Target(
+                    TargetIndex::PRIMARY,
+                )),
+            ),
+            abilities::typecycling(
+                "Plainscycling {2} ({2}, Discard this card: Search your library for a Plains card, reveal it, put it into your hand, then shuffle.)",
+                mana_cost!("{2}"),
+                ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
+            ),
+        ],
+    ),
 );
 
 // MOM 40 — Sunfall
