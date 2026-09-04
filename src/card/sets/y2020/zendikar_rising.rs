@@ -3,21 +3,66 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AlternativeCastKindDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
-    ControlDurationDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, TokenStatsDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
+    AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    ComparisonDef, ControlDurationDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, TokenStatsDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities,
 };
 use crate::{ParentBinding, TargetIndex, mana_cost};
 
 // ZNR 9 — Dauntless Unity
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DAUNTLESS_UNITY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b12a4d17-68e6-4133-99fd-e501e24e6c6b"),
     "Dauntless Unity",
-    crate::card::CardArt::new("b12a4d17-68e6-4133-99fd-e501e24e6c6b", "Josu Hernaiz"),
-    crate::card::CardSet::ZendikarRising,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("b12a4d17-68e6-4133-99fd-e501e24e6c6b", "Josu Hernaiz"),
+    CardSet::ZendikarRising,
+    // The kicked mode trades a point of toughness for a point of power, so
+    // it is the better combat trick and the worse blocking one.
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{2}{W}{W}"),
+            AlternativeCastKindDef::Kicked,
+            Some("Kicker {1}{W} (You may pay an additional {1}{W} as you cast this spell.)"),
+            EffectDef::None,
+        ),
+        AbilityDef::spell(
+            "Creatures you control get +1/+1 until end of turn. If this spell was kicked, those creatures get +2/+1 until end of turn instead.",
+            // "Instead" makes the two exclusive, so one condition picks a
+            // branch rather than the kicked mode stacking on the base one.
+            EffectDef::IfElseCondition {
+                condition: &TriggerConditionDef::SourceCastWith(AlternativeCastKindDef::Kicked),
+                then: &const {
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::matching_objects(
+                            ObjectPredicateDef::HasType(CardType::Creature),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::You,
+                        ),
+                        effect: AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(2),
+                            ValueDef::Constant(1),
+                        ),
+                        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                    }
+                },
+                otherwise: &const {
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::matching_objects(
+                            ObjectPredicateDef::HasType(CardType::Creature),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::You,
+                        ),
+                        effect: AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(1),
+                            ValueDef::Constant(1),
+                        ),
+                        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                    }
+                },
+            },
+        ),
+    ]),
 );
 
 // ZNR 39 — Skyclave Apparition
