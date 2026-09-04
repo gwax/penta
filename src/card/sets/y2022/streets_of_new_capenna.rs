@@ -3,8 +3,8 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef,
-    ObjectPredicateDef, PlayerRelation, QuantifierDef, TriggerConditionDef, TriggerEventDef,
-    abilities, tokens,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, PlayerSetDef, QuantifierDef,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
 };
 use crate::mana_cost;
 
@@ -87,13 +87,33 @@ pub(in crate::card::sets) static MAYHEM_PATROL: CardRecord = CardRecord::new(
 );
 
 // SNC 131 — Witty Roastmaster
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WITTY_ROASTMASTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("71d13f19-482b-4a2e-9692-b7d7caf2f9f5"),
     "Witty Roastmaster",
-    crate::card::CardArt::new("71d13f19-482b-4a2e-9692-b7d7caf2f9f5", "Joe Slucher"),
-    crate::card::CardSet::StreetsOfNewCapenna,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("71d13f19-482b-4a2e-9692-b7d7caf2f9f5", "Joe Slucher"),
+    CardSet::StreetsOfNewCapenna,
+    // "Alliance" is an ability word; the clause is an ordinary arrival
+    // trigger that fires for tokens as readily as for cast creatures.
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Devil", "Citizen"], 3, 2).with_ability(
+        AbilityDef::triggered(
+            "Alliance — Whenever another creature you control enters, this creature deals 1 damage to each opponent.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::players(PlayerSetDef::Related(
+                    PlayerRelation::Opponent,
+                )),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
 );
 
 // SNC 151 — Jewel Thief

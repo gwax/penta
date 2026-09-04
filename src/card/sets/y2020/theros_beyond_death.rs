@@ -4,11 +4,12 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::CostQuantityDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    AlternativeCastManaCostDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardChoiceSourceDef,
-    CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef,
-    EffectDef, EffectRecipientDef, ManaColor, MoveObjectsDef, ObjectChoiceBindingDef,
-    ObjectPredicateDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    RandomizeObjectOrderDef, SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef,
+    AlternativeCastManaCostDef, AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef,
+    CardArt, CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, ChoiceVisibilityDef,
+    ChooseDef, ComparisonDef, CounterKind, EffectDef, EffectRecipientDef, ManaColor,
+    MoveObjectsDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectSetDef, PlayerRefDef,
+    PlayerRelation, PlayerSetDef, RandomizeObjectOrderDef, ReplacementConditionDef,
+    ReplacementEffectDef, SpellAdditionalCostDef, TriggerConditionDef, TriggerEventDef,
     TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{Binding, ParentBinding, TargetIndex};
@@ -223,13 +224,28 @@ pub(in crate::card::sets) static UNDERWORLD_BREACH: CardRecord = CardRecord::new
 );
 
 // THB 163 — Underworld Rage-Hound
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNDERWORLD_RAGE_HOUND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a04eef82-fd53-41f4-9c7e-28b9ac039032"),
     "Underworld Rage-Hound",
-    crate::card::CardArt::new("a04eef82-fd53-41f4-9c7e-28b9ac039032", "Tyler Walpole"),
-    crate::card::CardSet::TherosBeyondDeath,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a04eef82-fd53-41f4-9c7e-28b9ac039032", "Tyler Walpole"),
+    CardSet::TherosBeyondDeath,
+    // It has to attack, so escaping it back is a commitment rather than a
+    // free extra body -- and the counter is what makes the second one hit
+    // harder than the first.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Elemental", "Dog"], 3, 1).with_abilities(&[
+        abilities::attacks_each_combat_if_able(),
+        escape(AlternativeCastManaCostDef::Fixed(mana_cost!("{3}{R}")), 3),
+        AbilityDef::as_enters_if(
+            "This creature escapes with a +1/+1 counter on it.",
+            ReplacementConditionDef::SourceCastWith(AlternativeCastKindDef::Escape),
+            ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::AddCounters {
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: 1,
+                },
+            ),
+        ),
+    ]),
 );
 
 // THB 229 — Uro, Titan of Nature's Wrath
