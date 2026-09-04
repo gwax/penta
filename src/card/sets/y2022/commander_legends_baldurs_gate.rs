@@ -4,8 +4,8 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind,
-    DeckConstructionDef, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CounterKind, DeckConstructionDef, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor,
     ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, SacrificedAmountDef,
     TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
     abilities,
@@ -372,13 +372,25 @@ pub(in crate::card::sets) static DELAYED_BLAST_FIREBALL: CardRecord =
     );
 
 // CLB 748 — Dauthi Horror
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DAUTHI_HORROR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c5a8bb3a-3a84-442f-8e31-8af2f04408ab"),
     "Dauthi Horror",
-    crate::card::CardArt::new("7c41afe6-7eed-4cf5-9bbb-ccc9f82cb4fa", "Jeff Laubenstein"),
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("7c41afe6-7eed-4cf5-9bbb-ccc9f82cb4fa", "Jeff Laubenstein"),
+    CardSet::CommanderLegendsBattleForBaldursGate,
+    // Shadow already stops white creatures blocking it, so the second
+    // clause only matters against a white creature that also has shadow.
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Dauthi", "Horror"], 2, 1).with_abilities(&[
+        abilities::shadow(),
+        AbilityDef::static_ability(
+            "This creature can't be blocked by white creatures.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::cannot_be_blocked_by(
+                    ObjectPredicateDef::Color(ManaColor::White),
+                )),
+            },
+        ),
+    ]),
 );
 
 // CLB 897 — Izzet Boilerworks
