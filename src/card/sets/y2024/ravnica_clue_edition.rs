@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype,
+    CardType, ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef,
     ExilePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
     PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef,
     TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, tokens,
@@ -199,13 +199,43 @@ pub(in crate::card::sets) static REPEAL: CardRecord = CardRecord::new(
 );
 
 // CLU 186 — Dimir Guildmage
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DIMIR_GUILDMAGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b9ab53af-749e-4559-85fa-f8d4181cf7da"),
     "Dimir Guildmage",
-    crate::card::CardArt::new("0b963389-6231-4095-a1f4-33457ce51ff2", "Adam Rex"),
-    crate::card::CardSet::RavnicaClueEdition,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("0b963389-6231-4095-a1f4-33457ce51ff2", "Adam Rex"),
+    CardSet::RavnicaClueEdition,
+    // Castable off either colour but only useful with both: the hybrid cost
+    // is what gets it into the deck, and the two halves are why it stays.
+    CardRules::new_creature(mana_cost!("{U/B}{U/B}"), &["Human", "Wizard"], 2, 2).with_abilities(
+        &[
+            AbilityDef::activated_with_targets(
+                "{3}{U}: Target player draws a card. Activate only as a sorcery.",
+                &[AbilityCostDef::Mana(mana_cost!("{3}{U}"))],
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Player(PlayerRelation::Any),
+                )],
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(1),
+                },
+            )
+            .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+            AbilityDef::activated_with_targets(
+                "{3}{B}: Target player discards a card. Activate only as a sorcery.",
+                &[AbilityCostDef::Mana(mana_cost!("{3}{B}"))],
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Player(PlayerRelation::Any),
+                )],
+                EffectDef::Discard {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(1),
+                    selection: DiscardSelectionDef::RecipientChooses,
+                    then: None,
+                },
+            )
+            .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+        ],
+    ),
 );
 
 // CLU 229 — Azorius Chancery
