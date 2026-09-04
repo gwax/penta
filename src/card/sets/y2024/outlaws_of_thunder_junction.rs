@@ -2,13 +2,14 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AggregateOperationDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ChangeStackTargetsDef,
-    CopyStackObjectDef, CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef, ManaColor,
-    MoveObjectsDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, ObjectValueAggregateDef,
-    ObjectValueDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef, RevealObjectsDef,
-    ScaledValueDef, StackTargetChangeDef, TokenStatsDef, TriggerConditionDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AggregateOperationDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    ChangeStackTargetsDef, CopyStackObjectDef, CounterKind, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, ManaColor, MoveObjectsDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectSetDef, ObjectValueAggregateDef, ObjectValueDef, PlayerRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, RevealObjectsDef, ScaledValueDef, StackTargetChangeDef,
+    TokenStatsDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
 use crate::{ParentBinding, TargetIndex, mana_cost};
 
@@ -498,13 +499,34 @@ pub(in crate::card::sets) static ABRADED_BLUFFS: CardRecord = CardRecord::new(
 );
 
 // OTJ 253 — Bristling Backwoods
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BRISTLING_BACKWOODS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d61dfeb7-7f6b-4601-8396-2cbb98165489"),
     "Bristling Backwoods",
-    crate::card::CardArt::new("d61dfeb7-7f6b-4601-8396-2cbb98165489", "Viko Menezes"),
-    crate::card::CardSet::OutlawsOfThunderJunction,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d61dfeb7-7f6b-4601-8396-2cbb98165489", "Viko Menezes"),
+    CardSet::OutlawsOfThunderJunction,
+    // A tapped dual that pays a point of damage for the tempo, and a Desert
+    // for whatever cares about that.
+    CardRules::new_land(&["Desert"]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::enters_trigger_with_targets(
+            "When this land enters, it deals 1 damage to target opponent.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {R} or {G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::Red,
+                ManaColor::Green,
+            ])),
+        ),
+    ]),
 );
 
 // OTJ 254 — Conduit Pylons
