@@ -5,14 +5,14 @@ use crate::card::PlayOptionDef;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AlternateSpellKind, AlternativeCastKindDef, AppliedEffectDef,
-    AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardComposition, CardEffectStatus,
-    CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType, CardTypeSet, ColorSet,
-    ComparisonDef, ControlDurationDef, CounterKind, CreatureTypeSetDef, EffectDef,
-    EffectRecipientDef, ExilePlayConditionDef, ExilePlayDurationDef, KeywordAbility, ManaColor,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    ReplacementEffectDef, ResolvedEffectDurationDef, SpellForm, SpellResolutionDestinationDef,
-    TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
-    abilities, tokens,
+    AppliedRuleDef, BasicLandType, BattlefieldEntryModificationDef, CardArt, CardComposition,
+    CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype, CardType,
+    CardTypeSet, ColorSet, ComparisonDef, ConditionDef, ControlDurationDef, CounterKind,
+    CreatureTypeSetDef, EffectDef, EffectRecipientDef, ExilePlayConditionDef, ExilePlayDurationDef,
+    KeywordAbility, ManaColor, ObjectCountConditionDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectSetDef, PlayerRefDef, PlayerRelation, ReplacementEffectDef, ResolvedEffectDurationDef,
+    SpellForm, SpellResolutionDestinationDef, TriggerConditionDef, TriggerEventDef,
+    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ParentBinding;
 use crate::{CardPartId, PlayOptionId, TargetIndex, mana_cost};
@@ -600,13 +600,69 @@ pub(in crate::card::sets) static MYSTIC_SANCTUARY: CardRecord = CardRecord::new(
 );
 
 // ELD 249 — Witch's Cottage
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WITCH_S_COTTAGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b87891cd-b457-4dff-8d18-a7eaf6748fc6"),
     "Witch's Cottage",
-    crate::card::CardArt::new("b87891cd-b457-4dff-8d18-a7eaf6748fc6", "Gabor Szikszai"),
-    crate::card::CardSet::ThroneOfEldraine,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("b87891cd-b457-4dff-8d18-a7eaf6748fc6", "Gabor Szikszai"),
+    CardSet::ThroneOfEldraine,
+    // A Swamp, so its mana ability is the subtype's rather than a printed
+    // clause -- which is why the card prints that line in parentheses.
+    CardRules::new_land(&["Swamp"]).with_abilities(&[
+        AbilityDef::as_enters(
+            "This land enters tapped unless you control three or more other Swamps.",
+            ReplacementEffectDef::Conditional {
+                condition: ConditionDef::ObjectCount(&const {
+                    ObjectCountConditionDef {
+                        query: ObjectQueryDef::matching(
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                            ]),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::You,
+                        ),
+                        comparison: ComparisonDef::GreaterOrEqual,
+                        amount: 3,
+                    }
+                }),
+                if_true: &[],
+                if_false: &const {
+                    [ReplacementEffectDef::ModifyBattlefieldEntry(
+                        BattlefieldEntryModificationDef::Tapped,
+                    )]
+                },
+            },
+        ),
+        AbilityDef::triggered_if_with_targets(
+            "When this land enters untapped, you may put target creature card from your graveyard on top of your library.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            // The same entry the replacement above just decided about: it
+            // fires only on the turns the Swamp count let it come in ready.
+            &TriggerConditionDef::SourceUntapped,
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: Some(PlayerRelation::You),
+                },
+            )],
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &const {
+                    EffectDef::MoveToZone {
+                        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        zone: ZoneKind::Library,
+                        placement: ZonePlacement::Top,
+                    }
+                },
+            },
+        ),
+    ]),
 );
 
 // ELD 342 — Emry, Lurker of the Loch

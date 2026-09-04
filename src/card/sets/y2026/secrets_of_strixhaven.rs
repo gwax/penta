@@ -71,16 +71,45 @@ pub(in crate::card::sets) static VICIOUS_RIVALRY: CardRecord = CardRecord::new(
 );
 
 // SOS 242 — Visionary's Dance
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VISIONARY_S_DANCE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("846a0e79-a530-429e-8f7f-4b87f1b0156e"),
     "Visionary's Dance",
-    crate::card::CardArt::new(
+    CardArt::new(
         "846a0e79-a530-429e-8f7f-4b87f1b0156e",
         "Josiah \"Jo\" Cameron",
     ),
-    crate::card::CardSet::SecretsOfStrixhaven,
-    crate::card::CardRules::unsupported(),
+    CardSet::SecretsOfStrixhaven,
+    // Seven mana is more than a limited deck usually reaches, which is what
+    // the discard half is for: the card is never stranded in hand.
+    CardRules::new_sorcery(mana_cost!("{5}{U}{R}")).with_abilities(&[
+        AbilityDef::spell(
+            "Create two 3/3 blue and red Elemental creature tokens with flying.",
+            EffectDef::create_creature_token(
+                &["Elemental"],
+                &[ManaColor::Blue, ManaColor::Red],
+                3,
+                3,
+            )
+            .with_abilities(&[abilities::flying()])
+            .with_amount(2),
+        ),
+        AbilityDef::activated(
+            "{2}, Discard this card: Look at the top two cards of your library. Put one of them into your hand and the other into your graveyard.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}")),
+                AbilityCostDef::DiscardSource,
+            ],
+            abilities::look_at_top_cards_choose_to_hand_rest_graveyard(
+                ValueDef::Constant(2),
+                ObjectPredicateDef::Any,
+                1,
+                1,
+            ),
+        )
+        // Activated from hand, which is the only place a card can be
+        // discarded from.
+        .with_source_zones(&[ZoneKind::Hand]),
+    ]),
 );
 
 // SOS 255 — Fields of Strife
