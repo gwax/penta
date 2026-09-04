@@ -489,13 +489,40 @@ pub(in crate::card::sets) static NESTED_SHAMBLER: CardRecord = CardRecord::new(
 );
 
 // MH2 107 — Vermin Gorger
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VERMIN_GORGER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d3166b10-5bc3-4db6-bb5b-81045d98e446"),
     "Vermin Gorger",
-    crate::card::CardArt::new("d3166b10-5bc3-4db6-bb5b-81045d98e446", "Tobias Kwan"),
-    crate::card::CardSet::ModernHorizons2,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d3166b10-5bc3-4db6-bb5b-81045d98e446", "Tobias Kwan"),
+    CardSet::ModernHorizons2,
+    // A four-point swing per creature fed to it, and the Nested Shambler
+    // two entries up is exactly the sort of thing it eats.
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Vampire"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "{T}, Sacrifice another creature: Each opponent loses 2 life and you gain 2 life.",
+            &[
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificePermanent {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                    ]),
+                    controller: PlayerRelation::You,
+                },
+            ],
+            EffectDef::Sequence(&[
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::players(PlayerSetDef::Related(
+                        PlayerRelation::Opponent,
+                    )),
+                    amount: ValueDef::Constant(2),
+                },
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(2),
+                },
+            ]),
+        ),
+    ),
 );
 
 // MH2 121 — Dragon's Rage Channeler

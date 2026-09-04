@@ -379,16 +379,37 @@ pub(in crate::card::sets) static DANCE_OF_THE_TUMBLEWEEDS: CardRecord = CardReco
 );
 
 // OTJ 188 — Voracious Varmint
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VORACIOUS_VARMINT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("99b74fa3-c1d7-4780-977d-f2d6663a529a"),
     "Voracious Varmint",
-    crate::card::CardArt::new(
+    CardArt::new(
         "99b74fa3-c1d7-4780-977d-f2d6663a529a",
         "Adrián Rodríguez Pérez",
     ),
-    crate::card::CardSet::OutlawsOfThunderJunction,
-    crate::card::CardRules::unsupported(),
+    CardSet::OutlawsOfThunderJunction,
+    // Maindeckable artifact and enchantment removal that is a body until it
+    // is needed, which is what vigilance is doing on a two-drop.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Varmint"], 2, 2).with_abilities(&[
+        abilities::vigilance(),
+        AbilityDef::activated_with_targets(
+            "{1}, Sacrifice this creature: Destroy target artifact or enchantment.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}")),
+                AbilityCostDef::SacrificeSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::HasType(CardType::Artifact),
+                    ObjectPredicateDef::HasType(CardType::Enchantment),
+                ]),
+            )],
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                can_regenerate: true,
+                then: None,
+            },
+        ),
+    ]),
 );
 
 // OTJ 224 — Pillage the Bog
