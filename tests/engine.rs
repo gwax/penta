@@ -608,7 +608,7 @@ fn drawing_from_an_empty_library_loses_the_game() {
 
 #[test]
 #[ignore = "slow simulation sweep"]
-fn all_builtin_deck_matchups_complete_under_deterministic_greedy_bots() {
+fn sweep_all_builtin_deck_matchups_complete_under_deterministic_greedy_bots() {
     let decks = [
         ("Goblins", penta::poc::goblins()),
         ("Sligh", penta::poc::sligh()),
@@ -656,7 +656,7 @@ fn all_builtin_deck_matchups_complete_under_deterministic_greedy_bots() {
 
 #[test]
 #[ignore = "slow simulation sweep"]
-fn every_registered_premodern_matchup_completes_under_deterministic_greedy_bots() {
+fn sweep_every_registered_premodern_matchup_completes_under_deterministic_greedy_bots() {
     // Read from the registry rather than named here, so a list promoted out of
     // `decks/premodern/` is swept the day it is registered instead of the day
     // somebody remembers to add it.

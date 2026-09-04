@@ -55,8 +55,14 @@ sweep_rust() {
     printf '\n== %s ==\n' "$label"
     output_file="$(mktemp)"
 
+    # `--ignored` alone is not the deferred tier. `#[ignore]` also carries
+    # tests parked against a card the engine does not support yet, and there
+    # are far more of those than there are sweeps -- running them here reports
+    # two dozen failures that say nothing about the night's revision. The tier
+    # is the `sweep_` prefix instead, so a parked test stays parked wherever it
+    # is added and whatever it is called.
     # shellcheck disable=SC2086 # selector is a deliberate multi-word argument list.
-    if cargo test --locked --profile simulation-test $selector -- --ignored 2>&1 |
+    if cargo test --locked --profile simulation-test $selector -- --ignored sweep_ 2>&1 |
       tee "$output_file"; then
       rm -f "$output_file"
       continue

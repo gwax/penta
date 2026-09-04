@@ -140,8 +140,19 @@ test-wasm-rust: ## Run native unit tests for the Rust WASM adapter.
 test-rust: ## Run normal Rust tests; simulation sweeps stay deferred.
 	$(call run_rust_tests,$(RUST_NORMAL_TARGETS),)
 
+# `sweep_` and not bare `--ignored`: `#[ignore]` also parks tests against cards
+# the engine does not support yet, and those are not this tier's job. Written
+# out rather than through `run_rust_tests` because an explicit `FILTER` has to
+# replace the tier rather than widen it -- libtest unions its name filters, so
+# passing both would run the whole tier alongside the one test asked for.
 test-rust-slow: ## Run only ignored Rust simulation sweeps.
-	$(call run_rust_tests,$(RUST_NORMAL_TARGETS),--ignored,simulation-test)
+	if [ -n "$$RUST_TEST_FILTER" ]; then \
+		cargo test --locked --profile simulation-test $(RUST_NORMAL_TARGETS) \
+			"$$RUST_TEST_FILTER" -- --quiet --ignored; \
+	else \
+		cargo test --locked --profile simulation-test $(RUST_NORMAL_TARGETS) \
+			-- --quiet --ignored sweep_; \
+	fi
 
 nightly-sweep: ## Run the deferred Rust sweeps, naming a narrow repro for any failure.
 	./scripts/slow-sweep.sh rust
@@ -149,8 +160,12 @@ nightly-sweep: ## Run the deferred Rust sweeps, naming a narrow repro for any fa
 nightly-sweep-web: build-wasm ## Run the deferred browser sweeps, naming a narrow repro for any failure.
 	./scripts/slow-sweep.sh web $(WEB_WASM_SLOW_SUITES)
 
+# Two passes rather than `--include-ignored`, which would sweep the parked
+# unsupported-card tests in with the deferred tier.
 test-rust-full: ## Run every normal and slow Rust test in one pass.
-	cargo test --locked --profile simulation-test $(RUST_NORMAL_TARGETS) -- --quiet --include-ignored
+	cargo test --locked --profile simulation-test $(RUST_NORMAL_TARGETS) -- --quiet
+	cargo test --locked --profile simulation-test $(RUST_NORMAL_TARGETS) -- --quiet \
+		--ignored sweep_
 
 # Its own dependency-free crate, so this stays a filesystem walk and finishes
 # in about a second even in a cold worktree. Keep it that way: as an

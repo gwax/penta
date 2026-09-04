@@ -59,7 +59,7 @@ impl Seat {
 
 #[test]
 #[ignore = "slow decision-boundary reconstruction audit"]
-fn sampled_game_decisions_reconstruct_from_their_observations() {
+fn sweep_sampled_game_decisions_reconstruct_from_their_observations() {
     let catalog = crate::poc::catalog().expect("catalog builds");
     let mut audited = 0_usize;
     let mut census: BTreeMap<&'static str, usize> = BTreeMap::new();

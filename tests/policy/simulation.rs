@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 #[ignore = "slow simulation sweep"]
-fn handcrafted_policy_decisively_beats_random_across_builtin_decks_and_seats() {
+fn sweep_handcrafted_policy_decisively_beats_random_across_builtin_decks_and_seats() {
     let catalog = poc::catalog().unwrap();
     let decks = [
         poc::goblins(),

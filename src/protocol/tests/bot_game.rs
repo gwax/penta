@@ -602,7 +602,7 @@ fn protocol_reincarnates_public_object_identity_across_cast_zones() {
 
 #[test]
 #[ignore = "slow simulation sweep"]
-fn bots_are_never_offered_the_chance_to_resign() {
+fn sweep_bots_are_never_offered_the_chance_to_resign() {
     // Conceding is legal in every state and strictly dominated, so it is
     // not in the bot's list at all. That makes picking blindly — index
     // zero, or uniform random — a weak bot rather than an instant loss,

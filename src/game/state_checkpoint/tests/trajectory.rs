@@ -46,7 +46,7 @@ const ID_LIST_FIELDS: &[&str] = &[
 
 #[test]
 #[ignore = "slow decision-boundary reconstruction audit"]
-fn a_reconstructed_game_stays_in_step_with_the_host_as_both_play_forward() {
+fn sweep_a_reconstructed_game_stays_in_step_with_the_host_as_both_play_forward() {
     let catalog = crate::poc::catalog().expect("catalog builds");
     let mut trajectories = 0_usize;
     let mut steps = 0_usize;
