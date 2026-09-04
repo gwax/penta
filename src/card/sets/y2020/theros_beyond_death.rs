@@ -125,13 +125,33 @@ pub(in crate::card::sets) static THASSAS_ORACLE: CardRecord = CardRecord::new_wi
 );
 
 // THB 99 — Gray Merchant of Asphodel
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRAY_MERCHANT_OF_ASPHODEL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b06078ce-f534-4e16-9a70-d51620a33eb2"),
     "Gray Merchant of Asphodel",
-    crate::card::CardArt::new("7c1a7dd8-8034-4f59-a351-33666b26ff5a", "Scott Murphy"),
-    crate::card::CardSet::TherosBeyondDeath,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("7c1a7dd8-8034-4f59-a351-33666b26ff5a", "Scott Murphy"),
+    CardSet::TherosBeyondDeath,
+    // Its own two black pips count, so the Merchant is never worth less than
+    // two even on an otherwise empty board.
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Zombie"], 2, 4).with_ability(
+        abilities::enters_trigger(
+            "When this creature enters, each opponent loses X life, where X is your devotion to black. You gain life equal to the life lost this way.",
+            // Devotion is counted once for the whole resolution, so both
+            // halves read the same number and the gain always matches the
+            // loss.
+            EffectDef::Sequence(&[
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::players(PlayerSetDef::Related(
+                        PlayerRelation::Opponent,
+                    )),
+                    amount: ValueDef::DevotionTo(ManaColor::Black),
+                },
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::DevotionTo(ManaColor::Black),
+                },
+            ]),
+        ),
+    ),
 );
 
 // THB 105 — Mire Triton

@@ -547,13 +547,36 @@ pub(in crate::card::sets) static ESSENCE_LEAK: CardRecord = CardRecord::new(
 );
 
 // INV 56 — Exclude
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EXCLUDE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("aeb359c8-209c-455f-84b2-970e5678a9fa"),
     "Exclude",
-    crate::card::CardArt::new("aeb359c8-209c-455f-84b2-970e5678a9fa", "Mark Romanoski"),
-    crate::card::CardSet::Invasion,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("aeb359c8-209c-455f-84b2-970e5678a9fa", "Mark Romanoski"),
+    CardSet::Invasion,
+    // A counter that replaces itself, which is what made the narrow half of
+    // the card affordable: a dead Exclude still cycles.
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Counter target creature spell.\nDraw a card.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::Spell,
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                ]),
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            },
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::counter_target(TargetIndex::PRIMARY),
+            // The draw is not conditional on the counter resolving, so an
+            // Exclude whose target left the stack still replaces itself.
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ]),
+    )),
 );
 
 // INV 57 — Fact or Fiction

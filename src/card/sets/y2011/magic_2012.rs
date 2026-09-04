@@ -1080,13 +1080,39 @@ pub(in crate::card::sets) static GRAVE_TITAN: CardRecord = CardRecord::new(
 );
 
 // M12 99 — Gravedigger
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRAVEDIGGER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b979d70e-d514-420f-886c-f60e2bb1861f"),
     "Gravedigger",
-    crate::card::CardArt::new("11055d4e-3efe-493c-8c18-9e2642267511", "Dermot Power"),
-    crate::card::CardSet::Magic2012,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("11055d4e-3efe-493c-8c18-9e2642267511", "Dermot Power"),
+    CardSet::Magic2012,
+    // Four mana for a body and a card, which is why it is the floor every
+    // black limited deck is measured against.
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Zombie"], 2, 2).with_ability(
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, you may return target creature card from your graveyard to your hand.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: Some(PlayerRelation::You),
+                },
+            )],
+            // The target is chosen as the trigger goes on the stack and the
+            // "may" is answered as it resolves, so a Gravedigger whose card
+            // was exiled in response still asks.
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &const {
+                    EffectDef::MoveToZone {
+                        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        zone: ZoneKind::Hand,
+                        placement: ZonePlacement::Top,
+                    }
+                },
+            },
+        ),
+    ),
 );
 
 // M12 100 — Hideous Visage

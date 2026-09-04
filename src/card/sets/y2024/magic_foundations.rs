@@ -2,13 +2,13 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype,
-    CharacteristicOperationDef, CreatureTypeSetDef, EffectDef, EffectRecipientDef,
-    ExilePlayDurationDef, ObjectPredicateDef, PowerToughnessOperationDef,
-    ResolvedEffectDurationDef, SetOperationDef, TriggerConditionDef, TriggerEventDef, ValueDef,
-    abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    CardArt, CardRules, CardSet, CardSupertype, CharacteristicOperationDef, CreatureTypeSetDef,
+    EffectDef, EffectRecipientDef, ExilePlayDurationDef, ObjectPredicateDef,
+    PowerToughnessOperationDef, ResolvedEffectDurationDef, SetOperationDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, abilities,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 // FDN 18 — Inspiring Paladin
 // Audit: unsupported — Card rules have not been implemented.
@@ -56,13 +56,27 @@ pub(in crate::card::sets) static LEYLINE_AXE: CardRecord = CardRecord::new(
 );
 
 // FDN 195 — Fanatical Firebrand
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FANATICAL_FIREBRAND: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5e5565de-028c-4799-a9f6-4dcd685639eb"),
     "Fanatical Firebrand",
-    crate::card::CardArt::new("d1296316-7781-4e98-95e6-7020648be6a5", "Wayne Reynolds"),
-    crate::card::CardSet::MagicFoundations,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d1296316-7781-4e98-95e6-7020648be6a5", "Wayne Reynolds"),
+    CardSet::MagicFoundations,
+    // Haste is what makes the sacrifice a one-mana Shock the turn it lands;
+    // left alive it is a one-power attacker that can cash itself in later.
+    CardRules::new_creature(mana_cost!("{R}"), &["Goblin", "Pirate"], 1, 1).with_abilities(&[
+        abilities::haste(),
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice this creature: It deals 1 damage to any target.",
+            &[AbilityCostDef::TapSource, AbilityCostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // FDN 200 — Goblin Surprise

@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -181,13 +182,34 @@ pub(in crate::card::sets) static INFERNAL_GRASP: CardRecord = CardRecord::new(
 );
 
 // MID 128 — Ardent Elementalist
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARDENT_ELEMENTALIST: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f58592f7-1df5-428d-9dde-e6acd9a5d1d5"),
     "Ardent Elementalist",
-    crate::card::CardArt::new("f58592f7-1df5-428d-9dde-e6acd9a5d1d5", "Miguel Mercado"),
-    crate::card::CardSet::InnistradMidnightHunt,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("f58592f7-1df5-428d-9dde-e6acd9a5d1d5", "Miguel Mercado"),
+    CardSet::InnistradMidnightHunt,
+    // Archaeomancer's trigger in red, on a body that trades rather than
+    // blocks: the card it buys back is the whole reason to cast it.
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Human", "Shaman"], 2, 1).with_ability(
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, return target instant or sorcery card from your graveyard to your hand.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Instant),
+                        ObjectPredicateDef::HasType(CardType::Sorcery),
+                    ]),
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: Some(PlayerRelation::You),
+                },
+            )],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+            },
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

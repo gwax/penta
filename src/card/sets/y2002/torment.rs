@@ -642,13 +642,53 @@ pub(in crate::card::sets) static DAWN_OF_THE_DEAD: CardRecord = CardRecord::new(
 );
 
 // TOR 60 — Faceless Butcher
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FACELESS_BUTCHER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4073be21-c54a-4eee-9109-f3adfe757c4e"),
     "Faceless Butcher",
-    crate::card::CardArt::new("4073be21-c54a-4eee-9109-f3adfe757c4e", "Daren Bader"),
-    crate::card::CardSet::Torment,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("4073be21-c54a-4eee-9109-f3adfe757c4e", "Daren Bader"),
+    CardSet::Torment,
+    // The exile is not a "may" and not optional: with only its own body on
+    // the board the Butcher has to eat something, and killing it hands the
+    // creature back.
+    CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Nightmare", "Horror"], 2, 3)
+        .with_abilities(&[
+            abilities::enters_trigger_with_targets(
+                "When this creature enters, exile another target creature.",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Creature),
+                            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                        ]),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: None,
+                        owner: None,
+                    },
+                )],
+                EffectDef::ExileLinkedToSource {
+                    until_source_leaves: false,
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    face_down: false,
+                    then: None,
+                },
+            ),
+            AbilityDef::triggered(
+                "When this creature leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    Some(ZoneKind::Battlefield),
+                    None,
+                ),
+                EffectDef::ReturnLinkedExiles {
+                    object: ObjectPredicateDef::Any,
+                    counters: None,
+                    zone: ZoneKind::Battlefield,
+                    grant: None,
+                    controller: None,
+                    transformed: false,
+                },
+            ),
+        ]),
 );
 
 // TOR 61 — Gloomdrifter
