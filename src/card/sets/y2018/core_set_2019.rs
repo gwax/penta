@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityPredicateDef, AddManaEffectDef, AppliedEffectDef, CardRules,
-    CardType, CharacteristicOperationDef, EffectDef, EffectRecipientDef, LAND_SUBTYPES,
-    ObjectPredicateDef, PlayerRelation, SetOperationDef, ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
+    AddManaEffectDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
+    CharacteristicOperationDef, EffectDef, EffectRecipientDef, LAND_SUBTYPES, ObjectPredicateDef,
+    PlayerRelation, SetOperationDef, ValueDef, ZoneKind, abilities,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 // M19 29 — Militia Bugler
 // Audit: unsupported — Card rules have not been implemented.
@@ -19,13 +20,34 @@ pub(in crate::card::sets) static MILITIA_BUGLER: CardRecord = CardRecord::new(
 );
 
 // M19 125 — Vampire Sovereign
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VAMPIRE_SOVEREIGN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ee338221-ead9-4b89-8b0c-12745c4ca13d"),
     "Vampire Sovereign",
-    crate::card::CardArt::new("ee338221-ead9-4b89-8b0c-12745c4ca13d", "Volkan Baǵa"),
-    crate::card::CardSet::CoreSet2019,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("ee338221-ead9-4b89-8b0c-12745c4ca13d", "Volkan Baǵa"),
+    CardSet::CoreSet2019,
+    // A six-point swing attached to a flier, which is what makes five mana
+    // a fair price in a format where the race is the game.
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Vampire", "Noble"], 3, 4).with_abilities(
+        &[
+            abilities::flying(),
+            abilities::enters_trigger_with_targets(
+                "When this creature enters, target opponent loses 3 life and you gain 3 life.",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+                )],
+                EffectDef::Sequence(&[
+                    EffectDef::LoseLife {
+                        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        amount: ValueDef::Constant(3),
+                    },
+                    EffectDef::GainLife {
+                        recipient: EffectRecipientDef::Controller,
+                        amount: ValueDef::Constant(3),
+                    },
+                ]),
+            ),
+        ],
+    ),
 );
 
 // M19 128 — Alpine Moon

@@ -3,9 +3,11 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AlternativeCastKindDef, CardArt, CardRules, CardSet, CostQuantityDef, EffectDef,
-    EffectRecipientDef, LikelihoodDef, ManaColor, ObjectPredicateDef, PlayerRelation,
-    SpellAdditionalCostDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities,
+    AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet, ComparisonDef,
+    ConditionalStaticEffectDef, CostQuantityDef, EffectDef, EffectRecipientDef, LikelihoodDef,
+    ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetCountConditionDef, ObjectSetDef,
+    ObjectSetPredicateDef, PlayerRelation, SpellAdditionalCostDef, StaticApplyDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -101,13 +103,47 @@ pub(in crate::card::sets) static MOGG_WAR_MARSHAL: CardRecord = CardRecord::new(
 );
 
 // EMA 191 — Werebear
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WEREBEAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("964cf7e3-932d-432f-8ad4-9bd651aada96"),
     "Werebear",
-    crate::card::CardArt::new("224ea635-b95b-4803-8716-edd4cb655923", "Filip Burburan"),
-    crate::card::CardSet::EternalMasters,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("224ea635-b95b-4803-8716-edd4cb655923", "Filip Burburan"),
+    CardSet::EternalMasters,
+    // A mana elf that turns into a 4/4 once the graveyard fills, and the
+    // mana ability is what fills it in the decks that want the body.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Human", "Bear", "Druid"], 1, 1)
+        .with_abilities(&[
+            AbilityDef::activated_mana(
+                "{T}: Add {G}.",
+                &[AbilityCostDef::TapSource],
+                EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+            ),
+            AbilityDef::static_ability(
+                "Threshold — This creature gets +3/+3 as long as there are seven or more cards in your graveyard.",
+                // Read continuously rather than latched, so a graveyard that
+                // shrinks back under seven takes the bonus away again.
+                EffectDef::ConditionalStatic(ConditionalStaticEffectDef {
+                    condition: ObjectSetCountConditionDef {
+                        objects: &ObjectSetDef::Query(ObjectQueryDef::matching(
+                            ObjectPredicateDef::Any,
+                            &[ZoneKind::Graveyard],
+                            PlayerRelation::You,
+                        )),
+                        predicate: ObjectSetPredicateDef {
+                            filter: None,
+                            comparison: ComparisonDef::GreaterOrEqual,
+                            amount: 7,
+                        },
+                    },
+                    then: StaticApplyDef {
+                        recipient: EffectRecipientDef::Source,
+                        effect: AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(3),
+                            ValueDef::Constant(3),
+                        ),
+                    },
+                }),
+            ),
+        ]),
 );
 
 // EMA 225 — Mana Crypt
