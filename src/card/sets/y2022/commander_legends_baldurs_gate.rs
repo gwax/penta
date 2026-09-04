@@ -3,9 +3,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, CardSupertype, CardType, CounterKind, DeckConstructionDef, EffectDef,
-    EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, PlayerRelation,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind, DeckConstructionDef,
+    EffectDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, PlayerRelation,
     SacrificedAmountDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef,
     ValueDef, ZoneKind, abilities,
 };
@@ -356,13 +356,24 @@ pub(in crate::card::sets) static DAUTHI_HORROR: CardRecord = CardRecord::new(
 );
 
 // CLB 897 — Izzet Boilerworks
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static IZZET_BOILERWORKS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("666f455e-3a3d-475d-b67a-a1fdd74820eb"),
     "Izzet Boilerworks",
-    crate::card::CardArt::new("c86e42c6-342b-443f-9b99-a68cf536ff45", "John Avon"),
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("c86e42c6-342b-443f-9b99-a68cf536ff45", "John Avon"),
+    CardSet::CommanderLegendsBattleForBaldursGate,
+    // The last of the ten karoos; only the two colours below are its own.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::karoo_bounce(),
+        AbilityDef::activated_mana(
+            "{T}: Add {U}{R}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_each(
+                ManaColor::Blue,
+                ManaColor::Red,
+            )),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

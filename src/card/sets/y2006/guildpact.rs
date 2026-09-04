@@ -2,9 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    ReplacementEffectDef, ReplacementEventDef, ValueDef, ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt,
+    CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, ReplacementEffectDef, ReplacementEventDef, ValueDef,
+    ZoneKind, abilities,
 };
 use crate::mana_cost;
 
@@ -149,13 +150,24 @@ pub(in crate::card::sets) static PILLORY_OF_THE_SLEEPLESS: CardRecord = CardReco
 );
 
 // GPT 158 — Gruul Turf
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRUUL_TURF: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("550b70e0-ebd5-49de-b62c-5224b8bf8e98"),
     "Gruul Turf",
-    crate::card::CardArt::new("550b70e0-ebd5-49de-b62c-5224b8bf8e98", "John Avon"),
-    crate::card::CardSet::Guildpact,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("550b70e0-ebd5-49de-b62c-5224b8bf8e98", "John Avon"),
+    CardSet::Guildpact,
+    // The red-green karoo; only the two colours below are its own.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::karoo_bounce(),
+        AbilityDef::activated_mana(
+            "{T}: Add {R}{G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_each(
+                ManaColor::Red,
+                ManaColor::Green,
+            )),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

@@ -2,8 +2,8 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, KeywordAbility, ObjectPredicateDef,
-    abilities,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef,
+    KeywordAbility, ManaColor, ObjectPredicateDef, abilities,
 };
 use crate::mana_cost;
 
@@ -56,23 +56,45 @@ pub(in crate::card::sets) static COILING_ORACLE: CardRecord = CardRecord::new(
 );
 
 // DIS 178 — Rakdos Carnarium
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAKDOS_CARNARIUM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("34f146f3-6541-4d2a-96e3-a3cd680c0a1e"),
     "Rakdos Carnarium",
-    crate::card::CardArt::new("34f146f3-6541-4d2a-96e3-a3cd680c0a1e", "John Avon"),
-    crate::card::CardSet::Dissension,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("34f146f3-6541-4d2a-96e3-a3cd680c0a1e", "John Avon"),
+    CardSet::Dissension,
+    // The black-red karoo; only the two colours below are its own.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::karoo_bounce(),
+        AbilityDef::activated_mana(
+            "{T}: Add {B}{R}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_each(
+                ManaColor::Black,
+                ManaColor::Red,
+            )),
+        ),
+    ]),
 );
 
 // DIS 180 — Simic Growth Chamber
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SIMIC_GROWTH_CHAMBER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("407d0a0c-a6be-4bd5-8355-1715698c6bde"),
     "Simic Growth Chamber",
-    crate::card::CardArt::new("407d0a0c-a6be-4bd5-8355-1715698c6bde", "John Avon"),
-    crate::card::CardSet::Dissension,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("407d0a0c-a6be-4bd5-8355-1715698c6bde", "John Avon"),
+    CardSet::Dissension,
+    // The green-blue karoo; only the two colours below are its own.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::karoo_bounce(),
+        AbilityDef::activated_mana(
+            "{T}: Add {G}{U}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_each(
+                ManaColor::Green,
+                ManaColor::Blue,
+            )),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

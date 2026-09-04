@@ -252,13 +252,24 @@ pub(in crate::card::sets) static ORZHOV_BASILICA: CardRecord = CardRecord::new(
 );
 
 // CLU 246 — Selesnya Sanctuary
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SELESNYA_SANCTUARY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c5e51787-f9c9-4926-9df1-a384a3092676"),
     "Selesnya Sanctuary",
-    crate::card::CardArt::new("fdc53c6a-8e28-4314-9bcf-b31b6c6f56d7", "John Avon"),
-    crate::card::CardSet::RavnicaClueEdition,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("fdc53c6a-8e28-4314-9bcf-b31b6c6f56d7", "John Avon"),
+    CardSet::RavnicaClueEdition,
+    // The green-white karoo; only the two colours below are its own.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::karoo_bounce(),
+        AbilityDef::activated_mana(
+            "{T}: Add {G}{W}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_each(
+                ManaColor::Green,
+                ManaColor::White,
+            )),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
