@@ -2,8 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, ObjectPredicateDef,
-    PlayerRelation, QuantifierDef, TriggerConditionDef, TriggerEventDef, abilities,
+    AbilityDef, CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef,
+    ObjectPredicateDef, PlayerRelation, QuantifierDef, TriggerConditionDef, TriggerEventDef,
+    abilities, tokens,
 };
 use crate::mana_cost;
 
@@ -96,13 +97,21 @@ pub(in crate::card::sets) static WITTY_ROASTMASTER: CardRecord = CardRecord::new
 );
 
 // SNC 151 — Jewel Thief
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JEWEL_THIEF: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("736e498e-1245-40c1-96a4-c9bcfd1cfe1f"),
     "Jewel Thief",
-    crate::card::CardArt::new("736e498e-1245-40c1-96a4-c9bcfd1cfe1f", "Joe Slucher"),
-    crate::card::CardSet::StreetsOfNewCapenna,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("736e498e-1245-40c1-96a4-c9bcfd1cfe1f", "Joe Slucher"),
+    CardSet::StreetsOfNewCapenna,
+    // Three mana for a 3/3 with two keywords and a ritual attached, which is
+    // why it is the green common every limited deck wants.
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Cat", "Rogue"], 3, 3).with_abilities(&[
+        abilities::vigilance(),
+        abilities::trample(),
+        abilities::enters_trigger(
+            "When this creature enters, create a Treasure token.",
+            EffectDef::create_token(tokens::treasure()),
+        ),
+    ]),
 );
 
 // SNC 168 — Body Dropper

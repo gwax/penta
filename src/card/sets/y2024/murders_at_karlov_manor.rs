@@ -27,13 +27,22 @@ const fn surveil_land(types: &'static [&'static str]) -> CardRules {
 }
 
 // MKM 29 — Novice Inspector
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NOVICE_INSPECTOR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("0ad38866-fc5f-4f62-89c1-afc0f50765aa"),
     "Novice Inspector",
-    crate::card::CardArt::new("0ad38866-fc5f-4f62-89c1-afc0f50765aa", "Fajareka Setiawan"),
-    crate::card::CardSet::MurdersAtKarlovManor,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("0ad38866-fc5f-4f62-89c1-afc0f50765aa", "Fajareka Setiawan"),
+    CardSet::MurdersAtKarlovManor,
+    // One mana for a blocker and half a card, which is the floor a white
+    // one-drop has to clear to be playable at all.
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Detective"], 1, 2).with_ability(
+        abilities::enters_trigger(
+            "When this creature enters, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+            EffectDef::create_token(tokens::clue()).with_art(CardArt::new(
+                "ef607895-d6d2-44ab-a6b4-84af55fce593",
+                "Daneen Wilkerson",
+            )),
+        ),
+    ),
 );
 
 // MKM 57 — Forensic Gadgeteer

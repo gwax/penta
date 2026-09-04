@@ -2,8 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, ValueDef, abilities,
+    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
+    ValueDef, abilities,
 };
 use crate::mana_cost;
 
@@ -18,13 +19,28 @@ pub(in crate::card::sets) static SOUL_MANIPULATION: CardRecord = CardRecord::new
 );
 
 // ARB 95 — Putrid Leech
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PUTRID_LEECH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("aaa47568-5668-4a9f-ad1c-9a13010ffc2b"),
     "Putrid Leech",
-    crate::card::CardArt::new("aaa47568-5668-4a9f-ad1c-9a13010ffc2b", "Dave Allsop"),
-    crate::card::CardSet::AlaraReborn,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("aaa47568-5668-4a9f-ad1c-9a13010ffc2b", "Dave Allsop"),
+    CardSet::AlaraReborn,
+    // A two-mana 4/4 that costs two life a turn to be one, and the life is
+    // paid before blockers rather than after.
+    CardRules::new_creature(mana_cost!("{B}{G}"), &["Zombie", "Leech"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "Pay 2 life: This creature gets +2/+2 until end of turn. Activate only once each turn.",
+            &[AbilityCostDef::PayLife(2)],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        )
+        .once_each_turn(),
+    ),
 );
 
 // ARB 133 — Thopter Foundry
