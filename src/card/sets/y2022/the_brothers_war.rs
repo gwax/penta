@@ -344,13 +344,24 @@ pub(in crate::card::sets) static PORTAL_TO_PHYREXIA: CardRecord = CardRecord::ne
 );
 
 // BRO 266 — Tocasia's Dig Site
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TOCASIA_S_DIG_SITE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("23d4b90c-95b1-4828-bc08-7067da0d5364"),
     "Tocasia's Dig Site",
-    crate::card::CardArt::new("23d4b90c-95b1-4828-bc08-7067da0d5364", "Nadia Hurianova"),
-    crate::card::CardSet::TheBrothersWar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("23d4b90c-95b1-4828-bc08-7067da0d5364", "Nadia Hurianova"),
+    CardSet::TheBrothersWar,
+    // Colourless and untapped, so the sink costs nothing to include: it is
+    // a Wastes that does something on the turns nothing else does.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated(
+            "{3}, {T}: Surveil 1.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{3}")),
+                AbilityCostDef::TapSource,
+            ],
+            abilities::surveil(ValueDef::Constant(1)),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
