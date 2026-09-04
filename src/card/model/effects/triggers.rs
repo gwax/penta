@@ -216,6 +216,24 @@ pub enum TriggerEventDef {
     /// which is why "at the beginning of your upkeep, you may create a
     /// Treasure token" names nobody until the Treasure actually exists.
     OptionalEffectTaken(ObjectPredicateDef),
+    /// "When you do", for the reflexive half of a clause that sacrifices a
+    /// permanent during its own resolution (CR 603.1c).
+    ///
+    /// The sibling of [`Self::OptionalEffectTaken`], for the compulsory
+    /// spelling: "Sacrifice a creature. When you do, ..." gives its
+    /// controller no choice about the sacrifice, so nothing accepts an
+    /// offer and that event never fires. What this watches instead is the
+    /// sacrifice itself having happened, which is also why it says nothing
+    /// when there was no creature to give up.
+    ///
+    /// The predicate matches the source of the clause rather than what it
+    /// took, the same way a damage trigger matches the dealer. What was
+    /// sacrificed is carried beside it: the reflexive ability reads its
+    /// power as [`ValueDef::TriggerEventAmount`] and asks about the rest of
+    /// it with [`TriggerConditionDef::SacrificedObjectMatches`], both from
+    /// last-known information, because the permanent is already gone by the
+    /// time the ability goes on the stack.
+    SacrificePerformed(ObjectPredicateDef),
     /// "Whenever you sacrifice a Clue." A sacrifice is a way of putting a
     /// permanent into a graveyard rather than a thing that happens to it
     /// there, so it is its own event: a Clue somebody destroyed went to the

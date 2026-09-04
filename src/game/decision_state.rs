@@ -586,6 +586,11 @@ pub(super) enum DecisionContinuation {
         followup: Option<SacrificeFollowup>,
         declined: Option<SacrificeDeclined>,
         optional: bool,
+        /// The clause that demanded it, so the compulsory "when you do" can
+        /// be published against the right card once something is given up.
+        /// `None` only for a checkpoint written before this was recorded,
+        /// which publishes no reflexive half.
+        source: Option<GameObjectId>,
     },
     /// A Doomsday-style search in progress: the cards chosen go on top of
     /// the library in the order they were chosen, and everything left in the

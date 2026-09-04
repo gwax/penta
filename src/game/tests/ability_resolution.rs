@@ -627,6 +627,7 @@ fn resolving_ability_masks_an_illegal_target_in_each_frozen_slot() {
                 event_player: None,
                 amount: None,
                 damaged_object: None,
+                sacrificed_object: None,
                 cast_from_zone: None,
             }
             .into(),

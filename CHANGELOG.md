@@ -25,6 +25,20 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **"Sacrifice a creature. When you do, ..." is a reflexive trigger of its
+  own.** A clause that sacrifices during its own resolution now publishes
+  `TriggerEventDef::SacrificePerformed` against the card that demanded it, so
+  the compulsory half of CR 603.1c works the way the optional half already
+  did: the reflexive ability goes on the stack by itself, picks its target
+  after the sacrifice, and can be responded to. It carries what was given up,
+  which `ValueDef::TriggerEventAmount` reads as that permanent's power and
+  `TriggerConditionDef::SacrificedObjectMatches` asks about by predicate.
+  Minsc & Boo, Timeless Heroes uses all three, throwing Boo for his power and
+  drawing that many because he is a Hamster. The stored sacrifice decision
+  gained an optional `source`, appended the way its `declined` field was: a
+  checkpoint written before this reads unchanged and publishes no reflexive
+  half, which no card could have named yet.
+
 - **A clause that exiles several cards at once is one exile event.** Moving a
   set of cards out of a graveyard, library, or hand into exile now publishes a
   single "one or more cards are put into exile" event rather than one per

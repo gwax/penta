@@ -403,6 +403,11 @@ impl Game {
         if !optional && candidates.len() <= count {
             let sacrificed = candidates.first().copied();
             self.capture_sacrifices(&candidates);
+            // The reflexive half is owed whether or not anybody was asked:
+            // one legal creature is still a creature given up.
+            if let Some(sacrificed) = sacrificed {
+                self.capture_sacrifice_performed(source, sacrificed);
+            }
             if let Some(followup) = followup {
                 self.move_permanents_to_graveyard_then(
                     &candidates,
@@ -441,6 +446,7 @@ impl Game {
                 followup,
                 declined,
                 optional,
+                source: Some(source),
             },
         );
     }

@@ -630,6 +630,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::ControllerGainedLifeThisTurn
         | TriggerConditionDef::CreatureDiedThisTurn
         | TriggerConditionDef::SourceArrivedSinceControllersLastUpkeep
+        | TriggerConditionDef::SacrificedObjectMatches(_)
         | TriggerConditionDef::SourceOnBattlefield
         | TriggerConditionDef::SourceInZone(_)
         | TriggerConditionDef::SourceUntapped

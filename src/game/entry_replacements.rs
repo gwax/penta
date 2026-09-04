@@ -334,6 +334,7 @@ impl Game {
             event_player: Some(entry.permanent.controller),
             amount: None,
             damaged_object: None,
+            sacrificed_object: None,
             cast_from_zone: None,
         }
     }

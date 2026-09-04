@@ -939,6 +939,7 @@ fn parse_continuation(
             followup,
             declined,
             optional,
+            source,
         } => DecisionContinuation::SacrificeOfChoice {
             followup: followup
                 .as_ref()
@@ -949,6 +950,7 @@ fn parse_continuation(
                 .map(|declined| parse_sacrifice_declined(declined, game))
                 .transpose()?,
             optional: *optional,
+            source: source.map(GameObjectId),
         },
         DecisionContinuationSnapshot::SearchZonesAndExileRest {
             player: owner,

@@ -3,9 +3,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet,
-    CardSupertype, CardType, DeckConstructionDef, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, PlayerRelation, SacrificedAmountDef, TriggerConditionDef, TriggerEventDef,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
+    CardSet, CardSupertype, CardType, CounterKind, DeckConstructionDef, EffectDef,
+    EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, PlayerRelation,
+    SacrificedAmountDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef,
     ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
@@ -150,13 +151,112 @@ pub(in crate::card::sets) static YOU_MEET_IN_A_TAVERN: CardRecord = CardRecord::
 );
 
 // CLB 285 — Minsc & Boo, Timeless Heroes
-// Audit: unsupported — Needs a sacrifice-scoped reflexive trigger that chooses its damage target after the sacrifice.
 pub(in crate::card::sets) static MINSC_BOO_TIMELESS_HEROES: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("928036c9-11b8-493e-b9f2-8fbd3487cd19"),
     "Minsc & Boo, Timeless Heroes",
     CardArt::new("928036c9-11b8-493e-b9f2-8fbd3487cd19", "Andreas Zafiratos"),
     CardSet::CommanderLegendsBattleForBaldursGate,
-    CardRules::unsupported(),
+    CardRules::new_planeswalker(mana_cost!("{2}{R}{G}"), &["Minsc"], 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::triggered(
+                "When Minsc & Boo enters and at the beginning of your upkeep, you may create Boo, a legendary 1/1 red Hamster creature token with trample and haste.",
+                // One printed sentence with two ways in, so it is one ability
+                // watching both rather than two abilities.
+                TriggerEventDef::AnyOf(&[
+                    TriggerEventDef::zone_changed(
+                        ObjectPredicateDef::Source,
+                        None,
+                        Some(ZoneKind::Battlefield),
+                    ),
+                    TriggerEventDef::StepBegins {
+                        step: TurnStepDef::Upkeep,
+                        player: PlayerRelation::You,
+                    },
+                ]),
+                EffectDef::May {
+                    player: EffectRecipientDef::Controller,
+                    // Boo is a particular hamster rather than a kind of one,
+                    // which is why the legend rule keeps there being only the
+                    // one however many upkeeps go by.
+                    effect: &EffectDef::create_token(
+                        TokenCharacteristics::creature(&["Hamster"], &[ManaColor::Red], 1, 1)
+                            .with_name("Boo")
+                            .with_supertype(CardSupertype::Legendary)
+                            .with_abilities(&[abilities::trample(), abilities::haste()]),
+                    ),
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "+1: Put three +1/+1 counters on up to one target creature with trample or haste.",
+                &[AbilityCostDef::Loyalty(1)],
+                &[AbilityTargetDef::up_to(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Creature),
+                            ObjectPredicateDef::AnyOf(&[
+                                ObjectPredicateDef::HasKeyword(KeywordAbility::Trample),
+                                ObjectPredicateDef::HasKeyword(KeywordAbility::Haste),
+                            ]),
+                        ]),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: None,
+                        owner: None,
+                    },
+                    1,
+                )],
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(3),
+                },
+            ),
+            AbilityDef::activated(
+                "\u{2212}2: Sacrifice a creature.",
+                &[AbilityCostDef::Loyalty(-2)],
+                EffectDef::SacrificeOfChoice {
+                    player: EffectRecipientDef::Controller,
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    count: ValueDef::Constant(1),
+                    // The payload is the reflexive half below, which needs to
+                    // pick its target after the sacrifice rather than before.
+                    then: None,
+                    amount: SacrificedAmountDef::Power,
+                    otherwise: None,
+                    optional: false,
+                },
+            ),
+            AbilityDef::triggered_with_targets(
+                "When you do, Minsc & Boo deals X damage to any target, where X is that creature's power. If the sacrificed creature was a Hamster, draw X cards.",
+                TriggerEventDef::SacrificePerformed(ObjectPredicateDef::Source),
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::AnyTarget,
+                )],
+                EffectDef::Sequence(&[
+                    EffectDef::DealDamage {
+                        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        amount: ValueDef::TriggerEventAmount,
+                    },
+                    // Throwing Boo is the payoff the card is built around, so
+                    // the draw asks what was sacrificed rather than what is
+                    // still on the battlefield.
+                    EffectDef::IfCondition {
+                        condition: &TriggerConditionDef::SacrificedObjectMatches(
+                            ObjectPredicateDef::Subtype("Hamster"),
+                        ),
+                        then: &EffectDef::DrawCards {
+                            recipient: EffectRecipientDef::Controller,
+                            amount: ValueDef::TriggerEventAmount,
+                        },
+                    },
+                ]),
+            ),
+            AbilityDef::deck_construction(
+                "Minsc & Boo, Timeless Heroes can be your commander.",
+                DeckConstructionDef::MayBeCommander,
+                "A planeswalker rather than a legendary creature, so the deck needs the printed permission.",
+            ),
+        ]),
 );
 
 // CLB 560 — Displacer Kitten

@@ -572,6 +572,25 @@ impl Game {
                         })
                     }
                 }
+                // Last-known by construction: the permanent this asks about
+                // was sacrificed by the same resolution that raised the
+                // event, so it is never still on the battlefield.
+                TriggerConditionDef::SacrificedObjectMatches(predicate) => context
+                    .sacrificed_object
+                    .and_then(|sacrificed| match self.retired_objects.get(&sacrificed) {
+                        Some(crate::game::RetiredObject::Permanent { permanent, .. }) => {
+                            Some(permanent.as_ref())
+                        }
+                        _ => None,
+                    })
+                    .is_some_and(|sacrificed| {
+                        self.trigger_object_matches(
+                            *predicate,
+                            &self.trigger_event_object(sacrificed),
+                            source,
+                            false,
+                        )
+                    }),
                 TriggerConditionDef::AttachedPermanentMatches { object: predicate } => self
                     .current_or_last_known_attached_host(source)
                     .and_then(|host| {

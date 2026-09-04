@@ -195,6 +195,12 @@ impl Game {
             | (
                 TriggerEventDef::OptionalEffectTaken(predicate),
                 CommittedTriggerEvent::OptionalEffectTaken { object },
+            )
+            // The compulsory spelling of the same thing: the predicate reads
+            // the source that sacrificed, not what it took.
+            | (
+                TriggerEventDef::SacrificePerformed(predicate),
+                CommittedTriggerEvent::SacrificePerformed { object, .. },
             ) => self.trigger_object_matches_for_controller(
                 predicate, object, source, false, controller,
             ),

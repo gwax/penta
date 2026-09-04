@@ -704,6 +704,7 @@ impl Game {
                 followup,
                 declined,
                 optional,
+                source,
             } => {
                 let sacrificed = pending
                     .observation
@@ -714,6 +715,12 @@ impl Game {
                     .collect::<Vec<_>>();
                 let chosen = sacrificed.first().copied();
                 self.capture_sacrifices(&sacrificed);
+                // The reflexive half of "Sacrifice a creature. When you do,
+                // ..." -- published only when something was actually given
+                // up, and while it is still readable on the battlefield.
+                if let (Some(source), Some(chosen)) = (source, chosen) {
+                    self.capture_sacrifice_performed(source, chosen);
+                }
                 // "If a player does" -- declining an optional sacrifice earns
                 // nothing, while a compulsory one pays out even for nothing.
                 if let Some(followup) = followup

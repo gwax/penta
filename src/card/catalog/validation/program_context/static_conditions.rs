@@ -30,6 +30,9 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::TargetMatches { .. }
         // And this reads a binding, which only a resolution has.
         | TriggerConditionDef::BoundObjectMatches { .. }
+        // And this reads what a resolution sacrificed, which a static walk
+        // has no event to ask.
+        | TriggerConditionDef::SacrificedObjectMatches(_)
         | TriggerConditionDef::ControlsGreatestPowerCreature => false,
         TriggerConditionDef::SourceMatches { object }
         | TriggerConditionDef::AttachedPermanentMatches { object } => {

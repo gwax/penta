@@ -298,6 +298,42 @@ impl Game {
         }
     }
 
+    /// The compulsory "when you do": a clause that sacrificed a permanent
+    /// during its own resolution publishes it against that clause's source,
+    /// so only the reflexive half on that card watches it. Captured while
+    /// the permanent is still on the battlefield, which is the only moment
+    /// its power can be read for certain.
+    pub(super) fn capture_sacrifice_performed(
+        &mut self,
+        source: GameObjectId,
+        sacrificed: GameObjectId,
+    ) {
+        let Some(sacrificed) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == sacrificed)
+            .map(|permanent| self.trigger_event_object(permanent))
+        else {
+            return;
+        };
+        let Some(object) = self
+            .battlefield
+            .iter()
+            .find(|permanent| permanent.card.id == source)
+            .map(|permanent| self.trigger_event_object(permanent))
+        else {
+            return;
+        };
+        // A negative power gives the reflexive half nothing rather than
+        // draining its controller, the same way a sacrifice follow-up reads.
+        let power = i32::from(self.current_or_last_known_power(sacrificed.id).unwrap_or(0)).max(0);
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::SacrificePerformed {
+            object,
+            sacrificed,
+            power,
+        });
+    }
+
     pub(super) fn move_permanents_to_graveyard(&mut self, ids: &[GameObjectId]) {
         self.move_permanents_to_graveyard_then(ids, None);
     }

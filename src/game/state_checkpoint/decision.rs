@@ -813,6 +813,7 @@ fn continuation_snapshot(
             followup,
             declined,
             optional,
+            source,
         } => {
             DecisionContinuationSnapshot::SacrificeOfChoice {
                 followup: match followup {
@@ -846,6 +847,7 @@ fn continuation_snapshot(
                     None => None,
                 },
                 optional: *optional,
+                source: source.map(|source| source.0),
             }
         }
         DecisionContinuation::SearchZonesAndExileRest {

@@ -521,6 +521,7 @@ fn validate_trigger_condition_shape(
         }
         TriggerConditionDef::SourceMatches { object }
         | TriggerConditionDef::BoundObjectMatches { object, .. }
+        | TriggerConditionDef::SacrificedObjectMatches(object)
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             validate_object_predicate_shape(object, targets)
         }

@@ -90,6 +90,9 @@ pub(in super::super) fn shared_trigger_condition(condition: TriggerConditionDef)
         }
         TriggerConditionDef::TargetMatches { object, .. }
         | TriggerConditionDef::BoundObjectMatches { object, .. }
+        // Read off the permanent the same resolution sacrificed, through the
+        // retired objects that still remember what it was.
+        | TriggerConditionDef::SacrificedObjectMatches(object)
         | TriggerConditionDef::SourceMatches { object }
         | TriggerConditionDef::AttachedPermanentMatches { object } => {
             shared_object_predicate(object)

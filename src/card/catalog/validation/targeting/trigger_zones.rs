@@ -15,6 +15,9 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::Attacks(_)
         | TriggerEventDef::Exerted(_)
         | TriggerEventDef::OptionalEffectTaken(_)
+        // The predicate names the source of the clause, which is still where
+        // it was when it sacrificed something.
+        | TriggerEventDef::SacrificePerformed(_)
         | TriggerEventDef::Sacrificed { .. }
         | TriggerEventDef::AttackDeclared { .. }
         | TriggerEventDef::CardsExiled { .. }

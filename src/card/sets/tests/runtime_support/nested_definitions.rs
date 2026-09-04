@@ -197,6 +197,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
             source && recipient
         }
         TriggerEventDef::ObjectsDied { object: source }
+        // Published by a sacrifice of choice once something was actually
+        // given up, against the clause that demanded it.
+        | TriggerEventDef::SacrificePerformed(source)
         | TriggerEventDef::AttacksAndIsNotBlocked { attacker: source }
         | TriggerEventDef::UnblockedAttackersDeclared {
             attacker: source, ..

@@ -411,9 +411,11 @@ fn validate_trigger_event_references(
             validate_trigger_object_predicate(attacker, event, target_count, scope)
         }
         // Each names one object: the creature exerted, the source of the
-        // "you may" that was accepted, or the permanent sacrificed.
+        // "you may" that was accepted, the source of the clause that
+        // sacrificed something, or the permanent sacrificed.
         TriggerEventDef::Exerted(object)
         | TriggerEventDef::OptionalEffectTaken(object)
+        | TriggerEventDef::SacrificePerformed(object)
         | TriggerEventDef::Sacrificed { object, .. } => {
             validate_trigger_object_predicate(object, event, target_count, scope)
         }

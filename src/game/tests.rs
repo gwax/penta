@@ -594,6 +594,7 @@ mod vintage_cube_metamorphosis_fanatic;
 mod vintage_cube_mightform_harmonizer;
 mod vintage_cube_mind_twist;
 mod vintage_cube_mine_collapse;
+mod vintage_cube_minsc_and_boo;
 mod vintage_cube_miscalculation;
 mod vintage_cube_mishras_bauble;
 mod vintage_cube_mishras_workshop;

@@ -808,6 +808,7 @@ pub(super) fn parse_trigger_context(
         event_player: value.event_player.map(seat_index_value).transpose()?,
         amount: value.amount,
         damaged_object: value.damaged_object.map(GameObjectId),
+        sacrificed_object: None,
         cast_from_zone: value.cast_from_zone.map(parse_zone_kind),
     })
 }
@@ -896,6 +897,7 @@ mod tests {
             event_player: Some(PlayerId::Two),
             amount: Some(3),
             damaged_object: None,
+            sacrificed_object: None,
             cast_from_zone: Some(crate::card::ZoneKind::Graveyard),
         };
         let mut context = EffectResolutionContext::new(trigger);

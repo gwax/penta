@@ -316,6 +316,12 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         declined: Option<Box<EffectContinuationSnapshot>>,
         optional: bool,
+        /// The clause that demanded the sacrifice, appended the same way
+        /// `declined` was so an older checkpoint still reads. One written
+        /// before this existed publishes no reflexive "when you do", which
+        /// changes nothing: no card could name that event yet.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        source: Option<u32>,
     },
     /// A colour choice waiting to be answered. Only the recipients are
     /// stored: what to do with the answer and how long it lasts are read

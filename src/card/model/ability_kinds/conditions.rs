@@ -23,6 +23,14 @@ pub enum TriggerConditionDef {
     /// conditions rather than as an effect with two branches, so that the
     /// pair reads the same way the card does.
     Not(&'static TriggerConditionDef),
+    /// Whether what a reflexive sacrifice clause just gave up matches.
+    ///
+    /// The companion of [`TriggerEventDef::SacrificePerformed`]: "if the
+    /// sacrificed creature was a Hamster" asks about the permanent the same
+    /// resolution took, not about anything still on the battlefield. It is
+    /// read from last-known information, because a sacrificed permanent is
+    /// in a graveyard by the time anything can ask.
+    SacrificedObjectMatches(ObjectPredicateDef),
     /// Whether the original source object is still on the battlefield.
     SourceOnBattlefield,
     /// Whether the original source object is still a card in the named
