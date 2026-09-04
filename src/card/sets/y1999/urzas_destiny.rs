@@ -5,10 +5,10 @@ use crate::card::sets::y2011::magic_2012 as catalog_m12;
 use crate::card::sets::y2012::magic_2013 as catalog_m13;
 use crate::card::sets::y2013::magic_2014 as catalog_m14;
 use crate::card::{
-    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
-    CardTypeSet, CharacteristicOperationDef, CounterKind, EffectDef, EffectRecipientDef,
+    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype,
+    CardType, CardTypeSet, CharacteristicOperationDef, CounterKind, EffectDef, EffectRecipientDef,
     ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRelation, PowerToughnessOperationDef,
-    SetOperationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement,
+    SetOperationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::mana_cost;
 
@@ -1306,13 +1306,54 @@ pub(in crate::card::sets) static THORN_ELEMENTAL: CardRecord = CardRecord::new(
 );
 
 // UDS 124 — Yavimaya Elder
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static YAVIMAYA_ELDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("325d9372-01c9-4e99-a966-13c8f8566e2e"),
     "Yavimaya Elder",
-    crate::card::CardArt::new("325d9372-01c9-4e99-a966-13c8f8566e2e", "Ray Lago"),
-    crate::card::CardSet::UrzasDestiny,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("325d9372-01c9-4e99-a966-13c8f8566e2e", "Ray Lago"),
+    CardSet::UrzasDestiny,
+    // Three cards for three mana if you have the two to spare: the body is
+    // a speed bump and everything else is the payment for chump blocking.
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Human", "Druid"], 2, 1).with_abilities(&[
+        abilities::dies_trigger(
+            "When this creature dies, you may search your library for up to two basic land cards, reveal them, put them into your hand, then shuffle.",
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &const {
+                    EffectDef::SearchZone {
+                        player: EffectRecipientDef::Controller,
+                        source: ZoneKind::Library,
+                        object: ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Land),
+                            ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                        ]),
+                        // "Up to two" of a stated quality, so finding none is
+                        // a legal answer even with basics still in there.
+                        minimum: 0,
+                        maximum: ValueDef::Constant(2),
+                        reveal: true,
+                        destination: ZoneKind::Hand,
+                        placement: ZonePlacement::Top,
+                        shuffle: true,
+                        enters_tapped: false,
+                        attachment: None,
+                        binding: None,
+                        then: None,
+                    }
+                },
+            },
+        ),
+        AbilityDef::activated(
+            "{2}, Sacrifice this creature: Draw a card.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}")),
+                AbilityCostDef::SacrificeSource,
+            ],
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // UDS 125 — Yavimaya Enchantress

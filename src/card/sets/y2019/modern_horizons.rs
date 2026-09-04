@@ -704,13 +704,20 @@ pub(in crate::card::sets) static MOTHER_BEAR: CardRecord = CardRecord::new(
 );
 
 // MH1 187 — Trumpeting Herd
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRUMPETING_HERD: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b0f3b68e-f616-4687-bc2d-075165162cd1"),
     "Trumpeting Herd",
-    crate::card::CardArt::new("b0f3b68e-f616-4687-bc2d-075165162cd1", "Lars Grant-West"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("b0f3b68e-f616-4687-bc2d-075165162cd1", "Lars Grant-West"),
+    CardSet::ModernHorizons1,
+    // Six power over two turns for four mana, which is why the rebound is
+    // the card rather than a rider on it.
+    CardRules::new_sorcery(mana_cost!("{2}{G}{G}")).with_abilities(&[
+        AbilityDef::spell(
+            "Create a 3/3 green Elephant creature token.",
+            EffectDef::create_creature_token(&["Elephant"], &[ManaColor::Green], 3, 3),
+        ),
+        abilities::rebound(),
+    ]),
 );
 
 // MH1 193 — Winding Way
