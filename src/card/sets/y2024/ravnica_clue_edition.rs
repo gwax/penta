@@ -2,12 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
-    CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef, ExilePlayDurationDef,
-    ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef,
-    ZoneKind, abilities, tokens,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    ComparisonDef, CounterKind, DiscardSelectionDef, EffectDef, EffectRecipientDef,
+    ExilePlayDurationDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
+    PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, abilities, tokens,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -209,13 +209,25 @@ pub(in crate::card::sets) static DIMIR_GUILDMAGE: CardRecord = CardRecord::new(
 );
 
 // CLU 229 — Azorius Chancery
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AZORIUS_CHANCERY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("e58365d2-e4db-444b-b1a9-795668ad3038"),
     "Azorius Chancery",
-    crate::card::CardArt::new("a9d629f3-24b0-400c-b054-b66250696708", "John Avon"),
-    crate::card::CardSet::RavnicaClueEdition,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a9d629f3-24b0-400c-b054-b66250696708", "John Avon"),
+    CardSet::RavnicaClueEdition,
+    // The blue-white karoo. Only the two colours below are its own; the rest
+    // of the cycle prints the same two clauses word for word.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::karoo_bounce(),
+        AbilityDef::activated_mana(
+            "{T}: Add {W}{U}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_each(
+                ManaColor::White,
+                ManaColor::Blue,
+            )),
+        ),
+    ]),
 );
 
 // CLU 241 — Orzhov Basilica

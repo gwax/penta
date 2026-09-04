@@ -3,10 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::CostQuantityDef;
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
-    EffectDef, EffectRecipientDef, KeywordAbility, ObjectPredicateDef, PlayerRelation,
-    ReplacementChoiceDef, ReplacementEffectDef, ResolvedEffectDurationDef, SpellAdditionalCostDef,
-    ValueDef, ZoneKind,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AddManaEffectDef, AppliedEffectDef, CardArt,
+    CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ObjectPredicateDef, PlayerRelation, ReplacementChoiceDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, SpellAdditionalCostDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -89,13 +89,25 @@ pub(in crate::card::sets) static TOXIC_DELUGE: CardRecord = CardRecord::new_with
 );
 
 // C13 279 — Boros Garrison
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BOROS_GARRISON: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7dfe3f03-078f-44fb-89cd-efa3ebfaf637"),
     "Boros Garrison",
-    crate::card::CardArt::new("c468dd1c-6f0a-4679-9d33-17e17db8841d", "John Avon"),
-    crate::card::CardSet::Commander2013,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("c468dd1c-6f0a-4679-9d33-17e17db8841d", "John Avon"),
+    CardSet::Commander2013,
+    // A karoo: it costs a land drop and a turn, and pays that back one mana
+    // at a time. Returning itself is legal and is what an empty board does.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::karoo_bounce(),
+        AbilityDef::activated_mana(
+            "{T}: Add {R}{W}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_each(
+                ManaColor::Red,
+                ManaColor::White,
+            )),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[

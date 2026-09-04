@@ -167,3 +167,42 @@ pub const fn fast_land_enters() -> AbilityDef {
         },
     )
 }
+
+static A_LAND_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::controlled_by(
+    ObjectPredicateDef::HasType(CardType::Land),
+    &[ZoneKind::Battlefield],
+    PlayerSetDef::Related(PlayerRelation::You),
+);
+
+static RETURN_CHOSEN_LAND_TO_HAND: EffectDef = EffectDef::MoveToZone {
+    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
+    zone: ZoneKind::Hand,
+    placement: ZonePlacement::Top,
+};
+
+/// The karoo bounce: "When this land enters, return a land you control to
+/// its owner's hand."
+///
+/// Shared by the whole ten-land cycle, which differs only in the two colours
+/// its mana ability adds -- so the colours stay on each card and this, which
+/// names none of them, does not. The land is chosen as the trigger resolves
+/// rather than targeted, so nothing about the choice can be responded to,
+/// and the karoo returning itself is a legal answer that an otherwise empty
+/// board is forced into.
+#[must_use]
+pub const fn karoo_bounce() -> AbilityDef {
+    enters_trigger(
+        "When this land enters, return a land you control to its owner's hand.",
+        EffectDef::Choose(ChooseDef {
+            binding: ObjectChoiceBindingDef::Objects(ParentBinding),
+            unchosen: None,
+            chooser: PlayerRefDef::EffectController,
+            candidates: ObjectSetDef::Query(A_LAND_YOU_CONTROL),
+            exclude: None,
+            minimum: 1,
+            maximum: 1,
+            visibility: ChoiceVisibilityDef::Public,
+            then: &RETURN_CHOSEN_LAND_TO_HAND,
+        }),
+    )
+}
