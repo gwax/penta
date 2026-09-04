@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
-    CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef,
-    EffectRecipientDef, MoveObjectsDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
-    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AlternativeCastKindDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef,
+    EffectDef, EffectRecipientDef, ManaColor, MoveObjectsDef, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities, tokens,
 };
 use crate::ids::{Binding, ParentBinding};
 use crate::{TargetIndex, mana_cost};
@@ -325,23 +326,45 @@ pub(in crate::card::sets) static WITHERBLOOM_APPRENTICE: CardRecord = CardRecord
 );
 
 // STX 271 — Quandrix Campus
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static QUANDRIX_CAMPUS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f788da28-481b-41fa-a70c-b53db6b0f068"),
     "Quandrix Campus",
-    crate::card::CardArt::new("f788da28-481b-41fa-a70c-b53db6b0f068", "Piotr Dura"),
-    crate::card::CardSet::StrixhavenSchoolOfMages,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("f788da28-481b-41fa-a70c-b53db6b0f068", "Piotr Dura"),
+    CardSet::StrixhavenSchoolOfMages,
+    // The green-blue Campus; only the two colours below are its own.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        AbilityDef::activated_mana(
+            "{T}: Add {G} or {U}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::Green,
+                ManaColor::Blue,
+            ])),
+        ),
+        abilities::campus_scry(),
+    ]),
 );
 
 // STX 275 — Witherbloom Campus
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WITHERBLOOM_CAMPUS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7346fb2e-754e-47de-b33d-eb089b357ee4"),
     "Witherbloom Campus",
-    crate::card::CardArt::new("7346fb2e-754e-47de-b33d-eb089b357ee4", "Alayna Danner"),
-    crate::card::CardSet::StrixhavenSchoolOfMages,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("7346fb2e-754e-47de-b33d-eb089b357ee4", "Alayna Danner"),
+    CardSet::StrixhavenSchoolOfMages,
+    // The black-green Campus; only the two colours below are its own.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        AbilityDef::activated_mana(
+            "{T}: Add {B} or {G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::Black,
+                ManaColor::Green,
+            ])),
+        ),
+        abilities::campus_scry(),
+    ]),
 );
 
 // STX 306 — Sedgemoor Witch

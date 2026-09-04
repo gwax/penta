@@ -206,3 +206,22 @@ pub const fn karoo_bounce() -> AbilityDef {
         }),
     )
 }
+
+/// The Campus cycle's shared sink: "{4}, {T}: Scry 1."
+///
+/// Ten lands print it word for word, differing only in the two colours their
+/// mana ability adds -- so the colours stay on each card and this, which
+/// names none of them, does not.
+#[must_use]
+pub const fn campus_scry() -> AbilityDef {
+    AbilityDef::activated(
+        "{4}, {T}: Scry 1.",
+        &const {
+            [
+                AbilityCostDef::Mana(crate::mana_cost!("{4}")),
+                AbilityCostDef::TapSource,
+            ]
+        },
+        scry(ValueDef::Constant(1)),
+    )
+}
