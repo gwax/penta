@@ -13,11 +13,11 @@ use crate::card::{
     InstalledTriggerLifetimeDef, ManaColor, ManaCost, ManaSpendEffectDef, MoveObjectsDef,
     ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
     ObjectSetFilterDef, ObjectSetValueAtLeastDef, ObjectSetValueDef, ObjectValueDef, PayOrDef,
-    PerPlayerSelectionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, RevealObjectsDef, RoundingDef, SetOperationDef,
-    SpellAdditionalCostDef, SumValueDef, TargetConditionDef, TokenCountersDef, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
-    tokens,
+    PerPlayerSelectionDef, PileExileDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
+    ReplacementEffectDef, ResolvedEffectDurationDef, RevealObjectsDef, RoundingDef,
+    SetOperationDef, SpellAdditionalCostDef, SumValueDef, TargetConditionDef, TokenCountersDef,
+    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
+    ZonePickDef, ZonePlacement, abilities, tokens,
 };
 use crate::ids::{Binding, ParentBinding};
 use crate::{TargetIndex, mana_cost};
@@ -2470,13 +2470,46 @@ pub(in crate::card::sets) static GUIDE_OF_SOULS: CardRecord = CardRecord::new(
 );
 
 // MH3 452 — Crabomination
-// Audit: unsupported — Needs one choice among the three cards exiled by its enter trigger before offering a free cast.
 pub(in crate::card::sets) static CRABOMINATION: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("b6ac511f-6c28-45f9-968b-9ac72872641b"),
     "Crabomination",
     CardArt::new("b6ac511f-6c28-45f9-968b-9ac72872641b", "Nicholas Gregory"),
     CardSet::ModernHorizons3,
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{4}{B}{B}"), &["Crab", "Demon"], 5, 5).with_abilities(&[
+        AbilityDef::alternative_cast_with_additional_cost(
+            AlternativeCastManaCostDef::Fixed(mana_cost!("{5}{B}{B}")),
+            AlternativeCastKindDef::Emerge,
+            None,
+            // The reduction the keyword applies is generic only, so a big
+            // enough artifact still leaves both black pips owed.
+            SpellAdditionalCostDef::sacrifice(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                CostQuantityDef::Fixed(1),
+            ),
+            EffectDef::None,
+        ),
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, target opponent exiles the top card of their library, a card at random from their graveyard, and a card at random from their hand. You may cast a spell from among cards exiled this way without paying its mana cost.",
+            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+                PlayerRelation::Opponent,
+            ))],
+            // One pile out of three zones, and one permission over the whole
+            // pile: the free cast is spent on whichever of the three is
+            // worth having.
+            EffectDef::ExileOneFromEachZone(&PileExileDef {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zones: &[
+                    ZonePickDef::top(ZoneKind::Library),
+                    // A library has an order to read from; a hand and a
+                    // graveyard do not, which is why the card says "at
+                    // random" for those two.
+                    ZonePickDef::at_random(ZoneKind::Graveyard),
+                    ZonePickDef::at_random(ZoneKind::Hand),
+                ],
+                permission: Some(ExiledCastPermissionDef::FreeWhileResolving),
+            }),
+        ),
+    ]),
 );
 
 // MH3 457 — Detective's Phoenix (alternate printing)
