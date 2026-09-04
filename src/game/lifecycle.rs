@@ -4,7 +4,7 @@ use super::{
     Game, GameError, GameEvent, GameObjectId, GameStack, ManaPool, ObjectBacking,
     ObjectCharacteristics, ObjectInstance, ObjectKind, Permanent, PermanentLastKnownInformation,
     PhysicalCard, PhysicalCardId, PlayerId, PlayerState, Pregame, ReplayRng, RetiredObject,
-    StackObject, Step, TriggerContext, ValueDef, VecDeque, ZoneChangeOutcome, remove_card,
+    StackObject, Step, Target, TriggerContext, ValueDef, VecDeque, ZoneChangeOutcome, remove_card,
 };
 use crate::card::{PlayerRelation, ZoneKind};
 
@@ -337,6 +337,56 @@ impl Game {
             .checked_add(1)
             .expect("continuous-effect timestamps exhausted");
         timestamp
+    }
+
+    /// Whether `target` names a card object that has ceased to exist.
+    ///
+    /// A binding outliving the object it named is ordinary. A group chosen at
+    /// the start of a resolution keeps its ids while the effect works through
+    /// them, and a card in that group may change zone on the way: Sylvan
+    /// Library puts a chosen card on top of its owner's library, and
+    /// `zone_change_card` below retires the object the group still lists.
+    pub(super) fn card_object_retired(&self, target: Target) -> bool {
+        match target {
+            Target::Player(_) => false,
+            Target::Card(id) | Target::Permanent(id) | Target::Spell(id) => {
+                matches!(self.retired_objects.get(&id), Some(RetiredObject::Card(_)))
+            }
+        }
+    }
+
+    /// The group as the member at `index` should see it: the same members,
+    /// less the ones the loop has already run past that no longer exist.
+    /// `None` when every earlier member is still there, so the ordinary
+    /// iteration keeps the group it was given.
+    ///
+    /// A dead id is not information the group still carries -- nothing on any
+    /// board matches it, so no correct read can depend on it -- but it is
+    /// information a checkpoint has to write down, and it cannot. Naming a
+    /// retired card publishes what it was and, through `successors`, where it
+    /// went; for a card put back on top of its owner's library that is a
+    /// disclosure the observation never made. Dropping it here keeps the
+    /// checkpoint honest without the wire having to describe a thing that no
+    /// longer exists. Members from `index` on are left alone -- the loop still
+    /// has to visit them.
+    pub(super) fn live_group_before(
+        &self,
+        members: &[Target],
+        index: usize,
+    ) -> Option<Vec<Target>> {
+        members[..index]
+            .iter()
+            .any(|target| self.card_object_retired(*target))
+            .then(|| {
+                members
+                    .iter()
+                    .enumerate()
+                    .filter(|(position, target)| {
+                        *position >= index || !self.card_object_retired(**target)
+                    })
+                    .map(|(_, target)| *target)
+                    .collect()
+            })
     }
 
     pub(super) fn zone_change_card(

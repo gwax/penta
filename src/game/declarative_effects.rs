@@ -965,8 +965,12 @@ impl Game {
         let members = context.runtime_object_group(&objects);
         let mut later_procedures = std::mem::take(&mut self.pending_procedures);
         while let Some(member) = members.get(next).copied() {
+            let consumed = next;
             next += 1;
             let mut iteration = context.clone();
+            if let Some(live) = self.live_group_before(&members, consumed) {
+                iteration.bind_runtime_object_group(&objects, live);
+            }
             iteration.bind_runtime_single_object(&binding, Some(member));
             self.resolve_effect_def(effect, object, iteration);
             if !self.pending_decisions.is_empty()

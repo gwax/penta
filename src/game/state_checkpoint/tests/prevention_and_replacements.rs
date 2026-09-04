@@ -350,6 +350,104 @@ fn sylvan_library_ordered_choice_survives_checkpoint_round_trip() {
     assert!(!rebuilt.pending_decisions.is_empty());
 }
 
+/// The loop's second iteration, once the first has already put its card back.
+/// That card's object is retired by the move into a library, which is the one
+/// place a checkpoint cannot name it from, so the iteration drops what it has
+/// already run past rather than carrying a dead id into a continuation that
+/// has to be written down.
+#[test]
+fn sylvan_library_second_payment_survives_the_first_card_going_back() {
+    let mut game = crate::game::tests::ready_game();
+    game.turn = 2;
+    game.step = Step::Upkeep;
+    game.put_onto_battlefield(PlayerId::One, crate::card::cards::SYLVAN_LIBRARY)
+        .expect("Sylvan Library enters");
+    game.players[0].library = vec![
+        crate::game::tests::card(77_030, crate::card::cards::PLAINS, PlayerId::One),
+        crate::game::tests::card(77_031, crate::card::cards::MOUNTAIN, PlayerId::One),
+        crate::game::tests::card(77_032, crate::card::cards::FOREST, PlayerId::One),
+    ];
+
+    game.advance_step();
+    let first = game.priority;
+    game.apply(first, Action::PassPriority).unwrap();
+    game.apply(first.opponent(), Action::PassPriority).unwrap();
+    crate::game::tests::pass_until_decision(&mut game);
+    let offer = game.pending_decisions[0].observation.clone();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: offer.id,
+            options: vec![1],
+        },
+    )
+    .expect("the extra draws are accepted");
+    let choice = game.pending_decisions[0].observation.clone();
+    let chosen = choice
+        .options
+        .iter()
+        .take(2)
+        .map(|option| option.id)
+        .collect::<Vec<_>>();
+    let members = choice
+        .options
+        .iter()
+        .filter(|option| chosen.contains(&option.id))
+        .filter_map(|option| option.card.map(|(card, _)| Target::Card(card)))
+        .collect::<Vec<_>>();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: choice.id,
+            options: chosen,
+        },
+    )
+    .expect("two drawn cards are chosen");
+
+    // Decline the first payment, which puts that card on top of the library
+    // and retires the object the group named.
+    let first_payment = game.pending_decisions[0].observation.clone();
+    game.apply(
+        PlayerId::One,
+        Action::ChooseDecision {
+            decision: first_payment.id,
+            options: vec![0],
+        },
+    )
+    .expect("the first payment may be declined");
+    assert!(
+        members.iter().any(|target| game.card_object_retired(*target)),
+        "the card that went back is gone as an object",
+    );
+    let Some(crate::game::DecisionContinuation::PayOr { context, .. }) = game
+        .pending_decisions
+        .first()
+        .map(|pending| &pending.continuation)
+    else {
+        unreachable!("the second payment is the pending question")
+    };
+    assert!(
+        !context
+            .object_group(crate::ParentBinding)
+            .iter()
+            .any(|target| game.card_object_retired(*target)),
+        "the second iteration carries no member it has already run past",
+    );
+
+    let (_, mut rebuilt) = rebuild_current_checkpoint(&game, PlayerId::One, 4_255);
+    let payment = rebuilt.pending_decisions[0].observation.clone();
+    rebuilt
+        .apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: payment.id,
+                options: vec![1],
+            },
+        )
+        .expect("the reconstructed second payment is still answerable");
+    assert_eq!(rebuilt.players[0].life, game.players[0].life - 4);
+}
+
 #[test]
 fn sylvan_library_for_each_payment_resumes_after_checkpoint_round_trip() {
     let mut game = crate::game::tests::ready_game();
