@@ -1017,13 +1017,55 @@ pub(in crate::card::sets) static ANCIENT_SPIDER: CardRecord = CardRecord::new(
 );
 
 // PLS 97 — Cavern Harpy
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAVERN_HARPY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("adfb0804-50d6-4bca-8733-72e01030a543"),
     "Cavern Harpy",
-    crate::card::CardArt::new("adfb0804-50d6-4bca-8733-72e01030a543", "Daren Bader"),
-    crate::card::CardSet::Planeshift,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("adfb0804-50d6-4bca-8733-72e01030a543", "Daren Bader"),
+    CardSet::Planeshift,
+    // The two halves loop: bouncing itself for a life lets the arrival
+    // trigger pick up something worth replaying, over and over.
+    CardRules::new_creature(mana_cost!("{U}{B}"), &["Harpy", "Beast"], 2, 1).with_abilities(&[
+        abilities::flying(),
+        abilities::enters_trigger(
+            "When this creature enters, return a blue or black creature you control to its owner's hand.",
+            // Chosen as this resolves rather than targeted, and the Harpy is
+            // itself blue and black, so it is always a legal answer.
+            EffectDef::Choose(ChooseDef {
+                binding: ObjectChoiceBindingDef::Objects(ParentBinding),
+                unchosen: None,
+                chooser: PlayerRefDef::EffectController,
+                candidates: ObjectSetDef::Query(ObjectQueryDef::controlled_by(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::AnyOf(&[
+                            ObjectPredicateDef::Color(ManaColor::Blue),
+                            ObjectPredicateDef::Color(ManaColor::Black),
+                        ]),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerSetDef::Related(PlayerRelation::You),
+                )),
+                exclude: None,
+                minimum: 1,
+                maximum: 1,
+                visibility: ChoiceVisibilityDef::Public,
+                then: &EffectDef::MoveToZone {
+                    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
+                    zone: ZoneKind::Hand,
+                    placement: ZonePlacement::Top,
+                },
+            }),
+        ),
+        AbilityDef::activated(
+            "Pay 1 life: Return this creature to its owner's hand.",
+            &[AbilityCostDef::PayLife(1)],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Source,
+                zone: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+            },
+        ),
+    ]),
 );
 
 // PLS 98 — Cloud Cover
