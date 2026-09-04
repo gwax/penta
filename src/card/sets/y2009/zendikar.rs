@@ -24,13 +24,44 @@ const fn fetch_land(text: &'static str, land_types: &'static [BasicLandType]) ->
 }
 
 // ZEN 14 — Journey to Nowhere
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JOURNEY_TO_NOWHERE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("09cfe585-8a55-4b27-89e0-dfb6946fe1f3"),
     "Journey to Nowhere",
-    crate::card::CardArt::new("09cfe585-8a55-4b27-89e0-dfb6946fe1f3", "Warren Mahy"),
-    crate::card::CardSet::Zendikar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("09cfe585-8a55-4b27-89e0-dfb6946fe1f3", "Warren Mahy"),
+    CardSet::Zendikar,
+    // Two printed abilities rather than the modern "until" wording, so the
+    // return is its own leaves-the-battlefield trigger: answering the
+    // enchantment in response to the exile leaves the creature where it was.
+    CardRules::new_enchantment(mana_cost!("{1}{W}")).with_abilities(&[
+        abilities::enters_trigger_with_targets(
+            "When this enchantment enters, exile target creature.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::ExileLinkedToSource {
+                until_source_leaves: false,
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                face_down: false,
+                then: None,
+            },
+        ),
+        AbilityDef::triggered(
+            "When this enchantment leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                Some(ZoneKind::Battlefield),
+                None,
+            ),
+            EffectDef::ReturnLinkedExiles {
+                object: ObjectPredicateDef::Any,
+                counters: None,
+                zone: ZoneKind::Battlefield,
+                grant: None,
+                controller: None,
+                transformed: false,
+            },
+        ),
+    ]),
 );
 
 // ZEN 23 — Kor Skyfisher
@@ -68,13 +99,45 @@ pub(in crate::card::sets) static KOR_SKYFISHER: CardRecord = CardRecord::new(
 );
 
 // ZEN 48 — Into the Roil
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INTO_THE_ROIL: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5dba9972-dd8b-407b-9374-a8f0ed1a96db"),
     "Into the Roil",
-    crate::card::CardArt::new("5dba9972-dd8b-407b-9374-a8f0ed1a96db", "Kieran Yanner"),
-    crate::card::CardSet::Zendikar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5dba9972-dd8b-407b-9374-a8f0ed1a96db", "Kieran Yanner"),
+    CardSet::Zendikar,
+    // Two mana for tempo, or four for tempo that replaces itself, which is
+    // what keeps it playable in a deck that is not otherwise bouncing things.
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{2}{U}{U}"),
+            AlternativeCastKindDef::Kicked,
+            Some("Kicker {1}{U} (You may pay an additional {1}{U} as you cast this spell.)"),
+            EffectDef::None,
+        ),
+        AbilityDef::spell_with_targets(
+            "Return target nonland permanent to its owner's hand. If this spell was kicked, draw a card.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::MoveToZone {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    zone: ZoneKind::Hand,
+                    placement: ZonePlacement::Top,
+                },
+                // Asked as this resolves, so a kicked spell still draws even
+                // when its target has already left the battlefield.
+                EffectDef::IfCondition {
+                    condition: &TriggerConditionDef::SourceCastWith(
+                        AlternativeCastKindDef::Kicked,
+                    ),
+                    then: &EffectDef::DrawCards {
+                        recipient: EffectRecipientDef::Controller,
+                        amount: ValueDef::Constant(1),
+                    },
+                },
+            ]),
+        ),
+    ]),
 );
 
 // ZEN 67 — Spell Pierce

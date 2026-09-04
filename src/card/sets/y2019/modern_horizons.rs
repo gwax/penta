@@ -306,13 +306,26 @@ pub(in crate::card::sets) static FORCE_OF_NEGATION: CardRecord = CardRecord::new
 );
 
 // MH1 55 — Man-o'-War
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MAN_O_WAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4dbf9bf9-75cd-4b25-a3a1-43b7e029700b"),
     "Man-o'-War",
-    crate::card::CardArt::new("5eaa4199-df9b-494a-af7a-2491e8b0ef70", "Jon J Muth"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5eaa4199-df9b-494a-af7a-2491e8b0ef70", "Jon J Muth"),
+    CardSet::ModernHorizons1,
+    // Any creature, its own included, which is the out when it is the only
+    // one on the board.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Jellyfish"], 2, 2).with_ability(
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, return target creature to its owner's hand.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+            },
+        ),
+    ),
 );
 
 // MH1 75 — Urza, Lord High Artificer
