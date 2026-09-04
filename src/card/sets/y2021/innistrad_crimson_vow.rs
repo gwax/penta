@@ -159,13 +159,36 @@ pub(in crate::card::sets) static VOLDAREN_EPICURE: CardRecord = CardRecord::new(
 );
 
 // VOW 189 — Bramble Wurm
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BRAMBLE_WURM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8f16f137-4ceb-469c-a381-e575d58f456b"),
     "Bramble Wurm",
-    crate::card::CardArt::new("8f16f137-4ceb-469c-a381-e575d58f456b", "Lars Grant-West"),
-    crate::card::CardSet::InnistradCrimsonVow,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("8f16f137-4ceb-469c-a381-e575d58f456b", "Lars Grant-West"),
+    CardSet::InnistradCrimsonVow,
+    // Seven mana is more than most decks reach, so the graveyard half is
+    // what the card usually does: five life for three, from the bin.
+    CardRules::new_creature(mana_cost!("{6}{G}"), &["Wurm"], 7, 6).with_abilities(&[
+        abilities::reach(),
+        abilities::trample(),
+        abilities::enters_trigger(
+            "When this creature enters, you gain 5 life.",
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(5),
+            },
+        ),
+        AbilityDef::activated(
+            "{2}{G}, Exile this card from your graveyard: You gain 5 life.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}{G}")),
+                AbilityCostDef::ExileSource,
+            ],
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(5),
+            },
+        )
+        .with_source_zones(&[ZoneKind::Graveyard]),
+    ]),
 );
 
 // VOW 225 — Ulvenwald Oddity // Ulvenwald Behemoth
