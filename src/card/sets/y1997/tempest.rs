@@ -1775,13 +1775,34 @@ pub(in crate::card::sets) static FIREFLY: CardRecord = CardRecord::new(
 );
 
 // TMP 173 — Fireslinger
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FIRESLINGER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("de253d94-9968-47da-bb7a-9c8ebf50f4e0"),
     "Fireslinger",
-    crate::card::CardArt::new("de253d94-9968-47da-bb7a-9c8ebf50f4e0", "Jeff Reitz"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("de253d94-9968-47da-bb7a-9c8ebf50f4e0", "Jeff Reitz"),
+    CardSet::Tempest,
+    // A Tim that shoots itself as well: the point back is what keeps it from
+    // simply winning long games on its own.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Wizard"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: This creature deals 1 damage to any target and 1 damage to you.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Constant(1),
+                },
+                // Damage rather than life loss, so it can be prevented and
+                // the Fireslinger's controller is a legal damage recipient.
+                EffectDef::DealDamage {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            ]),
+        ),
+    ),
 );
 
 // TMP 174 — Flowstone Giant

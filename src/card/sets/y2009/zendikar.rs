@@ -3,10 +3,11 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AdditionalCostValueDef, AppliedEffectDef, AppliedRuleDef, BasicLandType, CardArt, CardRules,
-    CardSet, CardType, ComparisonDef, EffectDef, EffectRecipientDef, ManaColor, ObjectPredicateDef,
-    ObjectRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
-    ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    AdditionalCostValueDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef,
+    BasicLandType, CardArt, CardRules, CardSet, CardType, ComparisonDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef,
+    ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -220,13 +221,55 @@ pub(in crate::card::sets) static BURST_LIGHTNING: CardRecord = CardRecord::new(
 );
 
 // ZEN 125 — Goblin Bushwhacker
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOBLIN_BUSHWHACKER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4085a5bf-a71b-4c73-9b39-0dcc328fe11b"),
     "Goblin Bushwhacker",
-    crate::card::CardArt::new("4085a5bf-a71b-4c73-9b39-0dcc328fe11b", "Mark Tedin"),
-    crate::card::CardSet::Zendikar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("4085a5bf-a71b-4c73-9b39-0dcc328fe11b", "Mark Tedin"),
+    CardSet::Zendikar,
+    // Unkicked it is a one-mana body; kicked it is the second half of an
+    // Empty the Warrens turn, which is the only reason the card sees play.
+    CardRules::new_creature(mana_cost!("{R}"), &["Goblin", "Warrior"], 1, 1).with_abilities(&[
+        AbilityDef::alternative_cast(
+            mana_cost!("{R}{R}"),
+            AlternativeCastKindDef::Kicked,
+            Some("Kicker {R} (You may pay an additional {R} as you cast this spell.)"),
+            EffectDef::None,
+        ),
+        AbilityDef::triggered_if(
+            "When this creature enters, if it was kicked, creatures you control get +1/+0 and gain haste until end of turn.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &TriggerConditionDef::SourceCastWith(AlternativeCastKindDef::Kicked),
+            // The Bushwhacker pumps itself too, and the haste is what lets
+            // the whole board attack the turn it lands.
+            EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(0),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                    effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ]),
+        ),
+    ]),
 );
 
 // ZEN 168 — Lotus Cobra

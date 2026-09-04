@@ -10,13 +10,26 @@ use crate::card::{
 use crate::{TargetIndex, mana_cost};
 
 // KHM 46 — Behold the Multiverse
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BEHOLD_THE_MULTIVERSE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("27855a38-a682-4f97-ad22-ac625e86faec"),
     "Behold the Multiverse",
-    crate::card::CardArt::new("27855a38-a682-4f97-ad22-ac625e86faec", "Magali Villeneuve"),
-    crate::card::CardSet::Kaldheim,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("27855a38-a682-4f97-ad22-ac625e86faec", "Magali Villeneuve"),
+    CardSet::Kaldheim,
+    // Foretell splits the four mana across two turns, which is what lets a
+    // deck hold up interaction and still draw two at instant speed.
+    CardRules::new_instant(mana_cost!("{3}{U}")).with_abilities(&[
+        AbilityDef::spell(
+            "Scry 2, then draw two cards.",
+            EffectDef::Sequence(&[
+                abilities::scry(ValueDef::Constant(2)),
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(2),
+                },
+            ]),
+        ),
+        abilities::foretell(mana_cost!("{1}{U}")),
+    ]),
 );
 
 // KHM 117 — Village Rites

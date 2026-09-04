@@ -236,13 +236,20 @@ pub(in crate::card::sets) static ECHO_OF_EONS: CardRecord = CardRecord::new_with
 );
 
 // MH1 51 — Faerie Seer
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FAERIE_SEER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d1fcfeb4-1818-4e08-be4c-27b8a9dc12e6"),
     "Faerie Seer",
-    crate::card::CardArt::new("d1fcfeb4-1818-4e08-be4c-27b8a9dc12e6", "Colin Boyer"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d1fcfeb4-1818-4e08-be4c-27b8a9dc12e6", "Colin Boyer"),
+    CardSet::ModernHorizons1,
+    // One mana for a flier that fixes the next two draws; the body is
+    // incidental to the scry in every deck that plays it.
+    CardRules::new_creature(mana_cost!("{U}"), &["Faerie", "Wizard"], 1, 1).with_abilities(&[
+        abilities::flying(),
+        abilities::enters_trigger(
+            "When this creature enters, scry 2.",
+            abilities::scry(ValueDef::Constant(2)),
+        ),
+    ]),
 );
 
 // MH1 52 — Force of Negation
