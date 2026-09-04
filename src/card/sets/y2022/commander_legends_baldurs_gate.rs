@@ -4,10 +4,11 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind, DeckConstructionDef,
-    EffectDef, EffectRecipientDef, KeywordAbility, ManaColor, ObjectPredicateDef, PlayerRelation,
-    SacrificedAmountDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, abilities,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind,
+    DeckConstructionDef, EffectDef, EffectRecipientDef, KeywordAbility, ManaColor,
+    ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, SacrificedAmountDef,
+    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
+    abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -52,13 +53,30 @@ pub(in crate::card::sets) static YOUNG_BLUE_DRAGON: CardRecord = CardRecord::new
 );
 
 // CLB 113 — Arms of Hadar
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARMS_OF_HADAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("db1fd431-8f6d-4ca5-bc0c-53881c500da1"),
     "Arms of Hadar",
-    crate::card::CardArt::new("db1fd431-8f6d-4ca5-bc0c-53881c500da1", "Mirko Failoni"),
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("db1fd431-8f6d-4ca5-bc0c-53881c500da1", "Mirko Failoni"),
+    CardSet::CommanderLegendsBattleForBaldursGate,
+    // A one-sided sweeper at sorcery speed, and it names a player rather
+    // than the creatures, so a board built after it resolves is untouched.
+    CardRules::new_sorcery(mana_cost!("{3}{B}")).with_ability(AbilityDef::spell_with_targets(
+        "Creatures target player controls get -2/-2 until end of turn.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Player(PlayerRelation::Any),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::objects_controlled_by_target(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                TargetIndex::PRIMARY,
+            ),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-2),
+                ValueDef::Constant(-2),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // CLB 119 — Cast Down

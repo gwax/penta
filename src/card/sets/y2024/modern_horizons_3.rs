@@ -1978,13 +1978,18 @@ pub(in crate::card::sets) static SINK_INTO_STUPOR: CardRecord = CardRecord::new_
 );
 
 // MH3 284 — Annoyed Altisaur
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANNOYED_ALTISAUR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7536d618-0c98-45bb-913b-b8117b4acf87"),
     "Annoyed Altisaur",
-    crate::card::CardArt::new("4aa9354d-3496-47f4-81c9-aead15efb8bb", "Lars Grant-West"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("4aa9354d-3496-47f4-81c9-aead15efb8bb", "Lars Grant-West"),
+    CardSet::ModernHorizons3,
+    // Seven mana with cascade attached, which is why a limited deck plays it
+    // as two cards rather than as an expensive one.
+    CardRules::new_creature(mana_cost!("{5}{G}{G}"), &["Dinosaur"], 6, 5).with_abilities(&[
+        abilities::reach(),
+        abilities::trample(),
+        abilities::cascade(),
+    ]),
 );
 
 // MH3 286 — Priest of Titania
