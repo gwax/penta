@@ -5,9 +5,9 @@ use crate::card::sets::y2005::ravnica_city_of_guilds as catalog_rav;
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ComparisonDef,
-    CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef, ObjectQueryDef, PlayerRelation,
-    ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, tokens,
+    CounterKind, EffectChoiceDef, EffectDef, EffectRecipientDef, ObjectPredicateDef,
+    ObjectQueryDef, PlayerRelation, ResolvedEffectDurationDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
@@ -198,16 +198,48 @@ pub(in crate::card::sets) static INSPIRING_OVERSEER: CardRecord = CardRecord::ne
 );
 
 // J25 343 — Pestermite
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PESTERMITE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f252ae53-443c-4a27-b8f0-639a9a2b8598"),
     "Pestermite",
-    crate::card::CardArt::new(
+    CardArt::new(
         "4c8b4f64-244c-4944-b23f-c383039d9767",
         "Christopher Moeller",
     ),
-    crate::card::CardSet::FoundationsJumpstart,
-    crate::card::CardRules::unsupported(),
+    CardSet::FoundationsJumpstart,
+    // Flash plus the untap half is the whole reason the card is remembered:
+    // held up on the opponent's end step it is a Time Walk on their land.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Faerie", "Rogue"], 2, 1).with_abilities(&[
+        abilities::flash(),
+        abilities::flying(),
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, you may tap or untap target permanent.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::Any,
+            )],
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &const {
+                    EffectDef::ChooseEffect {
+                        player: EffectRecipientDef::Controller,
+                        choices: &[
+                            EffectChoiceDef {
+                                label: "Tap it",
+                                effect: EffectDef::Tap {
+                                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                                },
+                            },
+                            EffectChoiceDef {
+                                label: "Untap it",
+                                effect: EffectDef::Untap {
+                                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                                },
+                            },
+                        ],
+                    }
+                },
+            },
+        ),
+    ]),
 );
 
 // J25 349 — Remand

@@ -2,11 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef, CardArt,
-    CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef, EffectRecipientDef,
-    MoveObjectsDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef,
-    ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerConditionDef, TriggerEventDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AlternativeCastKindDef,
+    CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef,
+    EffectRecipientDef, MoveObjectsDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef, TriggerConditionDef,
+    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::{Binding, ParentBinding};
 use crate::{TargetIndex, mana_cost};
@@ -150,13 +150,36 @@ pub(in crate::card::sets) static BALEFUL_MASTERY: CardRecord = CardRecord::new_w
 );
 
 // STX 90 — Unwilling Ingredient
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNWILLING_INGREDIENT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("30448144-639a-43c7-a408-bd6ed543c231"),
     "Unwilling Ingredient",
-    crate::card::CardArt::new("30448144-639a-43c7-a408-bd6ed543c231", "David Auden Nash"),
-    crate::card::CardSet::StrixhavenSchoolOfMages,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("30448144-639a-43c7-a408-bd6ed543c231", "David Auden Nash"),
+    CardSet::StrixhavenSchoolOfMages,
+    // Menace makes the one-drop trade awkwardly, and once it has traded the
+    // graveyard half is a card at instant speed.
+    CardRules::new_creature(mana_cost!("{B}"), &["Frog"], 1, 1).with_abilities(&[
+        abilities::menace(),
+        AbilityDef::activated(
+            "{2}{B}, Exile this card from your graveyard: You draw a card and you lose 1 life.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{2}{B}")),
+                AbilityCostDef::ExileSource,
+            ],
+            EffectDef::Sequence(&[
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            ]),
+        )
+        // No sorcery restriction printed, so unlike Mother Bear this one is
+        // available with the mana held up.
+        .with_source_zones(&[ZoneKind::Graveyard]),
+    ]),
 );
 
 // STX 186 — Expressive Iteration
