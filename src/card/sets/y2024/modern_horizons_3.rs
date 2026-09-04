@@ -2,22 +2,23 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AggregateOperationDef, AlternativeCastKindDef, AlternativeCastManaCostDef, AppliedEffectDef,
-    AppliedRuleDef, AttackEventMatcherDef, BasicLandType, BattlefieldEntryModificationDef, CardArt,
-    CardChoiceSourceDef, CardRules, CardSet, CardSupertype, CardType, CharacteristicOperationDef,
-    ChoiceVisibilityDef, ChooseDef, ChooseForEachPlayerDef, ClassifyObjectsDef, ComparisonDef,
-    ControlDurationDef, CopyExceptionsDef, CostQuantityDef, CounterKind, CreatureTypeSetDef,
-    DrawEventMatcherDef, EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef,
-    EmblemCharacteristics, ExiledCastPermissionDef, HalvedValueDef, InstalledTriggerDef,
-    InstalledTriggerLifetimeDef, ManaColor, ManaCost, ManaSpendEffectDef, MoveObjectsDef,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    ObjectSetFilterDef, ObjectSetValueAtLeastDef, ObjectSetValueDef, ObjectValueDef, PayOrDef,
-    PerPlayerSelectionDef, PileExileDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ReplacementEffectDef, ResolvedEffectDurationDef, RevealObjectsDef, RoundingDef,
-    SetOperationDef, SpellAdditionalCostDef, SumValueDef, TargetConditionDef, TokenCountersDef,
-    TriggerConditionDef, TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind,
-    ZonePickDef, ZonePlacement, abilities, tokens,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AddManaEffectDef, AggregateOperationDef, AlternativeCastKindDef, AlternativeCastManaCostDef,
+    AppliedEffectDef, AppliedRuleDef, AttackEventMatcherDef, BasicLandType,
+    BattlefieldEntryModificationDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
+    CardSupertype, CardType, CharacteristicOperationDef, ChoiceVisibilityDef, ChooseDef,
+    ChooseForEachPlayerDef, ClassifyObjectsDef, ComparisonDef, ControlDurationDef,
+    CopyExceptionsDef, CostQuantityDef, CounterKind, CreatureTypeSetDef, DrawEventMatcherDef,
+    EffectDef, EffectPaymentCostDef, EffectPaymentDef, EffectRecipientDef, EmblemCharacteristics,
+    ExiledCastPermissionDef, HalvedValueDef, InstalledTriggerDef, InstalledTriggerLifetimeDef,
+    ManaColor, ManaCost, ManaSpendEffectDef, MoveObjectsDef, ObjectChoiceBindingDef,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, ObjectSetFilterDef,
+    ObjectSetValueAtLeastDef, ObjectSetValueDef, ObjectValueDef, PayOrDef, PerPlayerSelectionDef,
+    PileExileDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, RevealObjectsDef, RoundingDef, SetOperationDef,
+    SpellAdditionalCostDef, SumValueDef, TargetConditionDef, TokenCountersDef, TriggerConditionDef,
+    TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePickDef,
+    ZonePlacement, abilities, tokens,
 };
 use crate::ids::{Binding, ParentBinding};
 use crate::{TargetIndex, mana_cost};
@@ -634,16 +635,54 @@ pub(in crate::card::sets) static SCURRILOUS_SENTRY: CardRecord = CardRecord::new
 );
 
 // MH3 111 — Wither and Bloom
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WITHER_AND_BLOOM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("95c2390f-71f1-4e42-83da-d603ca86a8d0"),
     "Wither and Bloom",
-    crate::card::CardArt::new(
+    CardArt::new(
         "95c2390f-71f1-4e42-83da-d603ca86a8d0",
         "Richard Kane Ferguson",
     ),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardSet::ModernHorizons3,
+    // Removal now and a counter later out of the same card, which is why it
+    // is worth casting the front half even when it trades down.
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Target creature gets -3/-3 until end of turn.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(-3),
+                    ValueDef::Constant(-3),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{1}{B}, Exile this card from your graveyard: Put a +1/+1 counter on target creature you control. Activate only as a sorcery.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}{B}")),
+                AbilityCostDef::ExileSource,
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::You),
+                    owner: None,
+                },
+            )],
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        )
+        .with_source_zones(&[ZoneKind::Graveyard])
+        .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+    ]),
 );
 
 // MH3 114 — Amped Raptor

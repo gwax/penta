@@ -128,13 +128,38 @@ pub(in crate::card::sets) static LEYLINE_OF_HOPE: CardRecord = CardRecord::new(
 );
 
 // DSK 36 — Trapped in the Screen
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRAPPED_IN_THE_SCREEN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1fe95bfb-8ca7-434f-a2e7-a6b2e699584e"),
     "Trapped in the Screen",
-    crate::card::CardArt::new("1fe95bfb-8ca7-434f-a2e7-a6b2e699584e", "Michael Phillippi"),
-    crate::card::CardSet::DuskmournHouseOfHorror,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("1fe95bfb-8ca7-434f-a2e7-a6b2e699584e", "Michael Phillippi"),
+    CardSet::DuskmournHouseOfHorror,
+    // Ward is what separates it from an ordinary O-Ring: answering the
+    // enchantment costs two more than it used to.
+    CardRules::new_enchantment(mana_cost!("{2}{W}")).with_abilities(&[
+        abilities::ward(
+            2,
+            "Ward {2} (Whenever this enchantment becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)",
+        ),
+        abilities::enters_trigger_with_targets(
+            "When this enchantment enters, exile target artifact, creature, or enchantment an opponent controls until this enchantment leaves the battlefield.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Artifact),
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::HasType(CardType::Enchantment),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+            )],
+            // The modern "until" wording is one clause rather than a pair of
+            // printed abilities, so the return is installed by this same
+            // resolution rather than printed separately.
+            abilities::exile_until_source_leaves(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
+        ),
+    ]),
 );
 
 // DSK 42 — Abhorrent Oculus
