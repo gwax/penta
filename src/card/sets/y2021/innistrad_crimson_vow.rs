@@ -12,13 +12,26 @@ use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
 
 // VOW 55 — Cruel Witness
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRUEL_WITNESS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5bf2c686-efb0-46c7-b34e-c77987914b96"),
     "Cruel Witness",
-    crate::card::CardArt::new("5bf2c686-efb0-46c7-b34e-c77987914b96", "Vincent Proce"),
-    crate::card::CardSet::InnistradCrimsonVow,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5bf2c686-efb0-46c7-b34e-c77987914b96", "Vincent Proce"),
+    CardSet::InnistradCrimsonVow,
+    // A four-mana flier that also fixes every draw afterwards, in a deck
+    // already casting the spells that turn it on.
+    CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Bird", "Horror"], 3, 3).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "Whenever you cast a noncreature spell, surveil 1.",
+            // On the cast rather than the resolution, so a countered spell
+            // has already paid for its surveil.
+            TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::NoncreatureSpell,
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ])),
+            abilities::surveil(ValueDef::Constant(1)),
+        ),
+    ]),
 );
 
 // VOW 95 — Blood Fountain
