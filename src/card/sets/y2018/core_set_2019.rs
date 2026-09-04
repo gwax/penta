@@ -4,8 +4,8 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
-    CharacteristicOperationDef, EffectDef, EffectRecipientDef, LAND_SUBTYPES, ObjectPredicateDef,
-    PlayerRelation, SetOperationDef, ValueDef, ZoneKind, abilities,
+    CharacteristicOperationDef, EffectDef, EffectRecipientDef, ExilePlayDurationDef, LAND_SUBTYPES,
+    ObjectPredicateDef, PlayerRelation, SetOperationDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -89,16 +89,40 @@ pub(in crate::card::sets) static ALPINE_MOON: CardRecord = CardRecord::new(
 );
 
 // M19 134 — Dark-Dweller Oracle
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DARK_DWELLER_ORACLE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("69a57bfc-1de2-4b3a-84bc-19ec41087f0d"),
     "Dark-Dweller Oracle",
-    crate::card::CardArt::new(
+    CardArt::new(
         "69a57bfc-1de2-4b3a-84bc-19ec41087f0d",
         "Deruchenko Alexander",
     ),
-    crate::card::CardSet::CoreSet2019,
-    crate::card::CardRules::unsupported(),
+    CardSet::CoreSet2019,
+    // A sacrifice outlet that turns each body into a look at the top card,
+    // and it can eat itself once the board is empty.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Shaman"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "{1}, Sacrifice a creature: Exile the top card of your library. You may play that card this turn.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}")),
+                AbilityCostDef::SacrificePermanent {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    controller: PlayerRelation::You,
+                },
+            ],
+            EffectDef::ExileTopOfLibraryToPlay {
+                player: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+                // "You may play that card", not play it for free: the Oracle
+                // still charges for whatever it turns up.
+                free: false,
+                face_down: false,
+                duration: ExilePlayDurationDef::ThisTurn,
+                spend_any_color: false,
+                play_condition: None,
+                cast_only: false,
+            },
+        ),
+    ),
 );
 
 // M19 143 — Goblin Motivator
