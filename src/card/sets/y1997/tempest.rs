@@ -1308,13 +1308,18 @@ pub(in crate::card::sets) static DAUTHI_MINDRIPPER: CardRecord = CardRecord::new
 );
 
 // TMP 126 — Dauthi Slayer
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DAUTHI_SLAYER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("652ccd79-aefd-4b45-b747-75190da0cfc6"),
     "Dauthi Slayer",
-    crate::card::CardArt::new("652ccd79-aefd-4b45-b747-75190da0cfc6", "Dermot Power"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("652ccd79-aefd-4b45-b747-75190da0cfc6", "Dermot Power"),
+    CardSet::Tempest,
+    // Shadow means the forced attack costs nothing most games: almost
+    // nothing can block it, so the drawback only bites against another
+    // shadow creature.
+    CardRules::new_creature(mana_cost!("{B}{B}"), &["Dauthi", "Soldier"], 2, 2).with_abilities(&[
+        abilities::shadow(),
+        abilities::attacks_each_combat_if_able(),
+    ]),
 );
 
 // TMP 127 — Death Pits of Rath
