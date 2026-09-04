@@ -3,8 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, CardArt, CardRules, CardSet, CardType, ChoiceVisibilityDef, ChooseDef, EffectDef,
-    EffectRecipientDef, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectRefDef, ObjectSetDef,
-    ObjectSetFilterDef, PlayerRefDef, TriggerEventDef, ZoneKind, ZonePlacement, abilities,
+    EffectRecipientDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectRefDef,
+    ObjectSetDef, ObjectSetFilterDef, PlayerRefDef, PlayerRelation, TriggerEventDef, ZoneKind,
+    ZonePlacement, abilities,
 };
 use crate::{ParentBinding, mana_cost};
 
@@ -62,13 +63,29 @@ pub(in crate::card::sets) static BONDER_S_ORNAMENT: CardRecord = CardRecord::new
 );
 
 // C20 118 — Murmuring Mystic
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MURMURING_MYSTIC: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5fc6adff-dcb3-456d-a8c2-0e77b784ff89"),
     "Murmuring Mystic",
-    crate::card::CardArt::new("ab25853c-29d3-4244-88db-813300a262a5", "Mark Winters"),
-    crate::card::CardSet::Commander2020,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("ab25853c-29d3-4244-88db-813300a262a5", "Mark Winters"),
+    CardSet::Commander2020,
+    // A 1/5 body that turns every cantrip into a blocker, so the deck that
+    // was already casting spells stops needing creatures of its own.
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Human", "Wizard"], 1, 5).with_ability(
+        AbilityDef::triggered(
+            "Whenever you cast an instant or sorcery spell, create a 1/1 blue Bird Illusion creature token with flying.",
+            // On the cast rather than the resolution, so a countered spell
+            // has already paid for its Bird.
+            TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::HasType(CardType::Instant),
+                    ObjectPredicateDef::HasType(CardType::Sorcery),
+                ]),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ])),
+            EffectDef::create_creature_token(&["Bird", "Illusion"], &[ManaColor::Blue], 1, 1)
+                .with_abilities(&[abilities::flying()]),
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =

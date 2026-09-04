@@ -2,13 +2,13 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, ActivationTimingDef, CardArt, CardRules, CardSet, CardSupertype,
-    CardType, CounterKind, DrawEventMatcherDef, EffectDef, EffectRecipientDef,
-    ExiledCastPermissionDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
-    PlayerRelation, PlayerSetDef, TokenCountersDef, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities, tokens,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, CounterKind, DrawEventMatcherDef,
+    EffectDef, EffectRecipientDef, ExiledCastPermissionDef, ManaColor, ObjectPredicateDef,
+    ObjectQueryDef, ObjectSetDef, PlayerRelation, PlayerSetDef, TokenCountersDef, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
-use crate::ids::ParentBinding;
+use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
 
 // MOM 3 — Alabaster Host Intercessor
@@ -210,13 +210,34 @@ pub(in crate::card::sets) static ETALI_PRIMAL_CONQUEROR: CardRecord = CardRecord
 );
 
 // MOM 328 — Zephyr Winder
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ZEPHYR_WINDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("14456a8e-016c-4407-8410-c490db3f5ea9"),
     "Zephyr Winder",
-    crate::card::CardArt::new("14456a8e-016c-4407-8410-c490db3f5ea9", "Jana Schirmer"),
-    crate::card::CardSet::MarchOfTheMachine,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("14456a8e-016c-4407-8410-c490db3f5ea9", "Jana Schirmer"),
+    CardSet::MarchOfTheMachine,
+    // The untap is usually its own blocker coming back, which is what lets a
+    // 2/1 flier attack into a board it could not otherwise race.
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Elemental"], 2, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered_with_targets(
+            "Whenever this creature deals combat damage to a player, untap up to one target creature.",
+            TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
+            // "Up to one", so connecting with an empty board is still a
+            // legal trigger rather than one that is removed for no targets.
+            &[AbilityTargetDef::up_to(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: None,
+                    owner: None,
+                },
+                1,
+            )],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
