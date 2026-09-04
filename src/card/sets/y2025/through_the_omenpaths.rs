@@ -2,10 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, BattlefieldEntryModificationDef, BattlefieldEntryScalarChoiceDef,
-    CardArt, CardRules, CardSet, EffectDef, EffectPaymentDef, EffectRecipientDef, PlayerRelation,
-    PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef,
+    AbilityCostDef, AbilityDef, AddManaEffectDef, AppliedEffectDef,
+    BattlefieldEntryModificationDef, BattlefieldEntryScalarChoiceDef, CardArt, CardRules, CardSet,
+    CardType, EffectDef, EffectPaymentDef, EffectRecipientDef, ManaColor, PlayerRelation,
+    PlayerSetDef, ReplacementChoiceDef, ReplacementEffectDef, ValueDef, abilities,
 };
+use crate::mana_cost;
 
 // OM1 181 — Multiversal Passage
 pub(in crate::card::sets) static MULTIVERSAL_PASSAGE: CardRecord = CardRecord::new(
@@ -90,13 +92,32 @@ pub(in crate::card::sets) static SUBURBAN_SANCTUARY: CardRecord = CardRecord::ne
 );
 
 // OM1 186 — University Campus
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNIVERSITY_CAMPUS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("cd4b9fc5-fe3d-41d9-9d0e-77f1aebef618"),
     "University Campus",
-    crate::card::CardArt::new("cd4b9fc5-fe3d-41d9-9d0e-77f1aebef618", "Randy Gallegos"),
-    crate::card::CardSet::ThroughTheOmenpaths,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("cd4b9fc5-fe3d-41d9-9d0e-77f1aebef618", "Randy Gallegos"),
+    CardSet::ThroughTheOmenpaths,
+    // A Campus that surveils rather than scries, so it does not share the
+    // Strixhaven cycle's clause even though the rest of the card matches.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        AbilityDef::activated_mana(
+            "{T}: Add {W} or {U}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::White,
+                ManaColor::Blue,
+            ])),
+        ),
+        AbilityDef::activated(
+            "{4}, {T}: Surveil 1.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{4}")),
+                AbilityCostDef::TapSource,
+            ],
+            abilities::surveil(ValueDef::Constant(1)),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
