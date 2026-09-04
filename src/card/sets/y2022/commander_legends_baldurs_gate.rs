@@ -62,13 +62,21 @@ pub(in crate::card::sets) static ARMS_OF_HADAR: CardRecord = CardRecord::new(
 );
 
 // CLB 119 — Cast Down
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAST_DOWN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("116ce944-6871-4f51-a889-d9c4a5d7cff2"),
     "Cast Down",
-    crate::card::CardArt::new("aba79021-39af-4e74-beb5-f2f508c865b2", "Tyler Walpole"),
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("aba79021-39af-4e74-beb5-f2f508c865b2", "Tyler Walpole"),
+    CardSet::CommanderLegendsBattleForBaldursGate,
+    // Two mana for unconditional removal, priced by the one exception it
+    // makes -- which is exactly the thing the opponent built around.
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_ability(AbilityDef::destroy_target(
+        "Destroy target nonlegendary creature.",
+        &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Legendary)),
+        ])),
+        true,
+    )),
 );
 
 // CLB 130 — Guildsworn Prowler

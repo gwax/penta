@@ -404,13 +404,36 @@ pub(in crate::card::sets) static URZA_LORD_HIGH_ARTIFICER: CardRecord = CardReco
 );
 
 // MH1 81 — Carrion Feeder
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CARRION_FEEDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("88042031-64af-4f84-85d5-95992b43aa6c"),
     "Carrion Feeder",
-    crate::card::CardArt::new("0a19da90-880e-4eca-8cf7-6d7baf090d53", "Svetlin Velinov"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("0a19da90-880e-4eca-8cf7-6d7baf090d53", "Svetlin Velinov"),
+    CardSet::ModernHorizons1,
+    // A free sacrifice outlet with no mana in the cost, which is what makes
+    // it an engine piece rather than a creature; not blocking is the price.
+    CardRules::new_creature(mana_cost!("{B}"), &["Zombie"], 1, 1).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't block.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BLOCK),
+            },
+        ),
+        AbilityDef::activated(
+            "Sacrifice a creature: Put a +1/+1 counter on this creature.",
+            // Any creature you control, the Feeder included -- which is the
+            // out when it is the last thing on the board.
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                controller: PlayerRelation::You,
+            }],
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // MH1 91 — First-Sphere Gargantua
