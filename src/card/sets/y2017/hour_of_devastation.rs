@@ -3,7 +3,8 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityDef, AbilityTargetDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ObjectPredicateDef, ValueDef,
+    EffectRecipientDef, ObjectPredicateDef, PlayerRelation, PlayerSetDef, TriggerEventDef,
+    ValueDef,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -57,13 +58,28 @@ pub(in crate::card::sets) static ABRADE: CardRecord = CardRecord::new(
 );
 
 // HOU 92 — Firebrand Archer
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FIREBRAND_ARCHER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6ddc6b73-298b-4afa-990a-63706e77dd9f"),
     "Firebrand Archer",
-    crate::card::CardArt::new("6ddc6b73-298b-4afa-990a-63706e77dd9f", "John Stanko"),
-    crate::card::CardSet::HourOfDevastation,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("6ddc6b73-298b-4afa-990a-63706e77dd9f", "John Stanko"),
+    CardSet::HourOfDevastation,
+    // The trigger fires on the cast rather than on the resolution, so a
+    // countered spell has already paid for its point of damage.
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Archer"], 2, 1).with_ability(
+        AbilityDef::triggered(
+            "Whenever you cast a noncreature spell, this creature deals 1 damage to each opponent.",
+            TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::NoncreatureSpell,
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ])),
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::players(PlayerSetDef::Related(
+                    PlayerRelation::Opponent,
+                )),
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ),
 );
 
 // HOU 138 — Bloodwater Entity

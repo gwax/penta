@@ -3,9 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet, ComparisonDef, CounterKind,
-    CounterKindDef, CounterOperationDef, EffectChoiceDef, EffectDef, EffectRecipientDef,
-    ObjectPredicateDef, PlayerRelation, PregameConditionDef, PrintedManaCost, TokenCountersDef,
+    AlternativeCastKindDef, CardArt, CardRules, CardSet, CardSupertype, CardType, CardTypeSet,
+    ComparisonDef, CostQuantityDef, CounterKind, CounterKindDef, CounterOperationDef,
+    EffectChoiceDef, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
+    PregameConditionDef, PrintedManaCost, SpellAdditionalCostDef, TokenCountersDef,
     TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
@@ -145,13 +146,41 @@ pub(in crate::card::sets) static LOOTER_IL_KOR: CardRecord = CardRecord::new(
 );
 
 // TSP 104 — Dread Return
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DREAD_RETURN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d7e304fc-0ace-459e-8d2f-376f1899639c"),
     "Dread Return",
-    crate::card::CardArt::new("d7e304fc-0ace-459e-8d2f-376f1899639c", "Kev Walker"),
-    crate::card::CardSet::TimeSpiral,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d7e304fc-0ace-459e-8d2f-376f1899639c", "Kev Walker"),
+    CardSet::TimeSpiral,
+    // The flashback costs no mana at all, which is why the card is about
+    // having three expendable bodies rather than about having four lands.
+    CardRules::new_sorcery(mana_cost!("{2}{B}{B}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Return target creature card from your graveyard to the battlefield.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: Some(PlayerRelation::You),
+                },
+            )],
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+            },
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{0}"),
+            AlternativeCastKindDef::Flashback,
+            Some("Flashback—Sacrifice three creatures."),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&SpellAdditionalCostDef::sacrifice(
+            ObjectPredicateDef::HasType(CardType::Creature),
+            CostQuantityDef::Fixed(3),
+        )),
+    ]),
 );
 
 // TSP 161 — Greater Gargadon

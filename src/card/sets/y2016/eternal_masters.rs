@@ -2,11 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, EffectDef,
-    EffectRecipientDef, LikelihoodDef, ManaColor, PlayerRelation, TriggerEventDef, TurnStepDef,
-    ValueDef, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AlternativeCastKindDef, CardArt, CardRules, CardSet, CostQuantityDef, EffectDef,
+    EffectRecipientDef, LikelihoodDef, ManaColor, PlayerRelation, SpellAdditionalCostDef,
+    TriggerEventDef, TurnStepDef, ValueDef, abilities,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 // EMA 6 — Coalition Honor Guard
 // Audit: unsupported — Card rules have not been implemented.
@@ -19,13 +20,34 @@ pub(in crate::card::sets) static COALITION_HONOR_GUARD: CardRecord = CardRecord:
 );
 
 // EMA 45 — Deep Analysis
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEEP_ANALYSIS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("01e3c2e9-d8df-4a7a-be86-7be8c6254fa2"),
     "Deep Analysis",
-    crate::card::CardArt::new("821cc8b6-eb2e-4441-8d88-c54cb44ab024", "Jesper Ejsing"),
-    crate::card::CardSet::EternalMasters,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("821cc8b6-eb2e-4441-8d88-c54cb44ab024", "Jesper Ejsing"),
+    CardSet::EternalMasters,
+    // Four cards out of one card, paid for in life and tempo rather than in
+    // mana: the flashback is the half that actually gets cast.
+    CardRules::new_sorcery(mana_cost!("{3}{U}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Target player draws two cards.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(2),
+            },
+        ),
+        AbilityDef::alternative_cast(
+            mana_cost!("{1}{U}"),
+            AlternativeCastKindDef::Flashback,
+            Some("Flashback—{1}{U}, Pay 3 life."),
+            EffectDef::None,
+        )
+        .with_alternative_additional_cost(&SpellAdditionalCostDef::pay_life(
+            CostQuantityDef::Fixed(3),
+        )),
+    ]),
 );
 
 // EMA 119 — Beetleback Chief

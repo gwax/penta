@@ -2,21 +2,36 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
-    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    ObjectRefDef, PlayerRelation, ResolvedEffectDurationDef, ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardType, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, ZoneKind, abilities,
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 // BFZ 58 — Eldrazi Skyspawner
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ELDRAZI_SKYSPAWNER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9c9c1a10-446e-492a-95cc-a459dc6c08a0"),
     "Eldrazi Skyspawner",
-    crate::card::CardArt::new("9c9c1a10-446e-492a-95cc-a459dc6c08a0", "Chase Stone"),
-    crate::card::CardSet::BattleForZendikar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("9c9c1a10-446e-492a-95cc-a459dc6c08a0", "Chase Stone"),
+    CardSet::BattleForZendikar,
+    // Three mana for two bodies and a ritual: the Scion is what turns the
+    // flier into a fourth-turn six-drop.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Eldrazi", "Drone"], 2, 1).with_abilities(&[
+        abilities::devoid(),
+        abilities::flying(),
+        abilities::enters_trigger(
+            "When this creature enters, create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\"",
+            EffectDef::create_creature_token(&["Eldrazi", "Scion"], &[], 1, 1).with_abilities(
+                &[AbilityDef::activated_mana(
+                    "Sacrifice this creature: Add {C}.",
+                    &[AbilityCostDef::SacrificeSource],
+                    EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+                )],
+            ),
+        ),
+    ]),
 );
 
 // BFZ 106 — Carrier Thrall
