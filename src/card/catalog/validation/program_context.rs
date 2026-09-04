@@ -118,6 +118,7 @@ fn validate_static_effect(
                 && static_condition_object_set_supported(*conditional.condition.objects)
                 && conditional
                     .condition
+                    .predicate
                     .filter
                     .is_none_or(|filter| static_object_predicate_supported(filter.predicate())) =>
         {
@@ -420,7 +421,8 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             | AppliedRuleDef::MayPlayAdditionalLands(_)
             | AppliedRuleDef::MayPlayAnyNumberOfLands
             | AppliedRuleDef::CannotDrawMoreThanEachTurn(_)
-            | AppliedRuleDef::RevealsDrawnCards | AppliedRuleDef::CannotGainLife
+            | AppliedRuleDef::RevealsDrawnCards
+            | AppliedRuleDef::CannotGainLife
             | AppliedRuleDef::PlayerRule(_)
             | AppliedRuleDef::DoublesTokensCreated,
         ) => true,

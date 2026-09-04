@@ -47,15 +47,14 @@ pub(super) fn validate_ability_program_targets(
     targets: &[AbilityTargetDef],
     program: AbilityProgramDef,
     trigger_event: Option<TriggerEventDef>,
-    binds_chosen_cost_card: bool,
+    chosen_cost_card_binding: Option<Binding>,
 ) -> Result<(), GrantedAbilityValidationError> {
     validate_target_definitions(targets)?;
     let bindings = BindingRegistry::default();
-    let scope = if binds_chosen_cost_card {
-        BindingScope::empty(&bindings).with_object(Binding!("object"))?
-    } else {
-        BindingScope::empty(&bindings)
-    };
+    let scope = chosen_cost_card_binding.map_or_else(
+        || Ok(BindingScope::empty(&bindings)),
+        |binding| BindingScope::empty(&bindings).with_object(binding),
+    )?;
     validate_program_references(program, targets.len(), scope)?;
     validate_program_target_shapes(program, targets, trigger_event)
 }
@@ -156,6 +155,7 @@ struct BindingRegistry {
 struct BindingScope<'registry> {
     objects: u64,
     object_sets: u64,
+    escaping_object_sets: u64,
     parent_object: Option<u8>,
     parent_object_set: Option<u8>,
     bindings: &'registry BindingRegistry,
@@ -166,6 +166,7 @@ impl<'registry> BindingScope<'registry> {
         Self {
             objects: 0,
             object_sets: 0,
+            escaping_object_sets: 0,
             parent_object: None,
             parent_object_set: None,
             bindings,
@@ -255,6 +256,30 @@ impl<'registry> BindingScope<'registry> {
             object_sets: self.object_sets | bit,
             ..self
         })
+    }
+
+    fn with_escaping_object_sets(
+        self,
+        bindings: &[Binding],
+    ) -> Result<Self, GrantedAbilityValidationError> {
+        let mut escaping = self.escaping_object_sets;
+        for binding in bindings {
+            let Some(bit) = self.binding_bit(*binding, true)? else {
+                continue;
+            };
+            escaping |= bit;
+        }
+        Ok(Self {
+            escaping_object_sets: escaping,
+            ..self
+        })
+    }
+
+    fn object_set_may_escape(self, binding: Binding) -> bool {
+        self.binding_bit(binding, false)
+            .ok()
+            .flatten()
+            .is_some_and(|bit| self.escaping_object_sets & bit != 0)
     }
 
     fn parent_binding_was_read(self) -> bool {
@@ -583,7 +608,7 @@ fn validate_trigger_condition(
         }
         TriggerConditionDef::ObjectSetCount(condition) => {
             validate_object_set_target_references(*condition.objects, target_count, scope)?;
-            condition.filter.map_or(Ok(()), |filter| {
+            condition.predicate.filter.map_or(Ok(()), |filter| {
                 validate_object_predicate_references(filter.predicate(), target_count, scope)
             })
         }
