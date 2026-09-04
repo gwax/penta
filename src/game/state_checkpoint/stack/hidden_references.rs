@@ -166,15 +166,48 @@ pub(in crate::game::state_checkpoint) fn object_reference_requires_hidden_rebind
     viewer: PlayerId,
     object: GameObjectId,
 ) -> bool {
-    matches!(
-        game.retired_objects.get(&object),
-        Some(RetiredObject::Card(_))
-    ) || [PlayerId::One, PlayerId::Two].into_iter().any(|player| {
-        let state = &game.players[player.index()];
-        state.library.iter().any(|card| card.id == object)
-            || state.outside_game.iter().any(|card| card.id == object)
-            || (player != viewer && state.hand.iter().any(|card| card.id == object))
-    })
+    retirement_endpoint(game, object)
+        .is_none_or(|endpoint| stack_source_requires_hidden_rebinding(game, viewer, endpoint))
+}
+
+/// What a retired card became, following the chain to the end.
+///
+/// Retiring a card is a zone change, so the object it became is the answer to
+/// the only question that matters here: where the card is now. A card that
+/// went somewhere public -- the battlefield, a graveyard, exile, this
+/// viewer's own hand -- can be named, because the checkpoint carries it among
+/// its retired objects and the successor beside it, and both describe
+/// something the viewer can already see. A card that went into a library,
+/// into the other seat's hand, or out of the game cannot, and the reference
+/// still fails closed.
+///
+/// Treating every retirement as hidden was too strict by exactly this
+/// difference: a flashback spell exiles itself as it resolves, so a decision
+/// raised mid-resolution named a card object whose only sin was having moved
+/// somewhere everyone can see.
+///
+/// `None` when the chain does not answer the question -- a retirement with no
+/// successor recorded, or one that loops -- because a card that cannot be
+/// followed is a card whose whereabouts the checkpoint cannot vouch for, and
+/// that has to keep failing closed.
+fn retirement_endpoint(game: &Game, object: GameObjectId) -> Option<GameObjectId> {
+    let mut current = object;
+    // The chain is short in practice; the bound is only so a cycle introduced
+    // elsewhere cannot hang a checkpoint.
+    for _ in 0..64 {
+        if !matches!(
+            game.retired_objects.get(&current),
+            Some(RetiredObject::Card(_))
+        ) {
+            return Some(current);
+        }
+        let next = game.successors.get(&current).copied()?;
+        if next == current {
+            return None;
+        }
+        current = next;
+    }
+    None
 }
 
 pub(in crate::game::state_checkpoint) fn resolution_context_referenced_object_ids(
