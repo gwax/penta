@@ -231,13 +231,24 @@ pub(in crate::card::sets) static AZORIUS_CHANCERY: CardRecord = CardRecord::new(
 );
 
 // CLU 241 — Orzhov Basilica
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ORZHOV_BASILICA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f9154d2a-3fc5-4fd6-9885-a810cb6b542a"),
     "Orzhov Basilica",
-    crate::card::CardArt::new("7c14375a-98c1-4e57-bf0d-1bea89a6bbd9", "John Avon"),
-    crate::card::CardSet::RavnicaClueEdition,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("7c14375a-98c1-4e57-bf0d-1bea89a6bbd9", "John Avon"),
+    CardSet::RavnicaClueEdition,
+    // The white-black karoo; only the two colours below are its own.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::karoo_bounce(),
+        AbilityDef::activated_mana(
+            "{T}: Add {W}{B}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_each(
+                ManaColor::White,
+                ManaColor::Black,
+            )),
+        ),
+    ]),
 );
 
 // CLU 246 — Selesnya Sanctuary

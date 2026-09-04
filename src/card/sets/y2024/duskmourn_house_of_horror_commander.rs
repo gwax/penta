@@ -2,10 +2,10 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, CardArt, CardRules,
-    CardSet, CardType, CounterKind, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    PlayerRelation, ResolvedEffectDurationDef, TokenCountersDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
+    AppliedEffectDef, CardArt, CardRules, CardSet, CardType, CounterKind, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
+    TokenCountersDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -114,23 +114,45 @@ pub(in crate::card::sets) static GROWTH_SPIRAL: CardRecord = CardRecord::new(
 );
 
 // DSC 270 — Dimir Aqueduct
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DIMIR_AQUEDUCT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("df3c3d56-8291-407e-87a1-94b7d12811fd"),
     "Dimir Aqueduct",
-    crate::card::CardArt::new("84bf9d60-64b8-4209-acfe-e07eefc6bf1f", "John Avon"),
-    crate::card::CardSet::DuskmournHouseOfHorrorCommander,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("84bf9d60-64b8-4209-acfe-e07eefc6bf1f", "John Avon"),
+    CardSet::DuskmournHouseOfHorrorCommander,
+    // The blue-black karoo; only the two colours below are its own.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::karoo_bounce(),
+        AbilityDef::activated_mana(
+            "{T}: Add {U}{B}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_each(
+                ManaColor::Blue,
+                ManaColor::Black,
+            )),
+        ),
+    ]),
 );
 
 // DSC 279 — Golgari Rot Farm
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOLGARI_ROT_FARM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("104364d5-ede8-4ac5-900f-19947f51bbc1"),
     "Golgari Rot Farm",
-    crate::card::CardArt::new("725fab98-558b-4b0c-a0a4-ef0eec92eebb", "John Avon"),
-    crate::card::CardSet::DuskmournHouseOfHorrorCommander,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("725fab98-558b-4b0c-a0a4-ef0eec92eebb", "John Avon"),
+    CardSet::DuskmournHouseOfHorrorCommander,
+    // The black-green karoo; only the two colours below are its own.
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        abilities::karoo_bounce(),
+        AbilityDef::activated_mana(
+            "{T}: Add {B}{G}.",
+            &[AbilityCostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_each(
+                ManaColor::Black,
+                ManaColor::Green,
+            )),
+        ),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
