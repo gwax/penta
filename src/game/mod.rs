@@ -58,6 +58,7 @@ mod api;
 mod attachments;
 mod banding;
 mod battlefield;
+mod board_read_memo;
 mod cast_context;
 mod casting;
 mod casting_actions;

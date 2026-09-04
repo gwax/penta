@@ -59,7 +59,7 @@ pub(in crate::game) struct SpellAdditionalCostRequest<'a> {
     pub(in crate::game) scale: CastScale,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub(in crate::game) struct SpellAdditionalCostPayment {
     pub(in crate::game) objects: Vec<(GameObjectId, SpellAdditionalCostDef)>,
     pub(in crate::game) mana: ManaCost,
@@ -303,12 +303,19 @@ impl Game {
                 request.scale,
             );
             let mut next = Vec::new();
+            // Deduplicated through a set rather than a scan of `next`. The
+            // combinations multiply out, and each `contains` compared whole
+            // payments -- object predicates and all -- against every one kept
+            // so far, which on a control board was most of a legal-action
+            // sweep. The vector still decides the order the actions are
+            // offered in, which is part of the wire contract.
+            let mut seen = std::collections::HashSet::new();
             for paid in &combined {
                 for way in &ways {
                     if let Some(payment) = paid.combine(way)
                         && i64::from(payment.life)
                             <= i64::from(self.players[request.player.index()].life)
-                        && !next.contains(&payment)
+                        && seen.insert(payment.clone())
                     {
                         next.push(payment);
                     }

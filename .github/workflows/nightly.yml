@@ -37,23 +37,23 @@ jobs:
     # been killed at this limit every night since 08-23 and has reported
     # nothing since 08-21.
     #
-    # Two things are known to be slower and it is not yet settled how much
-    # each contributes. The engine is: one fixed command, two Artifacts vs
-    # Goblins games, took about 2s at the 08-19, 08-20 and 08-23 revisions
-    # and about 13s on 09-01, and a pure memoization at 09-01 (d357bbdd,
-    # bdba42af) bought 2.1x of that back, so the layer it caches was
-    # genuinely dominating. Compilation is too: this job builds a third Cargo
-    # profile from cold, and the crate has grown by hundreds of cards.
+    # The question this comment used to leave open -- compile time or test
+    # time -- is settled: test time, and almost all of it in the Premodern
+    # gauntlet. Timing that test per pairing showed the cost was not spread
+    # over the grid at all. `legal_actions` was re-deriving two whole-board
+    # sweeps inside the mana payment search, so per-action cost grew with the
+    # square of the board and a handful of control pairings ran for hours
+    # while most finished in under a second. Memoizing those two sweeps for
+    # the life of one `&self` read, and dropping a quadratic dedup in the
+    # additional-cost search, took the whole 72-pairing gauntlet to about
+    # 33 minutes on an eight-core laptop.
     #
-    # What is NOT established is why the 08-20 nightly jumped to 32 minutes,
-    # since the engine still measured 2s at that revision. Do not assume the
-    # engine explains the job duration until someone separates compile time
-    # from test time in the log.
-    #
-    # So this number is a stopgap to get the tier reporting again, not a
-    # measurement of what the sweeps deserve. Put it back to 60 once the
-    # engine is fixed; if it ever needs raising again, check first whether the
-    # engine regressed rather than assuming the sweeps grew.
+    # Keep this at 180 rather than restoring 60. The public runner is roughly
+    # twice as slow, and one pairing -- the BW Control mirror on seed 2027 --
+    # is still two thirds of the gauntlet on its own, so the headroom is real
+    # but not large. If it needs raising again, time the pairings before
+    # assuming the sweeps grew: this tier's cost has twice turned out to be
+    # one game rather than the grid.
     timeout-minutes: 180
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

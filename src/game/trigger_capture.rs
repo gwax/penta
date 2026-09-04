@@ -304,7 +304,7 @@ impl Game {
         }
     }
 
-    pub(super) fn battlefield_trigger_listeners(&self) -> Vec<BattlefieldTriggerListener> {
+    pub(super) fn battlefield_trigger_listeners_uncached(&self) -> Vec<BattlefieldTriggerListener> {
         // Another long read that asks the same land-type questions once per
         // permanent, so it is worth one memo for the sweep rather than one
         // answer per permanent.

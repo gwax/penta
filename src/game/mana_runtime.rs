@@ -32,7 +32,7 @@ impl Game {
         }
     }
 
-    pub(super) fn mana_ability_activations(
+    pub(super) fn mana_ability_activations_uncached(
         &self,
         permanent: &Permanent,
     ) -> Vec<ManaAbilityActivation> {
