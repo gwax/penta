@@ -1216,13 +1216,50 @@ pub(in crate::card::sets) static ANIMATE_LAND: CardRecord = CardRecord::new(
 );
 
 // NEM 102 — Blastoderm
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLASTODERM: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9db5d6c2-b11f-442a-b172-c0c99c9bec07"),
     "Blastoderm",
-    crate::card::CardArt::new("9db5d6c2-b11f-442a-b172-c0c99c9bec07", "Eric Peterson"),
-    crate::card::CardSet::Nemesis,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("9db5d6c2-b11f-442a-b172-c0c99c9bec07", "Eric Peterson"),
+    CardSet::Nemesis,
+    // Shroud is what makes the fading a fair price: nothing the opponent
+    // holds answers it, so three swings for four mana is the whole deal.
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Beast"], 5, 5).with_abilities(&[
+        abilities::shroud(),
+        AbilityDef::as_enters(
+            "Fading 3 (This creature enters with three fade counters on it. At the beginning of your upkeep, remove a fade counter from it. If you can't, sacrifice it.)",
+            ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::AddCounters {
+                    kind: CounterKind::named("fade"),
+                    amount: 3,
+                },
+            ),
+        ),
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, remove a fade counter from this creature. If you can't, sacrifice it.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            // Three counters is three upkeeps, and the third one after them
+            // is the one that cannot pay and kills it -- which is why the
+            // creature gets exactly three attacks.
+            EffectDef::IfElseCondition {
+                condition: &TriggerConditionDef::SourceCounters {
+                    kind: CounterKind::named("fade"),
+                    comparison: ComparisonDef::GreaterOrEqual,
+                    amount: 1,
+                },
+                then: &EffectDef::RemoveCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::named("fade"),
+                    amount: ValueDef::Constant(1),
+                },
+                otherwise: &EffectDef::Sacrifice {
+                    object: EffectRecipientDef::Source,
+                },
+            },
+        ),
+    ]),
 );
 
 // NEM 103 — Coiling Woodworm

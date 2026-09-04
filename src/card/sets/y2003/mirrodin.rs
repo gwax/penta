@@ -83,13 +83,28 @@ pub(in crate::card::sets) static AETHER_SPELLBOMB: CardRecord = CardRecord::new(
 );
 
 // MRD 146 — Bonesplitter
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BONESPLITTER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ae31d513-7412-4467-b497-a7183ff29a42"),
     "Bonesplitter",
-    crate::card::CardArt::new("465a7990-c9f9-4716-a833-fd41458b9cee", "Darrell Riche"),
-    crate::card::CardSet::Mirrodin,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("465a7990-c9f9-4716-a833-fd41458b9cee", "Darrell Riche"),
+    CardSet::Mirrodin,
+    // Two mana total for +2/+0, and the Equipment survives whatever it was
+    // holding, which is why it never stops being playable in a limited deck.
+    CardRules::new_artifact(mana_cost!("{1}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +2/+0.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(2),
+                        ValueDef::Constant(0),
+                    ),
+                },
+            ),
+            abilities::equip(&[AbilityCostDef::Mana(mana_cost!("{1}"))], "Equip {1}"),
+        ]),
 );
 
 // MRD 152 — Chrome Mox

@@ -3,9 +3,9 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
-    CardArt, CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
-    ObjectPredicateDef, ObjectRefDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef,
-    TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
+    CardArt, CardRules, CardSet, CardSupertype, CardType, DiscardSelectionDef, EffectDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectRefDef, PlayerRefDef, PlayerRelation,
+    ResolvedEffectDurationDef, TriggerEventDef, ValueDef, ZoneKind, abilities, tokens,
 };
 use crate::ids::ParentBinding;
 use crate::{TargetIndex, mana_cost};
@@ -96,13 +96,34 @@ pub(in crate::card::sets) static HISSING_IGUANAR: CardRecord = CardRecord::new(
 );
 
 // ALA 156 — Blightning
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLIGHTNING: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3c05e8a2-b7d0-4f24-b2ae-8e4db30e5842"),
     "Blightning",
-    crate::card::CardArt::new("3c05e8a2-b7d0-4f24-b2ae-8e4db30e5842", "Thomas M. Baxa"),
-    crate::card::CardSet::ShardsOfAlara,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("3c05e8a2-b7d0-4f24-b2ae-8e4db30e5842", "Thomas M. Baxa"),
+    CardSet::ShardsOfAlara,
+    // Three damage and two cards for three mana, which is why it was the
+    // aggressive deck's answer to a control opponent rather than to a board.
+    CardRules::new_sorcery(mana_cost!("{1}{B}{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Blightning deals 3 damage to target player or planeswalker. That player or that planeswalker's controller discards two cards.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(3),
+            },
+            // A target naming a player resolves to that player, so one
+            // recipient says both halves of "that player or that
+            // planeswalker's controller".
+            EffectDef::Discard {
+                recipient: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(2),
+                selection: DiscardSelectionDef::RecipientChooses,
+                then: None,
+            },
+        ]),
+    )),
 );
 
 // ALA 158 — Branching Bolt

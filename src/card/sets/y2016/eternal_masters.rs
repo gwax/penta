@@ -4,7 +4,7 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AddManaEffectDef, CardArt, CardRules, CardSet, EffectDef,
     EffectRecipientDef, LikelihoodDef, ManaColor, PlayerRelation, TriggerEventDef, TurnStepDef,
-    ValueDef,
+    ValueDef, abilities,
 };
 use crate::mana_cost;
 
@@ -29,13 +29,19 @@ pub(in crate::card::sets) static DEEP_ANALYSIS: CardRecord = CardRecord::new(
 );
 
 // EMA 119 — Beetleback Chief
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BEETLEBACK_CHIEF: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1e3ccf3d-583c-46b4-b51e-ae1b0628d506"),
     "Beetleback Chief",
-    crate::card::CardArt::new("779d4745-ff14-4c79-b2c8-8e273faf7375", "Wayne England"),
-    crate::card::CardSet::EternalMasters,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("779d4745-ff14-4c79-b2c8-8e273faf7375", "Wayne England"),
+    CardSet::EternalMasters,
+    // Four power across three bodies for four mana: the Chief is a sacrifice
+    // outlet's worth of goblins rather than one creature.
+    CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Goblin", "Warrior"], 2, 2).with_ability(
+        abilities::enters_trigger(
+            "When this creature enters, create two 1/1 red Goblin creature tokens.",
+            EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1).with_amount(2),
+        ),
+    ),
 );
 
 // EMA 139 — Mogg War Marshal
