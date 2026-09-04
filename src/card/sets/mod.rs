@@ -353,6 +353,11 @@ const SET_MODULES: &[SetModule] = &[
         y2011::magic_2012::ADDITIONAL_PRINTINGS,
     ),
     SetModule::new(
+        CardSet::Commander2011,
+        y2011::commander_2011::CARDS,
+        y2011::commander_2011::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
         CardSet::Innistrad,
         y2011::innistrad::CARDS,
         y2011::innistrad::ADDITIONAL_PRINTINGS,
@@ -906,6 +911,21 @@ const SET_MODULES: &[SetModule] = &[
         CardSet::GuildsOfRavnica,
         y2018::guilds_of_ravnica::CARDS,
         y2018::guilds_of_ravnica::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::CommanderMasters,
+        y2023::commander_masters::CARDS,
+        y2023::commander_masters::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::DoctorWho,
+        y2023::doctor_who::CARDS,
+        y2023::doctor_who::ADDITIONAL_PRINTINGS,
+    ),
+    SetModule::new(
+        CardSet::MarvelSuperHeroesCommander,
+        y2026::marvel_super_heroes_commander::CARDS,
+        y2026::marvel_super_heroes_commander::ADDITIONAL_PRINTINGS,
     ),
 ];
 

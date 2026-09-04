@@ -407,6 +407,9 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             restriction.defender != AttackDefenderScopeDef::Any
                 && static_attack_restriction_supported(restriction)
         }
+        AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
+            crate::card::PlayerRuleDef::LegendRuleDoesNotApplyTo(predicate),
+        )) => static_object_predicate_supported(*predicate),
         // Read by the cleanup step, by the same walk and for the same reason.
         // The colour permission is read the same way, from the mana payment
         // rather than the cleanup step.
@@ -537,7 +540,7 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         | AppliedRuleDef::CrewsAsThoughPowerGreater(_)
         | AppliedRuleDef::CannotBeEnchanted
         | AppliedRuleDef::CannotBecomeEnchanted
-        | AppliedRuleDef::CannotActivateAbilities
+        | AppliedRuleDef::CannotActivateAbilities(_)
         | AppliedRuleDef::MayActivateLoyaltyAnyTime
         | AppliedRuleDef::MayAttackDespiteDefender
         | AppliedRuleDef::MayAttackAsThoughHasty
@@ -816,7 +819,7 @@ fn static_condition_object_set_supported(objects: ObjectSetDef) -> bool {
     }
 }
 
-fn static_query_supported(query: ObjectQueryDef) -> bool {
+pub(super) fn static_query_supported(query: ObjectQueryDef) -> bool {
     !query.zones.is_empty()
         && query.relative_position.is_none()
         && [query.related_player, query.controller, query.owner]

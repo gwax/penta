@@ -295,6 +295,12 @@ impl BlockRestrictionDef {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PlayerRuleDef {
+    /// The legend rule ignores matching permanents the affected player
+    /// controls. The predicate is part of the rule because exemptions range
+    /// from every permanent (Mirror Gallery) to only tokens, creatures, or a
+    /// named creature type. Nonmatching legendary permanents still form
+    /// ordinary same-name groups with one another.
+    LegendRuleDoesNotApplyTo(&'static ObjectPredicateDef),
     /// The affected player cannot be targeted by spells or abilities their
     /// opponents control. Unlike protection, this does not prevent damage or
     /// make an Aura that is already attached fall off.
@@ -445,10 +451,10 @@ pub enum AppliedRuleDef {
     /// window CR 606.3 imposes on every loyalty ability, and the one-per-turn
     /// limit beside it is untouched.
     MayActivateLoyaltyAnyTime,
-    /// The affected permanent's activated abilities can't be activated. Only
-    /// the activations: its triggered and static clauses, and any mana it
-    /// makes as a cost of something else, are untouched.
-    CannotActivateAbilities,
+    /// Matching activated abilities of the affected permanent can't be
+    /// activated. The abilities remain present: this changes what may be
+    /// activated rather than removing anything in layer 6.
+    CannotActivateAbilities(AbilityPredicateDef),
     /// No Aura may attach to the affected permanent. This restricts both the
     /// Aura spell's targeting and whether an existing attachment stays legal,
     /// so an Aura already on the permanent falls off.
@@ -796,6 +802,11 @@ impl AppliedEffectDef {
     }
 
     #[must_use]
+    pub const fn cannot_activate_abilities(predicate: AbilityPredicateDef) -> Self {
+        Self::Rule(AppliedRuleDef::CannotActivateAbilities(predicate))
+    }
+
+    #[must_use]
     pub const fn add_basic_land_types(types: &'static [BasicLandType]) -> Self {
         Self::Characteristic(CharacteristicOperationDef::BasicLandTypes(
             SetOperationDef::Add(types),
@@ -835,6 +846,13 @@ impl AppliedEffectDef {
         Self::Characteristic(CharacteristicOperationDef::CardTypes(SetOperationDef::Set(
             types,
         )))
+    }
+
+    #[must_use]
+    pub const fn remove_supertype(supertype: CardSupertype) -> Self {
+        Self::Characteristic(CharacteristicOperationDef::Supertypes(
+            SetOperationDef::Remove(CardSupertypeSet::single(supertype)),
+        ))
     }
 
     #[must_use]

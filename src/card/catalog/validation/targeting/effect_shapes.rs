@@ -506,9 +506,12 @@ fn validate_effect_target_shapes(
                 validate_recipient_shape(*copy.object, targets, RecipientExpectation::Object)?;
             }
             match created {
-                Some(created) => {
-                    validate_effect_target_shapes(*created.then, targets, triggering_object_zone)
-                }
+                Some(created) => validate_created_token_continuation(
+                    *created.then,
+                    created.binding,
+                    targets,
+                    triggering_object_zone,
+                ),
                 None => Ok(()),
             }
         }

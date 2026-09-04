@@ -2,12 +2,12 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AppliedEffectDef, CardArt, CardChoiceSourceDef, CardRules, CardSet,
-    CardSupertype, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRefDef,
-    PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AppliedEffectDef, CardArt, CardChoiceSourceDef,
+    CardRules, CardSet, CardSupertype, CardType, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
-use crate::ids::ParentBinding;
+use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
 
 // CHK 7 — Devoted Retainer
@@ -68,6 +68,16 @@ pub(in crate::card::sets) static BATTLE_MAD_RONIN: CardRecord = CardRecord::new(
         abilities::bushido(ValueDef::Constant(2)),
         abilities::attacks_each_combat_if_able(),
     ]),
+);
+
+// CHK 160a — Brothers Yamazaki
+// Audit: unsupported — Needs bushido plus a static legend-rule exemption gated on exactly two same-named permanents across the battlefield.
+pub(in crate::card::sets) static BROTHERS_YAMAZAKI: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("acef8c94-469b-4a76-b507-25b51f2501ab"),
+    "Brothers Yamazaki",
+    CardArt::new("acef8c94-469b-4a76-b507-25b51f2501ab", "Ron Spears"),
+    CardSet::ChampionsOfKamigawa,
+    CardRules::unsupported(),
 );
 
 // CHK 193 — Through the Breach
@@ -189,14 +199,42 @@ pub(in crate::card::sets) static SENSEIS_DIVINING_TOP: CardRecord = CardRecord::
     ]),
 );
 
+// CHK 279 — Minamo, School at Water's Edge
+pub(in crate::card::sets) static MINAMO_SCHOOL_AT_WATERS_EDGE: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("7536292c-da25-41c8-ba28-1e35758a7f3d"),
+    "Minamo, School at Water's Edge",
+    CardArt::new("7536292c-da25-41c8-ba28-1e35758a7f3d", "Jeremy Jarvis"),
+    CardSet::ChampionsOfKamigawa,
+    CardRules::new_land(&[])
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::tap_for(ManaColor::Blue),
+            AbilityDef::activated_with_targets(
+                "{U}, {T}: Untap target legendary permanent.",
+                &[
+                    AbilityCostDef::Mana(mana_cost!("{U}")),
+                    AbilityCostDef::TapSource,
+                ],
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+                )],
+                EffectDef::Untap {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                },
+            ),
+        ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEVOTED_RETAINER,
     &KONDA_LORD_OF_EIGANJO,
     &CURSED_RONIN,
     &BATTLE_MAD_RONIN,
+    &BROTHERS_YAMAZAKI,
     &THROUGH_THE_BREACH,
     &SAKURA_TRIBE_ELDER,
     &SENSEIS_DIVINING_TOP,
+    &MINAMO_SCHOOL_AT_WATERS_EDGE,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

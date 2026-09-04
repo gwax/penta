@@ -117,6 +117,7 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::DarkAscension => "dark-ascension",
         CardSet::AvacynRestored => "avacyn-restored",
         CardSet::Magic2012 => "magic-2012",
+        CardSet::Commander2011 => "commander-2011",
         CardSet::Magic2013 => "magic-2013",
         CardSet::ReturnToRavnica => "return-to-ravnica",
         CardSet::Gatecrash => "gatecrash",
@@ -214,6 +215,9 @@ const fn card_set_slug(set: CardSet) -> &'static str {
         CardSet::MarchOfTheMachineCommander => "march-of-the-machine-commander",
         CardSet::LostCavernsOfIxalanCommander => "lost-caverns-of-ixalan-commander",
         CardSet::GuildsOfRavnica => "guilds-of-ravnica",
+        CardSet::CommanderMasters => "commander-masters",
+        CardSet::DoctorWho => "doctor-who",
+        CardSet::MarvelSuperHeroesCommander => "marvel-super-heroes-commander",
         CardSet::Token => "token",
     }
 }

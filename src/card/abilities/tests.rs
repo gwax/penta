@@ -12,7 +12,8 @@ mod tests {
         gain_ability_until_end_of_turn_for_mana,
         exile_until_next_end_step, exile_until_next_end_step_under_your_control,
         exile_until_source_leaves, first_strike, flashback,
-        flashback_for_card_mana_cost, flying, intimidate, living_weapon, look_at_top_cards,
+        flashback_for_card_mana_cost, flying, intimidate, legendary_landwalk, living_weapon,
+        look_at_top_cards, mountainwalk,
         look_at_top_cards_choose_to_hand_rest_bottom, overload, pain_land,
         rebound, reveal_hand_and_choose_card, reveal_hand_and_discard_chosen_card,
         reveal_hand_and_exile_chosen_card,
@@ -20,7 +21,7 @@ mod tests {
         tap_for, trample, ward_aura_protection, EQUIP_TARGET, equip,
     };
     use crate::card::{
-        AbilityCostDef, AbilityCostList, AbilityDef, AbilityPredicateDef,
+        AbilityCostDef, AbilityCostList, AbilityDef, AbilityKindDef, AbilityPredicateDef,
         AbilityTargetDef, ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef,
         AlternativeCastManaCostDef, BasicLandType, CardRules, CardType, ConditionDef,
         CollectionInspectionDef, DeclarativeAbilityDef, EffectDef, EffectPaymentCostDef,
@@ -727,8 +728,8 @@ mod tests {
                     && definition.mana_cost
                         == AlternativeCastManaCostDef::Fixed(mana_cost!("{2}{U}"))
         ));
-        assert!(AbilityPredicateDef::Flashback.matches(&flashback));
-        assert!(!AbilityPredicateDef::Flashback.matches(&overload));
+        assert!(AbilityPredicateDef::Is(AbilityKindDef::Flashback).matches(&flashback));
+        assert!(!AbilityPredicateDef::Is(AbilityKindDef::Flashback).matches(&overload));
         assert_eq!(
             flashback.rules_text(),
             "Flashback {2}{U} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
@@ -760,6 +761,30 @@ mod tests {
             unreachable!("the helper always builds an alternative-cast ability")
         };
         assert_eq!(definition.mana_cost.resolve(None), None);
+    }
+
+    #[test]
+    fn landwalk_ability_kind_covers_basic_and_legendary_landwalk_only() {
+        assert!(AbilityPredicateDef::Is(AbilityKindDef::Landwalk).matches(&mountainwalk()));
+        assert!(AbilityPredicateDef::Is(AbilityKindDef::Landwalk).matches(&legendary_landwalk()));
+        assert!(!AbilityPredicateDef::Is(AbilityKindDef::Landwalk).matches(&flying()));
+    }
+
+    #[test]
+    fn activated_ability_kinds_distinguish_mana_abilities() {
+        let mana = tap_for(ManaColor::Green);
+        let nonmana = AbilityDef::activated("Test activation.", &[], EffectDef::None);
+
+        assert!(AbilityPredicateDef::Is(AbilityKindDef::Activated).matches(&mana));
+        assert!(AbilityPredicateDef::Is(AbilityKindDef::Activated).matches(&nonmana));
+        assert!(AbilityPredicateDef::Is(AbilityKindDef::ActivatedMana).matches(&mana));
+        assert!(
+            !AbilityPredicateDef::Is(AbilityKindDef::ActivatedMana).matches(&nonmana)
+        );
+        assert!(
+            AbilityPredicateDef::Is(AbilityKindDef::NonManaActivated).matches(&nonmana)
+        );
+        assert!(!AbilityPredicateDef::Is(AbilityKindDef::NonManaActivated).matches(&mana));
     }
 
     #[test]

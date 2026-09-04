@@ -328,14 +328,14 @@ pub(in crate::game) fn attach_constant_resolved_characteristics(
             CharacteristicOperationDef::CardTypes(operation) => {
                 ResolvedContinuousEffectKind::CardTypes(operation)
             }
+            CharacteristicOperationDef::Supertypes(operation) => {
+                ResolvedContinuousEffectKind::Supertypes(operation)
+            }
             CharacteristicOperationDef::Colors(operation) => {
                 ResolvedContinuousEffectKind::Colors(operation)
             }
             CharacteristicOperationDef::Color(_) => {
                 panic!("a source-derived color is read live rather than resolved")
-            }
-            CharacteristicOperationDef::Supertypes(_) => {
-                panic!("supertype operations are currently a static-only shape")
             }
             CharacteristicOperationDef::CreatureTypes(operation) => {
                 ResolvedContinuousEffectKind::CreatureTypes(operation)
@@ -395,12 +395,58 @@ pub(in crate::game) fn attach_constant_resolved_characteristics(
     timestamp
 }
 
+/// Attach one resolved object rule to a permanent. This keeps tests of live
+/// rule matching independent of a catalog card that happens to print it.
+pub(in crate::game) fn attach_resolved_rule(
+    game: &mut Game,
+    permanent: GameObjectId,
+    rule: AppliedRuleDef,
+    expiration: ContinuousEffectExpiration,
+) -> ContinuousEffectTimestamp {
+    let timestamp = game.allocate_continuous_effect_timestamp();
+    let target = game
+        .battlefield
+        .iter()
+        .find(|candidate| candidate.card.id == permanent)
+        .expect("the resolved rule target is on the battlefield");
+    let source = AbilitySourceRef {
+        object: permanent,
+        ability: AbilityOrigin::Printed {
+            definition: target
+                .card
+                .definition
+                .card_definition()
+                .expect("the fixture source is a printed card"),
+            part: target.presented,
+            ability: AbilityId::PRIMARY,
+        },
+    };
+    let definition = AppliedEffectDef::Rule(rule);
+    game.battlefield
+        .iter_mut()
+        .find(|candidate| candidate.card.id == permanent)
+        .expect("the resolved rule target is on the battlefield")
+        .resolved_continuous_effects
+        .push(ResolvedContinuousEffect {
+            definition,
+            source,
+            timestamp,
+            component_order: 0,
+            expiration,
+            kind: ResolvedContinuousEffectKind::Rule(rule),
+        });
+    timestamp
+}
+
 pub(in crate::game) fn copied_characteristics(
     definition: CardDefinitionId,
 ) -> CopiableCharacteristics {
     CopiableCharacteristics {
         base: ObjectCharacteristics::card(definition, CardPartId::PRIMARY),
+        name: None,
         added_types: CardTypeSet::empty(),
+        added_supertypes: [false; CardSupertype::COUNT],
+        removed_supertypes: [false; CardSupertype::COUNT],
         added_abilities: Vec::new(),
         retain_printed_subtypes: false,
         base_power_toughness: None,

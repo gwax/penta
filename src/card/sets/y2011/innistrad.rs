@@ -1075,7 +1075,7 @@ pub(in crate::card::sets) static STONY_SILENCE: CardRecord = CardRecord::new_wit
                 &[ZoneKind::Battlefield],
                 PlayerRelation::Any,
             ),
-            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotActivateAbilities),
+            effect: AppliedEffectDef::cannot_activate_abilities(AbilityPredicateDef::Any),
         },
     )),
 );
@@ -2036,7 +2036,9 @@ pub(in crate::card::sets) static RUNIC_REPETITION: CardRecord = CardRecord::new(
         "Return target exiled card with flashback you own to your hand.",
         &[AbilityTargetDef::exactly_one(
             AbilityTargetPredicate::Object {
-                object: ObjectPredicateDef::HasAbility(AbilityPredicateDef::Flashback),
+                object: ObjectPredicateDef::HasAbility(AbilityPredicateDef::Is(
+                    crate::card::AbilityKindDef::Flashback,
+                )),
                 zones: &[ZoneKind::Exile],
                 controller: None,
                 owner: Some(PlayerRelation::You),
