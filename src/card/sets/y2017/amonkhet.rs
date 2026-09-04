@@ -2,9 +2,9 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules,
-    CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef, PlayerRelation,
-    TriggerEventDef, ValueDef, ZoneKind, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ManaColor,
+    ObjectPredicateDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -95,13 +95,26 @@ pub(in crate::card::sets) static GLORYBRINGER: CardRecord = CardRecord::new(
 );
 
 // AKH 241 — Cradle of the Accursed
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRADLE_OF_THE_ACCURSED: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("41713e82-c3d3-4c2f-b075-f684cbd68ce8"),
     "Cradle of the Accursed",
-    crate::card::CardArt::new("41713e82-c3d3-4c2f-b075-f684cbd68ce8", "Noah Bradley"),
-    crate::card::CardSet::Amonkhet,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("41713e82-c3d3-4c2f-b075-f684cbd68ce8", "Noah Bradley"),
+    CardSet::Amonkhet,
+    // Untapped and colourless, so the body it eventually becomes costs the
+    // deck nothing but the land slot.
+    CardRules::new_land(&["Desert"]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated(
+            "{3}, {T}, Sacrifice this land: Create a 2/2 black Zombie creature token. Activate only as a sorcery.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{3}")),
+                AbilityCostDef::TapSource,
+                AbilityCostDef::SacrificeSource,
+            ],
+            EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2),
+        )
+        .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+    ]),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
