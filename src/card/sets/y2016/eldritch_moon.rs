@@ -192,13 +192,43 @@ pub(in crate::card::sets) static PROVIDENCE: CardRecord = CardRecord::new(
 );
 
 // EMN 55 — Displace
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DISPLACE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8ab850c5-6f5e-41b7-ab52-094579caca12"),
     "Displace",
-    crate::card::CardArt::new("8ab850c5-6f5e-41b7-ab52-094579caca12", "Clint Cearley"),
-    crate::card::CardSet::EldritchMoon,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("8ab850c5-6f5e-41b7-ab52-094579caca12", "Clint Cearley"),
+    CardSet::EldritchMoon,
+    // Two arrival triggers at instant speed, and the exile also answers
+    // whatever is pointed at them in the meantime.
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
+        "Exile up to two target creatures you control, then return those cards to the battlefield under their owner's control.",
+        &[AbilityTargetDef::up_to(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            },
+            2,
+        )],
+        // Exiled linked to this spell and returned by the same resolution,
+        // so the cards come back as new objects with their triggers armed.
+        EffectDef::Sequence(&[
+            EffectDef::ExileLinkedToSource {
+                until_source_leaves: false,
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                face_down: false,
+                then: None,
+            },
+            EffectDef::ReturnLinkedExiles {
+                object: ObjectPredicateDef::Any,
+                counters: None,
+                zone: ZoneKind::Battlefield,
+                grant: None,
+                controller: None,
+                transformed: false,
+            },
+        ]),
+    )),
 );
 
 // EMN 82 — Borrowed Malevolence
