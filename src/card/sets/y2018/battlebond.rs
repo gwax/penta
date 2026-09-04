@@ -2,10 +2,11 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    CardArt, CardRules, CardSet, CardType, EffectDef, EffectRecipientDef, ObjectPredicateDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityDef, AbilityTargetDef, AbilityTargetPredicate, CardArt, CardRules, CardSet, CardType,
+    EffectDef, EffectRecipientDef, ObjectPredicateDef, ValueDef, ZoneKind, ZonePlacement,
+    abilities,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 // BBD 41 — Spellseeker
 pub(in crate::card::sets) static SPELLSEEKER: CardRecord = CardRecord::new_with_legacy_id(
@@ -54,13 +55,38 @@ pub(in crate::card::sets) static GROTHAMA_ALL_DEVOURING: CardRecord = CardRecord
 );
 
 // BBD 209 — Pulse of Murasa
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PULSE_OF_MURASA: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c0c8057f-b45b-4f67-90cd-c808b5e9cbfa"),
     "Pulse of Murasa",
-    crate::card::CardArt::new("c591c615-69e8-4661-a089-8c4e152adac7", "Matt Stewart"),
-    crate::card::CardSet::Battlebond,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("c591c615-69e8-4661-a089-8c4e152adac7", "Matt Stewart"),
+    CardSet::Battlebond,
+    // Either graveyard, so it also answers an opponent's reanimation target
+    // by handing the card back to them rather than leaving it where it is.
+    CardRules::new_instant(mana_cost!("{2}{G}")).with_ability(AbilityDef::spell_with_targets(
+        "Return target creature or land card from a graveyard to its owner's hand. You gain 6 life.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::HasType(CardType::Land),
+                ]),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: None,
+            },
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+            },
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(6),
+            },
+        ]),
+    )),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] =
