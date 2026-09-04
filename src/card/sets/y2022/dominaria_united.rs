@@ -5,8 +5,8 @@ use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef, AppliedRuleDef,
     CardArt, CardRules, CardSet, CardSupertype, CardType, DrawEventMatcherDef, EffectDef,
     EffectRecipientDef, GraveyardPlayPermissionDef, InstalledTriggerDef, ObjectPredicateDef,
-    PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, TriggerEventDef, ValueDef, ZoneKind,
-    ZonePlacement, abilities,
+    ObjectQueryDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRelation, TriggerEventDef,
+    ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -93,16 +93,35 @@ pub(in crate::card::sets) static LEYLINE_BINDING: CardRecord = CardRecord::new(
 );
 
 // DMU 72 — Tolarian Terror
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TOLARIAN_TERROR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("42f01cba-43d4-46ad-b7a5-d7631b0e1347"),
     "Tolarian Terror",
-    crate::card::CardArt::new(
-        "42f01cba-43d4-46ad-b7a5-d7631b0e1347",
-        "Vincent Christiaens",
-    ),
-    crate::card::CardSet::DominariaUnited,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("42f01cba-43d4-46ad-b7a5-d7631b0e1347", "Vincent Christiaens"),
+    CardSet::DominariaUnited,
+    // Seven mana on paper and two in practice, which is what makes ward the
+    // relevant half: the deck that casts it cheaply is holding up counters.
+    CardRules::new_creature(mana_cost!("{6}{U}"), &["Serpent"], 5, 5).with_abilities(&[
+        AbilityDef::static_ability(
+            "This spell costs {1} less to cast for each instant and sorcery card in your graveyard.",
+            EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(
+                &ObjectQueryDef::matching(
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Instant),
+                        ObjectPredicateDef::HasType(CardType::Sorcery),
+                    ]),
+                    &[ZoneKind::Graveyard],
+                    PlayerRelation::You,
+                ),
+            )),
+        )
+        // Read from hand, where the cost is paid, rather than from the
+        // battlefield the creature is heading to.
+        .with_source_zones(&[ZoneKind::Hand]),
+        abilities::ward(
+            2,
+            "Ward {2} (Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.)",
+        ),
+    ]),
 );
 
 // DMU 89 — Cut Down
