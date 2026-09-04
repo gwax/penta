@@ -229,13 +229,46 @@ pub(in crate::card::sets) static HELIONAUT: CardRecord = CardRecord::new(
 );
 
 // APC 14 — Manacles of Decay
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MANACLES_OF_DECAY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("f3da5010-78b6-426f-aeb4-73c21d2af581"),
     "Manacles of Decay",
-    crate::card::CardArt::new("f3da5010-78b6-426f-aeb4-73c21d2af581", "Gary Ruddell"),
-    crate::card::CardSet::Apocalypse,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("f3da5010-78b6-426f-aeb4-73c21d2af581", "Gary Ruddell"),
+    CardSet::Apocalypse,
+    // A pacifism whose two activations are the other Dega colours: the Aura
+    // holds the creature still and the mana finishes it off.
+    CardRules::new_enchantment(mana_cost!("{1}{W}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            AbilityDef::static_ability(
+                "Enchanted creature can't attack.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_ATTACK),
+                },
+            ),
+            AbilityDef::activated(
+                "{B}: Enchanted creature gets -1/-1 until end of turn.",
+                &[AbilityCostDef::Mana(mana_cost!("{B}"))],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(-1),
+                        ValueDef::Constant(-1),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::activated(
+                "{R}: Enchanted creature can't block this turn.",
+                &[AbilityCostDef::Mana(mana_cost!("{R}"))],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BLOCK),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
 );
 
 // APC 15 — Orim's Thunder
