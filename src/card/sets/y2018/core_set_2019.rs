@@ -5,7 +5,8 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
     AddManaEffectDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType,
     CharacteristicOperationDef, EffectDef, EffectRecipientDef, ExilePlayDurationDef, LAND_SUBTYPES,
-    ObjectPredicateDef, PlayerRelation, SetOperationDef, ValueDef, ZoneKind, abilities,
+    ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef, SetOperationDef, ValueDef,
+    ZoneKind, abilities,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -126,13 +127,27 @@ pub(in crate::card::sets) static DARK_DWELLER_ORACLE: CardRecord = CardRecord::n
 );
 
 // M19 143 — Goblin Motivator
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOBLIN_MOTIVATOR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("94b3a4fb-9024-45ef-a54b-cf3a9fa5b9c2"),
     "Goblin Motivator",
-    crate::card::CardArt::new("94b3a4fb-9024-45ef-a54b-cf3a9fa5b9c2", "Johann Bodin"),
-    crate::card::CardSet::CoreSet2019,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("94b3a4fb-9024-45ef-a54b-cf3a9fa5b9c2", "Johann Bodin"),
+    CardSet::CoreSet2019,
+    // Any creature, not only yours, though the haste is only worth giving
+    // to something that just arrived on your own side.
+    CardRules::new_creature(mana_cost!("{R}"), &["Goblin", "Warrior"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}: Target creature gains haste until end of turn.",
+            &[AbilityCostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
