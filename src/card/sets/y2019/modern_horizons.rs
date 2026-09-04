@@ -6,11 +6,11 @@ use crate::card::{
     AbilityCostDef, AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate,
     ActivationTimingDef, AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef,
     AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType, ColorChoiceOperationDef,
-    ComparisonDef, CounterKind, DiscardFollowUpDef, DiscardSelectionDef, EffectDef,
-    EffectRecipientDef, EmblemCharacteristics, ExilePlayDurationDef, ManaColor, ObjectPredicateDef,
-    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    ResolvedEffectDurationDef, SpellAdditionalCostDef, TokenCharacteristics, TriggerConditionDef,
-    TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
+    ComparisonDef, CounterKind, CreatureTypeSetDef, DiscardFollowUpDef, DiscardSelectionDef,
+    EffectDef, EffectRecipientDef, EmblemCharacteristics, ExilePlayDurationDef, ManaColor,
+    ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, ResolvedEffectDurationDef, SpellAdditionalCostDef, TokenCharacteristics,
+    TriggerConditionDef, TriggerEventDef, ValueDef, ZoneKind, ZonePlacement, abilities, tokens,
 };
 use crate::ids::ParentBinding;
 use crate::{TargetIndex, mana_cost};
@@ -459,13 +459,41 @@ pub(in crate::card::sets) static PUTRID_GOBLIN: CardRecord = CardRecord::new(
 );
 
 // MH1 120 — Bogardan Dragonheart
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BOGARDAN_DRAGONHEART: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("feb81f44-8f22-4d28-a452-a50bef69a3e3"),
     "Bogardan Dragonheart",
-    crate::card::CardArt::new("feb81f44-8f22-4d28-a452-a50bef69a3e3", "Randy Vargas"),
-    crate::card::CardSet::ModernHorizons1,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("feb81f44-8f22-4d28-a452-a50bef69a3e3", "Randy Vargas"),
+    CardSet::ModernHorizons1,
+    // One spare creature turns a 2/2 into a hasty 4/4 flier, so the card is
+    // a finisher in the deck that was already sacrificing things.
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Shaman"], 2, 2).with_ability(
+        AbilityDef::activated(
+            "Sacrifice another creature: Until end of turn, this creature becomes a Dragon with base power and toughness 4/4, flying, and haste.",
+            &[AbilityCostDef::SacrificePermanent {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                controller: PlayerRelation::You,
+            }],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                // "Becomes a Dragon" repaints the whole creature-type line
+                // rather than adding to it, and the 4/4 is a base value, so
+                // counters and pumps still apply on top.
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::set_creature_types(CreatureTypeSetDef::named(&["Dragon"])),
+                    AppliedEffectDef::set_base_power_toughness(
+                        ValueDef::Constant(4),
+                        ValueDef::Constant(4),
+                    ),
+                    AppliedEffectDef::add_ability(&abilities::flying()),
+                    AppliedEffectDef::add_ability(&abilities::haste()),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
 );
 
 // MH1 144 — Reckless Charge
