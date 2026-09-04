@@ -15,7 +15,7 @@ use crate::card::{
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef, ObjectSetFilterDef,
     ObjectSetValueAtLeastDef, ObjectSetValueDef, ObjectValueDef, PayOrDef, PerPlayerSelectionDef,
     PileExileDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
-    ResolvedEffectDurationDef, RevealObjectsDef, RoundingDef, SetOperationDef,
+    ResolvedEffectDurationDef, RevealObjectsDef, RoundingDef, SacrificedAmountDef, SetOperationDef,
     SpellAdditionalCostDef, SumValueDef, TargetConditionDef, TokenCountersDef, TriggerConditionDef,
     TriggerEventDef, TurnStepDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePickDef,
     ZonePlacement, abilities, tokens,
@@ -436,13 +436,32 @@ pub(in crate::card::sets) static SERUM_VISIONARY: CardRecord = CardRecord::new(
 );
 
 // MH3 80 — Accursed Marauder
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ACCURSED_MARAUDER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("44a63029-1fb2-4fdc-bca9-0a530c7b42d9"),
     "Accursed Marauder",
-    crate::card::CardArt::new("5da14d86-0780-4821-a799-96f64b377df4", "Paolo Parente"),
-    crate::card::CardSet::ModernHorizons3,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5da14d86-0780-4821-a799-96f64b377df4", "Paolo Parente"),
+    CardSet::ModernHorizons3,
+    // Symmetrical on paper, one-sided in practice: the Marauder itself is a
+    // legal answer for its own controller, so a token board pays nothing.
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Zombie", "Warrior"], 2, 1).with_ability(
+        abilities::enters_trigger(
+            "When this creature enters, each player sacrifices a nontoken creature of their choice.",
+            EffectDef::SacrificeOfChoice {
+                player: EffectRecipientDef::EachPlayer,
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+                ]),
+                count: ValueDef::Constant(1),
+                then: None,
+                amount: SacrificedAmountDef::Power,
+                otherwise: None,
+                // "Sacrifices" rather than "may sacrifice": a player holding
+                // one gives it up.
+                optional: false,
+            },
+        ),
+    ),
 );
 
 // MH3 90 — Emperor of Bones
