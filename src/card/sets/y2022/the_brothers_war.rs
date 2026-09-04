@@ -3,9 +3,10 @@
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    CharacteristicOperationDef, CreatureTypeSetDef, EffectDef, EffectRecipientDef, ManaColor,
-    ManaRestrictionDef, ObjectPredicateDef, PlayerRelation, ResolvedEffectDurationDef,
+    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
+    CharacteristicOperationDef, CreatureTypeSetDef, EffectDef, EffectPaymentCostDef,
+    EffectPaymentDef, EffectRecipientDef, ManaColor, ManaRestrictionDef, ObjectPredicateDef,
+    PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef,
     SetOperationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::{TargetIndex, mana_cost};
@@ -64,13 +65,50 @@ pub(in crate::card::sets) static LORAN_OF_THE_THIRD_PATH: CardRecord = CardRecor
 );
 
 // BRO 72 — Weakstone's Subjugation
-// Audit: unsupported — Card rules have not been implemented.
+static AN_ARTIFACT_OR_CREATURE: ObjectPredicateDef = ObjectPredicateDef::AnyOf(&[
+    ObjectPredicateDef::HasType(CardType::Artifact),
+    ObjectPredicateDef::HasType(CardType::Creature),
+]);
+
 pub(in crate::card::sets) static WEAKSTONE_S_SUBJUGATION: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ef93ac79-8575-40f8-a222-63c2ffb30f60"),
     "Weakstone's Subjugation",
-    crate::card::CardArt::new("ef93ac79-8575-40f8-a222-63c2ffb30f60", "Igor Kieryluk"),
-    crate::card::CardSet::TheBrothersWar,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("ef93ac79-8575-40f8-a222-63c2ffb30f60", "Igor Kieryluk"),
+    CardSet::TheBrothersWar,
+    // One mana to hold a permanent down permanently; the {3} is only for
+    // catching one that is already untapped.
+    CardRules::new_enchantment(mana_cost!("{U}"))
+        .with_subtypes(&["Aura"])
+        .enchanting(AN_ARTIFACT_OR_CREATURE)
+        .with_abilities(&[
+            abilities::aura_spell(
+                "Enchant artifact or creature",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    AN_ARTIFACT_OR_CREATURE,
+                )],
+            ),
+            abilities::enters_trigger(
+                "When this Aura enters, you may pay {3}. If you do, tap enchanted permanent.",
+                EffectDef::PayOr(PayOrDef::optional(
+                    EffectPaymentDef {
+                        payer: PlayerSetDef::One(PlayerRefDef::EffectController),
+                        cost: EffectPaymentCostDef::GenericMana(ValueDef::Constant(3)),
+                    },
+                    &const {
+                        EffectDef::Tap {
+                            object: EffectRecipientDef::AttachedPermanent,
+                        }
+                    },
+                )),
+            ),
+            AbilityDef::static_ability(
+                "Enchanted permanent doesn't untap during its controller's untap step.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+                },
+            ),
+        ]),
 );
 
 // BRO 98 — Gixian Infiltrator
