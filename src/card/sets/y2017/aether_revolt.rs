@@ -4,22 +4,45 @@ use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
     AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AppliedEffectDef,
     BattlefieldEntryModificationDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ControlDurationDef, CounterKind, CreatedTokensDef, EffectDef, EffectRecipientDef,
-    InstalledTriggerDef, ManaColor, ObjectPredicateDef, ObjectSetDef, PlayerRefDef, PlayerRelation,
-    ReplacementEffectDef, ResolvedEffectDurationDef, TokenCharacteristics, TriggerConditionDef,
-    TriggerEventDef, TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
+    ControlDurationDef, CounterKind, CreatedTokensDef, EffectDef, EffectPaymentCostDef,
+    EffectPaymentDef, EffectRecipientDef, InstalledTriggerDef, ManaColor, ObjectPredicateDef,
+    ObjectSetDef, PayOrDef, PlayerRefDef, PlayerRelation, PlayerSetDef, ReplacementEffectDef,
+    ResolvedEffectDurationDef, TokenCharacteristics, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
 
 // AER 51 — Aether Poisoner
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AETHER_POISONER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c9b217f1-1621-40d1-8a98-24c1f7cba800"),
     "Aether Poisoner",
-    crate::card::CardArt::new("c9b217f1-1621-40d1-8a98-24c1f7cba800", "Yongjae Choi"),
-    crate::card::CardSet::AetherRevolt,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("c9b217f1-1621-40d1-8a98-24c1f7cba800", "Yongjae Choi"),
+    CardSet::AetherRevolt,
+    // Deathtouch is what makes the attack safe, and the two energy it brings
+    // pay for exactly one Servo before the board has to supply more.
+    CardRules::new_creature(mana_cost!("{1}{B}"), &["Human", "Artificer"], 1, 1).with_abilities(&[
+        abilities::deathtouch(),
+        abilities::enters_trigger(
+            "When this creature enters, you get {E}{E} (two energy counters).",
+            EffectDef::AddPlayerCounters {
+                recipient: EffectRecipientDef::Controller,
+                kind: CounterKind::named("energy"),
+                amount: ValueDef::Constant(2),
+            },
+        ),
+        AbilityDef::triggered(
+            "Whenever this creature attacks, you may pay {E}{E}. If you do, create a 1/1 colorless Servo artifact creature token.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            EffectDef::PayOr(PayOrDef::optional(
+                EffectPaymentDef {
+                    payer: PlayerSetDef::One(PlayerRefDef::EffectController),
+                    cost: EffectPaymentCostDef::Energy(2),
+                },
+                &const { EffectDef::create_artifact_creature_token(&["Servo"], &[], 1, 1) },
+            )),
+        ),
+    ]),
 );
 
 // AER 57 — Fatal Push
