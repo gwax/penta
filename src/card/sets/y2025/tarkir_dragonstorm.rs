@@ -2,14 +2,14 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, AddManaEffectDef,
-    AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
-    ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatedTokensDef, EffectDef,
-    EffectPaymentDef, EffectRecipientDef, FreePlayDef, FreePlayDurationDef, InstalledTriggerDef,
-    ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef,
-    PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef,
-    QuantifierDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef, TurnStepDef,
-    ValueDef, ZoneKind, ZonePlacement, abilities,
+    AbilityCostDef, AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
+    AddManaEffectDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules, CardSet, CardSupertype,
+    CardType, ChoiceVisibilityDef, ChooseDef, ComparisonDef, CounterKind, CreatedTokensDef,
+    EffectDef, EffectPaymentDef, EffectRecipientDef, FreePlayDef, FreePlayDurationDef,
+    InstalledTriggerDef, ManaColor, ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef,
+    ObjectSetDef, PayOrDef, PlayActionMatcherDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
+    PlayerSetDef, QuantifierDef, ResolvedEffectDurationDef, TriggerConditionDef, TriggerEventDef,
+    TurnStepDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
 use crate::ids::{ParentBinding, TargetIndex};
 use crate::mana_cost;
@@ -357,13 +357,42 @@ pub(in crate::card::sets) static AINOK_WAYFARER: CardRecord = CardRecord::new(
 );
 
 // TDM 137 — Champion of Dusan
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHAMPION_OF_DUSAN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("c51dcdab-38ee-4804-8859-09adc353c182"),
     "Champion of Dusan",
-    crate::card::CardArt::new("c51dcdab-38ee-4804-8859-09adc353c182", "Bastien L. Deharme"),
-    crate::card::CardSet::TarkirDragonstorm,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("c51dcdab-38ee-4804-8859-09adc353c182", "Bastien L. Deharme"),
+    CardSet::TarkirDragonstorm,
+    // A 4/2 trades early and then hands its trample to something better
+    // from the graveyard, which is the whole arc of the card.
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Human", "Warrior"], 4, 2).with_abilities(&[
+        abilities::trample(),
+        AbilityDef::activated_with_targets(
+            "Renew — {1}{G}, Exile this card from your graveyard: Put a +1/+1 counter and a trample counter on target creature. Activate only as a sorcery.",
+            &[
+                AbilityCostDef::Mana(mana_cost!("{1}{G}")),
+                AbilityCostDef::ExileSource,
+            ],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            // A trample counter rather than a granted keyword: it stays on
+            // the creature and survives anything that ends a duration.
+            EffectDef::Sequence(&[
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(1),
+                },
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    kind: CounterKind::Trample,
+                    amount: ValueDef::Constant(1),
+                },
+            ]),
+        )
+        .with_source_zones(&[ZoneKind::Graveyard])
+        .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+    ]),
 );
 
 // TDM 157 — Sagu Wildling
