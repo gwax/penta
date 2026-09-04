@@ -256,6 +256,8 @@ const BINDING_LABELS: &[&str] = &[
     "balance_lands_kept",
     "balance_lands_sacrificed",
     "branch_output",
+    "call_of_the_wild_creature",
+    "call_of_the_wild_other",
     "cards",
     "conditional_cards",
     "consult_kicked_chosen",
