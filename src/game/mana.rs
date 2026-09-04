@@ -49,7 +49,7 @@ impl Mana {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ManaPool {
     pub white: u16,
     pub blue: u16,

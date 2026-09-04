@@ -587,13 +587,23 @@ fn assign_independent_mana_sources(
     life_available: u16,
 ) -> Option<Vec<PlannedManaActivation>> {
     let starting_pool = normalized_payment_capacity(starting_pool, cost, x);
-    let mut states = HashMap::from([(
+    // Ordered, not hashed. Two plans can reach the same payment capacity with
+    // the same rank -- tapping either of two lands that make the same colour
+    // is the ordinary case -- and both the retention test below and the
+    // `min_by` at the end keep whichever they met first. Hash iteration order
+    // is not stable even within one process, because `RandomState` takes a
+    // fresh key per map, so the same seeded game replayed twice in a row
+    // could tap a painland once and a basic the next time and end a point of
+    // life apart. That is a determinism break the replay, checkpoint, and bot
+    // versioning contracts all rest on.
+    let mut states = BTreeMap::from([(
         (starting_pool.mana, starting_pool.generic, 0_u16),
         Vec::<PlannedManaActivation>::new(),
     )]);
 
     for source in sources {
-        let mut next: HashMap<(ManaPool, u16, u16), Vec<PlannedManaActivation>> = HashMap::new();
+        let mut next: BTreeMap<(ManaPool, u16, u16), Vec<PlannedManaActivation>> =
+            BTreeMap::new();
         for ((mana, generic, life_spent), plan) in states {
             for output in &source.outputs {
                 let next_life = life_spent.saturating_add(output.life_payment);

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::ControlFlow};
+use std::{collections::BTreeMap, ops::ControlFlow};
 
 use crate::ManaPaymentChoice;
 use crate::card::{
