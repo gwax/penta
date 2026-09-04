@@ -29,13 +29,31 @@ pub(in crate::card::sets) static STOCK_UP: CardRecord = CardRecord::new_with_leg
 );
 
 // DFT 79 — Chitin Gravestalker
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHITIN_GRAVESTALKER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("903b4141-04a3-44c4-9d3e-aa2a773d9883"),
     "Chitin Gravestalker",
-    crate::card::CardArt::new("903b4141-04a3-44c4-9d3e-aa2a773d9883", "Slawomir Maniak"),
-    crate::card::CardSet::Aetherdrift,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("903b4141-04a3-44c4-9d3e-aa2a773d9883", "Slawomir Maniak"),
+    CardSet::Aetherdrift,
+    // Cycling is what makes the discount reachable: the card fills the
+    // graveyard it later reads, including with copies of itself.
+    CardRules::new_creature(mana_cost!("{5}{B}"), &["Insect", "Warrior"], 5, 4).with_abilities(&[
+        AbilityDef::static_ability(
+            "This spell costs {1} less to cast for each artifact and/or creature card in your graveyard.",
+            EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(
+                &ObjectQueryDef::matching(
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Artifact),
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                    ]),
+                    &[ZoneKind::Graveyard],
+                    PlayerRelation::You,
+                ),
+            )),
+        )
+        // Read from hand, where the cost is paid.
+        .with_source_zones(&[ZoneKind::Hand]),
+        abilities::cycling("Cycling {2} ({2}, Discard this card: Draw a card.)", mana_cost!("{2}")),
+    ]),
 );
 
 // DFT 88 — Grim Bauble
