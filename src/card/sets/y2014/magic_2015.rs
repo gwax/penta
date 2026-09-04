@@ -2,12 +2,13 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::{
-    AbilityDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardType, EffectDef,
-    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef,
-    PlayerRelation, ResolvedEffectDurationDef, TriggerEventDef, TurnStepDef, ValueDef, ZoneKind,
-    abilities,
+    AbilityDef, AbilityTargetDef, AppliedEffectDef, AppliedRuleDef, BlockRestrictionDef, CardArt,
+    CardRules, CardSet, CardType, EffectDef, EffectPaymentCostDef, EffectPaymentDef,
+    EffectRecipientDef, ManaColor, ObjectPredicateDef, ObjectQueryDef, ObjectSetDef, PayOrDef,
+    PlayerRelation, PlayerSetDef, ResolvedEffectDurationDef, TriggerEventDef, TurnStepDef,
+    ValueDef, ZoneKind, abilities,
 };
-use crate::mana_cost;
+use crate::{TargetIndex, mana_cost};
 
 // M15 40 — Triplicate Spirits
 // Audit: unsupported — Card rules have not been implemented.
@@ -20,13 +21,43 @@ pub(in crate::card::sets) static TRIPLICATE_SPIRITS: CardRecord = CardRecord::ne
 );
 
 // M15 142 — Frenzied Goblin
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FRENZIED_GOBLIN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d307d8c7-b9b5-4f8f-933d-f1c64cbbf92f"),
     "Frenzied Goblin",
-    crate::card::CardArt::new("7ddfe382-3a80-45f3-a022-54739c4b69a6", "Carl Critchlow"),
-    crate::card::CardSet::Magic2015,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("7ddfe382-3a80-45f3-a022-54739c4b69a6", "Carl Critchlow"),
+    CardSet::Magic2015,
+    // One mana an attack to push whichever blocker matters, which is what
+    // keeps a one-drop relevant into the late game.
+    CardRules::new_creature(mana_cost!("{R}"), &["Goblin"], 1, 1).with_ability(
+        AbilityDef::triggered_with_targets(
+            "Whenever this creature attacks, you may pay {R}. If you do, target creature can't block this turn.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            // The target is chosen as the trigger goes on the stack and the
+            // payment is offered as it resolves, so the creature is named
+            // before its controller knows whether the mana is there.
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::PayOr(PayOrDef::optional(
+                EffectPaymentDef {
+                    payer: PlayerSetDef::Related(PlayerRelation::You),
+                    cost: EffectPaymentCostDef::ColoredMana {
+                        color: ManaColor::Red,
+                        amount: ValueDef::Constant(1),
+                    },
+                },
+                &const {
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        effect: AppliedEffectDef::Rule(AppliedRuleDef::BlockRestriction(
+                            BlockRestrictionDef::CANNOT_BLOCK,
+                        )),
+                        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                    }
+                },
+            )),
+        ),
+    ),
 );
 
 // M15 145 — Goblin Rabblemaster
