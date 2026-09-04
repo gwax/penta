@@ -10,10 +10,10 @@ use crate::mana_cost;
 
 // FIC 52 — Transpose
 pub(in crate::card::sets) static TRANSPOSE: CardRecord = CardRecord::new(
+    CardSet::FinalFantasyCommander,
     "Transpose",
     "66392b0e-8691-42a4-bc84-03b017174a73",
     "Toni Infante",
-    CardSet::FinalFantasyCommander,
     CardRules::new_instant(mana_cost!("{2}{B}")).with_abilities(&[
         AbilityDef::spell(
             "Draw a card, then discard a card. You lose 1 life. If this spell was cast from your hand, create a 0/1 black Wizard creature token with \"Whenever you cast a noncreature spell, this token deals 1 damage to each opponent.\"",
@@ -60,10 +60,10 @@ pub(in crate::card::sets) static TRANSPOSE: CardRecord = CardRecord::new(
 
 // FIC 55 — Gau, Feral Youth
 pub(in crate::card::sets) static GAU_FERAL_YOUTH: CardRecord = CardRecord::new(
+    CardSet::FinalFantasyCommander,
     "Gau, Feral Youth",
     "89175ce1-0746-4ba1-970e-617d134b0527",
     "Eglė Mosakaitė",
-    CardSet::FinalFantasyCommander,
     // Two mana that grows every attack and, in a deck that is already using
     // its graveyard, throws that growth at the opponent every end step.
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Berserker"], 2, 2)

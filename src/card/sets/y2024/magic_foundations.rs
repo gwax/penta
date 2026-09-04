@@ -13,29 +13,29 @@ use crate::mana_cost;
 // FDN 18 — Inspiring Paladin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INSPIRING_PALADIN: CardRecord = CardRecord::new(
+    crate::card::CardSet::MagicFoundations,
     "Inspiring Paladin",
     "0763be06-25b2-4d6b-ab33-a1af85aeb443",
     "Valera Lutfullina",
-    crate::card::CardSet::MagicFoundations,
     crate::card::CardRules::unsupported(),
 );
 
 // FDN 114 — Treetop Snarespinner
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TREETOP_SNARESPINNER: CardRecord = CardRecord::new(
+    crate::card::CardSet::MagicFoundations,
     "Treetop Snarespinner",
     "88e68fa3-159d-49a6-8ac6-afc9bd6f1718",
     "Steve Ellis",
-    crate::card::CardSet::MagicFoundations,
     crate::card::CardRules::unsupported(),
 );
 
 // FDN 129 — Leyline Axe
 pub(in crate::card::sets) static LEYLINE_AXE: CardRecord = CardRecord::new(
+    CardSet::MagicFoundations,
     "Leyline Axe",
     "b9c03336-a321-4c06-94d1-809f328fabd8",
     "Edgar Sánchez Hidalgo",
-    CardSet::MagicFoundations,
     CardRules::new_artifact(mana_cost!("{4}"))
         .with_subtypes(&["Equipment"])
         .with_abilities(&[
@@ -65,19 +65,19 @@ const FANATICAL_FIREBRAND_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // FDN 200 — Goblin Surprise
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOBLIN_SURPRISE: CardRecord = CardRecord::new(
+    crate::card::CardSet::MagicFoundations,
     "Goblin Surprise",
     "527dd5d4-5f72-40bb-8a9d-1f5ac3f81e2e",
     "Kevin Sidharta",
-    crate::card::CardSet::MagicFoundations,
     crate::card::CardRules::unsupported(),
 );
 
 // FDN 330 — Kellan, Planar Trailblazer
 pub(in crate::card::sets) static KELLAN_PLANAR_TRAILBLAZER: CardRecord = CardRecord::new(
+    CardSet::MagicFoundations,
     "Kellan, Planar Trailblazer",
     "0e413f37-b59a-4302-86d3-2abce81edc78",
     "Aaron J. Riley",
-    CardSet::MagicFoundations,
     // One mana for a 2/1 that grows into what the rest of the turn's mana
     // has nothing better to do with.
     CardRules::new_creature(mana_cost!("{R}"), &["Human", "Faerie", "Scout"], 2, 1)

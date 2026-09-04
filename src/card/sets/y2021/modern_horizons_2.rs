@@ -21,10 +21,10 @@ use crate::{AdditionalCostIndex, ParentBinding, TargetIndex, mana_cost};
 
 // MH2 25 — Prismatic Ending
 pub(in crate::card::sets) static PRISMATIC_ENDING: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Prismatic Ending",
     "825969b9-3c70-4fca-8cab-696e9ca7cdb2",
     "John Stanko",
-    CardSet::ModernHorizons2,
     // X buys nothing by itself: it is a sink for the extra colours, and how
     // many different ones went in is the only thing the spell reads.
     CardRules::new_sorcery(mana_cost!("{X}{W}")).with_ability(AbilityDef::spell_with_targets(
@@ -50,10 +50,10 @@ pub(in crate::card::sets) static PRISMATIC_ENDING: CardRecord = CardRecord::new(
 
 // MH2 32 — Solitude
 pub(in crate::card::sets) static SOLITUDE: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Solitude",
     "47a6234f-309f-4e03-9263-66da48b57153",
     "Evan Shipard",
-    CardSet::ModernHorizons2,
     // Two white cards for a free Swords to Plowshares at instant speed, and
     // a lifelinking 3/2 on the turns five mana is available instead.
     CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Elemental", "Incarnation"], 3, 2)
@@ -111,29 +111,29 @@ pub(in crate::card::sets) static SOLITUDE: CardRecord = CardRecord::new(
 // MH2 36 — Unbounded Potential
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNBOUNDED_POTENTIAL: CardRecord = CardRecord::new(
+    crate::card::CardSet::ModernHorizons2,
     "Unbounded Potential",
     "9955a344-dcd8-404d-9757-f62ed158ba22",
     "Iain McCaig",
-    crate::card::CardSet::ModernHorizons2,
     crate::card::CardRules::unsupported(),
 );
 
 // MH2 46 — Hard Evidence
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HARD_EVIDENCE: CardRecord = CardRecord::new(
+    crate::card::CardSet::ModernHorizons2,
     "Hard Evidence",
     "501599d6-1072-4124-b05d-01f96de153f3",
     "Yeong-Hao Han",
-    crate::card::CardSet::ModernHorizons2,
     crate::card::CardRules::unsupported(),
 );
 
 // MH2 49 — Lose Focus
 pub(in crate::card::sets) static LOSE_FOCUS: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Lose Focus",
     "985bdb0c-ce6c-4506-8163-76f3b2fdf5fb",
     "Martina Fačková",
-    CardSet::ModernHorizons2,
     // A soft counter that stops being soft once there is spare mana: each
     // replicate is another {2} the other player has to find.
     CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[
@@ -170,10 +170,10 @@ pub(in crate::card::sets) static LOSE_FOCUS: CardRecord = CardRecord::new(
 
 // MH2 52 — Murktide Regent
 pub(in crate::card::sets) static MURKTIDE_REGENT: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Murktide Regent",
     "20c4aae1-7665-4df7-bd51-a1d95bf8a17d",
     "Lucas Graciano",
-    CardSet::ModernHorizons2,
     CardRules::new_creature(mana_cost!("{5}{U}{U}"), &["Dragon"], 3, 3).with_abilities(&[
         abilities::delve(),
         abilities::flying(),
@@ -216,10 +216,10 @@ pub(in crate::card::sets) static MURKTIDE_REGENT: CardRecord = CardRecord::new(
 
 // MH2 67 — Subtlety
 pub(in crate::card::sets) static SUBTLETY: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Subtlety",
     "701256d5-1389-48b7-9581-d6037209bd06",
     "Anastasia Ovchinnikova",
-    CardSet::ModernHorizons2,
     // Free interaction that leaves a body when you have the mana, and a
     // blue card off the top of your hand when you do not.
     CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Elemental", "Incarnation"], 3, 3)
@@ -275,10 +275,10 @@ static A_CREATURE_OR_PLANESWALKER: ObjectPredicateDef = ObjectPredicateDef::AnyO
 ]);
 
 pub(in crate::card::sets) static ARCHON_OF_CRUELTY: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Archon of Cruelty",
     "1be9d9a4-d7ee-4854-abc2-85cabf993ec9",
     "Andrew Mar",
-    CardSet::ModernHorizons2,
     // Eight mana nobody pays: he is a reanimation target, and the trigger is
     // why -- a six-point swing and two cards the turn he lands, and again
     // every turn he attacks.
@@ -343,10 +343,10 @@ pub(in crate::card::sets) static ARCHON_OF_CRUELTY: CardRecord = CardRecord::new
 
 // MH2 76 — Bone Shards
 pub(in crate::card::sets) static BONE_SHARDS: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Bone Shards",
     "1ee98955-4c47-4d45-9377-608dfa755337",
     "Tommy Arnold",
-    CardSet::ModernHorizons2,
     // One black kills anything, and the second card is the price. A deck
     // full of things it wants in the graveyard pays it gladly.
     CardRules::new_sorcery(mana_cost!("{B}")).with_ability(
@@ -382,10 +382,10 @@ pub(in crate::card::sets) static BONE_SHARDS: CardRecord = CardRecord::new(
 
 // MH2 80 — Damn
 pub(in crate::card::sets) static DAMN: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Damn",
     "efeae088-9ac5-4d2f-a15c-d8675a471ac5",
     "Lucas Graciano",
-    CardSet::ModernHorizons2,
     // Two black is removal and four with two white is a Wrath, off one card
     // -- and neither half leaves anything to regenerate, which is what puts
     // it ahead of the sorceries it is otherwise a copy of.
@@ -420,10 +420,10 @@ pub(in crate::card::sets) static DAMN: CardRecord = CardRecord::new(
 
 // MH2 87 — Grief
 pub(in crate::card::sets) static GRIEF: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Grief",
     "e6befbc4-1320-4f26-bd9f-b1814fedda10",
     "Nicholas Gregory",
-    CardSet::ModernHorizons2,
     // Two black cards for a Thoughtseize on turn one, and a 3/2 that is
     // hard to block on the turns you have four mana instead.
     CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Elemental", "Incarnation"], 3, 2)
@@ -461,39 +461,39 @@ pub(in crate::card::sets) static GRIEF: CardRecord = CardRecord::new(
 // MH2 91 — Loathsome Curator
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LOATHSOME_CURATOR: CardRecord = CardRecord::new(
+    crate::card::CardSet::ModernHorizons2,
     "Loathsome Curator",
     "11a59a6f-6ef0-4acc-8358-a4e2cebdb7d5",
     "Mila Pesic",
-    crate::card::CardSet::ModernHorizons2,
     crate::card::CardRules::unsupported(),
 );
 
 // MH2 95 — Nested Shambler
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NESTED_SHAMBLER: CardRecord = CardRecord::new(
+    crate::card::CardSet::ModernHorizons2,
     "Nested Shambler",
     "9851f290-f502-49f8-9b48-67f7966d4e34",
     "Nicholas Gregory",
-    crate::card::CardSet::ModernHorizons2,
     crate::card::CardRules::unsupported(),
 );
 
 // MH2 107 — Vermin Gorger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VERMIN_GORGER: CardRecord = CardRecord::new(
+    crate::card::CardSet::ModernHorizons2,
     "Vermin Gorger",
     "d3166b10-5bc3-4db6-bb5b-81045d98e446",
     "Tobias Kwan",
-    crate::card::CardSet::ModernHorizons2,
     crate::card::CardRules::unsupported(),
 );
 
 // MH2 121 — Dragon's Rage Channeler
 pub(in crate::card::sets) static DRAGON_S_RAGE_CHANNELER: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Dragon's Rage Channeler",
     "4ced112a-e775-4f97-97b3-74877e9dce12",
     "Martina Fačková",
-    CardSet::ModernHorizons2,
     // One mana for a 1/1 that fills its own graveyard and turns into a 3/3
     // flier for doing what the deck was going to do anyway. The compulsion
     // to attack is the price, and it is rarely one.
@@ -549,10 +549,10 @@ pub(in crate::card::sets) static DRAGON_S_RAGE_CHANNELER: CardRecord = CardRecor
 
 // MH2 126 — Fury
 pub(in crate::card::sets) static FURY: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Fury",
     "bd281158-8180-40b9-a5b7-03cfc712d81a",
     "Raoul Vitale",
-    CardSet::ModernHorizons2,
     CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Elemental", "Incarnation"], 3, 3)
         .with_abilities(&[
             abilities::double_strike(),
@@ -604,10 +604,10 @@ pub(in crate::card::sets) static FURY: CardRecord = CardRecord::new(
 
 // MH2 135 — Mine Collapse
 pub(in crate::card::sets) static MINE_COLLAPSE: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Mine Collapse",
     "56e2e8b5-660d-4469-a4fe-2367dfadb709",
     "Bud Cook",
-    CardSet::ModernHorizons2,
     // Nobody pays four mana for this. What it is worth is a land off an
     // already-flooded board on your own turn, which is why the free half is
     // the half that reads "if it's your turn".
@@ -654,10 +654,10 @@ pub(in crate::card::sets) static MINE_COLLAPSE: CardRecord = CardRecord::new(
 
 // MH2 138 — Ragavan, Nimble Pilferer
 pub(in crate::card::sets) static RAGAVAN_NIMBLE_PILFERER: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Ragavan, Nimble Pilferer",
     "a9738cda-adb1-47fb-9f4c-ecd930228c4d",
     "Simon Dominic",
-    CardSet::ModernHorizons2,
     // One mana for a 2/1 that pays for itself the first time it connects,
     // and a dash cost for the turns when leaving it out would only get it
     // killed.
@@ -700,10 +700,10 @@ pub(in crate::card::sets) static RAGAVAN_NIMBLE_PILFERER: CardRecord = CardRecor
 
 // MH2 145 — Unholy Heat
 pub(in crate::card::sets) static UNHOLY_HEAT: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Unholy Heat",
     "2b73d294-6ab1-4051-9b0f-d8e335d37674",
     "Kari Christensen",
-    CardSet::ModernHorizons2,
     CardRules::new_instant(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
         "Unholy Heat deals 2 damage to target creature or planeswalker.\nDelirium — Unholy Heat deals 6 damage instead if there are four or more card types among cards in your graveyard.",
         &[AbilityTargetDef::exactly_one(
@@ -735,29 +735,29 @@ pub(in crate::card::sets) static UNHOLY_HEAT: CardRecord = CardRecord::new(
 // MH2 147 — Abundant Harvest
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ABUNDANT_HARVEST: CardRecord = CardRecord::new(
+    crate::card::CardSet::ModernHorizons2,
     "Abundant Harvest",
     "5ad86b17-3fed-418a-938c-c49adb409531",
     "Iris Compiet",
-    crate::card::CardSet::ModernHorizons2,
     crate::card::CardRules::unsupported(),
 );
 
 // MH2 149 — Bannerhide Krushok
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BANNERHIDE_KRUSHOK: CardRecord = CardRecord::new(
+    crate::card::CardSet::ModernHorizons2,
     "Bannerhide Krushok",
     "1271251b-7d79-4cb4-80bb-98574aa63249",
     "Joe Slucher",
-    crate::card::CardSet::ModernHorizons2,
     crate::card::CardRules::unsupported(),
 );
 
 // MH2 157 — Endurance
 pub(in crate::card::sets) static ENDURANCE: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Endurance",
     "eb0e0404-4846-4891-acfa-bd0951ecf9c6",
     "Anastasia Ovchinnikova",
-    CardSet::ModernHorizons2,
     // A free answer to a graveyard that leaves a 3/4 blocker behind, or a
     // green card off the top of your hand when the graveyard is the whole
     // reason you are casting it.
@@ -799,29 +799,29 @@ pub(in crate::card::sets) static ENDURANCE: CardRecord = CardRecord::new(
 // MH2 181 — Urban Daggertooth
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static URBAN_DAGGERTOOTH: CardRecord = CardRecord::new(
+    crate::card::CardSet::ModernHorizons2,
     "Urban Daggertooth",
     "4ab83a39-d90d-403e-b74d-fe99c8b2aacd",
     "Randy Vargas",
-    crate::card::CardSet::ModernHorizons2,
     crate::card::CardRules::unsupported(),
 );
 
 // MH2 188 — Captured by Lagacs
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAPTURED_BY_LAGACS: CardRecord = CardRecord::new(
+    crate::card::CardSet::ModernHorizons2,
     "Captured by Lagacs",
     "7ce1c2a8-688b-4f63-8d58-e325efc6052a",
     "Andrew Mar",
-    crate::card::CardSet::ModernHorizons2,
     crate::card::CardRules::unsupported(),
 );
 
 // MH2 202 — Grist, the Hunger Tide
 pub(in crate::card::sets) static GRIST_THE_HUNGER_TIDE: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Grist, the Hunger Tide",
     "69af2825-18c2-4463-b6ba-42eaa070ccc1",
     "Yongjae Choi",
-    CardSet::ModernHorizons2,
     // Three mana that makes a body every turn and answers one on the turn
     // it lands, which is why it is played over the planeswalkers that only
     // do one of those.
@@ -927,10 +927,10 @@ pub(in crate::card::sets) static GRIST_THE_HUNGER_TIDE: CardRecord = CardRecord:
 
 // MH2 216 — Territorial Kavu
 pub(in crate::card::sets) static TERRITORIAL_KAVU: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Territorial Kavu",
     "2605df98-0b02-4aab-bc36-01e93c693743",
     "E. M. Gist",
-    CardSet::ModernHorizons2,
     // Two mana for as big a body as your mana base is greedy, and an attack
     // trigger that either loots or eats a graveyard.
     CardRules::new_creature(mana_cost!("{R}{G}"), &["Kavu"], 0, 0).with_abilities(&[
@@ -995,10 +995,10 @@ pub(in crate::card::sets) static TERRITORIAL_KAVU: CardRecord = CardRecord::new(
 
 // MH2 227 — Kaldra Compleat
 pub(in crate::card::sets) static KALDRA_COMPLEAT: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Kaldra Compleat",
     "87cc2855-6b14-44dd-a398-7dc2bbae081f",
     "Vincent Proce",
-    CardSet::ModernHorizons2,
     // Seven mana that arrives as a 5/5 first-striking, trampling,
     // indestructible, hasty creature which exiles whatever blocks it. The
     // Germ is the point: it never needs a creature to equip.
@@ -1057,10 +1057,10 @@ static ARTIFACTS_AND_ENCHANTMENTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::
 );
 
 pub(in crate::card::sets) static NETTLECYST: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Nettlecyst",
     "4a0bb5dc-75a6-4bd6-81f8-611197fb0fba",
     "Vincent Proce",
-    CardSet::ModernHorizons2,
     CardRules::new_artifact(mana_cost!("{3}"))
         .with_subtypes(&["Equipment"])
         .with_abilities(&[
@@ -1081,10 +1081,10 @@ pub(in crate::card::sets) static NETTLECYST: CardRecord = CardRecord::new(
 
 // MH2 261 — Yavimaya, Cradle of Growth
 pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Yavimaya, Cradle of Growth",
     "4e4b6e22-93b2-4896-bba5-0ceaa5d8ea3c",
     "Sarah Finnigan",
-    CardSet::ModernHorizons2,
     CardRules::new_land(&[])
         .with_supertype(CardSupertype::Legendary)
         .with_ability(AbilityDef::static_ability(
@@ -1102,10 +1102,10 @@ pub(in crate::card::sets) static YAVIMAYA_CRADLE_OF_GROWTH: CardRecord = CardRec
 
 // MH2 355 — Ignoble Hierarch
 pub(in crate::card::sets) static IGNOBLE_HIERARCH: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Ignoble Hierarch",
     "3139cce8-3467-4c50-add2-5b78fb33b90a",
     "Mark Zug",
-    CardSet::ModernHorizons2,
     // Noble Hierarch in the other three colours: the same one-mana
     // accelerant, and the same 0/1 that exalted turns into a real
     // dividend on a turn when only one creature attacks.
@@ -1131,10 +1131,10 @@ static ARTIFACTS_YOU_CONTROL_SAGA: ObjectQueryDef = ObjectQueryDef::matching(
 );
 
 pub(in crate::card::sets) static URZA_S_SAGA: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Urza's Saga",
     "2138dfbb-a4e3-49db-b908-95d0b2b7e82f",
     "Titus Lunter",
-    CardSet::ModernHorizons2,
     // A land that costs nothing, taps for one turn's mana, spends the next
     // two turns making Constructs, and fetches the artifact that makes them
     // bigger on its way out.
@@ -1223,19 +1223,19 @@ pub(in crate::card::sets) static URZA_S_SAGA: CardRecord = CardRecord::new(
 // MH2 421 — Goblin Anarchomancer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOBLIN_ANARCHOMANCER: CardRecord = CardRecord::new(
+    crate::card::CardSet::ModernHorizons2,
     "Goblin Anarchomancer",
     "f7f07a80-05b5-4108-9e68-f8da05866acc",
     "Joe Slucher",
-    crate::card::CardSet::ModernHorizons2,
     crate::card::CardRules::unsupported(),
 );
 
 // MH2 450 — Dauthi Voidwalker
 pub(in crate::card::sets) static DAUTHI_VOIDWALKER: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons2,
     "Dauthi Voidwalker",
     "29632951-3c3d-478c-8c5a-9a34f30a5c28",
     "Sidharth Chaturvedi",
-    CardSet::ModernHorizons2,
     // Two mana for a body nothing ordinary can block, a graveyard nobody
     // else gets to use, and one card off the top of that pile.
     CardRules::new_creature(mana_cost!("{B}{B}"), &["Dauthi", "Rogue"], 3, 2)

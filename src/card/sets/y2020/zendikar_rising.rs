@@ -13,19 +13,19 @@ use crate::{ParentBinding, TargetIndex, mana_cost};
 // ZNR 9 — Dauntless Unity
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DAUNTLESS_UNITY: CardRecord = CardRecord::new(
+    crate::card::CardSet::ZendikarRising,
     "Dauntless Unity",
     "b12a4d17-68e6-4133-99fd-e501e24e6c6b",
     "Josu Hernaiz",
-    crate::card::CardSet::ZendikarRising,
     crate::card::CardRules::unsupported(),
 );
 
 // ZNR 39 — Skyclave Apparition
 pub(in crate::card::sets) static SKYCLAVE_APPARITION: CardRecord = CardRecord::new(
+    crate::card::CardSet::ZendikarRising,
     "Skyclave Apparition",
     "b83cfbaa-7890-4f6f-878b-4edb45677371",
     "Donato Giancola",
-    crate::card::CardSet::ZendikarRising,
     // Three mana for a body and an answer, and the answer is only undone by
     // killing the body -- which hands back an Illusion rather than the card.
     CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Kor", "Spirit"], 2, 2)
@@ -97,10 +97,10 @@ pub(in crate::card::sets) static SKYCLAVE_APPARITION: CardRecord = CardRecord::n
 
 // ZNR 85 — Thieving Skydiver
 pub(in crate::card::sets) static THIEVING_SKYDIVER: CardRecord = CardRecord::new(
+    CardSet::ZendikarRising,
     "Thieving Skydiver",
     "ff84ea71-e477-44f7-a3f8-77fef708efeb",
     "Kieran Yanner",
-    CardSet::ZendikarRising,
     // Two mana for a flier, or two plus X for a flier that takes the best
     // artifact on the board with it -- a Mox on turn three, a Sword on turn
     // five, and the Sword comes down already attached.
@@ -157,10 +157,10 @@ pub(in crate::card::sets) static THIEVING_SKYDIVER: CardRecord = CardRecord::new
 
 // ZNR 94 — Bloodchief's Thirst
 pub(in crate::card::sets) static BLOODCHIEFS_THIRST: CardRecord = CardRecord::new(
+    CardSet::ZendikarRising,
     "Bloodchief's Thirst",
     "059e8447-6b1c-4651-a734-a8fea2cbf7b2",
     "Jason Rainville",
-    CardSet::ZendikarRising,
     // One black kills most of what an aggressive deck leads with; four kills
     // whatever is left, which is why the card is played over a cheaper
     // removal spell that can only do the first job.
@@ -209,10 +209,10 @@ pub(in crate::card::sets) static BLOODCHIEFS_THIRST: CardRecord = CardRecord::ne
 // ZNR 185 — Gnarlid Colony
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GNARLID_COLONY: CardRecord = CardRecord::new(
+    crate::card::CardSet::ZendikarRising,
     "Gnarlid Colony",
     "7327289d-eed8-44b1-8495-7172e2b49d5f",
     "Izzy",
-    crate::card::CardSet::ZendikarRising,
     crate::card::CardRules::unsupported(),
 );
 
@@ -226,10 +226,10 @@ const fn omnath_resolution(amount: u8) -> TriggerConditionDef {
 
 pub(in crate::card::sets) static OMNATH_LOCUS_OF_CREATION: CardRecord =
     CardRecord::new(
+        CardSet::ZendikarRising,
     "Omnath, Locus of Creation",
     "4e4fb50c-a81f-44d3-93c5-fa9a0b37f617",
     "Chris Rahn",
-        CardSet::ZendikarRising,
         // Four colours for a 4/4 that replaces itself, and a deck full of
         // fetchlands turns the third land of a turn into eight damage.
         CardRules::new_creature(mana_cost!("{R}{G}{W}{U}"), &["Elemental"], 4, 4)
@@ -315,10 +315,10 @@ static LITHOFORM_RETARGET_COPY: crate::card::CopyStackObjectDef = crate::card::C
 };
 
 pub(in crate::card::sets) static LITHOFORM_ENGINE: CardRecord = CardRecord::new(
+    CardSet::ZendikarRising,
     "Lithoform Engine",
     "6683416a-5820-4cd0-b28a-60a53239e9ef",
     "Colin Boyer",
-    CardSet::ZendikarRising,
     CardRules::new_artifact(mana_cost!("{4}"))
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
@@ -393,10 +393,10 @@ pub(in crate::card::sets) static LITHOFORM_ENGINE: CardRecord = CardRecord::new(
 
 // ZNR 319 — Luminarch Aspirant
 pub(in crate::card::sets) static LUMINARCH_ASPIRANT: CardRecord = CardRecord::new(
+    CardSet::ZendikarRising,
     "Luminarch Aspirant",
     "ebe9427d-068f-487c-9263-b40366a164bc",
     "Mads Ahm",
-    CardSet::ZendikarRising,
     // Two mana that adds a counter every turn it survives, before attackers
     // are declared -- so the counter is already on whatever is about to
     // attack or block.

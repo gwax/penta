@@ -677,33 +677,49 @@ fn validate_declaration<'a>(
                 index + 1
             )
         });
+    let initializer = lines[initializer_index].trim();
+    let (name_offset, scryfall_id_offset) = if initializer.contains("CardRecord::") {
+        let debut_set = lines
+            .get(initializer_index + 1)
+            .map_or("", |line| line.trim());
+        assert!(
+            debut_set.contains("CardSet::") && debut_set.ends_with(','),
+            "{}:{}: CardRecord constructors must put the debut set first",
+            path.display(),
+            initializer_index + 2,
+        );
+        (2, 3)
+    } else {
+        // Inline declaration helpers are checked at their CardRecord call site.
+        (1, 2)
+    };
     let name = lines
-        .get(initializer_index + 1)
+        .get(initializer_index + name_offset)
         .and_then(|line| line.trim().strip_prefix('"'))
         .and_then(|line| line.strip_suffix("\","))
         .unwrap_or_else(|| {
             panic!(
                 "{}:{}: expected a one-line canonical card name",
                 path.display(),
-                initializer_index + 2
+                initializer_index + name_offset + 1
             )
         });
     let scryfall_id = lines
-        .get(initializer_index + 2)
+        .get(initializer_index + scryfall_id_offset)
         .and_then(|line| line.trim().strip_prefix('"'))
         .and_then(|line| line.strip_suffix("\","))
         .unwrap_or_else(|| {
             panic!(
                 "{}:{}: expected a one-line debut-art Scryfall UUID",
                 path.display(),
-                initializer_index + 3
+                initializer_index + scryfall_id_offset + 1
             )
         });
     assert!(
         super::is_uuid(scryfall_id),
         "{}:{}: invalid debut-art Scryfall UUID: {scryfall_id}",
         path.display(),
-        initializer_index + 3,
+        initializer_index + scryfall_id_offset + 1,
     );
     assert!(
         header_name == name

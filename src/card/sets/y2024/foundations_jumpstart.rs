@@ -15,19 +15,19 @@ use crate::mana_cost;
 // J25 19 — Scholar of Combustion
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCHOLAR_OF_COMBUSTION: CardRecord = CardRecord::new(
+    crate::card::CardSet::FoundationsJumpstart,
     "Scholar of Combustion",
     "23660e44-8546-438d-a2c4-e1cef6e50855",
     "Nereida",
-    crate::card::CardSet::FoundationsJumpstart,
     crate::card::CardRules::unsupported(),
 );
 
 // J25 24 — Scythecat Cub
 pub(in crate::card::sets) static SCYTHECAT_CUB: CardRecord = CardRecord::new(
+    CardSet::FoundationsJumpstart,
     "Scythecat Cub",
     "b3dd3c7d-4685-4579-b483-14ddaaaddf5b",
     "Gabor Szikszai",
-    CardSet::FoundationsJumpstart,
     // Two mana that turns a land drop into a counter and the second land of
     // the turn into all of them at once -- and trample, so what it grows
     // into does not stop at a blocker.
@@ -83,19 +83,19 @@ pub(in crate::card::sets) static SCYTHECAT_CUB: CardRecord = CardRecord::new(
 // J25 28 — Shardless Outlander
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHARDLESS_OUTLANDER: CardRecord = CardRecord::new(
+    crate::card::CardSet::FoundationsJumpstart,
     "Shardless Outlander",
     "fccb51a4-cb78-4437-b9ab-cc77736af561",
     "Leon Tukker",
-    crate::card::CardSet::FoundationsJumpstart,
     crate::card::CardRules::unsupported(),
 );
 
 // J25 37 — Plagon, Lord of the Beach
 pub(in crate::card::sets) static PLAGON_LORD_OF_THE_BEACH: CardRecord = CardRecord::new(
+    CardSet::FoundationsJumpstart,
     "Plagon, Lord of the Beach",
     "7f8a6bfe-6033-4f6b-ab45-6b553f8b51a1",
     "GOSSAN",
-    CardSet::FoundationsJumpstart,
     // A 0/3 that pays for itself in a deck of walls and then turns them into
     // an offense: the numbers stay what they are, and only the combat
     // assignment reads the other one.
@@ -145,10 +145,10 @@ pub(in crate::card::sets) static PLAGON_LORD_OF_THE_BEACH: CardRecord = CardReco
 
 // J25 50 — Ivora, Insatiable Heir
 pub(in crate::card::sets) static IVORA_INSATIABLE_HEIR: CardRecord = CardRecord::new(
+    CardSet::FoundationsJumpstart,
     "Ivora, Insatiable Heir",
     "2ba70366-b6ae-423a-a8d8-29d2b8afd939",
     "Canata Katana",
-    CardSet::FoundationsJumpstart,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Vampire", "Warrior"], 1, 1)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[

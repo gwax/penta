@@ -13,10 +13,10 @@ use crate::{TargetIndex, mana_cost};
 
 // CLU 4 — Headliner Scarlett
 pub(in crate::card::sets) static HEADLINER_SCARLETT: CardRecord = CardRecord::new(
+    CardSet::RavnicaClueEdition,
     "Headliner Scarlett",
     "be77b98a-dd79-477c-8ab2-7ebf5637a89e",
     "Heonhwa",
-    CardSet::RavnicaClueEdition,
     // Four mana that attacks the turn it lands into a board that cannot
     // block, and then draws an extra card every turn it survives.
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Human", "Warlock"], 3, 3)
@@ -69,10 +69,10 @@ pub(in crate::card::sets) static HEADLINER_SCARLETT: CardRecord = CardRecord::ne
 
 // CLU 26 — Carnage Interpreter
 pub(in crate::card::sets) static CARNAGE_INTERPRETER: CardRecord = CardRecord::new(
+    CardSet::RavnicaClueEdition,
     "Carnage Interpreter",
     "f6fb576e-a4a4-496b-b553-3f81cc651210",
     "Justine Cruz",
-    CardSet::RavnicaClueEdition,
     // Three mana for a 5/5 with menace and four cards' worth of Clues, paid
     // for with whatever was left in hand -- which is nothing, on the turn
     // the deck wants to cast it.
@@ -125,10 +125,10 @@ pub(in crate::card::sets) static CARNAGE_INTERPRETER: CardRecord = CardRecord::n
 
 // CLU 50 — Unruly Krasis
 pub(in crate::card::sets) static UNRULY_KRASIS: CardRecord = CardRecord::new(
+    CardSet::RavnicaClueEdition,
     "Unruly Krasis",
     "a3b1b58d-b7f1-404f-aec6-b19cef4bebbd",
     "Billy Christian",
-    CardSet::RavnicaClueEdition,
     CardRules::new_creature(
         mana_cost!("{1}{G}{U}"),
         &["Shark", "Octopus", "Lizard"],

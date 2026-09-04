@@ -10,10 +10,10 @@ use crate::{ParentBinding, mana_cost};
 
 // C20 34 — Ethereal Forager
 pub(in crate::card::sets) static ETHEREAL_FORAGER: CardRecord = CardRecord::new(
+    CardSet::Commander2020,
     "Ethereal Forager",
     "97543d69-547e-41f8-9a4f-908e5eb0ee4a",
     "Nicholas Gregory",
-    CardSet::Commander2020,
     CardRules::new_creature(mana_cost!("{4}{U}{U}"), &["Elemental", "Whale"], 3, 3)
         .with_abilities(&[
             abilities::delve(),
@@ -54,10 +54,10 @@ pub(in crate::card::sets) static ETHEREAL_FORAGER: CardRecord = CardRecord::new(
 // C20 67 — Bonder's Ornament
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BONDER_S_ORNAMENT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Commander2020,
     "Bonder's Ornament",
     "5afe425c-50a7-4d29-ac14-0edb094fc770",
     "Lindsey Look",
-    crate::card::CardSet::Commander2020,
     crate::card::CardRules::unsupported(),
 );
 

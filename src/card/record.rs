@@ -32,10 +32,10 @@ impl CardRecord {
     /// Defines a card whose ID is derived from its exact debut artwork.
     #[allow(clippy::large_types_passed_by_value)]
     pub(super) const fn new(
+        debut_set: CardSet,
         name: &'static str,
         scryfall_id: &'static str,
         artist: &'static str,
-        debut_set: CardSet,
         rules: CardRules,
     ) -> Self {
         Self {
@@ -50,10 +50,10 @@ impl CardRecord {
     /// Defines a double-faced card whose ID is derived from its immutable
     /// debut artwork.
     const fn new_double_faced(
+        debut_set: CardSet,
         name: &'static str,
         scryfall_id: &'static str,
         artist: &'static str,
-        debut_set: CardSet,
         faces: &'static [(&'static str, CardRules); 2],
         kind: DoubleFacedKind,
     ) -> Self {
@@ -69,17 +69,17 @@ impl CardRecord {
     /// Defines a transforming double-faced card whose ID is derived from its
     /// exact debut artwork.
     pub(super) const fn new_dfc(
+        debut_set: CardSet,
         name: &'static str,
         scryfall_id: &'static str,
         artist: &'static str,
-        debut_set: CardSet,
         faces: &'static [(&'static str, CardRules); 2],
     ) -> Self {
         Self::new_double_faced(
+            debut_set,
             name,
             scryfall_id,
             artist,
-            debut_set,
             faces,
             DoubleFacedKind::Transforming,
         )
@@ -88,17 +88,17 @@ impl CardRecord {
     /// Defines a modal double-faced card whose ID is derived from its
     /// exact debut artwork.
     pub(super) const fn new_mdfc(
+        debut_set: CardSet,
         name: &'static str,
         scryfall_id: &'static str,
         artist: &'static str,
-        debut_set: CardSet,
         faces: &'static [(&'static str, CardRules); 2],
     ) -> Self {
         Self::new_double_faced(
+            debut_set,
             name,
             scryfall_id,
             artist,
-            debut_set,
             faces,
             DoubleFacedKind::Modal,
         )
@@ -106,10 +106,10 @@ impl CardRecord {
 
     /// Defines a split card directly from its two printed halves.
     pub(super) const fn new_split(
+        debut_set: CardSet,
         name: &'static str,
         scryfall_id: &'static str,
         artist: &'static str,
-        debut_set: CardSet,
         halves: &'static [(&'static str, CardRules); 2],
     ) -> Self {
         Self {
@@ -126,14 +126,14 @@ impl CardRecord {
 
     /// Defines a fuse card directly from its two printed halves and combined cost.
     pub(super) const fn new_fuse(
+        debut_set: CardSet,
         name: &'static str,
         scryfall_id: &'static str,
         artist: &'static str,
-        debut_set: CardSet,
         halves: &'static [(&'static str, CardRules); 2],
         fuse_cost: super::ManaCost,
     ) -> Self {
-        let mut record = Self::new_split(name, scryfall_id, artist, debut_set, halves);
+        let mut record = Self::new_split(debut_set, name, scryfall_id, artist, halves);
         record.composition = Some(CompositionSource::Split {
             halves,
             fuse_cost: Some(fuse_cost),
@@ -242,10 +242,10 @@ mod tests {
 
     fn derived() -> CardRecord {
         CardRecord::new(
+            CardSet::Alpha,
             "Derived identity test",
             ANCHOR,
             "Test Artist",
-            CardSet::Alpha,
             CardRules::unsupported(),
         )
     }

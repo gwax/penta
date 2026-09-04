@@ -18,20 +18,20 @@ use crate::{TargetIndex, mana_cost};
 
 // CON 3 — Aven Squire
 pub(in crate::card::sets) static AVEN_SQUIRE: CardRecord = CardRecord::new(
+    CardSet::Conflux,
     "Aven Squire",
     "60301dbd-40d1-4af8-8e2b-797febfa859f",
     "David Palumbo",
-    CardSet::Conflux,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Bird", "Soldier"], 1, 1)
         .with_abilities(&[abilities::flying(), abilities::exalted()]),
 );
 
 // CON 5 — Celestial Purge
 pub(in crate::card::sets) static CELESTIAL_PURGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Conflux,
     "Celestial Purge",
     "31c404e8-1241-4675-b259-fbbf1dba15c4",
     "David Palumbo",
-    crate::card::CardSet::Conflux,
     CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell_with_targets(
         "Exile target black or red permanent.",
         &[AbilityTargetDef::exactly_one_permanent(
@@ -50,10 +50,10 @@ pub(in crate::card::sets) static CELESTIAL_PURGE: CardRecord = CardRecord::new(
 
 // CON 15 — Path to Exile
 pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new(
+    CardSet::Conflux,
     "Path to Exile",
     "29b7a8b1-b98e-483a-87a4-73bd831c03d4",
     "Todd Lockwood",
-    CardSet::Conflux,
     CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
         "Exile target creature. Its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
         &[AbilityTargetDef::exactly_one_permanent(
@@ -92,19 +92,19 @@ pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new(
 
 // CON 60 — Canyon Minotaur
 pub(in crate::card::sets) static CANYON_MINOTAUR: CardRecord = CardRecord::new(
+    CardSet::Conflux,
     "Canyon Minotaur",
     "9b200790-43c7-42ae-9edf-89c8198a385b",
     "Steve Prescott",
-    CardSet::Conflux,
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Minotaur", "Warrior"], 3, 3),
 );
 
 // CON 87 — Noble Hierarch
 pub(in crate::card::sets) static NOBLE_HIERARCH: CardRecord = CardRecord::new(
+    CardSet::Conflux,
     "Noble Hierarch",
     "6adfe928-1305-444d-b709-1e714544daaf",
     "Mark Zug",
-    CardSet::Conflux,
     // A one-mana accelerant for three colours whose body is beside the
     // point, except that exalted makes the 0/1 into a real attacker's
     // dividend on any turn nothing else attacks.
@@ -133,10 +133,10 @@ static RELIQUARY_LAND_CARDS: ObjectQueryDef = ObjectQueryDef::matching(
 );
 
 pub(in crate::card::sets) static KNIGHT_OF_THE_RELIQUARY: CardRecord = CardRecord::new(
+    CardSet::Conflux,
     "Knight of the Reliquary",
     "ad8b8518-c09e-4cb7-95b2-08e4e370d89c",
     "Michael Komarck",
-    CardSet::Conflux,
     // Three mana for a body that grows a point every time it fetches, which
     // is what makes the utility lands in the deck worth a card each.
     CardRules::new_creature(mana_cost!("{1}{G}{W}"), &["Human", "Knight"], 2, 2)
@@ -186,10 +186,10 @@ pub(in crate::card::sets) static KNIGHT_OF_THE_RELIQUARY: CardRecord = CardRecor
 
 // CON 120 — Nicol Bolas, Planeswalker
 pub(in crate::card::sets) static NICOL_BOLAS_PLANESWALKER: CardRecord = CardRecord::new(
+    CardSet::Conflux,
     "Nicol Bolas, Planeswalker",
     "48ee3939-bc12-4275-a446-9de36f0b4672",
     "D. Alexander Gregory",
-    CardSet::Conflux,
     CardRules::new_planeswalker(mana_cost!("{4}{U}{B}{B}{R}"), &["Bolas"], 5)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
@@ -249,10 +249,10 @@ pub(in crate::card::sets) static NICOL_BOLAS_PLANESWALKER: CardRecord = CardReco
 
 // CON 142 — Exotic Orchard
 pub(in crate::card::sets) static EXOTIC_ORCHARD: CardRecord = CardRecord::new(
+    CardSet::Conflux,
     "Exotic Orchard",
     "6aae6480-4e71-4d94-a648-f80d3849d792",
     "Steven Belledin",
-    CardSet::Conflux,
     CardRules::new_land(&[]).with_ability(AbilityDef::activated_mana(
         "{T}: Add one mana of any color that a land an opponent controls could produce.",
         &[AbilityCostDef::TapSource],
@@ -269,10 +269,10 @@ pub(in crate::card::sets) static EXOTIC_ORCHARD: CardRecord = CardRecord::new(
 
 // CON 143 — Reliquary Tower
 pub(in crate::card::sets) static RELIQUARY_TOWER: CardRecord = CardRecord::new(
+    CardSet::Conflux,
     "Reliquary Tower",
     "c5c0c1a5-dce7-4c7d-8a5b-0bf93ba68ace",
     "Jesper Ejsing",
-    CardSet::Conflux,
     // "You", so it does nothing for the opponent, and it is read at cleanup
     // rather than captured -- losing the Tower on your own turn puts the
     // limit straight back.

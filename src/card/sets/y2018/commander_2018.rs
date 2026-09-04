@@ -10,10 +10,10 @@ use crate::mana_cost;
 
 // C18 54 — Coveted Jewel
 pub(in crate::card::sets) static COVETED_JEWEL: CardRecord = CardRecord::new(
+    CardSet::Commander2018,
     "Coveted Jewel",
     "f83ed433-fae3-4fa5-acad-bb8a5b535ce3",
     "Jason A. Engle",
-    CardSet::Commander2018,
     // Six mana for three cards and a Gilded Lotus, held only as long as you
     // can stop them getting through -- and they untap it on the way out.
     CardRules::new_artifact(mana_cost!("{6}")).with_abilities(&[
@@ -65,10 +65,10 @@ pub(in crate::card::sets) static COVETED_JEWEL: CardRecord = CardRecord::new(
 
 // C18 57 — Retrofitter Foundry
 pub(in crate::card::sets) static RETROFITTER_FOUNDRY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Commander2018,
     "Retrofitter Foundry",
     "5da578b8-19e6-4068-9336-e7cd33c585f1",
     "Dmitry Burmak",
-    crate::card::CardSet::Commander2018,
     // One mana on turn one and a mana sink for the rest of the game, which
     // is why it is played in decks with no other artifacts at all.
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[

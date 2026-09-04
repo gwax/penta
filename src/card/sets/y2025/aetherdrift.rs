@@ -10,10 +10,10 @@ use crate::mana_cost;
 
 // DFT 67 — Stock Up
 pub(in crate::card::sets) static STOCK_UP: CardRecord = CardRecord::new(
+    CardSet::Aetherdrift,
     "Stock Up",
     "0a786855-6eb4-42c0-a528-4842db46809d",
     "Izzy",
-    CardSet::Aetherdrift,
     // Two cards for three mana at sorcery speed is unremarkable; seeing five
     // to find them is what puts it in a deck built around one or two cards.
     CardRules::new_sorcery(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
@@ -30,29 +30,29 @@ pub(in crate::card::sets) static STOCK_UP: CardRecord = CardRecord::new(
 // DFT 79 — Chitin Gravestalker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHITIN_GRAVESTALKER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Aetherdrift,
     "Chitin Gravestalker",
     "903b4141-04a3-44c4-9d3e-aa2a773d9883",
     "Slawomir Maniak",
-    crate::card::CardSet::Aetherdrift,
     crate::card::CardRules::unsupported(),
 );
 
 // DFT 88 — Grim Bauble
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRIM_BAUBLE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Aetherdrift,
     "Grim Bauble",
     "9bfdf60a-6f67-4872-8961-d63776b192c3",
     "Wero Gallo",
-    crate::card::CardSet::Aetherdrift,
     crate::card::CardRules::unsupported(),
 );
 
 // DFT 191 — Brightglass Gearhulk
 pub(in crate::card::sets) static BRIGHTGLASS_GEARHULK: CardRecord = CardRecord::new(
+    CardSet::Aetherdrift,
     "Brightglass Gearhulk",
     "3dea5b45-925c-4732-8e9d-fa8232792736",
     "José Parodi",
-    CardSet::Aetherdrift,
     // A 4/4 first striker with trample that also finds the two one-drops the
     // deck is built around, which is what four coloured pips buy.
     CardRules::new_artifact_creature(mana_cost!("{G}{G}{W}{W}"), &["Construct"], 4, 4)
@@ -102,10 +102,10 @@ pub(in crate::card::sets) static BRIGHTGLASS_GEARHULK: CardRecord = CardRecord::
 
 // DFT 250 — Bleachbone Verge
 pub(in crate::card::sets) static BLEACHBONE_VERGE: CardRecord = CardRecord::new(
+    CardSet::Aetherdrift,
     "Bleachbone Verge",
     "52dcdabd-a186-45fe-9fee-6c0f1afeaf16",
     "Mark Tedin",
-    CardSet::Aetherdrift,
     // Untapped and free either way: the black is unconditional, and the
     // white is what the rest of the mana base is for.
     CardRules::new_land(&[]).with_abilities(&[
@@ -139,19 +139,19 @@ pub(in crate::card::sets) static BLEACHBONE_VERGE: CardRecord = CardRecord::new(
 // DFT 258 — Night Market
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NIGHT_MARKET: CardRecord = CardRecord::new(
+    crate::card::CardSet::Aetherdrift,
     "Night Market",
     "a8c1dce3-6136-4294-9d2b-5ef8527d733b",
     "David Álvarez",
-    crate::card::CardSet::Aetherdrift,
     crate::card::CardRules::unsupported(),
 );
 
 // DFT 260 — Riverpyre Verge
 pub(in crate::card::sets) static RIVERPYRE_VERGE: CardRecord = CardRecord::new(
+    CardSet::Aetherdrift,
     "Riverpyre Verge",
     "57a93a71-d77c-417f-85d0-cd420f573331",
     "Titus Lunter",
-    CardSet::Aetherdrift,
     // Untapped and free either way: the red is unconditional, and the blue
     // is what the second land in the deck is for.
     CardRules::new_land(&[]).with_abilities(&[
@@ -184,10 +184,10 @@ pub(in crate::card::sets) static RIVERPYRE_VERGE: CardRecord = CardRecord::new(
 
 // DFT 264 — Sunbillow Verge
 pub(in crate::card::sets) static SUNBILLOW_VERGE: CardRecord = CardRecord::new(
+    CardSet::Aetherdrift,
     "Sunbillow Verge",
     "94ed132f-b818-4dbf-9b4a-e5acb067e0a4",
     "Pete Venters",
-    CardSet::Aetherdrift,
     // Untapped and free either way: the white is unconditional, and the red
     // is what the rest of the mana base is for.
     CardRules::new_land(&[]).with_abilities(&[
@@ -220,10 +220,10 @@ pub(in crate::card::sets) static SUNBILLOW_VERGE: CardRecord = CardRecord::new(
 
 // DFT 268 — Wastewood Verge
 pub(in crate::card::sets) static WASTEWOOD_VERGE: CardRecord = CardRecord::new(
+    CardSet::Aetherdrift,
     "Wastewood Verge",
     "5ceacc7d-d407-4f82-af58-9bdf8426924e",
     "Bartek Fedyczak",
-    CardSet::Aetherdrift,
     // Untapped and free either way: the green is unconditional, and the
     // black is what the second land in the deck is for.
     CardRules::new_land(&[]).with_abilities(&[

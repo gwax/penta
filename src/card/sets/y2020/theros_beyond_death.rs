@@ -45,10 +45,10 @@ const HELIOD_S_PILGRIM_REPRINT: PrintingRecord = PrintingRecord::reprint(
 const ORACLE_TOP: Binding = Binding!("oracle_top");
 const ORACLE_REST: Binding = Binding!("oracle_rest");
 pub(in crate::card::sets) static THASSAS_ORACLE: CardRecord = CardRecord::new(
+    CardSet::TherosBeyondDeath,
     "Thassa's Oracle",
     "726e8b29-13e9-4138-b6a9-d2a0d8188d1c",
     "Jesper Ejsing",
-    CardSet::TherosBeyondDeath,
     // Two blue mana and an empty library is the whole card. The looking is
     // what it does when the library is not empty yet.
     CardRules::new_creature(mana_cost!("{U}{U}"), &["Merfolk", "Wizard"], 1, 3).with_ability(
@@ -131,39 +131,39 @@ const GRAY_MERCHANT_OF_ASPHODEL_REPRINT: PrintingRecord = PrintingRecord::reprin
 // THB 105 — Mire Triton
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MIRE_TRITON: CardRecord = CardRecord::new(
+    crate::card::CardSet::TherosBeyondDeath,
     "Mire Triton",
     "3f8427d3-4d9e-48c9-838b-239fd1357d95",
     "Seb McKinnon",
-    crate::card::CardSet::TherosBeyondDeath,
     crate::card::CardRules::unsupported(),
 );
 
 // THB 120 — Underworld Charger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNDERWORLD_CHARGER: CardRecord = CardRecord::new(
+    crate::card::CardSet::TherosBeyondDeath,
     "Underworld Charger",
     "f2dd847f-0db2-4f6a-bdfb-5c88ce7802f9",
     "Johann Bodin",
-    crate::card::CardSet::TherosBeyondDeath,
     crate::card::CardRules::unsupported(),
 );
 
 // THB 128 — Blood Aspirant
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLOOD_ASPIRANT: CardRecord = CardRecord::new(
+    crate::card::CardSet::TherosBeyondDeath,
     "Blood Aspirant",
     "8d4f3fa3-ba1f-48dc-a56b-738936f1bf86",
     "Tyler Walpole",
-    crate::card::CardSet::TherosBeyondDeath,
     crate::card::CardRules::unsupported(),
 );
 
 // THB 161 — Underworld Breach
 pub(in crate::card::sets) static UNDERWORLD_BREACH: CardRecord = CardRecord::new(
+    CardSet::TherosBeyondDeath,
     "Underworld Breach",
     "0e51d796-7279-4c06-87f0-37adbdaa41df",
     "Lie Setiawan",
-    CardSet::TherosBeyondDeath,
     // Two mana that turns a graveyard into a hand for one turn, which is as
     // long as anything playing it needs.
     CardRules::new_enchantment(mana_cost!("{1}{R}")).with_abilities(&[
@@ -199,19 +199,19 @@ pub(in crate::card::sets) static UNDERWORLD_BREACH: CardRecord = CardRecord::new
 // THB 163 — Underworld Rage-Hound
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNDERWORLD_RAGE_HOUND: CardRecord = CardRecord::new(
+    crate::card::CardSet::TherosBeyondDeath,
     "Underworld Rage-Hound",
     "a04eef82-fd53-41f4-9c7e-28b9ac039032",
     "Tyler Walpole",
-    crate::card::CardSet::TherosBeyondDeath,
     crate::card::CardRules::unsupported(),
 );
 
 // THB 229 — Uro, Titan of Nature's Wrath
 pub(in crate::card::sets) static URO_TITAN_OF_NATURE_S_WRATH: CardRecord = CardRecord::new(
+    CardSet::TherosBeyondDeath,
     "Uro, Titan of Nature's Wrath",
     "a0b6a71e-56cb-4d25-8f2b-7a4f1b60900d",
     "Vincent Proce",
-    CardSet::TherosBeyondDeath,
     // Three mana for a ramp spell that gains three and draws, and the same
     // card again later as a 6/6 that does it every attack.
     CardRules::new_creature(mana_cost!("{1}{G}{U}"), &["Elder", "Giant"], 6, 6)
@@ -284,10 +284,10 @@ pub(in crate::card::sets) static URO_TITAN_OF_NATURE_S_WRATH: CardRecord = CardR
 
 // THB 237 — Soul-Guide Lantern
 pub(in crate::card::sets) static SOUL_GUIDE_LANTERN: CardRecord = CardRecord::new(
+    crate::card::CardSet::TherosBeyondDeath,
     "Soul-Guide Lantern",
     "7c850b94-75c9-4457-8b5e-1193352d6fcb",
     "Cliff Childs",
-    crate::card::CardSet::TherosBeyondDeath,
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
         abilities::enters_trigger_with_targets(
             "When this artifact enters, exile target card from a graveyard.",

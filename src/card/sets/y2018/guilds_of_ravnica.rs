@@ -32,19 +32,19 @@ static ARCLIGHT_PHOENIX_RETURN_CONDITION: TriggerConditionDef = TriggerCondition
 // GRN 45 — Murmuring Mystic
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MURMURING_MYSTIC: CardRecord = CardRecord::new(
+    crate::card::CardSet::GuildsOfRavnica,
     "Murmuring Mystic",
     "5fc6adff-dcb3-456d-a8c2-0e77b784ff89",
     "Mark Winters",
-    crate::card::CardSet::GuildsOfRavnica,
     crate::card::CardRules::unsupported(),
 );
 
 // GRN 91 — Arclight Phoenix
 pub(in crate::card::sets) static ARCLIGHT_PHOENIX: CardRecord = CardRecord::new(
+    CardSet::GuildsOfRavnica,
     "Arclight Phoenix",
     "787de9ce-02c5-4a17-a88b-d38e83dbeb0b",
     "Slawomir Maniak",
-    CardSet::GuildsOfRavnica,
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Phoenix"], 3, 2).with_abilities(&[
         abilities::flying(),
         abilities::haste(),

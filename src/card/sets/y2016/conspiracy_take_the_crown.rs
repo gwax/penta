@@ -11,10 +11,10 @@ use crate::{TargetIndex, mana_cost};
 
 // CN2 18 — Palace Jailer
 pub(in crate::card::sets) static PALACE_JAILER: CardRecord = CardRecord::new(
+    CardSet::ConspiracyTakeTheCrown,
     "Palace Jailer",
     "78cef262-c753-4658-b3ec-fec8db47f944",
     "David Palumbo",
-    CardSet::ConspiracyTakeTheCrown,
     // The crown is the card: a removal spell that also draws every turn, for
     // as long as nobody can get through to take it back.
     CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Human", "Soldier"], 2, 2)
@@ -65,39 +65,39 @@ pub(in crate::card::sets) static PALACE_JAILER: CardRecord = CardRecord::new(
 // CN2 19 — Palace Sentinels
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PALACE_SENTINELS: CardRecord = CardRecord::new(
+    crate::card::CardSet::ConspiracyTakeTheCrown,
     "Palace Sentinels",
     "3e002a99-eb2b-4cc3-992e-f3ee42245dba",
     "Aaron Miller",
-    crate::card::CardSet::ConspiracyTakeTheCrown,
     crate::card::CardRules::unsupported(),
 );
 
 // CN2 48 — Thorn of the Black Rose
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THORN_OF_THE_BLACK_ROSE: CardRecord = CardRecord::new(
+    crate::card::CardSet::ConspiracyTakeTheCrown,
     "Thorn of the Black Rose",
     "2e4829c6-50d4-4602-af78-59249486a97c",
     "David Gaillet",
-    crate::card::CardSet::ConspiracyTakeTheCrown,
     crate::card::CardRules::unsupported(),
 );
 
 // CN2 64 — Entourage of Trest
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ENTOURAGE_OF_TREST: CardRecord = CardRecord::new(
+    crate::card::CardSet::ConspiracyTakeTheCrown,
     "Entourage of Trest",
     "3d7ee777-6113-43f8-883e-c7569eefb872",
     "Anthony Palumbo",
-    crate::card::CardSet::ConspiracyTakeTheCrown,
     crate::card::CardRules::unsupported(),
 );
 
 // CN2 77 — Leovold, Emissary of Trest
 pub(in crate::card::sets) static LEOVOLD_EMISSARY_OF_TREST: CardRecord = CardRecord::new(
+    CardSet::ConspiracyTakeTheCrown,
     "Leovold, Emissary of Trest",
     "49bb0ad3-1082-41f1-82a4-52a4006cc9b6",
     "Magali Villeneuve",
-    CardSet::ConspiracyTakeTheCrown,
     // Three mana that turns every draw spell they have into one card and
     // every removal spell they point at you into a replacement.
     CardRules::new_creature(mana_cost!("{B}{G}{U}"), &["Elf", "Advisor"], 3, 3)

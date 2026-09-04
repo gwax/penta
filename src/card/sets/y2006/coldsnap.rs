@@ -16,10 +16,10 @@ use crate::{TargetIndex, mana_cost};
 
 // CSP 33 — Flashfreeze
 pub(in crate::card::sets) static FLASHFREEZE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Coldsnap,
     "Flashfreeze",
     "cefd9955-a195-4855-a00e-3809b96ca92b",
     "Brian Despain",
-    crate::card::CardSet::Coldsnap,
     CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
         "Counter target red or green spell.",
         &[AbilityTargetDef::exactly_one(
@@ -46,10 +46,10 @@ pub(in crate::card::sets) static FLASHFREEZE: CardRecord = CardRecord::new(
 
 // CSP 54 — Deathmark
 pub(in crate::card::sets) static DEATHMARK: CardRecord = CardRecord::new(
+    crate::card::CardSet::Coldsnap,
     "Deathmark",
     "e72e8728-d0a0-4ee5-87c3-092ca94225e0",
     "Jeremy Jarvis",
-    crate::card::CardSet::Coldsnap,
     CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
         "Destroy target green or white creature.",
         &[AbilityTargetDef::exactly_one_permanent(
@@ -71,10 +71,10 @@ pub(in crate::card::sets) static DEATHMARK: CardRecord = CardRecord::new(
 
 // CSP 138 — Mishra's Bauble
 pub(in crate::card::sets) static MISHRA_S_BAUBLE: CardRecord = CardRecord::new(
+    CardSet::Coldsnap,
     "Mishra's Bauble",
     "8a720448-017f-4f4a-9501-678245eaed17",
     "Chippy",
-    CardSet::Coldsnap,
     // A free artifact that replaces itself a turn later. The looking is
     // incidental; what the card is played for is being an artifact that cost
     // nothing and a card that comes back.
@@ -107,10 +107,10 @@ pub(in crate::card::sets) static MISHRA_S_BAUBLE: CardRecord = CardRecord::new(
 
 // CSP 145 — Dark Depths
 pub(in crate::card::sets) static DARK_DEPTHS: CardRecord = CardRecord::new(
+    CardSet::Coldsnap,
     "Dark Depths",
     "92409c3a-fb1a-4205-9fe1-0f5affc7b21d",
     "Stephan Martiniere",
-    CardSet::Coldsnap,
     // Thirty mana the long way round, or none at all if something else takes
     // the counters off.
     CardRules::new_land(&[])

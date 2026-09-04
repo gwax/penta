@@ -10,29 +10,29 @@ use crate::mana_cost;
 // ARB 29 — Soul Manipulation
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOUL_MANIPULATION: CardRecord = CardRecord::new(
+    crate::card::CardSet::AlaraReborn,
     "Soul Manipulation",
     "bcd3cb05-c6f9-435a-a0e7-1f85da4a36eb",
     "Carl Critchlow",
-    crate::card::CardSet::AlaraReborn,
     crate::card::CardRules::unsupported(),
 );
 
 // ARB 95 — Putrid Leech
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PUTRID_LEECH: CardRecord = CardRecord::new(
+    crate::card::CardSet::AlaraReborn,
     "Putrid Leech",
     "aaa47568-5668-4a9f-ad1c-9a13010ffc2b",
     "Dave Allsop",
-    crate::card::CardSet::AlaraReborn,
     crate::card::CardRules::unsupported(),
 );
 
 // ARB 133 — Thopter Foundry
 pub(in crate::card::sets) static THOPTER_FOUNDRY: CardRecord = CardRecord::new(
+    CardSet::AlaraReborn,
     "Thopter Foundry",
     "42b8d797-b01d-49cf-9818-d84bba17029d",
     "Ralph Horsley",
-    CardSet::AlaraReborn,
     // Two mana for a machine that turns every spent artifact into a flier
     // and a life, which is why it is played beside the artifacts that come
     // back on their own.

@@ -13,10 +13,10 @@ use crate::{TargetIndex, mana_cost};
 
 // P02 8 — Angel of Mercy
 pub(in crate::card::sets) static ANGEL_OF_MERCY: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Angel of Mercy",
     "dac5c913-4eb5-4cfb-9c24-223f14f07064",
     "Melissa A. Benson",
-    CardSet::PortalSecondAge,
     CardRules::new_creature(mana_cost!("{4}{W}"), &["Angel"], 3, 3).with_abilities(&[
         abilities::flying(),
         abilities::enters_trigger(
@@ -31,10 +31,10 @@ pub(in crate::card::sets) static ANGEL_OF_MERCY: CardRecord = CardRecord::new(
 
 // P02 10 — Angelic Wall
 pub(in crate::card::sets) static ANGELIC_WALL: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Angelic Wall",
     "e0bb39fb-29fc-4e69-9918-47277b8af0d3",
     "Rebecca Guay",
-    CardSet::PortalSecondAge,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Wall"], 0, 4)
         .with_abilities(&[abilities::defender(), abilities::flying()]),
 );
@@ -55,10 +55,10 @@ const PATH_OF_PEACE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // P02 20 — Righteous Charge
 pub(in crate::card::sets) static RIGHTEOUS_CHARGE: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Righteous Charge",
     "9f7bd958-20c7-4394-8beb-06b32db90d32",
     "Jeffrey R. Busch",
-    CardSet::PortalSecondAge,
     CardRules::new_sorcery(mana_cost!("{1}{W}{W}")).with_ability(AbilityDef::spell(
         "Creatures you control get +2/+2 until end of turn.",
         EffectDef::Apply {
@@ -92,10 +92,10 @@ const EXHAUSTION_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // P02 46 — Sleight of Hand
 pub(in crate::card::sets) static SLEIGHT_OF_HAND: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Sleight of Hand",
     "f3405184-dcda-4bb6-ade6-c2a87bc3296d",
     "Phil Foglio",
-    CardSet::PortalSecondAge,
     CardRules::new_sorcery(mana_cost!("{U}")).with_ability(AbilityDef::spell(
         "Look at the top two cards of your library. Put one of them into your hand and the other on the bottom of your library.",
         abilities::look_at_top_cards_choose_to_hand_rest_bottom(
@@ -109,10 +109,10 @@ pub(in crate::card::sets) static SLEIGHT_OF_HAND: CardRecord = CardRecord::new(
 
 // P02 87 — Ravenous Rats
 pub(in crate::card::sets) static RAVENOUS_RATS: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Ravenous Rats",
     "8899244b-737a-43a9-9241-15a650b47bed",
     "Edward P. Beard, Jr.",
-    CardSet::PortalSecondAge,
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Rat"], 1, 1).with_ability(
         abilities::enters_trigger_with_targets(
             "When this creature enters, target opponent discards a card.",
@@ -138,10 +138,10 @@ const BLAZE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // P02 98 — Goblin Glider
 pub(in crate::card::sets) static GOBLIN_GLIDER: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Goblin Glider",
     "9c29491b-dec1-429d-9950-062582f8164f",
     "Pete Venters",
-    CardSet::PortalSecondAge,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin"], 1, 1).with_abilities(&[
         abilities::flying(),
         AbilityDef::static_ability(
@@ -156,10 +156,10 @@ pub(in crate::card::sets) static GOBLIN_GLIDER: CardRecord = CardRecord::new(
 
 // P02 100 — Goblin Matron
 pub(in crate::card::sets) static GOBLIN_MATRON: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Goblin Matron",
     "f99dc21c-8600-49bf-b0a3-c981f7ec7ac3",
     "Daniel Gelon",
-    CardSet::PortalSecondAge,
     // Any Goblin card, so it fetches the answer rather than the biggest
     // body: Tinkerer against artifacts, Ringleader for more cards.
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin"], 1, 1).with_ability(
@@ -183,19 +183,19 @@ pub(in crate::card::sets) static GOBLIN_MATRON: CardRecord = CardRecord::new(
 
 // P02 102 — Goblin Piker
 pub(in crate::card::sets) static GOBLIN_PIKER: CardRecord = CardRecord::new(
+    crate::card::CardSet::PortalSecondAge,
     "Goblin Piker",
     "2786834d-dbda-40ce-82a4-e518cd554312",
     "DiTerlizzi",
-    crate::card::CardSet::PortalSecondAge,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Warrior"], 2, 1),
 );
 
 // P02 103 — Goblin Raider
 pub(in crate::card::sets) static GOBLIN_RAIDER: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Goblin Raider",
     "68fe9691-d788-42cb-8d13-005724939b62",
     "Matt Stawicki",
-    CardSet::PortalSecondAge,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Warrior"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "This creature can't block.",
@@ -209,10 +209,10 @@ pub(in crate::card::sets) static GOBLIN_RAIDER: CardRecord = CardRecord::new(
 
 // P02 105 — Goblin War Strike
 pub(in crate::card::sets) static GOBLIN_WAR_STRIKE: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Goblin War Strike",
     "738fecfd-1119-4dcb-acd6-ec9715d9c074",
     "Michael Weaver",
-    CardSet::PortalSecondAge,
     CardRules::new_sorcery(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
         "Goblin War Strike deals damage to target player or planeswalker equal to the number of Goblins you control.",
         &[AbilityTargetDef::exactly_one(
@@ -231,10 +231,10 @@ pub(in crate::card::sets) static GOBLIN_WAR_STRIKE: CardRecord = CardRecord::new
 
 // P02 106 — Jagged Lightning
 pub(in crate::card::sets) static JAGGED_LIGHTNING: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Jagged Lightning",
     "148e6704-9cf0-45cf-9bab-db318c016593",
     "Michael Weaver",
-    CardSet::PortalSecondAge,
     CardRules::new_sorcery(mana_cost!("{3}{R}{R}")).with_ability(AbilityDef::spell_with_targets(
         "Jagged Lightning deals 3 damage to each of two target creatures.",
         &[AbilityTargetDef::exactly_value(
@@ -255,10 +255,10 @@ pub(in crate::card::sets) static JAGGED_LIGHTNING: CardRecord = CardRecord::new(
 
 // P02 112 — Ogre Taskmaster
 pub(in crate::card::sets) static OGRE_TASKMASTER: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Ogre Taskmaster",
     "d674a92e-b268-48f7-b082-f8ca2e63d43b",
     "Dan Frazier",
-    CardSet::PortalSecondAge,
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Ogre"], 4, 3).with_ability(
         AbilityDef::static_ability(
             "This creature can't block.",
@@ -279,10 +279,10 @@ const VOLCANIC_HAMMER_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // P02 120 — Wildfire
 pub(in crate::card::sets) static WILDFIRE: CardRecord = CardRecord::new(
+    CardSet::PortalSecondAge,
     "Wildfire",
     "b69cfcb0-db68-4494-a3e1-7c2ca279fcf5",
     "Rob Alexander",
-    CardSet::PortalSecondAge,
     CardRules::new_sorcery(mana_cost!("{4}{R}{R}")).with_ability(AbilityDef::spell(
         "Each player sacrifices four lands of their choice. Wildfire deals 4 damage to each creature.",
         EffectDef::Sequence(&[
@@ -310,10 +310,10 @@ pub(in crate::card::sets) static WILDFIRE: CardRecord = CardRecord::new(
 // P02 131 — Lone Wolf
 // Audit: unsupported — Needs a combat-damage assignment option that lets the attacker assign damage as though it were unblocked without actually becoming unblocked.
 pub(in crate::card::sets) static LONE_WOLF: CardRecord = CardRecord::new(
+    crate::card::CardSet::PortalSecondAge,
     "Lone Wolf",
     "7ff4d831-7388-4321-a636-79cf7bde25bb",
     "Michael Weaver",
-    crate::card::CardSet::PortalSecondAge,
     crate::card::CardRules::unsupported(),
 );
 

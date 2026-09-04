@@ -14,10 +14,10 @@ use crate::{AdditionalCostIndex, TargetIndex, mana_cost};
 // ALL 1a — Carrier Pigeons
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CARRIER_PIGEONS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Carrier Pigeons",
     "5543b08d-d470-435e-83d9-a3a84c1cc2e6",
     "Pat Lewis",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -32,10 +32,10 @@ const CARRIER_PIGEONS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 2a — Errand of Duty
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ERRAND_OF_DUTY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Errand of Duty",
     "6d3c539b-4039-45c2-8d43-80648d946e91",
     "Julie Baroh",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -50,50 +50,50 @@ const ERRAND_OF_DUTY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 3 — Exile
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static EXILE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Exile",
     "108b85ff-ed03-4b3e-872f-1cad1a27b930",
     "Rob Alexander",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 4 — Inheritance
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INHERITANCE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Inheritance",
     "9fe88de7-b226-4a43-9662-8b408e4281d3",
     "Kaja Foglio",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 5 — Ivory Gargoyle
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static IVORY_GARGOYLE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Ivory Gargoyle",
     "365820e4-7b43-423b-98ce-f383eb4d2a96",
     "Quinton Hoover",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 6 — Juniper Order Advocate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JUNIPER_ORDER_ADVOCATE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Juniper Order Advocate",
     "9185d10f-7368-4b40-b4a6-baf46c616c34",
     "Douglas Shuler",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 7a — Kjeldoran Escort
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KJELDORAN_ESCORT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Kjeldoran Escort",
     "0fd7536a-5417-4de0-9a48-82a5f82d9af4",
     "Bryon Wackwitz",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -108,10 +108,10 @@ const KJELDORAN_ESCORT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 8 — Kjeldoran Home Guard
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KJELDORAN_HOME_GUARD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Kjeldoran Home Guard",
     "794d16f9-848f-44ca-8e85-d01a58558077",
     "Andi Rusu",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -126,10 +126,10 @@ const KJELDORAN_PRIDE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 9b — Kjeldoran Pride
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KJELDORAN_PRIDE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Kjeldoran Pride",
     "a88d1c1a-b53e-459b-8a83-4d559177188a",
     "Kaja Foglio",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -144,20 +144,20 @@ const MARTYRDOM_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 10b — Martyrdom
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MARTYRDOM: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Martyrdom",
     "07f91817-8e79-4885-a57b-d26241c4791f",
     "Mark Poole",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 11a — Noble Steeds
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NOBLE_STEEDS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Noble Steeds",
     "45a35751-a232-40ba-a73b-d3ca7a44867d",
     "Rebecca Guay",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -180,20 +180,20 @@ const REINFORCEMENTS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 12b — Reinforcements
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static REINFORCEMENTS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Reinforcements",
     "c0b26881-3ad7-4d70-8051-a7e222d910bf",
     "Diana Vick",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 13a — Reprisal
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static REPRISAL: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Reprisal",
     "179f50be-6658-42f4-b9b9-c97c7d3f239a",
     "Randy Asplund-Faith",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -208,20 +208,20 @@ const REPRISAL_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 14 — Royal Decree
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ROYAL_DECREE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Royal Decree",
     "d22231f5-30af-4f46-b2c9-0b71124c6939",
     "Pete Venters",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 15a — Royal Herbalist
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ROYAL_HERBALIST: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Royal Herbalist",
     "027e03e1-1a39-47ba-b206-44d022b4c346",
     "Douglas Shuler",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -236,60 +236,60 @@ const ROYAL_HERBALIST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 16 — Scars of the Veteran
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCARS_OF_THE_VETERAN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Scars of the Veteran",
     "632870c3-7c0b-48ad-865d-95f8c4e887d0",
     "Dan Frazier",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 17 — Seasoned Tactician
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SEASONED_TACTICIAN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Seasoned Tactician",
     "f8be4b6b-23a2-42d2-911d-fa14f7f5a95b",
     "Dan Frazier",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 18 — Sustaining Spirit
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUSTAINING_SPIRIT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Sustaining Spirit",
     "c9ecf91a-9ce1-44a1-8859-7163d32cfba6",
     "Rebecca Guay",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 19 — Sworn Defender
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SWORN_DEFENDER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Sworn Defender",
     "328e6ceb-30f7-415e-93b4-7075af0fed89",
     "D. Alexander Gregory",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 20 — Unlikely Alliance
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNLIKELY_ALLIANCE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Unlikely Alliance",
     "c14d2c73-1934-4504-bbfb-62ba82e0a0e3",
     "Phil Foglio",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 21a — Wild Aesthir
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WILD_AESTHIR: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Wild Aesthir",
     "dd0decda-d77a-4b7b-8ca4-08528d476f51",
     "Greg Simanson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -310,10 +310,10 @@ static DENIED_CONTROLLER: EffectRecipientDef = EffectRecipientDef::player(
 );
 
 pub(in crate::card::sets) static ARCANE_DENIAL: CardRecord = CardRecord::new(
+    CardSet::Alliances,
     "Arcane Denial",
     "b0c5728e-43e7-417a-ba18-5038345cec67",
     "Richard Kane Ferguson",
-    CardSet::Alliances,
     // Two mana to answer anything, and the cards it gives back arrive a turn
     // too late to matter in a deck that is about to lock the game up.
     CardRules::new_instant(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell_with_targets(
@@ -392,20 +392,20 @@ const AWESOME_PRESENCE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 23b — Awesome Presence
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AWESOME_PRESENCE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Awesome Presence",
     "0aa8a120-5c13-4852-bdc8-80ae50a6e3d3",
     "Lawrence Snelly",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 24a — Benthic Explorers
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BENTHIC_EXPLORERS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Benthic Explorers",
     "146eb650-92c8-48a9-a40d-e7bba6545f36",
     "Greg Simanson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -420,30 +420,30 @@ const BENTHIC_EXPLORERS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 25 — Browse
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BROWSE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Browse",
     "578549f0-5643-4891-b467-2d1cb49fe4ea",
     "Phil Foglio",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 26 — Diminishing Returns
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DIMINISHING_RETURNS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Diminishing Returns",
     "a375ec24-4841-4792-ad58-f29cdf0d1bbb",
     "Allen Williams",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 27a — False Demise
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FALSE_DEMISE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "False Demise",
     "69773e2b-bfee-449d-b8e8-5646442f5487",
     "Randy Gallegos",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -457,10 +457,10 @@ const FALSE_DEMISE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 
 // ALL 28 — Force of Will
 pub(in crate::card::sets) static FORCE_OF_WILL: CardRecord = CardRecord::new(
+    CardSet::Alliances,
     "Force of Will",
     "9a879b60-4381-447d-8a5a-8e0b6a1d49ca",
     "Terese Nielsen",
-    CardSet::Alliances,
     // Answering a spell for no mana is what makes an entire format possible:
     // a deck can tap out and still not be dead to the one card that would
     // have beaten it.
@@ -498,10 +498,10 @@ pub(in crate::card::sets) static FORCE_OF_WILL: CardRecord = CardRecord::new(
 // ALL 29a — Foresight
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FORESIGHT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Foresight",
     "a12e624c-8879-4e60-a1be-286abc5e0106",
     "Terese Nielsen",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -524,30 +524,30 @@ const LAT_NAM_S_LEGACY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 30b — Lat-Nam's Legacy
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LAT_NAM_S_LEGACY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Lat-Nam's Legacy",
     "cd3b0741-dd5e-4d98-a50b-19a0f20dd72c",
     "Tom Wänerstrand",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 31 — Library of Lat-Nam
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIBRARY_OF_LAT_NAM: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Library of Lat-Nam",
     "5f5fa739-e8d4-4e1d-8b6b-c334d1e91bef",
     "Alan Rabinowitz",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 32 — Phantasmal Sphere
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHANTASMAL_SPHERE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Phantasmal Sphere",
     "a84617c7-c70a-497c-b834-3d98346180cf",
     "Mark Tedin",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -562,20 +562,20 @@ const SOLDEVI_HERETIC_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 33b — Soldevi Heretic
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOLDEVI_HERETIC: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Soldevi Heretic",
     "9613ca47-c9d1-4485-b0bd-71b0b587567e",
     "Mike Kimble",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 34a — Soldevi Sage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOLDEVI_SAGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Soldevi Sage",
     "07392841-2df5-47f1-9868-edae3376e35a",
     "Carol Heyer",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -590,10 +590,10 @@ const SOLDEVI_SAGE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 35 — Spiny Starfish
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPINY_STARFISH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Spiny Starfish",
     "c4242dda-6078-481d-a068-e7b10c873b89",
     "Alan Rabinowitz",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -608,50 +608,50 @@ const STORM_CROW_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 36b — Storm Crow
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STORM_CROW: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Storm Crow",
     "2dbf72f7-2360-4105-beae-946556884e40",
     "Sandra Everingham",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 37 — Storm Elemental
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STORM_ELEMENTAL: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Storm Elemental",
     "24de2b5e-78b1-490d-ac47-67f7076bc6b6",
     "John Matson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 38 — Suffocation
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUFFOCATION: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Suffocation",
     "d22104df-8147-45fd-897a-f99a815be062",
     "Allen Williams",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 39 — Thought Lash
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THOUGHT_LASH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Thought Lash",
     "d59bbac1-ca51-4c72-9f1f-5fc6c82a4a27",
     "Mark Tedin",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 40 — Tidal Control
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TIDAL_CONTROL: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Tidal Control",
     "cb9a7b7d-3d37-4bb6-ab48-1fec2bfb4fdc",
     "Randy Gallegos",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -666,30 +666,30 @@ const VISCERID_ARMOR_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 41b — Viscerid Armor
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VISCERID_ARMOR: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Viscerid Armor",
     "b719f89d-2a2c-460c-95e4-ada21353b340",
     "Heather Hudson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 42 — Viscerid Drone
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VISCERID_DRONE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Viscerid Drone",
     "2ccd245f-e374-4bb8-8ac9-743b27ecf817",
     "Heather Hudson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 43 — Balduvian Dead
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BALDUVIAN_DEAD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Balduvian Dead",
     "fac1875a-feab-4213-aa15-69892b7df58b",
     "Mike Kimble",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -704,60 +704,60 @@ const CASTING_OF_BONES_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 44b — Casting of Bones
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CASTING_OF_BONES: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Casting of Bones",
     "88442ddf-c12b-4a25-804d-29fef5a90a0c",
     "Anson Maddocks",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 45 — Contagion
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CONTAGION: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Contagion",
     "00c8f94a-7690-47f5-b664-61411a32ab74",
     "Mike Raabe",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 46 — Diseased Vermin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DISEASED_VERMIN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Diseased Vermin",
     "39703080-524d-4aa1-8c58-d512c41ae5d4",
     "Scott Kirschner",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 47 — Dystopia
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DYSTOPIA: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Dystopia",
     "5f8bb451-706d-44ff-bbad-9ddc6f9f786a",
     "Ruth Thompson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 48 — Fatal Lore
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FATAL_LORE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Fatal Lore",
     "24ba0b83-9671-4ee7-996d-57a3616b9c66",
     "Lawrence Snelly",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 49a — Feast or Famine
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FEAST_OR_FAMINE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Feast or Famine",
     "7c185b4d-8da5-4b8a-85f0-5f0622c7bade",
     "Pete Venters",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -772,10 +772,10 @@ const FEAST_OR_FAMINE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 50a — Fevered Strength
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FEVERED_STRENGTH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Fevered Strength",
     "13e53d6c-67f5-4d74-8205-6325c75d1d07",
     "Brian Snõddy",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -790,10 +790,10 @@ const FEVERED_STRENGTH_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 51a — Insidious Bookworms
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INSIDIOUS_BOOKWORMS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Insidious Bookworms",
     "4bfb7c7e-5a0a-4d4d-be98-ffed0386592b",
     "Greg Simanson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -808,30 +808,30 @@ const INSIDIOUS_BOOKWORMS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternat
 // ALL 52 — Keeper of Tresserhorn
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KEEPER_OF_TRESSERHORN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Keeper of Tresserhorn",
     "aaf8b0ec-f81a-488c-850c-098a8a3119e5",
     "Zak Plucinski & D. Alexander Gregory",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 53 — Krovikan Horror
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KROVIKAN_HORROR: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Krovikan Horror",
     "e1f3cb1c-6bde-4b55-b5bc-5b64b56930f2",
     "Christopher Rush",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 54 — Krovikan Plague
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KROVIKAN_PLAGUE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Krovikan Plague",
     "b258e192-20af-4a45-981f-05181f4cd997",
     "Liz Danforth",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -846,20 +846,20 @@ const LIM_DUL_S_HIGH_GUARD_ALTERNATE_1: PrintingRecord = PrintingRecord::alterna
 // ALL 55b — Lim-Dûl's High Guard
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIM_DUL_S_HIGH_GUARD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Lim-Dûl's High Guard",
     "5470fce6-30cf-43bd-a258-a9fde4be0be8",
     "Anson Maddocks",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 56 — Misinformation
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MISINFORMATION: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Misinformation",
     "2f8638df-7915-4867-882a-95439486bd7b",
     "Richard Kane Ferguson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -874,10 +874,10 @@ const PHANTASMAL_FIEND_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 57b — Phantasmal Fiend
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHANTASMAL_FIEND: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Phantasmal Fiend",
     "2c2842a1-25b8-4c4b-b5f8-496929288ff3",
     "Scott Kirschner",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -892,20 +892,20 @@ const PHYREXIAN_BOON_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 58b — Phyrexian Boon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHYREXIAN_BOON: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Phyrexian Boon",
     "6f82668b-50b3-4746-b7fd-82f8560ebd95",
     "Mark Tedin",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 59 — Ritual of the Machine
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RITUAL_OF_THE_MACHINE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Ritual of the Machine",
     "537b4109-ae7c-451a-8576-97f817a70d75",
     "Anson Maddocks",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -920,10 +920,10 @@ const SOLDEVI_ADNATE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 60b — Soldevi Adnate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOLDEVI_ADNATE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Soldevi Adnate",
     "80812871-d9a7-40de-94a5-b854e55409db",
     "Christopher Rush",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -938,30 +938,30 @@ const STENCH_OF_DECAY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 61b — Stench of Decay
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STENCH_OF_DECAY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Stench of Decay",
     "b4b93845-f17a-4892-a1ce-a4630dced218",
     "Heather Hudson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 62 — Stromgald Spy
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STROMGALD_SPY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Stromgald Spy",
     "0cf8cecc-449f-4cc6-ac4d-440722df0ab9",
     "Zak Plucinski",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 63a — Swamp Mosquito
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SWAMP_MOSQUITO: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Swamp Mosquito",
     "21961b79-637a-4aa5-89b5-4e6e9f60d4d1",
     "Nicola Leonard",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -976,10 +976,10 @@ const SWAMP_MOSQUITO_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 64a — Agent of Stromgald
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AGENT_OF_STROMGALD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Agent of Stromgald",
     "4a7506f8-cf09-46ca-ad80-3c398c487ae2",
     "Alan Rabinowitz",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -994,20 +994,20 @@ const AGENT_OF_STROMGALD_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate
 // ALL 65 — Balduvian Horde
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BALDUVIAN_HORDE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Balduvian Horde",
     "8e167a6c-05f8-4d90-9f6b-eb0f1046d54a",
     "Brian Snõddy",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 66a — Balduvian War-Makers
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BALDUVIAN_WAR_MAKERS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Balduvian War-Makers",
     "12fd561e-6a26-4140-a033-1204f5dda5f3",
     "Mike Kimble",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1022,10 +1022,10 @@ const BALDUVIAN_WAR_MAKERS_ALTERNATE_1: PrintingRecord = PrintingRecord::alterna
 // ALL 67a — Bestial Fury
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BESTIAL_FURY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Bestial Fury",
     "626225b9-2cfd-4cf5-b11c-89e5a231b09e",
     "Mike Raabe",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1040,30 +1040,30 @@ const BESTIAL_FURY_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 68 — Burnout
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BURNOUT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Burnout",
     "5a8f5a18-e490-4010-ac1c-c74a5f2dcbda",
     "Mike Raabe",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 69 — Chaos Harlequin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHAOS_HARLEQUIN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Chaos Harlequin",
     "ec7d7c80-4e3c-454e-b2ed-6f0436df19c9",
     "Alan Rabinowitz",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 70 — Death Spark
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEATH_SPARK: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Death Spark",
     "ba841b44-475c-402c-ac11-763de0cf27d9",
     "Mark Tedin",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1078,10 +1078,10 @@ const ENSLAVED_SCOUT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 71b — Enslaved Scout
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ENSLAVED_SCOUT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Enslaved Scout",
     "aac0e04a-d223-426b-b856-2829dbdffda0",
     "Rebecca Guay",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1096,20 +1096,20 @@ const GORILLA_SHAMAN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 72b — Gorilla Shaman
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GORILLA_SHAMAN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Gorilla Shaman",
     "5a16231c-1f73-4dec-9d88-e3d62e93a70f",
     "Anthony S. Waters",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 73a — Gorilla War Cry
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GORILLA_WAR_CRY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Gorilla War Cry",
     "613762ea-6111-4f74-bea2-c13b76e0751c",
     "Bryon Wackwitz",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1132,39 +1132,39 @@ const GUERRILLA_TACTICS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 74b — Guerrilla Tactics
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GUERRILLA_TACTICS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Guerrilla Tactics",
     "3c005ca3-0508-4ac2-afec-3d4a27334c31",
     "Randy Asplund-Faith",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 75 — Omen of Fire
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static OMEN_OF_FIRE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Omen of Fire",
     "9c724b46-6e17-4bee-9bc6-e9fc5a379dd7",
     "Pete Venters",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 76 — Pillage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PILLAGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Pillage",
     "389ecb50-b007-4086-89fb-ec2daa5afdcf",
     "Richard Kane Ferguson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 77 — Primitive Justice
 pub(in crate::card::sets) static PRIMITIVE_JUSTICE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Primitive Justice",
     "d6b7829b-2a10-47e7-9cf9-8ae49d2b398a",
     "Anthony S. Waters",
-    crate::card::CardSet::Alliances,
     CardRules::new_sorcery(mana_cost!("{1}{R}")).with_abilities(&[
         abilities::repeatable_additional_mana_cost(
             "As an additional cost to cast this spell, you may pay {1}{R} any number of times.",
@@ -1212,10 +1212,10 @@ pub(in crate::card::sets) static PRIMITIVE_JUSTICE: CardRecord = CardRecord::new
 
 // ALL 78 — Pyrokinesis
 pub(in crate::card::sets) static PYROKINESIS: CardRecord = CardRecord::new(
+    CardSet::Alliances,
     "Pyrokinesis",
     "db2a5e85-6cbc-43c1-9362-4056ad017ef0",
     "Ron Spencer",
-    CardSet::Alliances,
     // The free cast is what the card is played for -- a blowout from an empty
     // board -- so the printed cost alone understates it considerably.
     CardRules::new_instant(mana_cost!("{4}{R}{R}")).with_abilities(&[
@@ -1264,20 +1264,20 @@ pub(in crate::card::sets) static PYROKINESIS: CardRecord = CardRecord::new(
 // ALL 79 — Rogue Skycaptain
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ROGUE_SKYCAPTAIN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Rogue Skycaptain",
     "97aebf3b-e77d-4d18-b58b-117ae91792e2",
     "Randy Asplund-Faith",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 80 — Soldier of Fortune
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOLDIER_OF_FORTUNE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Soldier of Fortune",
     "37c05f46-2081-4ebb-a758-894ac040ea2a",
     "Douglas Shuler",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1292,20 +1292,20 @@ const STORM_SHAMAN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 81b — Storm Shaman
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STORM_SHAMAN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Storm Shaman",
     "3a8f1150-6306-42a6-84e1-7dd5bfef6d14",
     "Carol Heyer",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 82a — Varchild's Crusader
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VARCHILD_S_CRUSADER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Varchild's Crusader",
     "b5ade7ad-ce32-4296-8cec-20bd79c7b16a",
     "Mark Poole",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1320,10 +1320,10 @@ const VARCHILD_S_CRUSADER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternat
 // ALL 83 — Varchild's War-Riders
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VARCHILD_S_WAR_RIDERS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Varchild's War-Riders",
     "ee1d41da-aa72-434b-811f-95d4bae4ba5c",
     "Susan Van Camp",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1338,20 +1338,20 @@ const VETERAN_S_VOICE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 84b — Veteran's Voice
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VETERAN_S_VOICE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Veteran's Voice",
     "6e1ecb9a-7443-49cb-8197-ef180124aabb",
     "Andi Rusu",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 85 — Bounty of the Hunt
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BOUNTY_OF_THE_HUNT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Bounty of the Hunt",
     "21ed522a-cf5a-41e1-9677-1226f689ec9c",
     "Jeff A. Menges",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1366,20 +1366,20 @@ const DEADLY_INSECT_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 86b — Deadly Insect
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEADLY_INSECT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Deadly Insect",
     "030963d9-b59f-4ccb-abed-d817a4bc4e05",
     "Scott Kirschner",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 87 — Elvish Bard
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ELVISH_BARD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Elvish Bard",
     "62261004-ed32-4865-824a-4320548f4234",
     "Susan Van Camp",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1394,19 +1394,19 @@ const ELVISH_RANGER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 88b — Elvish Ranger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ELVISH_RANGER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Elvish Ranger",
     "7b08a164-d6f4-423e-8666-e4a4c2d21045",
     "Terese Nielsen",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 89 — Elvish Spirit Guide
 pub(in crate::card::sets) static ELVISH_SPIRIT_GUIDE: CardRecord = CardRecord::new(
+    CardSet::Alliances,
     "Elvish Spirit Guide",
     "5b94f37f-ebdf-4b79-a615-58331d27cf4e",
     "Julie Baroh",
-    CardSet::Alliances,
     CardRules::new_creature(mana_cost!("{2}{G}"), &["Elf", "Spirit"], 2, 2).with_ability(
         AbilityDef::activated_mana(
             "Exile this card from your hand: Add {G}.",
@@ -1420,10 +1420,10 @@ pub(in crate::card::sets) static ELVISH_SPIRIT_GUIDE: CardRecord = CardRecord::n
 // ALL 90a — Fyndhorn Druid
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FYNDHORN_DRUID: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Fyndhorn Druid",
     "778b028f-fa4e-4638-82b4-fb287223ea20",
     "Rob Alexander",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1438,10 +1438,10 @@ const FYNDHORN_DRUID_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 91 — Gargantuan Gorilla
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GARGANTUAN_GORILLA: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Gargantuan Gorilla",
     "49f367c2-f47e-43e1-9936-4324be664475",
     "Greg Simanson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1456,20 +1456,20 @@ const GIFT_OF_THE_WOODS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 92b — Gift of the Woods
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GIFT_OF_THE_WOODS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Gift of the Woods",
     "6a0df4e9-b201-4fc7-8e37-59d99b583f76",
     "Susan Van Camp",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 93a — Gorilla Berserkers
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GORILLA_BERSERKERS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Gorilla Berserkers",
     "344b4613-17f8-4c8b-b5bc-f773a8f8007a",
     "John Matson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1484,10 +1484,10 @@ const GORILLA_BERSERKERS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate
 // ALL 94a — Gorilla Chieftain
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GORILLA_CHIEFTAIN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Gorilla Chieftain",
     "47f1eedd-7021-4cce-a808-2e9384a5ef15",
     "Quinton Hoover",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1502,50 +1502,50 @@ const GORILLA_CHIEFTAIN_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 95 — Hail Storm
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HAIL_STORM: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Hail Storm",
     "a7e9d786-4e9b-447b-a5dc-ca117c4961c5",
     "Jeff A. Menges",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 96 — Kaysa
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KAYSA: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Kaysa",
     "cd4b6daf-cf37-43c6-9446-3aa0de222ac4",
     "Rebecca Guay",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 97 — Nature's Chosen
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NATURE_S_CHOSEN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Nature's Chosen",
     "7bd0b831-9d7e-40ce-8514-e852daee1a9e",
     "Rebecca Guay",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 98 — Nature's Wrath
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NATURE_S_WRATH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Nature's Wrath",
     "450759f0-5d60-4f05-9011-b0b66dbb06a7",
     "Liz Danforth",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 99 — Splintering Wind
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPLINTERING_WIND: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Splintering Wind",
     "0afa94e5-fef6-4f3a-9196-d7aa6dd841c2",
     "Ron Spencer",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1560,20 +1560,20 @@ const TASTE_OF_PARADISE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 100b — Taste of Paradise
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TASTE_OF_PARADISE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Taste of Paradise",
     "a774c426-ec0e-48de-b00f-5a05cc6dc34b",
     "Lawrence Snelly",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 101 — Tornado
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TORNADO: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Tornado",
     "a2fd58e4-eb9a-4a12-8914-0a9a8300626c",
     "Susan Van Camp",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1588,10 +1588,10 @@ const UNDERGROWTH_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 102b — Undergrowth
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNDERGROWTH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Undergrowth",
     "7b07df91-49be-4a50-9d3b-ddde0e6c1be9",
     "Pat Lewis",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1606,10 +1606,10 @@ const WHIP_VINE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 103b — Whip Vine
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WHIP_VINE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Whip Vine",
     "31ee1c89-d7df-4ee7-b403-24dfabae38a0",
     "Allen Williams",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1624,130 +1624,130 @@ const YAVIMAYA_ANCIENTS_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 104b — Yavimaya Ancients
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static YAVIMAYA_ANCIENTS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Yavimaya Ancients",
     "91708e45-f9a1-4c2e-973d-bfc294926c93",
     "Quinton Hoover",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 105 — Yavimaya Ants
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static YAVIMAYA_ANTS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Yavimaya Ants",
     "5ded1c83-a289-4951-b72a-477a041610d3",
     "Pat Lewis",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 106 — Energy Arc
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ENERGY_ARC: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Energy Arc",
     "f81cd99e-902a-44dd-8928-803a96fe25c4",
     "Terese Nielsen",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 107 — Lim-Dûl's Vault
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIM_DUL_S_VAULT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Lim-Dûl's Vault",
     "f9b0164c-2d4e-48ab-addd-322d9b504739",
     "Rob Alexander",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 108 — Lim-Dûl's Paladin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIM_DUL_S_PALADIN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Lim-Dûl's Paladin",
     "44be2d66-359e-4cc1-9670-119cb9c7d5f5",
     "Christopher Rush",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 109 — Surge of Strength
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SURGE_OF_STRENGTH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Surge of Strength",
     "96fff700-af02-4861-b7ed-be9950e69bf1",
     "Ruth Thompson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 110 — Nature's Blessing
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NATURE_S_BLESSING: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Nature's Blessing",
     "5ba0e677-361d-4e03-9c2c-018d1c383456",
     "Sandra Everingham",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 111 — Wandering Mage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WANDERING_MAGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Wandering Mage",
     "8d9b1b6c-1f02-4918-bb5c-2dbcdb0997ec",
     "Pete Venters",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 112 — Lord of Tresserhorn
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LORD_OF_TRESSERHORN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Lord of Tresserhorn",
     "5fc9497a-42bf-4d78-afaf-67645514ade4",
     "Anson Maddocks",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 113 — Misfortune
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MISFORTUNE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Misfortune",
     "b14cc32a-eb4f-4690-aceb-160780743ebe",
     "Ron Spencer",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 114 — Winter's Night
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WINTER_S_NIGHT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Winter's Night",
     "7f020ebc-4950-4407-8cb8-7630cad226f6",
     "Rob Alexander",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 115 — Phelddagrif
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHELDDAGRIF: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Phelddagrif",
     "d9631cb2-d53b-4401-b53b-29d27bdefc44",
     "Amy Weber",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 116a — Aesthir Glider
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AESTHIR_GLIDER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Aesthir Glider",
     "35a8080f-ca3c-46fe-81cf-003ac7ba7f24",
     "Ruth Thompson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1762,10 +1762,10 @@ const AESTHIR_GLIDER_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 117 — Ashnod's Cylix
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ASHNOD_S_CYLIX: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Ashnod's Cylix",
     "d84e6fcf-4745-4dfb-9103-17beec4e45b6",
     "Nicola Leonard",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1780,100 +1780,100 @@ const ASTROLABE_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
 // ALL 118b — Astrolabe
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ASTROLABE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Astrolabe",
     "8e3a4e30-f919-4c96-89f2-467355135f8f",
     "Amy Weber",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 119 — Floodwater Dam
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLOODWATER_DAM: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Floodwater Dam",
     "d272c3cb-0b68-4693-abef-8a5375b2463e",
     "Randy Gallegos",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 120 — Gustha's Scepter
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GUSTHA_S_SCEPTER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Gustha's Scepter",
     "797c84fa-3704-4fec-bd72-468d6415ae70",
     "Sandra Everingham",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 121 — Helm of Obedience
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HELM_OF_OBEDIENCE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Helm of Obedience",
     "b17e9216-b1ed-4101-a04e-2bb139ccfa55",
     "Brian Snõddy",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 122 — Lodestone Bauble
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LODESTONE_BAUBLE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Lodestone Bauble",
     "84d88a33-3990-4044-a5fe-4123d5781f18",
     "Douglas Shuler",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 123 — Mishra's Groundbreaker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MISHRA_S_GROUNDBREAKER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Mishra's Groundbreaker",
     "74e2dc26-30aa-4e20-84b0-ea4be8894475",
     "Randy Gallegos",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 124 — Mystic Compass
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MYSTIC_COMPASS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Mystic Compass",
     "de53ba3a-f2f7-4ea6-a2f6-dd5b87029e58",
     "Amy Weber",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 125 — Phyrexian Devourer
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHYREXIAN_DEVOURER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Phyrexian Devourer",
     "319430fa-11e4-426e-8297-67df8474c3cc",
     "Mark Tedin",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 126 — Phyrexian Portal
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHYREXIAN_PORTAL: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Phyrexian Portal",
     "74f77387-1239-4ad2-b59f-d13e317477ba",
     "Pete Venters",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 127a — Phyrexian War Beast
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHYREXIAN_WAR_BEAST: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Phyrexian War Beast",
     "e7a83384-8762-4028-8cab-b690593790a6",
     "Bill Sienkiewicz",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1888,50 +1888,50 @@ const PHYREXIAN_WAR_BEAST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternat
 // ALL 128 — Scarab of the Unseen
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCARAB_OF_THE_UNSEEN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Scarab of the Unseen",
     "d5da1c71-6059-4e4e-933d-dbca1cc4bd15",
     "Sandra Everingham",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 129 — Shield Sphere
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHIELD_SPHERE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Shield Sphere",
     "1730d219-a28f-4930-8088-4cfcb627f157",
     "Alan Rabinowitz",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 130 — Sol Grail
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOL_GRAIL: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Sol Grail",
     "62652722-e345-4670-9547-d9579efa227d",
     "Christopher Rush",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 131 — Soldevi Digger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOLDEVI_DIGGER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Soldevi Digger",
     "5a3a0ab4-e8ef-45fd-9a73-86d1ee30cb48",
     "Amy Weber",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 132a — Soldevi Sentry
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOLDEVI_SENTRY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Soldevi Sentry",
     "85976b5c-4eed-4cf9-b2b0-a8421a97ab2a",
     "Alan Rabinowitz",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1954,119 +1954,119 @@ const SOLDEVI_STEAM_BEAST_ALTERNATE_1: PrintingRecord = PrintingRecord::alternat
 // ALL 133b — Soldevi Steam Beast
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOLDEVI_STEAM_BEAST: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Soldevi Steam Beast",
     "9de5e730-1d5c-4326-b3fc-2f0f97edc07e",
     "Bill Sienkiewicz",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 134 — Storm Cauldron
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STORM_CAULDRON: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Storm Cauldron",
     "1f68b531-a3f2-4830-b170-fb8a1195c149",
     "Dan Frazier",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 135 — Urza's Engine
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static URZA_S_ENGINE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Urza's Engine",
     "273b54c3-325b-4f2e-857b-fc1d59b6b3c5",
     "Greg Simanson",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 136 — Whirling Catapult
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WHIRLING_CATAPULT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Whirling Catapult",
     "6206d65a-6907-4d11-acb0-8820277f2cf2",
     "Dan Frazier",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 137 — Balduvian Trading Post
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BALDUVIAN_TRADING_POST: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Balduvian Trading Post",
     "a329ff98-36fd-44c3-b037-dcc6e78ee61e",
     "Tom Wänerstrand",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 138 — Heart of Yavimaya
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HEART_OF_YAVIMAYA: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Heart of Yavimaya",
     "40c59cb9-559b-4716-9bd7-c818b3f46f1d",
     "Pete Venters",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 139 — Kjeldoran Outpost
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KJELDORAN_OUTPOST: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Kjeldoran Outpost",
     "e0769fc7-50b5-4b49-8aff-af04536288fb",
     "Jeff A. Menges",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 140 — Lake of the Dead
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LAKE_OF_THE_DEAD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Lake of the Dead",
     "aee806ce-effa-4244-9659-43246e944d80",
     "Pete Venters",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 141 — School of the Unseen
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCHOOL_OF_THE_UNSEEN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "School of the Unseen",
     "1438606d-556d-4b96-9662-fcac051af045",
     "Pat Lewis",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 142 — Sheltered Valley
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SHELTERED_VALLEY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Sheltered Valley",
     "049d7a08-1605-4ce2-b8c5-634ce2a261e0",
     "Rob Alexander",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 143 — Soldevi Excavations
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SOLDEVI_EXCAVATIONS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Alliances,
     "Soldevi Excavations",
     "8dbda146-ed0a-4bf6-b99d-dc6d59bd9447",
     "Liz Danforth",
-    crate::card::CardSet::Alliances,
     crate::card::CardRules::unsupported(),
 );
 
 // ALL 144 — Thawing Glaciers
 pub(in crate::card::sets) static THAWING_GLACIERS: CardRecord = CardRecord::new(
+    CardSet::Alliances,
     "Thawing Glaciers",
     "6411a8c6-010f-4863-a0fa-bbebe09d5c34",
     "Jeff A. Menges",
-    CardSet::Alliances,
     // One basic a turn, forever: slow enough that only a deck with nothing
     // better to do at end of turn wants it, which is exactly Landstill.
     CardRules::new_land(&[]).with_abilities(&[

@@ -14,50 +14,50 @@ use crate::{TargetIndex, mana_cost};
 // CLB 11 — Blessed Hippogriff
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLESSED_HIPPOGRIFF: CardRecord = CardRecord::new(
+    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     "Blessed Hippogriff",
     "b4590e53-ca8d-4896-a8cf-6af1e4bc456f",
     "Leanna Crossan",
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     crate::card::CardRules::unsupported(),
 );
 
 // CLB 22 — Greatsword of Tyr
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GREATSWORD_OF_TYR: CardRecord = CardRecord::new(
+    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     "Greatsword of Tyr",
     "50088a60-642b-47ed-a289-ef0b617b688f",
     "Titus Lunter",
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     crate::card::CardRules::unsupported(),
 );
 
 // CLB 99 — Sword Coast Serpent
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SWORD_COAST_SERPENT: CardRecord = CardRecord::new(
+    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     "Sword Coast Serpent",
     "0bbfb7ae-9a32-428d-903c-99d0d8669b8d",
     "Caio Monteiro",
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     crate::card::CardRules::unsupported(),
 );
 
 // CLB 106 — Young Blue Dragon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static YOUNG_BLUE_DRAGON: CardRecord = CardRecord::new(
+    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     "Young Blue Dragon",
     "56b0f66b-dca9-4a01-9394-20a513c2b225",
     "Tuan Duong Chu",
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     crate::card::CardRules::unsupported(),
 );
 
 // CLB 113 — Arms of Hadar
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARMS_OF_HADAR: CardRecord = CardRecord::new(
+    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     "Arms of Hadar",
     "db1fd431-8f6d-4ca5-bc0c-53881c500da1",
     "Mirko Failoni",
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     crate::card::CardRules::unsupported(),
 );
 
@@ -71,19 +71,19 @@ const CAST_DOWN_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // CLB 130 — Guildsworn Prowler
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GUILDSWORN_PROWLER: CardRecord = CardRecord::new(
+    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     "Guildsworn Prowler",
     "d7efb10f-c760-431c-8ac6-904965d850dc",
     "Fariba Khamseh",
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     crate::card::CardRules::unsupported(),
 );
 
 // CLB 180 — Gut, True Soul Zealot
 pub(in crate::card::sets) static GUT_TRUE_SOUL_ZEALOT: CardRecord = CardRecord::new(
+    CardSet::CommanderLegendsBattleForBaldursGate,
     "Gut, True Soul Zealot",
     "3d8ca18d-9099-4f1e-95c1-f04da58a26bd",
     "Wayne Reynolds",
-    CardSet::CommanderLegendsBattleForBaldursGate,
     // Every spent artifact and every creature that has done its work turns
     // into four attacking power that two blockers cannot answer alone.
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Shaman"], 2, 2)
@@ -147,29 +147,29 @@ const YOU_MEET_IN_A_TAVERN_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // CLB 285 — Minsc & Boo, Timeless Heroes
 // Audit: unsupported — Needs a sacrifice-scoped reflexive trigger that chooses its damage target after the sacrifice.
 pub(in crate::card::sets) static MINSC_BOO_TIMELESS_HEROES: CardRecord = CardRecord::new(
+    CardSet::CommanderLegendsBattleForBaldursGate,
     "Minsc & Boo, Timeless Heroes",
     "928036c9-11b8-493e-b9f2-8fbd3487cd19",
     "Andreas Zafiratos",
-    CardSet::CommanderLegendsBattleForBaldursGate,
     CardRules::unsupported(),
 );
 
 // CLB 346 — Basilisk Gate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BASILISK_GATE: CardRecord = CardRecord::new(
+    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     "Basilisk Gate",
     "4a306025-d429-4006-b7ed-bdb287e83f57",
     "Julian Kok Joon Wen",
-    crate::card::CardSet::CommanderLegendsBattleForBaldursGate,
     crate::card::CardRules::unsupported(),
 );
 
 // CLB 560 — Displacer Kitten
 pub(in crate::card::sets) static DISPLACER_KITTEN: CardRecord = CardRecord::new(
+    CardSet::CommanderLegendsBattleForBaldursGate,
     "Displacer Kitten",
     "9a53e8fc-bfd2-4866-a61c-f3204b0a98bf",
     "Campbell White",
-    CardSet::CommanderLegendsBattleForBaldursGate,
     // Four mana for a 2/2 that does nothing on its own and everything in a
     // deck built to cast noncreature spells: every one of them is another
     // enter trigger off whatever is already on the battlefield.
@@ -219,10 +219,10 @@ pub(in crate::card::sets) static DISPLACER_KITTEN: CardRecord = CardRecord::new(
 
 // CLB 630 — Delayed Blast Fireball
 pub(in crate::card::sets) static DELAYED_BLAST_FIREBALL: CardRecord = CardRecord::new(
+    CardSet::CommanderLegendsBattleForBaldursGate,
     "Delayed Blast Fireball",
     "400c76c6-f677-4e7e-87ad-2e526d4b498a",
     "Andreas Zafiratos",
-    CardSet::CommanderLegendsBattleForBaldursGate,
     // A one-sided sweeper that costs a turn of setup, which is the trade the
     // cube's aggressive decks are least able to make and the slow ones most.
     CardRules::new_instant(mana_cost!("{1}{R}{R}")).with_abilities(&[

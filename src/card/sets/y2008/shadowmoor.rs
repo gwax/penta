@@ -50,10 +50,10 @@ const fn conspire(
 
 // SHM 57 — Beseech the Queen
 pub(in crate::card::sets) static BESEECH_THE_QUEEN: CardRecord = CardRecord::new(
+    CardSet::Shadowmoor,
     "Beseech the Queen",
     "64ee0a93-0f6d-42be-bdca-1de5422d8d54",
     "Jason Chan",
-    CardSet::Shadowmoor,
     CardRules::new_sorcery(mana_cost!("{2/B}{2/B}{2/B}")).with_ability(AbilityDef::spell(
         "Search your library for a card with mana value less than or equal to the number of lands you control, reveal it, put it into your hand, then shuffle.",
         EffectDef::SearchZone {
@@ -83,10 +83,10 @@ pub(in crate::card::sets) static BESEECH_THE_QUEEN: CardRecord = CardRecord::new
 
 // SHM 86 — Burn Trail
 pub(in crate::card::sets) static BURN_TRAIL: CardRecord = CardRecord::new(
+    CardSet::Shadowmoor,
     "Burn Trail",
     "7f01f9a0-f1d0-4241-a270-df4ed673d1fd",
     "Nils Hamm",
-    CardSet::Shadowmoor,
     CardRules::new_sorcery(mana_cost!("{3}{R}")).with_abilities(&conspire(
         &AbilityDef::spell_with_targets(
             "Burn Trail deals 3 damage to any target.",
@@ -109,10 +109,10 @@ pub(in crate::card::sets) static BURN_TRAIL: CardRecord = CardRecord::new(
 );
 // SHM 117 — Gloomwidow
 pub(in crate::card::sets) static GLOOMWIDOW: CardRecord = CardRecord::new(
+    CardSet::Shadowmoor,
     "Gloomwidow",
     "99bda306-1e37-4359-a649-fcd8a5a7e2fc",
     "Mark Tedin",
-    CardSet::Shadowmoor,
     CardRules::new_creature(mana_cost!("{2}{G}"), &["Spider"], 3, 3).with_abilities(&[
         abilities::reach(),
         AbilityDef::static_ability(
@@ -129,10 +129,10 @@ pub(in crate::card::sets) static GLOOMWIDOW: CardRecord = CardRecord::new(
 
 // SHM 119 — Howl of the Night Pack
 pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord::new(
+    CardSet::Shadowmoor,
     "Howl of the Night Pack",
     "293f7768-6279-4f26-979f-ea4e48095ae5",
     "Lars Grant-West",
-    CardSet::Shadowmoor,
     CardRules::new_sorcery(mana_cost!("{6}{G}")).with_ability(AbilityDef::spell(
         "Create a 2/2 green Wolf creature token for each Forest you control.",
         EffectDef::create_creature_token(&["Wolf"], &[ManaColor::Green], 2, 2)
@@ -150,10 +150,10 @@ pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord
 
 // SHM 135 — Woodfall Primus
 pub(in crate::card::sets) static WOODFALL_PRIMUS: CardRecord = CardRecord::new(
+    CardSet::Shadowmoor,
     "Woodfall Primus",
     "43aa7e35-55ee-4e02-a8aa-ea2b267055d1",
     "Adam Rex",
-    CardSet::Shadowmoor,
     // Eight mana for two Naturalizes and a trampling body that has to be
     // answered twice.
     CardRules::new_creature(mana_cost!("{5}{G}{G}{G}"), &["Treefolk", "Shaman"], 6, 6)
@@ -178,10 +178,10 @@ pub(in crate::card::sets) static WOODFALL_PRIMUS: CardRecord = CardRecord::new(
 
 // SHM 211 — Manamorphose
 pub(in crate::card::sets) static MANAMORPHOSE: CardRecord = CardRecord::new(
+    CardSet::Shadowmoor,
     "Manamorphose",
     "50283122-b8c4-4fb3-8eba-6252b72222f4",
     "Jeff Miracola",
-    CardSet::Shadowmoor,
     // It costs nothing and does nothing, which is the point: the deck that
     // wants it wants a spell that replaces itself and moves the storm count.
     CardRules::new_instant(mana_cost!("{1}{R/G}")).with_ability(AbilityDef::spell(
@@ -209,10 +209,10 @@ pub(in crate::card::sets) static MANAMORPHOSE: CardRecord = CardRecord::new(
 
 // SHM 224 — Barkshell Blessing
 pub(in crate::card::sets) static BARKSHELL_BLESSING: CardRecord = CardRecord::new(
+    CardSet::Shadowmoor,
     "Barkshell Blessing",
     "cd273ef2-4aed-4c7e-8c97-fe8b1af9ce69",
     "Steven Belledin",
-    CardSet::Shadowmoor,
     CardRules::new_instant(mana_cost!("{G/W}")).with_abilities(&conspire(
         &AbilityDef::spell_with_targets(
             "Target creature gets +2/+2 until end of turn.",

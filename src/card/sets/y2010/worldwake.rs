@@ -14,10 +14,10 @@ use crate::{AdditionalCostIndex, TargetIndex, mana_cost};
 
 // WWK 20 — Stoneforge Mystic
 pub(in crate::card::sets) static STONEFORGE_MYSTIC: CardRecord = CardRecord::new(
+    CardSet::Worldwake,
     "Stoneforge Mystic",
     "19557351-b65f-4b04-b971-66abdc07000a",
     "Mike Bierek",
-    CardSet::Worldwake,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Kor", "Artificer"], 1, 2)
         .with_abilities(&[
             abilities::enters_trigger("When this creature enters, you may search your library for an Equipment card, reveal it, put it into your hand, then shuffle.", EffectDef::May {
@@ -65,10 +65,10 @@ pub(in crate::card::sets) static STONEFORGE_MYSTIC: CardRecord = CardRecord::new
 
 // WWK 26 — Dispel
 pub(in crate::card::sets) static DISPEL: CardRecord = CardRecord::new(
+    CardSet::Worldwake,
     "Dispel",
     "f178d0cc-5dd1-41ab-a2e8-218ece6f2a86",
     "Vance Kovacs",
-    CardSet::Worldwake,
     CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::counter_target(
         "Counter target instant spell.",
         &AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
@@ -90,10 +90,10 @@ static A_PLAYER: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 
 pub(in crate::card::sets) static JACE_THE_MIND_SCULPTOR: CardRecord =
     CardRecord::new(
+        CardSet::Worldwake,
     "Jace, the Mind Sculptor",
     "0e606072-a3aa-4300-ba90-ec92a721fa76",
     "Jason Chan",
-        CardSet::Worldwake,
         // Four abilities and three of them matter: the bounce buys the turn, the
         // zero rebuilds the hand, and the fateseal is what a Jace that is not
         // under pressure does forever.
@@ -171,19 +171,19 @@ pub(in crate::card::sets) static JACE_THE_MIND_SCULPTOR: CardRecord =
 // WWK 52 — Brink of Disaster
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BRINK_OF_DISASTER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Worldwake,
     "Brink of Disaster",
     "0c841c3e-e0d1-49d7-bcec-3c45f73c13c5",
     "Alex Horley-Orlandelli",
-    crate::card::CardSet::Worldwake,
     crate::card::CardRules::unsupported(),
 );
 
 // WWK 87 — Ricochet Trap
 pub(in crate::card::sets) static RICOCHET_TRAP: CardRecord = CardRecord::new(
+    CardSet::Worldwake,
     "Ricochet Trap",
     "5d782375-9192-4ed0-bd79-f3404e5a1b01",
     "Jaime Jones",
-    CardSet::Worldwake,
     CardRules::new_instant(mana_cost!("{3}{R}")).with_subtypes(&["Trap"]).with_abilities(&[
         AbilityDef::alternative_cast(
             mana_cost!("{R}"),
@@ -231,10 +231,10 @@ pub(in crate::card::sets) static RICOCHET_TRAP: CardRecord = CardRecord::new(
 
 // WWK 95 — Arbor Elf
 pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new(
+    CardSet::Worldwake,
     "Arbor Elf",
     "6d32a4ed-6b43-4473-91ec-08cd5414f2f0",
     "rk post",
-    CardSet::Worldwake,
     CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Druid"], 1, 1).with_abilities(&[
         AbilityDef::activated_with_targets(
             "{T}: Untap target Forest.",
@@ -256,10 +256,10 @@ pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new(
 
 // WWK 118 — Wolfbriar Elemental
 pub(in crate::card::sets) static WOLFBRIAR_ELEMENTAL: CardRecord = CardRecord::new(
+    CardSet::Worldwake,
     "Wolfbriar Elemental",
     "35ffbd5e-113a-4f24-baa1-b65a5082d893",
     "Chippy",
-    CardSet::Worldwake,
     CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Elemental"], 4, 4).with_abilities(&[
         abilities::multikicker(mana_cost!("{G}")),
         abilities::enters_trigger(
@@ -279,10 +279,10 @@ pub(in crate::card::sets) static WOLFBRIAR_ELEMENTAL: CardRecord = CardRecord::n
 
 // WWK 123 — Everflowing Chalice
 pub(in crate::card::sets) static EVERFLOWING_CHALICE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Worldwake,
     "Everflowing Chalice",
     "1fdcc0c3-4029-4fc3-a486-5d7f45c910bd",
     "Steve Argyle",
-    crate::card::CardSet::Worldwake,
     // A mana rock whose size is chosen as it is cast, which is why it is
     // played on turn two and on turn ten.
     CardRules::new_artifact(mana_cost!("{0}")).with_abilities(&[
@@ -312,10 +312,10 @@ pub(in crate::card::sets) static EVERFLOWING_CHALICE: CardRecord = CardRecord::n
 
 // WWK 126 — Kitesail
 pub(in crate::card::sets) static KITESAIL: CardRecord = CardRecord::new(
+    CardSet::Worldwake,
     "Kitesail",
     "217a05a7-557f-4879-8fd1-d6c003f1751e",
     "Cyril Van Der Haegen",
-    CardSet::Worldwake,
     CardRules::new_artifact(mana_cost!("{2}"))
         .with_subtypes(&["Equipment"])
         .with_abilities(&[
@@ -342,10 +342,10 @@ pub(in crate::card::sets) static KITESAIL: CardRecord = CardRecord::new(
 
 // WWK 133 — Celestial Colonnade
 pub(in crate::card::sets) static CELESTIAL_COLONNADE: CardRecord = CardRecord::new(
+    CardSet::Worldwake,
     "Celestial Colonnade",
     "f6929259-2903-4f6f-9b06-42048fd55c6a",
     "Eric Deschamps",
-    CardSet::Worldwake,
     // A land that costs you a turn and then wins the game on its own, which
     // is the trade every control deck in the format is happy to make.
     CardRules::new_land(&[]).with_abilities(&[
@@ -388,10 +388,10 @@ pub(in crate::card::sets) static CELESTIAL_COLONNADE: CardRecord = CardRecord::n
 
 // WWK 134 — Creeping Tar Pit
 pub(in crate::card::sets) static CREEPING_TAR_PIT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Worldwake,
     "Creeping Tar Pit",
     "0f427f0b-034c-4821-8758-e395c0042d8a",
     "Jason Felix",
-    crate::card::CardSet::Worldwake,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::enters_tapped("This land enters tapped."),
         AbilityDef::activated_mana(

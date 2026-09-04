@@ -15,10 +15,10 @@ use crate::{TargetIndex, mana_cost};
 
 // PLC 25 — Mana Tithe
 pub(in crate::card::sets) static MANA_TITHE: CardRecord = CardRecord::new(
+    CardSet::PlanarChaos,
     "Mana Tithe",
     "7d48d622-f397-4f31-b1a5-0c23f60aa71c",
     "Martina Pilcerova",
-    CardSet::PlanarChaos,
     CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
         "Counter target spell unless its controller pays {1}.",
         &[AbilityTargetDef::exactly_one(
@@ -36,29 +36,29 @@ pub(in crate::card::sets) static MANA_TITHE: CardRecord = CardRecord::new(
 // PLC 26 — Mesa Enchantress
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MESA_ENCHANTRESS: CardRecord = CardRecord::new(
+    crate::card::CardSet::PlanarChaos,
     "Mesa Enchantress",
     "4037d6de-f30b-483c-83a8-9a4e2978f7fc",
     "Randy Gallegos",
-    crate::card::CardSet::PlanarChaos,
     crate::card::CardRules::unsupported(),
 );
 
 // PLC 31 — Sunlance
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUNLANCE: CardRecord = CardRecord::new(
+    crate::card::CardSet::PlanarChaos,
     "Sunlance",
     "46144ca5-aa81-4314-a1e5-1716f8565d70",
     "Volkan Baǵa",
-    crate::card::CardSet::PlanarChaos,
     crate::card::CardRules::unsupported(),
 );
 
 // PLC 70 — Enslave
 pub(in crate::card::sets) static ENSLAVE: CardRecord = CardRecord::new(
+    crate::card::CardSet::PlanarChaos,
     "Enslave",
     "6c6283e1-e4f1-4ff6-be01-b66ab623e0ac",
     "Zoltan Boros & Gabor Szikszai",
-    crate::card::CardSet::PlanarChaos,
     CardRules::new_enchantment(mana_cost!("{4}{B}{B}"))
         .with_subtypes(&["Aura"])
         .with_abilities(&[
@@ -92,10 +92,10 @@ pub(in crate::card::sets) static ENSLAVE: CardRecord = CardRecord::new(
 
 // PLC 128 — Fungal Behemoth
 pub(in crate::card::sets) static FUNGAL_BEHEMOTH: CardRecord = CardRecord::new(
+    CardSet::PlanarChaos,
     "Fungal Behemoth",
     "53c1910b-9475-4551-b9a0-4b24511a6f98",
     "Mark Tedin",
-    CardSet::PlanarChaos,
     CardRules::new_creature(mana_cost!("{3}{G}"), &["Fungus"], 0, 0).with_abilities(&[
         AbilityDef::static_ability(
             "Fungal Behemoth's power and toughness are each equal to the number of +1/+1 counters on creatures you control.",
@@ -152,10 +152,10 @@ pub(in crate::card::sets) static FUNGAL_BEHEMOTH: CardRecord = CardRecord::new(
 
 // PLC 165 — Urborg, Tomb of Yawgmoth
 pub(in crate::card::sets) static URBORG_TOMB_OF_YAWGMOTH: CardRecord = CardRecord::new(
+    CardSet::PlanarChaos,
     "Urborg, Tomb of Yawgmoth",
     "19e1224f-82cb-4f41-8739-f880cba61bbb",
     "John Avon",
-    CardSet::PlanarChaos,
     CardRules::new_land(&[])
         .with_supertype(CardSupertype::Legendary)
         .with_ability(AbilityDef::static_ability(

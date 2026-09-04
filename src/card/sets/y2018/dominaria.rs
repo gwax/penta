@@ -27,10 +27,10 @@ static ARTIFACTS_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
 );
 
 pub(in crate::card::sets) static KARN_SCION_OF_URZA: CardRecord = CardRecord::new(
+    CardSet::Dominaria,
     "Karn, Scion of Urza",
     "07a3d9e8-8597-498b-869c-cff79e0df516",
     "Chase Stone",
-    CardSet::Dominaria,
     // Colorless, so every deck can play him: a card every turn that the
     // other player picks, the pile of leftovers he can cash in later, and a
     // body that grows with the artifacts the deck is made of.
@@ -138,19 +138,19 @@ pub(in crate::card::sets) static KARN_SCION_OF_URZA: CardRecord = CardRecord::ne
 // DOM 81 — Cast Down
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAST_DOWN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Dominaria,
     "Cast Down",
     "116ce944-6871-4f51-a889-d9c4a5d7cff2",
     "Bastien L. Deharme",
-    crate::card::CardSet::Dominaria,
     crate::card::CardRules::unsupported(),
 );
 
 // DOM 207 — Teferi, Hero of Dominaria
 pub(in crate::card::sets) static TEFERI_HERO_OF_DOMINARIA: CardRecord = CardRecord::new(
+    crate::card::CardSet::Dominaria,
     "Teferi, Hero of Dominaria",
     "5d10b752-d9cb-419d-a5c4-d4ee1acb655e",
     "Chris Rallis",
-    crate::card::CardSet::Dominaria,
     // Five mana that draws a card and leaves two lands up, so the turn he
     // lands is not the turn he costs you: the plus pays for the counterspell
     // held behind him.
@@ -237,10 +237,10 @@ pub(in crate::card::sets) static TEFERI_HERO_OF_DOMINARIA: CardRecord = CardReco
 // DOM 213 — Damping Sphere
 // Audit: unsupported — Needs a static replacement changing a land ability producing two or more mana into exactly {C}.
 pub(in crate::card::sets) static DAMPING_SPHERE: CardRecord = CardRecord::new(
+    CardSet::Dominaria,
     "Damping Sphere",
     "a5c7d16b-8f4e-42b9-be24-3cb091932d7c",
     "Adam Paquette",
-    CardSet::Dominaria,
     CardRules::unsupported(),
 );
 

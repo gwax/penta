@@ -11,10 +11,10 @@ use crate::{TargetIndex, mana_cost};
 
 // CNS 16 — Council's Judgment
 pub(in crate::card::sets) static COUNCILS_JUDGMENT: CardRecord = CardRecord::new(
+    CardSet::Conspiracy,
     "Council's Judgment",
     "17f28b16-da65-41a8-ba4f-f1c5e104aad6",
     "Kev Walker",
-    CardSet::Conspiracy,
     // Exiling without targeting is what it is played for: shroud, hexproof,
     // and protection are all no answer at all. Two players usually means two
     // permanents, since a disagreement ties.
@@ -32,19 +32,19 @@ pub(in crate::card::sets) static COUNCILS_JUDGMENT: CardRecord = CardRecord::new
 // CNS 18 — Custodi Squire
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CUSTODI_SQUIRE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Conspiracy,
     "Custodi Squire",
     "a9151422-8df1-409c-a686-0cd89247eb43",
     "Alex Horley-Orlandelli",
-    crate::card::CardSet::Conspiracy,
     crate::card::CardRules::unsupported(),
 );
 
 // CNS 42 — Dack Fayden
 pub(in crate::card::sets) static DACK_FAYDEN: CardRecord = CardRecord::new(
+    CardSet::Conspiracy,
     "Dack Fayden",
     "3fcb7810-1054-4001-855c-6e17939b3d3f",
     "Eric Deschamps",
-    CardSet::Conspiracy,
     // The greatest thief in the multiverse, and in a cube full of Moxen the
     // minus is what he is actually here for.
     CardRules::new_planeswalker(mana_cost!("{1}{U}{R}"), &["Dack"], 3)

@@ -12,29 +12,29 @@ use crate::mana_cost;
 // BOK 44 — Ninja of the Deep Hours
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static NINJA_OF_THE_DEEP_HOURS: CardRecord = CardRecord::new(
+    crate::card::CardSet::BetrayersOfKamigawa,
     "Ninja of the Deep Hours",
     "367a67c7-54db-4336-b55a-3fa27625172a",
     "Dan Murayama Scott",
-    crate::card::CardSet::BetrayersOfKamigawa,
     crate::card::CardRules::unsupported(),
 );
 
 // BOK 76 — Okiba-Gang Shinobi
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static OKIBA_GANG_SHINOBI: CardRecord = CardRecord::new(
+    crate::card::CardSet::BetrayersOfKamigawa,
     "Okiba-Gang Shinobi",
     "5cd9297e-301e-4e70-af9b-3218eacacf8d",
     "Mark Zug",
-    crate::card::CardSet::BetrayersOfKamigawa,
     crate::card::CardRules::unsupported(),
 );
 
 // BOK 163 — Umezawa's Jitte
 pub(in crate::card::sets) static UMEZAWAS_JITTE: CardRecord = CardRecord::new(
+    CardSet::BetrayersOfKamigawa,
     "Umezawa's Jitte",
     "3b6e5956-f795-451b-bb24-56462d1ced27",
     "Christopher Moeller",
-    CardSet::BetrayersOfKamigawa,
     CardRules::new_artifact(mana_cost!("{2}"))
         .with_supertype(CardSupertype::Legendary)
         .with_subtypes(&["Equipment"])

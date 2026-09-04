@@ -10,10 +10,10 @@ use crate::mana_cost;
 
 // BNG 119 — Courser of Kruphix
 pub(in crate::card::sets) static COURSER_OF_KRUPHIX: CardRecord = CardRecord::new(
+    crate::card::CardSet::BornOfTheGods,
     "Courser of Kruphix",
     "da5a807f-58e8-4d92-a61c-47bb9b28977f",
     "Eric Deschamps",
-    crate::card::CardSet::BornOfTheGods,
     // Two toughness past what red reaches, which is most of why the body is
     // worth three mana at all.
     CardRules::new_enchantment_creature(mana_cost!("{1}{G}{G}"), &["Centaur"], 2, 4)

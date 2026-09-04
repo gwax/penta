@@ -9,10 +9,10 @@ use crate::mana_cost;
 
 // DMC 47 — Torsten, Founder of Benalia
 pub(in crate::card::sets) static TORSTEN_FOUNDER_OF_BENALIA: CardRecord = CardRecord::new(
+    CardSet::DominariaUnitedCommander,
     "Torsten, Founder of Benalia",
     "0783b426-a527-42c1-9271-be28b229e1c6",
     "Volkan Baǵa",
-    CardSet::DominariaUnitedCommander,
     // Seven mana, and the two halves answer the two ways it goes wrong: it
     // refills your hand the turn it lands, and leaves seven bodies behind if
     // somebody kills it.

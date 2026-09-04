@@ -11,10 +11,10 @@ use crate::mana_cost;
 
 // BLC 9 — Jacked Rabbit
 pub(in crate::card::sets) static JACKED_RABBIT: CardRecord = CardRecord::new(
+    CardSet::BloomburrowCommander,
     "Jacked Rabbit",
     "2c695df6-6bf2-4e6b-8500-e3116137ca27",
     "Scott Murphy",
-    CardSet::BloomburrowCommander,
     // The counters are the body and the body is the token count, so every
     // mana past the second is another Rabbit on every attack.
     CardRules::new_creature(mana_cost!("{X}{1}{W}"), &["Rabbit", "Warrior"], 1, 2)

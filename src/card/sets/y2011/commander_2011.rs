@@ -30,10 +30,10 @@ static EXILED_A_CREATURE: TargetConditionDef = TargetConditionDef {
 };
 
 pub(in crate::card::sets) static SCAVENGING_OOZE: CardRecord = CardRecord::new(
+    CardSet::Commander2011,
     "Scavenging Ooze",
     "371ceb58-f498-4616-a7f0-eb118fe2e4ff",
     "Austin Hsu",
-    CardSet::Commander2011,
     CardRules::new_creature(
         mana_cost!("{1}{G}"),
         &["Ooze"],

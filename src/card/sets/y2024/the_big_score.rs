@@ -16,10 +16,10 @@ static ANY_TARGET: [AbilityTargetDef; 1] = [AbilityTargetDef::exactly_one(
 
 // BIG 9 — Harvester of Misery
 pub(in crate::card::sets) static HARVESTER_OF_MISERY: CardRecord = CardRecord::new(
+    CardSet::TheBigScore,
     "Harvester of Misery",
     "a3012af9-621d-4fae-b00d-079a89ae35fe",
     "Jorge Jacinto",
-    CardSet::TheBigScore,
     // Five mana for a board sweep on a hard-to-block body, or two mana from
     // the hand for one creature when the board does not need sweeping.
     CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Spirit"], 5, 4).with_abilities(&[
@@ -70,10 +70,10 @@ pub(in crate::card::sets) static HARVESTER_OF_MISERY: CardRecord = CardRecord::n
 
 // BIG 12 — Legion Extruder
 pub(in crate::card::sets) static LEGION_EXTRUDER: CardRecord = CardRecord::new(
+    CardSet::TheBigScore,
     "Legion Extruder",
     "5a077de0-1893-40d0-a499-ee2e6e2258f1",
     "Anton Solovianchyk",
-    CardSet::TheBigScore,
     // Two mana that answers a creature on the way in and then turns every
     // spent artifact -- a cracked Lotus Petal, an emptied Bauble -- into a
     // 3/3, which is what the cube's artifact decks have lying around.
@@ -111,10 +111,10 @@ pub(in crate::card::sets) static LEGION_EXTRUDER: CardRecord = CardRecord::new(
 
 // BIG 21 — Loot, the Pathfinder
 pub(in crate::card::sets) static LOOT_THE_PATHFINDER: CardRecord = CardRecord::new(
+    CardSet::TheBigScore,
     "Loot, the Pathfinder",
     "fb169fa2-c92e-45f7-89a2-0ca0e3910a1c",
     "Rudy Siswanto",
-    CardSet::TheBigScore,
     // Five mana for a hasty double striker that also unloads three cards,
     // three mana, or three damage -- once each, and never twice, because
     // every one of them taps it.
@@ -164,10 +164,10 @@ pub(in crate::card::sets) static LOOT_THE_PATHFINDER: CardRecord = CardRecord::n
 
 // BIG 41 — Generous Plunderer
 pub(in crate::card::sets) static GENEROUS_PLUNDERER: CardRecord = CardRecord::new(
+    CardSet::TheBigScore,
     "Generous Plunderer",
     "351eea06-f5be-4044-b3b3-cc6bf805abb1",
     "Josiah \"Jo\" Cameron",
-    CardSet::TheBigScore,
     // Two mana for a 2/2 that hands the other player a Treasure every
     // upkeep and then bills them for it on the attack.
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Rogue"], 2, 2)
@@ -222,10 +222,10 @@ pub(in crate::card::sets) static GENEROUS_PLUNDERER: CardRecord = CardRecord::ne
 
 // BIG 85 — Vaultborn Tyrant
 pub(in crate::card::sets) static VAULTBORN_TYRANT: CardRecord = CardRecord::new(
+    crate::card::CardSet::TheBigScore,
     "Vaultborn Tyrant",
     "07ca436a-e992-40a9-978a-501a82e443ed",
     "Loïc Canavaggia",
-    crate::card::CardSet::TheBigScore,
     // Seven mana that draws a card the moment it lands, and killing it hands
     // the same body back once.
     CardRules::new_creature(mana_cost!("{5}{G}{G}"), &["Dinosaur"], 6, 6)

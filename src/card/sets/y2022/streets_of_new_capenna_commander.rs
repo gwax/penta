@@ -21,10 +21,10 @@ static CONVERTER_RETURNS_THE_CARD: EffectDef = EffectDef::MoveToZone {
 };
 
 pub(in crate::card::sets) static CURRENCY_CONVERTER: CardRecord = CardRecord::new(
+    CardSet::StreetsOfNewCapennaCommander,
     "Currency Converter",
     "187b6719-e5ed-4615-a00b-3313ceca055b",
     "Sean Murray",
-    CardSet::StreetsOfNewCapennaCommander,
     // One mana for a bank: every card you throw away is held rather than
     // spent, and later it comes back out as a Treasure or a body.
     CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[

@@ -10,19 +10,19 @@ use crate::card::{
 // SPM 141 — Rhino's Rampage
 // Audit: unsupported — Needs a reflexive excess-damage trigger that chooses its artifact target after the fight.
 pub(in crate::card::sets) static RHINOS_RAMPAGE: CardRecord = CardRecord::new(
+    CardSet::MarvelsSpiderMan,
     "Rhino's Rampage",
     "f668817c-1cab-44c5-b6a8-95113e480d5e",
     "Nino Is",
-    CardSet::MarvelsSpiderMan,
     CardRules::unsupported(),
 );
 
 // SPM 180 — Multiversal Passage
 pub(in crate::card::sets) static MULTIVERSAL_PASSAGE: CardRecord = CardRecord::new(
+    CardSet::MarvelsSpiderMan,
     "Multiversal Passage",
     "f5fb426a-5618-4dd4-9c51-0cc847be8c1d",
     "Pablo Mendoza",
-    CardSet::MarvelsSpiderMan,
     CardRules::new_land(&[]).with_abilities(&[
         AbilityDef::replacement(
             "As this land enters, choose a basic land type. Then you may pay 2 life. If you \
@@ -53,50 +53,50 @@ pub(in crate::card::sets) static MULTIVERSAL_PASSAGE: CardRecord = CardRecord::n
 // SPM 181 — Ominous Asylum
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static OMINOUS_ASYLUM: CardRecord = CardRecord::new(
+    CardSet::MarvelsSpiderMan,
     "Ominous Asylum",
     "4329f94a-9110-4f07-b4a6-f1ccae97ccc9",
     "Pavel Kolomeyets",
-    CardSet::MarvelsSpiderMan,
     CardRules::unsupported(),
 );
 
 // SPM 183 — Savage Mansion
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SAVAGE_MANSION: CardRecord = CardRecord::new(
+    CardSet::MarvelsSpiderMan,
     "Savage Mansion",
     "855f59a5-17a8-4aca-8a4d-f98111eba14c",
     "David Álvarez",
-    CardSet::MarvelsSpiderMan,
     CardRules::unsupported(),
 );
 
 // SPM 184 — Sinister Hideout
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SINISTER_HIDEOUT: CardRecord = CardRecord::new(
+    CardSet::MarvelsSpiderMan,
     "Sinister Hideout",
     "23190d7e-5165-49bd-b307-bf81877d228d",
     "Pavel Kolomeyets",
-    CardSet::MarvelsSpiderMan,
     CardRules::unsupported(),
 );
 
 // SPM 185 — Suburban Sanctuary
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUBURBAN_SANCTUARY: CardRecord = CardRecord::new(
+    CardSet::MarvelsSpiderMan,
     "Suburban Sanctuary",
     "467df77a-a99c-4cfd-9af4-502eaa2eb2e3",
     "David Frasheski",
-    CardSet::MarvelsSpiderMan,
     CardRules::unsupported(),
 );
 
 // SPM 186 — University Campus
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNIVERSITY_CAMPUS: CardRecord = CardRecord::new(
+    CardSet::MarvelsSpiderMan,
     "University Campus",
     "2752f21c-f535-4772-a8b3-e97e1339e9c9",
     "David Álvarez",
-    CardSet::MarvelsSpiderMan,
     CardRules::unsupported(),
 );
 

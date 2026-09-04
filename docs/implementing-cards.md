@@ -57,8 +57,9 @@ identity header, or promote generally reusable behavior to `card::abilities` as
 appropriate. Do not leave card-local helpers in the shared preamble or between
 other cards' blocks.
 
-Every `CardRecord` constructor takes the exact debut printing's Scryfall UUID
-and artist directly: the first English-language paper printing when possible,
+Every `CardRecord` constructor takes the debut set first, followed by the card
+name and exact debut printing's Scryfall UUID and artist: the first
+English-language paper printing when possible,
 otherwise the first paper printing in any language. The build normally derives
 the stable 52-bit definition ID from that UUID and rejects collisions across
 the whole corpus. Historical ID assignments that cannot be derived from the

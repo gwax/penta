@@ -17,10 +17,10 @@ use crate::{TargetIndex, mana_cost};
 
 // ROE 4 — Emrakul, the Aeons Torn
 pub(in crate::card::sets) static EMRAKUL_THE_AEONS_TORN: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Emrakul, the Aeons Torn",
     "67600383-bbb8-411c-b8e6-2296650bc747",
     "Mark Tedin",
-    CardSet::RiseOfTheEldrazi,
     CardRules::new_creature(mana_cost!("{15}"), &["Eldrazi"], 15, 15)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
@@ -65,10 +65,10 @@ pub(in crate::card::sets) static EMRAKUL_THE_AEONS_TORN: CardRecord = CardRecord
 
 // ROE 13 — Ulamog's Crusher
 pub(in crate::card::sets) static ULAMOG_S_CRUSHER: CardRecord = CardRecord::new(
+    crate::card::CardSet::RiseOfTheEldrazi,
     "Ulamog's Crusher",
     "76bacedb-9fa8-4a21-b0eb-e7ead64360b4",
     "Todd Lockwood",
-    crate::card::CardSet::RiseOfTheEldrazi,
     CardRules::new_creature(mana_cost!("{8}"), &["Eldrazi"], 8, 8).with_abilities(&[
         abilities::annihilator(2),
         abilities::attacks_each_combat_if_able("This creature attacks each combat if able."),
@@ -78,19 +78,19 @@ pub(in crate::card::sets) static ULAMOG_S_CRUSHER: CardRecord = CardRecord::new(
 // ROE 21 — Gideon Jura
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GIDEON_JURA: CardRecord = CardRecord::new(
+    crate::card::CardSet::RiseOfTheEldrazi,
     "Gideon Jura",
     "e0440668-1b0e-437c-9e42-7166dd14dfe5",
     "Aleksi Briclot",
-    crate::card::CardSet::RiseOfTheEldrazi,
     crate::card::CardRules::unsupported(),
 );
 
 // ROE 40 — Oust
 pub(in crate::card::sets) static OUST: CardRecord = CardRecord::new(
+    crate::card::CardSet::RiseOfTheEldrazi,
     "Oust",
     "07313dd3-d0dc-40ca-98a3-fa4d39e5bcae",
     "Mike Bierek",
-    crate::card::CardSet::RiseOfTheEldrazi,
     // One white mana answers anything, and pays for it with three life and a
     // card the other player draws again in two turns.
     CardRules::new_sorcery(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
@@ -122,19 +122,19 @@ pub(in crate::card::sets) static OUST: CardRecord = CardRecord::new(
 // ROE 61 — Domestication
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DOMESTICATION: CardRecord = CardRecord::new(
+    crate::card::CardSet::RiseOfTheEldrazi,
     "Domestication",
     "e1f15831-8dfd-4232-875c-efa6744c9a12",
     "Jesper Ejsing",
-    crate::card::CardSet::RiseOfTheEldrazi,
     crate::card::CardRules::unsupported(),
 );
 
 // ROE 67 — Fleeting Distraction
 pub(in crate::card::sets) static FLEETING_DISTRACTION: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Fleeting Distraction",
     "ed843c4d-28b5-4a4c-8bae-8f03f329bf2b",
     "Kieran Yanner",
-    CardSet::RiseOfTheEldrazi,
     CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_targets(
         "Target creature gets -1/-0 until end of turn. Draw a card.",
         &[AbilityTargetDef::exactly_one_permanent(
@@ -159,10 +159,10 @@ pub(in crate::card::sets) static FLEETING_DISTRACTION: CardRecord = CardRecord::
 
 // ROE 98 — Bloodthrone Vampire
 pub(in crate::card::sets) static BLOODTHRONE_VAMPIRE: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Bloodthrone Vampire",
     "48bf0233-1d2e-40cb-9a69-8eeeeb2959ca",
     "Steve Argyle",
-    CardSet::RiseOfTheEldrazi,
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Vampire"], 1, 1).with_ability(
         AbilityDef::activated(
             "Sacrifice a creature: This creature gets +2/+2 until end of turn.",
@@ -184,10 +184,10 @@ pub(in crate::card::sets) static BLOODTHRONE_VAMPIRE: CardRecord = CardRecord::n
 
 // ROE 102 — Contaminated Ground
 pub(in crate::card::sets) static CONTAMINATED_GROUND: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Contaminated Ground",
     "3d2ba8f3-58f5-43e5-9201-974ba58f56f8",
     "Rob Alexander",
-    CardSet::RiseOfTheEldrazi,
     CardRules::new_enchantment(mana_cost!("{1}{B}"))
         .with_subtypes(&["Aura"])
         .with_abilities(&[
@@ -228,10 +228,10 @@ pub(in crate::card::sets) static CONTAMINATED_GROUND: CardRecord = CardRecord::n
 /// A choice of one with nothing on offer simply does not ask: a hand with
 /// nothing cheap enough in it loses nothing.
 pub(in crate::card::sets) static INQUISITION_OF_KOZILEK: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Inquisition of Kozilek",
     "6a3ff5c3-0fdb-4d54-b4e5-ce7bad9953f0",
     "Tomasz Jedruszek",
-    CardSet::RiseOfTheEldrazi,
     // One mana and no life, for everything the format actually casts on the
     // first three turns.
     CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
@@ -255,10 +255,10 @@ pub(in crate::card::sets) static INQUISITION_OF_KOZILEK: CardRecord = CardRecord
 
 // ROE 126 — Shrivel
 pub(in crate::card::sets) static SHRIVEL: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Shrivel",
     "a87c80a1-5818-45fd-9a37-a2ee3396626e",
     "Jung Park",
-    CardSet::RiseOfTheEldrazi,
     CardRules::new_sorcery(mana_cost!("{1}{B}")).with_ability(AbilityDef::spell(
         "All creatures get -1/-1 until end of turn.",
         EffectDef::Apply {
@@ -285,10 +285,10 @@ const VENDETTA_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // ROE 145 — Flame Slash
 pub(in crate::card::sets) static FLAME_SLASH: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Flame Slash",
     "006d2bf1-20f7-4b09-8d98-8233d91682bd",
     "Raymond Swanland",
-    CardSet::RiseOfTheEldrazi,
     // One mana for four damage is the best rate in the format; the sorcery
     // speed is the whole price, and it cannot go upstairs.
     CardRules::new_sorcery(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
@@ -305,10 +305,10 @@ pub(in crate::card::sets) static FLAME_SLASH: CardRecord = CardRecord::new(
 
 // ROE 147 — Goblin Arsonist
 pub(in crate::card::sets) static GOBLIN_ARSONIST: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Goblin Arsonist",
     "707d396d-950b-4ab8-9db2-f40c8f7db062",
     "Wayne Reynolds",
-    CardSet::RiseOfTheEldrazi,
     CardRules::new_creature(mana_cost!("{R}"), &["Goblin", "Shaman"], 1, 1).with_ability(
         abilities::dies_trigger_with_targets(
             "When this creature dies, you may have it deal 1 damage to any target.",
@@ -328,10 +328,10 @@ pub(in crate::card::sets) static GOBLIN_ARSONIST: CardRecord = CardRecord::new(
 
 // ROE 148 — Goblin Tunneler
 pub(in crate::card::sets) static GOBLIN_TUNNELER: CardRecord = CardRecord::new(
+    crate::card::CardSet::RiseOfTheEldrazi,
     "Goblin Tunneler",
     "0b2e4a34-6255-4f89-a62d-941996c573e1",
     "Jesper Ejsing",
-    crate::card::CardSet::RiseOfTheEldrazi,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Rogue"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
             "{T}: Target creature with power 2 or less can't be blocked this turn.",
@@ -356,19 +356,19 @@ pub(in crate::card::sets) static GOBLIN_TUNNELER: CardRecord = CardRecord::new(
 // ROE 161 — Raid Bombardment
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RAID_BOMBARDMENT: CardRecord = CardRecord::new(
+    crate::card::CardSet::RiseOfTheEldrazi,
     "Raid Bombardment",
     "9c2d1a48-efde-4134-95f0-b23f6cf85259",
     "Matt Cavotta",
-    crate::card::CardSet::RiseOfTheEldrazi,
     crate::card::CardRules::unsupported(),
 );
 
 // ROE 168 — Traitorous Instinct
 pub(in crate::card::sets) static TRAITOROUS_INSTINCT: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Traitorous Instinct",
     "d65b63ea-e3c3-465d-8cd9-7251cda9cc63",
     "Scott Chou",
-    CardSet::RiseOfTheEldrazi,
     CardRules::new_sorcery(mana_cost!("{3}{R}")).with_ability(
         AbilityDef::spell_with_targets(
             "Gain control of target creature until end of turn. Untap that creature. Until end of turn, it gets +2/+0 and gains haste.",
@@ -399,10 +399,10 @@ pub(in crate::card::sets) static TRAITOROUS_INSTINCT: CardRecord = CardRecord::n
 
 // ROE 201 — Nest Invader
 pub(in crate::card::sets) static NEST_INVADER: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Nest Invader",
     "24517d9c-6cde-41e8-9e82-ee73f069379a",
     "Trevor Claxton",
-    CardSet::RiseOfTheEldrazi,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Eldrazi", "Drone"], 2, 2).with_ability(
         abilities::enters_trigger("When this creature enters, create a 0/1 colorless Eldrazi Spawn creature token. It has \"Sacrifice this token: Add {C}.\"", EffectDef::create_creature_token(&["Eldrazi", "Spawn"], &[], 0, 1)
                 .with_abilities(&[AbilityDef::activated_mana(
@@ -419,10 +419,10 @@ pub(in crate::card::sets) static NEST_INVADER: CardRecord = CardRecord::new(
 
 // ROE 222 — Prophetic Prism
 pub(in crate::card::sets) static PROPHETIC_PRISM: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Prophetic Prism",
     "cfb90d44-8cb1-4b83-b2f2-92c19d6304fb",
     "John Avon",
-    CardSet::RiseOfTheEldrazi,
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
         abilities::enters_trigger(
             "When this artifact enters, draw a card.",
@@ -444,10 +444,10 @@ pub(in crate::card::sets) static PROPHETIC_PRISM: CardRecord = CardRecord::new(
 
 // ROE 228 — Evolving Wilds
 pub(in crate::card::sets) static EVOLVING_WILDS: CardRecord = CardRecord::new(
+    CardSet::RiseOfTheEldrazi,
     "Evolving Wilds",
     "bc7e0407-fea1-43ef-8580-82271e440bb3",
     "Steven Belledin",
-    CardSet::RiseOfTheEldrazi,
     CardRules::new_land(&[]).with_ability(AbilityDef::activated(
         "{T}, Sacrifice this land: Search your library for a basic land card, put it onto the \
          battlefield tapped, then shuffle.",

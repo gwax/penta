@@ -10,10 +10,10 @@ use crate::mana_cost;
 
 // EOC 13 — Baloth Prime
 pub(in crate::card::sets) static BALOTH_PRIME: CardRecord = CardRecord::new(
+    CardSet::EdgeOfEternitiesCommander,
     "Baloth Prime",
     "2c723fc9-d5c9-4126-a9a6-f80c247a4b6b",
     "Joshua Raphael",
-    CardSet::EdgeOfEternitiesCommander,
     // A 10/10 for four that owes six untaps. Every land you feed him buys
     // one of them back and leaves a 4/4 behind, so the six counters are a
     // schedule rather than a wall.

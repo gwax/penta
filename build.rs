@@ -461,18 +461,31 @@ fn collect_card_ids(
             let initializer = lines[initializer_index].trim();
             assert!(
                 initializer.ends_with('('),
-                "{}:{}: CardRecord initializer must put its identity on the next line",
+                "{}:{}: CardRecord initializer must put its arguments on following lines",
                 path.display(),
                 initializer_index + 1
             );
-            let scryfall_id = lines.get(initializer_index + 2).unwrap_or_else(|| {
-                panic!(
-                    "{}:{}: CardRecord declaration is missing its debut art",
-                    path.display(),
-                    initializer_index + 1
-                )
-            });
-            let scryfall_id = authored_scryfall_id(scryfall_id, &path, initializer_index + 3);
+            let scryfall_id_offset = if initializer.contains("CardRecord::") {
+                3
+            } else {
+                // A few declarations use a local inline helper whose own
+                // CardRecord constructor still follows the canonical order.
+                2
+            };
+            let scryfall_id = lines
+                .get(initializer_index + scryfall_id_offset)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "{}:{}: CardRecord declaration is missing its debut art",
+                        path.display(),
+                        initializer_index + 1
+                    )
+                });
+            let scryfall_id = authored_scryfall_id(
+                scryfall_id,
+                &path,
+                initializer_index + scryfall_id_offset + 1,
+            );
             let id = historical_ids
                 .get(&scryfall_id)
                 .map_or_else(|| derived_card_definition_id(&scryfall_id), |(_, id)| *id);

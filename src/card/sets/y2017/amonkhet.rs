@@ -11,29 +11,29 @@ use crate::{TargetIndex, mana_cost};
 // AKH 75 — Vizier of Tumbling Sands
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VIZIER_OF_TUMBLING_SANDS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Amonkhet,
     "Vizier of Tumbling Sands",
     "ce4ff0f5-abee-4f3e-89ae-1b7ee771ec68",
     "Josu Hernaiz",
-    crate::card::CardSet::Amonkhet,
     crate::card::CardRules::unsupported(),
 );
 
 // AKH 81 — Bone Picker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BONE_PICKER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Amonkhet,
     "Bone Picker",
     "bdc6a825-43f7-40a4-95f0-335dc538b6cd",
     "Yeong-Hao Han",
-    crate::card::CardSet::Amonkhet,
     crate::card::CardRules::unsupported(),
 );
 
 // AKH 134 — Glorybringer
 pub(in crate::card::sets) static GLORYBRINGER: CardRecord = CardRecord::new(
+    CardSet::Amonkhet,
     "Glorybringer",
     "3277ad99-5682-4baa-b106-de15721876a6",
     "Sam Burley",
-    CardSet::Amonkhet,
     // Five mana that attacks the turn it lands for four in the air and kills
     // something on the way in. What exerting costs is the next attack, which
     // is the only thing keeping it honest.
@@ -69,10 +69,10 @@ pub(in crate::card::sets) static GLORYBRINGER: CardRecord = CardRecord::new(
 // AKH 241 — Cradle of the Accursed
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRADLE_OF_THE_ACCURSED: CardRecord = CardRecord::new(
+    crate::card::CardSet::Amonkhet,
     "Cradle of the Accursed",
     "41713e82-c3d3-4c2f-b075-f684cbd68ce8",
     "Noah Bradley",
-    crate::card::CardSet::Amonkhet,
     crate::card::CardRules::unsupported(),
 );
 

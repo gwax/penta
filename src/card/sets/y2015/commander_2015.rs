@@ -12,10 +12,10 @@ use crate::mana_cost;
 
 // C15 14 — Mystic Confluence
 pub(in crate::card::sets) static MYSTIC_CONFLUENCE: CardRecord = CardRecord::new(
+    CardSet::Commander2015,
     "Mystic Confluence",
     "81bbffc2-6f58-4baa-8f95-168eab106b15",
     "Kieran Yanner",
-    CardSet::Commander2015,
     // Five mana that is never dead: three cards when nothing is happening, a
     // hard counter plus a card when something is.
     CardRules::new_instant(mana_cost!("{3}{U}{U}")).with_ability(
@@ -63,10 +63,10 @@ pub(in crate::card::sets) static MYSTIC_CONFLUENCE: CardRecord = CardRecord::new
 
 // C15 26 — Fiery Confluence
 pub(in crate::card::sets) static FIERY_CONFLUENCE: CardRecord = CardRecord::new(
+    CardSet::Commander2015,
     "Fiery Confluence",
     "7b61c9bc-16e8-417f-99e7-8bd83d4666c5",
     "Kieran Yanner",
-    CardSet::Commander2015,
     // Four mana that is a burn spell, a sweeper, or artifact removal, and
     // usually two of the three at once.
     CardRules::new_sorcery(mana_cost!("{2}{R}{R}")).with_ability(
@@ -116,10 +116,10 @@ pub(in crate::card::sets) static FIERY_CONFLUENCE: CardRecord = CardRecord::new(
 
 // C15 34 — Caller of the Pack
 pub(in crate::card::sets) static CALLER_OF_THE_PACK: CardRecord = CardRecord::new(
+    CardSet::Commander2015,
     "Caller of the Pack",
     "1286208b-896b-4f41-a837-1c8a2b199a0f",
     "Ryan Yee",
-    CardSet::Commander2015,
     CardRules::new_creature(mana_cost!("{5}{G}{G}"), &["Beast"], 8, 6)
         .with_abilities(&[abilities::trample(), abilities::myriad()]),
 );

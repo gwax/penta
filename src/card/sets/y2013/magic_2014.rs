@@ -50,20 +50,20 @@ const AJANI_CALLER_OF_THE_PRIDE_REPRINT: PrintingRecord = PrintingRecord::reprin
 // M14 2 — Ajani's Chosen
 // Audit: unsupported — CreateToken cannot continue by conditionally attaching the triggering Aura to the newly created token.
 pub(in crate::card::sets) static AJANI_S_CHOSEN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Ajani's Chosen",
     "583bfbc1-638b-4de5-b865-0b00a69dd073",
     "Wayne Reynolds",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 3 — Angelic Accord
 // Audit: unsupported — Trigger conditions cannot track life gained during the turn or compare that total with four.
 pub(in crate::card::sets) static ANGELIC_ACCORD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Angelic Accord",
     "03f26bc2-53d7-4448-8021-de35aa82fcc6",
     "Michael C. Hayes",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -76,10 +76,10 @@ const ANGELIC_WALL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 5 — Archangel of Thune
 pub(in crate::card::sets) static ARCHANGEL_OF_THUNE: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Archangel of Thune",
     "531cba81-afd7-4be4-adec-87edb77ba2a9",
     "James Ryman",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Angel"], 3, 4).with_abilities(&[
         abilities::flying(),
         abilities::lifelink(),
@@ -114,10 +114,10 @@ const AURAMANCER_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 7 — Banisher Priest
 // Audit: unsupported — Linked exile cannot express Banisher Priest's one-shot duration, which must do nothing if the source left before the enter trigger resolved.
 pub(in crate::card::sets) static BANISHER_PRIEST: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Banisher Priest",
     "06823bf8-2fca-49e1-ba40-9b61c9ae55b3",
     "Willian Murai",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -130,10 +130,10 @@ const BLESSING_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 9 — Bonescythe Sliver
 pub(in crate::card::sets) static BONESCYTHE_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Bonescythe Sliver",
     "a26bb68b-1830-470a-8cea-91edc7db0c57",
     "Trevor Claxton",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have double strike.",
@@ -168,10 +168,10 @@ const CAPASHEN_KNIGHT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 12 — Celestial Flare
 pub(in crate::card::sets) static CELESTIAL_FLARE: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Celestial Flare",
     "6c8d1320-0f1a-4c66-86c9-9f8da0f1d9ef",
     "Clint Cearley",
-    CardSet::Magic2014,
     CardRules::new_instant(mana_cost!("{W}{W}")).with_ability(AbilityDef::spell_with_targets(
         "Target player sacrifices an attacking or blocking creature of their choice.",
         &[AbilityTargetDef::exactly_one(
@@ -194,10 +194,10 @@ pub(in crate::card::sets) static CELESTIAL_FLARE: CardRecord = CardRecord::new(
 
 // M14 13 — Charging Griffin
 pub(in crate::card::sets) static CHARGING_GRIFFIN: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Charging Griffin",
     "88637cc0-3b2a-402c-b491-26fcc2d21fb8",
     "Erica Yang",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Griffin"], 2, 2).with_abilities(&[
         abilities::flying(),
         AbilityDef::triggered(
@@ -224,10 +224,10 @@ const CONGREGATE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 15 — Dawnstrike Paladin
 pub(in crate::card::sets) static DAWNSTRIKE_PALADIN: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Dawnstrike Paladin",
     "93cf5fb3-bb41-4efa-9721-2c2d169b05cd",
     "Tyler Jacobson",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Human", "Knight"], 2, 4)
         .with_abilities(&[abilities::vigilance(), abilities::lifelink()]),
 );
@@ -235,10 +235,10 @@ pub(in crate::card::sets) static DAWNSTRIKE_PALADIN: CardRecord = CardRecord::ne
 // M14 16 — Devout Invocation
 // Audit: unsupported — Spell costs cannot tap a freely chosen number of creatures and carry that paid count into token creation.
 pub(in crate::card::sets) static DEVOUT_INVOCATION: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Devout Invocation",
     "8a286954-fb40-4440-9f0e-a28367c6823c",
     "David Palumbo",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -252,10 +252,10 @@ const DIVINE_FAVOR_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 18 — Fiendslayer Paladin
 // Audit: unsupported — Targeting restrictions cannot filter opposing spell sources by black or red color while leaving abilities unaffected.
 pub(in crate::card::sets) static FIENDSLAYER_PALADIN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Fiendslayer Paladin",
     "5cfb0f4a-e273-4ffb-91cd-dd1a7b6f6a8f",
     "Wesley Burt",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -275,10 +275,10 @@ const GRIFFIN_SENTINEL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 21 — Hive Stirrings
 pub(in crate::card::sets) static HIVE_STIRRINGS: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Hive Stirrings",
     "e4399e19-d05d-4bb3-9aff-c4133ddd2850",
     "Maciej Kuciara",
-    CardSet::Magic2014,
     CardRules::new_sorcery(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell(
         "Create two 1/1 colorless Sliver creature tokens.",
         EffectDef::create_creature_token(&["Sliver"], &[], 1, 1)
@@ -292,10 +292,10 @@ pub(in crate::card::sets) static HIVE_STIRRINGS: CardRecord = CardRecord::new(
 
 // M14 22 — Imposing Sovereign
 pub(in crate::card::sets) static IMPOSING_SOVEREIGN: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Imposing Sovereign",
     "0f672328-3361-498e-a9f4-2d8e69a8b072",
     "Scott M. Fischer",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Noble"], 2, 1).with_ability(
         AbilityDef::replacement_for(
             "Creatures your opponents control enter tapped.",
@@ -319,10 +319,10 @@ const INDESTRUCTIBILITY_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 24 — Master of Diversion
 // Audit: unsupported — Attack triggers cannot restrict a target to the creature controlled by that attack's defending player.
 pub(in crate::card::sets) static MASTER_OF_DIVERSION: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Master of Diversion",
     "2bec89b3-640e-4093-a6e9-5639610769b9",
     "Michael Komarck",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -336,10 +336,10 @@ const PACIFISM_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 26 — Path of Bravery
 // Audit: unsupported — Continuous effects cannot compare current and starting life, and attack events cannot aggregate one combat's attackers into one trigger amount.
 pub(in crate::card::sets) static PATH_OF_BRAVERY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Path of Bravery",
     "5222e200-df1b-46c6-a194-c341e8c1d516",
     "Chris Rahn",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -366,10 +366,10 @@ const PLANAR_CLEANSING_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 30 — Sentinel Sliver
 pub(in crate::card::sets) static SENTINEL_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Sentinel Sliver",
     "74c28560-e6ac-4be9-a253-22c4613b0d90",
     "Maciej Kuciara",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have vigilance.",
@@ -390,10 +390,10 @@ pub(in crate::card::sets) static SENTINEL_SLIVER: CardRecord = CardRecord::new(
 
 // M14 31 — Seraph of the Sword
 pub(in crate::card::sets) static SERAPH_OF_THE_SWORD: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Seraph of the Sword",
     "d9789cac-5774-4f72-82c3-18f11f9d4a62",
     "Jaime Jones",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Angel"], 3, 3).with_abilities(&[
         abilities::flying(),
         AbilityDef::static_ability(
@@ -445,10 +445,10 @@ const SOLEMN_OFFERING_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 37 — Soulmender
 pub(in crate::card::sets) static SOULMENDER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Soulmender",
     "37f45133-6134-4664-9952-67c03d60f9a0",
     "James Ryman",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{W}"), &["Human", "Cleric"], 1, 1).with_ability(
         AbilityDef::activated(
             "{T}: You gain 1 life.",
@@ -463,10 +463,10 @@ pub(in crate::card::sets) static SOULMENDER: CardRecord = CardRecord::new(
 
 // M14 38 — Steelform Sliver
 pub(in crate::card::sets) static STEELFORM_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Steelform Sliver",
     "c15d6329-ffb1-43fd-8558-60c8315f5b91",
     "Chase Stone",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control get +0/+1.",
@@ -490,10 +490,10 @@ pub(in crate::card::sets) static STEELFORM_SLIVER: CardRecord = CardRecord::new(
 
 // M14 39 — Stonehorn Chanter
 pub(in crate::card::sets) static STONEHORN_CHANTER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Stonehorn Chanter",
     "cd6ec61b-c039-4526-a359-a7947eeba5c3",
     "Raymond Swanland",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{5}{W}"), &["Rhino", "Cleric"], 4, 4).with_ability(
         AbilityDef::activated(
             "{5}{W}: This creature gains vigilance and lifelink until end of turn.",
@@ -570,10 +570,10 @@ const CLONE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 48 — Colossal Whale
 // Audit: unsupported — Islandwalk and defending-player targeting are unsupported, and linked exile cannot express the required one-shot duration if the source leaves early.
 pub(in crate::card::sets) static COLOSSAL_WHALE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Colossal Whale",
     "f7f7caca-14ee-4d6a-97c3-e19898f86635",
     "Adam Paquette",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -587,10 +587,10 @@ const CORAL_MERFOLK_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 50 — Dismiss into Dream
 // Audit: unsupported — Static effects cannot add a creature subtype, and no trigger event observes a permanent becoming a target.
 pub(in crate::card::sets) static DISMISS_INTO_DREAM: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Dismiss into Dream",
     "af4cd7fe-639c-45a5-97af-9529904e3975",
     "Sam Wolfe Connelly",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -618,10 +618,10 @@ const DOMESTICATION_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 54 — Elite Arcanist
 // Audit: unsupported — Imprint cannot retain a chosen hand card for a later X cost, spell copy, and free-cast permission.
 pub(in crate::card::sets) static ELITE_ARCANIST: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Elite Arcanist",
     "99b225fe-c07d-4d8a-bf2b-c1777bd29061",
     "James Zapata",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -641,10 +641,10 @@ const FROST_BREATH_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 57 — Galerider Sliver
 pub(in crate::card::sets) static GALERIDER_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Galerider Sliver",
     "425f5d1b-9989-4fd1-88e2-6c3108aefa0b",
     "James Zapata",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{U}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have flying.",
@@ -665,10 +665,10 @@ pub(in crate::card::sets) static GALERIDER_SLIVER: CardRecord = CardRecord::new(
 
 // M14 58 — Glimpse the Future
 pub(in crate::card::sets) static GLIMPSE_THE_FUTURE: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Glimpse the Future",
     "f4d875e9-713d-4ddb-ae0a-db8483366319",
     "Andrew Robinson",
-    CardSet::Magic2014,
     CardRules::new_sorcery(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
         "Look at the top three cards of your library. Put one of them into your hand and the rest into your graveyard.",
         abilities::look_at_top_cards_choose_to_hand_rest_graveyard(
@@ -683,10 +683,10 @@ pub(in crate::card::sets) static GLIMPSE_THE_FUTURE: CardRecord = CardRecord::ne
 // M14 59 — Illusionary Armor
 // Audit: unsupported — No trigger event observes the enchanted creature becoming a target.
 pub(in crate::card::sets) static ILLUSIONARY_ARMOR: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Illusionary Armor",
     "d09346ff-6e63-499b-9265-c15a7b2cdece",
     "Mathias Kollros",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -700,10 +700,10 @@ const JACE_MEMORY_ADEPT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 61 — Jace's Mindseeker
 // Audit: unsupported — Mill cannot retain the exact milled batch for a filtered optional free-cast choice.
 pub(in crate::card::sets) static JACE_S_MINDSEEKER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Jace's Mindseeker",
     "f67852a6-ae75-44e7-9e2d-d458c7b9d869",
     "Greg Staples",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -716,10 +716,10 @@ const MERFOLK_SPY_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 63 — Messenger Drake
 pub(in crate::card::sets) static MESSENGER_DRAKE: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Messenger Drake",
     "13dd3172-0b45-4dc8-adc6-9e0ba112e664",
     "Yeong-Hao Han",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{3}{U}{U}"), &["Drake"], 3, 3).with_abilities(&[
         abilities::flying(),
         abilities::dies_trigger(
@@ -776,10 +776,10 @@ const SCROLL_THIEF_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 70 — Seacoast Drake
 pub(in crate::card::sets) static SEACOAST_DRAKE: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Seacoast Drake",
     "5333de10-a6d4-47ff-ab57-4edb49535739",
     "Scott Chou",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Drake"], 1, 3)
         .with_abilities(&[abilities::flying()]),
 );
@@ -801,10 +801,10 @@ const SPELL_BLAST_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 73 — Tidebinder Mage
 // Audit: unsupported — Effect durations cannot end when the source changes controller while remaining on the battlefield.
 pub(in crate::card::sets) static TIDEBINDER_MAGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Tidebinder Mage",
     "e032d1dd-6efc-4f6c-ad3b-30fe74845edf",
     "John Severin Brassell",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -824,10 +824,10 @@ const TOME_SCOUR_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 76 — Trained Condor
 pub(in crate::card::sets) static TRAINED_CONDOR: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Trained Condor",
     "6e1eaa5a-3f9d-4166-b418-fd82fff86c73",
     "Alex Horley-Orlandelli",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Bird"], 2, 1).with_abilities(&[
         abilities::flying(),
         AbilityDef::triggered_with_targets(
@@ -864,10 +864,10 @@ const WALL_OF_FROST_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 79 — Warden of Evos Isle
 // Audit: unsupported — Generic-cost reduction cannot be filtered to creature spells with effective flying.
 pub(in crate::card::sets) static WARDEN_OF_EVOS_ISLE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Warden of Evos Isle",
     "2316d281-21a4-460d-9062-f0737249484e",
     "Nils Hamm",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -880,10 +880,10 @@ const WATER_SERVANT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 81 — Windreader Sphinx
 pub(in crate::card::sets) static WINDREADER_SPHINX: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Windreader Sphinx",
     "f566741d-a847-4f24-b6fc-7873f0797d59",
     "Min Yum",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{5}{U}{U}"), &["Sphinx"], 3, 7).with_abilities(&[
         abilities::flying(),
         AbilityDef::triggered(
@@ -905,10 +905,10 @@ pub(in crate::card::sets) static WINDREADER_SPHINX: CardRecord = CardRecord::new
 
 // M14 82 — Zephyr Charge
 pub(in crate::card::sets) static ZEPHYR_CHARGE: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Zephyr Charge",
     "f9ea2808-0dde-4065-ae7d-905aae98703f",
     "Steve Prescott",
-    CardSet::Magic2014,
     CardRules::new_enchantment(mana_cost!("{1}{U}")).with_ability(
         AbilityDef::activated_with_targets(
             "{1}{U}: Target creature gains flying until end of turn.",
@@ -927,10 +927,10 @@ pub(in crate::card::sets) static ZEPHYR_CHARGE: CardRecord = CardRecord::new(
 
 // M14 83 — Accursed Spirit
 pub(in crate::card::sets) static ACCURSED_SPIRIT: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Accursed Spirit",
     "cf08313b-14c9-4e0b-aad7-05cbd90b1ed8",
     "Kev Walker",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{3}{B}"), &["Spirit"], 3, 2)
         .with_abilities(&[abilities::intimidate()]),
 );
@@ -945,19 +945,19 @@ const ALTARS_REAP_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 85 — Artificer's Hex
 // Audit: unsupported — Conditions and recipients cannot follow an Aura to an Equipment and then to the creature that Equipment is attached to.
 pub(in crate::card::sets) static ARTIFICER_S_HEX: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Artificer's Hex",
     "3a5cd9a1-da2e-44ef-9f2e-352dc9f92c50",
     "Franz Vohwinkel",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 86 — Blightcaster
 pub(in crate::card::sets) static BLIGHTCASTER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Blightcaster",
     "61752b13-255a-44d0-9fb0-5ed5680b954e",
     "Winona Nelson",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{3}{B}"), &["Human", "Wizard"], 2, 3).with_ability(
         AbilityDef::triggered_with_targets(
             "Whenever you cast an enchantment spell, you may have target creature get -2/-2 until end of turn.",
@@ -982,10 +982,10 @@ pub(in crate::card::sets) static BLIGHTCASTER: CardRecord = CardRecord::new(
 
 // M14 87 — Blood Bairn
 pub(in crate::card::sets) static BLOOD_BAIRN: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Blood Bairn",
     "a3fcbbd1-ee51-42a3-ad11-2fd41728c35d",
     "Ryan Yee",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Vampire"], 2, 2).with_ability(
         AbilityDef::activated(
             "Sacrifice another creature: This creature gets +2/+2 until end of turn.",
@@ -1011,10 +1011,10 @@ pub(in crate::card::sets) static BLOOD_BAIRN: CardRecord = CardRecord::new(
 // M14 88 — Bogbrew Witch
 // Audit: unsupported — SearchZone cannot match either exact printed name or make the selected permanent enter tapped.
 pub(in crate::card::sets) static BOGBREW_WITCH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Bogbrew Witch",
     "7559cf3e-7fad-4bcf-8551-045f9150e014",
     "Eric Deschamps",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1027,10 +1027,10 @@ const CHILD_OF_NIGHT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 90 — Corpse Hauler
 pub(in crate::card::sets) static CORPSE_HAULER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Corpse Hauler",
     "ca6adc5e-9221-4a18-8d41-4675797e5d46",
     "Jesper Ejsing",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Human", "Rogue"], 2, 1).with_ability(
         AbilityDef::activated_with_targets(
             "{2}{B}, Sacrifice this creature: Return another target creature card from your graveyard to your hand.",
@@ -1069,10 +1069,10 @@ const DARK_FAVOR_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 93 — Dark Prophecy
 pub(in crate::card::sets) static DARK_PROPHECY: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Dark Prophecy",
     "ecf82c3b-7a35-43dd-8bf3-ebc68dc1b8fc",
     "Scott Chou",
-    CardSet::Magic2014,
     CardRules::new_enchantment(mana_cost!("{B}{B}{B}")).with_ability(AbilityDef::triggered(
         "Whenever a creature you control dies, you draw a card and you lose 1 life.",
         TriggerEventDef::zone_changed(
@@ -1098,10 +1098,10 @@ pub(in crate::card::sets) static DARK_PROPHECY: CardRecord = CardRecord::new(
 
 // M14 94 — Deathgaze Cockatrice
 pub(in crate::card::sets) static DEATHGAZE_COCKATRICE: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Deathgaze Cockatrice",
     "9f17b58c-9738-4cdb-a408-e1595c384b92",
     "Kev Walker",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Cockatrice"], 2, 2)
         .with_abilities(&[abilities::flying(), abilities::deathtouch()]),
 );
@@ -1130,19 +1130,19 @@ const DURESS_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 98 — Festering Newt
 // Audit: unsupported — Object predicates cannot test for a different exact card name to choose between two effect amounts.
 pub(in crate::card::sets) static FESTERING_NEWT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Festering Newt",
     "eaee5261-416c-41e9-9ad7-bf7bd169aa08",
     "Eric Deschamps",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 99 — Gnawing Zombie
 pub(in crate::card::sets) static GNAWING_ZOMBIE: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Gnawing Zombie",
     "56653d9e-0c29-440b-8724-cae746abb1a9",
     "Greg Staples",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Zombie"], 1, 3).with_ability(
         AbilityDef::activated_with_targets(
             "{1}{B}, Sacrifice a creature: Target player loses 1 life and you gain 1 life.",
@@ -1173,19 +1173,19 @@ pub(in crate::card::sets) static GNAWING_ZOMBIE: CardRecord = CardRecord::new(
 // M14 100 — Grim Return
 // Audit: unsupported — Graveyard target predicates cannot inspect whether a card moved there from the battlefield this turn.
 pub(in crate::card::sets) static GRIM_RETURN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Grim Return",
     "15b69f74-3b54-4db4-abf3-b71db8cc9562",
     "Seb McKinnon",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 101 — Lifebane Zombie
 pub(in crate::card::sets) static LIFEBANE_ZOMBIE: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Lifebane Zombie",
     "98370735-5303-40d4-9e80-cdb40dee18e2",
     "Min Yum",
-    CardSet::Magic2014,
     CardRules::new_creature(
         mana_cost!("{1}{B}{B}"),
         &["Zombie", "Warrior"],
@@ -1218,10 +1218,10 @@ const LILIANA_OF_THE_DARK_REALMS_REPRINT: PrintingRecord = PrintingRecord::repri
 
 // M14 103 — Liliana's Reaver
 pub(in crate::card::sets) static LILIANAS_REAVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Liliana's Reaver",
     "a734c33c-4fa0-4f7a-943c-14a8aecea1a6",
     "Karl Kopinski",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Zombie"], 4, 3).with_abilities(&[
         abilities::deathtouch(),
         AbilityDef::triggered(
@@ -1243,10 +1243,10 @@ pub(in crate::card::sets) static LILIANAS_REAVER: CardRecord = CardRecord::new(
 
 // M14 104 — Liturgy of Blood
 pub(in crate::card::sets) static LITURGY_OF_BLOOD: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Liturgy of Blood",
     "3532105d-c550-4c20-8465-a6a19169efbd",
     "Zack Stella",
-    CardSet::Magic2014,
     CardRules::new_sorcery(mana_cost!("{3}{B}{B}")).with_ability(AbilityDef::spell_with_targets(
         "Destroy target creature. Add {B}{B}{B}.",
         &[AbilityTargetDef::exactly_one_permanent(
@@ -1279,10 +1279,10 @@ const MIND_ROT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 107 — Minotaur Abomination
 pub(in crate::card::sets) static MINOTAUR_ABOMINATION: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Minotaur Abomination",
     "9dca75a1-443d-4f8e-b12b-2aada3a8e3e4",
     "Karl Kopinski",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{4}{B}{B}"), &["Zombie", "Minotaur"], 4, 6),
 );
 
@@ -1310,10 +1310,10 @@ const QUAG_SICKNESS_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 111 — Rise of the Dark Realms
 // Audit: unsupported — MoveToZone cannot sweep matching cards from every graveyard into one player's control.
 pub(in crate::card::sets) static RISE_OF_THE_DARK_REALMS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Rise of the Dark Realms",
     "073f81e8-8c0c-4430-bd3e-95ed3625340f",
     "Michael Komarck",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1334,19 +1334,19 @@ const SENGIR_VAMPIRE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 114 — Shadowborn Apostle
 // Audit: unsupported — Deck construction has no any-number exception, and activated costs cannot choose and sacrifice six matching permanents as one payment.
 pub(in crate::card::sets) static SHADOWBORN_APOSTLE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Shadowborn Apostle",
     "202c2323-6589-457a-af51-5528a98e7b30",
     "Lucas Graciano",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 115 — Shadowborn Demon
 pub(in crate::card::sets) static SHADOWBORN_DEMON: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Shadowborn Demon",
     "3884c05b-c10e-4f1d-a8bd-8b5118657972",
     "Lucas Graciano",
-    CardSet::Magic2014,
     CardRules::new_creature(
         mana_cost!("{3}{B}{B}"),
         &["Demon"],
@@ -1405,10 +1405,10 @@ const SHRIVEL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 117 — Syphon Sliver
 pub(in crate::card::sets) static SYPHON_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Syphon Sliver",
     "85cb40e3-c3ed-4b3f-88ad-6f1305297c6f",
     "Tyler Jacobson",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have lifelink.",
@@ -1430,28 +1430,28 @@ pub(in crate::card::sets) static SYPHON_SLIVER: CardRecord = CardRecord::new(
 // M14 118 — Tenacious Dead
 // Audit: unsupported — The effect vocabulary cannot make the returned source enter tapped after a death trigger.
 pub(in crate::card::sets) static TENACIOUS_DEAD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Tenacious Dead",
     "5b96fed2-0be9-4181-94ae-10f031e2aeb2",
     "John Stanko",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 119 — Undead Minotaur
 pub(in crate::card::sets) static UNDEAD_MINOTAUR: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Undead Minotaur",
     "5e5ae910-ee1d-4958-92d9-0b06872913c6",
     "Karl Kopinski",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Zombie", "Minotaur"], 2, 3),
 );
 
 // M14 120 — Vampire Warlord
 pub(in crate::card::sets) static VAMPIRE_WARLORD: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Vampire Warlord",
     "7e07929b-450c-45b0-85e6-512ad280a122",
     "Wesley Burt",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{4}{B}"), &["Vampire", "Warrior"], 4, 2).with_ability(
         abilities::regenerate_self(
             "Sacrifice another creature: Regenerate this creature.",
@@ -1482,10 +1482,10 @@ const WRING_FLESH_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 123 — Xathrid Necromancer
 pub(in crate::card::sets) static XATHRID_NECROMANCER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Xathrid Necromancer",
     "26494f96-1d97-4435-a116-3ade1becaab4",
     "Maciej Kuciara",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Human", "Wizard"], 2, 2).with_ability(
         AbilityDef::triggered(
             "Whenever this creature or another Human creature you control dies, create a \
@@ -1509,10 +1509,10 @@ pub(in crate::card::sets) static XATHRID_NECROMANCER: CardRecord = CardRecord::n
 // M14 124 — Academy Raider
 // Audit: unsupported — The optional discard cost needs a continuation that draws only when a card was actually discarded.
 pub(in crate::card::sets) static ACADEMY_RAIDER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Academy Raider",
     "6652ed29-ee90-4abc-a6cf-6b18a6cbae86",
     "Karl Kopinski",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1525,10 +1525,10 @@ const ACT_OF_TREASON_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 126 — Awaken the Ancient
 pub(in crate::card::sets) static AWAKEN_THE_ANCIENT: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Awaken the Ancient",
     "e4125304-fd68-4051-96d5-625ffa9b0d3c",
     "Jaime Jones",
-    CardSet::Magic2014,
     CardRules::new_enchantment(mana_cost!("{1}{R}{R}{R}"))
         .with_subtypes(&["Aura"])
         .with_abilities(&[
@@ -1565,10 +1565,10 @@ pub(in crate::card::sets) static AWAKEN_THE_ANCIENT: CardRecord = CardRecord::ne
 
 // M14 127 — Barrage of Expendables
 pub(in crate::card::sets) static BARRAGE_OF_EXPENDABLES: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Barrage of Expendables",
     "b9e0912d-b4b9-497c-bce7-ed80b79bab32",
     "Trevor Claxton",
-    CardSet::Magic2014,
     CardRules::new_enchantment(mana_cost!("{R}")).with_ability(AbilityDef::activated_with_targets(
         "{R}, Sacrifice a creature: This enchantment deals 1 damage to any target.",
         &[
@@ -1590,10 +1590,10 @@ pub(in crate::card::sets) static BARRAGE_OF_EXPENDABLES: CardRecord = CardRecord
 
 // M14 128 — Battle Sliver
 pub(in crate::card::sets) static BATTLE_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Battle Sliver",
     "68490b8c-e9d1-4f5c-9001-750be0e0569f",
     "Slawomir Maniak",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{4}{R}"), &["Sliver"], 3, 3).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control get +2/+0.",
@@ -1617,10 +1617,10 @@ pub(in crate::card::sets) static BATTLE_SLIVER: CardRecord = CardRecord::new(
 
 // M14 129 — Blur Sliver
 pub(in crate::card::sets) static BLUR_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Blur Sliver",
     "63227937-86cc-45e0-9e9e-8c7ab80cbaef",
     "Daarken",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have haste.",
@@ -1641,10 +1641,10 @@ pub(in crate::card::sets) static BLUR_SLIVER: CardRecord = CardRecord::new(
 
 // M14 130 — Burning Earth
 pub(in crate::card::sets) static BURNING_EARTH: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Burning Earth",
     "1df3a7c9-5c8d-438c-a5ad-3c9754c6ea5d",
     "rk post",
-    CardSet::Magic2014,
     CardRules::new_enchantment(mana_cost!("{3}{R}")).with_ability(
         AbilityDef::triggered(
             "Whenever a player taps a nonbasic land for mana, this enchantment deals 1 damage to that player.",
@@ -1672,10 +1672,10 @@ const CANYON_MINOTAUR_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 132 — Chandra, Pyromaster
 // Audit: unsupported — Planeswalker support lacks a turn-long cannot-block effect, top-card exile/play permission, and the ultimate's repeatable spell-copy procedure.
 pub(in crate::card::sets) static CHANDRA_PYROMASTER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Chandra, Pyromaster",
     "bcb4f983-a4b4-46df-830d-ab3d892c93bb",
     "Winona Nelson",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1695,10 +1695,10 @@ const CHANDRA_S_PHOENIX_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 135 — Cyclops Tyrant
 pub(in crate::card::sets) static CYCLOPS_TYRANT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Cyclops Tyrant",
     "f0b8e733-22a7-4696-83b3-297cbe75dadc",
     "Zack Stella",
-    crate::card::CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{5}{R}"), &["Cyclops"], 3, 4).with_abilities(&[
         abilities::intimidate(),
         AbilityDef::static_ability(
@@ -1722,10 +1722,10 @@ const DEMOLISH_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 137 — Dragon Egg
 pub(in crate::card::sets) static DRAGON_EGG: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Dragon Egg",
     "dc2048f7-0c68-4142-9aad-de9b91fe5958",
     "Jack Wang",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Dragon", "Egg"], 0, 2).with_abilities(&[
         abilities::defender(),
         abilities::dies_trigger("When this creature dies, create a 2/2 red Dragon creature token with flying and \"{R}: This token gets +1/+0 until end of turn.\"", EffectDef::create_creature_token(&["Dragon"], &[ManaColor::Red], 2, 2)
@@ -1753,10 +1753,10 @@ const FLAMES_OF_THE_FIREBRAND_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 140 — Fleshpulper Giant
 pub(in crate::card::sets) static FLESHPULPER_GIANT: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Fleshpulper Giant",
     "f2726d3c-c182-4d8a-a723-0de2c5c4b152",
     "Alex Horley-Orlandelli",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{5}{R}{R}"), &["Giant"], 4, 4).with_ability(
         abilities::enters_trigger_with_targets(
             "When this creature enters, you may destroy target creature with toughness 2 or less.",
@@ -1780,10 +1780,10 @@ pub(in crate::card::sets) static FLESHPULPER_GIANT: CardRecord = CardRecord::new
 
 // M14 141 — Goblin Diplomats
 pub(in crate::card::sets) static GOBLIN_DIPLOMATS: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Goblin Diplomats",
     "4620c581-fef7-45e8-ba20-d00903c2f4c5",
     "Izzy",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin"], 2, 1).with_ability(
         AbilityDef::activated(
             "{T}: Each creature attacks this turn if able.",
@@ -1827,19 +1827,19 @@ const LIGHTNING_TALONS_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 145 — Marauding Maulhorn
 // Audit: unsupported — Attack requirements cannot be conditional on controlling a permanent with a different exact name.
 pub(in crate::card::sets) static MARAUDING_MAULHORN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Marauding Maulhorn",
     "b7d5e3dc-f307-4f91-a5ee-e7c5d03d8102",
     "Jesper Ejsing",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 146 — Mindsparker
 pub(in crate::card::sets) static MINDSPARKER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Mindsparker",
     "a94295dc-d078-4f3f-9856-bd0a1899a9ca",
     "Wayne Reynolds",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Elemental"], 3, 2).with_abilities(&[
         abilities::first_strike(),
         AbilityDef::triggered(
@@ -1866,19 +1866,19 @@ pub(in crate::card::sets) static MINDSPARKER: CardRecord = CardRecord::new(
 // M14 147 — Molten Birth
 // Audit: unsupported — There is no coin-flip decision or result-conditioned self-return effect.
 pub(in crate::card::sets) static MOLTEN_BIRTH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Molten Birth",
     "0cd182be-1604-47e1-858f-3c304fd0ee63",
     "Jaime Jones",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 148 — Ogre Battledriver
 pub(in crate::card::sets) static OGRE_BATTLEDRIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Ogre Battledriver",
     "bff2d740-22cc-4719-ac58-28621951e68d",
     "Greg Staples",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Ogre", "Warrior"], 3, 3).with_ability(
         AbilityDef::triggered(
             "Whenever another creature you control enters, that creature gets +2/+0 and gains haste until end of turn.",
@@ -1908,19 +1908,19 @@ const PITCHBURN_DEVILS_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 150 — Regathan Firecat
 pub(in crate::card::sets) static REGATHAN_FIRECAT: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Regathan Firecat",
     "4b4df1dd-886d-4fe7-b3f7-2dca044de41c",
     "Eric Velhagen",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Elemental", "Cat"], 4, 1),
 );
 
 // M14 151 — Scourge of Valkas
 pub(in crate::card::sets) static SCOURGE_OF_VALKAS: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Scourge of Valkas",
     "27ce2b55-45bf-4852-a74a-d0b17c6c9c3f",
     "Lucas Graciano",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{R}{R}{R}"), &["Dragon"], 4, 4).with_abilities(&[
         abilities::flying(),
         AbilityDef::triggered_with_targets(
@@ -1953,10 +1953,10 @@ pub(in crate::card::sets) static SCOURGE_OF_VALKAS: CardRecord = CardRecord::new
 
 // M14 152 — Seismic Stomp
 pub(in crate::card::sets) static SEISMIC_STOMP: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Seismic Stomp",
     "f55a02a3-8b65-44a7-82ef-2d3dc05d00ab",
     "Chase Stone",
-    crate::card::CardSet::Magic2014,
     CardRules::new_sorcery(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell(
         "Creatures without flying can't block this turn.",
         EffectDef::Apply {
@@ -2006,10 +2006,10 @@ const SMELT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 157 — Striking Sliver
 pub(in crate::card::sets) static STRIKING_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Striking Sliver",
     "4ee9254b-3d98-4477-a82e-1450cf3ee96e",
     "Maciej Kuciara",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{R}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have first strike.",
@@ -2030,10 +2030,10 @@ pub(in crate::card::sets) static STRIKING_SLIVER: CardRecord = CardRecord::new(
 
 // M14 158 — Thorncaster Sliver
 pub(in crate::card::sets) static THORNCASTER_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Thorncaster Sliver",
     "3655d837-945f-4ff5-8952-cff5f7b2d18f",
     "Trevor Claxton",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{4}{R}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have \"Whenever this creature attacks, it deals 1 damage to any target.\"",
@@ -2088,10 +2088,10 @@ const WILD_RICOCHET_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 163 — Young Pyromancer
 pub(in crate::card::sets) static YOUNG_PYROMANCER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Young Pyromancer",
     "e349c204-3a93-4bf7-b79a-5f5f261ea2d3",
     "Cynthia Sheppard",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Shaman"], 2, 1).with_ability(
         AbilityDef::triggered(
             "Whenever you cast an instant or sorcery spell, create a 1/1 red Elemental creature token.",
@@ -2109,10 +2109,10 @@ pub(in crate::card::sets) static YOUNG_PYROMANCER: CardRecord = CardRecord::new(
 
 // M14 164 — Advocate of the Beast
 pub(in crate::card::sets) static ADVOCATE_OF_THE_BEAST: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Advocate of the Beast",
     "b1320400-5aa8-48d6-be84-197b4559456f",
     "Jesper Ejsing",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{G}"), &["Elf", "Shaman"], 2, 3).with_ability(
         AbilityDef::triggered_with_targets(
             "At the beginning of your end step, put a +1/+1 counter on target Beast creature you control.",
@@ -2164,20 +2164,20 @@ const DEADLY_RECLUSE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 169 — Elvish Mystic
 pub(in crate::card::sets) static ELVISH_MYSTIC: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Elvish Mystic",
     "60d0e6a6-629a-45a7-bfcb-25ba7156788b",
     "Wesley Burt",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Druid"], 1, 1)
         .with_abilities(&[abilities::tap_for(ManaColor::Green)]),
 );
 
 // M14 170 — Enlarge
 pub(in crate::card::sets) static ENLARGE: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Enlarge",
     "b46cd181-59d8-4d4c-a8b6-e6b38704009c",
     "Michael Komarck",
-    CardSet::Magic2014,
     CardRules::new_sorcery(mana_cost!("{3}{G}{G}")).with_ability(AbilityDef::spell_with_targets(
         "Target creature gets +7/+7 and gains trample until end of turn. It must be blocked this \
          turn if able.",
@@ -2213,10 +2213,10 @@ const FOG_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 172 — Garruk, Caller of Beasts
 // Audit: unsupported — The planeswalker modes need filtered multi-card top selection, a hand-to-battlefield choice, and an emblem carrying an optional creature tutor trigger.
 pub(in crate::card::sets) static GARRUK_CALLER_OF_BEASTS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Garruk, Caller of Beasts",
     "a96d0c67-e9f4-46d9-bd74-13a8606fdfe3",
     "Karl Kopinski",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2250,10 +2250,10 @@ const GLADECOVER_SCOUT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 177 — Groundshaker Sliver
 pub(in crate::card::sets) static GROUNDSHAKER_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Groundshaker Sliver",
     "712f0ce4-9189-4c75-9c2b-d370bce89052",
     "Chase Stone",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{6}{G}"), &["Sliver"], 5, 5).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have trample.",
@@ -2282,10 +2282,10 @@ const HOWL_OF_THE_NIGHT_PACK_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 179 — Hunt the Weak
 // Audit: unsupported — DealDamage can only attribute damage to the resolving spell, not to each fighting creature.
 pub(in crate::card::sets) static HUNT_THE_WEAK: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Hunt the Weak",
     "8f7a6df7-acfc-4047-b119-505f4277225c",
     "Raoul Vitale",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2294,10 +2294,10 @@ pub(in crate::card::sets) static HUNT_THE_WEAK: CardRecord = CardRecord::new(
 /// taken remains on top, so a nonland card is still the next draw.
 const WILDS_LAND: Binding = Binding!("wilds_land");
 pub(in crate::card::sets) static INTO_THE_WILDS: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Into the Wilds",
     "ecfa6c8d-b5b5-4b68-9ad4-c9d8169659d6",
     "Véronique Meignaud",
-    CardSet::Magic2014,
     // A free land every upkeep the top card cooperates, and the land it puts
     // down does not spend the turn's land drop.
     CardRules::new_enchantment(mana_cost!("{3}{G}")).with_ability(AbilityDef::triggered(
@@ -2340,19 +2340,19 @@ pub(in crate::card::sets) static INTO_THE_WILDS: CardRecord = CardRecord::new(
 // M14 181 — Kalonian Hydra
 // Audit: unsupported — Counter effects cannot double each creature's existing +1/+1 counter count.
 pub(in crate::card::sets) static KALONIAN_HYDRA: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Kalonian Hydra",
     "438bd3c1-98f2-4fcc-8521-995c6c5c1a79",
     "Chris Rahn",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 182 — Kalonian Tusker
 pub(in crate::card::sets) static KALONIAN_TUSKER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Kalonian Tusker",
     "135946fc-fe67-401f-821d-d7145c63f030",
     "Svetlin Velinov",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{G}{G}"), &["Beast"], 3, 3),
 );
 
@@ -2365,10 +2365,10 @@ const LAY_OF_THE_LAND_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 184 — Manaweft Sliver
 pub(in crate::card::sets) static MANAWEFT_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Manaweft Sliver",
     "fe45433b-e124-44d7-9463-dada39310148",
     "Trevor Claxton",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control have \"{T}: Add one mana of any color.\"",
@@ -2393,10 +2393,10 @@ pub(in crate::card::sets) static MANAWEFT_SLIVER: CardRecord = CardRecord::new(
 
 // M14 185 — Megantic Sliver
 pub(in crate::card::sets) static MEGANTIC_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Megantic Sliver",
     "7745f6a9-400c-4200-9732-86c54247de46",
     "Ryan Barger",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{5}{G}"), &["Sliver"], 3, 3).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control get +3/+3.",
@@ -2427,10 +2427,10 @@ const NATURALIZE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 187 — Oath of the Ancient Wood
 pub(in crate::card::sets) static OATH_OF_THE_ANCIENT_WOOD: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Oath of the Ancient Wood",
     "9bc42032-8727-4f78-b369-ba103d965b73",
     "Dan Murayama Scott",
-    CardSet::Magic2014,
     CardRules::new_enchantment(mana_cost!("{2}{G}")).with_ability(
         AbilityDef::triggered_with_targets(
             "Whenever this enchantment or another enchantment you control enters, you may put a +1/+1 counter on target creature.",
@@ -2462,10 +2462,10 @@ const PLUMMET_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 189 — Predatory Sliver
 pub(in crate::card::sets) static PREDATORY_SLIVER: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Predatory Sliver",
     "a2e37de8-66a1-4afa-aa6f-1151f849dfa8",
     "Mathias Kollros",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "Sliver creatures you control get +1/+1.",
@@ -2489,10 +2489,10 @@ pub(in crate::card::sets) static PREDATORY_SLIVER: CardRecord = CardRecord::new(
 
 // M14 190 — Primeval Bounty
 pub(in crate::card::sets) static PRIMEVAL_BOUNTY: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Primeval Bounty",
     "e750d55d-d5e8-4abe-99cf-f6b8ba86cf16",
     "Christine Choi",
-    CardSet::Magic2014,
     CardRules::new_enchantment(mana_cost!("{5}{G}")).with_abilities(&[
         AbilityDef::triggered(
             "Whenever you cast a creature spell, create a 3/3 green Beast creature token.",
@@ -2545,20 +2545,20 @@ const ROOTWALLA_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 193 — Rumbling Baloth
 pub(in crate::card::sets) static RUMBLING_BALOTH: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Rumbling Baloth",
     "d8610ff1-064b-4c75-a8df-d3b076370d1e",
     "Jesper Ejsing",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Beast"], 4, 4),
 );
 
 // M14 194 — Savage Summoning
 // Audit: unsupported — No continuation can tag the next creature spell with flash, uncounterability, and an entry counter while also making this spell uncounterable.
 pub(in crate::card::sets) static SAVAGE_SUMMONING: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Savage Summoning",
     "b5346ed7-2e17-4d8c-9c4b-b5efdd26380d",
     "Johann Bodin",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2571,10 +2571,10 @@ const SCAVENGING_OOZE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 196 — Sporemound
 pub(in crate::card::sets) static SPOREMOUND: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Sporemound",
     "2d256cd0-6fe9-4905-9886-fb1457292db5",
     "Svetlin Velinov",
-    CardSet::Magic2014,
     CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Fungus"], 3, 3).with_ability(
         AbilityDef::triggered(
             "Landfall — Whenever a land you control enters, create a 1/1 green Saproling creature token.",
@@ -2597,10 +2597,10 @@ const TROLLHIDE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 198 — Vastwood Hydra
 // Audit: unsupported — Entry replacements cannot add chosen-X counters, and counter distribution cannot read the dead source's last-known counter count.
 pub(in crate::card::sets) static VASTWOOD_HYDRA: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Vastwood Hydra",
     "9e635174-7f7d-4c04-a6aa-8674da6863ff",
     "Slawomir Maniak",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2614,10 +2614,10 @@ const VERDANT_HAVEN_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 200 — Voracious Wurm
 // Audit: unsupported — Entry replacements cannot derive a counter amount from life gained during the turn.
 pub(in crate::card::sets) static VORACIOUS_WURM: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Voracious Wurm",
     "da15100b-2934-438c-9917-84ad8bdc4181",
     "Igor Kieryluk",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2631,19 +2631,19 @@ const WINDSTORM_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 202 — Witchstalker
 // Audit: unsupported — A non-intervening spell-cast trigger cannot capture “during your turn” without incorrectly rechecking that restriction on resolution.
 pub(in crate::card::sets) static WITCHSTALKER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Witchstalker",
     "5a5ce47d-ea4f-4e15-adb6-5bb66981ed24",
     "Christopher Moeller",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 203 — Woodborn Behemoth
 pub(in crate::card::sets) static WOODBORN_BEHEMOTH: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Woodborn Behemoth",
     "8c73dbf3-e68e-4f21-b6ca-94302bf5574c",
     "Matt Stewart",
-    CardSet::Magic2014,
     // Both halves are behind the same threshold, so losing the eighth land
     // takes the trample away with the size.
     CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Elemental"], 4, 4).with_ability(
@@ -2685,10 +2685,10 @@ const ACCORDERS_SHIELD_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 205 — Bubbling Cauldron
 // Audit: unsupported — Costs cannot select an exact named sacrifice, and effects cannot total life actually lost by all opponents for the linked gain.
 pub(in crate::card::sets) static BUBBLING_CAULDRON: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Bubbling Cauldron",
     "9af87c24-a534-462b-968b-dccf6ac63299",
     "Eric Deschamps",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2730,19 +2730,19 @@ const FIRESHRIEKER_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 211 — Guardian of the Ages
 // Audit: unsupported — Attack events cannot match attacks at you or your planeswalker, and abilities cannot permanently remove defender from the source after that trigger.
 pub(in crate::card::sets) static GUARDIAN_OF_THE_AGES: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Guardian of the Ages",
     "c825c138-97de-44b9-8aec-70608ae035b6",
     "Ryan Pancoast",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
 // M14 212 — Haunted Plate Mail
 pub(in crate::card::sets) static HAUNTED_PLATE_MAIL: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Haunted Plate Mail",
     "e2dc1e07-7894-4f22-936d-bf5df3f8d5a5",
     "Izzy",
-    CardSet::Magic2014,
     CardRules::new_artifact(mana_cost!("{4}"))
         .with_subtypes(&["Equipment"])
         .with_abilities(&[
@@ -2798,10 +2798,10 @@ const MILLSTONE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 214 — Pyromancer's Gauntlet
 // Audit: unsupported — Damage replacement cannot filter red instant, sorcery, or planeswalker sources and add a fixed amount to the event.
 pub(in crate::card::sets) static PYROMANCER_S_GAUNTLET: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Pyromancer's Gauntlet",
     "9bde6763-2102-4adb-8048-fc9fe921205b",
     "Christine Choi",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2815,10 +2815,10 @@ const RATCHET_BOMB_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M14 216 — Ring of Three Wishes
 // Audit: unsupported — CounterKind has no wish counter, so the entry counters and removal cost cannot share the printed counter identity.
 pub(in crate::card::sets) static RING_OF_THREE_WISHES: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Ring of Three Wishes",
     "219ab03a-2b3b-4eef-8a42-2cbe793d2f33",
     "Mark Winters",
-    crate::card::CardSet::Magic2014,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2831,19 +2831,19 @@ const ROD_OF_RUIN_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 218 — Sliver Construct
 pub(in crate::card::sets) static SLIVER_CONSTRUCT: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Sliver Construct",
     "3129645a-221c-4eb5-88fd-12cc742a1dfe",
     "Mathias Kollros",
-    CardSet::Magic2014,
     CardRules::new_artifact_creature(mana_cost!("{3}"), &["Sliver", "Construct"], 2, 2),
 );
 
 // M14 219 — Staff of the Death Magus
 pub(in crate::card::sets) static STAFF_OF_THE_DEATH_MAGUS: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Staff of the Death Magus",
     "624fe171-8bd8-4156-b40e-74e2a847d380",
     "Daniel Ljunggren",
-    CardSet::Magic2014,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::triggered(
             "Whenever you cast a black spell, you gain 1 life.",
@@ -2877,10 +2877,10 @@ pub(in crate::card::sets) static STAFF_OF_THE_DEATH_MAGUS: CardRecord = CardReco
 
 // M14 220 — Staff of the Flame Magus
 pub(in crate::card::sets) static STAFF_OF_THE_FLAME_MAGUS: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Staff of the Flame Magus",
     "6d6befbd-4fe3-4338-b8ea-13b8b70a7664",
     "Daniel Ljunggren",
-    CardSet::Magic2014,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::triggered(
             "Whenever you cast a red spell, you gain 1 life.",
@@ -2914,10 +2914,10 @@ pub(in crate::card::sets) static STAFF_OF_THE_FLAME_MAGUS: CardRecord = CardReco
 
 // M14 221 — Staff of the Mind Magus
 pub(in crate::card::sets) static STAFF_OF_THE_MIND_MAGUS: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Staff of the Mind Magus",
     "f86bf36b-b83f-4451-8cdc-2a4ccffb93c7",
     "Daniel Ljunggren",
-    CardSet::Magic2014,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::triggered(
             "Whenever you cast a blue spell, you gain 1 life.",
@@ -2951,10 +2951,10 @@ pub(in crate::card::sets) static STAFF_OF_THE_MIND_MAGUS: CardRecord = CardRecor
 
 // M14 222 — Staff of the Sun Magus
 pub(in crate::card::sets) static STAFF_OF_THE_SUN_MAGUS: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Staff of the Sun Magus",
     "90a1f830-d19a-4ebf-9573-09b677693dd6",
     "Daniel Ljunggren",
-    CardSet::Magic2014,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::triggered(
             "Whenever you cast a white spell, you gain 1 life.",
@@ -2988,10 +2988,10 @@ pub(in crate::card::sets) static STAFF_OF_THE_SUN_MAGUS: CardRecord = CardRecord
 
 // M14 223 — Staff of the Wild Magus
 pub(in crate::card::sets) static STAFF_OF_THE_WILD_MAGUS: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Staff of the Wild Magus",
     "d207f03d-4c7b-444f-bf95-e63f7004d525",
     "Daniel Ljunggren",
-    CardSet::Magic2014,
     CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
         AbilityDef::triggered(
             "Whenever you cast a green spell, you gain 1 life.",
@@ -3025,10 +3025,10 @@ pub(in crate::card::sets) static STAFF_OF_THE_WILD_MAGUS: CardRecord = CardRecor
 
 // M14 224 — Strionic Resonator
 pub(in crate::card::sets) static STRIONIC_RESONATOR: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2014,
     "Strionic Resonator",
     "94d1fc0f-5c8b-4e47-aaf8-8888c025f70f",
     "Noah Bradley",
-    crate::card::CardSet::Magic2014,
     CardRules::new_artifact(mana_cost!("{2}")).with_ability(
         AbilityDef::activated_with_targets(
             "{2}, {T}: Copy target triggered ability you control. You may choose new targets for the copy. (A triggered ability uses the words \"when,\" \"whenever,\" or \"at.\")",
@@ -3064,10 +3064,10 @@ const TRADING_POST_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M14 226 — Vial of Poison
 pub(in crate::card::sets) static VIAL_OF_POISON: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Vial of Poison",
     "7769159b-5a6a-45e5-b69b-8db2a6ef5418",
     "Franz Vohwinkel",
-    CardSet::Magic2014,
     CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated_with_targets(
         "{1}, Sacrifice this artifact: Target creature gains deathtouch until end of turn.",
         &[
@@ -3087,10 +3087,10 @@ pub(in crate::card::sets) static VIAL_OF_POISON: CardRecord = CardRecord::new(
 
 // M14 227 — Encroaching Wastes
 pub(in crate::card::sets) static ENCROACHING_WASTES: CardRecord = CardRecord::new(
+    CardSet::Magic2014,
     "Encroaching Wastes",
     "1ad5a84b-ae9b-4ed1-a4de-b91bbf8ed0a5",
     "Noah Bradley",
-    CardSet::Magic2014,
     CardRules::new_land(&[]).with_abilities(&[
         abilities::tap_for(ManaColor::Colorless),
         AbilityDef::activated_with_targets(

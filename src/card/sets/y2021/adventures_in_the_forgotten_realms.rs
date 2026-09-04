@@ -10,10 +10,10 @@ use crate::{TargetIndex, mana_cost};
 
 // AFR 33 — Portable Hole
 pub(in crate::card::sets) static PORTABLE_HOLE: CardRecord = CardRecord::new(
+    CardSet::AdventuresInTheForgottenRealms,
     "Portable Hole",
     "80fca8c0-ae3e-439e-b202-228b9f360e9a",
     "John Stanko",
-    CardSet::AdventuresInTheForgottenRealms,
     // One white mana answers most of what a fast deck opens on, and it
     // answers it at instant speed on the other player's turn only because
     // somebody flashed it in -- otherwise the Hole is simply the cheapest
@@ -43,30 +43,30 @@ pub(in crate::card::sets) static PORTABLE_HOLE: CardRecord = CardRecord::new(
 // AFR 42 — You Hear Something on Watch
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static YOU_HEAR_SOMETHING_ON_WATCH: CardRecord = CardRecord::new(
+    crate::card::CardSet::AdventuresInTheForgottenRealms,
     "You Hear Something on Watch",
     "76e939ab-9d0c-4685-805c-c8bc4e6af163",
     "Zezhou Chen",
-    crate::card::CardSet::AdventuresInTheForgottenRealms,
     crate::card::CardRules::unsupported(),
 );
 
 // AFR 198 — Owlbear
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static OWLBEAR: CardRecord = CardRecord::new(
+    crate::card::CardSet::AdventuresInTheForgottenRealms,
     "Owlbear",
     "30e8a00f-8131-470d-8072-4c23b812281a",
     "Ilse Gort",
-    crate::card::CardSet::AdventuresInTheForgottenRealms,
     crate::card::CardRules::unsupported(),
 );
 
 // AFR 215 — You Meet in a Tavern
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static YOU_MEET_IN_A_TAVERN: CardRecord = CardRecord::new(
+    crate::card::CardSet::AdventuresInTheForgottenRealms,
     "You Meet in a Tavern",
     "593aa59a-4025-4df8-9f27-188fc7712fde",
     "Zoltan Boros",
-    crate::card::CardSet::AdventuresInTheForgottenRealms,
     crate::card::CardRules::unsupported(),
 );
 

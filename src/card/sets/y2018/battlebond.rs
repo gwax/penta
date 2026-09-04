@@ -9,10 +9,10 @@ use crate::mana_cost;
 
 // BBD 41 — Spellseeker
 pub(in crate::card::sets) static SPELLSEEKER: CardRecord = CardRecord::new(
+    CardSet::Battlebond,
     "Spellseeker",
     "74b4c336-5d4c-4bc5-b82a-35084a6ad808",
     "Igor Kieryluk",
-    CardSet::Battlebond,
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Human", "Wizard"], 1, 1).with_ability(
         abilities::enters_trigger("When this creature enters, you may search your library for an instant or sorcery card with mana value 2 or less, reveal it, put it into your hand, then shuffle.", EffectDef::May {
                 player: EffectRecipientDef::Controller,
@@ -46,10 +46,10 @@ pub(in crate::card::sets) static SPELLSEEKER: CardRecord = CardRecord::new(
 // BBD 71 — Grothama, All-Devouring
 // Audit: unsupported — Needs per-recipient damage history grouped by each source's controller.
 pub(in crate::card::sets) static GROTHAMA_ALL_DEVOURING: CardRecord = CardRecord::new(
+    CardSet::Battlebond,
     "Grothama, All-Devouring",
     "ab8935b1-ec87-4330-9952-9ef8cd344531",
     "Mark Behm",
-    CardSet::Battlebond,
     CardRules::unsupported(),
 );
 

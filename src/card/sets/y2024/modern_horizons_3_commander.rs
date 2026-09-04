@@ -17,10 +17,10 @@ use super::super::y2020::theros_beyond_death::escape;
 // M3C 4 — Ulalek, Fused Atrocity
 // Audit: unsupported — Needs grouped copying of every controlled spell and nonmana stack ability with independent target reselection.
 pub(in crate::card::sets) static ULALEK_FUSED_ATROCITY: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons3Commander,
     "Ulalek, Fused Atrocity",
     "fdad1b0e-d3cc-4d76-ae7e-fee12558cf2c",
     "Alex Konstad",
-    CardSet::ModernHorizons3Commander,
     CardRules::unsupported(),
 );
 
@@ -35,10 +35,10 @@ static GOYF_TOUGHNESS_IN_ALL_GRAVEYARDS: SumValueDef = SumValueDef::new(
 /// Where the chosen card is saved, kept apart from the milled pile so that
 /// "them" and "the one you took" are two different sets.
 pub(in crate::card::sets) static BARROWGOYF: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons3Commander,
     "Barrowgoyf",
     "f979fc86-2c7e-49b3-965e-607a203cbfb1",
     "Igor Kieryluk",
-    CardSet::ModernHorizons3Commander,
     // Deathtouch and lifelink on a body that grows with every graveyard,
     // and every hit digs for the next one.
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Lhurgoyf"], 0, 1).with_abilities(&[
@@ -101,10 +101,10 @@ pub(in crate::card::sets) static BARROWGOYF: CardRecord = CardRecord::new(
 
 // M3C 59 — Pyrogoyf
 pub(in crate::card::sets) static PYROGOYF: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons3Commander,
     "Pyrogoyf",
     "f60be310-4461-4b84-95f0-b2095108bd79",
     "Xabi Gaztelua",
-    CardSet::ModernHorizons3Commander,
     // The printed 0/1 is only what the corner says; the ability below is
     // what it is, wherever it is.
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Lhurgoyf"], 0, 1)
@@ -147,10 +147,10 @@ pub(in crate::card::sets) static PYROGOYF: CardRecord = CardRecord::new(
 
 // M3C 70 — Bloodbraid Challenger
 pub(in crate::card::sets) static BLOODBRAID_CHALLENGER: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons3Commander,
     "Bloodbraid Challenger",
     "4b39d43d-2a02-4edb-915a-6a7c002c945f",
     "Lie Setiawan",
-    CardSet::ModernHorizons3Commander,
     // Five mana for a hasty 4/3 and a free spell, and the graveyard keeps
     // handing it back for five more.
     CardRules::new_creature(mana_cost!("{3}{R}{G}"), &["Elf", "Berserker"], 4, 3).with_abilities(
@@ -167,10 +167,10 @@ pub(in crate::card::sets) static BLOODBRAID_CHALLENGER: CardRecord = CardRecord:
 
 // M3C 134 — Talon Gates of Madara
 pub(in crate::card::sets) static TALON_GATES_OF_MADARA: CardRecord = CardRecord::new(
+    CardSet::ModernHorizons3Commander,
     "Talon Gates of Madara",
     "c565f8fe-acf7-40dd-8100-8f692d1e232c",
     "Steven Belledin",
-    CardSet::ModernHorizons3Commander,
     // A land that answers a creature on the way in, and four mana that puts
     // it there on a turn the land drop is already spent.
     CardRules::new_land(&["Gate"]).with_abilities(&[

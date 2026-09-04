@@ -10,10 +10,10 @@ use crate::{TargetIndex, mana_cost};
 
 // LCC 86 — Broadside Bombardiers
 pub(in crate::card::sets) static BROADSIDE_BOMBARDIERS: CardRecord = CardRecord::new(
+    CardSet::LostCavernsOfIxalanCommander,
     "Broadside Bombardiers",
     "9721f8da-39ed-4ada-a571-61e08a86032b",
     "Tomek Larek",
-    CardSet::LostCavernsOfIxalanCommander,
     // A hasty attacker that turns whatever else is lying around into reach.
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Pirate"], 2, 2).with_abilities(&[
         abilities::menace(),

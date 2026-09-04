@@ -10,10 +10,10 @@ use crate::mana_cost;
 
 // PDRC 1 — Nalathni Dragon
 pub(in crate::card::sets) static NALATHNI_DRAGON: CardRecord = CardRecord::new(
+    CardSet::DragonCon,
     "Nalathni Dragon",
     "7f9c6be5-ec44-4c66-aad6-cf9eca765b6b",
     "Michael Whelan",
-    CardSet::DragonCon,
     CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Dragon"], 1, 1).with_abilities(&[
         abilities::flying(),
         abilities::banding(),

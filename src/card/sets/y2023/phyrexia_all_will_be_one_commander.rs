@@ -11,10 +11,10 @@ use crate::mana_cost;
 
 // ONC 6 — Glimmer Lens
 pub(in crate::card::sets) static GLIMMER_LENS: CardRecord = CardRecord::new(
+    CardSet::PhyrexiaAllWillBeOneCommander,
     "Glimmer Lens",
     "c9262000-e6f3-4da1-ad1c-038f65d3bef6",
     "Sidharth Chaturvedi",
-    CardSet::PhyrexiaAllWillBeOneCommander,
     CardRules::new_artifact(mana_cost!("{1}{W}"))
         .with_subtypes(&["Equipment"])
         .with_abilities(&[
@@ -43,10 +43,10 @@ pub(in crate::card::sets) static GLIMMER_LENS: CardRecord = CardRecord::new(
 
 // ONC 39 — Otharri, Suns' Glory
 pub(in crate::card::sets) static OTHARRI_SUNS_GLORY: CardRecord = CardRecord::new(
+    CardSet::PhyrexiaAllWillBeOneCommander,
     "Otharri, Suns' Glory",
     "348e0927-1d8f-4723-879d-f7e95ac60c27",
     "Marta Nael",
-    CardSet::PhyrexiaAllWillBeOneCommander,
     // Five mana for a hasty lifelinking flier that pays out more every time
     // it connects, and buys itself back out of the graveyard with what it
     // left behind.
@@ -108,10 +108,10 @@ pub(in crate::card::sets) static OTHARRI_SUNS_GLORY: CardRecord = CardRecord::ne
 
 // ONC 48 — Staff of the Storyteller
 pub(in crate::card::sets) static STAFF_OF_THE_STORYTELLER: CardRecord = CardRecord::new(
+    CardSet::PhyrexiaAllWillBeOneCommander,
     "Staff of the Storyteller",
     "17be11f2-f2db-40c4-8fc1-2ed7173f9a1a",
     "Dan Murayama Scott",
-    CardSet::PhyrexiaAllWillBeOneCommander,
     // Two mana for a flier, and a card for every turn the deck keeps making
     // tokens afterwards.
     CardRules::new_artifact(mana_cost!("{1}{W}")).with_abilities(&[

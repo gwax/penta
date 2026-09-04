@@ -7,10 +7,10 @@ use crate::mana_cost;
 
 // PTK 78 — Imperial Seal
 pub(in crate::card::sets) static IMPERIAL_SEAL: CardRecord = CardRecord::new(
+    CardSet::PortalThreeKingdoms,
     "Imperial Seal",
     "822e30db-40c5-4099-868b-185ad9b7c7dc",
     "Li Tie",
-    CardSet::PortalThreeKingdoms,
     // Vampiric Tutor's clause at sorcery speed, which is the whole of the
     // difference: the card you want is on top of your library, and you wait
     // a turn to draw it.

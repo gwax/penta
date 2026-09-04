@@ -16,10 +16,10 @@ use crate::{TargetIndex, mana_cost};
 
 // WAR 54 — Jace, Wielder of Mysteries
 pub(in crate::card::sets) static JACE_WIELDER_OF_MYSTERIES: CardRecord = CardRecord::new(
+    CardSet::WarOfTheSpark,
     "Jace, Wielder of Mysteries",
     "6adb7d73-4482-4930-8497-cffd169b57e2",
     "Anna Steinbauer",
-    CardSet::WarOfTheSpark,
     CardRules::new_planeswalker(mana_cost!("{1}{U}{U}{U}"), &["Jace"], 4)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
@@ -72,10 +72,10 @@ pub(in crate::card::sets) static JACE_WIELDER_OF_MYSTERIES: CardRecord = CardRec
 
 // WAR 61 — Narset, Parter of Veils
 pub(in crate::card::sets) static NARSET_PARTER_OF_VEILS: CardRecord = CardRecord::new(
+    CardSet::WarOfTheSpark,
     "Narset, Parter of Veils",
     "8c39f9b4-02b9-4d44-b8d6-4fd02ebbb0c5",
     "Magali Villeneuve",
-    CardSet::WarOfTheSpark,
     // Three mana that finds the spell the deck is built around and turns
     // every draw spell the other player has into one card.
     CardRules::new_planeswalker(mana_cost!("{1}{U}{U}"), &["Narset"], 5)
@@ -111,10 +111,10 @@ pub(in crate::card::sets) static NARSET_PARTER_OF_VEILS: CardRecord = CardRecord
 
 // WAR 79 — Bolas's Citadel
 pub(in crate::card::sets) static BOLASS_CITADEL: CardRecord = CardRecord::new(
+    CardSet::WarOfTheSpark,
     "Bolas's Citadel",
     "d2124603-d20e-40eb-97f0-a66323397ac2",
     "Jonas De Ro",
-    CardSet::WarOfTheSpark,
     // Six mana to turn a library into a hand and a life total into mana.
     // The ten-permanent ability is the finish, not the plan.
     CardRules::new_artifact(mana_cost!("{3}{B}{B}{B}"))
@@ -160,10 +160,10 @@ pub(in crate::card::sets) static BOLASS_CITADEL: CardRecord = CardRecord::new(
 
 // WAR 115 — Bolt Bend
 pub(in crate::card::sets) static BOLT_BEND: CardRecord = CardRecord::new(
+    CardSet::WarOfTheSpark,
     "Bolt Bend",
     "39b35408-3728-4e1b-9f58-b0775df914d6",
     "Svetlin Velinov",
-    CardSet::WarOfTheSpark,
     CardRules::new_instant(mana_cost!("{3}{R}")).with_abilities(&[
         AbilityDef::static_ability(
             "This spell costs {3} less to cast if you control a creature with power 4 or greater.",
@@ -210,10 +210,10 @@ pub(in crate::card::sets) static BOLT_BEND: CardRecord = CardRecord::new(
 
 // WAR 125 — Dreadhorde Arcanist
 pub(in crate::card::sets) static DREADHORDE_ARCANIST: CardRecord = CardRecord::new(
+    CardSet::WarOfTheSpark,
     "Dreadhorde Arcanist",
     "fd97b3cf-924e-4f77-bb82-0bf19592389f",
     "G-host Lee",
-    CardSet::WarOfTheSpark,
     // A 1/3 that only buys back one-mana spells until something makes it
     // bigger, which in the cube is most of what the deck is doing anyway.
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Zombie", "Wizard"], 1, 3)
@@ -259,20 +259,20 @@ pub(in crate::card::sets) static DREADHORDE_ARCANIST: CardRecord = CardRecord::n
 // WAR 130 — Grim Initiate
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRIM_INITIATE: CardRecord = CardRecord::new(
+    crate::card::CardSet::WarOfTheSpark,
     "Grim Initiate",
     "29b6ec9d-3861-48bf-a198-dc7efba5d89c",
     "Jason Felix",
-    crate::card::CardSet::WarOfTheSpark,
     crate::card::CardRules::unsupported(),
 );
 
 // WAR 169 — Nissa, Who Shakes the World
 pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD: CardRecord =
     CardRecord::new(
+        CardSet::WarOfTheSpark,
     "Nissa, Who Shakes the World",
     "f857bbe4-5619-4733-a0c7-69700f2ef4f3",
     "Chris Rallis",
-        CardSet::WarOfTheSpark,
         // Doubling every Forest is the card: five mana becomes eight the turn
         // after, and the +1 turns the spare land into a 3/3 that attacks at once.
         CardRules::new_planeswalker(mana_cost!("{3}{G}{G}"), &["Nissa"], 5)
@@ -376,10 +376,10 @@ pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD: CardRecord =
 // WAR 220 — Tamiyo, Collector of Tales
 pub(in crate::card::sets) static TAMIYO_COLLECTOR_OF_TALES: CardRecord =
     CardRecord::new(
+        CardSet::WarOfTheSpark,
     "Tamiyo, Collector of Tales",
     "76776b24-a2e1-4590-88e7-8a421baf2fc4",
     "Chase Stone",
-        CardSet::WarOfTheSpark,
         // The static is what the card is played for: it turns off every
         // discard-based and sacrifice-based answer an opponent has, and the
         // loyalty abilities are what it does while doing that.
@@ -437,10 +437,10 @@ pub(in crate::card::sets) static TAMIYO_COLLECTOR_OF_TALES: CardRecord =
 
 // WAR 221 — Teferi, Time Raveler
 pub(in crate::card::sets) static TEFERI_TIME_RAVELER: CardRecord = CardRecord::new(
+    CardSet::WarOfTheSpark,
     "Teferi, Time Raveler",
     "5cb76266-ae50-4bbc-8f96-d98f309b02d3",
     "Chris Rallis",
-    CardSet::WarOfTheSpark,
     // Three mana that takes the other player's instant speed away and hands
     // it to you, with a bounce-and-draw underneath it.
     CardRules::new_planeswalker(mana_cost!("{1}{W}{U}"), &["Teferi"], 4)
@@ -514,20 +514,20 @@ pub(in crate::card::sets) static TEFERI_TIME_RAVELER: CardRecord = CardRecord::n
 // WAR 222 — Tenth District Legionnaire
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TENTH_DISTRICT_LEGIONNAIRE: CardRecord = CardRecord::new(
+    crate::card::CardSet::WarOfTheSpark,
     "Tenth District Legionnaire",
     "44f3090b-917b-4122-b522-27c30dca8e69",
     "Victor Adame Minguez",
-    crate::card::CardSet::WarOfTheSpark,
     crate::card::CardRules::unsupported(),
 );
 
 // WAR 234 — Saheeli, Sublime Artificer
 pub(in crate::card::sets) static SAHEELI_SUBLIME_ARTIFICER: CardRecord =
     CardRecord::new(
+        CardSet::WarOfTheSpark,
     "Saheeli, Sublime Artificer",
     "5a10b543-d5d4-42a8-9ee8-dada59a2ad7e",
     "Wesley Burt",
-        CardSet::WarOfTheSpark,
         // A planeswalker that never has to be activated: three mana, five
         // loyalty, and a body for every spell the deck was casting anyway.
         CardRules::new_planeswalker(mana_cost!("{1}{U/R}{U/R}"), &["Saheeli"], 5)

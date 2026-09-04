@@ -29,30 +29,30 @@ use crate::mana_cost;
 // M12 1 — Aegis Angel
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AEGIS_ANGEL: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Aegis Angel",
     "4cdc19da-21af-45e7-ad1f-fcacd84a8d89",
     "Aleksi Briclot",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 2 — Alabaster Mage
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ALABASTER_MAGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Alabaster Mage",
     "f82e6a81-6a45-45f9-829d-332859a32257",
     "Izzy",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 3 — Angelic Destiny
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANGELIC_DESTINY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Angelic Destiny",
     "a0cd7438-fde2-4e26-9c34-52c476a971e9",
     "Jana Schirmer & Johannes Voss",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -66,10 +66,10 @@ const ANGELS_MERCY_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 5 — Arbalest Elite
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARBALEST_ELITE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Arbalest Elite",
     "094c839e-0aea-4754-af37-edf6292623e1",
     "Chris Rahn",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -82,10 +82,10 @@ const ARCHON_OF_JUSTICE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 7 — Armored Warhorse
 pub(in crate::card::sets) static ARMORED_WARHORSE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Armored Warhorse",
     "52daf505-d436-4ea6-a157-4268af2ff7a8",
     "rk post",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{W}{W}"), &["Horse"], 2, 3),
 );
 
@@ -105,10 +105,10 @@ const AURAMANCER_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 10 — Benalish Veteran
 pub(in crate::card::sets) static BENALISH_VETERAN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Benalish Veteran",
     "09a5603a-88c8-4b0c-b091-6d97e873859a",
     "Steven Belledin",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Soldier"], 2, 2).with_ability(
         AbilityDef::triggered(
             "Whenever this creature attacks, it gets +1/+1 until end of turn.",
@@ -148,10 +148,10 @@ const DEMYSTIFY_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 14 — Divine Favor
 pub(in crate::card::sets) static DIVINE_FAVOR: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Divine Favor",
     "1f44e053-95c2-410f-b35d-8ea3e3607e82",
     "Allen Williams",
-    CardSet::Magic2012,
     CardRules::new_enchantment(mana_cost!("{1}{W}"))
         .with_subtypes(&["Aura"])
         .with_abilities(&[
@@ -201,19 +201,19 @@ const GIDEON_JURA_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 17 — Gideon's Avenger
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GIDEON_S_AVENGER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Gideon's Avenger",
     "bb0a0d33-8862-433b-a078-82472e5f9af0",
     "Randy Gallegos",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 18 — Gideon's Lawkeeper
 pub(in crate::card::sets) static GIDEON_S_LAWKEEPER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Gideon's Lawkeeper",
     "1c71eb81-a077-4c85-a4ce-4ad664486bee",
     "Steve Prescott",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
             "{W}, {T}: Tap target creature.",
@@ -234,20 +234,20 @@ pub(in crate::card::sets) static GIDEON_S_LAWKEEPER: CardRecord = CardRecord::ne
 // M12 19 — Grand Abolisher
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRAND_ABOLISHER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Grand Abolisher",
     "67e35a40-37dd-436c-b4ac-b17b04508c1f",
     "Eric Deschamps",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 20 — Griffin Rider
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GRIFFIN_RIDER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Griffin Rider",
     "3f1a5517-e442-4fbc-b8c3-fea28e5e44d2",
     "Steve Prescott",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -260,10 +260,10 @@ const GRIFFIN_SENTINEL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 22 — Guardians' Pledge
 pub(in crate::card::sets) static GUARDIANS_PLEDGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Guardians' Pledge",
     "e7e6105c-8633-46f7-a7ca-2a5c36c6d548",
     "Christopher Moeller",
-    crate::card::CardSet::Magic2012,
     CardRules::new_instant(mana_cost!("{1}{W}{W}")).with_ability(AbilityDef::spell(
         "White creatures you control get +2/+2 until end of turn.",
         EffectDef::Apply {
@@ -328,10 +328,10 @@ const PACIFISM_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 29 — Peregrine Griffin
 pub(in crate::card::sets) static PEREGRINE_GRIFFIN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Peregrine Griffin",
     "0296eaa6-f9fe-4fb8-af9c-04928d99e2e2",
     "Steve Prescott",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{4}{W}"), &["Griffin"], 2, 4)
         .with_abilities(&[abilities::flying(), abilities::first_strike()]),
 );
@@ -339,19 +339,19 @@ pub(in crate::card::sets) static PEREGRINE_GRIFFIN: CardRecord = CardRecord::new
 // M12 30 — Personal Sanctuary
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PERSONAL_SANCTUARY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Personal Sanctuary",
     "56f10d57-687d-4ee3-8226-bae525d56e9e",
     "Howard Lyon",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 31 — Pride Guardian
 pub(in crate::card::sets) static PRIDE_GUARDIAN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Pride Guardian",
     "c8d8d723-743c-45d6-b11b-7213f4872cf1",
     "Chris Rahn",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{W}"), &["Cat", "Monk"], 0, 3).with_abilities(&[
         abilities::defender(),
         AbilityDef::triggered(
@@ -391,30 +391,30 @@ const SIEGE_MASTODON_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 35 — Spirit Mantle
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPIRIT_MANTLE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Spirit Mantle",
     "930c8444-ccce-411e-bc4f-e5abca749608",
     "Izzy",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 36 — Stave Off
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STAVE_OFF: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Stave Off",
     "3bb09157-5d7a-4da2-92b6-9354489e607f",
     "Mark Zug",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 37 — Stonehorn Dignitary
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STONEHORN_DIGNITARY: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Stonehorn Dignitary",
     "c3797f7f-489d-4735-af56-6359e0fa0a6b",
     "Dave Kendall",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -435,10 +435,10 @@ const SUN_TITAN_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 40 — Timely Reinforcements
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TIMELY_REINFORCEMENTS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Timely Reinforcements",
     "6ae4669c-e526-4c24-9c25-38cb5c5ef59b",
     "Tomasz Jedruszek",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -458,29 +458,29 @@ const ALLURING_SIREN_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 43 — Amphin Cutthroat
 pub(in crate::card::sets) static AMPHIN_CUTTHROAT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Amphin Cutthroat",
     "fd169064-9c7b-40bd-8be0-a89fcb28ae2f",
     "Howard Lyon",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{3}{U}"), &["Salamander", "Rogue"], 2, 4),
 );
 
 // M12 44 — Aven Fleetwing
 pub(in crate::card::sets) static AVEN_FLEETWING: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Aven Fleetwing",
     "57626fd2-d101-4e23-946f-8309c9676fe5",
     "Wayne Reynolds",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{3}{U}"), &["Bird", "Soldier"], 2, 2)
         .with_abilities(&[abilities::flying(), abilities::hexproof()]),
 );
 
 // M12 45 — Azure Mage
 pub(in crate::card::sets) static AZURE_MAGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Azure Mage",
     "a473897f-49eb-4e0f-a5b6-ea75e10be91a",
     "Izzy",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Human", "Wizard"], 2, 1).with_ability(
         AbilityDef::activated(
             "{3}{U}: Draw a card.",
@@ -510,10 +510,10 @@ const CANCEL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 48 — Chasm Drake
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHASM_DRAKE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Chasm Drake",
     "5e7e246d-92f8-4e6e-89fc-991b888fc1e8",
     "Anthony Francisco",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -554,10 +554,10 @@ const FLIGHT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 54 — Frost Breath
 pub(in crate::card::sets) static FROST_BREATH: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Frost Breath",
     "1724ec5b-5437-4688-aa10-b327a0ae2654",
     "Mike Bierek",
-    CardSet::Magic2012,
     CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell_with_targets(
         "Tap up to two target creatures. Those creatures don't untap during their controller's \
          next untap step.",
@@ -608,10 +608,10 @@ const ICE_CAGE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 58 — Jace, Memory Adept
 pub(in crate::card::sets) static JACE_MEMORY_ADEPT: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Jace, Memory Adept",
     "f3f2a5b6-c26c-4355-b760-d87f074a4921",
     "D. Alexander Gregory",
-    CardSet::Magic2012,
     CardRules::new_planeswalker(mana_cost!("{3}{U}{U}"), &["Jace"], 4)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
@@ -662,10 +662,10 @@ pub(in crate::card::sets) static JACE_MEMORY_ADEPT: CardRecord = CardRecord::new
 // M12 59 — Jace's Archivist
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static JACE_S_ARCHIVIST: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Jace's Archivist",
     "47c6b294-3840-4007-a4e3-67309f6581dd",
     "James Ryman",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -686,10 +686,10 @@ const LEVITATION_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 62 — Lord of the Unreal
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LORD_OF_THE_UNREAL: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Lord of the Unreal",
     "b09140f6-fa75-4bee-9ca0-3a71cd2b5a7b",
     "Jason Chan",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -703,10 +703,10 @@ const MANA_LEAK_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 64 — Master Thief
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MASTER_THIEF: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Master Thief",
     "77c273d3-ef0f-40c6-baf5-e39279d10509",
     "Christopher Moeller",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -719,10 +719,10 @@ const MERFOLK_LOOTER_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 66 — Merfolk Mesmerist
 pub(in crate::card::sets) static MERFOLK_MESMERIST: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Merfolk Mesmerist",
     "220dede5-472c-4a09-bdf0-73e722d9d4d2",
     "Jana Schirmer & Johannes Voss",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Merfolk", "Wizard"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
             "{U}, {T}: Target player mills two cards.",
@@ -751,10 +751,10 @@ const MIND_CONTROL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 68 — Mind Unbound
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MIND_UNBOUND: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Mind Unbound",
     "fd90cf36-9841-4adf-b5cb-0a7bf103eb93",
     "Jason Felix",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -767,10 +767,10 @@ const NEGATE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 70 — Phantasmal Bear
 pub(in crate::card::sets) static PHANTASMAL_BEAR: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Phantasmal Bear",
     "06cc574a-f687-4e41-b0a0-62a0eedea7c2",
     "Ryan Yee",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{U}"), &["Bear", "Illusion"], 2, 2).with_ability(
         AbilityDef::triggered(
             "When this creature becomes the target of a spell or ability, sacrifice it.",
@@ -785,10 +785,10 @@ pub(in crate::card::sets) static PHANTASMAL_BEAR: CardRecord = CardRecord::new(
 // M12 71 — Phantasmal Dragon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHANTASMAL_DRAGON: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Phantasmal Dragon",
     "a2cd015c-0569-4e7f-9daf-b39e67fc7096",
     "Wayne Reynolds",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -802,10 +802,10 @@ static PHANTASMAL_IMAGE_SACRIFICE: AbilityDef = AbilityDef::triggered(
 );
 
 pub(in crate::card::sets) static PHANTASMAL_IMAGE: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Phantasmal Image",
     "98e7bf8f-dba7-4005-8cee-634c9153931d",
     "Nils Hamm",
-    CardSet::Magic2012,
     // Two mana for the best creature on the board, which the cube is happy to
     // pay because the drawback only matters to a deck holding removal.
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Illusion"], 0, 0)
@@ -842,10 +842,10 @@ const REDIRECT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 75 — Skywinder Drake
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SKYWINDER_DRAKE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Skywinder Drake",
     "628213e9-bde9-43fd-a0d9-8c7fb17be879",
     "Dan Murayama Scott",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -856,10 +856,10 @@ const SPHINX_CHOSEN: Binding = Binding!("sphinx_chosen");
 const SPHINX_UNCHOSEN: Binding = Binding!("sphinx_unchosen");
 
 pub(in crate::card::sets) static SPHINX_OF_UTHUUN: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Sphinx of Uthuun",
     "a290648a-63c3-400b-98d3-5a5aa5505027",
     "Kekai Kotaki",
-    CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{5}{U}{U}"), &["Sphinx"], 5, 6).with_abilities(&[
         abilities::flying(),
         abilities::enters_trigger(
@@ -921,10 +921,10 @@ const TIME_REVERSAL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 78 — Turn to Frog
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TURN_TO_FROG: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Turn to Frog",
     "b43d9a1e-0767-4a9b-81b4-4ff2f3dde1d5",
     "Warren Mahy",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -938,10 +938,10 @@ const UNSUMMON_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 80 — Visions of Beyond
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VISIONS_OF_BEYOND: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Visions of Beyond",
     "75657d26-b0f8-4892-8684-533c103c921d",
     "Terese Nielsen",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -955,20 +955,20 @@ const BLOOD_SEEKER_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 82 — Bloodlord of Vaasgoth
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLOODLORD_OF_VAASGOTH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Bloodlord of Vaasgoth",
     "125c5cff-d4e9-4655-9cc5-3ce21e577569",
     "Greg Staples",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 83 — Bloodrage Vampire
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLOODRAGE_VAMPIRE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Bloodrage Vampire",
     "a078e438-fcf9-4648-95dc-3d4037f9b561",
     "Steve Prescott",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1009,10 +1009,10 @@ const CONSUME_SPIRIT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 89 — Dark Favor
 pub(in crate::card::sets) static DARK_FAVOR: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Dark Favor",
     "a258a235-086e-429b-9ac1-3178f902658b",
     "Allen Williams",
-    CardSet::Magic2012,
     CardRules::new_enchantment(mana_cost!("{1}{B}"))
         .with_subtypes(&["Aura"])
         .with_abilities(&[
@@ -1055,10 +1055,10 @@ const DEATHMARK_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 91 — Devouring Swarm
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEVOURING_SWARM: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Devouring Swarm",
     "735c2c79-9b4f-4f86-9dec-0749237fe9ce",
     "Wayne England",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1092,10 +1092,10 @@ const DOOM_BLADE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 96 — Drifting Shade
 pub(in crate::card::sets) static DRIFTING_SHADE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Drifting Shade",
     "00dcb25e-764b-47d6-bec4-225aaace77b0",
     "Tomasz Jedruszek",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{3}{B}"), &["Shade"], 1, 1).with_abilities(&[
         abilities::flying(),
         AbilityDef::activated(
@@ -1116,10 +1116,10 @@ pub(in crate::card::sets) static DRIFTING_SHADE: CardRecord = CardRecord::new(
 // M12 97 — Duskhunter Bat
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DUSKHUNTER_BAT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Duskhunter Bat",
     "4560ee1a-1076-4ec5-a177-55ffe12e2165",
     "Jesper Ejsing",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1139,10 +1139,10 @@ const GRAVEDIGGER_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 100 — Hideous Visage
 pub(in crate::card::sets) static HIDEOUS_VISAGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Hideous Visage",
     "25925751-b6cb-45a3-915f-d5ec3edcda78",
     "Nils Hamm",
-    crate::card::CardSet::Magic2012,
     CardRules::new_sorcery(mana_cost!("{2}{B}")).with_ability(AbilityDef::spell(
         "Creatures you control gain intimidate until end of turn.",
         EffectDef::Apply {
@@ -1167,19 +1167,19 @@ const MIND_ROT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 102 — Monomania
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MONOMANIA: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Monomania",
     "6af53d7f-7f02-4c35-b6f4-7365d121ba54",
     "James Ryman",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 103 — Onyx Mage
 pub(in crate::card::sets) static ONYX_MAGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Onyx Mage",
     "eabd38e6-1e59-42d2-bd1a-555c77cf6747",
     "Izzy",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Human", "Wizard"], 2, 1).with_ability(
         AbilityDef::activated_with_targets(
             "{1}{B}: Target creature you control gains deathtouch until end of turn.",
@@ -1218,10 +1218,10 @@ const ROYAL_ASSASSIN_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 106 — Rune-Scarred Demon
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static RUNE_SCARRED_DEMON: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Rune-Scarred Demon",
     "509e0f81-0591-4b28-978e-a2f1c46b7427",
     "Michael Komarck",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1248,10 +1248,10 @@ const SORIN_MARKOV_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 110 — Sorin's Thirst
 pub(in crate::card::sets) static SORIN_S_THIRST: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Sorin's Thirst",
     "1f14a435-811d-4057-93a9-ce74aa852a09",
     "Karl Kopinski",
-    crate::card::CardSet::Magic2012,
     CardRules::new_instant(mana_cost!("{B}{B}")).with_ability(AbilityDef::spell_with_targets(
         "This spell deals 2 damage to target creature and you gain 2 life.",
         &[AbilityTargetDef::exactly_one_permanent(
@@ -1272,10 +1272,10 @@ pub(in crate::card::sets) static SORIN_S_THIRST: CardRecord = CardRecord::new(
 
 // M12 111 — Sorin's Vengeance
 pub(in crate::card::sets) static SORIN_S_VENGEANCE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Sorin's Vengeance",
     "2cb62846-c5da-4c7c-b0d7-9b677dce68d1",
     "Jana Schirmer & Johannes Voss",
-    crate::card::CardSet::Magic2012,
     CardRules::new_sorcery(mana_cost!("{4}{B}{B}{B}")).with_ability(
         AbilityDef::spell_with_targets(
             "This spell deals 10 damage to target player or planeswalker and you gain 10 life.",
@@ -1305,10 +1305,10 @@ const SUTURED_GHOUL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 113 — Taste of Blood
 pub(in crate::card::sets) static TASTE_OF_BLOOD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Taste of Blood",
     "29268cef-da18-4c1d-9066-e0d513a61bf9",
     "Howard Lyon",
-    crate::card::CardSet::Magic2012,
     CardRules::new_sorcery(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
         "This spell deals 1 damage to target player or planeswalker and you gain 1 life.",
         &[AbilityTargetDef::exactly_one(
@@ -1329,10 +1329,10 @@ pub(in crate::card::sets) static TASTE_OF_BLOOD: CardRecord = CardRecord::new(
 
 // M12 114 — Tormented Soul
 pub(in crate::card::sets) static TORMENTED_SOUL: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Tormented Soul",
     "d2699c42-99bb-4b5a-82ec-9c6424c14ec1",
     "Karl Kopinski",
-    CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{B}"), &["Spirit"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "This creature can't block and can't be blocked.",
@@ -1352,20 +1352,20 @@ pub(in crate::card::sets) static TORMENTED_SOUL: CardRecord = CardRecord::new(
 // M12 115 — Vampire Outcasts
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VAMPIRE_OUTCASTS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Vampire Outcasts",
     "1286132d-1697-44da-ab97-387735265c01",
     "Clint Cearley",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 116 — Vengeful Pharaoh
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static VENGEFUL_PHARAOH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Vengeful Pharaoh",
     "12e0ca97-bc57-4084-86b4-e2e06152cb1c",
     "Igor Kieryluk",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1378,10 +1378,10 @@ const WARPATH_GHOUL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 118 — Wring Flesh
 pub(in crate::card::sets) static WRING_FLESH: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Wring Flesh",
     "663df3e8-12e5-46cf-9da7-39961feaa7f9",
     "Izzy",
-    CardSet::Magic2012,
     CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell_with_targets(
         "Target creature gets -3/-1 until end of turn.",
         &[AbilityTargetDef::exactly_one_permanent(
@@ -1422,29 +1422,29 @@ const ACT_OF_TREASON_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 122 — Blood Ogre
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BLOOD_OGRE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Blood Ogre",
     "b85ecba6-fc22-48c7-9f00-066cc1fce6b5",
     "Christopher Moeller",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 123 — Bonebreaker Giant
 pub(in crate::card::sets) static BONEBREAKER_GIANT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Bonebreaker Giant",
     "cc17e5c1-a6b4-401b-95eb-1c01cd1da570",
     "Kev Walker",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{4}{R}"), &["Giant"], 4, 4),
 );
 
 // M12 124 — Chandra, the Firebrand
 // Audit: unsupported — InstalledTriggerDef cannot combine “once” with expiration at end of turn for the next-spell copy permission.
 pub(in crate::card::sets) static CHANDRA_THE_FIREBRAND: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Chandra, the Firebrand",
     "efb37556-186f-4660-8b75-c52ef16a6d8f",
     "D. Alexander Gregory",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1458,20 +1458,20 @@ const CHANDRAS_OUTRAGE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 126 — Chandra's Phoenix
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CHANDRA_S_PHOENIX: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Chandra's Phoenix",
     "e8371c83-d7c5-4432-8511-cb3c1dc7d59f",
     "Aleksi Briclot",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 127 — Circle of Flame
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CIRCLE_OF_FLAME: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Circle of Flame",
     "419b1813-9760-47b9-b6f3-e501586cfe4d",
     "Jaime Jones",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1484,10 +1484,10 @@ const COMBUST_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 129 — Crimson Mage
 pub(in crate::card::sets) static CRIMSON_MAGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Crimson Mage",
     "0f69ccfc-e2a9-40af-b8ab-85bffe62c0f4",
     "Izzy",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Shaman"], 2, 1).with_ability(
         AbilityDef::activated_with_targets(
             "{R}: Target creature you control gains haste until end of turn.",
@@ -1547,10 +1547,10 @@ const FLING_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 135 — Furyborn Hellkite
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FURYBORN_HELLKITE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Furyborn Hellkite",
     "b5b735e5-da9d-4740-acff-aac9dd24334c",
     "Brad Rigney",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1564,10 +1564,10 @@ const GOBLIN_ARSONIST_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 137 — Goblin Bangchuckers
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOBLIN_BANGCHUCKERS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Goblin Bangchuckers",
     "b56ddad0-23ea-4139-a200-c76c9c46e8c5",
     "Wayne Reynolds",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1580,10 +1580,10 @@ const GOBLIN_CHIEFTAIN_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 139 — Goblin Fireslinger
 pub(in crate::card::sets) static GOBLIN_FIRESLINGER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Goblin Fireslinger",
     "3c11db78-f506-4af2-a7be-c7ac2c0ffcf3",
     "Pete Venters",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{R}"), &["Goblin", "Warrior"], 1, 1).with_ability(
         AbilityDef::activated_with_targets(
             "{T}: This creature deals 1 damage to target player or planeswalker.",
@@ -1630,10 +1630,10 @@ const GOBLIN_WAR_PAINT_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 144 — Gorehorn Minotaurs
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GOREHORN_MINOTAURS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Gorehorn Minotaurs",
     "1087e015-a3c4-4207-8285-5bda6bb50e52",
     "Wayne Reynolds",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1696,10 +1696,10 @@ const REVERBERATE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 153 — Scrambleverse
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCRAMBLEVERSE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Scrambleverse",
     "2b61fa9d-3f69-4632-be0e-09924ca88501",
     "Dan Murayama Scott",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1720,20 +1720,20 @@ const SLAUGHTER_CRY_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 156 — Stormblood Berserker
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STORMBLOOD_BERSERKER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Stormblood Berserker",
     "fc9a50af-ca3e-461a-9dcb-444f56284165",
     "Min Yum",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 157 — Tectonic Rift
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TECTONIC_RIFT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Tectonic Rift",
     "e9838784-8c6d-4e64-bc34-e21efde99093",
     "John Avon",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1746,10 +1746,10 @@ const VOLCANIC_DRAGON_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 159 — Wall of Torches
 pub(in crate::card::sets) static WALL_OF_TORCHES: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Wall of Torches",
     "76f69b92-7435-4aa8-9d90-89ea078befb1",
     "Mike Bierek",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Wall"], 4, 1)
         .with_abilities(&[abilities::defender()]),
 );
@@ -1757,10 +1757,10 @@ pub(in crate::card::sets) static WALL_OF_TORCHES: CardRecord = CardRecord::new(
 // M12 160 — Warstorm Surge
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WARSTORM_SURGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Warstorm Surge",
     "b16443df-52c6-4c9d-a7ff-89a37e593a0a",
     "Raymond Swanland",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1774,20 +1774,20 @@ const ACIDIC_SLIME_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 162 — Arachnus Spinner
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARACHNUS_SPINNER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Arachnus Spinner",
     "23321b80-d7e7-48fd-985d-1e9dc3adcd35",
     "Karl Kopinski",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 163 — Arachnus Web
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARACHNUS_WEB: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Arachnus Web",
     "9e4900b0-f934-42d9-92fb-0bb16d2e8bb1",
     "Karl Kopinski",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1822,10 +1822,10 @@ const BRINDLE_BOAR_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 168 — Carnage Wurm
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CARNAGE_WURM: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Carnage Wurm",
     "c086eb41-3524-4815-97c9-761ba86a30b2",
     "Dave Kendall",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1839,20 +1839,20 @@ const CUDGEL_TROLL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 170 — Doubling Chant
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DOUBLING_CHANT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Doubling Chant",
     "f71dc232-9b7e-4c0e-ac05-8e48b4936aa9",
     "Wayne England",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 171 — Dungrove Elder
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DUNGROVE_ELDER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Dungrove Elder",
     "b8b4ebbf-1613-42a0-97ff-2f36dc8d984a",
     "Matt Stewart",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1872,10 +1872,10 @@ const FOG_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 174 — Garruk, Primal Hunter
 pub(in crate::card::sets) static GARRUK_PRIMAL_HUNTER: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Garruk, Primal Hunter",
     "82d586bf-bed3-4390-b81d-d101c2ae524c",
     "D. Alexander Gregory",
-    CardSet::Magic2012,
     CardRules::new_planeswalker(mana_cost!("{2}{G}{G}{G}"), &["Garruk"], 3)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
@@ -1921,10 +1921,10 @@ const GARRUK_S_COMPANION_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 176 — Garruk's Horde
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static GARRUK_S_HORDE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Garruk's Horde",
     "563c6959-9131-40a6-97ec-12baf6fb7ca0",
     "Steve Prescott",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -1937,10 +1937,10 @@ const GIANT_SPIDER_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 178 — Gladecover Scout
 pub(in crate::card::sets) static GLADECOVER_SCOUT: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Gladecover Scout",
     "26710d5c-01d1-498b-9f54-521dfd195843",
     "Allen Williams",
-    CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{G}"), &["Elf", "Scout"], 1, 1)
         .with_abilities(&[abilities::hexproof()]),
 );
@@ -1955,19 +1955,19 @@ const GREATER_BASILISK_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 180 — Hunter's Insight
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HUNTER_S_INSIGHT: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Hunter's Insight",
     "e4044a9f-43bd-4c32-9d53-29a27ad9be80",
     "Terese Nielsen",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 181 — Jade Mage
 pub(in crate::card::sets) static JADE_MAGE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Jade Mage",
     "32d6c8d3-04a1-4b35-b7d1-18bed82beaf4",
     "Izzy",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Human", "Shaman"], 2, 1).with_ability(
         AbilityDef::activated(
             "{2}{G}: Create a 1/1 green Saproling creature token.",
@@ -1994,10 +1994,10 @@ const LURE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 184 — Lurking Crocodile
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LURKING_CROCODILE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Lurking Crocodile",
     "4cd7d075-031e-4766-89e9-03a8a7197019",
     "Donato Giancola",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2031,10 +2031,10 @@ const PRIMEVAL_TITAN_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 189 — Primordial Hydra
 pub(in crate::card::sets) static PRIMORDIAL_HYDRA: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Primordial Hydra",
     "3dcc5521-df8f-4992-b93e-e430d8cc7715",
     "Aleksi Briclot",
-    crate::card::CardSet::Magic2012,
     CardRules::new_creature(mana_cost!("{X}{G}{G}"), &["Hydra"], 0, 0).with_abilities(&[
         AbilityDef::as_enters(
             "This creature enters with X +1/+1 counters on it.",
@@ -2110,10 +2110,10 @@ const SACRED_WOLF_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 195 — Skinshifter
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SKINSHIFTER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Skinshifter",
     "d56c82ad-5eb1-4653-8f02-e9bb1f6f3154",
     "Matt Stewart",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2127,19 +2127,19 @@ const STAMPEDING_RHINO_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 197 — Stingerfling Spider
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static STINGERFLING_SPIDER: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Stingerfling Spider",
     "3b781626-f4ce-4d00-aa7c-0e07f58f688f",
     "Dave Allsop",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 198 — Titanic Growth
 pub(in crate::card::sets) static TITANIC_GROWTH: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Titanic Growth",
     "db3c8982-e1c2-48be-8094-683d00c2e52b",
     "Ryan Pancoast",
-    CardSet::Magic2012,
     CardRules::new_instant(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell_with_targets(
         "Target creature gets +4/+4 until end of turn.",
         &[AbilityTargetDef::exactly_one_permanent(
@@ -2158,10 +2158,10 @@ pub(in crate::card::sets) static TITANIC_GROWTH: CardRecord = CardRecord::new(
 
 // M12 199 — Trollhide
 pub(in crate::card::sets) static TROLLHIDE: CardRecord = CardRecord::new(
+    CardSet::Magic2012,
     "Trollhide",
     "32c8d6ed-4764-433b-9617-363e46e5b250",
     "Steven Belledin",
-    CardSet::Magic2012,
     CardRules::new_enchantment(mana_cost!("{2}{G}"))
         .with_subtypes(&["Aura"])
         .with_abilities(&[
@@ -2195,10 +2195,10 @@ const VASTWOOD_GORGER_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 201 — Adaptive Automaton
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ADAPTIVE_AUTOMATON: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Adaptive Automaton",
     "79e42ead-df6e-4181-ae2b-a2abfc3f1d7c",
     "Igor Kieryluk",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2212,20 +2212,20 @@ const ANGEL_S_FEATHER_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 203 — Crown of Empires
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CROWN_OF_EMPIRES: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Crown of Empires",
     "d4e36991-7b9f-4cc7-8da2-55b8baf19d70",
     "John Avon",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 204 — Crumbling Colossus
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CRUMBLING_COLOSSUS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Crumbling Colossus",
     "b09afa3b-c172-4cd7-b605-bacbfbd07c24",
     "Michael C. Hayes",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2246,10 +2246,10 @@ const DRAGON_S_CLAW_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 207 — Druidic Satchel
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DRUIDIC_SATCHEL: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Druidic Satchel",
     "fddb054f-0617-4afb-8ed1-a067f234f8e7",
     "Matt Stewart",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2262,10 +2262,10 @@ const ELIXIR_OF_IMMORTALITY_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 209 — Greatsword
 pub(in crate::card::sets) static GREATSWORD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Greatsword",
     "63b4041d-7c95-4cb9-a18b-6568db05942b",
     "Nic Klein",
-    crate::card::CardSet::Magic2012,
     CardRules::new_artifact(mana_cost!("{3}"))
         .with_subtypes(&["Equipment"])
         .with_abilities(&[
@@ -2288,10 +2288,10 @@ pub(in crate::card::sets) static GREATSWORD: CardRecord = CardRecord::new(
 
 // M12 210 — Kite Shield
 pub(in crate::card::sets) static KITE_SHIELD: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Kite Shield",
     "1a00d1e1-aaa4-4f4d-a887-1e477820d2c6",
     "Jim Pavelec",
-    crate::card::CardSet::Magic2012,
     CardRules::new_artifact(mana_cost!("{0}"))
         .with_subtypes(&["Equipment"])
         .with_abilities(&[
@@ -2321,10 +2321,10 @@ const KRAKEN_S_EYE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 212 — Manalith
 pub(in crate::card::sets) static MANALITH: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Manalith",
     "17bf5f25-82b4-460c-94da-b84daa8a53d9",
     "Charles Urbach",
-    crate::card::CardSet::Magic2012,
     CardRules::new_artifact(mana_cost!("{3}")).with_ability(AbilityDef::activated_mana(
         "{T}: Add one mana of any color.",
         &[AbilityCostDef::TapSource],
@@ -2348,10 +2348,10 @@ const QUICKSILVER_AMULET_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M12 215 — Rusted Sentinel
 pub(in crate::card::sets) static RUSTED_SENTINEL: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Rusted Sentinel",
     "cba5fc44-4b9a-418b-a4e0-26d2c3a1eca4",
     "Jason Felix",
-    crate::card::CardSet::Magic2012,
     CardRules::new_artifact_creature(mana_cost!("{4}"), &["Golem"], 3, 4)
         .with_ability(abilities::enters_tapped("This creature enters tapped.")),
 );
@@ -2359,10 +2359,10 @@ pub(in crate::card::sets) static RUSTED_SENTINEL: CardRecord = CardRecord::new(
 // M12 216 — Scepter of Empires
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SCEPTER_OF_EMPIRES: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Scepter of Empires",
     "54f1aaef-94cc-45ab-99c9-8ffdcf331a7b",
     "John Avon",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2376,19 +2376,19 @@ const SOLEMN_SIMULACRUM_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 218 — Sundial of the Infinite
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SUNDIAL_OF_THE_INFINITE: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Sundial of the Infinite",
     "36d3da9c-cb7a-4cea-b6e6-6722bd16c73c",
     "Vincent Proce",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
 // M12 219 — Swiftfoot Boots
 pub(in crate::card::sets) static SWIFTFOOT_BOOTS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Swiftfoot Boots",
     "8b82753b-284c-44ba-9d48-d28913f02a5f",
     "Svetlin Velinov",
-    crate::card::CardSet::Magic2012,
     CardRules::new_artifact(mana_cost!("{2}"))
         .with_subtypes(&["Equipment"])
         .with_abilities(&[
@@ -2419,10 +2419,10 @@ const THRAN_GOLEM_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 221 — Throne of Empires
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static THRONE_OF_EMPIRES: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Throne of Empires",
     "87352716-4cf6-4b2f-bb0a-b7aafae64478",
     "John Avon",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 
@@ -2443,10 +2443,10 @@ const WURM_S_TOOTH_REPRINT: PrintingRecord = PrintingRecord::reprint(
 // M12 224 — Buried Ruin
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BURIED_RUIN: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2012,
     "Buried Ruin",
     "e910cf59-f7aa-44b1-bb8a-c2211179137c",
     "Franz Vohwinkel",
-    crate::card::CardSet::Magic2012,
     crate::card::CardRules::unsupported(),
 );
 

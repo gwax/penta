@@ -12,20 +12,20 @@ use crate::mana_cost;
 // M15 14 — Heliod's Pilgrim
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HELIOD_S_PILGRIM: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2015,
     "Heliod's Pilgrim",
     "7ea54b97-9182-4d46-9d70-3cc7f9b18ada",
     "Izzy",
-    crate::card::CardSet::Magic2015,
     crate::card::CardRules::unsupported(),
 );
 
 // M15 40 — Triplicate Spirits
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRIPLICATE_SPIRITS: CardRecord = CardRecord::new(
+    crate::card::CardSet::Magic2015,
     "Triplicate Spirits",
     "3d6498d3-bf1f-4bf1-a602-7c21fb44c106",
     "Izzy",
-    crate::card::CardSet::Magic2015,
     crate::card::CardRules::unsupported(),
 );
 
@@ -38,10 +38,10 @@ const FRENZIED_GOBLIN_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // M15 145 — Goblin Rabblemaster
 pub(in crate::card::sets) static GOBLIN_RABBLEMASTER: CardRecord = CardRecord::new(
+    CardSet::Magic2015,
     "Goblin Rabblemaster",
     "ee9c697e-d2c0-413b-9142-ecf5d7cf5322",
     "Svetlin Velinov",
-    CardSet::Magic2015,
     // Three mana that makes a Goblin every turn and then sends the whole
     // pile in whether or not that was the plan.
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Warrior"], 2, 2)

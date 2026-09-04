@@ -70,10 +70,10 @@ const CASTLE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // LEB 10 — Circle of Protection: Black
 pub(in crate::card::sets) static CIRCLE_OF_PROTECTION_BLACK: CardRecord = CardRecord::new(
+    CardSet::Beta,
     "Circle of Protection: Black",
     "fa47b4cd-8da4-4544-b011-ba92b7009203",
     "Jesper Myrfors",
-    CardSet::Beta,
     CardRules::new_enchantment(mana_cost!("{1}{W}")).with_ability(
         abilities::circle_of_protection(
             "{1}: The next time a black source of your choice would deal damage to you this turn, prevent that damage.",
@@ -2017,10 +2017,10 @@ const UNDERGROUND_SEA_REPRINT: PrintingRecord = PrintingRecord::reprint(
 
 // LEB 287 — Volcanic Island
 pub(in crate::card::sets) static VOLCANIC_ISLAND: CardRecord = CardRecord::new(
+    CardSet::Beta,
     "Volcanic Island",
     "0324641d-af55-4c53-b4dc-c8262e967da5",
     "Brian Snõddy",
-    CardSet::Beta,
     CardRules::new_land(&["Island", "Mountain"]),
 );
 

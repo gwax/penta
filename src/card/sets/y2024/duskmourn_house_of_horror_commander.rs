@@ -11,10 +11,10 @@ use crate::{TargetIndex, mana_cost};
 
 // DSC 21 — Metamorphosis Fanatic
 pub(in crate::card::sets) static METAMORPHOSIS_FANATIC: CardRecord = CardRecord::new(
+    CardSet::DuskmournHouseOfHorrorCommander,
     "Metamorphosis Fanatic",
     "16448d95-ee21-4def-b880-26f6f159c213",
     "Andreas Zafiratos",
-    CardSet::DuskmournHouseOfHorrorCommander,
     // Six mana for a 4/4 that reanimates is a fair rate and nothing more.
     // Two mana for it off the top of your library is what puts the card in
     // a cube -- and the body it brings back is the half that wins games.
@@ -59,10 +59,10 @@ pub(in crate::card::sets) static METAMORPHOSIS_FANATIC: CardRecord = CardRecord:
 
 // DSC 36 — Ursine Monstrosity
 pub(in crate::card::sets) static URSINE_MONSTROSITY: CardRecord = CardRecord::new(
+    CardSet::DuskmournHouseOfHorrorCommander,
     "Ursine Monstrosity",
     "73cc6df4-3564-4ace-bf8a-eac3e62d725a",
     "Carlos Palma Cruchaga",
-    CardSet::DuskmournHouseOfHorrorCommander,
     // The bear feeds itself: every combat mills one more card, and every
     // card type that turns up is another point in both directions.
     CardRules::new_creature(mana_cost!("{2}{G}"), &["Bear", "Mutant"], 3, 3).with_abilities(&[
