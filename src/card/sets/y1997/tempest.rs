@@ -28,11 +28,16 @@ use crate::card::{
 use crate::ids::ParentBinding;
 use crate::{TargetIndex, mana_cost};
 
-const SLIVER_PERMANENTS: EffectRecipientDef = EffectRecipientDef::matching_objects(
-    ObjectPredicateDef::Subtype("Sliver"),
-    &[ZoneKind::Battlefield],
-    PlayerRelation::Any,
-);
+const fn all_slivers_get(effect: AppliedEffectDef) -> EffectDef {
+    EffectDef::StaticApply {
+        recipient: EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::Subtype("Sliver"),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Any,
+        ),
+        effect,
+    }
+}
 
 // TMP 1 — Advance Scout
 pub(in crate::card::sets) static ADVANCE_SCOUT: CardRecord = CardRecord::new(
@@ -117,25 +122,22 @@ pub(in crate::card::sets) static ARMOR_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "All Sliver creatures have \"{2}: This creature gets +0/+1 until end of turn.\"",
-            EffectDef::StaticApply {
-                recipient: SLIVER_PERMANENTS,
-                effect: AppliedEffectDef::add_ability(
-                    &const {
-                        AbilityDef::activated(
-                            "{2}: This creature gets +0/+1 until end of turn.",
-                            &[AbilityCostDef::Mana(mana_cost!("{2}"))],
-                            EffectDef::Apply {
-                                recipient: EffectRecipientDef::Source,
-                                effect: AppliedEffectDef::modify_power_toughness(
-                                    ValueDef::Constant(0),
-                                    ValueDef::Constant(1),
-                                ),
-                                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-                            },
-                        )
-                    },
-                ),
-            },
+            all_slivers_get(AppliedEffectDef::add_ability(
+                &const {
+                    AbilityDef::activated(
+                        "{2}: This creature gets +0/+1 until end of turn.",
+                        &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+                        EffectDef::Apply {
+                            recipient: EffectRecipientDef::Source,
+                            effect: AppliedEffectDef::modify_power_toughness(
+                                ValueDef::Constant(0),
+                                ValueDef::Constant(1),
+                            ),
+                            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                        },
+                    )
+                },
+            )),
         ),
     ),
 );
@@ -913,10 +915,7 @@ pub(in crate::card::sets) static TALON_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{W}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "All Sliver creatures have first strike.",
-            EffectDef::StaticApply {
-                recipient: SLIVER_PERMANENTS,
-                effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
-            },
+            all_slivers_get(AppliedEffectDef::add_ability(&abilities::first_strike())),
         ),
     ),
 );
@@ -1340,24 +1339,21 @@ pub(in crate::card::sets) static MNEMONIC_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{U}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "All Slivers have \"{2}, Sacrifice this permanent: Draw a card.\"",
-            EffectDef::StaticApply {
-                recipient: SLIVER_PERMANENTS,
-                effect: AppliedEffectDef::add_ability(
-                    &const {
-                        AbilityDef::activated(
-                            "{2}, Sacrifice this permanent: Draw a card.",
-                            &[
-                                AbilityCostDef::Mana(mana_cost!("{2}")),
-                                AbilityCostDef::SacrificeSource,
-                            ],
-                            EffectDef::DrawCards {
-                                recipient: EffectRecipientDef::Controller,
-                                amount: ValueDef::Constant(1),
-                            },
-                        )
-                    },
-                ),
-            },
+            all_slivers_get(AppliedEffectDef::add_ability(
+                &const {
+                    AbilityDef::activated(
+                        "{2}, Sacrifice this permanent: Draw a card.",
+                        &[
+                            AbilityCostDef::Mana(mana_cost!("{2}")),
+                            AbilityCostDef::SacrificeSource,
+                        ],
+                        EffectDef::DrawCards {
+                            recipient: EffectRecipientDef::Controller,
+                            amount: ValueDef::Constant(1),
+                        },
+                    )
+                },
+            )),
         ),
     ),
 );
@@ -1811,10 +1807,7 @@ pub(in crate::card::sets) static WINGED_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{U}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "All Sliver creatures have flying.",
-            EffectDef::StaticApply {
-                recipient: SLIVER_PERMANENTS,
-                effect: AppliedEffectDef::add_ability(&abilities::flying()),
-            },
+            all_slivers_get(AppliedEffectDef::add_ability(&abilities::flying())),
         ),
     ),
 );
@@ -1883,17 +1876,14 @@ pub(in crate::card::sets) static CLOT_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{B}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "All Slivers have \"{2}: Regenerate this permanent.\"",
-            EffectDef::StaticApply {
-                recipient: SLIVER_PERMANENTS,
-                effect: AppliedEffectDef::add_ability(
-                    &const {
-                        abilities::regenerate_self(
-                            "{2}: Regenerate this permanent.",
-                            &[AbilityCostDef::Mana(mana_cost!("{2}"))],
-                        )
-                    },
-                ),
-            },
+            all_slivers_get(AppliedEffectDef::add_ability(
+                &const {
+                    abilities::regenerate_self(
+                        "{2}: Regenerate this permanent.",
+                        &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+                    )
+                },
+            )),
         ),
     ),
 );
@@ -2459,30 +2449,27 @@ pub(in crate::card::sets) static MINDWHIP_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "All Slivers have \"{2}, Sacrifice this permanent: Target player discards a card at random. Activate only as a sorcery.\"",
-            EffectDef::StaticApply {
-                recipient: SLIVER_PERMANENTS,
-                effect: AppliedEffectDef::add_ability(&const {
-                    AbilityDef::activated_with_targets(
-                        "{2}, Sacrifice this permanent: Target player discards a card at random. Activate only as a sorcery.",
-                        &[
-                            AbilityCostDef::Mana(mana_cost!("{2}")),
-                            AbilityCostDef::SacrificeSource,
-                        ],
-                        &const {
-                            [AbilityTargetDef::exactly_one(
-                                AbilityTargetPredicate::Player(PlayerRelation::Any),
-                            )]
-                        },
-                        EffectDef::Discard {
-                            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                            amount: ValueDef::Constant(1),
-                            selection: DiscardSelectionDef::Random,
-                            then: None,
-                        },
-                    )
-                    .with_activation_timing(ActivationTimingDef::SorcerySpeed)
-                }),
-            },
+            all_slivers_get(AppliedEffectDef::add_ability(&const {
+                AbilityDef::activated_with_targets(
+                    "{2}, Sacrifice this permanent: Target player discards a card at random. Activate only as a sorcery.",
+                    &[
+                        AbilityCostDef::Mana(mana_cost!("{2}")),
+                        AbilityCostDef::SacrificeSource,
+                    ],
+                    &const {
+                        [AbilityTargetDef::exactly_one(
+                            AbilityTargetPredicate::Player(PlayerRelation::Any),
+                        )]
+                    },
+                    EffectDef::Discard {
+                        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        amount: ValueDef::Constant(1),
+                        selection: DiscardSelectionDef::Random,
+                        then: None,
+                    },
+                )
+                .with_activation_timing(ActivationTimingDef::SorcerySpeed)
+            })),
         ),
     ),
 );
@@ -2918,25 +2905,22 @@ pub(in crate::card::sets) static BARBED_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "All Sliver creatures have \"{2}: This creature gets +1/+0 until end of turn.\"",
-            EffectDef::StaticApply {
-                recipient: SLIVER_PERMANENTS,
-                effect: AppliedEffectDef::add_ability(
-                    &const {
-                        AbilityDef::activated(
-                            "{2}: This creature gets +1/+0 until end of turn.",
-                            &[AbilityCostDef::Mana(mana_cost!("{2}"))],
-                            EffectDef::Apply {
-                                recipient: EffectRecipientDef::Source,
-                                effect: AppliedEffectDef::modify_power_toughness(
-                                    ValueDef::Constant(1),
-                                    ValueDef::Constant(0),
-                                ),
-                                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-                            },
-                        )
-                    },
-                ),
-            },
+            all_slivers_get(AppliedEffectDef::add_ability(
+                &const {
+                    AbilityDef::activated(
+                        "{2}: This creature gets +1/+0 until end of turn.",
+                        &[AbilityCostDef::Mana(mana_cost!("{2}"))],
+                        EffectDef::Apply {
+                            recipient: EffectRecipientDef::Source,
+                            effect: AppliedEffectDef::modify_power_toughness(
+                                ValueDef::Constant(1),
+                                ValueDef::Constant(0),
+                            ),
+                            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                        },
+                    )
+                },
+            )),
         ),
     ),
 );
@@ -3321,10 +3305,7 @@ pub(in crate::card::sets) static HEART_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "All Sliver creatures have haste.",
-            EffectDef::StaticApply {
-                recipient: SLIVER_PERMANENTS,
-                effect: AppliedEffectDef::add_ability(&abilities::haste()),
-            },
+            all_slivers_get(AppliedEffectDef::add_ability(&abilities::haste())),
         ),
     ),
 );
@@ -4315,10 +4296,7 @@ pub(in crate::card::sets) static HORNED_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{G}"), &["Sliver"], 2, 2).with_ability(
         AbilityDef::static_ability(
             "All Sliver creatures have trample.",
-            EffectDef::StaticApply {
-                recipient: SLIVER_PERMANENTS,
-                effect: AppliedEffectDef::add_ability(&abilities::trample()),
-            },
+            all_slivers_get(AppliedEffectDef::add_ability(&abilities::trample())),
         ),
     ),
 );
@@ -4392,13 +4370,10 @@ pub(in crate::card::sets) static MUSCLE_SLIVER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Sliver"], 1, 1).with_ability(
         AbilityDef::static_ability(
             "All Sliver creatures get +1/+1.",
-            EffectDef::StaticApply {
-                recipient: SLIVER_PERMANENTS,
-                effect: AppliedEffectDef::modify_power_toughness(
-                    ValueDef::Constant(1),
-                    ValueDef::Constant(1),
-                ),
-            },
+            all_slivers_get(AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(1),
+            )),
         ),
     ),
 );
