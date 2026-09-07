@@ -49,25 +49,6 @@ impl Game {
                     .into_iter()
                     .collect()
             }
-            CostDef::Forage => {
-                let forage = [
-                    CostDef::exile(
-                        crate::card::ObjectPredicateDef::Any,
-                        ZoneKind::Graveyard,
-                        crate::card::CostQuantityDef::Fixed(3),
-                    ),
-                    CostDef::sacrifice(
-                        crate::card::ObjectPredicateDef::Subtype("Food"),
-                        crate::card::CostQuantityDef::Fixed(1),
-                    ),
-                ];
-                forage
-                    .into_iter()
-                    .flat_map(|cost| {
-                        self.spell_additional_cost_payment_options(cost, card, player, scale)
-                    })
-                    .collect()
-            }
             CostDef::Choice(costs) => costs
                 .iter()
                 .flat_map(|cost| {

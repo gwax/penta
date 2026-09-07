@@ -161,7 +161,6 @@ impl Game {
             | EffectDef::Discard { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::ShuffleLibrary { .. }
-            | EffectDef::BuryGraveyard { .. }
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::LoseLife { .. }
             | EffectDef::LoseTheGame { .. }

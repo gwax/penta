@@ -541,7 +541,6 @@ impl HandcraftedPolicy {
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::ShuffleLibrary { .. }
-            | EffectDef::BuryGraveyard { .. }
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::AddPlayerCounters { .. }

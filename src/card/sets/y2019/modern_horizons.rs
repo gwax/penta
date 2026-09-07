@@ -2,6 +2,7 @@
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
 use crate::card::CostQuantityDef;
+use crate::card::sets::y2011::mirrodin_besieged::battle_cry;
 use crate::card::{
     AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
     AddManaEffectDef, AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, CardArt, CardRules,
@@ -109,7 +110,7 @@ pub(in crate::card::sets) static RHOX_VETERAN: CardRecord = CardRecord::new(
     // A 2/4 that attacks profitably because everything beside it gets
     // bigger and the best blocker is tapped out of the way first.
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Rhino", "Soldier"], 2, 4).with_abilities(&[
-        abilities::battle_cry(),
+        battle_cry(),
         AbilityDef::triggered_with_targets(
             "Whenever this creature attacks, tap target creature an opponent controls.",
             TriggerEventDef::attacks(ObjectPredicateDef::Source),

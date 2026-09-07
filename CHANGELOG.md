@@ -35,6 +35,17 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Effect and cost compositions live with their consumers.** Forage is now a
+  Bloomburrow-owned choice of ordinary exile and sacrifice costs. Endurance's
+  graveyard instruction uses the shared collection randomization and movement
+  operations instead of a dedicated engine procedure. Battle cry lives in
+  Mirrodin Besieged and is imported by Modern Horizons; battalion and mobilize
+  live in Gatecrash and Tarkir: Dragonstorm. The ownership guide preserves
+  inline-by-default readability while documenting a narrow local-program
+  exception and the requirements for future runtime exceptions and payment
+  windows. No runtime callback interface or new payment window is introduced;
+  bot-wire, replay, and checkpoint format versions are unchanged.
+
 - **Fear is grantable, as the restriction rather than the ability.**
   `abilities::FEAR_RESTRICTION` is the applied effect `abilities::fear()`
   hands to its own source, exposed so a card that grants fear can apply the

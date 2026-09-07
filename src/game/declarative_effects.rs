@@ -279,7 +279,6 @@ impl Game {
             }
             EffectDef::DrawCards { .. }
             | EffectDef::ShuffleLibrary { .. }
-            | EffectDef::BuryGraveyard { .. }
             | EffectDef::Discard { .. }
             | EffectDef::DiscardCards { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }

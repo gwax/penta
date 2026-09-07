@@ -76,7 +76,7 @@ EffectDef::Fight { .. } | EffectDef::DrainLife { .. } |
 EffectDef::GainLife { .. } | EffectDef::AddPlayerCounters { .. } |
 EffectDef::DrawCards { .. } | EffectDef::Discard { .. } |
 EffectDef::DiscardCards { .. } | EffectDef::ShuffleLibrary { .. } |
-EffectDef::BuryGraveyard { .. } | EffectDef::EmptyManaPool { .. } |
+EffectDef::EmptyManaPool { .. } |
 EffectDef::LoseLife { .. } | EffectDef::LoseTheGame { .. } |
 EffectDef::WinTheGame { .. } | EffectDef::AddManaEqualTo { .. } |
 EffectDef::Regenerate { .. } | EffectDef::Tap { .. } |

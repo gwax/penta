@@ -29,6 +29,7 @@ const fn ardenvale_tactician_rules() -> CardRules {
     .with_ability(abilities::flying())
 }
 
+// Local program: Assemble both Adventure parts and their play options together.
 fn ardenvale_tactician_composition() -> CardComposition {
     let knight = ardenvale_tactician_rules();
     let swoop = const {
@@ -108,6 +109,7 @@ const fn faerie_guidemother_rules() -> CardRules {
         .with_ability(abilities::flying())
 }
 
+// Local program: Assemble both Adventure parts and their play options together.
 fn faerie_guidemother_composition() -> CardComposition {
     let faerie = faerie_guidemother_rules();
     let gift = const {
@@ -209,6 +211,7 @@ const fn brazen_borrower_rules() -> CardRules {
     )
 }
 
+// Local program: Assemble both Adventure parts and their play options together.
 fn brazen_borrower_composition() -> CardComposition {
     let borrower = brazen_borrower_rules();
     let theft = const {
@@ -360,6 +363,7 @@ const fn bonecrusher_rules() -> CardRules {
         ))
 }
 
+// Local program: Assemble both Adventure parts and their play options together.
 fn bonecrusher_composition() -> CardComposition {
     let giant = bonecrusher_rules();
     let stomp = const {
@@ -434,10 +438,15 @@ pub(in crate::card::sets) static BONECRUSHER_GIANT: CardRecord = CardRecord::new
 .with_composition(bonecrusher_composition);
 
 // ELD 122 — Embereth Shieldbreaker
-/// The adventure half. Answering an artifact for one red leaves the body
-/// waiting in exile, which is the whole bargain of the mechanic.
-fn battle_display_rules() -> CardRules {
-    CardRules::new_sorcery(mana_cost!("{R}"))
+const fn embereth_shieldbreaker_rules() -> CardRules {
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Knight"], 2, 1)
+}
+
+// Local program: Assemble both Adventure parts and their play options together.
+fn embereth_shieldbreaker_composition() -> CardComposition {
+    let knight = embereth_shieldbreaker_rules();
+    // The Adventure answers an artifact, leaving the creature available in exile.
+    let display = CardRules::new_sorcery(mana_cost!("{R}"))
         .with_subtypes(&["Adventure"])
         .with_ability(
             AbilityDef::spell_with_targets(
@@ -453,16 +462,7 @@ fn battle_display_rules() -> CardRules {
                 },
             )
             .with_resolution_destination(SpellResolutionDestinationDef::ExileOnAdventure),
-        )
-}
-
-const fn embereth_shieldbreaker_rules() -> CardRules {
-    CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Knight"], 2, 1)
-}
-
-fn embereth_shieldbreaker_composition() -> CardComposition {
-    let knight = embereth_shieldbreaker_rules();
-    let display = battle_display_rules();
+        );
     CardComposition {
         parts: vec![
             CardPart::new(CardPartId::PRIMARY, "Embereth Shieldbreaker", knight),
@@ -519,6 +519,7 @@ const fn rimrock_knight_rules() -> CardRules {
         ))
 }
 
+// Local program: Assemble both Adventure parts and their play options together.
 fn rimrock_knight_composition() -> CardComposition {
     let knight = rimrock_knight_rules();
     let rush = const {

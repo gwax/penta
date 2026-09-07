@@ -90,7 +90,6 @@ impl Game {
                 | CostDef::Mana(_)
                 | CostDef::PayLife(_)
                 | CostDef::PayLifeTimes(_)
-                | CostDef::Forage
                 | CostDef::All(_)
                 | CostDef::Choice(_) => {
                     unreachable!("scalar and composite costs do not name individual objects")

@@ -50,7 +50,6 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::DrawCards { .. } => "DrawCards",
         EffectDef::ContinueReplacedDraw => "ContinueReplacedDraw",
         EffectDef::ShuffleLibrary { .. } => "ShuffleLibrary",
-        EffectDef::BuryGraveyard { .. } => "BuryGraveyard",
         EffectDef::EmptyManaPool { .. } => "EmptyManaPool",
         EffectDef::Discard { .. } => "Discard",
         EffectDef::DiscardCards { .. } => "DiscardCards",

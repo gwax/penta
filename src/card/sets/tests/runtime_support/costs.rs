@@ -212,7 +212,7 @@ pub(in super::super) fn shared_spell_additional_cost(cost: Option<CostDef>) -> b
 
 fn shared_spell_additional_cost_def(cost: CostDef) -> bool {
     match cost {
-        CostDef::Forage | CostDef::Mana(_) | CostDef::PayLife(_) => true,
+        CostDef::Mana(_) | CostDef::PayLife(_) => true,
         CostDef::ManaTimes { quantity, .. } | CostDef::PayLifeTimes(quantity) => {
             shared_scalar_cost_quantity(quantity)
         }

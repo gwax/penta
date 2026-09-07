@@ -575,7 +575,6 @@ fn validate_effect_references(
         | EffectDef::LoseTheGame { player: object }
         | EffectDef::WinTheGame { player: object }
         | EffectDef::ShuffleLibrary { player: object }
-        | EffectDef::BuryGraveyard { player: object }
         | EffectDef::EmptyManaPool { player: object }
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }

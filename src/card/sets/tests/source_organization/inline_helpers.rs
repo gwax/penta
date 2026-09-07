@@ -7,7 +7,7 @@ use syn::visit::Visit;
 use super::{parse_header, printed_set_files};
 
 #[test]
-fn card_local_definition_helpers_are_reused_or_recursive() {
+fn card_local_definition_helpers_preserve_local_readability() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut violations = Vec::new();
 
@@ -28,7 +28,7 @@ fn card_local_definition_helpers_are_reused_or_recursive() {
         PathUseCounter { uses: &mut uses }.visit_file(&syntax);
 
         for declaration in declarations {
-            if uses[&declaration.name] <= 1 {
+            if uses[&declaration.name] <= 1 && !declaration.documented_program {
                 violations.push(format!(
                     "{}:{}: {} is referenced only once",
                     path.display(),
@@ -48,7 +48,7 @@ fn card_local_definition_helpers_are_reused_or_recursive() {
     let omitted = violations.len().saturating_sub(100);
     assert!(
         violations.is_empty(),
-        "inline card-local helpers unless they are reused or recursive ({} violations; showing up to 100):\n{shown}{}",
+        "inline card-local helpers unless reused, recursive, or a documented local program ({} violations; showing up to 100):\n{shown}{}",
         violations.len(),
         if omitted == 0 {
             String::new()
@@ -61,13 +61,15 @@ fn card_local_definition_helpers_are_reused_or_recursive() {
 struct ValueDeclaration {
     name: String,
     line: usize,
+    documented_program: bool,
 }
 
 fn card_local_helper_declarations(source: &str) -> Vec<ValueDeclaration> {
     let mut inside_card_blocks = false;
     let mut declarations = Vec::new();
 
-    for (index, line) in source.lines().enumerate() {
+    let lines = source.lines().collect::<Vec<_>>();
+    for (index, line) in lines.iter().copied().enumerate() {
         if parse_header(line).is_some_and(|header| header.printing_kind.is_none()) {
             inside_card_blocks = true;
         }
@@ -80,25 +82,64 @@ fn card_local_helper_declarations(source: &str) -> Vec<ValueDeclaration> {
             .or_else(|| line.strip_prefix("const "));
         let function = line
             .strip_prefix("const fn ")
+            .or_else(|| line.strip_prefix("fn "))
             .and_then(|body| body.split_once('(').map(|(name, _)| name));
-        let name = value
-            .and_then(|body| body.split_once(':').map(|(name, _)| name))
-            .or(function);
+        let name =
+            function.or_else(|| value.and_then(|body| body.split_once(':').map(|(name, _)| name)));
         let Some(name) = name else {
             continue;
         };
-        if name
-            .bytes()
-            .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'_')
+        if function.is_some()
+            || name
+                .bytes()
+                .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'_')
         {
             declarations.push(ValueDeclaration {
                 name: name.to_string(),
                 line: index + 1,
+                documented_program: function.is_some()
+                    && index
+                        .checked_sub(1)
+                        .and_then(|previous| lines[previous].strip_prefix("// Local program:"))
+                        .is_some_and(|reason| !reason.trim().is_empty()),
             });
         }
     }
 
     declarations
+}
+
+#[test]
+fn local_program_exception_requires_a_function_and_explanation() {
+    let declarations = card_local_helper_declarations(
+        "// TST 1 — Test Card\n\
+         // Local program: Preserve the bounded procedure beside its one card.\n\
+         const fn local_program(amount: ValueDef) -> EffectDef { todo!() }\n\
+         // Local program: This must not exempt a one-use constant.\n\
+         const AMOUNT: i32 = 1;\n\
+         // Local program: \n\
+         fn unexplained() -> EffectDef { todo!() }\n\
+         const fn tiny_wrapper() -> EffectDef { todo!() }\n",
+    );
+    assert_eq!(declarations.len(), 4);
+    assert_eq!(declarations[0].name, "local_program");
+    assert!(declarations[0].documented_program);
+    assert!(
+        declarations[1..]
+            .iter()
+            .all(|item| !item.documented_program)
+    );
+}
+
+#[test]
+fn set_preamble_helpers_do_not_need_card_local_exceptions() {
+    let declarations = card_local_helper_declarations(
+        "const fn set_mechanic() -> EffectDef { todo!() }\n\
+         // TST 1 — Test Card\n\
+         static ONE_USE_VALUE: i32 = 1;\n",
+    );
+    assert_eq!(declarations.len(), 1);
+    assert_eq!(declarations[0].name, "ONE_USE_VALUE");
 }
 
 struct PathUseCounter<'a> {

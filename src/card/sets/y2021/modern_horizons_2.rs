@@ -18,6 +18,7 @@ use crate::card::{
     TriggerConditionDef, TriggerEventDef, ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement,
     abilities, tokens,
 };
+use crate::card::{MoveObjectsDef, RandomizeObjectOrderDef};
 use crate::{AdditionalCostIndex, ParentBinding, TargetIndex, mana_cost};
 
 // MH2 25 — Prismatic Ending
@@ -904,9 +905,22 @@ pub(in crate::card::sets) static ENDURANCE: CardRecord = CardRecord::new(
                     AbilityTargetPredicate::Player(PlayerRelation::Any),
                     1,
                 )],
-                EffectDef::BuryGraveyard {
-                    player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
+                EffectDef::RandomizeObjectOrder(RandomizeObjectOrderDef {
+                    input: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+                        ObjectPredicateDef::Any,
+                        &[ZoneKind::Graveyard],
+                        PlayerSetDef::LegalTargets(TargetIndex::PRIMARY),
+                    )),
+                    randomized: ParentBinding,
+                    then: &EffectDef::MoveObjects(MoveObjectsDef {
+                        input: ObjectSetDef::Binding(ParentBinding),
+                        from: Some(ZoneKind::Graveyard),
+                        zone: ZoneKind::Library,
+                        placement: ZonePlacement::Bottom,
+                        moved: None,
+                        then: &EffectDef::None,
+                    }),
+                }),
             ),
             AbilityDef::alternative_cast(
                 mana_cost!("{0}"),

@@ -942,12 +942,6 @@ pub enum EffectDef {
     ShuffleLibrary {
         player: EffectRecipientDef,
     },
-    /// "Puts all the cards from their graveyard on the bottom of their
-    /// library in a random order." One effect rather than a queried move
-    /// plus a shuffle: the randomization is what the clause is for.
-    BuryGraveyard {
-        player: EffectRecipientDef,
-    },
     /// "This Mount becomes saddled until end of turn" (CR 702.166a). A fact
     /// about the permanent rather than a counter, and it ends with the turn.
     Saddle {

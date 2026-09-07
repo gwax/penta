@@ -1,6 +1,7 @@
 //! Bloomburrow cards cataloged for the Vintage Cube pool.
 
 use super::{CardRecord, PrintingAnchor, PrintingRecord};
+use crate::card::CostQuantityDef;
 use crate::card::{
     AbilityDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef, AddManaEffectDef,
     AlternativeCastKindDef, AppliedEffectDef, CardArt, CardRules, CardSet, CardSupertype, CardType,
@@ -11,6 +12,22 @@ use crate::card::{
 };
 use crate::ids::TargetIndex;
 use crate::mana_cost;
+
+/// Forage: the Bloomburrow mechanic is a choice of ordinary action costs.
+const fn forage() -> CostDef {
+    const CHOICES: [CostDef; 2] = [
+        CostDef::exile(
+            ObjectPredicateDef::Any,
+            ZoneKind::Graveyard,
+            CostQuantityDef::Fixed(3),
+        ),
+        CostDef::sacrifice(
+            ObjectPredicateDef::Subtype("Food"),
+            CostQuantityDef::Fixed(1),
+        ),
+    ];
+    CostDef::choice(&CHOICES)
+}
 
 // BLB 54 — Kitsa, Otterball Elite
 pub(in crate::card::sets) static KITSA_OTTERBALL_ELITE: CardRecord = CardRecord::new(
@@ -255,7 +272,7 @@ pub(in crate::card::sets) static FEED_THE_CYCLE: CardRecord = CardRecord::new(
                     ObjectPredicateDef::HasType(CardType::Planeswalker),
                 ]),
             )],
-            CostDef::choice(&[CostDef::forage(), CostDef::pay_mana(mana_cost!("{B}"))]),
+            CostDef::choice(&[forage(), CostDef::pay_mana(mana_cost!("{B}"))]),
             EffectDef::destroy_target(TargetIndex::PRIMARY),
         ),
     ),

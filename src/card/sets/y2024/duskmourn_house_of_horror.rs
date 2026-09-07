@@ -528,6 +528,7 @@ const fn walk_in_closet_rules() -> CardRules {
         .with_abilities(&[WALK_IN_CLOSET_DOOR])
 }
 
+// Local program: Keep both Room doors and their combined unlocked characteristics together.
 fn walk_in_closet_composition() -> CardComposition {
     CardComposition::room(
         "Walk-In Closet // Forgotten Cellar",
