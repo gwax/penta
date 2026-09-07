@@ -37,10 +37,10 @@ impl Game {
                 let mut sacrifice = None;
                 for cost in &definition.costs {
                     match cost {
-                        CostDef::SacrificePermanent { object, controller }
+                        CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(1), object }
                             if sacrifice.is_none() =>
                         {
-                            sacrifice = Some((*object, *controller));
+                            sacrifice = Some((*object, PlayerRelation::You));
                         }
                         _ => return,
                     }

@@ -1869,7 +1869,10 @@ pub(in crate::card::sets) static PSYCHIC_FROG: CardRecord = CardRecord::new_with
         // allows and flies as often as the graveyard does.
         AbilityDef::activated(
             "Discard a card: Put a +1/+1 counter on this creature.",
-            &[CostDef::DiscardCardMatching(ObjectPredicateDef::Any)],
+            &[CostDef::Discard {
+                object: ObjectPredicateDef::Any,
+                quantity: crate::card::CostQuantityDef::Fixed(1),
+            }],
             EffectDef::AddCounters {
                 object: EffectRecipientDef::Source,
                 kind: CounterKind::PlusOnePlusOne,
@@ -3244,12 +3247,12 @@ pub(in crate::card::sets) static WIGHT_OF_THE_RELIQUARY: CardRecord = CardRecord
                  battlefield tapped, then shuffle.",
             &[
                 CostDef::TapSource,
-                CostDef::SacrificePermanent {
+                CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
-                    controller: PlayerRelation::You,
                 },
             ],
             EffectDef::SearchZone {

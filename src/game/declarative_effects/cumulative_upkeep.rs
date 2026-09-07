@@ -26,6 +26,18 @@ impl Game {
             .iter()
             .find(|permanent| permanent.card.id == source)
             .map_or(0, |permanent| permanent.counters(age_kind));
+        if matches!(cost, CostDef::Sacrifice { .. } | CostDef::Discard { .. }) {
+            self.queue_cost_payment_window(crate::game::cost_payment::CostPaymentWindow {
+                player: object.controller,
+                definition: scoped,
+                object: Box::new(object.clone()),
+                context,
+                path: Vec::new(),
+                chosen: Vec::new(),
+                cumulative_upkeep_age: Some(age),
+            });
+            return;
+        }
         let payment = Self::resolved_cumulative_upkeep_payment(cost, source, age);
         self.queue_pay_or(
             object.controller,

@@ -249,24 +249,6 @@ impl Game {
                 if_paid,
                 otherwise,
             } => {
-                // Creatures are named one at a time, so choosing to pay opens
-                // its own run of decisions rather than settling here.
-                if let super::ResolvedEffectPayment::SacrificeCreaturesWithTotalPower(total) =
-                    payment
-                {
-                    if options.iter().copied().any(|option| option != 0) {
-                        self.queue_total_power_sacrifice(
-                            player,
-                            i32::from(total),
-                            &object,
-                            context,
-                            if_paid,
-                        );
-                    } else if let Some(effect) = otherwise {
-                        self.resolve_nested_effect_before_later(effect, &object, context);
-                    }
-                    return;
-                }
                 let paid = self.settle_payment_decision(player, payment, options, &pending_options);
                 if paid.is_none()
                     && let Some(age) = cumulative_upkeep_age
@@ -288,19 +270,18 @@ impl Game {
                     }
                 }
             }
-            DecisionContinuation::ActivationCostSacrifice {
+            DecisionContinuation::ActivationObjectCost {
                 player,
-                quota,
-                pending,
-                chosen,
+                cost,
+                action,
             } => {
-                // The option ids are positions in the candidate list the
-                // offer was built from, which is rebuilt the same way.
-                let answer = options
-                    .first()
-                    .copied()
-                    .and_then(|option| usize::try_from(option).ok());
-                self.continue_activation_sacrifice(player, quota, *pending, chosen, answer);
+                self.resolve_activation_object_payment(
+                    player,
+                    *action,
+                    cost,
+                    options,
+                    &pending_options,
+                );
             }
             DecisionContinuation::ActivationCostTap {
                 player,
@@ -328,28 +309,6 @@ impl Game {
                 candidates,
             } => {
                 self.continue_deferred_activation_targeting(*pending, &candidates, options);
-            }
-            DecisionContinuation::SacrificeToTotalPower {
-                player,
-                remaining,
-                object,
-                context,
-                if_paid,
-            } => {
-                let chosen = options
-                    .iter()
-                    .copied()
-                    .find(|option| *option != 0)
-                    .and_then(|chosen| {
-                        pending_options
-                            .iter()
-                            .find(|option| option.id == chosen)
-                            .and_then(|option| option.card)
-                    })
-                    .map(|(permanent, _)| permanent);
-                self.continue_total_power_sacrifice(
-                    player, remaining, chosen, &object, context, if_paid,
-                );
             }
             DecisionContinuation::ChainLightning {
                 player,

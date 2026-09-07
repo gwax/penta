@@ -30,6 +30,14 @@ impl Game {
             return options;
         }
         match payment {
+            ResolvedEffectPayment::ObjectCost { source, cost } => {
+                let (_, zone, _) = cost.object_selection().expect("an object cost");
+                let verb = if matches!(cost, crate::card::CostDef::Discard { .. }) { "Discard" } else { "Exile" };
+                options.extend(self.object_cost_options(&self.object_cost_candidates(player, source, cost), zone).into_iter().map(|mut option| {
+                    option.label = format!("{verb} {}", option.label);
+                    option
+                }));
+            }
             // One option per amount the payer can actually afford, with the
             // amount as the option id.
             ResolvedEffectPayment::ChosenGenericMana => {
@@ -73,32 +81,6 @@ impl Game {
                 };
                 options.extend(self.permanent_payment_options(player, predicate, verb));
             }
-            ResolvedEffectPayment::SacrificePermanentMatching(predicate) => {
-                options.extend(self.permanent_payment_options(player, predicate, "Sacrifice"));
-            }
-            ResolvedEffectPayment::DiscardMatching(predicate) => {
-                for (index, card) in self
-                    .matching_cards_in_hand(player, predicate)
-                    .into_iter()
-                    .enumerate()
-                {
-                    let name = self
-                        .catalog
-                        .get(card.definition)
-                        .map_or_else(|| "a card".to_string(), |card| card.name.clone());
-                    options.push(DecisionOption {
-                        id: u32::try_from(index + 1).unwrap_or(u32::MAX),
-                        label: format!("Discard {name}"),
-                        card: Some((
-                            card.id,
-                            ObjectCharacteristics::card(card.definition, CardPartId::PRIMARY),
-                        )),
-                        members: Vec::new(),
-                        ability_text: None,
-                        zone: DecisionZone::Hand,
-                    });
-                }
-            }
             payment => options.push(DecisionOption {
                 id: 1,
                 label: Self::effect_payment_label(payment),
@@ -118,32 +100,6 @@ impl Game {
         payment: ResolvedEffectPayment,
     ) -> bool {
         let (candidates, count, verb, zone) = match payment {
-            ResolvedEffectPayment::DiscardCards(amount) => (
-                self.players[player.index()]
-                    .hand
-                    .iter()
-                    .map(|card| {
-                        (
-                            card.id,
-                            ObjectCharacteristics::card(card.definition, CardPartId::PRIMARY),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-                amount,
-                "Discard",
-                DecisionZone::Hand,
-            ),
-            ResolvedEffectPayment::SacrificePermanents {
-                object: predicate,
-                amount,
-            } => (
-                self.group_payment_permanents(
-                    self.matching_permanents_controlled(player, predicate),
-                ),
-                amount,
-                "Sacrifice",
-                DecisionZone::Battlefield,
-            ),
             ResolvedEffectPayment::GainControlPermanents {
                 object: predicate,
                 amount,

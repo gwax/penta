@@ -5,6 +5,8 @@ use crate::ids::{GameObjectId, MechanicId};
 
 use super::{EffectResolutionContext, PlayerId, ScopedEffect, StackObject};
 
+mod activation;
+mod selection;
 mod window;
 
 /// A choice path through the authored cost, not an executable serialized
@@ -16,6 +18,10 @@ pub(in crate::game) struct CostPaymentWindow {
     pub object: Box<StackObject>,
     pub context: EffectResolutionContext,
     pub path: Vec<usize>,
+    /// Tentative members of an aggregate-constrained selection. None have
+    /// been consumed; cancellation discards only this selection state.
+    pub chosen: Vec<GameObjectId>,
+    pub cumulative_upkeep_age: Option<u16>,
 }
 
 pub(in crate::game) const fn uses_cost_payment_window(cost: CostDef) -> bool {
@@ -24,16 +30,24 @@ pub(in crate::game) const fn uses_cost_payment_window(cost: CostDef) -> bool {
         CostDef::Named { .. }
             | CostDef::Choice(_)
             | CostDef::Sacrifice { .. }
+            | CostDef::Discard { .. }
             | CostDef::Exile { .. }
     )
 }
 
 impl CostPaymentWindow {
     pub(in crate::game) fn selected_cost(&self) -> Option<(CostDef, Vec<MechanicId>)> {
-        let crate::card::EffectDef::PayOr(definition) = self.definition.effect else {
-            return None;
+        let mut cost = match self.definition.effect {
+            crate::card::EffectDef::PayOr(definition) if self.cumulative_upkeep_age.is_none() => {
+                definition.payment.cost
+            }
+            crate::card::EffectDef::CumulativeUpkeep(cost)
+                if self.cumulative_upkeep_age.is_some() =>
+            {
+                cost
+            }
+            _ => return None,
         };
-        let mut cost = definition.payment.cost;
         let mut path = self.path.iter();
         let mut mechanics = Vec::new();
         loop {
@@ -51,6 +65,25 @@ impl CostPaymentWindow {
                 },
                 _ => break,
             }
+        }
+        if let Some(age) = self.cumulative_upkeep_age {
+            cost = match cost {
+                CostDef::Sacrifice {
+                    object,
+                    quantity: crate::card::CostQuantityDef::Fixed(count),
+                } => CostDef::sacrifice(
+                    object,
+                    crate::card::CostQuantityDef::Fixed(count.saturating_mul(age)),
+                ),
+                CostDef::Discard {
+                    object,
+                    quantity: crate::card::CostQuantityDef::Fixed(count),
+                } => CostDef::discard(
+                    object,
+                    crate::card::CostQuantityDef::Fixed(count.saturating_mul(age)),
+                ),
+                _ => return None,
+            };
         }
         path.next().is_none().then_some((cost, mechanics))
     }

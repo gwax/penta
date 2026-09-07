@@ -90,7 +90,6 @@ const fn blessed_hippogriff_rules() -> CardRules {
     )
 }
 
-// Local program: Assemble both Adventure parts and their play options together.
 fn blessed_hippogriff_composition() -> CardComposition {
     let hippogriff = blessed_hippogriff_rules();
     let blessing = const {
@@ -246,7 +245,6 @@ const fn sword_coast_serpent_rules() -> CardRules {
     ))
 }
 
-// Local program: Assemble both Adventure parts and their play options together.
 fn sword_coast_serpent_composition() -> CardComposition {
     let serpent = sword_coast_serpent_rules();
     let wave = const {
@@ -319,7 +317,6 @@ const fn young_blue_dragon_rules() -> CardRules {
         .with_ability(abilities::flying())
 }
 
-// Local program: Assemble both Adventure parts and their play options together.
 fn young_blue_dragon_composition() -> CardComposition {
     let dragon = young_blue_dragon_rules();
     let augury = const {

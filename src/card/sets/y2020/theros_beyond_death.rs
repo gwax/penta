@@ -29,7 +29,7 @@ pub(in crate::card::sets) const fn escape(
         CostDef::exile(
             ObjectPredicateDef::Any,
             ZoneKind::Graveyard,
-            CostQuantityDef::Fixed(cards),
+            CostQuantityDef::Fixed(cards as u16),
         ),
         EffectDef::None,
     )
@@ -268,13 +268,10 @@ pub(in crate::card::sets) static BLOOD_ASPIRANT: CardRecord = CardRecord::new(
             &[
                 CostDef::Mana(mana_cost!("{1}{R}")),
                 CostDef::TapSource,
-                CostDef::SacrificePermanent {
-                    object: ObjectPredicateDef::AnyOf(&[
+                CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(1), object: ObjectPredicateDef::AnyOf(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::HasType(CardType::Enchantment),
-                    ]),
-                    controller: PlayerRelation::You,
-                },
+                    ]) },
             ],
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),

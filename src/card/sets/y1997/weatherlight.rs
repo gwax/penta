@@ -115,9 +115,7 @@ pub(in crate::card::sets) static ANGELIC_RENEWAL: CardRecord = CardRecord::new(
         EffectDef::PayOr(PayOrDef::optional(
             crate::card::EffectPaymentDef {
                 payer: PlayerSetDef::One(PlayerRefDef::EffectController),
-                cost: crate::card::CostDef::SacrificePermanentMatching(
-                    ObjectPredicateDef::Source,
-                ),
+                cost: crate::card::CostDef::Sacrifice { object: ObjectPredicateDef::Source, quantity: crate::card::CostQuantityDef::Fixed(1) },
             },
             &EffectDef::MoveToZone {
                 object: EffectRecipientDef::TriggeringZoneChangeResult,
@@ -1426,9 +1424,10 @@ pub(in crate::card::sets) static HIDDEN_HORROR: CardRecord = CardRecord::new(
             EffectDef::PayOr(PayOrDef::unless(
                 crate::card::EffectPaymentDef {
                     payer: PlayerSetDef::One(PlayerRefDef::EffectController),
-                    cost: crate::card::CostDef::DiscardMatching(ObjectPredicateDef::HasType(
-                        CardType::Creature,
-                    )),
+                    cost: crate::card::CostDef::Discard {
+                        object: ObjectPredicateDef::HasType(CardType::Creature),
+                        quantity: crate::card::CostQuantityDef::Fixed(1),
+                    },
                 },
                 &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
@@ -1448,9 +1447,9 @@ pub(in crate::card::sets) static INFERNAL_TRIBUTE: CardRecord = CardRecord::new(
         "{2}, Sacrifice a nontoken permanent: Draw a card.",
         &[
             CostDef::Mana(mana_cost!("{2}")),
-            CostDef::SacrificePermanent {
+            CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
-                controller: PlayerRelation::You,
             },
         ],
         EffectDef::DrawCards {
@@ -1595,10 +1594,7 @@ pub(in crate::card::sets) static STRANDS_OF_NIGHT: CardRecord = CardRecord::new(
             &[
                 CostDef::Mana(mana_cost!("{B}{B}")),
                 CostDef::PayLife(2),
-                CostDef::SacrificePermanent {
-                    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
-                    controller: PlayerRelation::You,
-                },
+                CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(1), object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]) },
             ],
             &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
                 object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -1737,12 +1733,12 @@ pub(in crate::card::sets) static BETROTHED_OF_FIRE: CardRecord = CardRecord::new
             abilities::aura_spell("Enchant creature", &abilities::ENCHANT_CREATURE_TARGET),
             AbilityDef::activated(
                 "Sacrifice an untapped creature: Enchanted creature gets +2/+0 until end of turn.",
-                &[CostDef::SacrificePermanent {
+                &[CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
                     ]),
-                    controller: PlayerRelation::You,
                 }],
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::AttachedPermanent,
@@ -1755,9 +1751,9 @@ pub(in crate::card::sets) static BETROTHED_OF_FIRE: CardRecord = CardRecord::new
             ),
             AbilityDef::activated(
                 "Sacrifice enchanted creature: Creatures you control get +2/+0 until end of turn.",
-                &[CostDef::SacrificePermanent {
+                &[CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::AttachedToSource,
-                    controller: PlayerRelation::You,
                 }],
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::matching_objects(
@@ -2596,9 +2592,10 @@ pub(in crate::card::sets) static FALLOW_WURM: CardRecord = CardRecord::new(
             EffectDef::PayOr(PayOrDef::unless(
                 crate::card::EffectPaymentDef {
                     payer: PlayerSetDef::One(PlayerRefDef::EffectController),
-                    cost: crate::card::CostDef::DiscardMatching(ObjectPredicateDef::HasType(
-                        CardType::Land,
-                    )),
+                    cost: crate::card::CostDef::Discard {
+                        object: ObjectPredicateDef::HasType(CardType::Land),
+                        quantity: crate::card::CostQuantityDef::Fixed(1),
+                    },
                 },
                 &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
@@ -2629,10 +2626,7 @@ pub(in crate::card::sets) static FUNGUS_ELEMENTAL: CardRecord = CardRecord::new(
             "{G}, Sacrifice a Forest: Put a +2/+2 counter on this creature. Activate only if this creature entered this turn.",
             &[
                 CostDef::Mana(mana_cost!("{G}")),
-                CostDef::SacrificePermanent {
-                    object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
-                    controller: PlayerRelation::You,
-                },
+                CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(1), object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]) },
             ],
             EffectDef::AddCounters {
                 object: EffectRecipientDef::Source,
@@ -2836,9 +2830,10 @@ pub(in crate::card::sets) static ROGUE_ELEPHANT: CardRecord = CardRecord::new(
             EffectDef::PayOr(PayOrDef::unless(
                 crate::card::EffectPaymentDef {
                     payer: PlayerSetDef::One(PlayerRefDef::EffectController),
-                    cost: crate::card::CostDef::SacrificePermanentMatching(
-                        ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
-                    ),
+                    cost: crate::card::CostDef::Sacrifice {
+                        object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
+                        quantity: crate::card::CostQuantityDef::Fixed(1),
+                    },
                 },
                 &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,

@@ -862,9 +862,9 @@ pub(in crate::card::sets) static BARRIN_MASTER_WIZARD: CardRecord = CardRecord::
             "{2}, Sacrifice a permanent: Return target creature to its owner's hand.",
             &[
                 CostDef::Mana(mana_cost!("{2}")),
-                CostDef::SacrificePermanent {
+                CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::Any,
-                    controller: PlayerRelation::You,
                 },
             ],
             &const {
@@ -2152,9 +2152,9 @@ pub(in crate::card::sets) static PHYREXIAN_GHOUL: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Phyrexian", "Zombie"], 2, 2).with_ability(
         AbilityDef::activated(
             "Sacrifice a creature: This creature gets +2/+2 until end of turn.",
-            &[CostDef::SacrificePermanent {
+            &[CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::HasType(CardType::Creature),
-                controller: PlayerRelation::You,
             }],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
@@ -4392,9 +4392,9 @@ pub(in crate::card::sets) static CLAWS_OF_GIX: CardRecord = CardRecord::new_with
         "{1}, Sacrifice a permanent: You gain 1 life.",
         &[
             CostDef::Mana(mana_cost!("{1}")),
-            CostDef::SacrificePermanent {
+            CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::Any,
-                controller: PlayerRelation::You,
             },
         ],
         EffectDef::GainLife {
@@ -4799,9 +4799,9 @@ pub(in crate::card::sets) static PHYREXIAN_TOWER: CardRecord = CardRecord::new(
                 "{T}, Sacrifice a creature: Add {B}{B}.",
                 &[
                     CostDef::TapSource,
-                    CostDef::SacrificePermanent {
+                    CostDef::Sacrifice {
+                        quantity: crate::card::CostQuantityDef::Fixed(1),
                         object: ObjectPredicateDef::HasType(CardType::Creature),
-                        controller: PlayerRelation::You,
                     },
                 ],
                 EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Black).with_amount(2)),

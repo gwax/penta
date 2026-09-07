@@ -192,22 +192,6 @@ fn parse_continuation(
                 target: parse_target(*target),
             }
         }
-        DecisionContinuationSnapshot::SacrificeToTotalPower {
-            player: payer,
-            remaining,
-            object,
-            context,
-            if_paid,
-        } => DecisionContinuation::SacrificeToTotalPower {
-            player: player(*payer)?,
-            remaining: *remaining,
-            object: Box::new(parse_detached_stack(object, game)?),
-            context: parse_effect_resolution_context(context.clone())?,
-            if_paid: match if_paid {
-                Some(snapshot) => Some(parse_effect_continuation(snapshot, game)?.effect),
-                None => None,
-            },
-        },
         DecisionContinuationSnapshot::CardNameChoice {
             choices,
             binding,
@@ -751,8 +735,8 @@ fn parse_continuation(
                 candidates: state.candidates,
             }
         }
-        DecisionContinuationSnapshot::CostPayment { player: payer, continuation, path } => {
-            parse_cost_payment_continuation(game, observation, player(*payer)?, continuation, path)?
+        DecisionContinuationSnapshot::CostPayment { player: payer, continuation, path, chosen, cumulative_upkeep_age } => {
+            parse_cost_payment_continuation(game, observation, player(*payer)?, continuation, path, chosen, *cumulative_upkeep_age)?
         }
         DecisionContinuationSnapshot::PayOr {
             player: payer,

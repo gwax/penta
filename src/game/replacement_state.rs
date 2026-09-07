@@ -150,7 +150,7 @@ pub(super) enum BattlefieldExitCompletion {
         frozen: Box<FrozenActivatedAbility>,
         targets: Vec<TargetSelection>,
         chosen_permanents: Vec<GameObjectId>,
-        remaining_sacrifices: Vec<GameObjectId>,
+        remaining_sacrifices: Vec<Vec<GameObjectId>>,
     },
     CompleteManaAbility {
         player: PlayerId,

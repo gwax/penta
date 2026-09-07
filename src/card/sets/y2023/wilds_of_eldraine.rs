@@ -434,7 +434,6 @@ const fn virtue_of_loyalty_rules() -> CardRules {
     ))
 }
 
-// Local program: Assemble both Adventure parts and their play options together.
 fn virtue_of_loyalty_composition() -> CardComposition {
     let virtue = virtue_of_loyalty_rules();
     let fealty = const {

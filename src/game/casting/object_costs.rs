@@ -145,117 +145,17 @@ impl Game {
         remaining_payments: &mut Vec<crate::game::cost_payment::CostPaymentStep>,
         paid_objects: &mut Vec<GameObjectId>,
     ) -> Vec<GameObjectId> {
-        let Some((from, card)) = self
-            .card_in_nonbattlefield_zone(spent)
-            .map(|(zone, card)| (zone, card.clone()))
-        else {
-            return Vec::new();
-        };
-        let destination = match cost {
-            CostDef::Discard { .. } => ZoneKind::Graveyard,
-            CostDef::Exile { .. } => ZoneKind::Exile,
-            _ => unreachable!("battlefield costs were handled above"),
-        };
-        let owner = card.owner;
-        // "One or more cards" exiled from a graveyard by one payment is one
-        // move and therefore one trigger event. A following payment action is
-        // not part of this batch.
-        if matches!(
-            cost,
-            CostDef::Exile {
-                from: ZoneKind::Graveyard,
-                ..
-            }
-        ) {
-            return self.exile_graveyard_payment_batch(
-                owner,
-                spent,
-                remaining_payments,
-                paid_objects,
-            );
+        let mut batch = vec![spent];
+        // EndAction separates identical adjacent costs too: one semantic
+        // action must not absorb the next action's objects or completion tag.
+        while let Some(crate::game::cost_payment::CostPaymentStep::Object(next, next_cost)) =
+            remaining_payments.first().copied()
+        {
+            if next_cost != cost { break; }
+            remaining_payments.remove(0);
+            batch.push(next);
+            paid_objects.push(next);
         }
-        let discarded = if matches!(cost, CostDef::Discard { .. }) {
-            self.printed_trigger_event_object(
-                card.id,
-                card.definition,
-                owner,
-                &CharacteristicContext::Hand,
-            )
-        } else {
-            None
-        };
-        let moved = self.move_card_from_nonbattlefield_zone(
-            spent,
-            from,
-            destination,
-            ZoneMoveCause::Effect { controller },
-            None,
-        );
-        if let (Some(discarded), Some((card, _actual_destination))) = (discarded, moved.as_ref()) {
-            self.events.push(GameEvent::CardsDiscarded {
-                player: owner,
-                cards: vec![(card.id, card.definition)],
-            });
-            self.capture_battlefield_triggers(&CommittedTriggerEvent::Discarded {
-                player: owner,
-                card: Some(discarded),
-            });
-            self.capture_battlefield_triggers(&CommittedTriggerEvent::CardsDiscarded {
-                player: owner,
-            });
-        }
-        moved
-            .filter(|(_, actual_destination)| *actual_destination == ZoneKind::Exile)
-            .map_or_else(Vec::new, |(card, _)| vec![card.id])
-    }
-
-    fn exile_graveyard_payment_batch(
-        &mut self,
-        owner: PlayerId,
-        spent: GameObjectId,
-        remaining_sacrifices: &mut Vec<crate::game::cost_payment::CostPaymentStep>,
-        paid_objects: &mut Vec<GameObjectId>,
-    ) -> Vec<GameObjectId> {
-        let mut exiled = Vec::new();
-        let mut next = Some(spent);
-        while let Some(id) = next.take() {
-            if !paid_objects.contains(&id) {
-                paid_objects.push(id);
-            }
-            if let Some(card) = remove_card(&mut self.players[owner.index()].graveyard, id) {
-                let (card, _zone_change) = self.zone_change_card(card);
-                self.players[owner.index()].exile.push(card.clone());
-                exiled.push(card);
-            }
-            next =
-                remaining_sacrifices
-                    .first()
-                    .copied()
-                    .and_then(|step| {
-                        let crate::game::cost_payment::CostPaymentStep::Object(candidate, candidate_cost) = step else {
-                            return None;
-                        };
-                        let (candidate_zone, candidate_card) =
-                            self.card_in_nonbattlefield_zone(candidate)?;
-                        (candidate_zone == ZoneKind::Graveyard
-                            && matches!(
-                                candidate_cost,
-                                CostDef::Exile {
-                                    from: ZoneKind::Graveyard,
-                                    ..
-                                }
-                            )
-                            && candidate_card.owner == owner)
-                            .then_some(candidate)
-                    });
-            if next.is_some() {
-                remaining_sacrifices.remove(0);
-            }
-        }
-        if !exiled.is_empty() {
-            self.capture_cards_exiled(&exiled, ZoneKind::Graveyard);
-            self.note_card_left_graveyard(owner);
-        }
-        exiled.into_iter().map(|card| card.id).collect()
+        self.pay_object_card_cost(controller, cost, &batch)
     }
 }

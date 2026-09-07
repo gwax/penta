@@ -937,9 +937,9 @@ pub(in crate::card::sets) static DARK_PRIVILEGE: CardRecord = CardRecord::new(
             ),
             AbilityDef::activated(
                 "Sacrifice a creature: Regenerate enchanted creature.",
-                &[CostDef::SacrificePermanent {
+                &[CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::HasType(CardType::Creature),
-                    controller: PlayerRelation::You,
                 }],
                 EffectDef::Regenerate {
                     object: EffectRecipientDef::AttachedPermanent,
@@ -1325,9 +1325,9 @@ pub(in crate::card::sets) static WAKE_OF_VULTURES: CardRecord = CardRecord::new(
             "{1}{B}, Sacrifice a creature: Regenerate this creature.",
             &[
                 CostDef::Mana(mana_cost!("{1}{B}")),
-                CostDef::SacrificePermanent {
+                CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::HasType(CardType::Creature),
-                    controller: PlayerRelation::You,
                 },
             ],
         ),

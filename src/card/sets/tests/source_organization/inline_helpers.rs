@@ -28,7 +28,7 @@ fn card_local_definition_helpers_preserve_local_readability() {
         PathUseCounter { uses: &mut uses }.visit_file(&syntax);
 
         for declaration in declarations {
-            if uses[&declaration.name] <= 1 && !declaration.documented_program {
+            if uses[&declaration.name] <= 1 {
                 violations.push(format!(
                     "{}:{}: {} is referenced only once",
                     path.display(),
@@ -48,7 +48,7 @@ fn card_local_definition_helpers_preserve_local_readability() {
     let omitted = violations.len().saturating_sub(100);
     assert!(
         violations.is_empty(),
-        "inline card-local helpers unless reused, recursive, or a documented local program ({} violations; showing up to 100):\n{shown}{}",
+        "inline card-local data helpers unless reused ({} violations; showing up to 100):\n{shown}{}",
         violations.len(),
         if omitted == 0 {
             String::new()
@@ -61,7 +61,6 @@ fn card_local_definition_helpers_preserve_local_readability() {
 struct ValueDeclaration {
     name: String,
     line: usize,
-    documented_program: bool,
 }
 
 fn card_local_helper_declarations(source: &str) -> Vec<ValueDeclaration> {
@@ -80,28 +79,17 @@ fn card_local_helper_declarations(source: &str) -> Vec<ValueDeclaration> {
         let value = line
             .strip_prefix("static ")
             .or_else(|| line.strip_prefix("const "));
-        let function = line
-            .strip_prefix("const fn ")
-            .or_else(|| line.strip_prefix("fn "))
-            .and_then(|body| body.split_once('(').map(|(name, _)| name));
-        let name =
-            function.or_else(|| value.and_then(|body| body.split_once(':').map(|(name, _)| name)));
+        let name = value.and_then(|body| body.split_once(':').map(|(name, _)| name));
         let Some(name) = name else {
             continue;
         };
-        if function.is_some()
-            || name
-                .bytes()
-                .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'_')
+        if name
+            .bytes()
+            .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'_')
         {
             declarations.push(ValueDeclaration {
                 name: name.to_string(),
                 line: index + 1,
-                documented_program: function.is_some()
-                    && index
-                        .checked_sub(1)
-                        .and_then(|previous| lines[previous].strip_prefix("// Local program:"))
-                        .is_some_and(|reason| !reason.trim().is_empty()),
             });
         }
     }
@@ -110,25 +98,17 @@ fn card_local_helper_declarations(source: &str) -> Vec<ValueDeclaration> {
 }
 
 #[test]
-fn local_program_exception_requires_a_function_and_explanation() {
+fn local_procedures_need_no_marker_but_comments_do_not_exempt_data_helpers() {
     let declarations = card_local_helper_declarations(
         "// TST 1 — Test Card\n\
-         // Local program: Preserve the bounded procedure beside its one card.\n\
          const fn local_program(amount: ValueDef) -> EffectDef { todo!() }\n\
-         // Local program: This must not exempt a one-use constant.\n\
+         // A comment cannot exempt a one-use constant.\n\
          const AMOUNT: i32 = 1;\n\
-         // Local program: \n\
          fn unexplained() -> EffectDef { todo!() }\n\
          const fn tiny_wrapper() -> EffectDef { todo!() }\n",
     );
-    assert_eq!(declarations.len(), 4);
-    assert_eq!(declarations[0].name, "local_program");
-    assert!(declarations[0].documented_program);
-    assert!(
-        declarations[1..]
-            .iter()
-            .all(|item| !item.documented_program)
-    );
+    assert_eq!(declarations.len(), 1);
+    assert_eq!(declarations[0].name, "AMOUNT");
 }
 
 #[test]

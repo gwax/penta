@@ -311,6 +311,7 @@ mod narcomoeba;
 mod new_phyrexia;
 mod nightmare;
 mod nyxborn_hydra;
+mod object_costs;
 mod old_school_interactions;
 mod old_school_permanents;
 mod old_school_spells;

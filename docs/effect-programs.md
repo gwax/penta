@@ -12,7 +12,8 @@ Rust functions, local values, branches, and loops may construct ordinary
 effect, cost, and ability structures in their owning card or set module.
 Runtime code currently interprets those structures; construction-time Rust is
 not a new callback or serialization protocol. Keep one-use components inline
-unless a coherent local procedure warrants the documented readability exception.
+unless a coherent local procedure materially improves readability. Comments
+explain non-obvious constraints; no annotation is required to permit a procedure.
 
 The first migration demonstrates several ownership levels:
 
@@ -56,15 +57,30 @@ through cost expansion, including suspended battlefield-exit replacements.
 Corpseberry Cultivator is the reference composition. Its optional combat
 forage and Feed the Cycle's additional cost use the same set-owned helper;
 its second clause observes forage independently of where it was performed.
-The new resolving-payment lane supports named choices of fixed sacrifice or
-graveyard-exile costs: choose a branch, select the exact objects, validate the
-whole selection, then commit. Cancelling selects the unpaid continuation and
-does not rewind mutations. Checkpoints retain the authored effect locator and
-choice path, and validate the reconstructed offer. The prepared engine can
-fall back to this semantic lane before mutation.
+Object costs share one eligibility and selection-validation layer across
+casting, activation, and resolving payments. Sacrifice, discard, and exile
+remain distinct actions; quantity and aggregate constraints describe their
+selections, not separate execution-specific cost variants. A resolving window
+collects exact-count or aggregate-constrained choices before commitment.
+Aggregate choices can exceed the threshold and use signed characteristic values.
+Hand choices stay private. Large activation selections precede mana and other
+cost payments; small selections may remain in the announced action. Mana
+planning reserves selected objects against incompatible consumption.
+Entry replacements retain their single-card payment adapter, backed by the
+same eligibility, validation, and commit routines; hand candidates are private.
 
-This is not yet a general joint payment planner. Arbitrary bundles, hidden or
-random action costs, and activation-cost migration remain follow-ups. Cycling
+Cancelling a resolving payment selects its unpaid continuation without rewind.
+Cumulative-upkeep sacrifice/discard payments use this same window while keeping
+the added age counter and the ordinary upkeep events. Checkpoints retain the
+authored locator, choice path, and tentative aggregate selections; reconstruction
+validates the offer. Checkpoint v14 removes superseded payment continuations.
+Paused activation declarations remain outside checkpoint coverage, as before.
+The prepared engine can fall back to the semantic lane before mutation.
+
+This is not yet a general joint payment planner. Casting still enumerates
+combinations and limits aggregate-cost offers to minimal selections. Arbitrary
+bundles, hidden or random action costs, and remaining activation-cost families
+remain follow-ups. Cycling
 also remains a follow-up: recognizing its ability before activation and
 observing its activation-time occurrence are separate from cost completion.
 

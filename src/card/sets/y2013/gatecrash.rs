@@ -1274,12 +1274,12 @@ pub(in crate::card::sets) static CORPSE_BLOCKADE: CardRecord = CardRecord::new_w
         abilities::defender(),
         abilities::gain_ability_until_end_of_turn(
             "Sacrifice another creature: This creature gains deathtouch until end of turn.",
-            &[CostDef::SacrificePermanent {
+            &[CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                 ]),
-                controller: PlayerRelation::You,
             }],
             &abilities::deathtouch(),
         ),
@@ -1739,10 +1739,7 @@ pub(in crate::card::sets) static UNDERCITY_INFORMER: CardRecord = CardRecord::ne
             "{1}, Sacrifice a creature: Target player reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard.",
             &[
                 CostDef::Mana(mana_cost!("{1}")),
-                CostDef::SacrificePermanent {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    controller: PlayerRelation::You,
-                },
+                CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(1), object: ObjectPredicateDef::HasType(CardType::Creature) },
             ],
             &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
                 PlayerRelation::Any,
@@ -2247,7 +2244,10 @@ pub(in crate::card::sets) static TIN_STREET_MARKET: CardRecord = CardRecord::new
                         "{T}, Discard a card: Draw a card.",
                         &[
                             CostDef::TapSource,
-                            CostDef::DiscardCardMatching(ObjectPredicateDef::Any),
+                            CostDef::Discard {
+                                object: ObjectPredicateDef::Any,
+                                quantity: crate::card::CostQuantityDef::Fixed(1),
+                            },
                         ],
                         EffectDef::DrawCards {
                             recipient: EffectRecipientDef::Controller,
@@ -3068,13 +3068,10 @@ pub(in crate::card::sets) static CARTEL_ARISTOCRAT: CardRecord = CardRecord::new
     CardRules::new_creature(mana_cost!("{W}{B}"), &["Human", "Advisor"], 2, 2).with_ability(
         AbilityDef::activated(
             "Sacrifice another creature: This creature gains protection from the color of your choice until end of turn.",
-            &[CostDef::SacrificePermanent {
-                object: ObjectPredicateDef::All(&[
+            &[CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(1), object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                ]),
-                controller: PlayerRelation::You,
-            }],
+                ]) }],
             EffectDef::ChooseColor {
                 object: EffectRecipientDef::Source,
                 operation: ColorChoiceOperationDef::ProtectionFromChosenColor,

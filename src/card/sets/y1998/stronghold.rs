@@ -1233,9 +1233,9 @@ pub(in crate::card::sets) static STRONGHOLD_ASSASSIN: CardRecord = CardRecord::n
         "{T}, Sacrifice a creature: Destroy target nonblack creature.",
         &[
             CostDef::TapSource,
-            CostDef::SacrificePermanent {
+            CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::HasType(CardType::Creature),
-                controller: PlayerRelation::You,
             },
         ],
         &[AbilityTargetDef::exactly_one_permanent(
@@ -1313,9 +1313,9 @@ pub(in crate::card::sets) static TORTURED_EXISTENCE: CardRecord = CardRecord::ne
             "{B}, Discard a creature card: Return target creature card from your graveyard to your hand.",
             &[
                 CostDef::Mana(mana_cost!("{B}")),
-                CostDef::DiscardCardMatching(ObjectPredicateDef::HasType(
+                CostDef::Discard { object: ObjectPredicateDef::HasType(
                     CardType::Creature,
-                )),
+                ), quantity: crate::card::CostQuantityDef::Fixed(1) },
             ],
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
@@ -2459,7 +2459,7 @@ pub(in crate::card::sets) static MOX_DIAMOND: CardRecord = CardRecord::new_with_
                     payer: PlayerSetDef::Related(PlayerRelation::You),
                     // A land card from hand, which is the whole cost. A hand with none cannot
                     // pay at all, and the Mox goes straight to the graveyard.
-                    cost: CostDef::DiscardMatching(ObjectPredicateDef::HasType(CardType::Land)),
+                    cost: CostDef::Discard { object: ObjectPredicateDef::HasType(CardType::Land), quantity: crate::card::CostQuantityDef::Fixed(1) },
                 },
                 // Paying changes nothing about the entry: the Mox arrives as it was
                 // going to. Declining is what redirects it.

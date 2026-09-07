@@ -171,12 +171,12 @@ pub(in crate::card::sets) static BODY_DROPPER: CardRecord = CardRecord::new(
             "{B}{R}, Sacrifice another creature: This creature gains menace until end of turn.",
             &[
                 CostDef::Mana(mana_cost!("{B}{R}")),
-                CostDef::SacrificePermanent {
+                CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
-                    controller: PlayerRelation::You,
                 },
             ],
             EffectDef::Apply {

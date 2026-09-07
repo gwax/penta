@@ -39,6 +39,7 @@ fn shared_effect_payment(payment: EffectPaymentDef) -> bool {
             cost @ (crate::card::CostDef::Named { .. }
             | crate::card::CostDef::Choice(_)
             | crate::card::CostDef::Sacrifice { .. }
+            | crate::card::CostDef::Discard { .. }
             | crate::card::CostDef::Exile { .. }) => shared_action_cost(cost),
             crate::card::CostDef::RemoveAnyNumberOfCounters { object, .. } => {
                 shared_effect_recipient(*object)
@@ -50,13 +51,9 @@ fn shared_effect_payment(payment: EffectPaymentDef) -> bool {
             | crate::card::CostDef::PayLife(_)
             | crate::card::CostDef::Energy(_)
             | crate::card::CostDef::MillCards(_)
-            | crate::card::CostDef::DiscardCards(_)
-            | crate::card::CostDef::SacrificeCreaturesWithTotalPower(_)
             | crate::card::CostDef::ChosenGenericMana
             | crate::card::CostDef::ChosenEnergy
-            | crate::card::CostDef::MovePermanentMatching { .. }
-            | crate::card::CostDef::DiscardMatching(_)
-            | crate::card::CostDef::SacrificePermanentMatching(_) => true,
+            | crate::card::CostDef::MovePermanentMatching { .. } => true,
             _ => false,
         }
 }
@@ -68,15 +65,19 @@ fn shared_action_cost(cost: crate::card::CostDef) -> bool {
         CostDef::Choice(costs) => {
             !costs.is_empty() && costs.iter().all(|cost| shared_action_cost(*cost))
         }
-        CostDef::Sacrifice {
-            object,
-            quantity: CostQuantityDef::Fixed(1..),
-        }
+        CostDef::Sacrifice { object, quantity }
+        | CostDef::Discard { object, quantity }
         | CostDef::Exile {
             object,
-            from: ZoneKind::Graveyard,
-            quantity: CostQuantityDef::Fixed(1..),
-        } => shared_object_predicate(object),
+            from: ZoneKind::Hand | ZoneKind::Graveyard,
+            quantity,
+        } => {
+            shared_object_predicate(object)
+                && matches!(
+                    quantity,
+                    CostQuantityDef::Fixed(_) | CostQuantityDef::ObjectSetValueAtLeast(_)
+                )
+        }
         _ => false,
     }
 }
@@ -372,11 +373,8 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
             deferred_decision_allowed
                 && match cost {
                     crate::card::CostDef::Mana(cost) => !cost.variable_x,
-                    crate::card::CostDef::SacrificePermanents {
-                        object,
-                        controller: crate::card::PlayerRelation::You,
-                        ..
-                    }
+                    crate::card::CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(_), object, .. }
+                    | crate::card::CostDef::Discard { quantity: crate::card::CostQuantityDef::Fixed(_), object }
                     | crate::card::CostDef::GainControlPermanents { object, .. } => {
                         shared_object_predicate(object)
                     }
@@ -398,7 +396,6 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                     crate::card::CostDef::SnowMana(_)
                     | crate::card::CostDef::PayLife(_)
                     | crate::card::CostDef::DrawCards(_)
-                    | crate::card::CostDef::DiscardCards(_)
                     | crate::card::CostDef::ExileTopCards(_)
                     | crate::card::CostDef::GainLife {
                         player: crate::card::PlayerRelation::Opponent,

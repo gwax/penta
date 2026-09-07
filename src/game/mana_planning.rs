@@ -39,6 +39,7 @@ impl Game {
         };
         let reserved = match action {
             Action::CastSpell { sacrifices, .. } => sacrifices.as_slice(),
+            Action::ActivateAbility { cost_objects, .. } => cost_objects.as_slice(),
             _ => &[],
         };
         let life_available = match action {
@@ -732,7 +733,7 @@ impl Game {
         )
     }
 
-    fn activate_mana_for_cost_with_options_reserving_for(
+    pub(super) fn activate_mana_for_cost_with_options_reserving_for(
         &mut self,
         player: PlayerId,
         cost: ManaCost,

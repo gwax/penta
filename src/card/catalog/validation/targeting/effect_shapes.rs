@@ -670,7 +670,8 @@ fn validate_effect_target_shapes(
         },
         // The ballot is a predicate, not a target: nothing is pointed at.
         EffectDef::CumulativeUpkeep(
-            crate::card::CostDef::SacrificePermanents { object, .. }
+            crate::card::CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(_), object, .. }
+            | crate::card::CostDef::Discard { object, .. }
             | crate::card::CostDef::GainControlPermanents { object, .. },
         ) => validate_object_predicate_shape(object, targets),
         EffectDef::CumulativeUpkeep(

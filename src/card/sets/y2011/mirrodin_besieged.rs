@@ -883,9 +883,9 @@ pub(in crate::card::sets) static FLESH_EATER_IMP: CardRecord = CardRecord::new(
         abilities::infect(),
         AbilityDef::activated(
             "Sacrifice a creature: This creature gets +1/+1 until end of turn.",
-            &[CostDef::SacrificePermanent {
+            &[CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::HasType(CardType::Creature),
-                controller: PlayerRelation::You,
             }],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
@@ -1369,9 +1369,9 @@ pub(in crate::card::sets) static GNATHOSAUR: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{4}{R}{R}"), &["Dinosaur"], 5, 4).with_ability(
         abilities::gain_ability_until_end_of_turn(
             "Sacrifice an artifact: This creature gains trample until end of turn.",
-            &[CostDef::SacrificePermanent {
+            &[CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::HasType(CardType::Artifact),
-                controller: PlayerRelation::You,
             }],
             &abilities::trample(),
         ),
@@ -1503,9 +1503,7 @@ pub(in crate::card::sets) static KULDOTHA_FLAMEFIEND: CardRecord = CardRecord::n
             EffectDef::PayOr(PayOrDef::optional(
                 EffectPaymentDef {
                     payer: PlayerSetDef::Related(PlayerRelation::You),
-                    cost: CostDef::SacrificePermanentMatching(
-                        ObjectPredicateDef::HasType(CardType::Artifact),
-                    ),
+                    cost: CostDef::Sacrifice { object: ObjectPredicateDef::HasType(CardType::Artifact), quantity: crate::card::CostQuantityDef::Fixed(1) },
                 },
                 &EffectDef::DealDamage {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -1863,10 +1861,7 @@ pub(in crate::card::sets) static PLAGUEMAW_BEAST: CardRecord = CardRecord::new(
             "{T}, Sacrifice a creature: Proliferate. (Choose any number of permanents and/or players, then give each another counter of each kind already there.)",
             &[
                 CostDef::TapSource,
-                CostDef::SacrificePermanent {
-                    object: ObjectPredicateDef::HasType(CardType::Creature),
-                    controller: PlayerRelation::You,
-                },
+                CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(1), object: ObjectPredicateDef::HasType(CardType::Creature) },
             ],
             EffectDef::Proliferate,
         )),
@@ -2701,9 +2696,9 @@ pub(in crate::card::sets) static PISTON_SLEDGE: CardRecord = CardRecord::new(
                 },
             ),
             abilities::equip(
-                &[CostDef::SacrificePermanent {
+                &[CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::HasType(CardType::Artifact),
-                    controller: PlayerRelation::You,
                 }],
                 "Equip—Sacrifice an artifact.",
             ),
@@ -2793,9 +2788,9 @@ pub(in crate::card::sets) static RUSTED_SLASHER: CardRecord = CardRecord::new(
     CardRules::new_artifact_creature(mana_cost!("{4}"), &["Horror"], 4, 1).with_ability(
         abilities::regenerate_self(
             "Sacrifice an artifact: Regenerate this creature.",
-            &[CostDef::SacrificePermanent {
+            &[CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::HasType(CardType::Artifact),
-                controller: PlayerRelation::You,
             }],
         ),
     ),

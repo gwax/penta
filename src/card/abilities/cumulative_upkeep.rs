@@ -24,7 +24,7 @@ pub const fn cumulative_upkeep(cost: CostDef) -> AbilityDef {
         CostDef::DrawCards(1) => {
             "Cumulative upkeep—Draw a card. (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)"
         }
-        CostDef::DiscardCards(1) => {
+        CostDef::Discard { object: crate::card::ObjectPredicateDef::Any, quantity: crate::card::CostQuantityDef::Fixed(1) } => {
             "Cumulative upkeep—Discard a card. (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)"
         }
         CostDef::PutCountersOnSource {

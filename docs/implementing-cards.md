@@ -41,11 +41,12 @@ understand one ability. A shared power/toughness value qualifies because both
 characteristics reference it; power/toughness values are not otherwise a special
 exception. Keep every
 allowed extracted component after the header and before the `CardRecord`,
-adjacent to the clause it supports and in printed-clause order. A one-use local
-procedure must carry a `// Local program: <reason>` comment immediately before
-its function declaration explaining the semantic boundary it preserves. This
-is a reviewable exception, not a blanket exemption for one-use constants or
-trivial wrappers. Ordinary Rust functions, local variables, loops, and branches
+adjacent to the clause it supports and in printed-clause order. Judge a one-use
+local procedure by whether it keeps a coherent operation understandable, not
+by a mandatory comment marker. Explain non-obvious constraints with ordinary
+comments; do not repeat what the surrounding declaration already says. This
+is not a blanket exemption for one-use constants or trivial wrappers.
+Ordinary Rust functions, local variables, loops, and branches
 are acceptable authoring syntax; keep timing, costs, targets, and the ordered
 ability clauses apparent at the card.
 

@@ -311,14 +311,23 @@ fn cumulative_upkeep_discard_and_sacrifice_costs_are_atomic_at_age_two() {
 
     resolve_upkeep_ability(&mut discard_game);
     let decision = discard_game.observe(PlayerId::One).decision.unwrap();
-    assert!(
-        decision
-            .options
-            .iter()
-            .skip(1)
-            .all(|option| option.members.len() == 2)
-    );
-    choose_decision_by_label(&mut discard_game, PlayerId::One, "Discard Island, Forest");
+    assert_eq!((decision.minimum, decision.maximum), (2, 2));
+    assert_eq!(discard_game.players[PlayerId::One.index()].hand.len(), 3);
+    let options = decision
+        .options
+        .iter()
+        .filter(|option| matches!(option.label.as_str(), "Island" | "Forest"))
+        .map(|option| option.id)
+        .collect();
+    discard_game
+        .apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .unwrap();
     assert_eq!(discard_game.players[PlayerId::One.index()].hand.len(), 1);
     assert!(
         discard_game
@@ -341,18 +350,23 @@ fn cumulative_upkeep_discard_and_sacrifice_costs_are_atomic_at_age_two() {
 
     resolve_upkeep_ability(&mut sacrifice_game);
     let decision = sacrifice_game.observe(PlayerId::One).decision.unwrap();
-    assert!(
-        decision
-            .options
-            .iter()
-            .skip(1)
-            .all(|option| option.members.len() == 2)
-    );
-    choose_decision_by_label(
-        &mut sacrifice_game,
-        PlayerId::One,
-        "Sacrifice Island, Island",
-    );
+    assert_eq!((decision.minimum, decision.maximum), (2, 2));
+    assert_eq!(sacrifice_game.battlefield.len(), 4);
+    let options = decision
+        .options
+        .iter()
+        .take(2)
+        .map(|option| option.id)
+        .collect();
+    sacrifice_game
+        .apply(
+            PlayerId::One,
+            Action::ChooseDecision {
+                decision: decision.id,
+                options,
+            },
+        )
+        .unwrap();
     assert_eq!(
         sacrifice_game
             .battlefield

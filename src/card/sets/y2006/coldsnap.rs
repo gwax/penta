@@ -240,7 +240,6 @@ pub(in crate::card::sets) static PHYREXIAN_SOULGORGER: CardRecord = CardRecord::
         .with_ability(
             abilities::cumulative_upkeep(CostDef::sacrifice_permanents(
                 ObjectPredicateDef::HasType(CardType::Creature),
-                PlayerRelation::You,
                 1,
             ))
             .override_text("Cumulative upkeep—Sacrifice a creature."),

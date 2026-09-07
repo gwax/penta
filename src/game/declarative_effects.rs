@@ -175,6 +175,8 @@ impl Game {
                         object: Box::new(object.clone()),
                         context,
                         path: Vec::new(),
+                        chosen: Vec::new(),
+                        cumulative_upkeep_age: None,
                     });
                     return;
                 }

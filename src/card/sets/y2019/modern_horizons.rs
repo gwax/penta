@@ -498,9 +498,9 @@ pub(in crate::card::sets) static CARRION_FEEDER: CardRecord = CardRecord::new(
             "Sacrifice a creature: Put a +1/+1 counter on this creature.",
             // Any creature you control, the Feeder included -- which is the
             // out when it is the last thing on the board.
-            &[CostDef::SacrificePermanent {
+            &[CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::HasType(CardType::Creature),
-                controller: PlayerRelation::You,
             }],
             EffectDef::AddCounters {
                 object: EffectRecipientDef::Source,
@@ -544,13 +544,10 @@ pub(in crate::card::sets) static BOGARDAN_DRAGONHEART: CardRecord = CardRecord::
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Shaman"], 2, 2).with_ability(
         AbilityDef::activated(
             "Sacrifice another creature: Until end of turn, this creature becomes a Dragon with base power and toughness 4/4, flying, and haste.",
-            &[CostDef::SacrificePermanent {
-                object: ObjectPredicateDef::All(&[
+            &[CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(1), object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                ]),
-                controller: PlayerRelation::You,
-            }],
+                ]) }],
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 // "Becomes a Dragon" repaints the whole creature-type line

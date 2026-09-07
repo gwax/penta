@@ -1,7 +1,7 @@
 use super::{
     AbilityOrigin, AbilitySourceRef, AlternativeCastKindDef, AppliedEffectDef, AppliedStackEffect,
     BTreeMap, BattlefieldExitCompletion, CREATURE_TYPES, CardDefinition, CardInstance, CardType,
-    CastChoices, CastContext, CastOfferCost, CastSignature, CastSourceZone, CharacteristicContext,
+    CastChoices, CastContext, CastOfferCost, CastSignature, CastSourceZone,
     CommittedStackObjectEvent, CommittedTriggerEvent, CostConfiguration, CostDef,
     DecisionContinuation, DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone,
     DeclarativeAbilityDef, EntryCompletion, Game, GameEvent, GameObjectId, Mana,

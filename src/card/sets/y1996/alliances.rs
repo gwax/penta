@@ -1350,7 +1350,7 @@ pub(in crate::card::sets) static AGENT_OF_STROMGALD: CardRecord = CardRecord::ne
 // ALL 64b — Agent of Stromgald (alternate printing)
 
 // ALL 65 — Balduvian Horde
-// Audit: unsupported — Needs a random discard as a resolving payment. The shared runtime's payment costs include DiscardCards and DiscardMatching, both of which let the payer choose, and "discard a card at random" is a different cost.
+// Audit: unsupported — Needs a random discard as a resolving payment. The CostDef::Discard window collects player selections; random action costs need separate execution and information-safety handling.
 pub(in crate::card::sets) static BALDUVIAN_HORDE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8e167a6c-05f8-4d90-9f6b-eb0f1046d54a"),
     "Balduvian Horde",

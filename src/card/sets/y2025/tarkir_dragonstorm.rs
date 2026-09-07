@@ -268,7 +268,6 @@ const fn riling_dawnbreaker_rules() -> CardRules {
     )
 }
 
-// Local program: Assemble both Omen parts, their destinations, and play options together.
 fn riling_dawnbreaker_composition() -> CardComposition {
     let dragon = riling_dawnbreaker_rules();
     let roar = const {
@@ -671,7 +670,6 @@ const fn sagu_wildling_rules() -> CardRules {
     )
 }
 
-// Local program: Assemble both Omen parts, their destinations, and play options together.
 fn sagu_wildling_composition() -> CardComposition {
     let wildling = sagu_wildling_rules();
     let seek =

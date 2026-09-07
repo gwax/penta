@@ -543,6 +543,8 @@ fn continuation_snapshot(
                 game, viewer, &window.object, &window.context, window.definition, visible_rebindings,
             )?),
             path: window.path.clone(),
+            chosen: window.chosen.iter().map(|id| id.0).collect(),
+            cumulative_upkeep_age: window.cumulative_upkeep_age,
         },
         DecisionContinuation::PayOr {
             player,
@@ -901,37 +903,6 @@ fn continuation_snapshot(
                 visible_rebindings,
             )?),
         },
-        // A run of sacrifices is one resolution answered a creature at a
-        // time, so what it carries is the resolution plus how much is still
-        // owed.
-        DecisionContinuation::SacrificeToTotalPower {
-            player,
-            remaining,
-            object,
-            context,
-            if_paid,
-        } => DecisionContinuationSnapshot::SacrificeToTotalPower {
-            player: player.index(),
-            remaining: *remaining,
-            object: Box::new(detached_stack_snapshot_allowing(
-                game,
-                viewer,
-                object,
-                visible_rebindings,
-            )?),
-            context: effect_resolution_context_snapshot(context),
-            if_paid: match if_paid {
-                Some(effect) => Some(Box::new(effect_continuation_snapshot(
-                    game,
-                    viewer,
-                    object,
-                    context,
-                    *effect,
-                    visible_rebindings,
-                )?)),
-                None => None,
-            },
-        },
         // The pair is not yet chosen, so what a land substitution would do to
         // the board is not writable down either.
         DecisionContinuation::LifeGainReplacement { .. }
@@ -944,7 +915,7 @@ fn continuation_snapshot(
         // An activation paused mid-payment carries the whole of what it
         // chose -- its frozen ability text, targets, and modes -- which this
         // format has no place for yet.
-        | DecisionContinuation::ActivationCostSacrifice { .. }
+        | DecisionContinuation::ActivationObjectCost { .. }
         | DecisionContinuation::ActivationCostTap { .. }
         | DecisionContinuation::ActivationCostTapPermanents { .. }
         | DecisionContinuation::ActivationTargeting { .. } => return None,

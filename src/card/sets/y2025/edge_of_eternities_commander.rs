@@ -63,10 +63,7 @@ pub(in crate::card::sets) static BALOTH_PRIME: CardRecord = CardRecord::new(
                 "{4}, Sacrifice a land: You gain 2 life.",
                 &[
                     CostDef::Mana(mana_cost!("{4}")),
-                    CostDef::SacrificePermanent {
-                        object: ObjectPredicateDef::HasType(CardType::Land),
-                        controller: PlayerRelation::You,
-                    },
+                    CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(1), object: ObjectPredicateDef::HasType(CardType::Land) },
                 ],
                 EffectDef::GainLife {
                     recipient: EffectRecipientDef::Controller,

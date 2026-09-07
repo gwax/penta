@@ -1138,7 +1138,10 @@ pub(in crate::card::sets) static MESMERIC_TRANCE: CardRecord = CardRecord::new(
             "{U}, Discard a card: Draw a card.",
             &[
                 CostDef::Mana(mana_cost!("{U}")),
-                CostDef::DiscardCardMatching(ObjectPredicateDef::Any),
+                CostDef::Discard {
+                    object: ObjectPredicateDef::Any,
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
+                },
             ],
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,
@@ -1209,7 +1212,6 @@ pub(in crate::card::sets) static POLAR_KRAKEN: CardRecord = CardRecord::new(
         abilities::enters_tapped(CardType::Creature),
         abilities::cumulative_upkeep(CostDef::sacrifice_permanents(
             ObjectPredicateDef::HasType(CardType::Land),
-            PlayerRelation::You,
             1,
         ))
         .override_text("Cumulative upkeep—Sacrifice a land."),
@@ -2976,9 +2978,9 @@ pub(in crate::card::sets) static ORCISH_LUMBERJACK: CardRecord = CardRecord::new
             // does. Which one is spent is chosen as the ability is activated.
             &[
                 CostDef::TapSource,
-                CostDef::SacrificePermanent {
+                CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
-                    controller: PlayerRelation::You,
                 },
             ],
             EffectDef::AddMana(AddManaEffectDef::combination(
@@ -5112,9 +5114,9 @@ pub(in crate::card::sets) static SKULL_CATAPULT: CardRecord = CardRecord::new(
         &[
             CostDef::Mana(mana_cost!("{1}")),
             CostDef::TapSource,
-            CostDef::SacrificePermanent {
+            CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::HasType(CardType::Creature),
-                controller: PlayerRelation::You,
             },
         ],
         &[AbilityTargetDef::exactly_one(
@@ -5195,12 +5197,12 @@ pub(in crate::card::sets) static SUNSTONE: CardRecord = CardRecord::new(
         "{2}, Sacrifice a snow land: Prevent all combat damage that would be dealt this turn.",
         &[
             CostDef::Mana(mana_cost!("{2}")),
-            CostDef::SacrificePermanent {
+            CostDef::Sacrifice {
+                quantity: crate::card::CostQuantityDef::Fixed(1),
                 object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Land),
                     ObjectPredicateDef::Supertype(CardSupertype::Snow),
                 ]),
-                controller: PlayerRelation::You,
             },
         ],
         EffectDef::PreventDamage {
@@ -5385,9 +5387,9 @@ pub(in crate::card::sets) static ZURAN_ORB: CardRecord = CardRecord::new_with_le
     CardSet::IceAge,
     CardRules::new_artifact(mana_cost!("{0}")).with_ability(AbilityDef::activated(
         "Sacrifice a land: You gain 2 life.",
-        &[CostDef::SacrificePermanent {
+        &[CostDef::Sacrifice {
+            quantity: crate::card::CostQuantityDef::Fixed(1),
             object: ObjectPredicateDef::HasType(CardType::Land),
-            controller: PlayerRelation::You,
         }],
         EffectDef::GainLife {
             recipient: EffectRecipientDef::Controller,

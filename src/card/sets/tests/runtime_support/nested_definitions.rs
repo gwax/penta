@@ -294,7 +294,17 @@ pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> b
             if_paid,
             if_declined,
         } => {
-            !matches!(
+            // The entry adapter currently accepts a single selected card;
+            // larger/composite action costs use resolving payment windows.
+            let object_cost_supported = match payment.cost {
+                CostDef::Discard { object, quantity }
+                | CostDef::Exile { object, quantity, from: ZoneKind::Hand | ZoneKind::Graveyard } =>
+                    quantity.fixed_value() == Some(1) && shared_object_predicate(object),
+                CostDef::Sacrifice { .. } | CostDef::Exile { .. } | CostDef::Named { .. }
+                | CostDef::All(_) | CostDef::Choice(_) => false,
+                _ => true,
+            };
+            object_cost_supported && !matches!(
                 payment.payer,
                 PlayerSetDef::All | PlayerSetDef::Related(PlayerRelation::Any)
             ) && if_paid.iter().copied().all(shared_entry_replacement_effect)

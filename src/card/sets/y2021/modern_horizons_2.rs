@@ -514,12 +514,12 @@ pub(in crate::card::sets) static VERMIN_GORGER: CardRecord = CardRecord::new(
             "{T}, Sacrifice another creature: Each opponent loses 2 life and you gain 2 life.",
             &[
                 CostDef::TapSource,
-                CostDef::SacrificePermanent {
+                CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
-                    controller: PlayerRelation::You,
                 },
             ],
             EffectDef::Sequence(&[
@@ -1070,9 +1070,9 @@ pub(in crate::card::sets) static GRIST_THE_HUNGER_TIDE: CardRecord = CardRecord:
                 EffectDef::PayOr(PayOrDef::optional(
                     EffectPaymentDef {
                         payer: PlayerSetDef::Related(PlayerRelation::You),
-                        cost: CostDef::SacrificePermanentMatching(ObjectPredicateDef::HasType(
+                        cost: CostDef::Sacrifice { object: ObjectPredicateDef::HasType(
                                 CardType::Creature,
-                            )),
+                            ), quantity: crate::card::CostQuantityDef::Fixed(1) },
                     },
                     &EffectDef::None,
                 )),

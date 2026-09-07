@@ -1639,9 +1639,9 @@ pub(in crate::card::sets) static SIEGE_GANG_COMMANDER: CardRecord = CardRecord::
             "{1}{R}, Sacrifice a Goblin: This creature deals 2 damage to any target.",
             &[
                 CostDef::Mana(mana_cost!("{1}{R}")),
-                CostDef::SacrificePermanent {
+                CostDef::Sacrifice {
+                    quantity: crate::card::CostQuantityDef::Fixed(1),
                     object: ObjectPredicateDef::Subtype("Goblin"),
-                    controller: PlayerRelation::You,
                 },
             ],
             &[AbilityTargetDef::exactly_one(

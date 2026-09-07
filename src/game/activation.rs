@@ -3,8 +3,8 @@ use super::{
     CharacteristicContext, CommittedTriggerEvent, CostDef, CounterKind, DeclarativeAbilityDef,
     FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost, ManaPaymentPurpose,
     ManaPlanOptions, ObjectCharacteristics, PendingActivation, PendingActivationTargeting,
-    PlayRestriction, PlayerId, SacrificeQuota, Step, TapQuota, Target, TargetSelection, ZoneKind,
-    ZoneMoveCause, ZonePlacement, remove_card,
+    PlayRestriction, PlayerId, Step, TapQuota, Target, TargetSelection, ZoneKind, ZoneMoveCause,
+    ZonePlacement, remove_card,
 };
 
 use crate::ManaPaymentChoice;
@@ -423,13 +423,22 @@ impl Game {
                     | CostDef::PayLife(_)
                     | CostDef::MillCards(_)
                     | CostDef::ExileTopCards(_)
-                    | CostDef::DiscardCards(_)
-                    | CostDef::DiscardCardMatching(_)
+                    | CostDef::Discard {
+                        object: crate::card::ObjectPredicateDef::Any,
+                        quantity: crate::card::CostQuantityDef::Fixed(_),
+                    }
+                    | CostDef::Discard {
+                        object: _,
+                        quantity: crate::card::CostQuantityDef::Fixed(1),
+                    }
                     | CostDef::RevealCardFromHand(_)
-                    | CostDef::ExileCardFromHand(_)
+                    | CostDef::Exile {
+                        object: _,
+                        from: crate::card::ZoneKind::Hand,
+                        quantity: crate::card::CostQuantityDef::Fixed(1),
+                    }
                     | CostDef::DiscardCardsAtRandom(_)
-                    | CostDef::SacrificePermanent { .. }
-                    | CostDef::SacrificePermanents { .. }
+                    | CostDef::Sacrifice { .. }
                     | CostDef::TapPermanents { .. }
                     | CostDef::TapCreaturesWithTotalPower { .. }
                     | CostDef::ExileSource
@@ -528,6 +537,34 @@ impl Game {
         // `apply` validated these exact ordered slot selections against a
         // generated legal action. Freeze both their slot identity and values
         // before any activation cost can move or change the source.
+        if let Some(effective) =
+            self.find_effective_ability(source_permanent, |effective| effective.origin == ability)
+            && let DeclarativeAbilityDef::Activated(definition) = effective.ability.definition
+            && let Some(cost) = definition.costs.iter().copied().find(|cost| {
+                matches!(
+                    cost,
+                    CostDef::Sacrifice { .. } | CostDef::Discard { .. } | CostDef::Exile { .. }
+                ) && cost.object_selection().is_some_and(|(_, _, quantity)| {
+                    quantity.fixed_value().is_some_and(|count| count > 1)
+                })
+            })
+            && cost_objects.is_empty()
+        {
+            self.queue_activation_object_payment(
+                player,
+                crate::Action::ActivateAbility {
+                    source,
+                    ability,
+                    targets,
+                    cost_objects: Vec::new(),
+                    x,
+                    modes: modes.to_vec(),
+                    mana_payment: mana_payment.cloned().map(Box::new),
+                },
+                cost,
+            );
+            return;
+        }
         let frozen_targets = targets;
         let selected_ability = self
             .find_effective_ability(source_permanent, |effective| effective.origin == ability)
@@ -544,6 +581,35 @@ impl Game {
                 unreachable!("the declarative activation filter checked its category")
             };
             let taps_source = definition.costs.contains(&CostDef::TapSource);
+            // The complete selected resource set is validated before the
+            // first mana activation or other cost mutation.
+            let announced = crate::Action::ActivateAbility {
+                source,
+                ability,
+                targets: frozen_targets.clone(),
+                cost_objects: cost_objects.to_vec(),
+                x,
+                modes: modes.to_vec(),
+                mana_payment: mana_payment.cloned().map(Box::new),
+            };
+            if let Some(cost) = definition.costs.iter().copied().find(|cost| {
+                matches!(
+                    cost,
+                    CostDef::Sacrifice { .. } | CostDef::Discard { .. } | CostDef::Exile { .. }
+                )
+            }) {
+                let (_, _, quantity) = cost.object_selection().expect("object cost");
+                if !self.object_selection_is_valid(
+                    &self.activation_payment_candidates(player, &announced, cost),
+                    cost_objects,
+                    quantity,
+                ) {
+                    return;
+                }
+                if !self.activation_selected_mana_is_payable(player, &announced) {
+                    return;
+                }
+            }
             let fixed_sacrifices = definition
                 .costs
                 .iter()
@@ -560,12 +626,6 @@ impl Game {
                 .any(|cost| matches!(cost, CostDef::SacrificeSource | CostDef::ExileSource))
                 || fixed_sacrifices.contains(&source);
             let animates_source = Self::effect_animates_source(ability_def.declarative_effect());
-            let has_generic_sacrifice = definition
-                .costs
-                .iter()
-                .any(|cost| matches!(cost, CostDef::SacrificePermanent { .. }));
-            let sacrifice_choice_is_source =
-                has_generic_sacrifice && cost_objects.contains(&source);
             let tap_cost_payer = if definition
                 .costs
                 .iter()
@@ -610,7 +670,7 @@ impl Game {
                             taps_source,
                             leaves_source,
                         };
-                        self.activate_mana_for_cost_with_options_for(
+                        self.activate_mana_for_cost_with_options_reserving_for(
                             player,
                             cost,
                             x,
@@ -622,6 +682,7 @@ impl Game {
                                 tap_cost_payer,
                             },
                             &payment_purpose,
+                            cost_objects,
                         );
                         // The same purpose the mana was raised under. Paying
                         // under a different one would price the cost
@@ -642,7 +703,7 @@ impl Game {
                             taps_source,
                             leaves_source,
                         };
-                        self.activate_mana_for_cost_with_options_for(
+                        self.activate_mana_for_cost_with_options_reserving_for(
                             player,
                             cost,
                             x,
@@ -651,6 +712,7 @@ impl Game {
                                 tap_cost_payer,
                             },
                             &payment_purpose,
+                            cost_objects,
                         );
                         let _ = self.pay_player_cost_for(player, cost, x, &payment_purpose);
                         dynamic_mana_paid = true;
@@ -691,8 +753,7 @@ impl Game {
                     | CostDef::SacrificeObject(_)
                     | CostDef::ReturnSourceToHand
                     | CostDef::ExileSource
-                    | CostDef::SacrificePermanent { .. }
-                    | CostDef::SacrificePermanents { .. } => {
+                    | CostDef::Sacrifice { .. } => {
                         // A tap of a chosen permanent was paid above, ahead of
                         // mana. The rest are deferred until mana and
                         // source-dependent costs have been paid: a chosen
@@ -713,8 +774,8 @@ impl Game {
                     CostDef::PayLife(amount) => {
                         self.lose_life(player, *amount);
                     }
-                    CostDef::DiscardCardMatching(_) => {
-                        self.discard_cards(player, cost_objects);
+                    cost @ (CostDef::Discard { .. } | CostDef::Exile { from: ZoneKind::Hand | ZoneKind::Graveyard, .. }) => {
+                        self.pay_object_card_cost(player, *cost, cost_objects);
                     }
                     CostDef::RevealCardFromHand(_) => {
                         self.events.extend(cost_objects.iter().filter_map(|chosen| {
@@ -728,20 +789,6 @@ impl Game {
                                     definition: card.definition,
                                 })
                         }));
-                    }
-                    CostDef::ExileCardFromHand(_) => {
-                        for chosen in cost_objects {
-                            if let Some(card) =
-                                remove_card(&mut self.players[player.index()].hand, *chosen)
-                            {
-                                let (card, _zone_change) = self.zone_change_card(card);
-                                self.players[player.index()].exile.push(card.clone());
-                                self.capture_cards_exiled(
-                                    std::slice::from_ref(&card),
-                                    crate::card::ZoneKind::Hand,
-                                );
-                            }
-                        }
                     }
                     // The cost names as many cards as it prints, and the
                     // activation carried every one of them.
@@ -785,44 +832,34 @@ impl Game {
                         self.players[player.index()].exile.extend(moved.iter().cloned());
                         self.capture_cards_exiled(&moved, ZoneKind::Library);
                     }
-                    CostDef::DiscardCards(_) | CostDef::Special(_) => {
+                    CostDef::Special(_) => {
                         unreachable!("unsupported costs are not offered as legal actions")
                     }
                     _ => unreachable!("cost is not supported for an activated ability"),
                 }
             }
-            let mut remaining_sacrifices = Vec::new();
-            if has_generic_sacrifice {
-                remaining_sacrifices.extend(
-                    cost_objects
-                        .iter()
-                        .copied()
-                        .filter(|chosen| *chosen != source),
-                );
-            }
-            for sacrificed in fixed_sacrifices {
-                if !remaining_sacrifices.contains(&sacrificed) {
-                    remaining_sacrifices.push(sacrificed);
-                }
-            }
-            // Read while they are all still on the battlefield, which is the
-            // last moment anything can: the ability resolves long after they
-            // have gone, and what it owes is measured by what paid for it.
+            let remaining_sacrifices = definition
+                .costs
+                .iter()
+                .filter_map(|cost| match cost {
+                    CostDef::Sacrifice { .. } => Some(cost_objects.to_vec()),
+                    CostDef::SacrificeSource => Some(vec![source]),
+                    CostDef::SacrificeObject(reference) => {
+                        Self::activation_object_reference(*reference, source, ability)
+                            .map(|id| vec![id])
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
             frozen_ability.sacrificed_mana_value = remaining_sacrifices
                 .iter()
-                .filter_map(|sacrificed| self.current_or_last_known_mana_value(*sacrificed))
-                .fold(0u16, u16::saturating_add);
+                .flatten()
+                .filter_map(|id| self.current_or_last_known_mana_value(*id))
+                .fold(0_u16, u16::saturating_add);
             if definition.costs.contains(&CostDef::ExileSource) {
                 self.exile_permanent(source);
             } else if definition.costs.contains(&CostDef::ReturnSourceToHand) {
-                // The source leaves the battlefield to pay, the way a
-                // sacrifice does, but it goes somewhere it can be cast from
-                // again.
                 self.return_permanent_to_hand(source);
-            } else if definition.costs.contains(&CostDef::SacrificeSource)
-                || sacrifice_choice_is_source
-            {
-                remaining_sacrifices.push(source);
             }
             let mut chosen_permanents = frozen_targets
                 .iter()
@@ -881,39 +918,6 @@ impl Game {
                 self.queue_activation_saddle(
                     player,
                     i32::from(*minimum),
-                    PendingActivation {
-                        source,
-                        source_card,
-                        controller: player,
-                        frozen: frozen_ability,
-                        targets: frozen_targets,
-                        chosen_permanents,
-                        remaining_sacrifices,
-                    },
-                    Vec::new(),
-                );
-                self.consecutive_passes = 0;
-                return;
-            }
-            // A cost that takes a printed number of permanents names them
-            // by decision, so the activation waits here with everything it
-            // has already chosen and paid.
-            if let Some(CostDef::SacrificePermanents {
-                object,
-                controller,
-                count,
-            }) = definition
-                .costs
-                .iter()
-                .find(|cost| matches!(cost, CostDef::SacrificePermanents { .. }))
-            {
-                self.queue_activation_sacrifice(
-                    player,
-                    SacrificeQuota {
-                        remaining: *count,
-                        object: *object,
-                        controller: *controller,
-                    },
                     PendingActivation {
                         source,
                         source_card,

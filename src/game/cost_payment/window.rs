@@ -1,12 +1,12 @@
-//! Bounded resolving action-cost choices. This first lane accepts named
-//! choices of fixed public-zone object payments. Bundles and hidden/random
-//! action costs remain outside this lane until their joint planning exists.
+//! Resolving payment windows use shared object selection and commit rules.
+//! Tentative choices never consume resources.
 
 use super::{CostDef, CostPaymentWindow};
 use crate::card::{CostQuantityDef, EffectDef, PayOrDef, ZoneKind};
 use crate::game::{
     BattlefieldExitCompletion, CardPartId, CommittedTriggerEvent, DecisionContinuation,
-    DecisionOption, DecisionPreference, DecisionZone, Game, ObjectCharacteristics, PlayerId,
+    DecisionOption, DecisionPreference, DecisionVisibility, DecisionZone, Game,
+    ObjectCharacteristics, PlayerId,
 };
 use crate::ids::GameObjectId;
 
@@ -17,40 +17,18 @@ pub(in crate::game) struct CostPaymentOffer {
 }
 
 impl Game {
-    fn action_cost_candidates(&self, player: PlayerId, cost: CostDef) -> Vec<GameObjectId> {
+    fn can_pay_action_cost(&self, player: PlayerId, source: GameObjectId, cost: CostDef) -> bool {
         match cost {
-            CostDef::Sacrifice { object, .. } => {
-                self.matching_permanents_controlled(player, object)
-            }
-            CostDef::Exile {
-                object,
-                from: ZoneKind::Graveyard,
-                ..
-            } => self.players[player.index()]
-                .graveyard
-                .iter()
-                .filter(|card| self.card_object_matches(object, card, ZoneKind::Graveyard, card.id))
-                .map(|card| card.id)
-                .collect(),
-            _ => Vec::new(),
-        }
-    }
-
-    fn can_pay_action_cost(&self, player: PlayerId, cost: CostDef) -> bool {
-        match cost {
-            CostDef::Named { cost, .. } => self.can_pay_action_cost(player, *cost),
+            CostDef::Named { cost, .. } => self.can_pay_action_cost(player, source, *cost),
             CostDef::Choice(costs) => costs
                 .iter()
-                .any(|cost| self.can_pay_action_cost(player, *cost)),
-            CostDef::Sacrifice {
-                quantity: CostQuantityDef::Fixed(count),
-                ..
-            }
-            | CostDef::Exile {
-                quantity: CostQuantityDef::Fixed(count),
-                ..
-            } => self.action_cost_candidates(player, cost).len() >= usize::from(count),
-            _ => false,
+                .any(|cost| self.can_pay_action_cost(player, source, *cost)),
+            cost => cost.object_selection().is_some_and(|(_, _, quantity)| {
+                self.object_selection_is_payable(
+                    &self.object_cost_candidates(player, source, cost),
+                    quantity,
+                )
+            }),
         }
     }
 
@@ -59,28 +37,21 @@ impl Game {
         window: &CostPaymentWindow,
     ) -> Option<CostPaymentOffer> {
         let (cost, _) = window.selected_cost()?;
-        if !self.can_pay_action_cost(window.player, cost) {
+        let source = window.object.source.unwrap_or(window.object.id);
+        if !self.can_pay_action_cost(window.player, source, cost) {
             return None;
         }
         if let CostDef::Choice(choices) = cost {
-            let mut options = vec![DecisionOption {
-                id: 0,
-                label: "Decline".into(),
-                card: None,
-                members: Vec::new(),
-                ability_text: None,
-                zone: DecisionZone::None,
-            }];
+            if !window.chosen.is_empty() {
+                return None;
+            }
+            let mut options = vec![plain_option(0, "Decline".into())];
             for (index, choice) in choices.iter().enumerate() {
-                if self.can_pay_action_cost(window.player, *choice) {
-                    options.push(DecisionOption {
-                        id: u32::try_from(index + 1).ok()?,
-                        label: action_cost_label(*choice),
-                        card: None,
-                        members: Vec::new(),
-                        ability_text: None,
-                        zone: DecisionZone::None,
-                    });
+                if self.can_pay_action_cost(window.player, source, *choice) {
+                    options.push(plain_option(
+                        u32::try_from(index + 1).ok()?,
+                        action_cost_label(*choice),
+                    ));
                 }
             }
             return Some(CostPaymentOffer {
@@ -89,48 +60,79 @@ impl Game {
                 cancellable: false,
             });
         }
-        let (count, zone) = match cost {
-            CostDef::Sacrifice {
-                quantity: CostQuantityDef::Fixed(count),
-                ..
-            } => (count, DecisionZone::Battlefield),
-            CostDef::Exile {
-                quantity: CostQuantityDef::Fixed(count),
-                from: ZoneKind::Graveyard,
-                ..
-            } => (count, DecisionZone::Graveyard),
-            _ => return None,
+        let (_, from, quantity) = cost.object_selection()?;
+        let candidates = self.object_cost_candidates(window.player, source, cost);
+        if !window
+            .chosen
+            .iter()
+            .enumerate()
+            .all(|(index, id)| candidates.contains(id) && !window.chosen[..index].contains(id))
+        {
+            return None;
+        }
+        let threshold = matches!(quantity, CostQuantityDef::ObjectSetValueAtLeast(_));
+        if !threshold && !window.chosen.is_empty() {
+            return None;
+        }
+        let mut options = Vec::new();
+        if threshold && self.object_selection_is_valid(&candidates, &window.chosen, quantity) {
+            options.push(plain_option(0, "Pay selected objects".into()));
+        }
+        options.extend(
+            self.object_cost_options(&candidates, from)
+                .into_iter()
+                .filter(|option| {
+                    option
+                        .card
+                        .is_none_or(|(id, _)| !window.chosen.contains(&id))
+                }),
+        );
+        Some(CostPaymentOffer {
+            options,
+            count: if threshold {
+                1
+            } else {
+                usize::from(quantity.fixed_value()?)
+            },
+            cancellable: true,
+        })
+    }
+
+    pub(in crate::game) fn object_cost_options(
+        &self,
+        candidates: &[GameObjectId],
+        from: ZoneKind,
+    ) -> Vec<DecisionOption> {
+        let zone = match from {
+            ZoneKind::Hand => DecisionZone::Hand,
+            ZoneKind::Graveyard => DecisionZone::Graveyard,
+            ZoneKind::Battlefield => DecisionZone::Battlefield,
+            _ => unreachable!("unsupported object-payment zone"),
         };
-        let options = self
-            .action_cost_candidates(window.player, cost)
-            .into_iter()
+        candidates
+            .iter()
             .enumerate()
             .filter_map(|(index, id)| {
                 let characteristics = self
                     .battlefield
                     .iter()
-                    .find(|permanent| permanent.card.id == id)
+                    .find(|permanent| permanent.card.id == *id)
                     .map(Self::effective_rules_source)
                     .or_else(|| {
-                        self.card_in_nonbattlefield_zone(id).map(|(_, card)| {
+                        self.card_in_nonbattlefield_zone(*id).map(|(_, card)| {
                             ObjectCharacteristics::card(card.definition, CardPartId::PRIMARY)
                         })
                     })?;
                 Some(DecisionOption {
                     id: u32::try_from(index + 1).ok()?,
                     label: self.characteristics_name(characteristics)?.into_owned(),
-                    card: Some((id, characteristics)),
+                    card: Some((*id, characteristics)),
                     members: Vec::new(),
                     ability_text: None,
                     zone,
                 })
             })
-            .collect();
-        Some(CostPaymentOffer {
-            options,
-            count: usize::from(count),
-            cancellable: true,
-        })
+            .collect()
     }
 
     pub(in crate::game) fn queue_cost_payment_window(&mut self, window: CostPaymentWindow) {
@@ -138,14 +140,12 @@ impl Game {
             self.finish_cost_payment_window(window, false);
             return;
         };
-        let EffectDef::PayOr(definition) = window.definition.effect else {
-            unreachable!()
-        };
+        let visibility = window.visibility();
         let source = window.object.source;
         self.queue_decision(
             window.player,
             window.object.ability_text().unwrap_or("Pay the cost?"),
-            crate::game::decision_offers::effect_choice_visibility(definition.visibility),
+            visibility,
             DecisionPreference::Neutral,
             offer.count..=offer.count,
             offer.cancellable,
@@ -166,6 +166,7 @@ impl Game {
         let Some((cost, _)) = window.selected_cost() else {
             return;
         };
+        let source = window.object.source.unwrap_or(window.object.id);
         if let CostDef::Choice(choices) = cost {
             if let [selected] = selected
                 && let Some(index) = selected
@@ -173,7 +174,7 @@ impl Game {
                     .and_then(|index| usize::try_from(index).ok())
                 && choices
                     .get(index)
-                    .is_some_and(|cost| self.can_pay_action_cost(window.player, *cost))
+                    .is_some_and(|cost| self.can_pay_action_cost(window.player, source, *cost))
             {
                 window.path.push(index);
                 self.queue_cost_payment_window(window);
@@ -182,7 +183,8 @@ impl Game {
             }
             return;
         }
-        let members = selected
+        let (_, _, quantity) = cost.object_selection().expect("a supported object cost");
+        let mut members = selected
             .iter()
             .filter_map(|selected| {
                 options
@@ -191,18 +193,27 @@ impl Game {
                     .and_then(|option| option.card.map(|(id, _)| id))
             })
             .collect::<Vec<_>>();
-        // Revalidate every selected resource before the first mutation.
-        let valid = self.cost_payment_offer(&window).is_some_and(|offer| {
-            selected.len() == offer.count
-                && members.len() == offer.count
-                && members.iter().enumerate().all(|(index, id)| {
-                    !members[..index].contains(id)
-                        && offer.options.iter().any(|option| {
-                            option.card.is_some_and(|(candidate, _)| candidate == *id)
-                        })
-                })
-        });
-        if !valid {
+        let candidates = self.object_cost_candidates(window.player, source, cost);
+        if matches!(quantity, CostQuantityDef::ObjectSetValueAtLeast(_)) {
+            if selected == [0] {
+                members.clone_from(&window.chosen);
+            } else if let [id] = members.as_slice()
+                && selected.len() == 1
+                && candidates.contains(id)
+                && !window.chosen.contains(id)
+            {
+                window.chosen.push(*id);
+                self.queue_cost_payment_window(window);
+                return;
+            } else {
+                self.finish_cost_payment_window(window, false);
+                return;
+            }
+        } else if selected.len() != members.len() {
+            self.finish_cost_payment_window(window, false);
+            return;
+        }
+        if !self.object_selection_is_valid(&candidates, &members, quantity) {
             self.finish_cost_payment_window(window, false);
             return;
         }
@@ -216,23 +227,12 @@ impl Game {
                     ))),
                 );
             }
-            CostDef::Exile {
-                from: ZoneKind::Graveyard,
+            CostDef::Discard { .. }
+            | CostDef::Exile {
+                from: ZoneKind::Hand | ZoneKind::Graveyard,
                 ..
             } => {
-                let mut exiled = Vec::new();
-                for id in members {
-                    let card = crate::game::remove_card(
-                        &mut self.players[window.player.index()].graveyard,
-                        id,
-                    )
-                    .expect("the whole selection was validated before payment");
-                    let (card, _) = self.zone_change_card(card);
-                    self.players[window.player.index()].exile.push(card.clone());
-                    exiled.push(card);
-                }
-                self.capture_cards_exiled(&exiled, ZoneKind::Graveyard);
-                self.note_card_left_graveyard(window.player);
+                self.pay_object_card_cost(window.player, cost, &members);
                 self.finish_cost_payment_window(window, true);
             }
             _ => unreachable!("unsupported action cost cannot open a payment window"),
@@ -244,6 +244,22 @@ impl Game {
         window: CostPaymentWindow,
         paid: bool,
     ) {
+        if let Some(age) = window.cumulative_upkeep_age {
+            if paid {
+                self.capture_optional_effect_taken(&window.object);
+                self.capture_cumulative_upkeep_paid(&window.object, window.player, age, &[]);
+            } else {
+                self.capture_cumulative_upkeep_not_paid(&window.object, window.player, age);
+                self.resolve_nested_effect_before_later(
+                    window.definition.with_effect(EffectDef::Sacrifice {
+                        object: crate::card::EffectRecipientDef::Source,
+                    }),
+                    &window.object,
+                    window.context,
+                );
+            }
+            return;
+        }
         let EffectDef::PayOr(PayOrDef {
             if_paid, otherwise, ..
         }) = window.definition.effect
@@ -275,6 +291,43 @@ impl Game {
     }
 }
 
+impl CostPaymentWindow {
+    pub(in crate::game) fn visibility(&self) -> DecisionVisibility {
+        if self.cumulative_upkeep_age.is_some() {
+            return DecisionVisibility::Private;
+        }
+        let EffectDef::PayOr(definition) = self.definition.effect else {
+            unreachable!()
+        };
+        if cost_has_private_selection(definition.payment.cost) {
+            DecisionVisibility::Private
+        } else {
+            crate::game::decision_offers::effect_choice_visibility(definition.visibility)
+        }
+    }
+}
+
+fn cost_has_private_selection(cost: CostDef) -> bool {
+    match cost {
+        CostDef::Named { cost, .. } => cost_has_private_selection(*cost),
+        CostDef::Choice(costs) => costs.iter().any(|cost| cost_has_private_selection(*cost)),
+        cost => cost
+            .object_selection()
+            .is_some_and(|(_, zone, _)| zone == ZoneKind::Hand),
+    }
+}
+
+fn plain_option(id: u32, label: String) -> DecisionOption {
+    DecisionOption {
+        id,
+        label,
+        card: None,
+        members: Vec::new(),
+        ability_text: None,
+        zone: DecisionZone::None,
+    }
+}
+
 fn action_cost_label(cost: CostDef) -> String {
     match cost {
         CostDef::Named { cost, .. } => action_cost_label(*cost),
@@ -283,9 +336,17 @@ fn action_cost_label(cost: CostDef) -> String {
             ..
         } => format!("Sacrifice {count} permanent(s)"),
         CostDef::Exile {
+            from: ZoneKind::Graveyard,
             quantity: CostQuantityDef::Fixed(count),
             ..
         } => format!("Exile {count} card(s) from your graveyard"),
+        CostDef::Sacrifice { .. } => "Sacrifice matching permanents".into(),
+        CostDef::Discard { .. } => "Discard matching cards".into(),
+        CostDef::Exile {
+            from: ZoneKind::Hand,
+            ..
+        } => "Exile cards from your hand".into(),
+        CostDef::Exile { .. } => "Exile cards from your graveyard".into(),
         CostDef::Choice(_) => "Choose a payment".into(),
         _ => unreachable!("unsupported action cost"),
     }

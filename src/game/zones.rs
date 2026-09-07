@@ -727,6 +727,20 @@ impl Game {
         // tapped. Everything else leaves this empty.
         arrival: Option<BattlefieldArrival>,
     ) -> Option<(CardInstance, ZoneKind)> {
+        self.move_nonbattlefield_card(id, expected_from, requested_to, cause, arrival, true)
+    }
+
+    /// A batch caller publishes exile occurrences after the whole move,
+    /// while still applying the same destination replacements per card.
+    pub(super) fn move_nonbattlefield_card(
+        &mut self,
+        id: GameObjectId,
+        expected_from: ZoneKind,
+        requested_to: ZoneKind,
+        cause: ZoneMoveCause,
+        arrival: Option<BattlefieldArrival>,
+        publish_exile: bool,
+    ) -> Option<(CardInstance, ZoneKind)> {
         let (from, card) = self
             .card_in_nonbattlefield_zone(id)
             .map(|(zone, card)| (zone, card.clone()))?;
@@ -777,7 +791,7 @@ impl Game {
         if destination == ZoneKind::Graveyard {
             self.capture_nonbattlefield_graveyard_arrival(&before_move, &card, from);
         }
-        if destination == ZoneKind::Exile {
+        if publish_exile && destination == ZoneKind::Exile {
             self.capture_cards_exiled(std::slice::from_ref(&card), from);
         }
         if from == ZoneKind::Graveyard {

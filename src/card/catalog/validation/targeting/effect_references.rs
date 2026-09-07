@@ -925,7 +925,8 @@ fn validate_effect_references(
         // target slot.
         // A prohibition names a card shape, never a target.
         EffectDef::CumulativeUpkeep(
-            crate::card::CostDef::SacrificePermanents { object, .. }
+            crate::card::CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(_), object, .. }
+            | crate::card::CostDef::Discard { object, .. }
             | crate::card::CostDef::GainControlPermanents { object, .. },
         ) => validate_object_predicate_references(object, target_count, scope),
         EffectDef::CumulativeUpkeep(

@@ -19,20 +19,11 @@ impl Game {
             },
             Cost::PayLife(amount) => Resolved::Life(repeated(amount)),
             Cost::DrawCards(amount) => Resolved::DrawCards(repeated(amount)),
-            Cost::DiscardCards(amount) => Resolved::DiscardCards(repeated(amount)),
             Cost::PutCountersOnSource { kind, amount } => Resolved::PutCounters {
                 object: source,
                 kind,
                 amount,
                 times: age,
-            },
-            Cost::SacrificePermanents {
-                object,
-                controller: crate::card::PlayerRelation::You,
-                count,
-            } => Resolved::SacrificePermanents {
-                object,
-                amount: repeated(u16::from(count)),
             },
             Cost::ExileTopCards(amount) => Resolved::ExileTopCards(repeated(amount)),
             Cost::AddMana(effect) => {
