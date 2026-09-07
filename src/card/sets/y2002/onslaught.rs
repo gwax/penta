@@ -4213,13 +4213,24 @@ pub(in crate::card::sets) static ELVISH_WARRIOR: CardRecord = CardRecord::new(
 );
 
 // ONS 261 — Enchantress's Presence
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ENCHANTRESS_S_PRESENCE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("75def198-99d6-4b0a-8878-5151f44bc0a4"),
     "Enchantress's Presence",
-    crate::card::CardArt::new("75def198-99d6-4b0a-8878-5151f44bc0a4", "Rebecca Guay"),
-    crate::card::CardSet::Onslaught,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("75def198-99d6-4b0a-8878-5151f44bc0a4", "Rebecca Guay"),
+    CardSet::Onslaught,
+    // The Enchantress effect without a body to kill, which is why the deck that
+    // wants it plays this one over the creature.
+    CardRules::new_enchantment(mana_cost!("{2}{G}")).with_ability(AbilityDef::triggered(
+        "Whenever you cast an enchantment spell, draw a card.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Enchantment),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        ])),
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    )),
 );
 
 // ONS 262 — Everglove Courier

@@ -357,13 +357,29 @@ pub(in crate::card::sets) static LIFELINK: CardRecord = CardRecord::new(
 );
 
 // M12 25 — Mesa Enchantress
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MESA_ENCHANTRESS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4037d6de-f30b-483c-83a8-9a4e2978f7fc"),
     "Mesa Enchantress",
-    crate::card::CardArt::new("691dcce5-ac3d-4970-b3ff-3db485f9f5c3", "Randy Gallegos"),
-    crate::card::CardSet::Magic2012,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("691dcce5-ac3d-4970-b3ff-3db485f9f5c3", "Randy Gallegos"),
+    CardSet::Magic2012,
+    // The same engine in white and without the shroud, which in practice means
+    // it draws one card before it dies.
+    CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Human", "Druid"], 0, 2).with_ability(
+        AbilityDef::triggered(
+            "Whenever you cast an enchantment spell, you may draw a card.",
+            TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Enchantment),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ])),
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            },
+        ),
+    ),
 );
 
 // M12 26 — Mighty Leap
@@ -2178,13 +2194,24 @@ pub(in crate::card::sets) static ADAPTIVE_AUTOMATON: CardRecord = CardRecord::ne
 );
 
 // M12 202 — Angel's Feather
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ANGEL_S_FEATHER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("4a11d101-2e82-42d5-b4a1-8f0c520441ab"),
     "Angel's Feather",
-    crate::card::CardArt::new("3992dc7c-61c0-4d5f-9c32-8febfad4ef6d", "Alan Pollack"),
-    crate::card::CardSet::Magic2012,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("3992dc7c-61c0-4d5f-9c32-8febfad4ef6d", "Alan Pollack"),
+    CardSet::Magic2012,
+    // A sideboard card that only reads well against one colour, which is
+    // exactly what the cycle was printed for.
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::triggered(
+        "Whenever a player casts a white spell, you may gain 1 life.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::Color(ManaColor::White)),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        },
+    )),
 );
 
 // M12 203 — Crown of Empires
@@ -2208,23 +2235,45 @@ pub(in crate::card::sets) static CRUMBLING_COLOSSUS: CardRecord = CardRecord::ne
 );
 
 // M12 205 — Demon's Horn
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DEMON_S_HORN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("41d40eb4-643a-4e22-a15f-eda45a48cfd6"),
     "Demon's Horn",
-    crate::card::CardArt::new("3f56b129-fe2d-4061-b1c9-f1f5a4db564a", "Alan Pollack"),
-    crate::card::CardSet::Magic2012,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("3f56b129-fe2d-4061-b1c9-f1f5a4db564a", "Alan Pollack"),
+    CardSet::Magic2012,
+    // The black member of the same cycle, and the one most likely to be
+    // triggering several times a turn.
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::triggered(
+        "Whenever a player casts a black spell, you may gain 1 life.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::Color(ManaColor::Black)),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        },
+    )),
 );
 
 // M12 206 — Dragon's Claw
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DRAGON_S_CLAW: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("7a46bbcc-b287-47bb-b252-5dd3217f61a9"),
     "Dragon's Claw",
-    crate::card::CardArt::new("0d732b87-08e5-41b6-8448-62dd6bf20d9c", "Alan Pollack"),
-    crate::card::CardSet::Magic2012,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("0d732b87-08e5-41b6-8448-62dd6bf20d9c", "Alan Pollack"),
+    CardSet::Magic2012,
+    // Against burn this is the card that turns a race into a grind, one life at
+    // a time.
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::triggered(
+        "Whenever a player casts a red spell, you may gain 1 life.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::Color(ManaColor::Red)),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        },
+    )),
 );
 
 // M12 207 — Druidic Satchel
@@ -2292,13 +2341,24 @@ pub(in crate::card::sets) static KITE_SHIELD: CardRecord = CardRecord::new(
 );
 
 // M12 211 — Kraken's Eye
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static KRAKEN_S_EYE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("cc767637-627a-4ea2-873b-d8a80ccc925b"),
     "Kraken's Eye",
-    crate::card::CardArt::new("48052433-c4d3-434e-a609-e8400150a0f6", "Alan Pollack"),
-    crate::card::CardSet::Magic2012,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("48052433-c4d3-434e-a609-e8400150a0f6", "Alan Pollack"),
+    CardSet::Magic2012,
+    // The least useful of the five in practice, because the deck it is aimed at
+    // wins without dealing damage at all.
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::triggered(
+        "Whenever a player casts a blue spell, you may gain 1 life.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::Color(ManaColor::Blue)),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        },
+    )),
 );
 
 // M12 212 — Manalith
@@ -2458,13 +2518,24 @@ pub(in crate::card::sets) static WORLDSLAYER: CardRecord = CardRecord::new(
 );
 
 // M12 223 — Wurm's Tooth
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static WURM_S_TOOTH: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("482cdbe0-b865-4e09-bd30-61ab93739b53"),
     "Wurm's Tooth",
-    crate::card::CardArt::new("da965767-a8b1-4725-ae20-65c18e37ad27", "Alan Pollack"),
-    crate::card::CardSet::Magic2012,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("da965767-a8b1-4725-ae20-65c18e37ad27", "Alan Pollack"),
+    CardSet::Magic2012,
+    // Two mana that quietly undoes a whole turn of green beats, provided the
+    // green deck keeps casting things.
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::triggered(
+        "Whenever a player casts a green spell, you may gain 1 life.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::Color(ManaColor::Green)),
+        EffectDef::May {
+            player: EffectRecipientDef::Controller,
+            effect: &EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        },
+    )),
 );
 
 // M12 224 — Buried Ruin

@@ -1222,13 +1222,25 @@ pub(in crate::card::sets) static YAWGMOTH_S_BARGAIN: CardRecord = CardRecord::ne
 );
 
 // UDS 76 — Aether Sting
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AETHER_STING: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("66a09917-50ce-4b51-a5cf-e28e88a45762"),
     "Aether Sting",
-    crate::card::CardArt::new("66a09917-50ce-4b51-a5cf-e28e88a45762", "Pete Venters"),
-    crate::card::CardSet::UrzasDestiny,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("66a09917-50ce-4b51-a5cf-e28e88a45762", "Pete Venters"),
+    CardSet::UrzasDestiny,
+    // One-sided and aimed squarely at the creature deck, which is the only kind
+    // of opponent a four-mana do-nothing enchantment can afford.
+    CardRules::new_enchantment(mana_cost!("{3}{R}")).with_ability(AbilityDef::triggered(
+        "Whenever an opponent casts a creature spell, this enchantment deals 1 damage to that \
+         player.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+        ])),
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::ControllerOfTriggeringObject,
+            amount: ValueDef::Constant(1),
+        },
+    )),
 );
 
 // UDS 77 — Bloodshot Cyclops

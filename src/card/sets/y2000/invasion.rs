@@ -565,13 +565,29 @@ pub(in crate::card::sets) static REVIVING_DOSE: CardRecord = CardRecord::new(
 );
 
 // INV 32 — Rewards of Diversity
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static REWARDS_OF_DIVERSITY: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("04116b38-8fb1-47c6-b68d-060d0fc4a60d"),
     "Rewards of Diversity",
-    crate::card::CardArt::new("04116b38-8fb1-47c6-b68d-060d0fc4a60d", "Darrell Riche"),
-    crate::card::CardSet::Invasion,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("04116b38-8fb1-47c6-b68d-060d0fc4a60d", "Darrell Riche"),
+    CardSet::Invasion,
+    // Four life is a lot, and in a block where every good card was gold the
+    // trigger was never going to be short of work.
+    CardRules::new_enchantment(mana_cost!("{2}{W}")).with_ability(AbilityDef::triggered(
+        "Whenever an opponent casts a multicolored spell, you gain 4 life.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::ColorCount(2),
+                ObjectPredicateDef::ColorCount(3),
+                ObjectPredicateDef::ColorCount(4),
+                ObjectPredicateDef::ColorCount(5),
+            ]),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+        ])),
+        EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(4),
+        },
+    )),
 );
 
 // INV 33 — Reya Dawnbringer

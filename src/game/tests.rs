@@ -92,6 +92,7 @@ mod cannot_block;
 mod cantrip_riders;
 mod cast_context_cards;
 mod cast_origin_cards;
+mod cast_watchers;
 mod casting_and_targets;
 mod casting_modes;
 mod casting_windows;

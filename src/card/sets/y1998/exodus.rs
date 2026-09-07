@@ -1575,13 +1575,21 @@ pub(in crate::card::sets) static SONIC_BURST: CardRecord = CardRecord::new(
 );
 
 // EXO 104 — Spellshock
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SPELLSHOCK: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("52db2a78-e1c5-4732-a4ee-04b4c540edbe"),
     "Spellshock",
-    crate::card::CardArt::new("52db2a78-e1c5-4732-a4ee-04b4c540edbe", "Thomas M. Baxa"),
-    crate::card::CardSet::Exodus,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("52db2a78-e1c5-4732-a4ee-04b4c540edbe", "Thomas M. Baxa"),
+    CardSet::Exodus,
+    // It taxes both players, so the deck playing it had better be the one with
+    // fewer spells -- which is a strange thing to build toward.
+    CardRules::new_enchantment(mana_cost!("{2}{R}")).with_ability(AbilityDef::triggered(
+        "Whenever a player casts a spell, this enchantment deals 2 damage to that player.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::Any),
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::ControllerOfTriggeringObject,
+            amount: ValueDef::Constant(2),
+        },
+    )),
 );
 
 // EXO 105 — Avenging Druid

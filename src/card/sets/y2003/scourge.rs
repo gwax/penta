@@ -1576,13 +1576,22 @@ pub(in crate::card::sets) static MISGUIDED_RAGE: CardRecord = CardRecord::new(
 );
 
 // SCG 100 — Pyrostatic Pillar
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PYROSTATIC_PILLAR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5973cd53-f6cd-4edc-b952-f6d3eef97988"),
     "Pyrostatic Pillar",
-    crate::card::CardArt::new("5973cd53-f6cd-4edc-b952-f6d3eef97988", "Pete Venters"),
-    crate::card::CardSet::Scourge,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5973cd53-f6cd-4edc-b952-f6d3eef97988", "Pete Venters"),
+    CardSet::Scourge,
+    // It hurts the cheap deck and leaves the expensive one alone, so the two
+    // mana it costs are the last cheap thing its controller wants to cast.
+    CardRules::new_enchantment(mana_cost!("{1}{R}")).with_ability(AbilityDef::triggered(
+        "Whenever a player casts a spell with mana value 3 or less, this enchantment deals 2 \
+         damage to that player.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::ManaValueAtMost(3)),
+        EffectDef::DealDamage {
+            recipient: EffectRecipientDef::ControllerOfTriggeringObject,
+            amount: ValueDef::Constant(2),
+        },
+    )),
 );
 
 // SCG 101 — Rock Jockey

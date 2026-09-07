@@ -2087,13 +2087,23 @@ pub(in crate::card::sets) static NO_REST_FOR_THE_WICKED: CardRecord = CardRecord
 );
 
 // USG 143 — Oppression
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static OPPRESSION: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("8838e751-b206-4052-9263-a67b8fea05cc"),
     "Oppression",
-    crate::card::CardArt::new("8838e751-b206-4052-9263-a67b8fea05cc", "Pete Venters"),
-    crate::card::CardSet::UrzasSaga,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("8838e751-b206-4052-9263-a67b8fea05cc", "Pete Venters"),
+    CardSet::UrzasSaga,
+    // Symmetrical on paper and not at all in practice: the deck that emptied its
+    // hand first is the one that stops caring.
+    CardRules::new_enchantment(mana_cost!("{1}{B}{B}")).with_ability(AbilityDef::triggered(
+        "Whenever a player casts a spell, that player discards a card.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::Any),
+        EffectDef::Discard {
+            recipient: EffectRecipientDef::ControllerOfTriggeringObject,
+            amount: ValueDef::Constant(1),
+            selection: DiscardSelectionDef::RecipientChooses,
+            then: None,
+        },
+    )),
 );
 
 // USG 144 — Order of Yawgmoth
@@ -2466,13 +2476,34 @@ pub(in crate::card::sets) static WITCH_ENGINE: CardRecord = CardRecord::new(
 );
 
 // USG 170 — Yawgmoth's Edict
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static YAWGMOTH_S_EDICT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3f16be4b-4540-476a-b3ac-7442507ed314"),
     "Yawgmoth's Edict",
-    crate::card::CardArt::new("3f16be4b-4540-476a-b3ac-7442507ed314", "Scott Kirschner"),
-    crate::card::CardSet::UrzasSaga,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("3f16be4b-4540-476a-b3ac-7442507ed314", "Scott Kirschner"),
+    CardSet::UrzasSaga,
+    // A two-point life swing per white spell, which is how black answers a
+    // colour it cannot otherwise interact with profitably.
+    CardRules::new_enchantment(mana_cost!("{1}{B}")).with_ability(AbilityDef::triggered(
+        "Whenever an opponent casts a white spell, that player loses 1 life and you gain 1 life.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Color(ManaColor::White),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+        ])),
+        EffectDef::Sequence(
+            &const {
+                [
+                    EffectDef::LoseLife {
+                        recipient: EffectRecipientDef::ControllerOfTriggeringObject,
+                        amount: ValueDef::Constant(1),
+                    },
+                    EffectDef::GainLife {
+                        recipient: EffectRecipientDef::Controller,
+                        amount: ValueDef::Constant(1),
+                    },
+                ]
+            },
+        ),
+    )),
 );
 
 // USG 171 — Yawgmoth's Will
@@ -3551,13 +3582,27 @@ pub(in crate::card::sets) static ARGOTHIAN_ELDER: CardRecord = CardRecord::new(
 );
 
 // USG 234 — Argothian Enchantress
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ARGOTHIAN_ENCHANTRESS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("9ababc1a-515e-4e20-8819-19d84d9b0af5"),
     "Argothian Enchantress",
-    crate::card::CardArt::new("9ababc1a-515e-4e20-8819-19d84d9b0af5", "Daren Bader"),
-    crate::card::CardSet::UrzasSaga,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("9ababc1a-515e-4e20-8819-19d84d9b0af5", "Daren Bader"),
+    CardSet::UrzasSaga,
+    // Shroud is the whole card: a 0/1 that draws a card a turn survives only
+    // because nothing can point at it.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Human", "Druid"], 0, 1).with_abilities(&[
+        abilities::shroud(),
+        AbilityDef::triggered(
+            "Whenever you cast an enchantment spell, draw a card.",
+            TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Enchantment),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ])),
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // USG 235 — Argothian Swine

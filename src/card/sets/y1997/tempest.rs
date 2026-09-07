@@ -993,13 +993,24 @@ pub(in crate::card::sets) static HORNED_TURTLE: CardRecord = CardRecord::new(
 );
 
 // TMP 68 — Insight
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static INSIGHT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("1dfd9cb9-51f6-4d09-b5c0-5b0ed9d16542"),
     "Insight",
-    crate::card::CardArt::new("1dfd9cb9-51f6-4d09-b5c0-5b0ed9d16542", "Ron Chironna"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("1dfd9cb9-51f6-4d09-b5c0-5b0ed9d16542", "Ron Chironna"),
+    CardSet::Tempest,
+    // Drawing a card off every spell they cast is the sort of hoser that wins a
+    // long game outright, if the matchup ever shows up.
+    CardRules::new_enchantment(mana_cost!("{2}{U}")).with_ability(AbilityDef::triggered(
+        "Whenever an opponent casts a green spell, you draw a card.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Color(ManaColor::Green),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+        ])),
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(1),
+        },
+    )),
 );
 
 // TMP 69 — Interdict
@@ -2757,13 +2768,24 @@ pub(in crate::card::sets) static HAND_TO_HAND: CardRecord = CardRecord::new(
 );
 
 // TMP 181 — Havoc
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HAVOC: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d7b032a1-6e43-4e22-9efa-43cfbf211e1c"),
     "Havoc",
-    crate::card::CardArt::new("d7b032a1-6e43-4e22-9efa-43cfbf211e1c", "Donato Giancola"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("d7b032a1-6e43-4e22-9efa-43cfbf211e1c", "Donato Giancola"),
+    CardSet::Tempest,
+    // Two life a spell is a real clock against a deck that has to cast four
+    // things to stabilise, and nothing at all against anyone else.
+    CardRules::new_enchantment(mana_cost!("{1}{R}")).with_ability(AbilityDef::triggered(
+        "Whenever an opponent casts a white spell, they lose 2 life.",
+        TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::Color(ManaColor::White),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+        ])),
+        EffectDef::LoseLife {
+            recipient: EffectRecipientDef::ControllerOfTriggeringObject,
+            amount: ValueDef::Constant(2),
+        },
+    )),
 );
 
 // TMP 182 — Heart Sliver
