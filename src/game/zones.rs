@@ -879,7 +879,7 @@ impl Game {
             {
                 continue;
             }
-            let Some((card, destination)) = self.move_card_from_nonbattlefield_zone(
+            let Some((card, _destination)) = self.move_card_from_nonbattlefield_zone(
                 *id,
                 ZoneKind::Hand,
                 ZoneKind::Graveyard,
@@ -892,17 +892,26 @@ impl Game {
             // Read where the card now lies: a trigger that exiles "that
             // card from your graveyard" needs the graveyard object, and the
             // one that was in hand no longer exists.
-            let context = match destination {
-                ZoneKind::Hand => Some(CharacteristicContext::Hand),
-                ZoneKind::Library => Some(CharacteristicContext::Library),
-                ZoneKind::Graveyard => Some(CharacteristicContext::Graveyard),
-                ZoneKind::Exile => Some(CharacteristicContext::Exile),
-                ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => None,
-            };
-            let object = context.and_then(|context| {
-                self.printed_trigger_event_object(card.id, definition, player, &context)
-            });
-            discarded.push((card.id, definition, object));
+            // An external replacement may redirect the requested destination;
+            // battlefield entry also mints its identity during commitment.
+            let current = self.successors.get(&card.id).copied().unwrap_or(card.id);
+            let object = self
+                .battlefield
+                .iter()
+                .find(|permanent| permanent.card.id == current)
+                .map(|permanent| self.trigger_event_object(permanent))
+                .or_else(|| {
+                    let (zone, card) = self.card_in_nonbattlefield_zone(current)?;
+                    let context = match zone {
+                        ZoneKind::Hand => CharacteristicContext::Hand,
+                        ZoneKind::Library => CharacteristicContext::Library,
+                        ZoneKind::Graveyard => CharacteristicContext::Graveyard,
+                        ZoneKind::Exile => CharacteristicContext::Exile,
+                        ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => return None,
+                    };
+                    self.printed_trigger_event_object(current, card.definition, player, &context)
+                });
+            discarded.push((current, definition, object));
         }
         if !discarded.is_empty() {
             self.events.push(GameEvent::CardsDiscarded {

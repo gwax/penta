@@ -555,6 +555,49 @@ mod channel_is_not_cycling {
     }
 
     #[test]
+    fn cycling_discard_predicates_read_the_replacement_destination() {
+        static ABILITIES: [AbilityDef; 3] = [
+            BOTH_ABILITIES[0],
+            AbilityDef::static_ability(
+                "While this card is in exile, it is also a creature.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::add_card_types(crate::card::CardTypeSet::single(
+                        CardType::Creature,
+                    )),
+                },
+            )
+            .with_source_zones(&[ZoneKind::Exile]),
+            AbilityDef::triggered(
+                "Whenever you cycle a creature card, gain 3 life.",
+                TriggerEventDef::mechanic_performed_on(
+                    abilities::CYCLING,
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    PlayerRelation::You,
+                ),
+                WHEN_CYCLED,
+            )
+            .with_source_zones(&[ZoneKind::Exile]),
+        ];
+        for prepared in [false, true] {
+            let (mut game, held, _) = staged_with_abilities(&ABILITIES);
+            game.set_prepared_engine_enabled(prepared);
+            game.put_onto_battlefield(PlayerId::One, cards::REST_IN_PEACE)
+                .unwrap();
+            drain_pending(&mut game);
+            game.apply(PlayerId::One, cycle_action(&game, held).unwrap())
+                .unwrap();
+            assert_eq!(
+                game.stack.len(),
+                2,
+                "the event reads the card as it actually exists in exile"
+            );
+            settle(&mut game);
+            assert_eq!(game.players[0].life, 23);
+        }
+    }
+
+    #[test]
     fn cycling_named_discard_cannot_spend_the_source_twice() {
         static ABILITIES: [AbilityDef; 1] = [AbilityDef::activated(
             "Discard this card twice: Draw a card.",
