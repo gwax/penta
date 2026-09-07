@@ -12,8 +12,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         TriggerEventDef::While { event, .. } => trigger_event_object_zone(*event),
         TriggerEventDef::ZoneChanged(matcher) => matcher.to,
         TriggerEventDef::Tapped(_)
-        | TriggerEventDef::CumulativeUpkeepPaid { .. }
-        | TriggerEventDef::CumulativeUpkeepNotPaid
+        | TriggerEventDef::MechanicPayment { .. }
         | TriggerEventDef::Attacks(_)
         | TriggerEventDef::Exerted(_)
         | TriggerEventDef::OptionalEffectTaken(_)

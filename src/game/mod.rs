@@ -1,3 +1,5 @@
+#[cfg(test)]
+pub(crate) use cost_payment::supported_action_program;
 use std::borrow::Cow;
 use std::collections::{BTreeMap, VecDeque};
 use std::ops::ControlFlow;

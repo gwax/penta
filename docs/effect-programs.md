@@ -53,6 +53,10 @@ actions: sacrificing a Food while foraging produces both sacrifice and forage,
 whereas sacrificing that Food for another purpose produces only sacrifice.
 Casting preserves named completion boundaries and individual action batches
 through cost expansion, including suspended battlefield-exit replacements.
+`AbilityDef::mechanics` separately labels the ability itself. Cumulative upkeep
+uses both: its triggered clause carries `CUMULATIVE_UPKEEP`, while its payment
+publishes a typed `MechanicPayment` result (paid/unpaid, repetition count, and
+actual mana colors spent). Ability identity is not inferred from rules text.
 
 Corpseberry Cultivator is the reference composition. Its optional combat
 forage and Feed the Cycle's additional cost use the same set-owned helper;
@@ -70,17 +74,20 @@ Entry replacements retain their single-card payment adapter, backed by the
 same eligibility, validation, and commit routines; hand candidates are private.
 
 Cancelling a resolving payment selects its unpaid continuation without rewind.
-Cumulative-upkeep sacrifice/discard payments use this same window while keeping
-the added age counter and the ordinary upkeep events. Checkpoints retain the
-authored locator, choice path, and tentative aggregate selections; reconstruction
-validates the offer. Checkpoint v14 removes superseded payment continuations.
+Cumulative upkeep uses this same window while keeping the added age counter.
+Checkpoints retain the authored locator, ordered selection answers, and
+tentative aggregate selections; reconstruction validates the offer. A committed
+payment suspended by an ordinary draw replacement retains its remaining action
+suffix, frozen repetition counts, and actual mana spent. It resumes without
+re-paying earlier actions. Unsupported or unlocatable suspended state fails
+closed. Checkpoint v14 removes superseded payment continuations.
 Paused activation declarations remain outside checkpoint coverage, as before.
 The prepared engine can fall back to the semantic lane before mutation.
 
-This is not yet a general joint payment planner. Casting still enumerates
-combinations and limits aggregate-cost offers to minimal selections. Arbitrary
-bundles, hidden or random action costs, and remaining activation-cost families
-remain follow-ups. Cycling
+This is not yet a general joint casting/activation planner. Casting still
+enumerates combinations and limits aggregate-cost offers to minimal selections.
+Arbitrary action programs and remaining activation-cost families remain
+follow-ups. Cycling
 also remains a follow-up: recognizing its ability before activation and
 observing its activation-time occurrence are separate from cost completion.
 
@@ -103,7 +110,7 @@ Neither are independently maintained affordability and execution callbacks.
 When a card overrides a shared rule, expose the override and its lifetime
 explicitly rather than teaching unrelated engine paths the card's identity.
 
-## Payment programs: next semantic slice
+## Resolving payment programs
 
 Keep one general cost grammar. Common payments and locally composed action
 costs should use the same payment window, selections, and execution validator.
@@ -111,7 +118,7 @@ Alternatives, bundles, and repetitions are composition, not new card-specific
 cost variants. Card-local behavior remains local, including Herald of
 Leshrac's choice of land and control-changing action.
 
-The intended lifecycle is selection, executable-plan validation, and commitment:
+The lifecycle is selection, executable-plan validation, and commitment:
 
 - Collect all resource selections for one payment, allowing edits or decline
   where the rules permit it. Do not enumerate every complete combination as a
@@ -129,14 +136,37 @@ The intended lifecycle is selection, executable-plan validation, and commitment:
   they are not permission to simulate hidden outcomes for the planner.
 - Publish a typed payment result and continue the caller's procedure. Scope
   decline to the payment: declining cumulative upkeep does not undo its age
-  counter. Its helper should eventually express the tagged upkeep trigger,
-  counter addition, repeated payment, and unpaid consequence as a program.
+  counter. `abilities::cumulative_upkeep!(cost)` constructs an ordinary tagged
+  upkeep trigger with a source-on-battlefield guard, counter addition,
+  `PayOr` of a named `Repeat`, and an unpaid sacrifice consequence.
+
+`Repeat` freezes the number of unit payments in one window. Choices are made
+independently per repetition; the planner checks the entire quantity before
+commitment, while execution retains individual action/event boundaries.
+`All` collects a constrained bundle of mana, life, and fixed object actions.
+Selected objects are reserved against incompatible mana-source consumption,
+and mana production shares the remaining life budget. A creature may tap for
+mana and then be sacrificed, but cannot be sacrificed twice. The existing
+convoke lane still owns its distinct tap-contribution reservations.
+
+Herald of Leshrac authors `CostDef::Action` around ordinary `ChooseExact` and
+`GainControl` in Coldsnap. The payment interpreter currently admits that bounded
+action shape and rejects unsupported programs; it does not identify Herald or
+carry a gain-control cost variant. Herald's independent leaves-the-battlefield
+trigger is also authored locally, including lands acquired by other means.
+
+The supported subset is deliberate: mixed snow/ordinary allocations, differently
+named mana subcosts inside bundles, repeated aggregate-threshold selections,
+and arbitrary information-producing bundles need additional planning support.
+Existing repeated draw/coin-flip costs do not preview hidden cards or randomness:
+they begin only after commitment and retain ordinary replacement processing.
+These limits are coverage boundaries, not silent approximations.
 
 The runtime payment plan is semantic state. It is distinct from the optional,
 catalog-derived programs in `src/prepared_engine` and must work with prepared
-execution disabled. This migration does not implement the full joint payment
-planner or change the current cumulative-upkeep representation. The bounded
-resolving action-cost lane above is its first payment-window slice.
+execution disabled. No fused cumulative-upkeep instruction is required in the
+core engine. Prepared execution may recognize its composition later without
+changing the authoring grammar or observable boundaries.
 
 ## Subsequent migrations
 

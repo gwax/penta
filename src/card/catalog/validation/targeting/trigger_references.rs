@@ -486,8 +486,7 @@ fn validate_trigger_event_references(
         | TriggerEventDef::CardsExiled { zones: &[], .. } => Err(unsupported_trigger_event(event)),
         TriggerEventDef::CommittedCrime(_)
         | TriggerEventDef::MechanicPerformed { object: None, .. }
-        | TriggerEventDef::CumulativeUpkeepPaid { .. }
-        | TriggerEventDef::CumulativeUpkeepNotPaid
+        | TriggerEventDef::MechanicPayment { .. }
         | TriggerEventDef::CoinFlipWon(_)
         | TriggerEventDef::CoinFlipLost(_)
         | TriggerEventDef::BecomesLevel(_)

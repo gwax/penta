@@ -27,16 +27,13 @@ pub(super) enum CommittedTriggerEvent {
         player: PlayerId,
         object: Option<TriggerEventObject>,
     },
-    CumulativeUpkeepPaid {
+    MechanicPayment {
+        mechanic: crate::ids::MechanicId,
+        paid: bool,
         object: TriggerEventObject,
         player: PlayerId,
-        age_counters: u16,
+        repetitions: u16,
         mana_spent: Vec<crate::ManaColor>,
-    },
-    CumulativeUpkeepNotPaid {
-        object: TriggerEventObject,
-        player: PlayerId,
-        age_counters: u16,
     },
     CoinFlipped {
         player: PlayerId,
@@ -274,23 +271,17 @@ impl CommittedTriggerEvent {
                 object_controller: object.as_ref().map(|object| object.controller),
                 ..TriggerContext::empty()
             },
-            Self::CumulativeUpkeepPaid {
+            Self::MechanicPayment {
                 object,
                 player,
-                age_counters,
-                ..
-            }
-            | Self::CumulativeUpkeepNotPaid {
-                object,
-                player,
-                age_counters,
+                repetitions,
                 ..
             } => TriggerContext {
                 object: Some(object.id),
                 zone_change_result: None,
                 object_controller: Some(object.controller),
                 event_player: Some(*player),
-                amount: Some(i32::from(*age_counters)),
+                amount: Some(i32::from(*repetitions)),
                 damaged_object: None,
                 sacrificed_object: None,
                 cast_from_zone: None,

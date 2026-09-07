@@ -38,6 +38,11 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
         DecisionContinuation::CostPayment(window) => {
             extend_stack_continuation_ids(&mut ids, &window.object, &window.context);
             ids.extend(window.chosen.iter().copied());
+            for answer in &window.answers {
+                if let crate::game::cost_payment::PaymentAnswer::Objects(objects) = answer {
+                    ids.extend(objects);
+                }
+            }
         }
         DecisionContinuation::LegendRule { candidates, .. } => {
             ids.extend(candidates.iter().copied());
@@ -704,12 +709,6 @@ pub(super) fn resolved_effect_payment_snapshot(
         ResolvedEffectPayment::Mana(cost) => {
             ResolvedEffectPaymentSnapshot::Mana(mana_cost_snapshot(cost))
         }
-        ResolvedEffectPayment::CumulativeMana { source, cost } => {
-            ResolvedEffectPaymentSnapshot::CumulativeMana {
-                source: source.0,
-                cost: mana_cost_snapshot(cost),
-            }
-        }
         ResolvedEffectPayment::SnowMana { source, amount } => {
             ResolvedEffectPaymentSnapshot::SnowMana {
                 source: source.0,
@@ -745,12 +744,6 @@ pub(super) fn resolved_effect_payment_snapshot(
         }
         ResolvedEffectPayment::OpponentCreatesTokens { amount, .. } => {
             ResolvedEffectPaymentSnapshot::OpponentCreatesTokens(amount)
-        }
-        ResolvedEffectPayment::GainControlPermanents { source, amount, .. } => {
-            ResolvedEffectPaymentSnapshot::GainControlPermanents {
-                source: source.0,
-                amount,
-            }
         }
         ResolvedEffectPayment::FlipCoins(amount) => {
             ResolvedEffectPaymentSnapshot::FlipCoins(amount)

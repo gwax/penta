@@ -19,6 +19,13 @@ use super::{
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(tag = "kind", content = "value", rename_all = "camelCase")]
+pub(in crate::game::state_checkpoint) enum PaymentAnswerSnapshot {
+    Choice(usize),
+    Objects(Vec<u32>),
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(
     tag = "kind",
     rename_all = "camelCase",
@@ -28,11 +35,9 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
     CostPayment {
         player: usize,
         continuation: Box<EffectContinuationSnapshot>,
-        path: Vec<usize>,
+        answers: Vec<PaymentAnswerSnapshot>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         chosen: Vec<u32>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        cumulative_upkeep_age: Option<u16>,
     },
     PregameActions {
         player: usize,
@@ -203,8 +208,6 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
     PayOr {
         player: usize,
         payment: ResolvedEffectPaymentSnapshot,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        cumulative_upkeep_age: Option<u16>,
         object: DetachedStackSnapshot,
         ability: AbilityLocator,
         context: EffectResolutionContextSnapshot,

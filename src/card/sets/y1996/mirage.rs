@@ -1211,7 +1211,7 @@ pub(in crate::card::sets) static MIND_HARNESS: CardRecord = CardRecord::new(
                     )]
                 },
             ),
-            abilities::cumulative_upkeep(CostDef::mana(mana_cost!("{1}"))),
+            abilities::cumulative_upkeep!(CostDef::mana(mana_cost!("{1}"))),
             AbilityDef::static_ability(
                 "You control enchanted creature.",
                 EffectDef::GainControl {

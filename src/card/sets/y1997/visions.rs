@@ -1802,7 +1802,7 @@ pub(in crate::card::sets) static ELEPHANT_GRASS: CardRecord = CardRecord::new(
     CardArt::new("f4c1f5a7-0d28-43ab-9b66-937e963f42cd", "Tony Roberts"),
     CardSet::Visions,
     CardRules::new_enchantment(mana_cost!("{G}")).with_abilities(&[
-        abilities::cumulative_upkeep(CostDef::mana(mana_cost!("{1}"))),
+        abilities::cumulative_upkeep!(CostDef::mana(mana_cost!("{1}"))),
         AbilityDef::static_ability(
             "Black creatures can't attack you.",
             EffectDef::StaticApply {
@@ -2194,7 +2194,7 @@ pub(in crate::card::sets) static FIRESTORM_HELLKITE: CardRecord = CardRecord::ne
     CardRules::new_creature(mana_cost!("{4}{U}{R}"), &["Dragon"], 6, 6).with_abilities(&[
         abilities::flying(),
         abilities::trample(),
-        abilities::cumulative_upkeep(CostDef::mana(mana_cost!("{U}{R}")))
+        abilities::cumulative_upkeep!(CostDef::mana(mana_cost!("{U}{R}")))
             .override_text("Cumulative upkeep {U}{R}"),
     ]),
 );

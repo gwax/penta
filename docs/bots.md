@@ -350,11 +350,15 @@ choice can take longer than an ordinary draw, so elapsed response time is not
 a privacy claim.
 Named action-cost choices use ordinary `Choice`, `ChooseDecision`, and
 `CancelDecision` vocabulary. Their additive `costPayment` checkpoint
-continuation records the payer, authored effect locator, and choice path;
-import validates the exact branch and object-selection offer against the
+continuation records the payer, authored effect locator, ordered `answers`, and
+tentative aggregate `chosen` objects. Import validates the exact branch and object-selection offer against the
 catalog. Selecting a branch does not spend resources. The existing private
 decision visibility rules apply; mechanic names and executable code are not
-serialized in the continuation.
+serialized in the continuation. A suspended committed payment uses a
+`commitPayment` procedure containing authored cost-node locators, frozen unit
+counts, remaining selected objects, named completion locators, and actual mana
+spent. Reconstruction checks that the remaining actions form a valid suffix;
+continuing it does not collect payment or activate mana a second time.
 
 An installed, pending, or stacked trigger likewise fails closed when its source,
 retained lexical targets, or bindings name a card in a hidden zone that has no
@@ -1113,10 +1117,14 @@ above. Replay version 2 is unchanged.
 
 Protocol 30 and replay format 2 are unchanged. Checkpoint format 14 replaces
 the older resolving discard, sacrifice, and total-power payment continuations
-with a shared `costPayment` window. It preserves tentative `chosen` objects
-without moving them, and an optional `cumulativeUpkeepAge` for the count already
-established by the upkeep effect. Reconstruction validates these choices
-against the authored cost and current offer. Activation payment windows remain
+with a shared `costPayment` window. It preserves ordered `answers` and tentative
+`chosen` objects without moving them. Cumulative upkeep is an ordinary tagged
+effect program; its age counters live on the permanent, not in a bespoke
+continuation. The obsolete upkeep-specific payment and mana-purpose payloads
+are removed. `commitPayment` represents remaining ordinary actions when a
+committed payment suspends for a replacement. Reconstruction validates choices
+against the authored cost and current offer, and committed action suffixes
+against the selected program. Activation payment windows remain
 explicitly unsupported for checkpoint reconstruction. Consumers should require
 `reconstruction.checkpoint.v14` and regenerate older checkpoints.
 

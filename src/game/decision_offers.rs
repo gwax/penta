@@ -14,14 +14,6 @@ use crate::card::{
 };
 use crate::ids::GameObjectId;
 
-fn selected_payment_members(chosen: u32, options: &[DecisionOption]) -> Vec<GameObjectId> {
-    options
-        .iter()
-        .find(|option| option.id == chosen)
-        .map(|option| option.members.iter().map(|(id, _)| *id).collect())
-        .unwrap_or_default()
-}
-
 pub(super) const fn effect_choice_visibility(
     visibility: ChoiceVisibilityDef,
 ) -> DecisionVisibility {
@@ -108,18 +100,18 @@ impl Game {
                 }
                 self.activate_mana_for_cost(player, cost, 0);
                 let _spent = self.pay_player_cost(player, cost, 0);
-                Some(SettledEffectPayment::without_mana(amount))
+                Some(SettledEffectPayment::amount(amount))
             }
             // The same shape in energy: the option id is how much is spent,
             // and energy is spent from the counters rather than raised.
             ResolvedEffectPayment::ChosenEnergy => {
                 let amount = u16::try_from(chosen).unwrap_or(u16::MAX);
                 self.spend_energy(player, amount)
-                    .then_some(SettledEffectPayment::without_mana(amount))
+                    .then_some(SettledEffectPayment::amount(amount))
             }
             ResolvedEffectPayment::RemoveAnyNumberOfCounters { object, kind } => self
                 .settle_counter_removal_payment(object, kind, chosen)
-                .map(SettledEffectPayment::without_mana),
+                .map(SettledEffectPayment::amount),
             ResolvedEffectPayment::ObjectCost { source, cost } => {
                 let selected = options.iter().find(|option| option.id == chosen)?.card?.0;
                 let (_, _, quantity) = cost.object_selection()?;
@@ -131,7 +123,7 @@ impl Game {
                     return None;
                 }
                 self.pay_object_card_cost(player, cost, &[selected]);
-                Some(SettledEffectPayment::without_mana(0))
+                Some(SettledEffectPayment::amount(0))
             }
             ResolvedEffectPayment::MovePermanentMatching {
                 object: predicate,
@@ -155,10 +147,7 @@ impl Game {
                     None,
                     ZonePlacement::Top,
                 );
-                Some(SettledEffectPayment::without_mana(0))
-            }
-            payment @ ResolvedEffectPayment::GainControlPermanents { .. } => {
-                self.settle_group_payment_decision(player, payment, chosen, options)
+                Some(SettledEffectPayment::amount(0))
             }
             payment => (chosen == 1)
                 .then(|| self.pay_effect_payment_with_mana(player, payment))
@@ -238,20 +227,16 @@ impl Game {
                 })
             }
             ResolvedEffectPayment::Mana(cost) => self.can_pay_cost(player, cost, 0),
-            ResolvedEffectPayment::CumulativeMana { source, cost } => self.can_pay_cost_for(
-                player,
-                cost,
-                0,
-                &super::ManaPaymentPurpose::CumulativeUpkeep {
-                    source,
-                    snow: false,
-                },
-            ),
             ResolvedEffectPayment::SnowMana { source, amount } => self.can_pay_cost_for(
                 player,
                 ManaCost::new(amount, 0),
                 0,
-                &super::ManaPaymentPurpose::CumulativeUpkeep { source, snow: true },
+                &super::ManaPaymentPurpose::Resolving {
+                    source,
+                    snow: true,
+                    mechanics: Vec::new(),
+                    reserved_life_payment: 0,
+                },
             ),
             ResolvedEffectPayment::Life(amount) => self.can_pay_life(player, amount),
             // A short library does not make either action unpayable: draws
@@ -304,11 +289,6 @@ impl Game {
             } => !self
                 .matching_permanents_controlled(player, predicate)
                 .is_empty(),
-            ResolvedEffectPayment::GainControlPermanents { object, amount, .. } => {
-                self.matching_permanents_not_controlled(player, object)
-                    .len()
-                    >= usize::from(amount)
-            }
         }
     }
 
@@ -323,27 +303,6 @@ impl Game {
         self.battlefield
             .iter()
             .filter(|permanent| permanent.controller == player)
-            .filter(|permanent| {
-                self.trigger_object_matches_for_controller(
-                    predicate,
-                    &self.trigger_event_object(permanent),
-                    permanent.card.id,
-                    false,
-                    Some(player),
-                )
-            })
-            .map(|permanent| permanent.card.id)
-            .collect()
-    }
-
-    pub(super) fn matching_permanents_not_controlled(
-        &self,
-        player: PlayerId,
-        predicate: ObjectPredicateDef,
-    ) -> Vec<GameObjectId> {
-        self.battlefield
-            .iter()
-            .filter(|permanent| permanent.controller != player)
             .filter(|permanent| {
                 self.trigger_object_matches_for_controller(
                     predicate,

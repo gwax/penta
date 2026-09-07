@@ -1,44 +1,4 @@
 impl Game {
-    fn settle_group_payment_decision(
-        &mut self,
-        player: PlayerId,
-        payment: ResolvedEffectPayment,
-        chosen: u32,
-        options: &[DecisionOption],
-    ) -> Option<SettledEffectPayment> {
-        let members = selected_payment_members(chosen, options);
-        match payment {
-            ResolvedEffectPayment::GainControlPermanents {
-                source,
-                object,
-                amount,
-            } => {
-                let matching = self.matching_permanents_not_controlled(player, object);
-                (members.len() == usize::from(amount)
-                    && members.iter().all(|id| matching.contains(id)))
-                .then(|| {
-                    for id in members {
-                        if let Some(permanent) = self
-                            .battlefield
-                            .iter_mut()
-                            .find(|permanent| permanent.card.id == id)
-                        {
-                            permanent.control_reverts_to = Some(permanent.card.owner);
-                            permanent.controller = player;
-                            permanent.suspend_haste = false;
-                            permanent.control_source = Some(source);
-                            permanent.control_requires_source_tapped = false;
-                            permanent.control_requires_source_attached = false;
-                            permanent.entered_controller_turn = self.turns_started[player.index()];
-                        }
-                    }
-                    SettledEffectPayment::without_mana(0)
-                })
-            }
-            _ => None,
-        }
-    }
-
     #[cfg_attr(not(test), allow(dead_code))]
     pub(super) fn pay_effect_payment(
         &mut self,
@@ -56,28 +16,20 @@ impl Game {
         if !self.can_pay_effect_payment(player, payment) {
             return None;
         }
-        let mut mana_spent = Vec::new();
         match payment {
             ResolvedEffectPayment::Mana(cost) => {
                 self.activate_mana_for_cost(player, cost, 0);
-                mana_spent = self.pay_player_cost(player, cost, 0);
-            }
-            ResolvedEffectPayment::CumulativeMana { source, cost } => {
-                let purpose = super::ManaPaymentPurpose::CumulativeUpkeep {
-                    source,
-                    snow: false,
-                };
-                self.activate_mana_for_cost_avoiding_for(player, cost, 0, None, &purpose);
-                mana_spent = self.pay_player_cost_for(player, cost, 0, &purpose);
+                let _spent = self.pay_player_cost(player, cost, 0);
             }
             ResolvedEffectPayment::SnowMana { source, amount } => {
                 let cost = ManaCost::new(amount, 0);
-                let purpose = super::ManaPaymentPurpose::CumulativeUpkeep {
+                let purpose = super::ManaPaymentPurpose::Resolving {
+                    mechanics: Vec::new(), reserved_life_payment: 0,
                     source,
                     snow: true,
                 };
                 self.activate_mana_for_cost_avoiding_for(player, cost, 0, None, &purpose);
-                mana_spent = self.pay_player_cost_for(player, cost, 0, &purpose);
+                let _spent = self.pay_player_cost_for(player, cost, 0, &purpose);
             }
             ResolvedEffectPayment::Life(amount) => self.lose_life(player, amount),
             ResolvedEffectPayment::DrawCards(amount) => self.draw_cards(player, amount),
@@ -130,19 +82,16 @@ impl Game {
             | ResolvedEffectPayment::ChosenEnergy
             | ResolvedEffectPayment::RemoveAnyNumberOfCounters { .. }
             | ResolvedEffectPayment::MovePermanentMatching { .. }
-            | ResolvedEffectPayment::GainControlPermanents { .. } => return None,
+            => return None,
         }
-        Some(SettledEffectPayment {
-            paid_amount: 0,
-            mana_spent,
-        })
+        Some(SettledEffectPayment::amount(0))
     }
 
 
     pub(super) fn effect_payment_label(payment: ResolvedEffectPayment) -> String {
         match payment {
             ResolvedEffectPayment::ObjectCost { cost, .. } => if matches!(cost, crate::card::CostDef::Discard { .. }) { "Discard a matching card".into() } else { "Exile a matching card".into() },
-            ResolvedEffectPayment::Mana(_) | ResolvedEffectPayment::CumulativeMana { .. } => {
+            ResolvedEffectPayment::Mana(_) => {
                 "Pay the cost".to_string()
             }
             ResolvedEffectPayment::SnowMana { amount, .. } => {
@@ -181,9 +130,6 @@ impl Game {
             }
             ResolvedEffectPayment::OpponentCreatesTokens { amount, .. } => {
                 format!("Have an opponent create {amount} token(s)")
-            }
-            ResolvedEffectPayment::GainControlPermanents { amount, .. } => {
-                format!("Gain control of {amount} permanent(s)")
             }
             ResolvedEffectPayment::FlipCoins(amount) => format!("Flip {amount} coin(s)"),
         }

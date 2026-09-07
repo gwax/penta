@@ -158,13 +158,9 @@ impl Game {
                     }))
             }),
             (
-                TriggerEventDef::CumulativeUpkeepPaid { .. },
-                CommittedTriggerEvent::CumulativeUpkeepPaid { object, .. },
-            )
-            | (
-                TriggerEventDef::CumulativeUpkeepNotPaid,
-                CommittedTriggerEvent::CumulativeUpkeepNotPaid { object, .. },
-            ) => object.id == source,
+                TriggerEventDef::MechanicPayment { mechanic, paid, .. },
+                CommittedTriggerEvent::MechanicPayment { mechanic: actual, paid: outcome, object, .. },
+            ) => object.id == source && mechanic == *actual && paid == *outcome,
             (
                 TriggerEventDef::CoinFlipWon(relation),
                 CommittedTriggerEvent::CoinFlipped { player, won: true },

@@ -50,7 +50,9 @@ pub(in crate::card::sets) static ADARKAR_UNICORN: CardRecord = CardRecord::new(
                         (ManaColor::Colorless, 1),
                     ]),
                 ])
-                .with_restrictions(&[ManaRestrictionDef::CumulativeUpkeep]),
+                .with_restrictions(&[ManaRestrictionDef::NamedPayment(
+                    abilities::CUMULATIVE_UPKEEP,
+                )]),
             ),
         ),
     ),
@@ -712,7 +714,7 @@ pub(in crate::card::sets) static ARNJLOT_S_ASCENT: CardRecord = CardRecord::new(
     // Evasion by the mana rather than by the card: one mana a turn keeps the
     // biggest creature on the board flying over everything.
     CardRules::new_enchantment(mana_cost!("{1}{U}{U}")).with_abilities(&[
-        abilities::cumulative_upkeep(CostDef::mana(mana_cost!("{U}"))),
+        abilities::cumulative_upkeep!(CostDef::mana(mana_cost!("{U}"))),
         AbilityDef::activated_with_targets(
             "{1}: Target creature gains flying until end of turn.",
             &[CostDef::Mana(mana_cost!("{1}"))],
@@ -783,7 +785,7 @@ pub(in crate::card::sets) static BREATH_OF_DREAMS: CardRecord = CardRecord::new(
     crate::card::CardArt::new("e40c9657-fab4-489d-8eb0-960ba2605add", "Phil Foglio"),
     crate::card::CardSet::IceAge,
     CardRules::new_enchantment(mana_cost!("{2}{U}{U}")).with_abilities(&[
-        abilities::cumulative_upkeep(CostDef::mana(mana_cost!("{U}")))
+        abilities::cumulative_upkeep!(CostDef::mana(mana_cost!("{U}")))
             .override_text("Cumulative upkeep {U}"),
         AbilityDef::static_ability(
             "Green creatures have cumulative upkeep {1}.",
@@ -796,7 +798,7 @@ pub(in crate::card::sets) static BREATH_OF_DREAMS: CardRecord = CardRecord::new(
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
-                effect: AppliedEffectDef::add_ability(&abilities::cumulative_upkeep(
+                effect: AppliedEffectDef::add_ability(&abilities::cumulative_upkeep!(
                     CostDef::mana(mana_cost!("{1}")),
                 )),
             },
@@ -1006,7 +1008,7 @@ pub(in crate::card::sets) static ILLUSIONARY_FORCES: CardRecord = CardRecord::ne
     // goes up every turn it stays.
     CardRules::new_creature(mana_cost!("{3}{U}"), &["Illusion"], 4, 4).with_abilities(&[
         abilities::flying(),
-        abilities::cumulative_upkeep(CostDef::Mana(mana_cost!("{U}"))).override_text(
+        abilities::cumulative_upkeep!(CostDef::Mana(mana_cost!("{U}"))).override_text(
                 "Cumulative upkeep {U} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)",
             ),
     ]),
@@ -1044,7 +1046,7 @@ pub(in crate::card::sets) static ILLUSIONARY_WALL: CardRecord = CardRecord::new(
         abilities::defender(),
         abilities::flying(),
         abilities::first_strike(),
-        abilities::cumulative_upkeep(CostDef::Mana(mana_cost!("{U}"))).override_text(
+        abilities::cumulative_upkeep!(CostDef::Mana(mana_cost!("{U}"))).override_text(
                 "Cumulative upkeep {U} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)",
             ),
     ]),
@@ -1057,7 +1059,7 @@ pub(in crate::card::sets) static ILLUSIONS_OF_GRANDEUR: CardRecord = CardRecord:
     crate::card::CardArt::new("17eeeef2-2ced-42b8-a5e0-1095c9e13b02", "Quinton Hoover"),
     crate::card::CardSet::IceAge,
     CardRules::new_enchantment(mana_cost!("{3}{U}")).with_abilities(&[
-        abilities::cumulative_upkeep(CostDef::mana(mana_cost!("{2}"))),
+        abilities::cumulative_upkeep!(CostDef::mana(mana_cost!("{2}"))),
         abilities::enters_trigger(
             "When this enchantment enters, you gain 20 life.",
             EffectDef::GainLife {
@@ -1133,7 +1135,7 @@ pub(in crate::card::sets) static MESMERIC_TRANCE: CardRecord = CardRecord::new(
     // A looter that costs mana instead of a card, so the rent it charges is the
     // only thing stopping it from filtering the whole deck.
     CardRules::new_enchantment(mana_cost!("{1}{U}{U}")).with_abilities(&[
-        abilities::cumulative_upkeep(CostDef::mana(mana_cost!("{1}"))),
+        abilities::cumulative_upkeep!(CostDef::mana(mana_cost!("{1}"))),
         AbilityDef::activated(
             "{U}, Discard a card: Draw a card.",
             &[
@@ -1210,7 +1212,7 @@ pub(in crate::card::sets) static POLAR_KRAKEN: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{8}{U}{U}{U}"), &["Kraken"], 11, 11).with_abilities(&[
         abilities::trample(),
         abilities::enters_tapped(CardType::Creature),
-        abilities::cumulative_upkeep(CostDef::sacrifice_permanents(
+        abilities::cumulative_upkeep!(CostDef::sacrifice_permanents(
             ObjectPredicateDef::HasType(CardType::Land),
             1,
         ))
@@ -1689,7 +1691,7 @@ pub(in crate::card::sets) static FLOW_OF_MAGGOTS: CardRecord = CardRecord::new(
     // Unblockable in practice, since a deck that kept Walls around to stop it
     // has already given up the initiative -- and the rent is only one mana.
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Insect"], 2, 2).with_abilities(&[
-        abilities::cumulative_upkeep(CostDef::mana(mana_cost!("{1}"))),
+        abilities::cumulative_upkeep!(CostDef::mana(mana_cost!("{1}"))),
         AbilityDef::static_ability(
             "This creature can't be blocked by non-Wall creatures.",
             EffectDef::StaticApply {
@@ -3636,7 +3638,7 @@ pub(in crate::card::sets) static FYNDHORN_POLLEN: CardRecord = CardRecord::new(
     // A standing tax on every attacker in the game, with a pump-in-reverse to
     // finish the job on the turn it matters.
     CardRules::new_enchantment(mana_cost!("{2}{G}")).with_abilities(&[
-        abilities::cumulative_upkeep(CostDef::mana(mana_cost!("{1}"))),
+        abilities::cumulative_upkeep!(CostDef::mana(mana_cost!("{1}"))),
         AbilityDef::static_ability(
             "All creatures get -1/-0.",
             EffectDef::StaticApply {
@@ -3766,7 +3768,7 @@ pub(in crate::card::sets) static MADDENING_WIND: CardRecord = CardRecord::new(
         .with_subtypes(&["Aura"])
         .with_abilities(&[
             abilities::enchant_creature(),
-            abilities::cumulative_upkeep(CostDef::mana(mana_cost!("{G}"))),
+            abilities::cumulative_upkeep!(CostDef::mana(mana_cost!("{G}"))),
             abilities::enchanted_controller_upkeep(
                 "At the beginning of the upkeep of enchanted creature's controller, this Aura \
                  deals 2 damage to that player.",
@@ -5159,7 +5161,7 @@ pub(in crate::card::sets) static SOLDEVI_SIMULACRUM: CardRecord = CardRecord::ne
     // A body that grows as long as you feed it, which is a mana sink for a
     // deck with nothing else to spend on.
     CardRules::new_artifact_creature(mana_cost!("{4}"), &["Construct"], 2, 4).with_abilities(&[
-        abilities::cumulative_upkeep(CostDef::Mana(mana_cost!("{1}"))).override_text(
+        abilities::cumulative_upkeep!(CostDef::Mana(mana_cost!("{1}"))).override_text(
                 "Cumulative upkeep {1} (At the beginning of your upkeep, put an age counter on this permanent, then sacrifice it unless you pay its upkeep cost for each age counter on it.)",
             ),
         AbilityDef::activated(
@@ -5429,7 +5431,7 @@ pub(in crate::card::sets) static GLACIAL_CHASM: CardRecord = CardRecord::new(
     crate::card::CardArt::new("3d23f800-7a6f-40e3-b242-9f5955e47a75", "Liz Danforth"),
     crate::card::CardSet::IceAge,
     CardRules::new_land(&[]).with_abilities(&[
-        abilities::cumulative_upkeep(CostDef::life(2)),
+        abilities::cumulative_upkeep!(CostDef::life(2)),
         abilities::enters_trigger(
             "When this land enters, sacrifice a land.",
             EffectDef::SacrificeOfChoice {

@@ -26,9 +26,17 @@ pub struct AbilityDef {
     pub text: &'static str,
     pub definition: DeclarativeAbilityDef,
     pub effect: AbilityEffectDef,
+    /// Rules identities of this clause, independent of its implementation.
+    pub mechanics: &'static [crate::MechanicId],
 }
 
 impl AbilityDef {
+    #[must_use]
+    pub const fn with_mechanics(mut self, mechanics: &'static [crate::MechanicId]) -> Self {
+        self.mechanics = mechanics;
+        self
+    }
+
     /// Replaces a reusable constructor's default printed text without changing
     /// the clause's category, targets, costs, or effect.
     ///
@@ -486,6 +494,7 @@ impl AbilityDef {
             text,
             definition: DeclarativeAbilityDef::Static(StaticAbilityDef::new()),
             effect: AbilityEffectDef::declarative(EffectDef::None),
+            mechanics: &[],
         }
     }
 
@@ -510,6 +519,7 @@ impl AbilityDef {
             text,
             definition: DeclarativeAbilityDef::DeckConstruction(permission),
             effect: AbilityEffectDef::declarative(EffectDef::None),
+            mechanics: &[],
         }
     }
 
@@ -539,6 +549,7 @@ impl AbilityDef {
             text,
             definition: DeclarativeAbilityDef::Replacement(definition),
             effect: AbilityEffectDef::replacement_program(effect),
+            mechanics: &[],
         }
     }
 
@@ -605,6 +616,7 @@ impl AbilityDef {
             text,
             definition,
             effect: AbilityEffectDef::declarative(effect),
+            mechanics: &[],
         }
     }
 

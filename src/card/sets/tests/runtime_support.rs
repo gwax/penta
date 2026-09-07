@@ -618,7 +618,6 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::SelectAtRandomFromZone { .. }
                     | EffectDef::ForEachInBinding { .. }
                     | EffectDef::PayOr(_)
-                    | EffectDef::CumulativeUpkeep(_)
                     | EffectDef::PreventDamage { .. }
                     | EffectDef::May { .. }
                     | EffectDef::None

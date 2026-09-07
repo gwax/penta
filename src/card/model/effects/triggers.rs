@@ -67,14 +67,14 @@ pub enum TriggerEventDef {
         /// Match once per actor's atomic batch rather than once per object.
         one_or_more: bool,
     },
-    /// This source's cumulative-upkeep cost was paid. The trigger amount is
-    /// how many mana spent on that payment had one of the named colors.
-    CumulativeUpkeepPaid {
-        mana_colors: ColorSet,
+    /// A named payment on this source finished. With a color filter, the
+    /// event amount counts matching mana actually spent; otherwise it is
+    /// the payment's frozen repetition count, including an unpaid offer.
+    MechanicPayment {
+        mechanic: crate::ids::MechanicId,
+        paid: bool,
+        mana_colors: Option<ColorSet>,
     },
-    /// The controller declined or could not make this source's cumulative
-    /// upkeep payment. The captured amount is its age-counter count.
-    CumulativeUpkeepNotPaid,
     CoinFlipWon(PlayerRelation),
     CoinFlipLost(PlayerRelation),
     /// Any one of several events, for a printed ability that names more than

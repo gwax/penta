@@ -379,10 +379,12 @@ impl Game {
             ManaPaymentPurpose::Spell {
                 reserved_life_payment,
                 ..
+            }
+            | ManaPaymentPurpose::Resolving {
+                reserved_life_payment,
+                ..
             } => *reserved_life_payment,
-            ManaPaymentPurpose::Ability { .. }
-            | ManaPaymentPurpose::CumulativeUpkeep { .. }
-            | ManaPaymentPurpose::Other => 0,
+            ManaPaymentPurpose::Ability { .. } | ManaPaymentPurpose::Other => 0,
         };
         let reserved = i16::try_from(reserved).unwrap_or(i16::MAX);
         u16::try_from(self.players[player.index()].life.saturating_sub(reserved)).unwrap_or(0)
@@ -530,8 +532,7 @@ impl Game {
         purpose: &ManaPaymentPurpose,
         reserved: &[GameObjectId],
     ) -> Option<Vec<PlannedManaActivation>> {
-        let life_available =
-            u16::try_from(self.players[player.index()].life.max(0)).unwrap_or(u16::MAX);
+        let life_available = self.mana_ability_life_budget(player, purpose);
         self.plan_mana_activations(ManaPlanningRequest {
             player,
             cost,
@@ -742,8 +743,7 @@ impl Game {
         purpose: &ManaPaymentPurpose,
         reserved: &[GameObjectId],
     ) -> (ManaCost, u16) {
-        let life_available =
-            u16::try_from(self.players[player.index()].life.max(0)).unwrap_or(u16::MAX);
+        let life_available = self.mana_ability_life_budget(player, purpose);
         let Some(plan) = self.plan_mana_activations(ManaPlanningRequest {
             player,
             cost,

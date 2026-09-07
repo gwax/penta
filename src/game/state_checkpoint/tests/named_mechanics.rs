@@ -35,6 +35,118 @@ fn wire(game: &Game, viewer: PlayerId) -> Value {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
+fn payment_programs_committed_draw_replacement_checkpoint_resumes_remaining_actions_once() {
+    for prepared in [false, true] {
+        let mut game = ready_game();
+        game.set_prepared_engine_enabled(prepared);
+        game.players[0].outside_game = game
+            .build_zone(PlayerId::One, &[cards::SERRA_ANGEL])
+            .unwrap();
+        let ring = game
+            .put_onto_battlefield(PlayerId::One, cards::RING_OF_MARUF)
+            .unwrap();
+        game.players[0].mana_pool.colorless = 5;
+        let activation = game.legal_actions(PlayerId::One).into_iter().find(|action|
+            matches!(action, Action::ActivateAbility { source, .. } if *source == ring)).unwrap();
+        game.apply(PlayerId::One, activation).unwrap();
+        crate::game::tests::drain_pending(&mut game);
+        assert_eq!(game.draw_replacements[0].len(), 1);
+        let mut vortex = creature(161_100, cards::PSYCHIC_VORTEX, PlayerId::One);
+        vortex.set_counters(crate::CounterKind::named("age"), 1);
+        game.battlefield.push(vortex);
+        game.players[0].library = vec![
+            card(161_101, cards::ISLAND, PlayerId::One),
+            card(161_102, cards::FOREST, PlayerId::One),
+        ];
+        game.step = crate::game::Step::Upkeep;
+        game.handle_upkeep_triggers();
+        game.finish_rules_procedure();
+        game.resolve_stack_top();
+        choose_decision_by_label(&mut game, PlayerId::One, "Draw 2 card(s)");
+        assert!(
+            game.pending_procedures.iter().any(|procedure| matches!(
+                procedure,
+                crate::game::PendingProcedure::CommitPayment(_)
+            ))
+        );
+        assert_eq!(
+            game.players[0].library.len(),
+            2,
+            "the first draw is awaiting replacement"
+        );
+        assert!(game.observe(PlayerId::Two).decision.is_none());
+        let snapshot = wire(&game, PlayerId::One);
+        assert_eq!(snapshot["checkpoint"]["hasDeferredState"], false);
+        let mut rebuilt = Game::from_observation_checkpoint(
+            game.catalog.clone(),
+            game.format,
+            &snapshot,
+            &true_hidden_hypothesis(&game, PlayerId::One),
+            55,
+        )
+        .expect("suspended ordinary payment reconstructs");
+        rebuilt.set_prepared_engine_enabled(prepared);
+        let index = snapshot["checkpoint"]["pendingProcedures"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|procedure| procedure["kind"] == "commitPayment")
+            .unwrap();
+        for field in ["cost", "times"] {
+            let mut invalid = snapshot.clone();
+            invalid["checkpoint"]["pendingProcedures"][index]["remaining"][0][field] = json!(99);
+            assert!(
+                Game::from_observation_checkpoint(
+                    game.catalog.clone(),
+                    game.format,
+                    &invalid,
+                    &true_hidden_hypothesis(&game, PlayerId::One),
+                    55
+                )
+                .is_err()
+            );
+        }
+        for current in [&mut game, &mut rebuilt] {
+            let decision = current.pending_decisions[0].observation.clone();
+            let option = decision
+                .options
+                .iter()
+                .find(|option| option.zone == crate::game::DecisionZone::OutsideGame)
+                .unwrap()
+                .id;
+            current
+                .apply(
+                    PlayerId::One,
+                    Action::ChooseDecision {
+                        decision: decision.id,
+                        options: vec![option],
+                    },
+                )
+                .unwrap();
+            crate::game::tests::drain_pending(current);
+            assert_eq!(
+                current.players[0].library.len(),
+                1,
+                "only the second unit draws from the library"
+            );
+            assert_eq!(
+                current.players[0].hand.len(),
+                2,
+                "one replacement plus one ordinary draw"
+            );
+            assert!(current.pending_procedures.is_empty());
+            assert!(
+                current
+                    .battlefield
+                    .iter()
+                    .any(|permanent| permanent.card.definition == cards::PSYCHIC_VORTEX)
+            );
+        }
+    }
+}
+
+#[test]
 fn named_mechanics_payment_choices_round_trip_without_hidden_information() {
     for leaf in [false, true] {
         let mut game = staged();
@@ -101,13 +213,13 @@ fn named_mechanics_payment_choices_round_trip_without_hidden_information() {
 }
 
 #[test]
-fn named_mechanics_checkpoint_rejects_invalid_cost_path_and_payer() {
+fn named_mechanics_checkpoint_rejects_invalid_cost_answers_and_payer() {
     let game = staged();
     let snapshot = wire(&game, PlayerId::One);
-    for field in ["path", "player"] {
+    for field in ["answers", "player"] {
         let mut invalid = snapshot.clone();
-        invalid["checkpoint"]["decisionState"]["continuation"][field] = if field == "path" {
-            json!([99])
+        invalid["checkpoint"]["decisionState"]["continuation"][field] = if field == "answers" {
+            json!([{ "kind": "choice", "value": 99 }])
         } else {
             json!(1)
         };
@@ -157,12 +269,12 @@ fn object_costs_upkeep_checkpoint_preserves_age_and_cancel_does_not_discard() {
         55,
     )
     .unwrap();
-    for field in ["cumulativeUpkeepAge", "chosen"] {
+    for field in ["answers", "chosen"] {
         let mut invalid = snapshot.clone();
         invalid["checkpoint"]["decisionState"]["continuation"][field] = if field == "chosen" {
             json!([160_020])
         } else {
-            json!(1)
+            json!([{ "kind": "objects", "value": [160_020] }])
         };
         assert!(
             Game::from_observation_checkpoint(

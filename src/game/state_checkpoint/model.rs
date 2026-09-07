@@ -42,6 +42,7 @@ pub(in crate::game::state_checkpoint) use stack::*;
 pub(in crate::game::state_checkpoint) use triggers::*;
 
 pub(super) use continuation::DecisionContinuationSnapshot;
+pub(super) use continuation::PaymentAnswerSnapshot;
 pub(super) use continuation::PregameAbilityActionSnapshot;
 pub(in crate::game::state_checkpoint) use continuous::*;
 pub(super) use copy::{
@@ -664,10 +665,6 @@ pub(super) enum ResolvedEffectPaymentSnapshot {
         source: u32,
     },
     Mana(ManaCostSnapshot),
-    CumulativeMana {
-        source: u32,
-        cost: ManaCostSnapshot,
-    },
     SnowMana {
         source: u32,
         amount: u16,
@@ -687,10 +684,6 @@ pub(super) enum ResolvedEffectPaymentSnapshot {
     },
     OpponentGainsLife(u16),
     OpponentCreatesTokens(u16),
-    GainControlPermanents {
-        source: u32,
-        amount: u16,
-    },
     FlipCoins(u16),
     Energy(u16),
     /// Appended after the first two, so a checkpoint written before this

@@ -48,7 +48,7 @@ static ACTIVATIONS: [AbilityDef; 3] = [
     ),
 ];
 
-fn fixture(abilities: &'static [AbilityDef], power: i16) -> (Game, GameObjectId) {
+pub(super) fn fixture(abilities: &'static [AbilityDef], power: i16) -> (Game, GameObjectId) {
     let mut game = ready_game();
     let id = CardDefinitionId::new(160_500);
     let mut definition = CardDefinition::new(
@@ -72,7 +72,7 @@ fn fixture(abilities: &'static [AbilityDef], power: i16) -> (Game, GameObjectId)
     (game, source_id)
 }
 
-fn activate(game: &mut Game, source_id: GameObjectId, index: usize) {
+pub(super) fn activate(game: &mut Game, source_id: GameObjectId, index: usize) {
     game.priority = PlayerId::One;
     let action = game.legal_actions(PlayerId::One).into_iter().filter(|action|
         matches!(action, Action::ActivateAbility { source, .. } if *source == source_id)
@@ -80,7 +80,7 @@ fn activate(game: &mut Game, source_id: GameObjectId, index: usize) {
     game.apply(PlayerId::One, action).unwrap();
 }
 
-fn select(game: &mut Game, objects: &[GameObjectId]) {
+pub(super) fn select(game: &mut Game, objects: &[GameObjectId]) {
     let decision = game.pending_decisions[0].observation.clone();
     let options = objects
         .iter()

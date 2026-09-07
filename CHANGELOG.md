@@ -35,6 +35,19 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Cumulative upkeep is an ordinary, labeled effect program.** The shared
+  constructor expands into an upkeep trigger, battlefield guard, age counter,
+  and named repeated payment with an unpaid sacrifice branch. Resolving costs
+  share selection, whole-plan validation, and commitment for supported bundles
+  and repetitions, preserving individual action events without visible rewind.
+  Herald of Leshrac's land selection and control change live in Coldsnap as an
+  ordinary action program; its actual leaves-the-battlefield trigger now
+  returns all relevant lands when that trigger resolves, not automatically
+  when Herald leaves. Generic mechanic payment results and named-mana scopes
+  replace upkeep-specific engine variants. The checkpoint-14 migration
+  includes ordered payment answers and resumable committed-action suffixes;
+  protocol 30 and replay 2 are unchanged.
+
 - **Object costs share semantic definitions and payment selection rules.**
   Sacrifice, discard, and exile costs no longer have separate variants for
   activation versus resolving payment, matching one object versus many, or

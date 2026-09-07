@@ -669,26 +669,11 @@ fn validate_effect_target_shapes(
             | crate::card::ManaSelectionDef::ChoiceOfBundles(_) => Ok(()),
         },
         // The ballot is a predicate, not a target: nothing is pointed at.
-        EffectDef::CumulativeUpkeep(
-            crate::card::CostDef::Sacrifice { quantity: crate::card::CostQuantityDef::Fixed(_), object, .. }
-            | crate::card::CostDef::Discard { object, .. }
-            | crate::card::CostDef::GainControlPermanents { object, .. },
-        ) => validate_object_predicate_shape(object, targets),
-        EffectDef::CumulativeUpkeep(
-            crate::card::CostDef::CreateTokens { token, .. },
-        ) => match token.variable_stats {
-            Some(stats) => {
-                validate_value_shape(stats.power, targets)?;
-                validate_value_shape(stats.toughness, targets)
-            }
-            None => Ok(()),
-        },
         EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::ModifyCost(_)
         | EffectDef::None
         | EffectDef::ContinueReplacedDraw
-        | EffectDef::CumulativeUpkeep(_)
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::ReturnLinkedExiles { .. }
         | EffectDef::MayPlayWithoutPaying { .. }

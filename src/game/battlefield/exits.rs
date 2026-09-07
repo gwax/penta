@@ -893,7 +893,7 @@ impl Game {
                 remaining_sacrifices,
             } => self.continue_spell_cast(*object, targets, remaining_sacrifices),
             BattlefieldExitCompletion::CompleteResolvingCost(window) => {
-                self.finish_cost_payment_window(*window, true);
+                self.continue_payment_commit(*window);
             }
             BattlefieldExitCompletion::CompleteActivatedAbility {
                 source,

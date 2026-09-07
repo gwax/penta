@@ -542,14 +542,15 @@ fn continuation_snapshot(
             continuation: Box::new(effect_continuation_snapshot(
                 game, viewer, &window.object, &window.context, window.definition, visible_rebindings,
             )?),
-            path: window.path.clone(),
+            answers: window.answers.iter().map(|answer| match answer {
+                crate::game::cost_payment::PaymentAnswer::Choice(index) => super::model::PaymentAnswerSnapshot::Choice(*index),
+                crate::game::cost_payment::PaymentAnswer::Objects(ids) => super::model::PaymentAnswerSnapshot::Objects(ids.iter().map(|id| id.0).collect()),
+            }).collect(),
             chosen: window.chosen.iter().map(|id| id.0).collect(),
-            cumulative_upkeep_age: window.cumulative_upkeep_age,
         },
         DecisionContinuation::PayOr {
             player,
             payment,
-            cumulative_upkeep_age,
             definition: scoped,
             object,
             context,
@@ -571,7 +572,6 @@ fn continuation_snapshot(
             DecisionContinuationSnapshot::PayOr {
                 player: player.index(),
                 payment: resolved_effect_payment_snapshot(*payment),
-                cumulative_upkeep_age: *cumulative_upkeep_age,
                 object: detached_stack_snapshot_allowing(game, viewer, object, visible_rebindings)?,
                 ability,
                 context: effect_resolution_context_snapshot(context),

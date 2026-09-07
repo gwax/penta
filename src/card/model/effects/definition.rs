@@ -1,7 +1,6 @@
 /// Declarative effect primitives interpreted by the rules engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectDef {
-    CumulativeUpkeep(CostDef),
     AddCounters {
         object: EffectRecipientDef,
         kind: CounterKind,

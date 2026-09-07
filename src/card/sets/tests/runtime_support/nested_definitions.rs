@@ -140,8 +140,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         // card that was cycled is the only thing that can be listening.
         TriggerEventDef::CommittedCrime(_)
         | TriggerEventDef::MechanicPerformed { object: None, .. }
-        | TriggerEventDef::CumulativeUpkeepPaid { .. }
-        | TriggerEventDef::CumulativeUpkeepNotPaid
+        | TriggerEventDef::MechanicPayment { .. }
         | TriggerEventDef::CoinFlipWon(_)
         | TriggerEventDef::CoinFlipLost(_)
         | TriggerEventDef::BecomesLevel(_)

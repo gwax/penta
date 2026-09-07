@@ -50,10 +50,6 @@ pub(super) enum ResolvedEffectPayment {
         cost: crate::card::CostDef,
     },
     Mana(ManaCost),
-    CumulativeMana {
-        source: GameObjectId,
-        cost: ManaCost,
-    },
     SnowMana {
         source: GameObjectId,
         amount: u16,
@@ -81,11 +77,6 @@ pub(super) enum ResolvedEffectPayment {
         token: crate::card::TokenCharacteristics,
         amount: u16,
     },
-    GainControlPermanents {
-        source: GameObjectId,
-        object: ObjectPredicateDef,
-        amount: u16,
-    },
     FlipCoins(u16),
     /// Energy, spent in full or not at all.
     Energy(u16),
@@ -111,15 +102,11 @@ pub(super) enum ResolvedEffectPayment {
 #[derive(Clone, Debug)]
 pub(super) struct SettledEffectPayment {
     pub(super) paid_amount: u16,
-    pub(super) mana_spent: Vec<Mana>,
 }
 
 impl SettledEffectPayment {
-    pub(super) const fn without_mana(paid_amount: u16) -> Self {
-        Self {
-            paid_amount,
-            mana_spent: Vec::new(),
-        }
+    pub(super) const fn amount(paid_amount: u16) -> Self {
+        Self { paid_amount }
     }
 }
 
@@ -580,10 +567,6 @@ pub(super) enum DecisionContinuation {
     PayOr {
         player: PlayerId,
         payment: ResolvedEffectPayment,
-        /// The age-counter count whose cumulative-upkeep payment this is.
-        /// Present only for the shared keyword procedure, so declining can
-        /// publish its own rules event before the source is sacrificed.
-        cumulative_upkeep_age: Option<u16>,
         definition: ScopedEffect,
         object: Box<StackObject>,
         context: EffectResolutionContext,

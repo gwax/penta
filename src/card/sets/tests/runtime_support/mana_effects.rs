@@ -71,7 +71,7 @@ pub(in super::super) fn shared_mana_effect(effect: EffectDef, choices_are_suppor
                 ManaRestrictionDef::CastSpell(object)
                 | ManaRestrictionDef::CannotCastSpell(object) => shared_object_predicate(object),
                 ManaRestrictionDef::CastCreatureSpellOfChosenType
-                | ManaRestrictionDef::CumulativeUpkeep => true,
+                | ManaRestrictionDef::NamedPayment(_) => true,
                 ManaRestrictionDef::ActivateAbility(_) | ManaRestrictionDef::Special(_) => false,
             })
         && mana

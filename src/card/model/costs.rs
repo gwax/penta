@@ -12,6 +12,16 @@ include!("costs/quantities.rs");
 /// is its source, and whether it supports the expression's required choices.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum CostDef {
+    /// Repeat a unit cost inside one indivisible payment. Each repetition
+    /// makes its own choices; none of its actions run during selection.
+    Repeat {
+        cost: &'static CostDef,
+        times: ValueDef,
+    },
+    /// An ordinary, locally authored effect program used as a cost. The
+    /// payment planner must support and validate the entire program before
+    /// committing it; this is not an unrestricted runtime callback.
+    Action(&'static super::EffectDef),
     /// Perform the inner cost as one named action. Its occurrence is
     /// published once after the selected payment completes, never on an
     /// attempted, declined, or merely selected payment.
@@ -197,12 +207,6 @@ pub enum CostDef {
         token: &'static TokenCharacteristics,
         amount: u16,
     },
-    /// Gain control of matching permanents not already controlled by the
-    /// payer.
-    GainControlPermanents {
-        object: ObjectPredicateDef,
-        amount: u16,
-    },
     /// Have the payer flip this many coins.
     FlipCoins(u16),
     /// Choose a positive generic-mana amount during payment.
@@ -227,6 +231,22 @@ pub enum CostDef {
 }
 
 impl CostDef {
+    /// Traverse authored composition, including the root. Catalog visitors
+    /// use the same tree that payment planning interprets.
+    pub(crate) fn subcosts(self) -> Vec<Self> {
+        let mut costs = vec![self];
+        match self {
+            Self::Named { cost, .. } | Self::Repeat { cost, .. } => costs.extend(cost.subcosts()),
+            Self::All(children) | Self::Choice(children) => {
+                for child in children {
+                    costs.extend(child.subcosts());
+                }
+            }
+            _ => {}
+        }
+        costs
+    }
+
     /// The semantic object selection shared by cost-paying procedures.
     #[must_use]
     pub const fn object_selection(self) -> Option<(ObjectPredicateDef, ZoneKind, CostQuantityDef)> {
@@ -313,11 +333,6 @@ impl CostDef {
             token,
             amount,
         }
-    }
-
-    #[must_use]
-    pub const fn gain_control_permanents(object: ObjectPredicateDef, amount: u16) -> Self {
-        Self::GainControlPermanents { object, amount }
     }
 
     #[must_use]
@@ -699,8 +714,8 @@ pub enum ManaRestrictionDef {
     CannotCastSpell(ObjectPredicateDef),
     CastCreatureSpellOfChosenType,
     ActivateAbility(ObjectPredicateDef),
-    /// This mana can be spent only on a cumulative-upkeep payment.
-    CumulativeUpkeep,
+    /// This mana can be spent only on a payment carrying the named identity.
+    NamedPayment(crate::MechanicId),
     Special(&'static str),
 }
 

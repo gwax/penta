@@ -9,7 +9,6 @@ use crate::card::{AppliedRuleDef, ArrivalAttachmentDef};
 mod attachment;
 mod bound_outputs;
 mod copy;
-mod cumulative_upkeep;
 mod damage;
 mod exile_to_play;
 mod hand_and_library;
@@ -174,9 +173,9 @@ impl Game {
                         definition: scoped,
                         object: Box::new(object.clone()),
                         context,
-                        path: Vec::new(),
+                        answers: Vec::new(),
                         chosen: Vec::new(),
-                        cumulative_upkeep_age: None,
+                        committing: None,
                     });
                     return;
                 }
@@ -185,7 +184,6 @@ impl Game {
                 self.queue_pay_or(
                     *player,
                     payment,
-                    None,
                     definition.visibility,
                     scoped,
                     object,
@@ -195,9 +193,6 @@ impl Game {
                         .otherwise
                         .map(|effect| scoped.with_effect(*effect)),
                 );
-            }
-            EffectDef::CumulativeUpkeep(cost) => {
-                self.resolve_cumulative_upkeep(cost, scoped, object, context);
             }
             EffectDef::AddMana(_) | EffectDef::AddManaEqualTo { .. } => {
                 self.resolve_mana_effect(scoped, object, &context);
