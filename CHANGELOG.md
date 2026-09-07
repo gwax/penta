@@ -35,6 +35,16 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Cycling uses named abilities and semantic discard actions.** Cycling and
+  typecycling declare a numeric ability identity and a named discard cost,
+  replacing the dedicated engine marker and trigger event. A discard can carry
+  multiple labels without duplicating "cycle or discard" triggers. Self-trigger
+  discovery follows replacement destinations; copied abilities do not repeat
+  their costs. Fluctuator filters the specific ability through the shared
+  ability-query grammar, and Lightning Rift observes cycling with ordinary
+  targeting and optional-payment effects. Existing checkpoint 14, protocol 30,
+  and replay 2 formats are unchanged.
+
 - **Cumulative upkeep is an ordinary, labeled effect program.** The shared
   constructor expands into an upkeep trigger, battlefield guard, age counter,
   and named repeated payment with an unpaid sacrifice branch. Resolving costs

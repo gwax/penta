@@ -490,14 +490,12 @@ fn validate_trigger_event_references(
         | TriggerEventDef::CoinFlipWon(_)
         | TriggerEventDef::CoinFlipLost(_)
         | TriggerEventDef::BecomesLevel(_)
-        | TriggerEventDef::Cycled
         | TriggerEventDef::DoorUnlocked
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LandPlayed { .. }
         | TriggerEventDef::LifeGained(_)
         | TriggerEventDef::BecomesMonarch(_)
         | TriggerEventDef::DrewCard(_)
-        | TriggerEventDef::Discarded(_)
         | TriggerEventDef::DiscardedCards(_)
         | TriggerEventDef::CardsExiled { .. }
         | TriggerEventDef::StateCondition => Ok(()),

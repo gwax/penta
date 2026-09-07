@@ -273,7 +273,7 @@ impl Game {
             }
             if paid {
                 self.capture_battlefield_triggers(&CommittedTriggerEvent::MechanicPerformed {
-                    mechanic: named.mechanic,
+                    mechanics: vec![named.mechanic],
                     player: window.player,
                     object: None,
                 });

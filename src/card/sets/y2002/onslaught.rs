@@ -3566,13 +3566,26 @@ pub(in crate::card::sets) static LAVAMANCER_S_SKILL: CardRecord = CardRecord::ne
 // ONS 216 — Lay Waste (reprint)
 
 // ONS 217 — Lightning Rift
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static LIGHTNING_RIFT: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("d775d729-0ad9-4b14-9d44-6282f6936e07"),
     "Lightning Rift",
     crate::card::CardArt::new("d775d729-0ad9-4b14-9d44-6282f6936e07", "Eric Peterson"),
     crate::card::CardSet::Onslaught,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{1}{R}")).with_ability(AbilityDef::triggered_with_targets(
+        "Whenever a player cycles a card, you may pay {1}. If you do, this enchantment deals 2 damage to any target.",
+        TriggerEventDef::mechanic_performed(abilities::CYCLING, PlayerRelation::Any),
+        &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)],
+        EffectDef::PayOr(PayOrDef::optional(
+            EffectPaymentDef {
+                payer: PlayerSetDef::Related(PlayerRelation::You),
+                cost: CostDef::Mana(mana_cost!("{1}")),
+            },
+            &EffectDef::DealDamage {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(2),
+            },
+        )),
+    )),
 );
 
 // ONS 218 — Mana Echoes

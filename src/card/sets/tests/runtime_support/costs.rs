@@ -86,8 +86,11 @@ fn at_most_one_source_exit_cost(costs: &[CostDef]) -> bool {
         .iter()
         .filter(|cost| {
             matches!(
-                cost,
-                CostDef::SacrificeSource | CostDef::ExileSource | CostDef::ReturnSourceToHand
+                cost.unnamed(),
+                CostDef::SacrificeSource
+                    | CostDef::ExileSource
+                    | CostDef::ReturnSourceToHand
+                    | CostDef::DiscardSource
             )
         })
         .count()
@@ -204,6 +207,7 @@ pub(in super::super) fn shared_activated_costs(zones: &[ZoneKind], costs: &[Cost
             // card in hand.
             CostDef::DiscardSource
             | CostDef::ReturnUnblockedAttackerToHand => hand,
+            CostDef::Named { .. } => hand && cost.unnamed() == CostDef::DiscardSource,
             _ => false,
         })
 }

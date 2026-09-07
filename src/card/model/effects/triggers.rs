@@ -227,13 +227,9 @@ pub enum TriggerEventDef {
     /// A matching player became the monarch (CR 720). The crown passing
     /// from one player to another raises this once, for whoever received it.
     BecomesMonarch(PlayerRelation),
-    /// A card was put into a graveyard from a matching player's hand. One
-    /// trigger per card, so "whenever you discard a card" fires twice for a
-    /// discard of two -- and a discard paid as a cost is still a discard.
-    Discarded(PlayerRelation),
     /// "Whenever you discard one or more cards." One trigger for the whole
     /// discard however many cards it took, which is what separates it from
-    /// [`Self::Discarded`]: a discard of two fires that one twice and this
+    /// a per-card discard mechanic event: a discard of two fires that twice and this
     /// one once.
     DiscardedCards(PlayerRelation),
     /// "When you do", for the reflexive half of exert (CR 701.38a).
@@ -303,11 +299,6 @@ pub enum TriggerEventDef {
         object: ObjectPredicateDef,
         kind: crate::card::CounterKind,
     },
-    /// "When you cycle this card" (CR 702.29b). Cycling is an activation, so
-    /// this fires when the ability is activated rather than when it resolves,
-    /// and the card is already in the graveyard by then. Only the cycled card
-    /// carries the clause, so the event names nothing else.
-    Cycled,
     /// "Whenever you commit a crime" (CR 701.51a). A player commits a crime
     /// as they cast a spell, activate an ability, or put a triggered ability
     /// onto the stack that targets an opponent, anything an opponent

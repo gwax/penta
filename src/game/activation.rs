@@ -1,10 +1,10 @@
 use super::{
     AbilityOrigin, AbilityProcedureDef, ActivationChoices, ActivationTimingDef, CardInstance,
-    CharacteristicContext, CommittedTriggerEvent, CostDef, CounterKind, DeclarativeAbilityDef,
-    FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost, ManaPaymentPurpose,
-    ManaPlanOptions, ObjectCharacteristics, PendingActivation, PendingActivationTargeting,
-    PlayRestriction, PlayerId, Step, TapQuota, Target, TargetSelection, ZoneKind, ZoneMoveCause,
-    ZonePlacement, remove_card,
+    CharacteristicContext, CostDef, CounterKind, DeclarativeAbilityDef, FrozenActivatedAbility,
+    Game, GameEvent, GameObjectId, ManaCost, ManaPaymentPurpose, ManaPlanOptions,
+    ObjectCharacteristics, PendingActivation, PendingActivationTargeting, PlayRestriction,
+    PlayerId, Step, TapQuota, Target, TargetSelection, ZoneKind, ZoneMoveCause, ZonePlacement,
+    remove_card,
 };
 
 use crate::ManaPaymentChoice;
@@ -167,7 +167,7 @@ impl Game {
         self.pay_graveyard_activation_costs(
             player,
             source,
-            &definition,
+            &effective.ability,
             AnnouncedActivationCost {
                 cost_objects,
                 x,
@@ -343,8 +343,7 @@ impl Game {
                 taps_source: false,
                 leaves_source: false,
             };
-            let priced_mana_cost = self.priced_ability_mana_cost(source, &definition);
-            let is_cycling = definition.cycling;
+            let priced_mana_cost = self.priced_ability_mana_cost(source, &effective.ability);
             for cost in definition.costs.as_slice() {
                 match cost {
                     CostDef::Mana(cost) => {
@@ -362,40 +361,20 @@ impl Game {
                     CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. } => {
                         unreachable!("hand abilities cannot price another chosen card")
                     }
-                    CostDef::DiscardSource => {
-                        let discarded = remove_card(&mut self.players[player.index()].hand, source)
-                            .expect("a legal hand activation still has its source");
-                        let definition = discarded.definition;
-                        let (discarded, _zone_change) = self.zone_change_card(discarded);
-                        let discarded_id = discarded.id;
-                        self.put_card_into_graveyard(player, discarded);
-                        self.events.push(GameEvent::CardsDiscarded {
-                            player,
-                            cards: vec![(discarded_id, definition)],
-                        });
-                        // A discard paid as a cost is still a discard, so
-                        // what watches for one sees this too.
-                        let card = self.printed_trigger_event_object(
-                            discarded_id,
-                            definition,
-                            player,
-                            &CharacteristicContext::Graveyard,
-                        );
-                        self.capture_battlefield_triggers(&CommittedTriggerEvent::Discarded {
-                            player,
-                            card,
-                        });
-                        self.capture_battlefield_triggers(&CommittedTriggerEvent::CardsDiscarded {
-                            player,
-                        });
-                        // CR 702.29b fires cycling's trigger on activation
-                        // rather than on resolution, so it belongs here
-                        // beside the cost rather than at the draw. Only
-                        // cycling raises it: channel pays the very same way
-                        // and is a different keyword.
-                        if is_cycling {
-                            self.capture_cycling_triggers(discarded_id, player);
+                    CostDef::DiscardSource | CostDef::Named { .. } => {
+                        let mut payment = *cost;
+                        let mut mechanics = Vec::new();
+                        while let CostDef::Named { mechanic, cost } = payment {
+                            mechanics.push(mechanic);
+                            payment = *cost;
                         }
+                        assert_eq!(payment, CostDef::DiscardSource);
+                        self.discard_cards_with_mechanics(
+                            player,
+                            &[source],
+                            ZoneMoveCause::Rules,
+                            &mechanics,
+                        );
                     }
                     // The attacker named by the action, returned before the
                     // ability goes on the stack: it is a cost.
@@ -663,7 +642,7 @@ impl Game {
                         // Read through any increase on the battlefield and
                         // any discount, printed or granted, so what is paid
                         // is what the offer was priced at.
-                        let cost = self.activation_mana_cost(&definition, source, *cost);
+                        let cost = self.activation_mana_cost(&ability_def, source, *cost);
                         let cost = self.announced_activation_cost(player, cost, mana_payment);
                         let payment_purpose = ManaPaymentPurpose::Ability {
                             source,
@@ -696,7 +675,7 @@ impl Game {
                         }
                         let cost = self
                             .activated_ability_mana_cost_for(&definition, &frozen_targets, cost_objects)
-                            .map(|cost| self.activation_mana_cost(&definition, source, cost))
+                            .map(|cost| self.activation_mana_cost(&ability_def, source, cost))
                             .expect("a legal dynamic-mana activation has its priced object");
                         let payment_purpose = ManaPaymentPurpose::Ability {
                             source,

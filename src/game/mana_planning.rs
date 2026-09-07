@@ -247,7 +247,7 @@ impl Game {
             .hand
             .iter()
             .find(|card| card.id == source)
-            && let Some(definition) = self
+            && let Some((definition, activated)) = self
                 .find_printed_card_ability(card, &CharacteristicContext::Hand, |effective| {
                     effective.origin == ability
                         && matches!(
@@ -260,7 +260,7 @@ impl Game {
                     DeclarativeAbilityDef::Activated(definition)
                         if definition.source_zones.contains(&ZoneKind::Hand) =>
                     {
-                        Some(definition)
+                        Some((definition, effective.ability))
                     }
                     _ => None,
                 })
@@ -268,7 +268,7 @@ impl Game {
             return Self::activated_ability_mana_cost(&definition).map(|cost| {
                 (
                     Self::announced_mana_cost(
-                        self.activation_mana_cost(&definition, source, cost),
+                        self.activation_mana_cost(&activated, source, cost),
                         mana_payment,
                     ),
                     x,
@@ -286,11 +286,12 @@ impl Game {
             .battlefield
             .iter()
             .find(|permanent| permanent.card.id == source)?;
-        if let Some((definition, animates_source)) = self
+        if let Some((definition, activated, animates_source)) = self
             .find_effective_ability(permanent, |effective| effective.origin == ability)
             .and_then(|effective| match effective.ability.definition {
                 DeclarativeAbilityDef::Activated(definition) => Some((
                     definition,
+                    effective.ability,
                     Self::effect_animates_source(effective.ability.declarative_effect()),
                 )),
                 DeclarativeAbilityDef::Spell(_)
@@ -318,7 +319,7 @@ impl Game {
                 .map(|cost| {
                     (
                         Self::announced_mana_cost(
-                            self.activation_mana_cost(&definition, source, cost),
+                            self.activation_mana_cost(&activated, source, cost),
                             mana_payment,
                         ),
                         x,

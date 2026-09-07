@@ -267,7 +267,7 @@ fn ordinary_sacrifice_and_opponents_forage_do_not_count_as_your_forage() {
         _ => unreachable!(),
     };
     game.capture_battlefield_triggers(&CommittedTriggerEvent::MechanicPerformed {
-        mechanic: forage,
+        mechanics: vec![forage],
         player: PlayerId::Two,
         object: None,
     });

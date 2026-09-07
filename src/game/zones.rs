@@ -858,6 +858,18 @@ impl Game {
         cards: &[GameObjectId],
         cause: ZoneMoveCause,
     ) {
+        self.discard_cards_with_mechanics(player, cards, cause, &[]);
+    }
+
+    /// Labels describe the same discard occurrence, not additional events.
+    /// This is shared by ordinary discards and named activation payments.
+    pub(super) fn discard_cards_with_mechanics(
+        &mut self,
+        player: PlayerId,
+        cards: &[GameObjectId],
+        cause: ZoneMoveCause,
+        mechanics: &[crate::MechanicId],
+    ) {
         let mut discarded = Vec::new();
         for id in cards {
             if !self.players[player.index()]
@@ -867,7 +879,7 @@ impl Game {
             {
                 continue;
             }
-            let Some((card, _destination)) = self.move_card_from_nonbattlefield_zone(
+            let Some((card, destination)) = self.move_card_from_nonbattlefield_zone(
                 *id,
                 ZoneKind::Hand,
                 ZoneKind::Graveyard,
@@ -880,12 +892,16 @@ impl Game {
             // Read where the card now lies: a trigger that exiles "that
             // card from your graveyard" needs the graveyard object, and the
             // one that was in hand no longer exists.
-            let object = self.printed_trigger_event_object(
-                card.id,
-                definition,
-                player,
-                &CharacteristicContext::Graveyard,
-            );
+            let context = match destination {
+                ZoneKind::Hand => Some(CharacteristicContext::Hand),
+                ZoneKind::Library => Some(CharacteristicContext::Library),
+                ZoneKind::Graveyard => Some(CharacteristicContext::Graveyard),
+                ZoneKind::Exile => Some(CharacteristicContext::Exile),
+                ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => None,
+            };
+            let object = context.and_then(|context| {
+                self.printed_trigger_event_object(card.id, definition, player, &context)
+            });
             discarded.push((card.id, definition, object));
         }
         if !discarded.is_empty() {
@@ -899,12 +915,21 @@ impl Game {
             // One event per card: "whenever you discard a card" fires twice
             // for a discard of two. Raised after the cards have moved, so
             // anything the triggers read sees the finished hand.
-            for (_, _, object) in discarded {
-                self.capture_battlefield_triggers(&CommittedTriggerEvent::Discarded {
-                    player,
-                    card: object,
-                });
+            let mut labels = vec![crate::card::abilities::DISCARD];
+            for mechanic in mechanics {
+                if !labels.contains(mechanic) {
+                    labels.push(*mechanic);
+                }
             }
+            let events = discarded
+                .into_iter()
+                .map(|(_, _, object)| CommittedTriggerEvent::MechanicPerformed {
+                    mechanics: labels.clone(),
+                    player,
+                    object,
+                })
+                .collect::<Vec<_>>();
+            self.capture_battlefield_trigger_batch(&events);
             // And once for the whole discard, which is what "one or more
             // cards" asks about.
             self.capture_battlefield_triggers(&CommittedTriggerEvent::CardsDiscarded { player });

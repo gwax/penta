@@ -58,6 +58,24 @@ uses both: its triggered clause carries `CUMULATIVE_UPKEEP`, while its payment
 publishes a typed `MechanicPayment` result (paid/unpaid, repetition count, and
 actual mana colors spent). Ability identity is not inferred from rules text.
 
+Cycling and typecycling carry the shared `CYCLING` ability identity and compose
+mana plus `Named(CYCLING, DiscardSource)` costs. The discard publishes one
+occurrence labeled with both `DISCARD` and `CYCLING`, so a "cycle or discard"
+clause triggers once. Ordinary discards use the same semantic action without
+the cycling label. Self-listeners follow the discarded card into its actual
+destination; other battlefield listeners see that same event. Copying or
+countering the draw/search ability does not repeat or undo its payment.
+The hand activation adapter currently admits named source-discard actions,
+not arbitrary named activation programs.
+
+`AbilityPredicateDef::Mechanic` queries an individual ability's metadata.
+Fluctuator uses it in an ordinary ability-cost reduction; channel on the same
+card remains undiscounted. Lightning Rift observes the shared cycling event
+and composes ordinary target selection with a resolving optional mana payment.
+Both reference cards remain local declarations. Event identities are not new
+checkpoint fields: captured triggers and frozen abilities retain authored
+locators, including across a discarded source's zone change.
+
 Corpseberry Cultivator is the reference composition. Its optional combat
 forage and Feed the Cycle's additional cost use the same set-owned helper;
 its second clause observes forage independently of where it was performed.
@@ -87,9 +105,8 @@ The prepared engine can fall back to the semantic lane before mutation.
 This is not yet a general joint casting/activation planner. Casting still
 enumerates combinations and limits aggregate-cost offers to minimal selections.
 Arbitrary action programs and remaining activation-cost families remain
-follow-ups. Cycling
-also remains a follow-up: recognizing its ability before activation and
-observing its activation-time occurrence are separate from cost completion.
+follow-ups. Cost modifiers' remaining activation/source-specific shapes can
+be consolidated around ability, source, and activating-player selectors.
 
 ## Contract for local runtime exceptions
 

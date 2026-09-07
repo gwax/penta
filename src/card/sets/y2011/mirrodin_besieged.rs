@@ -1154,7 +1154,10 @@ pub(in crate::card::sets) static SANGROMANCER: CardRecord = CardRecord::new(
             ),
             AbilityDef::triggered(
                 "Whenever an opponent discards a card, you may gain 3 life.",
-                TriggerEventDef::Discarded(PlayerRelation::Opponent),
+                TriggerEventDef::mechanic_performed(
+                    crate::card::abilities::DISCARD,
+                    PlayerRelation::Opponent,
+                ),
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,
                     effect: &EffectDef::GainLife {

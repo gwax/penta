@@ -4455,13 +4455,20 @@ pub(in crate::card::sets) static ENDOSKELETON: CardRecord = CardRecord::new(
 );
 
 // USG 295 — Fluctuator
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static FLUCTUATOR: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("92078408-e0e4-443e-b0fd-aac0ac651f46"),
     "Fluctuator",
     crate::card::CardArt::new("92078408-e0e4-443e-b0fd-aac0ac651f46", "John Matson"),
     crate::card::CardSet::UrzasSaga,
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::static_ability(
+        "Cycling abilities you activate cost {2} less to activate.",
+        EffectDef::ModifyCost(crate::card::CostModificationDef::AbilityReduction {
+            permanent: ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ability: crate::card::AbilityPredicateDef::Mechanic(abilities::CYCLING),
+            amount: ValueDef::Constant(2),
+            minimum: 0,
+        }),
+    )),
 );
 
 // USG 296 — Grafted Skullcap

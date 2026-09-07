@@ -1037,7 +1037,10 @@ pub(in crate::card::sets) static MEGRIM: CardRecord = CardRecord::new(
     crate::card::CardSet::Stronghold,
     CardRules::new_enchantment(mana_cost!("{2}{B}")).with_ability(AbilityDef::triggered(
         "Whenever an opponent discards a card, this enchantment deals 2 damage to that player.",
-        TriggerEventDef::Discarded(PlayerRelation::Opponent),
+        TriggerEventDef::mechanic_performed(
+            crate::card::abilities::DISCARD,
+            PlayerRelation::Opponent,
+        ),
         EffectDef::DealDamage {
             recipient: EffectRecipientDef::EventPlayer,
             amount: ValueDef::Constant(2),

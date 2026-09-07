@@ -285,7 +285,7 @@ impl Game {
             .into_iter()
             .map(
                 |(object, player)| CommittedTriggerEvent::MechanicPerformed {
-                    mechanic: crate::card::abilities::SACRIFICE,
+                    mechanics: vec![crate::card::abilities::SACRIFICE],
                     object: Some(object),
                     player,
                 },

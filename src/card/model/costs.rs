@@ -231,6 +231,15 @@ pub enum CostDef {
 }
 
 impl CostDef {
+    /// Inspect a named action's payment shape without erasing its authored
+    /// completion labels from the executable cost.
+    pub(crate) const fn unnamed(mut self) -> Self {
+        while let Self::Named { cost, .. } = self {
+            self = *cost;
+        }
+        self
+    }
+
     /// Traverse authored composition, including the root. Catalog visitors
     /// use the same tree that payment planning interprets.
     pub(crate) fn subcosts(self) -> Vec<Self> {

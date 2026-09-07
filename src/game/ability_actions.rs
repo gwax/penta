@@ -329,7 +329,7 @@ impl Game {
                         CostDef::Mana(cost) => self
                             .affordable_activation_payments(
                                 player,
-                                self.activation_mana_cost(&definition, permanent.card.id, *cost),
+                                self.activation_mana_cost(&ability, permanent.card.id, *cost),
                                 0,
                                 &payment_purpose,
                             )
@@ -521,7 +521,7 @@ impl Game {
                     .find_map(|cost| match cost {
                         CostDef::Mana(cost) if cost.variable_x => Some(self.maximum_x_for(
                             player,
-                            self.activation_mana_cost(&definition, permanent.card.id, *cost),
+                            self.activation_mana_cost(&ability, permanent.card.id, *cost),
                             &payment_purpose,
                         )),
                         _ => None,
@@ -566,11 +566,7 @@ impl Game {
                                         cost_objects,
                                     )
                                     .map(|cost| {
-                                        self.activation_mana_cost(
-                                            &definition,
-                                            permanent.card.id,
-                                            cost,
-                                        )
+                                        self.activation_mana_cost(&ability, permanent.card.id, cost)
                                     });
                                 if definition.costs.iter().any(|cost| {
                                     matches!(

@@ -144,7 +144,7 @@ pub(in crate::card::sets) static DECREE_OF_JUSTICE: CardRecord = CardRecord::new
         ),
         AbilityDef::triggered(
             "When you cycle this card, you may pay {X}. If you do, create X 1/1 white Soldier creature tokens.",
-            TriggerEventDef::Cycled,
+            TriggerEventDef::mechanic_performed_on(abilities::CYCLING, ObjectPredicateDef::Source, PlayerRelation::You),
             EffectDef::PayOr(PayOrDef::optional(
                 EffectPaymentDef {
                     payer: PlayerSetDef::Related(PlayerRelation::You),
@@ -159,7 +159,7 @@ pub(in crate::card::sets) static DECREE_OF_JUSTICE: CardRecord = CardRecord::new
                             "Bachzim",
                         )),
             )),
-        ),
+        ).with_source_zones(abilities::CYCLED_CARD_ZONES),
     ]),
 );
 
@@ -575,7 +575,7 @@ pub(in crate::card::sets) static DECREE_OF_SILENCE: CardRecord = CardRecord::new
         ),
         AbilityDef::triggered_with_targets(
             "When you cycle this card, you may counter target spell.",
-            TriggerEventDef::Cycled,
+            TriggerEventDef::mechanic_performed_on(abilities::CYCLING, ObjectPredicateDef::Source, PlayerRelation::You),
             &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
                 object: ObjectPredicateDef::Spell,
                 zones: &[ZoneKind::Stack],
@@ -590,7 +590,7 @@ pub(in crate::card::sets) static DECREE_OF_SILENCE: CardRecord = CardRecord::new
                     placement: ZonePlacement::Top,
                 },
             },
-        ),
+        ).with_source_zones(abilities::CYCLED_CARD_ZONES),
     ]),
 );
 

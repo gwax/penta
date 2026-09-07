@@ -89,8 +89,35 @@ impl Game {
     }
 
     pub(super) fn capture_battlefield_triggers(&mut self, event: &CommittedTriggerEvent) {
-        let listeners = self.battlefield_trigger_listeners();
-        self.capture_battlefield_triggers_from_snapshot(&listeners, event);
+        self.capture_battlefield_trigger_batch(core::slice::from_ref(event));
+    }
+
+    pub(super) fn capture_battlefield_trigger_batch(&mut self, events: &[CommittedTriggerEvent]) {
+        let mut listeners = self.battlefield_trigger_listeners();
+        // A named object action can carry a self-listener into a hidden
+        // zone. Inspect just that object, not every unrelated hidden card.
+        // Graveyard and exile listeners are already in the ordinary snapshot.
+        let mut inspected = Vec::new();
+        for event in events {
+            if let CommittedTriggerEvent::MechanicPerformed {
+                object: Some(object),
+                ..
+            } = event
+                && !inspected.contains(&object.id)
+                && let Some((zone, card)) = self.card_in_nonbattlefield_zone(object.id)
+            {
+                let context = match zone {
+                    ZoneKind::Hand => Some(CharacteristicContext::Hand),
+                    ZoneKind::Library => Some(CharacteristicContext::Library),
+                    _ => None,
+                };
+                if let Some(context) = context {
+                    inspected.push(object.id);
+                    self.extend_with_card_trigger_listeners(&mut listeners, card, &context);
+                }
+            }
+        }
+        self.capture_battlefield_trigger_batch_from_snapshot(&listeners, events);
     }
 
     /// "Whenever one or more counters are put on this permanent." One event
@@ -143,72 +170,6 @@ impl Game {
             .copied()
             .collect::<Vec<_>>();
         self.capture_targeting_triggers(object.kind, &event, &targets);
-    }
-
-    /// "When you cycle this card" (CR 702.29b), raised as the cycling ability
-    /// is activated. Only the cycled card can carry the clause, so its own
-    /// printed abilities are the entire listener list -- there is no zone to
-    /// scan. The card is read in the graveyard the discard cost has already
-    /// put it in, which is also the object the trigger names.
-    pub(super) fn capture_cycling_triggers(&mut self, cycled: GameObjectId, player: PlayerId) {
-        let Some((_zone, card)) = self.card_in_nonbattlefield_zone(cycled) else {
-            return;
-        };
-        let card = card.clone();
-        let Some(object) = self.printed_trigger_event_object(
-            cycled,
-            card.definition,
-            player,
-            &CharacteristicContext::Graveyard,
-        ) else {
-            return;
-        };
-        let mut listeners = Vec::new();
-        self.for_each_printed_card_ability(&card, &CharacteristicContext::Graveyard, |effective| {
-            let ability = effective.ability;
-            let DeclarativeAbilityDef::Triggered(definition) = ability.definition else {
-                return;
-            };
-            if definition.event != TriggerEventDef::Cycled
-                || definition.procedure != AbilityProcedureDef::Shared
-            {
-                return;
-            }
-            listeners.push(BattlefieldTriggerListener {
-                event: definition.event,
-                uses_stack: true,
-                trigger_limit: definition.trigger_limit,
-                installed: None,
-                capture: TriggerCapture {
-                    source: AbilitySourceRef {
-                        object: cycled,
-                        ability: effective.origin,
-                    },
-                    presentation: Self::ability_presentation(
-                        effective.origin,
-                        ObjectCharacteristics::card(card.definition, CardPartId::PRIMARY),
-                    ),
-                    owner: card.owner,
-                    controller: player,
-                    text: ability.text,
-                    target_defs: definition.targets.to_vec(),
-                    targets: Vec::new(),
-                    effect: ability.declarative_effect().unwrap_or(EffectDef::None),
-                    resolver: Self::ability_resolver(effective.origin, &ability),
-                    context: TriggerContext::empty().into(),
-                    condition: definition.condition,
-                    modes: definition.modes,
-                    x: 0,
-                },
-            });
-        });
-        if listeners.is_empty() {
-            return;
-        }
-        self.capture_battlefield_triggers_from_snapshot(
-            &listeners,
-            &CommittedTriggerEvent::Cycled { object },
-        );
     }
 
     /// A spell's own "when you cast this spell" clause, raised as it is put on

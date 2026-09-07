@@ -849,7 +849,11 @@ pub(in crate::card::sets) static KROSAN_TUSKER: CardRecord = CardRecord::new(
              that card, put it into your hand, then shuffle. (Do this before you draw.)",
             // The trigger goes on the stack above the cycling draw, which is
             // what the reminder text means by "before you draw".
-            TriggerEventDef::Cycled,
+            TriggerEventDef::mechanic_performed_on(
+                abilities::CYCLING,
+                ObjectPredicateDef::Source,
+                PlayerRelation::You,
+            ),
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
@@ -871,7 +875,8 @@ pub(in crate::card::sets) static KROSAN_TUSKER: CardRecord = CardRecord::new(
                     then: None,
                 },
             },
-        ),
+        )
+        .with_source_zones(abilities::CYCLED_CARD_ZONES),
     ]),
 );
 

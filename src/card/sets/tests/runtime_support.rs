@@ -790,15 +790,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             // would trigger on every state-based check forever.
             let condition_is_required = definition.event != TriggerEventDef::StateCondition
                 || definition.condition.is_some();
-            // A trigger listens from the battlefield, graveyard, or exile,
-            // or -- for the one clause no single walk sees -- from the first
-            // two together. A permanent that dies is captured off a snapshot
-            // taken before it left, when the graveyard walk cannot see it
-            // yet; a card discarded or milled is captured after it lands,
-            // when the battlefield walk never held it. Exile has its own
-            // listener walk for Suspend and printed exile abilities. Every
-            // other event is found from whichever one zone the card is in,
-            // so claiming multiple zones would be an authoring mistake.
+            // Ordinary listeners have a zone walk. Graveyard-from-anywhere
+            // also needs the battlefield look-back snapshot; a named action
+            // on this source discovers its listener after the card moves.
             (matches!(
                 definition.source_zones,
                 [ZoneKind::Battlefield | ZoneKind::Graveyard | ZoneKind::Exile]
@@ -808,7 +802,11 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     [ZoneKind::Battlefield, ZoneKind::Graveyard],
                     TriggerEventDef::ZoneChanged(matcher),
                 ) if matcher.from.is_none() && matcher.to == Some(ZoneKind::Graveyard)
-            )) && definition.procedure == AbilityProcedureDef::Shared
+            ) || (matches!(definition.event, TriggerEventDef::MechanicPerformed {
+                object: Some(ObjectPredicateDef::Source), ..
+            }) && !definition.source_zones.is_empty() && definition.source_zones.iter().all(|zone| matches!(zone,
+                ZoneKind::Battlefield | ZoneKind::Graveyard | ZoneKind::Exile | ZoneKind::Hand | ZoneKind::Library
+            )))) && definition.procedure == AbilityProcedureDef::Shared
                 && shared_trigger_event(definition.event)
                 && condition_is_required
                 && definition

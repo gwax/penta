@@ -147,11 +147,11 @@ impl Game {
             (
                 TriggerEventDef::MechanicPerformed { mechanic, player, object: predicate, .. },
                 CommittedTriggerEvent::MechanicPerformed {
-                    mechanic: performed,
+                    mechanics,
                     player: actor,
                     object,
                 },
-            ) => mechanic == *performed && controller.is_some_and(|controller| {
+            ) => mechanics.contains(&mechanic) && controller.is_some_and(|controller| {
                 self.player_relation_matches(*actor, player, controller, event.context())
                     && predicate.is_none_or(|predicate| object.as_ref().is_some_and(|object| {
                         self.trigger_object_matches_for_controller(predicate, object, source, false, Some(controller))
@@ -558,10 +558,6 @@ impl Game {
             // the clause that goes on to name it; which card it was does not
             // narrow the trigger, which asks only whose discard it was.
             (
-                TriggerEventDef::Discarded(relation),
-                CommittedTriggerEvent::Discarded { player, .. },
-            )
-            | (
                 TriggerEventDef::DiscardedCards(relation),
                 CommittedTriggerEvent::CardsDiscarded { player },
             )
@@ -579,12 +575,6 @@ impl Game {
             ) => {
                 let controller = controller.unwrap_or(*player);
                 self.player_relation_matches(*player, relation, controller, event.context())
-            }
-            // The listener list for a cycled card holds only that card's own
-            // clauses, so there is nothing further to match on: any card
-            // whose ability reached here is the card that was cycled.
-            (TriggerEventDef::Cycled, CommittedTriggerEvent::Cycled { object }) => {
-                object.id == source
             }
             (
                 TriggerEventDef::StepBegins { step, player },

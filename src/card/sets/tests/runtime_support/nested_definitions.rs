@@ -135,23 +135,19 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                     StackObjectEventDef::Cast { .. } | StackObjectEventDef::Copied => true,
                 }
         }
-        // A crime names only the player who committed it; what was targeted
-        // is not part of the event. Cycling names no object of its own: the
-        // card that was cycled is the only thing that can be listening.
+        // These events do not constrain an affected object predicate.
         TriggerEventDef::CommittedCrime(_)
         | TriggerEventDef::MechanicPerformed { object: None, .. }
         | TriggerEventDef::MechanicPayment { .. }
         | TriggerEventDef::CoinFlipWon(_)
         | TriggerEventDef::CoinFlipLost(_)
         | TriggerEventDef::BecomesLevel(_)
-        | TriggerEventDef::Cycled
         | TriggerEventDef::DoorUnlocked
         // The land that was played is on the battlefield by the time the
         // trigger is captured, so an ordinary predicate may read it.
         | TriggerEventDef::LandPlayed { .. }
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LifeGained(_)
-        | TriggerEventDef::Discarded(_)
         | TriggerEventDef::DiscardedCards(_)
         // The crown names only the player who received it, and there is
         // nothing else for a predicate to read.

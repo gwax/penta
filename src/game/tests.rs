@@ -142,6 +142,7 @@ mod countering_and_mana;
 mod creature_bond;
 mod cumulative_upkeep;
 mod cycling_cards;
+mod cycling_mechanics;
 mod cyclone;
 mod damage_dealers;
 mod damage_dealt_by;

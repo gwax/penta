@@ -9,12 +9,12 @@ impl Game {
         controller: PlayerId,
     ) -> Option<(crate::ids::MechanicId, PlayerId)> {
         match definition {
-            TriggerEventDef::MechanicPerformed { one_or_more: true, .. } => {
-                let CommittedTriggerEvent::MechanicPerformed { mechanic, player, .. } = event else {
+            TriggerEventDef::MechanicPerformed { mechanic, one_or_more: true, .. } => {
+                let CommittedTriggerEvent::MechanicPerformed { player, .. } = event else {
                     return None;
                 };
                 self.trigger_event_matches_for_controller(definition, event, source, Some(controller))
-                    .then_some((*mechanic, *player))
+                    .then_some((mechanic, *player))
             }
             TriggerEventDef::While { event: definition, .. } => {
                 self.mechanic_batch_occurrence(*definition, event, source, controller)

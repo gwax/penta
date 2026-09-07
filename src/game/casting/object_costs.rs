@@ -38,7 +38,7 @@ impl Game {
                 crate::game::cost_payment::CostPaymentStep::EndAction => continue,
                 crate::game::cost_payment::CostPaymentStep::CompleteMechanic(mechanic) => {
                     self.capture_battlefield_triggers(&CommittedTriggerEvent::MechanicPerformed {
-                        mechanic,
+                        mechanics: vec![mechanic],
                         player: stack_object.controller,
                         object: None,
                     });
