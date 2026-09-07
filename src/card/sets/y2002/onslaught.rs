@@ -2291,13 +2291,43 @@ pub(in crate::card::sets) static DISCIPLE_OF_MALICE: CardRecord = CardRecord::ne
 );
 
 // ONS 140 — Doomed Necromancer
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static DOOMED_NECROMANCER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("3ca3e348-47cc-41d6-999a-60d1206aaf06"),
     "Doomed Necromancer",
-    crate::card::CardArt::new("3ca3e348-47cc-41d6-999a-60d1206aaf06", "Mark Brill"),
-    crate::card::CardSet::Onslaught,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("3ca3e348-47cc-41d6-999a-60d1206aaf06", "Mark Brill"),
+    CardSet::Onslaught,
+    // It costs a turn and a body, and what comes back is whatever the deck was
+    // willing to discard -- which is the whole reanimator plan on one card.
+    CardRules::new_creature(
+        mana_cost!("{2}{B}"),
+        &["Human", "Cleric", "Mercenary"],
+        2,
+        2,
+    )
+    .with_ability(AbilityDef::activated_with_targets(
+        "{B}, {T}, Sacrifice this creature: Return target creature card from your graveyard \
+             to the battlefield.",
+        &[
+            CostDef::Mana(mana_cost!("{B}")),
+            CostDef::TapSource,
+            CostDef::SacrificeSource,
+        ],
+        &const {
+            [AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: Some(PlayerRelation::You),
+                },
+            )]
+        },
+        EffectDef::MoveToZone {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            zone: ZoneKind::Battlefield,
+            placement: ZonePlacement::Top,
+        },
+    )),
 );
 
 // ONS 141 — Ebonblade Reaper

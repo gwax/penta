@@ -201,13 +201,35 @@ pub(in crate::card::sets) static BENALISH_TRAPPER: CardRecord = CardRecord::new(
 // INV 9 — Blinding Light (reprint)
 
 // INV 10 — Capashen Unicorn
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CAPASHEN_UNICORN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("ec3e5741-88d7-4837-9b43-ba8304d9ee74"),
     "Capashen Unicorn",
-    crate::card::CardArt::new("ec3e5741-88d7-4837-9b43-ba8304d9ee74", "Jerry Tiritilli"),
-    crate::card::CardSet::Invasion,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("ec3e5741-88d7-4837-9b43-ba8304d9ee74", "Jerry Tiritilli"),
+    CardSet::Invasion,
+    // Disenchant stapled to a body, payable in instalments -- white gets to hold
+    // the answer on the battlefield instead of in hand.
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Unicorn"], 1, 2).with_ability(
+        AbilityDef::activated_with_targets(
+            "{1}{W}, {T}, Sacrifice this creature: Destroy target artifact or enchantment.",
+            &[
+                CostDef::Mana(mana_cost!("{1}{W}")),
+                CostDef::TapSource,
+                CostDef::SacrificeSource,
+            ],
+            &const {
+                [AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Artifact),
+                        ObjectPredicateDef::HasType(CardType::Enchantment),
+                    ]),
+                )]
+            },
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                then: None,
+            },
+        ),
+    ),
 );
 
 // INV 11 — Crimson Acolyte

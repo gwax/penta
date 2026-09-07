@@ -1073,16 +1073,42 @@ pub(in crate::card::sets) static PHYREXIAN_NEGATOR: CardRecord = CardRecord::new
 );
 
 // UDS 66 — Plague Dogs
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PLAGUE_DOGS: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("6b9cebd8-aa3f-4e22-8d15-d4b7bad355e4"),
     "Plague Dogs",
-    crate::card::CardArt::new(
+    CardArt::new(
         "6b9cebd8-aa3f-4e22-8d15-d4b7bad355e4",
         "Chippy & Matthew D. Wilson",
     ),
-    crate::card::CardSet::UrzasDestiny,
-    crate::card::CardRules::unsupported(),
+    CardSet::UrzasDestiny,
+    // Five mana for a sweeper that also replaces itself; against a board of
+    // one-toughness creatures the death trigger is the whole card.
+    CardRules::new_creature(mana_cost!("{4}{B}"), &["Phyrexian", "Zombie", "Dog"], 3, 3)
+        .with_abilities(&[
+            abilities::dies_trigger(
+                "When this creature dies, all creatures get -1/-1 until end of turn.",
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::Any,
+                    ),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(-1),
+                        ValueDef::Constant(-1),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::activated(
+                "{2}, Sacrifice this creature: Draw a card.",
+                &[CostDef::Mana(mana_cost!("{2}")), CostDef::SacrificeSource],
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
 );
 
 // UDS 67 — Rapid Decay
@@ -1118,13 +1144,24 @@ pub(in crate::card::sets) static SKITTERING_HORROR: CardRecord = CardRecord::new
 );
 
 // UDS 71 — Slinking Skirge
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SLINKING_SKIRGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("00522c4b-4e64-4403-96b1-df41afbe255f"),
     "Slinking Skirge",
-    crate::card::CardArt::new("00522c4b-4e64-4403-96b1-df41afbe255f", "Ron Spencer"),
-    crate::card::CardSet::UrzasDestiny,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("00522c4b-4e64-4403-96b1-df41afbe255f", "Ron Spencer"),
+    CardSet::UrzasDestiny,
+    // A flier that stops being a bad topdeck the moment the board stalls: two
+    // mana turns it back into a card.
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Phyrexian", "Imp"], 2, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::activated(
+            "{2}, Sacrifice this creature: Draw a card.",
+            &[CostDef::Mana(mana_cost!("{2}")), CostDef::SacrificeSource],
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // UDS 72 — Soul Feast
@@ -1629,13 +1666,24 @@ pub(in crate::card::sets) static GOLIATH_BEETLE: CardRecord = CardRecord::new(
 );
 
 // UDS 108 — Heart Warden
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static HEART_WARDEN: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("96e42dbe-3eeb-4367-bb6d-0f5c71f5da80"),
     "Heart Warden",
-    crate::card::CardArt::new("96e42dbe-3eeb-4367-bb6d-0f5c71f5da80", "Adam Rex"),
-    crate::card::CardSet::UrzasDestiny,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("96e42dbe-3eeb-4367-bb6d-0f5c71f5da80", "Adam Rex"),
+    CardSet::UrzasDestiny,
+    // Ramp that cashes itself in once the deck no longer needs the mana, which
+    // is the only reason a 1/1 accelerant survives to the late game.
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Druid"], 1, 1).with_abilities(&[
+        abilities::tap_for(ManaColor::Green),
+        AbilityDef::activated(
+            "{2}, Sacrifice this creature: Draw a card.",
+            &[CostDef::Mana(mana_cost!("{2}")), CostDef::SacrificeSource],
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // UDS 109 — Hunting Moa
@@ -1684,13 +1732,39 @@ pub(in crate::card::sets) static MAGNIFY: CardRecord = CardRecord::new(
 );
 
 // UDS 112 — Marker Beetles
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static MARKER_BEETLES: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("5cbd3c78-197a-40b9-94d1-bbb1ec1e64b1"),
     "Marker Beetles",
-    crate::card::CardArt::new("5cbd3c78-197a-40b9-94d1-bbb1ec1e64b1", "Ron Spencer"),
-    crate::card::CardSet::UrzasDestiny,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("5cbd3c78-197a-40b9-94d1-bbb1ec1e64b1", "Ron Spencer"),
+    CardSet::UrzasDestiny,
+    // The pump is small and the draw is the point, but the two together mean the
+    // Beetles is never a wasted card whichever way the game went.
+    CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Insect"], 2, 3).with_abilities(&[
+        abilities::dies_trigger_with_targets(
+            "When this creature dies, target creature gets +1/+1 until end of turn.",
+            &const {
+                [AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )]
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::activated(
+            "{2}, Sacrifice this creature: Draw a card.",
+            &[CostDef::Mana(mana_cost!("{2}")), CostDef::SacrificeSource],
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // UDS 113 — Momentum

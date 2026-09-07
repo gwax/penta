@@ -387,6 +387,7 @@ mod runic_repetition;
 mod sacrifice_costs;
 mod sacrifice_for_mana;
 mod sacrifice_lands;
+mod sacrifice_outlets;
 mod sacrifice_to_tax;
 mod sacrificed_toughness;
 mod scaling_upkeep;

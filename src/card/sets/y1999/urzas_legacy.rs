@@ -398,13 +398,33 @@ pub(in crate::card::sets) static SUSTAINER_OF_THE_REALM: CardRecord = CardRecord
 );
 
 // ULG 24 — Tragic Poet
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static TRAGIC_POET: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("294aa7fc-12be-4722-b288-de14a28919b2"),
     "Tragic Poet",
-    crate::card::CardArt::new("294aa7fc-12be-4722-b288-de14a28919b2", "Quinton Hoover"),
-    crate::card::CardSet::UrzasLegacy,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("294aa7fc-12be-4722-b288-de14a28919b2", "Quinton Hoover"),
+    CardSet::UrzasLegacy,
+    // One mana held back to buy an answer out of the graveyard, which matters in
+    // a format where the enchantment was the removal.
+    CardRules::new_creature(mana_cost!("{W}"), &["Human"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice this creature: Return target enchantment card from your graveyard to your \
+             hand.",
+            &[CostDef::TapSource, CostDef::SacrificeSource],
+            &const {
+                [AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Enchantment),
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: Some(PlayerRelation::You),
+                })]
+            },
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+            },
+        ),
+    ),
 );
 
 // ULG 25 — Anthroplasm
@@ -968,13 +988,35 @@ pub(in crate::card::sets) static PHYREXIAN_BROODLINGS: CardRecord = CardRecord::
 );
 
 // ULG 59 — Phyrexian Debaser
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHYREXIAN_DEBASER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("672dcca2-096b-4bcc-9b02-7180c4c0d4c7"),
     "Phyrexian Debaser",
-    crate::card::CardArt::new("672dcca2-096b-4bcc-9b02-7180c4c0d4c7", "Mark Tedin"),
-    crate::card::CardSet::UrzasLegacy,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("672dcca2-096b-4bcc-9b02-7180c4c0d4c7", "Mark Tedin"),
+    CardSet::UrzasLegacy,
+    // A flier that trades with anything small on the way out, which is more than
+    // most four-drops manage on the turn they die.
+    CardRules::new_creature(mana_cost!("{3}{B}"), &["Phyrexian", "Carrier"], 2, 2).with_abilities(
+        &[
+            abilities::flying(),
+            AbilityDef::activated_with_targets(
+                "{T}, Sacrifice this creature: Target creature gets -2/-2 until end of turn.",
+                &[CostDef::TapSource, CostDef::SacrificeSource],
+                &const {
+                    [AbilityTargetDef::exactly_one_permanent(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                    )]
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(-2),
+                        ValueDef::Constant(-2),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ],
+    ),
 );
 
 // ULG 60 — Phyrexian Defiler
@@ -1032,13 +1074,53 @@ pub(in crate::card::sets) static PHYREXIAN_DENOUNCER: CardRecord = CardRecord::n
 );
 
 // ULG 62 — Phyrexian Plaguelord
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PHYREXIAN_PLAGUELORD: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("307bd530-4b11-428e-864e-e24e96051e3e"),
     "Phyrexian Plaguelord",
-    crate::card::CardArt::new("307bd530-4b11-428e-864e-e24e96051e3e", "Kev Walker"),
-    crate::card::CardSet::UrzasLegacy,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("307bd530-4b11-428e-864e-e24e96051e3e", "Kev Walker"),
+    CardSet::UrzasLegacy,
+    // A sacrifice outlet that turns every other creature on the board into a
+    // -1/-1, which is how a five-drop ends a game of small creatures.
+    CardRules::new_creature(mana_cost!("{3}{B}{B}"), &["Phyrexian", "Carrier"], 4, 4)
+        .with_abilities(&[
+            AbilityDef::activated_with_targets(
+                "{T}, Sacrifice this creature: Target creature gets -4/-4 until end of turn.",
+                &[CostDef::TapSource, CostDef::SacrificeSource],
+                &const {
+                    [AbilityTargetDef::exactly_one_permanent(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                    )]
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(-4),
+                        ValueDef::Constant(-4),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "Sacrifice a creature: Target creature gets -1/-1 until end of turn.",
+                &[CostDef::SacrificePermanent {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    controller: PlayerRelation::You,
+                }],
+                &const {
+                    [AbilityTargetDef::exactly_one_permanent(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                    )]
+                },
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(-1),
+                        ValueDef::Constant(-1),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
 );
 
 // ULG 63 — Phyrexian Reclamation

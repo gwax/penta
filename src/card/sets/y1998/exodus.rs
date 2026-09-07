@@ -2032,13 +2032,26 @@ pub(in crate::card::sets) static NULL_BROOCH: CardRecord = CardRecord::new(
 );
 
 // EXO 137 — Skyshaper
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static SKYSHAPER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("234ed934-6ea7-41f6-bd13-3df8662a3a1d"),
     "Skyshaper",
-    crate::card::CardArt::new("234ed934-6ea7-41f6-bd13-3df8662a3a1d", "Donato Giancola"),
-    crate::card::CardSet::Exodus,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("234ed934-6ea7-41f6-bd13-3df8662a3a1d", "Donato Giancola"),
+    CardSet::Exodus,
+    // Two mana held up all game for one alpha strike over the top of a board
+    // that had the ground perfectly covered.
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::activated(
+        "Sacrifice this artifact: Creatures you control gain flying until end of turn.",
+        &[CostDef::SacrificeSource],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ),
+            effect: AppliedEffectDef::add_ability(&const { abilities::flying() }),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )),
 );
 
 // EXO 138 — Spellbook

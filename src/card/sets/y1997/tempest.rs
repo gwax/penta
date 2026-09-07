@@ -1223,13 +1223,32 @@ pub(in crate::card::sets) static PROPAGANDA: CardRecord = CardRecord::new(
 );
 
 // TMP 81 — Rootwater Diver
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ROOTWATER_DIVER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("a6315323-cf82-46c0-b164-e6ea1bf809f4"),
     "Rootwater Diver",
-    crate::card::CardArt::new("a6315323-cf82-46c0-b164-e6ea1bf809f4", "Ron Spencer"),
-    crate::card::CardSet::Tempest,
-    crate::card::CardRules::unsupported(),
+    CardArt::new("a6315323-cf82-46c0-b164-e6ea1bf809f4", "Ron Spencer"),
+    CardSet::Tempest,
+    // The blue equivalent, and in an artifact block the card it buys back is
+    // usually the one that was worth destroying.
+    CardRules::new_creature(mana_cost!("{U}"), &["Merfolk"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice this creature: Return target artifact card from your graveyard to your hand.",
+            &[CostDef::TapSource, CostDef::SacrificeSource],
+            &const {
+                [AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Artifact),
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: Some(PlayerRelation::You),
+                })]
+            },
+            EffectDef::MoveToZone {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                zone: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+            },
+        ),
+    ),
 );
 
 // TMP 82 — Rootwater Hunter

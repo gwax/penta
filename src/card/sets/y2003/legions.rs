@@ -453,16 +453,39 @@ pub(in crate::card::sets) static AVEN_ENVOY: CardRecord = CardRecord::new(
 );
 
 // LGN 31 — Cephalid Pathmage
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CEPHALID_PATHMAGE: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("88528929-4953-452a-b85e-dac15786e094"),
     "Cephalid Pathmage",
-    crate::card::CardArt::new(
+    CardArt::new(
         "88528929-4953-452a-b85e-dac15786e094",
         "Alex Horley-Orlandelli",
     ),
-    crate::card::CardSet::Legions,
-    crate::card::CardRules::unsupported(),
+    CardSet::Legions,
+    // Unblockable itself and able to hand that on once, which is how a 1/2 ends
+    // a game the turn a fat creature is already on the board.
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Octopus", "Wizard"], 1, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't be blocked.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BE_BLOCKED),
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice this creature: Target creature can't be blocked this turn.",
+            &[CostDef::TapSource, CostDef::SacrificeSource],
+            &const {
+                [AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )]
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BE_BLOCKED),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 // LGN 32 — Chromeshell Crab
