@@ -537,6 +537,13 @@ fn continuation_snapshot(
                 private_chosen,
             }
         }
+        DecisionContinuation::CostPayment(window) => DecisionContinuationSnapshot::CostPayment {
+            player: window.player.index(),
+            continuation: Box::new(effect_continuation_snapshot(
+                game, viewer, &window.object, &window.context, window.definition, visible_rebindings,
+            )?),
+            path: window.path.clone(),
+        },
         DecisionContinuation::PayOr {
             player,
             payment,
@@ -947,6 +954,7 @@ fn continuation_snapshot(
 include!("decision/parse_observation.rs");
 
 include!("decision/continuation.rs");
+include!("decision/cost_payment_continuation.rs");
 include!("decision/battlefield_entry_continuation.rs");
 
 include!("decision/validation.rs");

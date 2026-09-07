@@ -668,6 +668,7 @@ impl Game {
         // A grouped targeting clause triggers once for the spell or ability
         // whose targets were chosen, not once for every matching recipient.
         let mut matched_targeting_batches = Vec::new();
+        let mut matched_mechanic_batches = Vec::new();
         // "Triggers only once each turn" counts the triggering rather than
         // the resolution, and one batch can offer a capped ability several
         // matching events, so the count has to rise inside this loop as
@@ -692,6 +693,23 @@ impl Game {
                 ) else {
                     continue;
                 };
+                if let Some((mechanic, player)) = self.mechanic_batch_occurrence(
+                    listener.event,
+                    event,
+                    listener.capture.source.object,
+                    listener.capture.controller,
+                ) {
+                    let occurrence = (
+                        listener.capture.source,
+                        listener.installed,
+                        mechanic,
+                        player,
+                    );
+                    if matched_mechanic_batches.contains(&occurrence) {
+                        continue;
+                    }
+                    matched_mechanic_batches.push(occurrence);
+                }
                 if let Some(limit) = listener.trigger_limit {
                     let source = listener.capture.source;
                     let already = self.triggers_this_turn(source);
@@ -858,6 +876,7 @@ impl Game {
 }
 
 include!("trigger_capture/event_matching.rs");
+include!("trigger_capture/mechanics.rs");
 include!("trigger_capture/attack_matching.rs");
 include!("trigger_capture/ability_resolver.rs");
 include!("trigger_capture/damage_matching.rs");

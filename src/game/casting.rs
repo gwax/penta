@@ -558,7 +558,7 @@ impl Game {
         &mut self,
         mut stack_object: StackObject,
         targets: Vec<Target>,
-        object_payments: Vec<(GameObjectId, CostDef)>,
+        object_payments: Vec<crate::game::cost_payment::CostPaymentStep>,
         cost: ManaCost,
         x: u16,
         purpose: ManaPaymentPurpose,

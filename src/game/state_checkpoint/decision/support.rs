@@ -35,6 +35,9 @@ pub(in crate::game::state_checkpoint) fn decision_referenced_object_ids(
 ) -> Vec<GameObjectId> {
     let mut ids = Vec::new();
     match continuation {
+        DecisionContinuation::CostPayment(window) => {
+            extend_stack_continuation_ids(&mut ids, &window.object, &window.context);
+        }
         DecisionContinuation::LegendRule { candidates, .. } => {
             ids.extend(candidates.iter().copied());
         }

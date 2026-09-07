@@ -22,6 +22,11 @@ pub(super) enum CommittedStackObjectEvent {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum CommittedTriggerEvent {
+    MechanicPerformed {
+        mechanic: crate::ids::MechanicId,
+        player: PlayerId,
+        object: Option<TriggerEventObject>,
+    },
     CumulativeUpkeepPaid {
         object: TriggerEventObject,
         player: PlayerId,
@@ -245,12 +250,6 @@ pub(super) enum CommittedTriggerEvent {
     OptionalEffectTaken {
         object: TriggerEventObject,
     },
-    /// A permanent was sacrificed, captured before it left so what it was
-    /// is still readable.
-    Sacrificed {
-        object: TriggerEventObject,
-        player: PlayerId,
-    },
     /// A resolution sacrificed a permanent as part of its own clause, which
     /// is what the compulsory "when you do" watches. The object is the
     /// source of that clause, the way a damage event names the dealer;
@@ -269,6 +268,12 @@ impl CommittedTriggerEvent {
     #[allow(clippy::too_many_lines)]
     pub(super) fn context(&self) -> TriggerContext {
         match self {
+            Self::MechanicPerformed { player, object, .. } => TriggerContext {
+                event_player: Some(*player),
+                object: object.as_ref().map(|object| object.id),
+                object_controller: object.as_ref().map(|object| object.controller),
+                ..TriggerContext::empty()
+            },
             Self::CumulativeUpkeepPaid {
                 object,
                 player,
@@ -334,7 +339,7 @@ impl CommittedTriggerEvent {
             // Who did it is the half that "whenever you sacrifice" and "when
             // you play another land" read, and what it was done to is the
             // other.
-            Self::Sacrificed { object, player } | Self::LandPlayed { object, player } => {
+            Self::LandPlayed { object, player } => {
                 TriggerContext {
                     object: Some(object.id),
                     zone_change_result: None,

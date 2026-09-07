@@ -12,6 +12,13 @@ include!("costs/quantities.rs");
 /// is its source, and whether it supports the expression's required choices.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum CostDef {
+    /// Perform the inner cost as one named action. Its occurrence is
+    /// published once after the selected payment completes, never on an
+    /// attempted, declined, or merely selected payment.
+    Named {
+        mechanic: crate::ids::MechanicId,
+        cost: &'static CostDef,
+    },
     Mana(ManaCost),
     /// Pay the same mana cost a computed number of times. Fixed single
     /// payments should use [`Self::Mana`]; this form preserves quantities
@@ -251,6 +258,11 @@ pub enum CostDef {
 }
 
 impl CostDef {
+    #[must_use]
+    pub const fn named(mechanic: crate::ids::MechanicId, cost: &'static Self) -> Self {
+        Self::Named { mechanic, cost }
+    }
+
     #[must_use]
     pub const fn mana(cost: ManaCost) -> Self {
         Self::Mana(cost)

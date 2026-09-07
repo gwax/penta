@@ -106,7 +106,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         TriggerEventDef::OptionalEffectTaken(taker) => shared_object_predicate(taker),
         // Published from every site that sacrifices, before the permanent
         // leaves, so what it was is still readable.
-        TriggerEventDef::Sacrificed { object, .. } => shared_object_predicate(object),
+        TriggerEventDef::MechanicPerformed { object: Some(object), .. } => shared_object_predicate(object),
         TriggerEventDef::Attacks(matcher) => {
             shared_object_predicate(matcher.attacker)
                 && matcher.declaration.minimum > 0
@@ -139,6 +139,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         // is not part of the event. Cycling names no object of its own: the
         // card that was cycled is the only thing that can be listening.
         TriggerEventDef::CommittedCrime(_)
+        | TriggerEventDef::MechanicPerformed { object: None, .. }
         | TriggerEventDef::CumulativeUpkeepPaid { .. }
         | TriggerEventDef::CumulativeUpkeepNotPaid
         | TriggerEventDef::CoinFlipWon(_)

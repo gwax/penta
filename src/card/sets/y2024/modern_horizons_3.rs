@@ -1942,13 +1942,14 @@ pub(in crate::card::sets) static WRITHING_CHRYSALIS: CardRecord = CardRecord::ne
             abilities::reach(),
             AbilityDef::triggered(
                 "Whenever you sacrifice another Eldrazi, put a +1/+1 counter on this creature.",
-                TriggerEventDef::Sacrificed {
-                    object: ObjectPredicateDef::All(&[
+                TriggerEventDef::mechanic_performed_on(
+                    crate::card::abilities::SACRIFICE,
+                    ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Subtype("Eldrazi"),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
-                    player: PlayerRelation::You,
-                },
+                    PlayerRelation::You,
+                ),
                 EffectDef::AddCounters {
                     object: EffectRecipientDef::Source,
                     kind: CounterKind::PlusOnePlusOne,

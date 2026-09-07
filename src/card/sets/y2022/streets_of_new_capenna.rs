@@ -153,13 +153,14 @@ pub(in crate::card::sets) static BODY_DROPPER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{B}{R}"), &["Devil", "Warrior"], 2, 2).with_abilities(&[
         AbilityDef::triggered(
             "Whenever you sacrifice another creature, put a +1/+1 counter on this creature.",
-            TriggerEventDef::Sacrificed {
-                object: ObjectPredicateDef::All(&[
+            TriggerEventDef::mechanic_performed_on(
+                crate::card::abilities::SACRIFICE,
+                ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                 ]),
-                player: PlayerRelation::You,
-            },
+                PlayerRelation::You,
+            ),
             EffectDef::AddCounters {
                 object: EffectRecipientDef::Source,
                 kind: CounterKind::PlusOnePlusOne,

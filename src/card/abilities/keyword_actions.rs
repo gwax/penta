@@ -304,3 +304,6 @@ static POPULATE_CANDIDATE: [ObjectPredicateDef; 2] = [
     ObjectPredicateDef::HasType(CardType::Creature),
     ObjectPredicateDef::Token,
 ];
+/// Sacrifice is a globally shared rules action. Its event uses the same
+/// identity and capture path as set-owned named actions.
+pub const SACRIFICE: crate::ids::MechanicId = crate::ids::MechanicId::from_name("mtg:sacrifice");

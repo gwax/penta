@@ -139,8 +139,10 @@ supported activated or triggered non-mana ability bypass the shared stack.
 
 ## Coverage
 
-Currently executable clauses use declarative effects and carry no separate
-behavior identity, including when ordinary Rust constructs those effects.
+Currently executable clauses use declarative effects, including when ordinary
+Rust constructs those effects. `MechanicId` labels identify observable rules
+concepts, not card-specific execution handlers; define them beside the owning
+mechanic and import the constants wherever they are referenced.
 There is not yet a local runtime-callback interface. A future local runtime
 interface must integrate validation, persistence, and coverage before it can
 make a card executable. Unsupported cards may exist in catalogs and hidden

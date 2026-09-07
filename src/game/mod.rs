@@ -72,6 +72,7 @@ mod companion;
 mod continuous_effects;
 mod continuous_state;
 mod control_changes;
+mod cost_payment;
 mod counters;
 mod creature_characteristics;
 mod crime;

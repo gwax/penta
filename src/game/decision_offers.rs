@@ -902,7 +902,10 @@ impl Game {
         }
     }
 
-    fn characteristics_name(&self, characteristics: ObjectCharacteristics) -> Option<Cow<'_, str>> {
+    pub(in crate::game) fn characteristics_name(
+        &self,
+        characteristics: ObjectCharacteristics,
+    ) -> Option<Cow<'_, str>> {
         match characteristics {
             ObjectCharacteristics::Card { definition, part } => self
                 .catalog

@@ -35,6 +35,15 @@ distinguishes snapshots of the covered source and build inputs.
 
 ### Added
 
+- **Named mechanics have numeric identities and a shared action-event path.**
+  Corpseberry Cultivator demonstrates Bloomburrow-owned forage as both an
+  optional resolving action and a spell cost. Sacrifice uses the same event
+  model with a globally shared identity and preserved object snapshots and
+  batch boundaries. Resolving forage collects and validates selections before
+  commitment and can be cancelled without mutation. Its new checkpoint
+  continuation is additive and guarded by the exact simulation fingerprint;
+  existing checkpoint shapes, bot-wire and replay versions are unchanged.
+
 - **Effect and cost compositions live with their consumers.** Forage is now a
   Bloomburrow-owned choice of ordinary exile and sacrifice costs. Endurance's
   graveyard instruction uses the shared collection randomization and movement

@@ -36,6 +36,10 @@ fn shared_effect_payment(payment: EffectPaymentDef) -> bool {
         PlayerSetDef::All | PlayerSetDef::Related(PlayerRelation::Any)
     ) && shared_effect_recipient(EffectRecipientDef::players(payment.payer))
         && match payment.cost {
+            cost @ (crate::card::CostDef::Named { .. }
+            | crate::card::CostDef::Choice(_)
+            | crate::card::CostDef::Sacrifice { .. }
+            | crate::card::CostDef::Exile { .. }) => shared_action_cost(cost),
             crate::card::CostDef::RemoveAnyNumberOfCounters { object, .. } => {
                 shared_effect_recipient(*object)
             }
@@ -55,6 +59,26 @@ fn shared_effect_payment(payment: EffectPaymentDef) -> bool {
             | crate::card::CostDef::SacrificePermanentMatching(_) => true,
             _ => false,
         }
+}
+
+fn shared_action_cost(cost: crate::card::CostDef) -> bool {
+    use crate::card::{CostDef, CostQuantityDef};
+    match cost {
+        CostDef::Named { cost, .. } => shared_action_cost(*cost),
+        CostDef::Choice(costs) => {
+            !costs.is_empty() && costs.iter().all(|cost| shared_action_cost(*cost))
+        }
+        CostDef::Sacrifice {
+            object,
+            quantity: CostQuantityDef::Fixed(1..),
+        }
+        | CostDef::Exile {
+            object,
+            from: ZoneKind::Graveyard,
+            quantity: CostQuantityDef::Fixed(1..),
+        } => shared_object_predicate(object),
+        _ => false,
+    }
 }
 
 fn shared_choose(choice: ChooseDef) -> bool {

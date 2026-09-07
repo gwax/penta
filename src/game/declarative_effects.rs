@@ -168,6 +168,16 @@ impl Game {
                     }
                     return;
                 };
+                if crate::game::cost_payment::uses_cost_payment_window(definition.payment.cost) {
+                    self.queue_cost_payment_window(crate::game::cost_payment::CostPaymentWindow {
+                        player: *player,
+                        definition: scoped,
+                        object: Box::new(object.clone()),
+                        context,
+                        path: Vec::new(),
+                    });
+                    return;
+                }
                 let payment =
                     self.resolved_effect_payment(definition.payment.cost, object, &context, scoped);
                 self.queue_pay_or(

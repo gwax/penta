@@ -8,7 +8,7 @@ impl Game {
         &mut self,
         stack_object: StackObject,
         targets: Vec<Target>,
-        remaining_sacrifices: Vec<(GameObjectId, CostDef)>,
+        remaining_sacrifices: Vec<crate::game::cost_payment::CostPaymentStep>,
     ) {
         let Some((stack_object, targets)) =
             self.pay_spell_object_costs(stack_object, targets, remaining_sacrifices)
@@ -18,26 +18,48 @@ impl Game {
         self.complete_spell_cast(stack_object, targets);
     }
 
+    // Keep the ordered payment dispatch together, including named-action
+    // completion markers that must follow the actions they label.
+    #[allow(clippy::too_many_lines)]
     fn pay_spell_object_costs(
         &mut self,
         mut stack_object: StackObject,
         targets: Vec<Target>,
-        mut remaining_sacrifices: Vec<(GameObjectId, CostDef)>,
+        mut remaining_sacrifices: Vec<crate::game::cost_payment::CostPaymentStep>,
     ) -> Option<(StackObject, Vec<Target>)> {
         // The action carries object choices in the same order as their
         // additional-cost clauses. Process one at a time so a mandatory
         // return/exile cost and an optional sacrifice cost retain distinct
         // semantic actions even when both were selected for the same cast.
-        while let Some((spent, cost)) = remaining_sacrifices.first().copied() {
+        while let Some(step) = remaining_sacrifices.first().copied() {
             remaining_sacrifices.remove(0);
+            let (spent, cost) = match step {
+                crate::game::cost_payment::CostPaymentStep::Object(spent, cost) => (spent, cost),
+                crate::game::cost_payment::CostPaymentStep::EndAction => continue,
+                crate::game::cost_payment::CostPaymentStep::CompleteMechanic(mechanic) => {
+                    self.capture_battlefield_triggers(&CommittedTriggerEvent::MechanicPerformed {
+                        mechanic,
+                        player: stack_object.controller,
+                        object: None,
+                    });
+                    continue;
+                }
+            };
             if !stack_object.chosen_permanents.contains(&spent) {
                 stack_object.chosen_permanents.push(spent);
             }
             match cost {
                 CostDef::Sacrifice { .. } => {
-                    self.capture_sacrifices(&[spent]);
+                    let mut batch = vec![spent];
+                    while let Some(crate::game::cost_payment::CostPaymentStep::Object(next, next_cost)) = remaining_sacrifices.first().copied() {
+                        if next_cost != cost { break; }
+                        remaining_sacrifices.remove(0);
+                        batch.push(next);
+                        stack_object.chosen_permanents.push(next);
+                    }
+                    self.capture_sacrifices(&batch);
                     self.move_permanents_to_graveyard_then(
-                        &[spent],
+                        &batch,
                         Some(BattlefieldExitCompletion::CompleteSpellCast {
                             object: Box::new(stack_object),
                             targets,
@@ -120,7 +142,7 @@ impl Game {
         controller: PlayerId,
         spent: GameObjectId,
         cost: CostDef,
-        remaining_payments: &mut Vec<(GameObjectId, CostDef)>,
+        remaining_payments: &mut Vec<crate::game::cost_payment::CostPaymentStep>,
         paid_objects: &mut Vec<GameObjectId>,
     ) -> Vec<GameObjectId> {
         let Some((from, card)) = self
@@ -191,7 +213,7 @@ impl Game {
         &mut self,
         owner: PlayerId,
         spent: GameObjectId,
-        remaining_sacrifices: &mut Vec<(GameObjectId, CostDef)>,
+        remaining_sacrifices: &mut Vec<crate::game::cost_payment::CostPaymentStep>,
         paid_objects: &mut Vec<GameObjectId>,
     ) -> Vec<GameObjectId> {
         let mut exiled = Vec::new();
@@ -209,7 +231,10 @@ impl Game {
                 remaining_sacrifices
                     .first()
                     .copied()
-                    .and_then(|(candidate, candidate_cost)| {
+                    .and_then(|step| {
+                        let crate::game::cost_payment::CostPaymentStep::Object(candidate, candidate_cost) = step else {
+                            return None;
+                        };
                         let (candidate_zone, candidate_card) =
                             self.card_in_nonbattlefield_zone(candidate)?;
                         (candidate_zone == ZoneKind::Graveyard

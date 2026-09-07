@@ -236,6 +236,7 @@ fn shared_spell_additional_cost_def(cost: CostDef) -> bool {
         CostDef::All(costs) => {
             !costs.is_empty() && costs.iter().copied().all(shared_spell_additional_cost_def)
         }
+        CostDef::Named { cost, .. } => shared_spell_additional_cost_def(*cost),
         CostDef::Choice(costs) => {
             !costs.is_empty()
                 && costs.iter().copied().all(shared_spell_additional_cost_def)
@@ -256,6 +257,7 @@ fn shared_spell_additional_cost_def(cost: CostDef) -> bool {
 
 fn spell_cost_can_be_objectless(cost: CostDef) -> bool {
     match cost {
+        CostDef::Named { cost, .. } => spell_cost_can_be_objectless(*cost),
         CostDef::Mana(_)
         | CostDef::PayLife(_)
         | CostDef::ManaTimes { .. }

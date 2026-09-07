@@ -10,10 +10,12 @@ use crate::card::{
     ObjectSetDef, PlayerRefDef, PlayerRelation, TriggerConditionDef, TriggerEventDef,
     ValueComparisonDef, ValueDef, ZoneKind, ZonePlacement, abilities,
 };
-use crate::ids::TargetIndex;
+use crate::ids::{MechanicId, TargetIndex};
 use crate::mana_cost;
 
 /// Forage: the Bloomburrow mechanic is a choice of ordinary action costs.
+pub(in crate::card::sets) const FORAGE: MechanicId = MechanicId::from_name("mtg:forage");
+
 const fn forage() -> CostDef {
     const CHOICES: [CostDef; 2] = [
         CostDef::exile(
@@ -26,7 +28,8 @@ const fn forage() -> CostDef {
             CostQuantityDef::Fixed(1),
         ),
     ];
-    CostDef::choice(&CHOICES)
+    const PAYMENT: CostDef = CostDef::choice(&CHOICES);
+    CostDef::named(FORAGE, &PAYMENT)
 }
 
 // BLB 54 — Kitsa, Otterball Elite
@@ -288,6 +291,40 @@ pub(in crate::card::sets) static CINDERING_CUTTHROAT: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
+// BLB 210 — Corpseberry Cultivator
+pub(in crate::card::sets) static CORPSEBERRY_CULTIVATOR: CardRecord = CardRecord::new(
+    PrintingAnchor::scryfall("c911a759-ed7b-452b-88a3-663478357610"),
+    "Corpseberry Cultivator",
+    CardArt::new("c911a759-ed7b-452b-88a3-663478357610", "Izzy"),
+    CardSet::Bloomburrow,
+    CardRules::new_creature(mana_cost!("{1}{B/G}{B/G}"), &["Squirrel", "Warlock"], 2, 3)
+        .with_abilities(&[
+            AbilityDef::triggered(
+                "At the beginning of combat on your turn, you may forage. (Exile three cards from your graveyard or sacrifice a Food.)",
+                TriggerEventDef::StepBegins {
+                    step: crate::card::TurnStepDef::BeginningOfCombat,
+                    player: PlayerRelation::You,
+                },
+                EffectDef::PayOr(crate::card::PayOrDef::optional(
+                    crate::card::EffectPaymentDef {
+                        payer: crate::card::PlayerSetDef::One(PlayerRefDef::EffectController),
+                        cost: forage(),
+                    },
+                    &EffectDef::None,
+                )),
+            ),
+            AbilityDef::triggered(
+                "Whenever you forage, put a +1/+1 counter on this creature.",
+                TriggerEventDef::mechanic_performed(FORAGE, PlayerRelation::You),
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
+
 // BLB 235 — Tempest Angler
 pub(in crate::card::sets) static TEMPEST_ANGLER: CardRecord = CardRecord::new(
     PrintingAnchor::scryfall("850daae4-f0b7-4604-95e7-ad044ec165c3"),
@@ -405,6 +442,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &THUNDERTRAP_TRAINER,
     &FEED_THE_CYCLE,
     &CINDERING_CUTTHROAT,
+    &CORPSEBERRY_CULTIVATOR,
     &TEMPEST_ANGLER,
     &HIDDEN_GROTTO,
     &KEEN_EYED_CURATOR,

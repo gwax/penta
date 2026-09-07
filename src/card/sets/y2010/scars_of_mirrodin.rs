@@ -2028,10 +2028,11 @@ pub(in crate::card::sets) static FURNACE_CELEBRATION: CardRecord = CardRecord::n
     CardRules::new_enchantment(mana_cost!("{1}{R}{R}")).with_ability(
         AbilityDef::triggered_with_targets(
             "Whenever you sacrifice another permanent, you may pay {2}. If you do, this enchantment deals 2 damage to any target.",
-            TriggerEventDef::Sacrificed {
-                object: ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                player: PlayerRelation::You,
-            },
+            TriggerEventDef::mechanic_performed_on(
+                crate::card::abilities::SACRIFICE,
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                PlayerRelation::You,
+            ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::AnyTarget,
             )],

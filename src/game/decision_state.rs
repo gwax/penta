@@ -616,6 +616,7 @@ pub(super) enum DecisionContinuation {
         if_paid: Option<ScopedEffect>,
         otherwise: Option<ScopedEffect>,
     },
+    CostPayment(Box<super::cost_payment::CostPaymentWindow>),
     /// A card name chosen while an effect resolves, with the remaining
     /// sequence waiting on the answer.
     CardNameChoice {

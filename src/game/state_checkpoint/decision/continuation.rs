@@ -751,6 +751,9 @@ fn parse_continuation(
                 candidates: state.candidates,
             }
         }
+        DecisionContinuationSnapshot::CostPayment { player: payer, continuation, path } => {
+            parse_cost_payment_continuation(game, observation, player(*payer)?, continuation, path)?
+        }
         DecisionContinuationSnapshot::PayOr {
             player: payer,
             payment: payment_snapshot,

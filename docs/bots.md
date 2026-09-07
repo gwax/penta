@@ -348,6 +348,14 @@ rooms instead serve the opponent their last complete safe state until the
 choice settles. They do not add a cover delay, however: an interactive Miracle
 choice can take longer than an ordinary draw, so elapsed response time is not
 a privacy claim.
+Named action-cost choices use ordinary `Choice`, `ChooseDecision`, and
+`CancelDecision` vocabulary. Their additive `costPayment` checkpoint
+continuation records the payer, authored effect locator, and choice path;
+import validates the exact branch and object-selection offer against the
+catalog. Selecting a branch does not spend resources. The existing private
+decision visibility rules apply; mechanic names and executable code are not
+serialized in the continuation.
+
 An installed, pending, or stacked trigger likewise fails closed when its source,
 retained lexical targets, or bindings name a card in a hidden zone that has no
 stable public object ID; the checkpoint omits that executable state rather than

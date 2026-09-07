@@ -145,6 +145,19 @@ impl Game {
     ) -> bool {
         match (definition, event) {
             (
+                TriggerEventDef::MechanicPerformed { mechanic, player, object: predicate, .. },
+                CommittedTriggerEvent::MechanicPerformed {
+                    mechanic: performed,
+                    player: actor,
+                    object,
+                },
+            ) => mechanic == *performed && controller.is_some_and(|controller| {
+                self.player_relation_matches(*actor, player, controller, event.context())
+                    && predicate.is_none_or(|predicate| object.as_ref().is_some_and(|object| {
+                        self.trigger_object_matches_for_controller(predicate, object, source, false, Some(controller))
+                    }))
+            }),
+            (
                 TriggerEventDef::CumulativeUpkeepPaid { .. },
                 CommittedTriggerEvent::CumulativeUpkeepPaid { object, .. },
             )
@@ -576,22 +589,6 @@ impl Game {
             // whose ability reached here is the card that was cycled.
             (TriggerEventDef::Cycled, CommittedTriggerEvent::Cycled { object }) => {
                 object.id == source
-            }
-            (
-                TriggerEventDef::Sacrificed {
-                    object: predicate,
-                    player: relation,
-                },
-                CommittedTriggerEvent::Sacrificed { object, player },
-            ) => {
-                self.player_relation_matches(
-                    *player,
-                    relation,
-                    controller.unwrap_or(*player),
-                    TriggerContext::empty(),
-                ) && self.trigger_object_matches_for_controller(
-                    predicate, object, source, false, controller,
-                )
             }
             (
                 TriggerEventDef::StepBegins { step, player },

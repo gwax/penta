@@ -28,6 +28,46 @@ The first migration demonstrates several ownership levels:
 Helper names and source locations are not runtime dispatch keys. Moving a
 helper between ownership levels does not require adding a core operation.
 
+## Named mechanics and observable actions
+
+`MechanicId` is an opaque `u64`. Define a constant beside the mechanic with
+`MechanicId::from_name("mtg:forage")`, then import that constant. The fixed
+FNV-1a computation runs at compile time for constants; live costs, events, and
+trigger predicates contain only the number. Catalog source validation rejects
+duplicate or colliding declarations. The spelling is an identity contract:
+moving a definition does not rename it. It is distinct from the provenance of
+one particular ability instance.
+
+Forage's ID and cost composition belong to Bloomburrow. Sacrifice's ID belongs
+to shared vocabulary (`abilities::SACRIFICE`). Both publish the same committed
+`MechanicPerformed` event and use the ordinary trigger-capture, APNAP placement,
+and resolution paths. An event can retain an affected object's characteristics;
+sacrifice retains that snapshot before the permanent leaves. Per-object and
+"one or more" listeners retain distinct aggregation semantics. A sacrifice
+is still a genuine primitive, not an ordinary move-to-graveyard effect.
+
+`CostDef::Named` wraps a cost expression and publishes one occurrence when
+its selected payment completes. It does not infer identity from the inner
+actions: sacrificing a Food while foraging produces both sacrifice and forage,
+whereas sacrificing that Food for another purpose produces only sacrifice.
+Casting preserves named completion boundaries and individual action batches
+through cost expansion, including suspended battlefield-exit replacements.
+
+Corpseberry Cultivator is the reference composition. Its optional combat
+forage and Feed the Cycle's additional cost use the same set-owned helper;
+its second clause observes forage independently of where it was performed.
+The new resolving-payment lane supports named choices of fixed sacrifice or
+graveyard-exile costs: choose a branch, select the exact objects, validate the
+whole selection, then commit. Cancelling selects the unpaid continuation and
+does not rewind mutations. Checkpoints retain the authored effect locator and
+choice path, and validate the reconstructed offer. The prepared engine can
+fall back to this semantic lane before mutation.
+
+This is not yet a general joint payment planner. Arbitrary bundles, hidden or
+random action costs, and activation-cost migration remain follow-ups. Cycling
+also remains a follow-up: recognizing its ability before activation and
+observing its activation-time occurrence are separate from cost completion.
+
 ## Contract for local runtime exceptions
 
 A bounded runtime exception is a legitimate future extension. It need not be
@@ -78,8 +118,9 @@ The intended lifecycle is selection, executable-plan validation, and commitment:
 
 The runtime payment plan is semantic state. It is distinct from the optional,
 catalog-derived programs in `src/prepared_engine` and must work with prepared
-execution disabled. This migration does not implement the payment window or
-change the current cumulative-upkeep representation.
+execution disabled. This migration does not implement the full joint payment
+planner or change the current cumulative-upkeep representation. The bounded
+resolving action-cost lane above is its first payment-window slice.
 
 ## Subsequent migrations
 

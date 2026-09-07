@@ -419,7 +419,7 @@ fn validate_trigger_event_references(
         TriggerEventDef::Exerted(object)
         | TriggerEventDef::OptionalEffectTaken(object)
         | TriggerEventDef::SacrificePerformed(object)
-        | TriggerEventDef::Sacrificed { object, .. } => {
+        | TriggerEventDef::MechanicPerformed { object: Some(object), .. } => {
             validate_trigger_object_predicate(object, event, target_count, scope)
         }
         TriggerEventDef::Attacks(matcher) => {
@@ -485,6 +485,7 @@ fn validate_trigger_event_references(
         TriggerEventDef::LifeGained(PlayerRelation::ChosenPlayer)
         | TriggerEventDef::CardsExiled { zones: &[], .. } => Err(unsupported_trigger_event(event)),
         TriggerEventDef::CommittedCrime(_)
+        | TriggerEventDef::MechanicPerformed { object: None, .. }
         | TriggerEventDef::CumulativeUpkeepPaid { .. }
         | TriggerEventDef::CumulativeUpkeepNotPaid
         | TriggerEventDef::CoinFlipWon(_)

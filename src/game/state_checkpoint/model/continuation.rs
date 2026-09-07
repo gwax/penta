@@ -25,6 +25,11 @@ use super::{
     rename_all_fields = "camelCase"
 )]
 pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
+    CostPayment {
+        player: usize,
+        continuation: Box<EffectContinuationSnapshot>,
+        path: Vec<usize>,
+    },
     PregameActions {
         player: usize,
         actions: Vec<PregameAbilityActionSnapshot>,

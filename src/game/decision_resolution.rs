@@ -236,6 +236,9 @@ impl Game {
             DecisionContinuation::BattlefieldExitOrder { batch, remaining } => {
                 self.complete_battlefield_exit_order(batch, remaining, &pending_options, options);
             }
+            DecisionContinuation::CostPayment(window) => {
+                self.resolve_cost_payment_window(*window, options, &pending_options);
+            }
             DecisionContinuation::PayOr {
                 player,
                 payment,

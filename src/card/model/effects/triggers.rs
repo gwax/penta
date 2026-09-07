@@ -57,6 +57,16 @@ pub struct StackObjectEventMatcherDef {
 /// The committed event observed by a triggered ability.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TriggerEventDef {
+    /// A named action was actually performed by the related player. The
+    /// owning mechanic defines its occurrence boundary, not its effect shape.
+    MechanicPerformed {
+        mechanic: crate::ids::MechanicId,
+        player: PlayerRelation,
+        /// Optionally match the affected object's event-time characteristics.
+        object: Option<ObjectPredicateDef>,
+        /// Match once per actor's atomic batch rather than once per object.
+        one_or_more: bool,
+    },
     /// This source's cumulative-upkeep cost was paid. The trigger amount is
     /// how many mana spent on that payment had one of the named colors.
     CumulativeUpkeepPaid {
@@ -262,15 +272,6 @@ pub enum TriggerEventDef {
     /// last-known information, because the permanent is already gone by the
     /// time the ability goes on the stack.
     SacrificePerformed(ObjectPredicateDef),
-    /// "Whenever you sacrifice a Clue." A sacrifice is a way of putting a
-    /// permanent into a graveyard rather than a thing that happens to it
-    /// there, so it is its own event: a Clue somebody destroyed went to the
-    /// same place and is not what this asks about. The relation is to the
-    /// player who sacrificed it, which is who "you sacrifice" names.
-    Sacrificed {
-        object: ObjectPredicateDef,
-        player: PlayerRelation,
-    },
     /// "When you unlock this door" (CR 714.4c). A door becomes unlocked
     /// either on the battlefield, for the unlock special action, or as the
     /// Room enters because you cast that half.
@@ -316,6 +317,33 @@ pub enum TriggerEventDef {
 }
 
 impl TriggerEventDef {
+    #[must_use]
+    pub const fn mechanic_performed(
+        mechanic: crate::ids::MechanicId,
+        player: PlayerRelation,
+    ) -> Self {
+        Self::MechanicPerformed {
+            mechanic,
+            player,
+            object: None,
+            one_or_more: false,
+        }
+    }
+
+    #[must_use]
+    pub const fn mechanic_performed_on(
+        mechanic: crate::ids::MechanicId,
+        object: ObjectPredicateDef,
+        player: PlayerRelation,
+    ) -> Self {
+        Self::MechanicPerformed {
+            mechanic,
+            player,
+            object: Some(object),
+            one_or_more: false,
+        }
+    }
+
     const fn damage_source(source: ObjectPredicateDef) -> DamageSourceMatcherDef {
         match source {
             ObjectPredicateDef::Source => DamageSourceMatcherDef::Object(ObjectRefDef::Source),

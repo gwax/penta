@@ -306,6 +306,7 @@ mod multi_block;
 mod multi_target_slots;
 mod must_block;
 mod named_card_mechanics;
+mod named_mechanics;
 mod narcomoeba;
 mod new_phyrexia;
 mod nightmare;
