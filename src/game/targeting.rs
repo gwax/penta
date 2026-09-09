@@ -46,6 +46,9 @@ impl Game {
     }
 
     pub(super) fn stack_spell_types(&self, object: &StackObject) -> Option<CardTypeSet> {
+        if let Some(face_down) = object.face_down {
+            return Some(face_down.rules().types());
+        }
         let definition = self
             .catalog
             .get(object.card.definition.card_definition()?)?;
@@ -63,6 +66,14 @@ impl Game {
         &self,
         object: &StackObject,
     ) -> Option<TriggerEventObject> {
+        if let Some(face_down) = object.face_down {
+            return self.presentation_trigger_event_object(
+                object.id,
+                ObjectCharacteristics::FaceDown { face_down },
+                object.controller,
+                false,
+            );
+        }
         let signature = object.signature.as_ref()?;
         let mut view = self.printed_trigger_event_object(
             object.id,
@@ -72,6 +83,9 @@ impl Game {
                 form: signature.form().clone(),
             },
         )?;
+        // The printed view treats X as zero. A stack event observes the
+        // spell's chosen X, just like targeting and resolution do.
+        view.mana_value = self.stack_spell_mana_value(object);
         // Bestow (CR 702.103b): a spell cast for its bestow cost is an Aura
         // spell rather than a creature spell -- an enchantment spell either
         // way, but never both halves at once. Which one it is follows from
