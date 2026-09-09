@@ -42,7 +42,8 @@ pub(super) enum ManaPaymentPurpose {
         /// not legal ways to pay this cost.
         leaves_source: bool,
     },
-    CumulativeUpkeep {
+    Payment {
+        label: Option<crate::card::AbilityLabel>,
         source: GameObjectId,
         snow: bool,
     },

@@ -12,6 +12,8 @@ include!("costs/quantities.rs");
 /// is its source, and whether it supports the expression's required choices.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum CostDef {
+    /// Expand the cost list supplied by the enclosing `WithCosts` program.
+    Parameter,
     Mana(ManaCost),
     /// Pay the same mana cost a computed number of times. Fixed single
     /// payments should use [`Self::Mana`]; this form preserves quantities
@@ -659,8 +661,8 @@ pub enum ManaRestrictionDef {
     CannotCastSpell(ObjectPredicateDef),
     CastCreatureSpellOfChosenType,
     ActivateAbility(ObjectPredicateDef),
-    /// This mana can be spent only on a cumulative-upkeep payment.
-    CumulativeUpkeep,
+    /// This mana can be spent only on a payment with the named semantic purpose.
+    Payment(super::AbilityLabel),
     Special(&'static str),
 }
 

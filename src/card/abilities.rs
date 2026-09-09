@@ -1,7 +1,8 @@
 //! Reusable constructors for common ability clauses.
 //!
-//! The functions here return identity-free [`AbilityDef`] values. A card part,
-//! intrinsic rule, or grant site assigns identity when it attaches the clause.
+//! The functions here return [`AbilityDef`] values without instance IDs. A card part,
+//! intrinsic rule, or grant site assigns instance identity when it attaches the clause.
+//! A semantic label, when present, travels with the clause itself.
 
 use super::model::{
     AbilityDef, AbilityPredicateDef, AbilityTargetDef, AbilityTargetPredicate, ActivationTimingDef,
@@ -874,62 +875,7 @@ pub const fn shield_against_a_chosen_source(
     })
 }
 
-static COUNTER_PRIMARY_TARGET: EffectDef = EffectDef::Counter {
-    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-    zone: ZoneKind::Graveyard,
-    placement: ZonePlacement::Top,
-};
-static COUNTER_PRIMARY_TARGET_TO_EXILE: EffectDef = EffectDef::Counter {
-    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-    zone: ZoneKind::Exile,
-    placement: ZonePlacement::Top,
-};
-static COUNTER_TRIGGERING_SPELL: EffectDef = EffectDef::Counter {
-    object: EffectRecipientDef::TriggeringObject,
-    zone: ZoneKind::Graveyard,
-    placement: ZonePlacement::Top,
-};
-
-const fn pay_or_counter(
-    payer: PlayerRefDef,
-    costs: &'static [CostDef],
-    otherwise: &'static EffectDef,
-) -> EffectDef {
-    EffectDef::PayOr(PayOrDef {
-        visibility: ChoiceVisibilityDef::Public,
-        ..PayOrDef::unless(costs, otherwise).with_payer(PlayerSetDef::One(payer))
-    })
-}
-
-/// Counter the primary targeted spell unless its controller pays the supplied costs.
-#[must_use]
-pub const fn counter_target_unless_paid(costs: &'static [CostDef]) -> EffectDef {
-    pay_or_counter(
-        PlayerRefDef::ControllerOf(ObjectRefDef::Target(TargetIndex::PRIMARY)),
-        costs,
-        &COUNTER_PRIMARY_TARGET,
-    )
-}
-
-/// Counter the primary targeted spell into exile unless its controller pays.
-#[must_use]
-pub const fn counter_target_to_exile_unless_paid(costs: &'static [CostDef]) -> EffectDef {
-    pay_or_counter(
-        PlayerRefDef::ControllerOf(ObjectRefDef::Target(TargetIndex::PRIMARY)),
-        costs,
-        &COUNTER_PRIMARY_TARGET_TO_EXILE,
-    )
-}
-
-/// Counter the spell that caused a trigger unless its controller pays.
-#[must_use]
-pub const fn counter_triggering_spell_unless_paid(costs: &'static [CostDef]) -> EffectDef {
-    pay_or_counter(
-        PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject),
-        costs,
-        &COUNTER_TRIGGERING_SPELL,
-    )
-}
+include!("abilities/counter_payments.rs");
 
 /// The printed static "this creature can't be blocked".
 #[must_use]

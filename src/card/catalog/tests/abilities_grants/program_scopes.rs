@@ -824,7 +824,7 @@ fn nested_grant_capacity_is_validated_per_granted_definition() {
             part: CardPartId::PRIMARY,
             ability: AbilityId::PRIMARY,
             grant_path: vec![GrantId::PRIMARY],
-            problem: GrantedAbilityValidationError::TooManyGrantSites { count: 257 },
+            problem: Box::new(GrantedAbilityValidationError::TooManyGrantSites { count: 257 }),
         }
     );
 }
@@ -857,7 +857,7 @@ fn executable_legacy_procedures_are_rejected() {
             part: CardPartId::PRIMARY,
             ability: AbilityId::PRIMARY,
             grant_path: vec![GrantId::PRIMARY],
-            problem: GrantedAbilityValidationError::UnsupportedLegacyProcedure,
+            problem: Box::new(GrantedAbilityValidationError::UnsupportedLegacyProcedure),
         }
     );
 }

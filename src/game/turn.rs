@@ -737,6 +737,23 @@ impl Game {
             };
             let mut later_procedures = std::mem::take(&mut self.pending_procedures);
             match procedure {
+                PendingProcedure::CompletePayment {
+                    player,
+                    provenance,
+                    paid,
+                    definition,
+                    object,
+                    context,
+                } => {
+                    self.complete_effect_payment(
+                        player,
+                        provenance,
+                        paid.as_ref(),
+                        definition,
+                        &object,
+                        context,
+                    );
+                }
                 PendingProcedure::DrawCards { player, remaining } => {
                     self.draw_cards(player, remaining);
                 }

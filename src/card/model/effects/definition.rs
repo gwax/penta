@@ -3,7 +3,8 @@
 pub enum EffectDef {
     /// The controller exiles three graveyard cards or sacrifices a Food.
     Forage { optional: bool },
-    CumulativeUpkeep(&'static [CostDef]),
+    /// Supply a lexical cost parameter to an inspectable effect program.
+    WithCosts { costs: &'static [CostDef], effect: &'static EffectDef },
     AddCounters {
         object: EffectRecipientDef,
         kind: CounterKind,
@@ -115,13 +116,7 @@ pub enum EffectDef {
     CannotBeForcedToDiscard,
     /// On resolution, choose two different basic land-type words and apply
     /// the resulting indefinite, noncopiable text change to the object.
-    /// Ask a player to name a colour, then apply the named operation to the
-    /// recipients in that colour. The choice is made as the effect resolves,
-    /// so it cannot be a fixed colour in the declaration.
-    ///
-    /// The recipients are resolved before the question is asked -- targets
-    /// are already chosen by then, and a group is whatever it is at that
-    /// moment -- so the decision only has to carry the answer.
+    /// Name a colour and apply the selected operation to the resolved recipients.
     ChooseColor {
         object: EffectRecipientDef,
         operation: ColorChoiceOperationDef,

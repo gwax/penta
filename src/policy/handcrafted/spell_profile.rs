@@ -306,15 +306,15 @@ impl HandcraftedPolicy {
                     && quotient.denominator == ValueDef::ResolvedRecipientCount)
         };
         match effect {
-            EffectDef::WithRule { effect, .. } => Self::is_empty_without_x(*effect),
+            EffectDef::WithCosts { effect, .. }
+            | EffectDef::WithRule { effect, .. }
+            | EffectDef::BindOutput { effect, .. }
+            | EffectDef::May { effect, .. } => Self::is_empty_without_x(*effect),
             EffectDef::Sequence(effects) => {
                 !effects.is_empty()
                     && effects
                         .iter()
                         .all(|effect| Self::is_empty_without_x(*effect))
-            }
-            EffectDef::BindOutput { effect, .. } | EffectDef::May { effect, .. } => {
-                Self::is_empty_without_x(*effect)
             }
             EffectDef::DrainLife { amount, .. }
             | EffectDef::DrawCards { amount, .. }
@@ -427,7 +427,8 @@ impl HandcraftedPolicy {
             // An optional effect is worth what it would do if taken. Iteration
             // has the same child profile; multiplicity is intentionally not a
             // separate policy weight here.
-            EffectDef::WithRule { effect, .. }
+            EffectDef::WithCosts { effect, .. }
+            | EffectDef::WithRule { effect, .. }
             | EffectDef::BindOutput { effect, .. }
             | EffectDef::May { effect, .. }
             | EffectDef::ForEachInBinding { effect, .. }
@@ -578,7 +579,6 @@ impl HandcraftedPolicy {
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::Forage { .. }
-            | EffectDef::CumulativeUpkeep(_)
             | EffectDef::CannotBeForcedToDiscard
             | EffectDef::GainClassLevel { .. }
             | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }

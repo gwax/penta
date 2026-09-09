@@ -480,6 +480,7 @@ fn validate_effect_references(
         }
         EffectDef::PayOr(payment) => {
             validate_payment_references(payment.payment, target_count, scope)?;
+            if let Some(value) = payment.repeat { validate_value_target_references(*value, target_count, scope)?; }
             for branch in payment.if_paid.iter().chain(payment.otherwise.iter()) {
                 validate_effect_references(**branch, target_count, scope)?;
             }
@@ -919,9 +920,10 @@ fn validate_effect_references(
         // The chosen player is recorded on the permanent, not read from a
         // target slot.
         // A prohibition names a card shape, never a target.
-        EffectDef::CumulativeUpkeep(costs) => costs.iter().try_for_each(|cost| {
-            validate_upkeep_cost_references(*cost, target_count, scope)
-        }),
+        EffectDef::WithCosts { costs, effect } => {
+            costs.iter().try_for_each(|cost| validate_upkeep_cost_references(*cost, target_count, scope))?;
+            validate_effect_references(*effect, target_count, scope)
+        }
         EffectDef::ModifyCost(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)

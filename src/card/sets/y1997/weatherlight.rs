@@ -2124,7 +2124,7 @@ pub(in crate::card::sets) static HEART_OF_BOGARDAN: CardRecord = CardRecord::new
         ),
         AbilityDef::triggered_with_targets(
             "When a player doesn't pay this enchantment's cumulative upkeep, this enchantment deals X damage to target player or planeswalker and each creature that player or that planeswalker's controller controls, where X is twice the number of age counters on this enchantment minus 2.",
-            TriggerEventDef::CumulativeUpkeepNotPaid,
+            TriggerEventDef::PaymentNotPaid(crate::card::AbilityLabel::CUMULATIVE_UPKEEP),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::PlayerOrPlaneswalker(PlayerRelation::Any),
             )],

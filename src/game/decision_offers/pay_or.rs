@@ -4,7 +4,7 @@ impl Game {
         &mut self,
         player: PlayerId,
         payment: ResolvedEffectPayment,
-        cumulative_upkeep_age: Option<u16>,
+        payment_provenance: Option<super::PaymentProvenance>,
         visibility: ChoiceVisibilityDef,
         definition: ScopedEffect,
         object: &StackObject,
@@ -12,13 +12,13 @@ impl Game {
         if_paid: Option<ScopedEffect>,
         otherwise: Option<ScopedEffect>,
     ) {
-        if if_paid.is_none() && otherwise.is_none() {
+        if if_paid.is_none() && otherwise.is_none() && payment_provenance.is_none() {
             return;
         }
         let can_pay = self.can_pay_effect_payment(player, payment.clone());
         if !can_pay && let Some(effect) = otherwise {
-            if let Some(age) = cumulative_upkeep_age {
-                self.capture_cumulative_upkeep_not_paid(object, player, age);
+            if let Some(provenance) = payment_provenance {
+                self.capture_payment_not_paid(object, player, provenance);
             }
             self.resolve_effect_def(effect, object, context);
             return;
@@ -35,7 +35,7 @@ impl Game {
             DecisionContinuation::PayOr {
                 player,
                 payment,
-                cumulative_upkeep_age,
+                payment_provenance,
                 definition,
                 object: Box::new(object.clone()),
                 context,
@@ -44,5 +44,41 @@ impl Game {
             },
         );
         self.associate_latest_decision_with(object);
+    }
+}
+
+impl Game {
+    pub(in crate::game) fn complete_effect_payment(
+        &mut self,
+        player: PlayerId,
+        provenance: Option<super::PaymentProvenance>,
+        paid: Option<&SettledEffectPayment>,
+        scoped: ScopedEffect,
+        object: &StackObject,
+        mut context: EffectResolutionContext,
+    ) {
+        let EffectDef::PayOr(definition) = scoped.effect else {
+            unreachable!("payment completion retains its authored offer")
+        };
+        if let Some(provenance) = provenance {
+            match paid {
+                Some(receipt) => {
+                    self.capture_payment_paid(object, player, provenance, &receipt.mana_spent);
+                }
+                None => self.capture_payment_not_paid(object, player, provenance),
+            }
+        }
+        context.paid_amount = paid.map(|receipt| receipt.paid_amount);
+        let branch = if paid.is_some() {
+            definition.if_paid
+        } else {
+            definition.otherwise
+        };
+        if let Some(effect) = branch {
+            self.resolve_nested_effect_before_later(scoped.with_effect(*effect), object, context);
+        }
+        if paid.is_some() {
+            self.capture_optional_effect_taken(object);
+        }
     }
 }

@@ -8,12 +8,7 @@ impl Game {
         definition: TriggerEventDef,
         event: &CommittedTriggerEvent,
     ) -> Option<ZoneChangeObservationDef> {
-        let CommittedTriggerEvent::ZoneChanged {
-            from,
-            to,
-            ..
-        } = event
-        else {
+        let CommittedTriggerEvent::ZoneChanged { from, to, .. } = event else {
             return None;
         };
         let matcher = match definition {
@@ -70,11 +65,7 @@ impl Game {
                     .map(|candidate| self.trigger_event_object(candidate))
                     .is_some_and(|target| {
                         self.trigger_object_matches_for_controller(
-                            predicate,
-                            &target,
-                            source,
-                            false,
-                            controller,
+                            predicate, &target, source, false, controller,
                         )
                     }),
                 Target::Player(_) | Target::Card(_) | Target::Spell(_) => false,
@@ -101,11 +92,7 @@ impl Game {
                     })
                     .is_some_and(|target| {
                         self.trigger_object_matches_for_controller(
-                            predicate,
-                            &target,
-                            source,
-                            false,
-                            controller,
+                            predicate, &target, source, false, controller,
                         )
                     }),
                 Target::Player(_) | Target::Permanent(_) | Target::Spell(_) => false,
@@ -118,11 +105,7 @@ impl Game {
                     .and_then(|candidate| self.stack_object_event_object(candidate))
                     .is_some_and(|target| {
                         self.trigger_object_matches_for_controller(
-                            predicate,
-                            &target,
-                            source,
-                            true,
-                            controller,
+                            predicate, &target, source, true, controller,
                         )
                     }),
                 Target::Player(_) | Target::Permanent(_) | Target::Card(_) => false,
@@ -150,13 +133,13 @@ impl Game {
                 })
             }
             (
-                TriggerEventDef::CumulativeUpkeepPaid { .. },
-                CommittedTriggerEvent::CumulativeUpkeepPaid { object, .. },
+                TriggerEventDef::PaymentPaid { label, .. },
+                CommittedTriggerEvent::PaymentPaid { object, label: actual, .. },
             )
             | (
-                TriggerEventDef::CumulativeUpkeepNotPaid,
-                CommittedTriggerEvent::CumulativeUpkeepNotPaid { object, .. },
-            ) => object.id == source,
+                TriggerEventDef::PaymentNotPaid(label),
+                CommittedTriggerEvent::PaymentNotPaid { object, label: actual, .. },
+            ) => object.id == source && label == *actual,
             (
                 TriggerEventDef::CoinFlipWon(relation),
                 CommittedTriggerEvent::CoinFlipped { player, won: true },
@@ -576,11 +559,10 @@ impl Game {
                 let controller = controller.unwrap_or(*player);
                 self.player_relation_matches(*player, relation, controller, event.context())
             }
-            // The listener list for a cycled card holds only that card's own
-            // clauses, so there is nothing further to match on: any card
-            // whose ability reached here is the card that was cycled.
-            (TriggerEventDef::Cycled, CommittedTriggerEvent::Cycled { object }) => {
-                object.id == source
+            // The listener belongs to the resulting discarded card. Match
+            // the semantic purpose independently of its activation's body.
+            (TriggerEventDef::DiscardedToActivate(expected), CommittedTriggerEvent::DiscardedToActivate { object, label }) => {
+                object.id == source && expected == *label
             }
             (
                 TriggerEventDef::Sacrificed {

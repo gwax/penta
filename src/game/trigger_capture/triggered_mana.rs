@@ -68,7 +68,7 @@ EffectDef::RevealObjects(_) | EffectDef::MoveObjects(_) |
 EffectDef::PutObjectsOntoBattlefieldFaceDown(_) |
 EffectDef::ChooseForEachPlayer(_) | EffectDef::ChooseCardName { .. } |
 EffectDef::SelectAtRandomFromZone { .. } |
-EffectDef::ForEachInBinding { .. } | EffectDef::PayOr(_) | EffectDef::CumulativeUpkeep(_) |
+EffectDef::ForEachInBinding { .. } | EffectDef::PayOr(_) | EffectDef::WithCosts { .. } |
 EffectDef::PreventDamage { .. } |
 EffectDef::DealDamage(_) |
 EffectDef::Fight { .. } | EffectDef::DrainLife { .. } |

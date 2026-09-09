@@ -99,7 +99,7 @@ impl Game {
     /// them would be a different card there.
     pub(in crate::game) fn resolved_effect_costs(
         &self,
-        costs: &'static [crate::CostDef],
+        costs: &[crate::CostDef],
         object: &StackObject,
         context: &EffectResolutionContext,
         scoped: ScopedEffect,

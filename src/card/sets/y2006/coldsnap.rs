@@ -74,7 +74,7 @@ pub(in crate::card::sets) static BALDUVIAN_FALLEN: CardRecord = CardRecord::new(
         ),
         AbilityDef::triggered(
             "Whenever this creature's cumulative upkeep is paid, it gets +1/+0 until end of turn for each {B} or {R} spent this way.",
-            TriggerEventDef::CumulativeUpkeepPaid {
+            TriggerEventDef::PaymentPaid { label: crate::card::AbilityLabel::CUMULATIVE_UPKEEP,
                 mana_colors: ColorSet::from_colors(&[ManaColor::Black, ManaColor::Red]),
             },
             EffectDef::Apply {

@@ -3,7 +3,6 @@ include!("counter_choice_continuation.rs");
 include!("trigger_continuation.rs");
 include!("object_collection_continuation.rs");
 include!("pay_or_continuation.rs");
-include!("cumulative_upkeep_continuation.rs");
 
 #[allow(clippy::too_many_lines)]
 fn parse_continuation(
@@ -778,7 +777,7 @@ fn parse_continuation(
         DecisionContinuationSnapshot::PayOr {
             player: payer,
             payment: payment_snapshot,
-            cumulative_upkeep_age,
+            payment_provenance,
             object,
             ability,
             context,
@@ -796,23 +795,17 @@ fn parse_continuation(
             let scoped = catalog_scoped_effect(&game.catalog, ability, definition)
                 .ok_or("pay-or locator is absent from this catalog")?;
             let (payment, visibility, if_paid, otherwise) = match scoped.effect {
-                EffectDef::PayOr(authored) => parse_authored_pay_or_continuation(
-                    game,
-                    &object,
-                    &context,
-                    payer,
-                    *cumulative_upkeep_age,
-                    scoped,
-                    authored,
-                )?,
-                EffectDef::CumulativeUpkeep(cost) => parse_cumulative_upkeep_continuation(
-                    game,
-                    &object,
-                    payer,
-                    *cumulative_upkeep_age,
-                    scoped,
-                    cost,
-                )?,
+                EffectDef::PayOr(authored) => {
+                    parse_authored_pay_or_continuation(
+                        game,
+                        &object,
+                        &context,
+                        payer,
+                        payment_provenance.as_ref(),
+                        scoped,
+                        authored,
+                    )?
+                }
                 _ => {
                     return Err("pay-or locator does not identify an optional payment".into());
                 }
@@ -824,7 +817,8 @@ fn parse_continuation(
                 return Err("pay-or payer or payment disagrees with its authored effect".into());
             }
             let can_pay = game.can_pay_effect_payment(payer, payment.clone());
-            if if_paid.is_none() && otherwise.is_none() || (!can_pay && otherwise.is_some()) {
+            if (if_paid.is_none() && otherwise.is_none() && payment_provenance.is_none()) || (!can_pay && otherwise.is_some())
+            {
                 return Err(
                     "pay-or checkpoint encodes a choice that would resolve automatically".into(),
                 );
@@ -845,7 +839,7 @@ fn parse_continuation(
             DecisionContinuation::PayOr {
                 player: payer,
                 payment,
-                cumulative_upkeep_age: *cumulative_upkeep_age,
+                payment_provenance: match scoped.effect { EffectDef::PayOr(authored) => game.resolve_payment_offer(authored, &object, &context, scoped).1, _ => unreachable!() },
                 definition: scoped,
                 object,
                 context,

@@ -208,6 +208,7 @@ fn validate_effect_target_shapes(
         ),
         EffectDef::PayOr(payment) => {
             validate_payment_shape(payment.payment, targets)?;
+            if let Some(value) = payment.repeat { validate_value_shape(*value, targets)?; }
             for effect in payment.if_paid.iter().chain(payment.otherwise.iter()) {
                 validate_effect_target_shapes(**effect, targets, triggering_object_zone)?;
             }
@@ -646,9 +647,10 @@ fn validate_effect_target_shapes(
             | crate::card::ManaSelectionDef::ChoiceOfBundles(_) => Ok(()),
         },
         // The ballot is a predicate, not a target: nothing is pointed at.
-        EffectDef::CumulativeUpkeep(costs) => costs
-            .iter()
-            .try_for_each(|cost| validate_upkeep_cost_shape(*cost, targets)),
+        EffectDef::WithCosts { costs, effect } => {
+            costs.iter().try_for_each(|cost| validate_upkeep_cost_shape(*cost, targets))?;
+            validate_effect_target_shapes(*effect, targets, triggering_object_zone)
+        }
         EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::ModifyCost(_)

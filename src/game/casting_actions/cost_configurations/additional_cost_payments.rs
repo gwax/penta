@@ -141,6 +141,18 @@ impl Game {
         scale: CastScale,
     ) -> Vec<SpellAdditionalCostPayment> {
         let cost = Self::canonical_spell_cost(cost);
+        if let Some(plans) = crate::game::cost_planning::scalar_cost_plans(cost, repetitions) {
+            return plans
+                .into_iter()
+                .filter(|plan| self.can_pay_life(player, plan.life))
+                .map(|plan| SpellAdditionalCostPayment {
+                    objects: Vec::new(),
+                    mana: plan.mana,
+                    includes_mana_payment: plan.includes_mana_payment,
+                    life: plan.life,
+                })
+                .collect();
+        }
         if repetitions == 0 {
             return vec![SpellAdditionalCostPayment::free()];
         }
@@ -181,18 +193,6 @@ impl Game {
                 .quantity(quantity)
                 .expect("object thresholds cannot quantify a life payment")
                 .saturating_mul(repetitions);
-            return (i64::from(amount) <= i64::from(self.players[player.index()].life))
-                .then_some(SpellAdditionalCostPayment {
-                    objects: Vec::new(),
-                    mana: ManaCost::default(),
-                    includes_mana_payment: false,
-                    life: amount,
-                })
-                .into_iter()
-                .collect();
-        }
-        if let CostDef::PayLife(amount) = cost {
-            let amount = amount.saturating_mul(repetitions);
             return (i64::from(amount) <= i64::from(self.players[player.index()].life))
                 .then_some(SpellAdditionalCostPayment {
                     objects: Vec::new(),

@@ -1487,7 +1487,7 @@ pub(in crate::card::sets) static GEMPALM_INCINERATOR: CardRecord = CardRecord::n
         ),
         AbilityDef::triggered_with_targets(
             "When you cycle this card, you may have it deal X damage to target creature, where X is the number of Goblins on the battlefield.",
-            TriggerEventDef::Cycled,
+            TriggerEventDef::DiscardedToActivate(crate::card::AbilityLabel::CYCLING),
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],

@@ -82,22 +82,24 @@ impl Game {
         }
         let mut mana_spent = Vec::new();
         match payment {
-            ResolvedEffectPayment::All(payments) => return self.settle_cost_list_payment(player, &payments, 1),
+            ResolvedEffectPayment::All(payments) => return self.settle_cost_list_payment(player, &payments, 1, None),
             ResolvedEffectPayment::Mana(cost) => {
                 self.activate_mana_for_cost(player, cost, 0);
                 mana_spent = self.pay_player_cost(player, cost, 0);
             }
-            ResolvedEffectPayment::CumulativeMana { source, cost } => {
-                let purpose = super::ManaPaymentPurpose::CumulativeUpkeep {
+            ResolvedEffectPayment::LabeledMana { source, cost, label } => {
+                let purpose = super::ManaPaymentPurpose::Payment {
+                    label: Some(label),
                     source,
                     snow: false,
                 };
                 self.activate_mana_for_cost_avoiding_for(player, cost, 0, None, &purpose);
                 mana_spent = self.pay_player_cost_for(player, cost, 0, &purpose);
             }
-            ResolvedEffectPayment::SnowMana { source, amount } => {
+            ResolvedEffectPayment::SnowMana { source, amount, label } => {
                 let cost = ManaCost::new(amount, 0);
-                let purpose = super::ManaPaymentPurpose::CumulativeUpkeep {
+                let purpose = super::ManaPaymentPurpose::Payment {
+                    label,
                     source,
                     snow: true,
                 };
@@ -161,7 +163,8 @@ impl Game {
             // Both are paid by [`Self::settle_payment_decision`], which knows
             // which card was named or how much was chosen. Reaching here
             // means a caller lost that answer.
-            ResolvedEffectPayment::DiscardMatching(_)
+            ResolvedEffectPayment::Choice(_)
+            | ResolvedEffectPayment::DiscardMatching(_)
             | ResolvedEffectPayment::DiscardCards(_)
             | ResolvedEffectPayment::ChosenGenericMana
             | ResolvedEffectPayment::ChosenEnergy
@@ -206,8 +209,8 @@ impl Game {
 
     pub(super) fn effect_payment_label(payment: &ResolvedEffectPayment) -> String {
         match *payment {
-            ResolvedEffectPayment::All(_) => "Pay the cost".into(),
-            ResolvedEffectPayment::Mana(_) | ResolvedEffectPayment::CumulativeMana { .. } => {
+            ResolvedEffectPayment::All(_) | ResolvedEffectPayment::Choice(_) => "Pay the cost".into(),
+            ResolvedEffectPayment::Mana(_) | ResolvedEffectPayment::LabeledMana { .. } => {
                 "Pay the cost".to_string()
             }
             ResolvedEffectPayment::SnowMana { amount, .. } => {

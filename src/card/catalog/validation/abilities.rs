@@ -292,7 +292,7 @@ fn validate_attached_ability(
                     part,
                     ability: ability_id,
                     mode: mode_id,
-                    problem,
+                    problem: Box::new(problem),
                 });
             }
         }
@@ -329,7 +329,7 @@ fn validate_granted_abilities(
                 part,
                 ability: outer_ability,
                 grant_path: path.clone(),
-                problem: GrantedAbilityValidationError::ExecutableStaticAbility,
+                problem: Box::new(GrantedAbilityValidationError::ExecutableStaticAbility),
             });
         }
         if let Err(problem) = validate_ability_definition(granted, &[]) {
@@ -338,7 +338,7 @@ fn validate_granted_abilities(
                 part,
                 ability: outer_ability,
                 grant_path: path.clone(),
-                problem,
+                problem: Box::new(problem),
             });
         }
         validate_granted_abilities(definition, part, outer_ability, granted, path, created)?;

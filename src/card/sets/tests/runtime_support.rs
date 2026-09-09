@@ -632,7 +632,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::ForEachInBinding { .. }
                     | EffectDef::PayOr(_)
                     | EffectDef::Forage { .. }
-                    | EffectDef::CumulativeUpkeep(_)
+                    | EffectDef::WithCosts { .. }
                     | EffectDef::PreventDamage { .. }
                     | EffectDef::May { .. }
                     | EffectDef::None

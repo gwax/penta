@@ -369,7 +369,7 @@ pub enum CatalogError {
         part: CardPartId,
         ability: AbilityId,
         mode: ModeId,
-        problem: GrantedAbilityValidationError,
+        problem: Box<GrantedAbilityValidationError>,
     },
     TooManyAbilityGrantSites {
         definition: CardDefinitionId,
@@ -382,7 +382,7 @@ pub enum CatalogError {
         part: CardPartId,
         ability: AbilityId,
         grant_path: Vec<GrantId>,
-        problem: GrantedAbilityValidationError,
+        problem: Box<GrantedAbilityValidationError>,
     },
     AbilityHasNoSourceZone {
         definition: CardDefinitionId,

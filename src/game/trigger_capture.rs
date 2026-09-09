@@ -24,11 +24,11 @@ mod graveyard;
 include!("trigger_capture/drawing.rs");
 
 impl Game {
-    pub(super) fn capture_cumulative_upkeep_paid(
+    pub(super) fn capture_payment_paid(
         &mut self,
         ability: &StackObject,
         player: PlayerId,
-        age_counters: u16,
+        provenance: super::PaymentProvenance,
         mana_spent: &[Mana],
     ) {
         let Some(source) = ability.source else {
@@ -42,10 +42,11 @@ impl Game {
         else {
             return;
         };
-        self.capture_battlefield_triggers(&CommittedTriggerEvent::CumulativeUpkeepPaid {
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::PaymentPaid {
             object,
             player,
-            age_counters,
+            repetitions: provenance.repetitions,
+            label: provenance.label,
             mana_spent: mana_spent.iter().map(|mana| mana.color).collect(),
         });
     }
@@ -56,11 +57,11 @@ impl Game {
         won
     }
 
-    pub(super) fn capture_cumulative_upkeep_not_paid(
+    pub(super) fn capture_payment_not_paid(
         &mut self,
         ability: &StackObject,
         player: PlayerId,
-        age_counters: u16,
+        provenance: super::PaymentProvenance,
     ) {
         let Some(source) = ability.source else {
             return;
@@ -73,10 +74,11 @@ impl Game {
         else {
             return;
         };
-        self.capture_battlefield_triggers(&CommittedTriggerEvent::CumulativeUpkeepNotPaid {
+        self.capture_battlefield_triggers(&CommittedTriggerEvent::PaymentNotPaid {
             object,
             player,
-            age_counters,
+            repetitions: provenance.repetitions,
+            label: provenance.label,
         });
     }
 
@@ -195,18 +197,21 @@ impl Game {
         self.capture_targeting_triggers(object.kind, &event, &targets);
     }
 
-    /// "When you cycle this card" (CR 702.29b), raised as the cycling ability
-    /// is activated. Only the cycled card can carry the clause, so its own
-    /// printed abilities are the entire listener list -- there is no zone to
-    /// scan. The card is read in the graveyard the discard cost has already
-    /// put it in, which is also the object the trigger names.
-    pub(super) fn capture_cycling_triggers(&mut self, cycled: GameObjectId, player: PlayerId) {
-        let Some((_zone, card)) = self.card_in_nonbattlefield_zone(cycled) else {
+    /// A self-trigger on a card discarded to activate a labeled ability.
+    /// The resulting card supplies its own clauses; the label identifies
+    /// the action independently of the activated ability's body.
+    pub(super) fn capture_discard_activation_triggers(
+        &mut self,
+        discarded: GameObjectId,
+        player: PlayerId,
+        label: crate::card::AbilityLabel,
+    ) {
+        let Some((_zone, card)) = self.card_in_nonbattlefield_zone(discarded) else {
             return;
         };
         let card = card.clone();
         let Some(object) = self.printed_trigger_event_object(
-            cycled,
+            discarded,
             card.definition,
             player,
             &CharacteristicContext::Graveyard,
@@ -219,7 +224,7 @@ impl Game {
             let DeclarativeAbilityDef::Triggered(definition) = ability.definition else {
                 return;
             };
-            if definition.event != TriggerEventDef::Cycled
+            if definition.event != TriggerEventDef::DiscardedToActivate(label)
                 || definition.procedure != AbilityProcedureDef::Shared
             {
                 return;
@@ -231,7 +236,7 @@ impl Game {
                 installed: None,
                 capture: TriggerCapture {
                     source: AbilitySourceRef {
-                        object: cycled,
+                        object: discarded,
                         ability: effective.origin,
                     },
                     presentation: Self::ability_presentation(
@@ -257,7 +262,7 @@ impl Game {
         }
         self.capture_battlefield_triggers_from_snapshot(
             &listeners,
-            &CommittedTriggerEvent::Cycled { object },
+            &CommittedTriggerEvent::DiscardedToActivate { object, label },
         );
     }
 
@@ -530,8 +535,8 @@ impl Game {
     ) -> Option<TriggerContext> {
         let mut context = event.context();
         if let (
-            TriggerEventDef::CumulativeUpkeepPaid { mana_colors },
-            CommittedTriggerEvent::CumulativeUpkeepPaid { mana_spent, .. },
+            TriggerEventDef::PaymentPaid { mana_colors, .. },
+            CommittedTriggerEvent::PaymentPaid { mana_spent, .. },
         ) = (listener.event, event)
         {
             context.amount = Some(

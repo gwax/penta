@@ -73,7 +73,7 @@ impl Game {
                     object.controller,
                     context.trigger,
                     object.ability.as_ref().map(|ability| ability.origin),
-                    Some((object, scoped, &context)),
+                    Some((object, &scoped, &context)),
                 ) {
                     self.resolve_effect_output(scoped.with_effect(*then), object, context)
                 } else {

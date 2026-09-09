@@ -11,6 +11,7 @@ use serde_json::json;
 
 mod adversarial;
 mod broad_audit;
+mod composed_mechanic_programs;
 mod effect_walkers;
 mod face_down_characteristics;
 mod rare_reconstructions;

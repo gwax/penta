@@ -798,7 +798,7 @@ pub(in crate::card::sets) static THOUGHT_LASH: CardRecord = CardRecord::new(
             .override_text("Cumulative upkeep—Exile the top card of your library."),
         AbilityDef::triggered(
             "When this enchantment's cumulative upkeep isn't paid, exile all cards from your library.",
-            TriggerEventDef::CumulativeUpkeepNotPaid,
+            TriggerEventDef::PaymentNotPaid(crate::card::AbilityLabel::CUMULATIVE_UPKEEP),
             EffectDef::MoveToZone {
                 object: EffectRecipientDef::objects(ObjectSetDef::Query(
                     crate::card::ObjectQueryDef::owned_by(

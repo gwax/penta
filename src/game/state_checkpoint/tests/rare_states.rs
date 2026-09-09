@@ -612,8 +612,8 @@ fn cumulative_upkeep_payment_reconstructs_from_its_authored_cost() {
             .map(|pending| &pending.continuation),
         Some(DecisionContinuation::PayOr {
             player: PlayerId::One,
-            payment: ResolvedEffectPayment::CumulativeMana { .. },
-            cumulative_upkeep_age: Some(1),
+            payment: ResolvedEffectPayment::LabeledMana { .. },
+            payment_provenance: Some(crate::game::PaymentProvenance { repetitions: 1, .. }),
             ..
         })
     ));
@@ -637,7 +637,7 @@ fn cumulative_upkeep_payment_reconstructs_from_its_authored_cost() {
                 .map(|pending| &pending.continuation),
             Some(DecisionContinuation::PayOr {
                 player: PlayerId::One,
-                cumulative_upkeep_age: Some(1),
+                payment_provenance: Some(crate::game::PaymentProvenance { repetitions: 1, .. }),
                 ..
             })
         ));

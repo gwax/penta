@@ -497,6 +497,7 @@ pub(super) fn scoped_effect_snapshot(
         AbilityProgramDef::Effects(definition) => locate_effect(
             definition,
             crate::game::EffectLocalRules::default(),
+            None,
             effect,
             &mut path,
         ),
@@ -508,6 +509,7 @@ pub(super) fn scoped_effect_snapshot(
                 if locate_effect(
                     root,
                     crate::game::EffectLocalRules::default(),
+                    None,
                     effect,
                     &mut path,
                 ) {
@@ -538,7 +540,11 @@ pub(super) fn catalog_scoped_effect(
         }
     };
     let mut local_rules = crate::game::EffectLocalRules::default();
+    let mut cost_parameter = None;
     for &index in path {
+        if let EffectDef::WithCosts { costs, .. } = effect {
+            cost_parameter = Some(costs);
+        }
         if let EffectDef::WithRule { rule, .. } = effect {
             local_rules = local_rules.with(rule);
         }
@@ -548,6 +554,7 @@ pub(super) fn catalog_scoped_effect(
         effect,
         target_base: snapshot.target_base,
         local_rules,
+        cost_parameter,
     })
 }
 
@@ -647,19 +654,27 @@ fn collect_replacement_effects(
 fn locate_effect(
     current: EffectDef,
     local_rules: crate::game::EffectLocalRules,
+    cost_parameter: Option<&'static [crate::card::CostDef]>,
     needle: ScopedEffect,
     path: &mut Vec<usize>,
 ) -> bool {
-    if current == needle.effect && local_rules == needle.local_rules {
+    if current == needle.effect
+        && local_rules == needle.local_rules
+        && cost_parameter == needle.cost_parameter
+    {
         return true;
     }
     let local_rules = match current {
         EffectDef::WithRule { rule, .. } => local_rules.with(rule),
         _ => local_rules,
     };
+    let cost_parameter = match current {
+        EffectDef::WithCosts { costs, .. } => Some(costs),
+        _ => cost_parameter,
+    };
     for (index, child) in child_effects(current).into_iter().enumerate() {
         path.push(index);
-        if locate_effect(child, local_rules, needle, path) {
+        if locate_effect(child, local_rules, cost_parameter, needle, path) {
             return true;
         }
         path.pop();

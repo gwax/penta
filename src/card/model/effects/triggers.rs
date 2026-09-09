@@ -59,14 +59,15 @@ pub struct StackObjectEventMatcherDef {
 pub enum TriggerEventDef {
     /// A player completed the forage keyword action, including as a cost.
     Foraged(PlayerRelation),
-    /// This source's cumulative-upkeep cost was paid. The trigger amount is
+    /// This source's labeled cost was paid. The trigger amount is
     /// how many mana spent on that payment had one of the named colors.
-    CumulativeUpkeepPaid {
+    PaymentPaid {
+        label: crate::card::AbilityLabel,
         mana_colors: ColorSet,
     },
-    /// The controller declined or could not make this source's cumulative
-    /// upkeep payment. The captured amount is its age-counter count.
-    CumulativeUpkeepNotPaid,
+    /// The payer declined or could not make this source's labeled payment.
+    /// The captured amount is the payment's frozen repetition count.
+    PaymentNotPaid(crate::card::AbilityLabel),
     CoinFlipWon(PlayerRelation),
     CoinFlipLost(PlayerRelation),
     /// Any one of several events, for a printed ability that names more than
@@ -304,11 +305,10 @@ pub enum TriggerEventDef {
         object: ObjectPredicateDef,
         kind: crate::card::CounterKind,
     },
-    /// "When you cycle this card" (CR 702.29b). Cycling is an activation, so
-    /// this fires when the ability is activated rather than when it resolves,
-    /// and the card is already in the graveyard by then. Only the cycled card
-    /// carries the clause, so the event names nothing else.
-    Cycled,
+    /// This card was discarded to activate an ability with the named label.
+    /// The resulting card object is the source of its own triggered clause;
+    /// the activated ability does not need to resolve.
+    DiscardedToActivate(crate::card::AbilityLabel),
     /// "Whenever you commit a crime" (CR 701.51a). A player commits a crime
     /// as they cast a spell, activate an ability, or put a triggered ability
     /// onto the stack that targets an opponent, anything an opponent

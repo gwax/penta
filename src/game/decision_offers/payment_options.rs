@@ -30,6 +30,9 @@ impl Game {
             return options;
         }
         match payment {
+            ResolvedEffectPayment::Choice(choices) => {
+                options.extend(self.cost_list_payment_options(player, &[ResolvedEffectPayment::Choice(choices)]));
+            }
             ResolvedEffectPayment::All(payments) => {
                 options.extend(self.cost_list_payment_options(player, &payments));
             }

@@ -355,7 +355,7 @@ impl Game {
                     mana_payment,
                 },
             );
-            let is_cycling = definition.cycling;
+            let activation_label = effective.ability.label;
             for cost in definition.costs {
                 match cost {
                     CostDef::Mana(_) | CostDef::PayLife(_) => {}
@@ -390,11 +390,11 @@ impl Game {
                         });
                         // CR 702.29b fires cycling's trigger on activation
                         // rather than on resolution, so it belongs here
-                        // beside the cost rather than at the draw. Only
-                        // cycling raises it: channel pays the very same way
-                        // and is a different keyword.
-                        if is_cycling {
-                            self.capture_cycling_triggers(discarded_id, player);
+                        // beside the cost rather than at the draw. The
+                        // clause's semantic label distinguishes abilities
+                        // that pay the same cost for different purposes.
+                        if let Some(label) = activation_label {
+                            self.capture_discard_activation_triggers(discarded_id, player, label);
                         }
                     }
                     // The attacker named by the action, returned before the

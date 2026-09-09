@@ -800,7 +800,7 @@ impl Game {
                     object.controller,
                     context.trigger,
                     object.ability.as_ref().map(|ability| ability.origin),
-                    Some((object, scoped, context)),
+                    Some((object, &scoped, context)),
                 ) {
                     branches.then
                 } else {

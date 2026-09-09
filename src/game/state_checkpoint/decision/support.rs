@@ -689,10 +689,17 @@ pub(in crate::game::state_checkpoint) fn mana_cost_from_snapshot(
     }
 }
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn resolved_effect_payment_snapshot(
     payment: ResolvedEffectPayment,
 ) -> ResolvedEffectPaymentSnapshot {
     match payment {
+        ResolvedEffectPayment::Choice(payments) => ResolvedEffectPaymentSnapshot::Choice(
+            payments
+                .into_iter()
+                .map(resolved_effect_payment_snapshot)
+                .collect(),
+        ),
         ResolvedEffectPayment::All(payments) => ResolvedEffectPaymentSnapshot::All(
             payments
                 .into_iter()
@@ -702,18 +709,24 @@ pub(super) fn resolved_effect_payment_snapshot(
         ResolvedEffectPayment::Mana(cost) => {
             ResolvedEffectPaymentSnapshot::Mana(mana_cost_snapshot(cost))
         }
-        ResolvedEffectPayment::CumulativeMana { source, cost } => {
-            ResolvedEffectPaymentSnapshot::CumulativeMana {
-                source: source.0,
-                cost: mana_cost_snapshot(cost),
-            }
-        }
-        ResolvedEffectPayment::SnowMana { source, amount } => {
-            ResolvedEffectPaymentSnapshot::SnowMana {
-                source: source.0,
-                amount,
-            }
-        }
+        ResolvedEffectPayment::LabeledMana {
+            source,
+            cost,
+            label,
+        } => ResolvedEffectPaymentSnapshot::LabeledMana {
+            label: label.0.to_owned(),
+            source: source.0,
+            cost: mana_cost_snapshot(cost),
+        },
+        ResolvedEffectPayment::SnowMana {
+            source,
+            amount,
+            label,
+        } => ResolvedEffectPaymentSnapshot::SnowMana {
+            label: label.map(|label| label.0.to_owned()),
+            source: source.0,
+            amount,
+        },
         ResolvedEffectPayment::Life(amount) => ResolvedEffectPaymentSnapshot::Life(amount),
         ResolvedEffectPayment::DrawCards(amount) => {
             ResolvedEffectPaymentSnapshot::DrawCards(amount)

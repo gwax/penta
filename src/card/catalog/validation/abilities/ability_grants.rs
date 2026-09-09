@@ -62,7 +62,7 @@ fn collect_ability_grants(
         EffectDef::CreateAttachedToken { token, .. } => {
             tokens.push(token);
         }
-        EffectDef::CumulativeUpkeep(costs) => collect_cost_tokens(costs, tokens),
+        EffectDef::WithCosts { costs, .. } => collect_cost_tokens(costs, tokens),
         EffectDef::CreateEmblem { emblem } => emblems.push(emblem),
         EffectDef::BecomeCopyOf { exceptions, .. } => grants.extend(
             exceptions

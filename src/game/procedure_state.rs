@@ -24,6 +24,14 @@ pub(super) struct DrawReplacement {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[allow(clippy::large_enum_variant)]
 pub(super) enum PendingProcedure {
+    CompletePayment {
+        player: PlayerId,
+        provenance: Option<super::PaymentProvenance>,
+        paid: Option<super::SettledEffectPayment>,
+        definition: ScopedEffect,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
+    },
     DrawCards {
         player: PlayerId,
         remaining: u16,

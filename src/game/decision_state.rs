@@ -16,6 +16,12 @@ use super::{
     SacrificedAmountDef, ScopedEffect, StackObject, TapQuota, TriggerPlacementBatch,
 };
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct PaymentProvenance {
+    pub(super) label: crate::card::AbilityLabel,
+    pub(super) repetitions: u16,
+}
+
 /// What runs once a demanded sacrifice has been chosen and made. The
 /// sacrificed permanent's power travels as the trigger amount, so an effect
 /// measured by what was sacrificed can read it.
@@ -44,12 +50,15 @@ pub(super) struct SacrificeDeclined {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum ResolvedEffectPayment {
     All(Vec<Self>),
+    Choice(Vec<Self>),
     Mana(ManaCost),
-    CumulativeMana {
+    LabeledMana {
+        label: crate::card::AbilityLabel,
         source: GameObjectId,
         cost: ManaCost,
     },
     SnowMana {
+        label: Option<crate::card::AbilityLabel>,
         source: GameObjectId,
         amount: u16,
     },
@@ -64,7 +73,7 @@ pub(super) enum ResolvedEffectPayment {
         kind: CounterKind,
         /// Counters placed by one copy of the printed cost.
         amount: u16,
-        /// How many age counters repeat that cost.
+        /// How many repetitions perform this counter-placement action.
         times: u16,
     },
     SacrificePermanents {
@@ -117,7 +126,7 @@ pub(super) enum ResolvedEffectPayment {
     SacrificeCreaturesWithTotalPower(u16),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct SettledEffectPayment {
     pub(super) paid_amount: u16,
     pub(super) mana_spent: Vec<Mana>,
@@ -618,10 +627,9 @@ pub(super) enum DecisionContinuation {
     PayOr {
         player: PlayerId,
         payment: ResolvedEffectPayment,
-        /// The age-counter count whose cumulative-upkeep payment this is.
-        /// Present only for the shared keyword procedure, so declining can
-        /// publish its own rules event before the source is sacrificed.
-        cumulative_upkeep_age: Option<u16>,
+        /// Purpose and repetition count frozen when the offer was made.
+        /// The resolving object retains source and ability-instance identity.
+        payment_provenance: Option<PaymentProvenance>,
         definition: ScopedEffect,
         object: Box<StackObject>,
         context: EffectResolutionContext,

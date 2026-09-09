@@ -381,7 +381,7 @@ impl Game {
                 ..
             } => *reserved_life_payment,
             ManaPaymentPurpose::Ability { .. }
-            | ManaPaymentPurpose::CumulativeUpkeep { .. }
+            | ManaPaymentPurpose::Payment { .. }
             | ManaPaymentPurpose::Other => 0,
         };
         let reserved = i16::try_from(reserved).unwrap_or(i16::MAX);

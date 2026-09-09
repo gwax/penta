@@ -112,7 +112,7 @@ fn cumulative_upkeep_draw_cost_repeats_each_draw() {
         game.pending_decisions[0].continuation,
         DecisionContinuation::PayOr {
             payment: ResolvedEffectPayment::DrawCards(1),
-            cumulative_upkeep_age: Some(1),
+            payment_provenance: Some(crate::game::PaymentProvenance { repetitions: 1, .. }),
             ..
         }
     ));
@@ -124,7 +124,7 @@ fn cumulative_upkeep_draw_cost_repeats_each_draw() {
         game.pending_decisions[0].continuation,
         DecisionContinuation::PayOr {
             payment: ResolvedEffectPayment::DrawCards(2),
-            cumulative_upkeep_age: Some(2),
+            payment_provenance: Some(crate::game::PaymentProvenance { repetitions: 2, .. }),
             ..
         }
     ));
@@ -287,7 +287,8 @@ fn adarkar_unicorn_offers_both_outputs_and_its_mana_only_pays_cumulative_upkeep(
         !game.mana_can_pay_for(*mana, &ManaPaymentPurpose::Other)
             && game.mana_can_pay_for(
                 *mana,
-                &ManaPaymentPurpose::CumulativeUpkeep {
+                &ManaPaymentPurpose::Payment {
+                    label: Some(crate::card::AbilityLabel::CUMULATIVE_UPKEEP),
                     source: unicorn_id,
                     snow: false,
                 },

@@ -359,12 +359,13 @@ pub const fn ward(costs: &'static [CostDef], text: &'static str) -> AbilityDef {
     AbilityDef::triggered(
         text,
         TriggerEventDef::becomes_targeted(AN_OPPONENTS_SPELL_OR_ABILITY),
-        EffectDef::PayOr(PayOrDef {
-            visibility: ChoiceVisibilityDef::Public,
-            ..PayOrDef::unless(costs, &COUNTER_TRIGGERING_SPELL).with_payer(PlayerSetDef::One(
-                PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject),
-            ))
-        }),
+        EffectDef::PayOr(
+            PayOrDef::unless(costs, &COUNTER_TRIGGERING_SPELL)
+                .with_payer(PlayerSetDef::One(PlayerRefDef::ControllerOf(
+                    ObjectRefDef::TriggeringObject,
+                )))
+                .with_visibility(ChoiceVisibilityDef::Public),
+        ),
     )
 }
 

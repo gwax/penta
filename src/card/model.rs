@@ -6,6 +6,7 @@
 
 mod ability;
 mod ability_kinds;
+mod ability_labels;
 mod characteristics;
 mod composition;
 pub(crate) mod costs;
@@ -25,6 +26,7 @@ mod token;
 
 pub use ability::*;
 pub use ability_kinds::*;
+pub use ability_labels::*;
 pub use characteristics::*;
 pub use composition::*;
 pub use costs::*;

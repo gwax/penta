@@ -28,14 +28,14 @@ impl Game {
         reference: ObjectRefDef,
         source: GameObjectId,
         context: TriggerContext,
-        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+        effect_context: Option<(&StackObject, &ScopedEffect, &EffectResolutionContext)>,
     ) -> Option<GameObjectId> {
         match reference {
             ObjectRefDef::Source => Some(source),
             ObjectRefDef::TriggeringObject => context.object,
             ObjectRefDef::DamagedObject => context.damaged_object,
             _ => effect_context.and_then(|(object, scoped, resolution)| {
-                self.object_reference_target(reference, object, resolution, scoped)
+                self.object_reference_target(reference, object, resolution, *scoped)
                     .and_then(|target| match target {
                         Target::Permanent(id) | Target::Card(id) | Target::Spell(id) => Some(id),
                         Target::Player(_) => None,
@@ -50,7 +50,7 @@ impl Game {
         relative: ZoneRelativePositionDef,
         source: GameObjectId,
         context: TriggerContext,
-        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+        effect_context: Option<(&StackObject, &ScopedEffect, &EffectResolutionContext)>,
     ) -> bool {
         let reference = match relative {
             ZoneRelativePositionDef::Above(reference)
@@ -124,7 +124,7 @@ impl Game {
             object.source.unwrap_or(object.id),
             context.trigger,
             None,
-            Some((object, scoped, context)),
+            Some((object, &scoped, context)),
         )
     }
 
@@ -153,7 +153,7 @@ impl Game {
         source: GameObjectId,
         context: TriggerContext,
         prospective: Option<&Permanent>,
-        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+        effect_context: Option<(&StackObject, &ScopedEffect, &EffectResolutionContext)>,
     ) -> Vec<Target> {
         let mut recipients = Vec::new();
         let result = self.visit_objects_matching_query_with_context(
@@ -200,7 +200,7 @@ impl Game {
         source: GameObjectId,
         context: TriggerContext,
         prospective: Option<&Permanent>,
-        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+        effect_context: Option<(&StackObject, &ScopedEffect, &EffectResolutionContext)>,
         visitor: impl FnMut(Target) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         self.visit_objects_matching_query_with_context(
@@ -220,7 +220,7 @@ impl Game {
         players: PlayerSetDef,
         query_origin: (PlayerId, GameObjectId),
         context: TriggerContext,
-        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+        effect_context: Option<(&StackObject, &ScopedEffect, &EffectResolutionContext)>,
     ) -> bool {
         let (evaluation_controller, source) = query_origin;
         match players {
@@ -240,14 +240,14 @@ impl Game {
                         PlayerSetDef::LegalTargets(target),
                         object,
                         resolution,
-                        scoped,
+                        *scoped,
                     )
                     .contains(&candidate)
                 })
             }
             PlayerSetDef::One(reference) => {
                 effect_context.is_some_and(|(object, scoped, resolution)| {
-                    self.player_reference(reference, object, resolution, scoped) == Some(candidate)
+                    self.player_reference(reference, object, resolution, *scoped) == Some(candidate)
                 })
             }
         }
@@ -260,7 +260,7 @@ impl Game {
         query: ObjectQueryDef,
         query_origin: (PlayerId, GameObjectId),
         context: TriggerContext,
-        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+        effect_context: Option<(&StackObject, &ScopedEffect, &EffectResolutionContext)>,
     ) -> bool {
         query.related_player.is_none_or(|players| {
             self.player_matches_set(
@@ -286,7 +286,7 @@ impl Game {
         evaluation_controller: PlayerId,
         source: GameObjectId,
         context: TriggerContext,
-        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+        effect_context: Option<(&StackObject, &ScopedEffect, &EffectResolutionContext)>,
         visitor: &mut impl FnMut(Target) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         for zone in [
@@ -319,7 +319,7 @@ impl Game {
                             Target::Card(card.id),
                             object,
                             resolution,
-                            scoped,
+                            *scoped,
                         )
                     },
                 );
@@ -348,7 +348,7 @@ impl Game {
         source: GameObjectId,
         context: TriggerContext,
         prospective: Option<&Permanent>,
-        effect_context: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+        effect_context: Option<(&StackObject, &ScopedEffect, &EffectResolutionContext)>,
         mut visitor: impl FnMut(Target) -> ControlFlow<()>,
     ) -> ControlFlow<()> {
         // "Other than that creature": read once, because every candidate is
@@ -392,7 +392,7 @@ impl Game {
                             Target::Permanent(permanent.card.id),
                             object,
                             resolution,
-                            scoped,
+                            *scoped,
                         )
                     },
                 );
@@ -426,7 +426,7 @@ impl Game {
                             Target::Spell(candidate.id),
                             object,
                             resolution,
-                            scoped,
+                            *scoped,
                         )
                     },
                 );

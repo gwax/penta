@@ -703,7 +703,7 @@ impl Game {
                 reserved_life_payment: 0,
             },
             ManaPaymentPurpose::Ability { .. }
-            | ManaPaymentPurpose::CumulativeUpkeep { .. }
+            | ManaPaymentPurpose::Payment { .. }
             | ManaPaymentPurpose::Other => purpose.clone(),
         };
         let spent_mana =

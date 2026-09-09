@@ -140,12 +140,12 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
         // card that was cycled is the only thing that can be listening.
         TriggerEventDef::Foraged(_)
         | TriggerEventDef::CommittedCrime(_)
-        | TriggerEventDef::CumulativeUpkeepPaid { .. }
-        | TriggerEventDef::CumulativeUpkeepNotPaid
+        | TriggerEventDef::PaymentPaid { .. }
+        | TriggerEventDef::PaymentNotPaid(_)
         | TriggerEventDef::CoinFlipWon(_)
         | TriggerEventDef::CoinFlipLost(_)
         | TriggerEventDef::BecomesLevel(_)
-        | TriggerEventDef::Cycled
+        | TriggerEventDef::DiscardedToActivate(_)
         | TriggerEventDef::DoorUnlocked
         // The land that was played is on the battlefield by the time the
         // trigger is captured, so an ordinary predicate may read it.
