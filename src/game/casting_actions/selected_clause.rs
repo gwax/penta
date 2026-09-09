@@ -201,6 +201,20 @@ impl Game {
             .unwrap_or(0)
     }
 
+    /// Resolve the selected runtime cost ID to its authored name. External
+    /// cost IDs cannot collide with the card's own printed alternatives.
+    pub(in crate::game) fn selected_alternative_cost_binding(
+        option: &PlayOptionDef,
+        costs: &CostConfiguration,
+    ) -> Option<crate::Binding> {
+        let selected = costs.alternative()?;
+        option
+            .alternative_costs
+            .iter()
+            .find(|cost| cost.id == selected)
+            .and_then(|cost| cost.binding)
+    }
+
     pub(super) fn temporary_alternative_cost_id(
         option: &PlayOptionDef,
     ) -> Option<AlternativeCostId> {

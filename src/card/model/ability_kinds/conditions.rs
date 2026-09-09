@@ -80,10 +80,15 @@ pub enum TriggerConditionDef {
         comparison: ComparisonDef,
         amount: u8,
     },
-    /// How the source's own spell was cast. Evoke's sacrifice asks exactly
-    /// this: the permanent is here, and the question is which way it was
-    /// paid for on the way in. False for anything that never was a spell.
+    /// The family of cost chosen for the source spell, such as escape or
+    /// dash. Use `SourcePaidAlternativeCost` when a clause refers to one
+    /// particular printed cost rather than every cost in the same family.
     SourceCastWith(AlternativeCastKindDef),
+    /// Whether the source spell chose the alternative cost with this binding.
+    /// Catalog validation links the name to exactly one cost on the card part.
+    /// Spell copies retain this choice (CR 707.10); external alternatives such
+    /// as Omniscience have no cost binding on the source card.
+    SourcePaidAlternativeCost(crate::Binding),
     /// Whether one particular optional additional cost was paid for the
     /// source spell. This distinguishes cards with two independent kickers.
     SourcePaidAdditionalCost(crate::AdditionalCostIndex),

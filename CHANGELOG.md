@@ -36,6 +36,19 @@ distinguishes snapshots of the covered source and build inputs.
   Existing protocol and checkpoint version numbers are unchanged; unavailable
   checkpoints fail closed in both current and older readers.
 
+- **Evoke's sacrifice checks its named alternative cost.** The shared
+  `evoke(cost)` constructor expands into both the alternative cost and its
+  separate sacrifice trigger. Its `SourcePaidAlternativeCost` condition
+  reads the binding declared internally on the cost,
+  so choosing an unrelated alternative no longer triggers Evoke. Catalog
+  validation rejects duplicate or undeclared cost names, and reordering
+  abilities preserves their links.
+  Normal casting and Omniscience's external alternative keep their behavior.
+  The selected cost name survives spell copies and is preserved by the
+  additive `castAlternativeCostBinding` checkpoint member on stack objects and
+  permanents. Protocol, checkpoint, and replay versions are unchanged;
+  exact reconstruction continues to require the simulation fingerprint.
+
 - **Corpseberry Cultivator is implemented.** Shared forage effects offer the
   complete graveyard-exile or Food-sacrifice payment, and completed forage
   actions raise their own trigger event, including when paying Feed the Cycle's

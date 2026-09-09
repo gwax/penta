@@ -121,6 +121,31 @@ Use the smallest boundary that truthfully implements the behavior:
 Resolution must not silently change an explicit ability category or let a
 supported activated or triggered non-mana ability bypass the shared stack.
 
+Declare Evoke once with `abilities::evoke(cost)`. It expands into the alternative
+cost and its sacrifice trigger, with their shared binding handled internally.
+Use `ability_list!` to flatten complete ability groups in source order:
+
+```rust
+.with_abilities(&crate::ability_list![
+    [abilities::flying()],
+    abilities::evoke(CostDef::Mana(mana_cost!("{2}{U}"))),
+])
+```
+
+The constructor also accepts the colored-card exile costs. Use
+`abilities::evoke_with_text(cost, text)` for other nonmana wording or a printed
+text override. Both constructors always return the complete mechanic.
+
+Other clauses that refer to a particular alternative cost can use
+`TriggerConditionDef::SourcePaidAlternativeCost(binding)`, paired with
+`.with_alternative_cost_binding(binding)` on that cost. Ability order does
+not affect the link.
+Catalog validation rejects duplicate cost names within a card part and
+references to undeclared cost names. These names occupy a separate namespace
+from effect-output bindings; `ParentBinding` cannot name a cost.
+`SourceCastWith` instead asks about a cost family such as escape. External
+alternatives such as Omniscience do not acquire the card's cost bindings.
+
 ## Coverage
 
 Executable clauses use declarative effects and carry no separate behavior

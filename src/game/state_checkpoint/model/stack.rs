@@ -53,6 +53,9 @@ pub(in crate::game::state_checkpoint) struct StackSnapshot {
     pub(in crate::game::state_checkpoint) cast_tags: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(in crate::game::state_checkpoint) cast_alternative: Option<String>,
+    /// Name of the chosen alternative cost; absent for unlabeled or external costs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(in crate::game::state_checkpoint) cast_alternative_cost_binding: Option<String>,
     #[serde(default, skip_serializing_if = "super::is_zero_u16")]
     pub(in crate::game::state_checkpoint) cast_x: u16,
     #[serde(default, skip_serializing_if = "super::is_zero_u16")]
@@ -144,6 +147,9 @@ pub(in crate::game::state_checkpoint) struct DetachedStackSnapshot {
     pub(in crate::game::state_checkpoint) cast_tags: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(in crate::game::state_checkpoint) cast_alternative: Option<String>,
+    /// Name of the chosen alternative cost; absent for unlabeled or external costs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(in crate::game::state_checkpoint) cast_alternative_cost_binding: Option<String>,
     #[serde(default, skip_serializing_if = "super::is_zero_u16")]
     pub(in crate::game::state_checkpoint) cast_x: u16,
     #[serde(default, skip_serializing_if = "super::is_zero_u16")]
