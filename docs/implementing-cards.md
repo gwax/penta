@@ -146,6 +146,31 @@ from effect-output bindings; `ParentBinding` cannot name a cost.
 `SourceCastWith` instead asks about a cost family such as escape. External
 alternatives such as Omniscience do not acquire the card's cost bindings.
 
+### Temporary self effects
+
+Use `abilities::apply_to_self_until_end_of_turn` for activated stat changes,
+ability grants, or combinations that last until end of turn. It accepts the
+complete `&[CostDef]` alongside the effect:
+
+```rust
+abilities::apply_to_self_until_end_of_turn(
+    "{B}: This creature gets +1/+1 until end of turn.",
+    &[CostDef::Mana(mana_cost!("{B}"))],
+    AppliedEffectDef::modify_power_toughness(
+        ValueDef::Constant(1),
+        ValueDef::Constant(1),
+    ),
+)
+```
+
+`AppliedEffectDef::modify_power_toughness` accepts signed or dynamic `ValueDef`
+deltas. Pass `AppliedEffectDef::add_ability` for an ability grant, or an
+`AppliedEffectDef::Composite` when a clause changes stats and grants an ability
+together. The returned `AbilityDef` supports ordinary modifiers such as
+`.once_each_turn()`. The helper constructs ordinary activated clauses using
+`EffectDef::Apply`; the shared engine still owns cost payment, stack resolution,
+and cleanup expiration.
+
 ## Coverage
 
 Executable clauses use declarative effects and carry no separate behavior

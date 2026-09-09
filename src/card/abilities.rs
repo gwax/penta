@@ -790,41 +790,27 @@ pub const fn regenerate_self(text: &'static str, costs: &'static [CostDef]) -> A
     )
 }
 
-/// An activated ability that gives its source one ability until end of turn.
-/// The caller supplies the complete cost list so nonmana payments retain the
-/// same compact declaration shape.
+/// An activated ability that applies an effect to its source until end of turn.
+/// Use [`AppliedEffectDef::modify_power_toughness`] for signed or dynamic stat
+/// deltas, [`AppliedEffectDef::add_ability`] for an ability grant, or
+/// [`AppliedEffectDef::Composite`] to combine them. Costs and printed text
+/// remain card-local; activation limits and timing restrictions can be chained
+/// onto the result.
 #[must_use]
-pub const fn gain_ability_until_end_of_turn(
+pub const fn apply_to_self_until_end_of_turn(
     text: &'static str,
     costs: &'static [CostDef],
-    ability: &'static AbilityDef,
+    effect: AppliedEffectDef,
 ) -> AbilityDef {
-    AbilityDef::activated(text, costs, gain_ability_until_end_of_turn_effect(ability))
-}
-
-/// The common mana-only form of [`gain_ability_until_end_of_turn`]. Owning
-/// the one-element cost list lets card declarations pass a [`ManaCost`]
-/// directly without naming the generic activation-cost representation.
-#[must_use]
-pub const fn gain_ability_until_end_of_turn_for_mana(
-    text: &'static str,
-    cost: ManaCost,
-    ability: &'static AbilityDef,
-) -> AbilityDef {
-    AbilityDef::activated_with_cost_list_and_targets(
+    AbilityDef::activated(
         text,
-        AbilityCostList::one(CostDef::Mana(cost)),
-        &[],
-        gain_ability_until_end_of_turn_effect(ability),
+        costs,
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Source,
+            effect,
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
     )
-}
-
-const fn gain_ability_until_end_of_turn_effect(ability: &'static AbilityDef) -> EffectDef {
-    EffectDef::Apply {
-        recipient: EffectRecipientDef::Source,
-        effect: AppliedEffectDef::add_ability(ability),
-        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-    }
 }
 
 /// A Circle of Protection: "the next time a <kind> source of your choice
