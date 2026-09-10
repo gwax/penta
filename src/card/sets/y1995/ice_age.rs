@@ -49,7 +49,9 @@ pub(in crate::card::sets) static ADARKAR_UNICORN: CardRecord = CardRecord::new(
                         (ManaColor::Colorless, 1),
                     ]),
                 ])
-                .with_restrictions(&[ManaRestrictionDef::CumulativeUpkeep]),
+                .with_restrictions(&[ManaRestrictionDef::Payment(
+                    crate::card::AbilityLabel::CUMULATIVE_UPKEEP,
+                )]),
             ),
         ),
     ),

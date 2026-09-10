@@ -450,7 +450,7 @@ mod channel_is_not_cycling {
         .with_source_zones(&[ZoneKind::Hand]),
         AbilityDef::triggered(
             "When you cycle this card, you gain 3 life.",
-            TriggerEventDef::Cycled,
+            TriggerEventDef::DiscardedToActivate(crate::card::AbilityLabel::CYCLING),
             WHEN_CYCLED,
         ),
     ];

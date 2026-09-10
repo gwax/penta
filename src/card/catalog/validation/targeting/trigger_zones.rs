@@ -12,8 +12,8 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         TriggerEventDef::While { event, .. } => trigger_event_object_zone(*event),
         TriggerEventDef::ZoneChanged(matcher) => matcher.to,
         TriggerEventDef::Tapped(_)
-        | TriggerEventDef::CumulativeUpkeepPaid { .. }
-        | TriggerEventDef::CumulativeUpkeepNotPaid
+        | TriggerEventDef::PaymentPaid { .. }
+        | TriggerEventDef::PaymentNotPaid(_)
         | TriggerEventDef::Attacks(_)
         | TriggerEventDef::Exerted(_)
         | TriggerEventDef::OptionalEffectTaken(_)
@@ -49,7 +49,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::CoinFlipWon(_)
         | TriggerEventDef::CoinFlipLost(_)
         | TriggerEventDef::BecomesLevel(_)
-        | TriggerEventDef::Cycled
+        | TriggerEventDef::DiscardedToActivate(_)
         | TriggerEventDef::DoorUnlocked
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LandPlayed { .. }

@@ -369,7 +369,7 @@ impl Game {
         controller: PlayerId,
         context: TriggerContext,
         ability: Option<AbilityOrigin>,
-        object: Option<(&StackObject, ScopedEffect, &EffectResolutionContext)>,
+        object: Option<(&StackObject, &ScopedEffect, &EffectResolutionContext)>,
     ) -> bool {
         let TriggerConditionDef::ObjectCount {
             query,
@@ -399,7 +399,7 @@ impl Game {
                         object.map_or_else(
                             || self.condition_value(value, source, controller, context),
                             |(object, scoped, effect_context)| {
-                                self.effect_value(value, object, effect_context, scoped)
+                                self.effect_value(value, object, effect_context, *scoped)
                             },
                         )
                     };
@@ -422,7 +422,7 @@ impl Game {
                 } => object.is_some_and(|(object, scoped, context)| {
                     context.single_object(*binding).is_some_and(|bound| {
                         self.effect_collection_target_matches(
-                            *predicate, bound, object, context, scoped,
+                            *predicate, bound, object, context, *scoped,
                         )
                     })
                 }),
@@ -555,9 +555,9 @@ impl Game {
                         || self.source_object_set_count_condition_holds(**counting, source),
                         |(object, scoped, context)| {
                             let objects =
-                                self.effect_objects(*counting.objects, object, context, scoped);
+                                self.effect_objects(*counting.objects, object, context, *scoped);
                             self.effect_object_set_count_condition_holds(
-                                **counting, objects, object, context, scoped,
+                                **counting, objects, object, context, *scoped,
                             )
                         },
                     )

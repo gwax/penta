@@ -15,8 +15,12 @@ pub const fn cumulative_upkeep(costs: &'static [CostDef]) -> AbilityDef {
             step: TurnStepDef::Upkeep,
             player: PlayerRelation::You,
         },
-        EffectDef::CumulativeUpkeep(costs),
+        EffectDef::WithCosts {
+            costs,
+            effect: &CUMULATIVE_UPKEEP_PROGRAM,
+        },
     )
+    .labeled(crate::card::AbilityLabel::CUMULATIVE_UPKEEP)
 }
 
 const fn mana_cost_is_generic(cost: ManaCost, amount: u16) -> bool {
@@ -90,3 +94,26 @@ const fn cumulative_upkeep_text(cost: CostDef) -> &'static str {
         _ => "Cumulative upkeep",
     }
 }
+
+static CUMULATIVE_UPKEEP_PROGRAM: EffectDef = EffectDef::IfCondition {
+    condition: &TriggerConditionDef::SourceOnBattlefield,
+    then: &EffectDef::Sequence(&[
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Source,
+            kind: CounterKind::named("age"),
+            amount: ValueDef::Constant(1),
+        },
+        EffectDef::PayOr(
+            PayOrDef::unless(
+                &[CostDef::repeated(
+                    &[CostDef::Parameter],
+                    &ValueDef::CountersOnSource(CounterKind::named("age")),
+                )],
+                &EffectDef::Sacrifice {
+                    object: EffectRecipientDef::Source,
+                },
+            )
+            .labeled(crate::card::AbilityLabel::CUMULATIVE_UPKEEP),
+        ),
+    ]),
+};

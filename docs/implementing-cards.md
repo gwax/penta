@@ -5,6 +5,9 @@ This guide describes where card behavior belongs in the current engine. The
 are preferences rather than purity requirements. The source-layout rules in
 this guide are invariants.
 
+The [named mechanic programs draft](composed-mechanics.md) describes the current
+cycling and cumulative-upkeep composition slice and its payment boundaries.
+
 ## Definition boundary
 
 Each built-in canonical card is declared once in the `CARDS` registry of its
@@ -299,3 +302,9 @@ payment, including additional costs and increases; reducing a mana component
 to zero preserves its presence. Neither form changes the card's printed mana
 cost. Keep that printed characteristic separate from mandatory additional
 costs in the text box, such as Bone Shards' sacrifice-or-discard cost.
+
+Resolving payments can contain `CostDef::repeated(costs, count)`. The count is a
+`ValueDef` evaluated when offered; only that sub-list repeats, and the complete
+payment remains all-or-nothing. Use `PayOrDef::optional`, `optional_or`, or
+`unless` to choose the continuation, with `.labeled(...)` when observers or
+mana restrictions care about the payment's purpose.

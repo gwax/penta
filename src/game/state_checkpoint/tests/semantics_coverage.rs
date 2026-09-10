@@ -338,6 +338,7 @@ fn reachable_effects(effect: crate::card::EffectDef) -> Vec<ScopedEffect> {
         index += 1;
         let child_scope = match current.effect {
             EffectDef::WithRule { rule, .. } => current.with_rule(rule),
+            EffectDef::WithCosts { costs, .. } => current.with_costs(costs),
             _ => current,
         };
         found.extend(

@@ -626,7 +626,7 @@ fn executable_granted_static_abilities_are_rejected_until_fixed_point_evaluation
             part: CardPartId::PRIMARY,
             ability: AbilityId::PRIMARY,
             grant_path: vec![GrantId::PRIMARY],
-            problem: GrantedAbilityValidationError::ExecutableStaticAbility,
+            problem: Box::new(GrantedAbilityValidationError::ExecutableStaticAbility),
         }
     );
 }
@@ -651,7 +651,7 @@ fn granted_ability_validation_reports_nested_structural_paths() {
             part: CardPartId::PRIMARY,
             ability: AbilityId::PRIMARY,
             grant_path: vec![GrantId::PRIMARY, GrantId::PRIMARY],
-            problem: GrantedAbilityValidationError::EmptyText,
+            problem: Box::new(GrantedAbilityValidationError::EmptyText),
         }
     );
 }
@@ -685,7 +685,7 @@ fn granted_ability_validation_follows_sacrifice_continuations() {
             part: CardPartId::PRIMARY,
             ability: AbilityId::PRIMARY,
             grant_path: vec![GrantId::PRIMARY, GrantId::PRIMARY],
-            problem: GrantedAbilityValidationError::EmptyText,
+            problem: Box::new(GrantedAbilityValidationError::EmptyText),
         }
     );
 }
@@ -754,7 +754,7 @@ fn granted_modal_branches_validate_nested_grants_in_printed_order() {
             part: CardPartId::PRIMARY,
             ability: AbilityId::PRIMARY,
             grant_path: vec![GrantId::PRIMARY, GrantId(1)],
-            problem: GrantedAbilityValidationError::EmptyText,
+            problem: Box::new(GrantedAbilityValidationError::EmptyText),
         }
     );
 }
@@ -792,7 +792,7 @@ fn granted_modal_capacity_counts_grants_across_all_modes() {
             part: CardPartId::PRIMARY,
             ability: AbilityId::PRIMARY,
             grant_path: vec![GrantId::PRIMARY],
-            problem: GrantedAbilityValidationError::TooManyGrantSites { count: 257 },
+            problem: Box::new(GrantedAbilityValidationError::TooManyGrantSites { count: 257 }),
         }
     );
 }
@@ -843,7 +843,7 @@ fn granted_ability_validation_checks_zones_mana_targets_and_target_slots() {
                 part: CardPartId::PRIMARY,
                 ability: AbilityId::PRIMARY,
                 grant_path: vec![GrantId::PRIMARY],
-                problem,
+                problem: Box::new(problem),
             }
         );
     }

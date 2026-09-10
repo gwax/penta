@@ -357,7 +357,7 @@ fn shared_static_effect_at(source_zones: &[ZoneKind], effect: EffectDef, root: b
         | EffectDef::ForEachInBinding { .. }
         | EffectDef::PayOr(_)
         | EffectDef::Forage { .. }
-        | EffectDef::CumulativeUpkeep(_)
+        | EffectDef::WithCosts { .. }
         | EffectDef::PreventDamage { .. }
         | EffectDef::Apply { .. }
         | EffectDef::May { .. }

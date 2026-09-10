@@ -3,7 +3,7 @@ fn parse_authored_pay_or_continuation(
     object: &super::super::StackObject,
     context: &super::super::EffectResolutionContext,
     payer: PlayerId,
-    cumulative_upkeep_age: Option<u16>,
+    payment_provenance: Option<&String>,
     scoped: ScopedEffect,
     authored: crate::card::PayOrDef,
 ) -> Result<
@@ -15,29 +15,26 @@ fn parse_authored_pay_or_continuation(
     ),
     String,
 > {
-    if cumulative_upkeep_age.is_some() {
-        return Err("ordinary pay-or checkpoint carries cumulative upkeep state".into());
-    }
     // The payer was settled when the decision was queued, and the state it
     // was read from can have moved since: Chain of Vapor asks the controller
     // of a permanent it has already returned to hand. A payer that can no
     // longer be derived is the recorded one, while a payer that derives to
     // somebody else is a disagreement.
-    let authored_payment =
-        resolved_effect_payment(game, authored.payment, object, context, scoped);
+    let (resolved, provenance) = game.resolve_payment_offer(authored, object, context, scoped);
+    if provenance.map(|p| p.label.0.to_owned()).as_ref() != payment_provenance {
+        return Err("payment provenance disagrees with its authored program".into());
+    }
+    let payers = game.effect_players(authored.payment.payer, object, context, scoped);
+    let authored_payment = match payers.as_slice() {
+        [payer] => Some((*payer, resolved.clone())),
+        _ => None,
+    };
     let payment = match authored_payment {
         Some((expected_payer, payment)) if expected_payer == payer => payment,
         Some(_) => {
             return Err("pay-or payer or payment disagrees with its authored effect".into());
         }
-        None => resolved_effect_payment_for_payer(
-            game,
-            authored.payment,
-            object,
-            context,
-            scoped,
-        )
-        .ok_or("pay-or authored payment cannot be rebuilt")?,
+        None => resolved,
     };
     Ok((
         payment,

@@ -4,6 +4,7 @@ pub(super) fn effect_resolution_context_snapshot(
     let binding_values = context.bindings();
     EffectResolutionContextSnapshot {
         trigger: trigger_context_snapshot(context.trigger),
+        paid_amount: context.paid_amount,
         replaced_draw: context.replaced_draw.as_ref().map(replaced_draw_snapshot),
         chosen_counter: context.chosen_counter.map(CounterKindSnapshot),
         parent_object: context.parent_object().map(target_snapshot),
@@ -74,5 +75,6 @@ pub(super) fn parse_effect_resolution_context(
     );
     context.replaced_draw = value.replaced_draw.map(parse_replaced_draw).transpose()?;
     context.chosen_counter = value.chosen_counter.map(|kind| kind.0);
+    context.paid_amount = value.paid_amount;
     Ok(context)
 }

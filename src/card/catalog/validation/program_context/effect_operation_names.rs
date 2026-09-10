@@ -37,7 +37,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::SelectAtRandomFromZone { .. } => "SelectAtRandomFromZone",
         EffectDef::PayOr(_) => "PayOr",
         EffectDef::Forage { .. } => "Forage",
-        EffectDef::CumulativeUpkeep(_) => "CumulativeUpkeep",
+        EffectDef::WithCosts { .. } => "WithCosts",
         EffectDef::PreventDamage { .. } => "PreventDamage",
         EffectDef::AddMana(_) => "AddMana",
         EffectDef::AddPlayerCounters { .. } => "AddPlayerCounters",

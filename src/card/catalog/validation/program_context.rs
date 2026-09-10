@@ -34,6 +34,10 @@ pub(super) fn validate_ability_effect_context(
         // effect tree through either runtime.
         return Ok(());
     };
+    validate_cost_program(effect, None).map_err(|operation| EffectProgramContextError {
+        context: "cost program",
+        operation,
+    })?;
     match ability.definition {
         DeclarativeAbilityDef::Static(definition) => {
             validate_static_effect(effect, definition.source_zones, StaticPosition::Root).map_err(
@@ -932,3 +936,5 @@ include!("program_context/effect_operation_names.rs");
 include!("program_context/static_conditions.rs");
 include!("program_context/static_predicates.rs");
 include!("program_context/static_values.rs");
+
+include!("program_context/cost_programs.rs");

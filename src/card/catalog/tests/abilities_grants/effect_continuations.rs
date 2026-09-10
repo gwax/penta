@@ -73,7 +73,7 @@ fn catalog_validation_follows_nested_token_and_grant_continuations() {
                 part: CardPartId::PRIMARY,
                 ability: AbilityId::PRIMARY,
                 grant_path: vec![GrantId::PRIMARY, GrantId::PRIMARY],
-                problem: GrantedAbilityValidationError::EmptyText,
+                problem: Box::new(GrantedAbilityValidationError::EmptyText),
             },
         );
     }

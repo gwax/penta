@@ -27,6 +27,12 @@ const fn default_true() -> bool {
 )]
 #[allow(clippy::large_enum_variant)]
 pub(super) enum PendingProcedureSnapshot {
+    CompletePayment {
+        player: usize,
+        provenance: Option<String>,
+        paid: Option<(u16, Vec<super::model::ManaSnapshot>)>,
+        continuation: EffectContinuationSnapshot,
+    },
     DrawCards {
         player: usize,
         remaining: u16,

@@ -99,7 +99,7 @@ impl Game {
     /// them would be a different card there.
     pub(in crate::game) fn resolved_effect_costs(
         &self,
-        costs: &'static [crate::CostDef],
+        costs: &[crate::CostDef],
         object: &StackObject,
         context: &EffectResolutionContext,
         scoped: ScopedEffect,
@@ -127,6 +127,9 @@ impl Game {
         };
         match cost {
             Cost::All(costs) => self.resolved_effect_costs(costs, object, context, scoped),
+            Cost::Parameter | Cost::Repeated { .. } | Cost::Choice(_) => {
+                self.resolved_program_cost(cost, object, context, scoped, None, None)
+            }
             Cost::Mana(cost) => Resolved::Mana(cost),
             Cost::GenericMana(amount) => Resolved::Mana(crate::ManaCost::new(amount_of(amount), 0)),
             Cost::ColoredMana { color, amount } => {

@@ -25,16 +25,16 @@ pub(super) enum CommittedTriggerEvent {
     Foraged {
         player: PlayerId,
     },
-    CumulativeUpkeepPaid {
+    PaymentPaid {
         object: TriggerEventObject,
         player: PlayerId,
-        age_counters: u16,
+        label: crate::card::AbilityLabel,
         mana_spent: Vec<crate::ManaColor>,
     },
-    CumulativeUpkeepNotPaid {
+    PaymentNotPaid {
         object: TriggerEventObject,
         player: PlayerId,
-        age_counters: u16,
+        label: crate::card::AbilityLabel,
     },
     CoinFlipped {
         player: PlayerId,
@@ -233,10 +233,11 @@ pub(super) enum CommittedTriggerEvent {
         step: TurnStepDef,
         player: PlayerId,
     },
-    /// A card was cycled. The object is the card in the graveyard, which is
-    /// where the discard cost has already put it.
-    Cycled {
+    /// A card was discarded to activate a labeled ability. The object is the
+    /// card resulting from that discard cost.
+    DiscardedToActivate {
         object: TriggerEventObject,
+        label: crate::card::AbilityLabel,
     },
     /// A creature was exerted as it was declared as an attacker
     /// (CR 701.38a).
@@ -272,23 +273,21 @@ impl CommittedTriggerEvent {
     #[allow(clippy::too_many_lines)]
     pub(super) fn context(&self) -> TriggerContext {
         match self {
-            Self::CumulativeUpkeepPaid {
+            Self::PaymentPaid {
                 object,
                 player,
-                age_counters,
                 ..
             }
-            | Self::CumulativeUpkeepNotPaid {
+            | Self::PaymentNotPaid {
                 object,
                 player,
-                age_counters,
                 ..
             } => TriggerContext {
                 object: Some(object.id),
                 zone_change_result: None,
                 object_controller: Some(object.controller),
                 event_player: Some(*player),
-                amount: Some(i32::from(*age_counters)),
+                amount: None,
                 damaged_object: None,
                 sacrificed_object: None,
                 cast_from_zone: None,
@@ -321,7 +320,7 @@ impl CommittedTriggerEvent {
                 cast_from_zone: None,
             },
             Self::Transformed { object }
-            | Self::Cycled { object }
+            | Self::DiscardedToActivate { object, .. }
             | Self::Exerted { object }
             | Self::OptionalEffectTaken { object }
             | Self::AttacksAndIsNotBlocked { object } => TriggerContext {

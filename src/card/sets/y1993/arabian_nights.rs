@@ -929,9 +929,8 @@ pub(in crate::card::sets) static CYCLONE: CardRecord = CardRecord::new_with_lega
                 kind: CounterKind::named("wind"),
                 amount: ValueDef::Constant(1),
             },
-            EffectDef::PayOr(PayOrDef {
-                visibility: ChoiceVisibilityDef::Public,
-                ..PayOrDef::optional_or(
+            EffectDef::PayOr(
+                PayOrDef::optional_or(
                     &[CostDef::ColoredMana {
                         color: ManaColor::Green,
                         amount: ValueDef::CountersOnSource(CounterKind::named("wind")),
@@ -956,7 +955,8 @@ pub(in crate::card::sets) static CYCLONE: CardRecord = CardRecord::new_with_lega
                         object: EffectRecipientDef::Source,
                     },
                 )
-            }),
+                .with_visibility(ChoiceVisibilityDef::Public),
+            ),
         ]),
     )),
 );

@@ -21,6 +21,7 @@ pub enum SacrificedAmountDef {
 /// another without treating the whole rules box as opaque text.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AbilityPredicateDef {
+    Label(&'static crate::card::AbilityLabel),
     Any,
     Keyword(KeywordAbility),
     /// An ability belonging to one structural family, whatever parameters
@@ -55,6 +56,7 @@ impl AbilityPredicateDef {
     pub(crate) fn matches(self, ability: &AbilityDef) -> bool {
         match self {
             Self::Any => true,
+            Self::Label(label) => ability.label == Some(*label),
             Self::Keyword(expected) => matches!(
                 ability.definition,
                 DeclarativeAbilityDef::Keyword(actual) if actual == expected

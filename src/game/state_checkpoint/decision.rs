@@ -1,8 +1,8 @@
 use serde_json::Value;
 
 use crate::card::{
-    AlternativeCastKindDef, CardType, CardTypeSet, EffectDef, EffectPaymentDef,
-    ReplacementChoiceDef, ReplacementEventDef, TurnKindDef, ZonePlacement,
+    AlternativeCastKindDef, CardType, CardTypeSet, EffectDef, ReplacementChoiceDef,
+    ReplacementEventDef, TurnKindDef, ZonePlacement,
 };
 use crate::{
     CardCatalog, CardDefinitionId, CardPartId, GameObjectId, ManaCost, ObjectCharacteristics,
@@ -554,7 +554,7 @@ fn continuation_snapshot(
         DecisionContinuation::PayOr {
             player,
             payment,
-            cumulative_upkeep_age,
+            payment_provenance,
             definition: scoped,
             object,
             context,
@@ -576,7 +576,7 @@ fn continuation_snapshot(
             DecisionContinuationSnapshot::PayOr {
                 player: player.index(),
                 payment: resolved_effect_payment_snapshot(payment.clone()),
-                cumulative_upkeep_age: *cumulative_upkeep_age,
+                payment_provenance: payment_provenance.map(|p| p.label.0.to_owned()),
                 object: detached_stack_snapshot_allowing(game, viewer, object, visible_rebindings)?,
                 ability,
                 context: effect_resolution_context_snapshot(context),

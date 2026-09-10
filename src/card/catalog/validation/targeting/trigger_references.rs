@@ -486,12 +486,12 @@ fn validate_trigger_event_references(
         | TriggerEventDef::CardsExiled { zones: &[], .. } => Err(unsupported_trigger_event(event)),
         TriggerEventDef::Foraged(_)
         | TriggerEventDef::CommittedCrime(_)
-        | TriggerEventDef::CumulativeUpkeepPaid { .. }
-        | TriggerEventDef::CumulativeUpkeepNotPaid
+        | TriggerEventDef::PaymentPaid { .. }
+        | TriggerEventDef::PaymentNotPaid(_)
         | TriggerEventDef::CoinFlipWon(_)
         | TriggerEventDef::CoinFlipLost(_)
         | TriggerEventDef::BecomesLevel(_)
-        | TriggerEventDef::Cycled
+        | TriggerEventDef::DiscardedToActivate(_)
         | TriggerEventDef::DoorUnlocked
         | TriggerEventDef::StepBegins { .. }
         | TriggerEventDef::LandPlayed { .. }

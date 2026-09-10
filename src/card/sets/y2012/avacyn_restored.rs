@@ -1355,9 +1355,8 @@ pub(in crate::card::sets) static FETTERGEIST: CardRecord = CardRecord::new_with_
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::PayOr(PayOrDef {
-                visibility: ChoiceVisibilityDef::Public,
-                ..PayOrDef::unless(
+            EffectDef::PayOr(
+                PayOrDef::unless(
                     &[CostDef::GenericMana(ValueDef::CountMatchingObjects(
                         &ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
@@ -1372,7 +1371,8 @@ pub(in crate::card::sets) static FETTERGEIST: CardRecord = CardRecord::new_with_
                         object: EffectRecipientDef::Source,
                     },
                 )
-            }),
+                .with_visibility(ChoiceVisibilityDef::Public),
+            ),
         ),
     ]),
 );

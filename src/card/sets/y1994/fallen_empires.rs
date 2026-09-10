@@ -428,15 +428,15 @@ pub(in crate::card::sets) static DEEP_SPAWN: CardRecord = CardRecord::new_with_l
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::PayOr(PayOrDef {
-                visibility: ChoiceVisibilityDef::Public,
-                ..PayOrDef::unless(
+            EffectDef::PayOr(
+                PayOrDef::unless(
                     &[CostDef::MillCards(2)],
                     &EffectDef::Sacrifice {
                         object: EffectRecipientDef::Source,
                     },
                 )
-            }),
+                .with_visibility(ChoiceVisibilityDef::Public),
+            ),
         ),
         AbilityDef::activated(
             "{U}: This creature gains shroud until end of turn and doesn't untap during your \

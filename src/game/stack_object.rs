@@ -157,6 +157,7 @@ struct ScopedEffect {
     effect: EffectDef,
     target_base: usize,
     local_rules: EffectLocalRules,
+    cost_parameter: Option<&'static [crate::card::CostDef]>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -190,6 +191,7 @@ impl ScopedEffect {
             effect,
             target_base,
             local_rules: EffectLocalRules(0),
+            cost_parameter: None,
         }
     }
 
@@ -198,6 +200,7 @@ impl ScopedEffect {
             effect,
             target_base: self.target_base,
             local_rules: self.local_rules,
+            cost_parameter: self.cost_parameter,
         }
     }
 
@@ -206,7 +209,12 @@ impl ScopedEffect {
             effect: self.effect,
             target_base: self.target_base,
             local_rules: self.local_rules.with(rule),
+            cost_parameter: self.cost_parameter,
         }
+    }
+
+    const fn with_costs(self, costs: &'static [crate::card::CostDef]) -> Self {
+        Self { cost_parameter: Some(costs), ..self }
     }
 
     const fn has_rule(self, rule: AppliedRuleDef) -> bool {

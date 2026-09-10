@@ -78,6 +78,7 @@ fn recursive_effect_children_round_trip_all_continuation_branches() {
         assert!(locate_effect(
             *root,
             crate::game::EffectLocalRules::default(),
+            None,
             ScopedEffect::primary(CREATE_TOKEN),
             &mut path,
         ));

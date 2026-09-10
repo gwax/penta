@@ -1321,9 +1321,8 @@ pub(in crate::card::sets) static MISHRA_S_WAR_MACHINE: CardRecord = CardRecord::
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::PayOr(PayOrDef {
-                visibility: ChoiceVisibilityDef::Public,
-                ..PayOrDef::unless(
+            EffectDef::PayOr(
+                PayOrDef::unless(
                     &[CostDef::DiscardCards(1)],
                     &EffectDef::DealDamage(
                         crate::card::DamageDef::new(
@@ -1337,7 +1336,8 @@ pub(in crate::card::sets) static MISHRA_S_WAR_MACHINE: CardRecord = CardRecord::
                         ),
                     ),
                 )
-            }),
+                .with_visibility(ChoiceVisibilityDef::Public),
+            ),
         ),
     ]),
 );
@@ -1640,16 +1640,13 @@ pub(in crate::card::sets) static TETRAVUS: CardRecord = CardRecord::new_with_leg
         AbilityDef::triggered(
             "At the beginning of your upkeep, you may remove any number of +1/+1 counters from this creature. If you do, create that many 1/1 colorless Tetravite artifact creature tokens. They each have flying and \"This token can't be enchanted.\"",
             UPKEEP,
-            EffectDef::PayOr(PayOrDef {
-                visibility: ChoiceVisibilityDef::Public,
-                ..PayOrDef::optional(
+            EffectDef::PayOr(PayOrDef::optional(
                     &[CostDef::RemoveAnyNumberOfCounters {
                         object: &EffectRecipientDef::Source,
                         kind: CounterKind::PlusOnePlusOne,
                     }],
                     &EffectDef::create_token(TETRAVITE).with_count(ValueDef::PaidAmount),
-                )
-            }),
+                ).with_visibility(ChoiceVisibilityDef::Public)),
         ),
         AbilityDef::triggered(
             "At the beginning of your upkeep, you may exile any number of tokens created with this creature. If you do, put that many +1/+1 counters on this creature.",

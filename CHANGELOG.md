@@ -23,6 +23,15 @@ the bot-wire epoch.
 This release reports engine 0.7.0 and protocol 29. The simulation fingerprint
 distinguishes snapshots of the covered source and build inputs.
 
+### Changed
+
+- Cycling and cumulative upkeep now use named ordinary ability programs.
+  Cumulative upkeep composes counter placement with `CostDef::Repeated`;
+  restricted mana and payment triggers inspect semantic labels. Shared payment
+  completion preserves ordering across suspended cost actions. Checkpoint format
+  15 replaces upkeep-specific payment state and records generic completion;
+  bot protocol and replay versions are unchanged.
+
 ### Fixed
 
 - **Mishra's War Machine taps only when its upkeep damage reaches its controller.**

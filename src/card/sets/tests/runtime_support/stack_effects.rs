@@ -39,10 +39,17 @@ fn shared_effect_payment(payment: EffectPaymentDef) -> bool {
             crate::card::CostDef::All(costs) => {
                 shared_effect_payment(EffectPaymentDef::new(payment.payer, costs))
             }
+            crate::card::CostDef::Repeated { costs, .. } => {
+                costs.iter().all(|cost| shared_program_cost(*cost))
+            }
+            crate::card::CostDef::Choice(costs) => {
+                costs.iter().all(|cost| scalar_program_cost(*cost))
+            }
             crate::card::CostDef::RemoveAnyNumberOfCounters { object, .. } => {
                 shared_effect_recipient(*object)
             }
-            crate::card::CostDef::Mana(_)
+            crate::card::CostDef::Parameter
+            | crate::card::CostDef::Mana(_)
             | crate::card::CostDef::GenericMana(_)
             | crate::card::CostDef::ColoredMana { .. }
             | crate::card::CostDef::ObjectManaCostReducedBy { .. }
@@ -339,8 +346,10 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         }
         EffectDef::PayOr(payment) => {
             deferred_decision_allowed
-                && shared_effect_payment(payment.payment)
-                && (payment.if_paid.is_some() || payment.otherwise.is_some())
+                && (if payment.label.is_some() {
+                    payment.payment.costs.iter().all(|cost| shared_program_cost(*cost))
+                } else { shared_effect_payment(payment.payment) })
+                && (payment.if_paid.is_some() || payment.otherwise.is_some() || payment.label.is_some())
                 && payment
                     .if_paid
                     .iter()
@@ -351,8 +360,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                     })
         }
         EffectDef::Forage { .. } => deferred_decision_allowed,
-        EffectDef::CumulativeUpkeep(costs) => deferred_decision_allowed && costs.iter().all(|cost| shared_cumulative_cost(*cost)),
-
+        EffectDef::WithCosts { costs, effect } => costs.iter().all(|cost| shared_program_cost(*cost)) && shared_stack_effect_at_position(*effect, deferred_decision_allowed),
         // A spell copying itself asks its chooser for targets, which is a
         // decision window like any other. Proliferate asks over permanents
         // and players at once, which is the same kind of window and reads
@@ -844,19 +852,22 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
     }
 }
 
-fn shared_cumulative_cost(cost: crate::CostDef) -> bool {
+// The production catalog validates lexical binding and supported cost shapes;
+// this independent runtime audit also checks predicates inside a supplied cost.
+fn shared_program_cost(cost: CostDef) -> bool {
     match cost {
-        crate::CostDef::All(costs) => costs.iter().all(|cost| shared_cumulative_cost(*cost)),
-        crate::card::CostDef::Mana(cost) => !cost.variable_x,
-        crate::card::CostDef::SacrificePermanents {
+        CostDef::All(costs) | CostDef::Repeated { costs, .. } => {
+            costs.iter().all(|cost| shared_program_cost(*cost))
+        }
+        CostDef::Choice(costs) => costs.iter().all(|cost| scalar_program_cost(*cost)),
+        CostDef::Mana(cost) => !cost.variable_x,
+        CostDef::SacrificePermanents {
             object,
-            controller: crate::card::PlayerRelation::You,
+            controller: PlayerRelation::You,
             ..
         }
-        | crate::card::CostDef::GainControlPermanents { object, .. } => {
-            shared_object_predicate(object)
-        }
-        crate::card::CostDef::AddMana(effect) => {
+        | CostDef::GainControlPermanents { object, .. } => shared_object_predicate(object),
+        CostDef::AddMana(effect) => {
             matches!(
                 effect.mana,
                 crate::card::ManaSelectionDef::One(crate::card::ManaTypeDef::Fixed(_))
@@ -868,21 +879,35 @@ fn shared_cumulative_cost(cost: crate::CostDef) -> bool {
                 && effect.restrictions.is_empty()
                 && effect.spend_effects.is_empty()
         }
-        crate::card::CostDef::SnowMana(_)
-        | crate::card::CostDef::PayLife(_)
-        | crate::card::CostDef::DrawCards(_)
-        | crate::card::CostDef::DiscardCards(_)
-        | crate::card::CostDef::ExileTopCards(_)
-        | crate::card::CostDef::GainLife {
-            player: crate::card::PlayerRelation::Opponent,
+        CostDef::Parameter
+        | CostDef::SnowMana(_)
+        | CostDef::PayLife(_)
+        | CostDef::Energy(_)
+        | CostDef::MillCards(_)
+        | CostDef::DrawCards(_)
+        | CostDef::DiscardCards(_)
+        | CostDef::ExileTopCards(_)
+        | CostDef::GainLife {
+            player: PlayerRelation::Opponent,
             ..
         }
-        | crate::card::CostDef::CreateTokens {
-            player: crate::card::PlayerRelation::Opponent,
+        | CostDef::CreateTokens {
+            player: PlayerRelation::Opponent,
             ..
         }
-        | crate::card::CostDef::FlipCoins(_)
-        | crate::card::CostDef::PutCountersOnSource { .. } => true,
+        | CostDef::FlipCoins(_)
+        | CostDef::PutCountersOnSource { .. } => true,
+        _ => false,
+    }
+}
+
+fn scalar_program_cost(cost: CostDef) -> bool {
+    match cost {
+        CostDef::All(costs) | CostDef::Choice(costs) | CostDef::Repeated { costs, .. } => {
+            costs.iter().all(|cost| scalar_program_cost(*cost))
+        }
+        CostDef::Mana(cost) => !cost.variable_x,
+        CostDef::PayLife(_) | CostDef::Parameter => true,
         _ => false,
     }
 }

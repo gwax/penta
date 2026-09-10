@@ -953,27 +953,3 @@ fn validate_applied_effect_shapes(
         }
     }
 }
-
-fn validate_payment_cost_shape(
-    cost: CostDef,
-    targets: &[AbilityTargetDef],
-) -> Result<(), GrantedAbilityValidationError> {
-    match cost {
-        CostDef::All(costs) => costs
-            .iter()
-            .try_for_each(|cost| validate_payment_cost_shape(*cost, targets)),
-        CostDef::GenericMana(amount) | CostDef::ColoredMana { amount, .. } => {
-            validate_value_shape(amount, targets)
-        }
-        CostDef::ObjectManaCostReducedBy { object, .. }
-        | CostDef::RemoveAnyNumberOfCounters { object, .. } => {
-            validate_recipient_shape(*object, targets, RecipientExpectation::Object)
-        }
-        CostDef::DiscardMatching(object)
-        | CostDef::SacrificePermanent { object, .. }
-        | CostDef::MovePermanentMatching { object, .. } => {
-            validate_object_predicate_shape(object, targets)
-        }
-        _ => Ok(()),
-    }
-}

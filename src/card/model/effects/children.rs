@@ -44,6 +44,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
             .collect(),
         EffectDef::BindOutput { effect, .. }
         | EffectDef::WithRule { effect, .. }
+        | EffectDef::WithCosts { effect, .. }
         | EffectDef::ForEachInBinding { effect, .. }
         | EffectDef::May { effect, .. }
         | EffectDef::ChooseCounterKind { then: effect, .. }
@@ -97,7 +98,6 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         // other leaf below it has no child effect to walk.
         EffectDef::AddCounters { .. }
         | EffectDef::Forage { .. }
-        | EffectDef::CumulativeUpkeep(_)
         | EffectDef::AddMana(_)
         | EffectDef::AddManaEqualTo { .. }
         | EffectDef::SelectAtRandomFromZone { .. }

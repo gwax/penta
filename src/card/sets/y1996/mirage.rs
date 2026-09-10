@@ -1028,9 +1028,8 @@ pub(in crate::card::sets) static FLASH: CardRecord = CardRecord::new(
                     // "Its mana cost reduced by {2}", which is a discount on the generic half
                     // and nothing else: the coloured pips are still paid in their colours.
                     then: &const {
-                        EffectDef::PayOr(PayOrDef {
-                            visibility: ChoiceVisibilityDef::Public,
-                            ..PayOrDef::unless(
+                        EffectDef::PayOr(
+                            PayOrDef::unless(
                                 &[CostDef::ObjectManaCostReducedBy {
                                     object: &const {
                                         EffectRecipientDef::objects(ObjectSetDef::Binding(
@@ -1047,7 +1046,8 @@ pub(in crate::card::sets) static FLASH: CardRecord = CardRecord::new(
                                     }
                                 },
                             )
-                        })
+                            .with_visibility(ChoiceVisibilityDef::Public),
+                        )
                     },
                 }
             },

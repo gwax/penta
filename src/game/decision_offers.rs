@@ -99,8 +99,14 @@ impl Game {
     ) -> Option<SettledEffectPayment> {
         let chosen = answered.iter().copied().find(|option| *option != 0)?;
         match payment {
+            ResolvedEffectPayment::Choice(choices) => self.settle_cost_list_payment(
+                player,
+                &[ResolvedEffectPayment::Choice(choices)],
+                chosen,
+                Some(options),
+            ),
             ResolvedEffectPayment::All(payments) => {
-                self.settle_cost_list_payment(player, &payments, chosen)
+                self.settle_cost_list_payment(player, &payments, chosen, Some(options))
             }
             // The option id is the amount, so the answer carries how much was
             // paid without a second question.
@@ -244,24 +250,40 @@ impl Game {
         payment: ResolvedEffectPayment,
     ) -> bool {
         match payment {
+            ResolvedEffectPayment::Choice(choices) => !self
+                .cost_list_payment_plans(player, &[ResolvedEffectPayment::Choice(choices)])
+                .is_empty(),
             ResolvedEffectPayment::All(payments) => {
                 !self.cost_list_payment_plans(player, &payments).is_empty()
             }
             ResolvedEffectPayment::Mana(cost) => self.can_pay_cost(player, cost, 0),
-            ResolvedEffectPayment::CumulativeMana { source, cost } => self.can_pay_cost_for(
+            ResolvedEffectPayment::LabeledMana {
+                source,
+                cost,
+                label,
+            } => self.can_pay_cost_for(
                 player,
                 cost,
                 0,
-                &super::ManaPaymentPurpose::CumulativeUpkeep {
+                &super::ManaPaymentPurpose::Payment {
+                    label: Some(label),
                     source,
                     snow: false,
                 },
             ),
-            ResolvedEffectPayment::SnowMana { source, amount } => self.can_pay_cost_for(
+            ResolvedEffectPayment::SnowMana {
+                source,
+                amount,
+                label,
+            } => self.can_pay_cost_for(
                 player,
                 ManaCost::new(amount, 0),
                 0,
-                &super::ManaPaymentPurpose::CumulativeUpkeep { source, snow: true },
+                &super::ManaPaymentPurpose::Payment {
+                    source,
+                    snow: true,
+                    label,
+                },
             ),
             ResolvedEffectPayment::Life(amount) => self.can_pay_life(player, amount),
             // A short library does not make either action unpayable: draws

@@ -62,7 +62,7 @@ fn collect_ability_grants(
         EffectDef::CreateAttachedToken { token, .. } => {
             tokens.push(token);
         }
-        EffectDef::CumulativeUpkeep(costs) => collect_cost_tokens(costs, tokens),
+        EffectDef::WithCosts { costs, .. } => collect_cost_tokens(costs, tokens),
         EffectDef::CreateEmblem { emblem } => emblems.push(emblem),
         EffectDef::BecomeCopyOf { exceptions, .. } => grants.extend(
             exceptions
@@ -247,7 +247,7 @@ fn collect_cost_tokens(
     for cost in costs {
         match cost {
             crate::CostDef::CreateTokens { token, .. } => tokens.push(**token),
-            crate::CostDef::All(costs) => {
+            crate::CostDef::All(costs) | crate::CostDef::Choice(costs) | crate::CostDef::Repeated { costs, .. } => {
                 collect_cost_tokens(costs, tokens);
             }
             _ => {}

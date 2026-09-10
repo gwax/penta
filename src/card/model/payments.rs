@@ -30,6 +30,8 @@ impl EffectPaymentDef {
 /// Offer a payment and continue through the branch selected by its result.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct PayOrDef {
+    /// Semantic purpose used by mana restrictions and payment observers.
+    pub label: Option<super::AbilityLabel>,
     pub payment: EffectPaymentDef,
     pub if_paid: Option<&'static EffectDef>,
     pub otherwise: Option<&'static EffectDef>,
@@ -42,20 +44,43 @@ pub struct PayOrDef {
 }
 
 impl PayOrDef {
-    /// Offer the effect controller an optional payment and continue only when
-    /// it is paid.
+    /// Offer the effect controller one unlabeled payment with private visibility.
     #[must_use]
-    pub const fn optional(costs: &'static [CostDef], if_paid: &'static EffectDef) -> Self {
+    pub const fn new(costs: &'static [CostDef]) -> Self {
         Self {
+            label: None,
             payment: EffectPaymentDef::new(
                 PlayerSetDef::One(PlayerRefDef::EffectController),
                 costs,
             ),
-            if_paid: Some(if_paid),
+            if_paid: None,
             otherwise: None,
             visibility: ChoiceVisibilityDef::Private,
             condition: None,
         }
+    }
+
+    /// Offer an optional payment and continue only when it is paid.
+    #[must_use]
+    pub const fn optional(costs: &'static [CostDef], if_paid: &'static EffectDef) -> Self {
+        Self {
+            if_paid: Some(if_paid),
+            ..Self::new(costs)
+        }
+    }
+
+    /// Attach a semantic purpose for mana restrictions and payment observers.
+    #[must_use]
+    pub const fn labeled(mut self, label: super::AbilityLabel) -> Self {
+        self.label = Some(label);
+        self
+    }
+
+    /// Choose who can observe the payment decision.
+    #[must_use]
+    pub const fn with_visibility(mut self, visibility: ChoiceVisibilityDef) -> Self {
+        self.visibility = visibility;
+        self
     }
 
     /// Offer the effect controller an optional payment with a branch either
@@ -94,14 +119,8 @@ impl PayOrDef {
     #[must_use]
     pub const fn unless(costs: &'static [CostDef], otherwise: &'static EffectDef) -> Self {
         Self {
-            payment: EffectPaymentDef::new(
-                PlayerSetDef::One(PlayerRefDef::EffectController),
-                costs,
-            ),
-            if_paid: None,
             otherwise: Some(otherwise),
-            visibility: ChoiceVisibilityDef::Private,
-            condition: None,
+            ..Self::new(costs)
         }
     }
 }

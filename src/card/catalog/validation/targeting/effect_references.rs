@@ -919,9 +919,10 @@ fn validate_effect_references(
         // The chosen player is recorded on the permanent, not read from a
         // target slot.
         // A prohibition names a card shape, never a target.
-        EffectDef::CumulativeUpkeep(costs) => costs.iter().try_for_each(|cost| {
-            validate_upkeep_cost_references(*cost, target_count, scope)
-        }),
+        EffectDef::WithCosts { costs, effect } => {
+            costs.iter().try_for_each(|cost| validate_program_cost_references(*cost, target_count, scope))?;
+            validate_effect_references(*effect, target_count, scope)
+        }
         EffectDef::ModifyCost(_)
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
@@ -951,29 +952,5 @@ fn validate_effect_references(
             target_count,
             scope,
         ),
-    }
-}
-
-fn validate_upkeep_cost_references(
-    cost: crate::CostDef,
-    target_count: usize,
-    scope: BindingScope<'_>,
-) -> Result<(), GrantedAbilityValidationError> {
-    match cost {
-        crate::card::CostDef::SacrificePermanents { object, .. }
-        | crate::card::CostDef::GainControlPermanents { object, .. } => {
-            validate_object_predicate_references(object, target_count, scope)
-        }
-        crate::card::CostDef::CreateTokens { token, .. } => match token.creation_stats {
-            Some(stats) => {
-                validate_value_target_references(stats.power, target_count, scope)?;
-                validate_value_target_references(stats.toughness, target_count, scope)
-            }
-            None => Ok(()),
-        },
-        crate::CostDef::All(costs) => costs
-            .iter()
-            .try_for_each(|cost| validate_upkeep_cost_references(*cost, target_count, scope)),
-        _ => Ok(()),
     }
 }

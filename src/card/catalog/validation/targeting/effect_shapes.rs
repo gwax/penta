@@ -646,9 +646,10 @@ fn validate_effect_target_shapes(
             | crate::card::ManaSelectionDef::ChoiceOfBundles(_) => Ok(()),
         },
         // The ballot is a predicate, not a target: nothing is pointed at.
-        EffectDef::CumulativeUpkeep(costs) => costs
-            .iter()
-            .try_for_each(|cost| validate_upkeep_cost_shape(*cost, targets)),
+        EffectDef::WithCosts { costs, effect } => {
+            costs.iter().try_for_each(|cost| validate_program_cost_shape(*cost, targets))?;
+            validate_effect_target_shapes(*effect, targets, triggering_object_zone)
+        }
         EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::ModifyCost(_)
@@ -676,29 +677,6 @@ fn validate_effect_target_shapes(
 #[cfg(test)]
 #[path = "effect_shape_entry_choice_tests.rs"]
 mod entry_choice_tests;
-
-fn validate_upkeep_cost_shape(
-    cost: crate::CostDef,
-    targets: &[AbilityTargetDef],
-) -> Result<(), GrantedAbilityValidationError> {
-    match cost {
-        crate::card::CostDef::SacrificePermanents { object, .. }
-        | crate::card::CostDef::GainControlPermanents { object, .. } => {
-            validate_object_predicate_shape(object, targets)
-        }
-        crate::card::CostDef::CreateTokens { token, .. } => match token.creation_stats {
-            Some(stats) => {
-                validate_value_shape(stats.power, targets)?;
-                validate_value_shape(stats.toughness, targets)
-            }
-            None => Ok(()),
-        },
-        crate::CostDef::All(costs) => costs
-            .iter()
-            .try_for_each(|cost| validate_upkeep_cost_shape(*cost, targets)),
-        _ => Ok(()),
-    }
-}
 
 #[cfg(test)]
 mod recipient_shape_tests {

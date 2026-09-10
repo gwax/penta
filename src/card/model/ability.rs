@@ -23,11 +23,19 @@ pub struct AbilityDef {
     /// metadata.
     /// Use [`Self::rules_text`] when presenting a clause.
     pub text: &'static str,
+    /// Semantic identity travels with this complete clause when it is granted or copied.
+    pub label: Option<super::AbilityLabel>,
     pub definition: DeclarativeAbilityDef,
     pub effect: AbilityEffectDef,
 }
 
 impl AbilityDef {
+    #[must_use]
+    pub const fn labeled(mut self, label: super::AbilityLabel) -> Self {
+        self.label = Some(label);
+        self
+    }
+
     /// Replaces a reusable constructor's default printed text without changing
     /// the clause's category, targets, costs, or effect.
     ///
@@ -319,9 +327,10 @@ impl AbilityDef {
     ) -> Self {
         Self::defined(
             text,
-            DeclarativeAbilityDef::Activated(ActivatedAbilityDef::new(costs).cycling()),
+            DeclarativeAbilityDef::Activated(ActivatedAbilityDef::new(costs)),
             effect,
         )
+        .labeled(super::AbilityLabel::CYCLING)
     }
 
     /// "Choose one --" on an activated ability, which chooses its modes as
@@ -466,6 +475,7 @@ impl AbilityDef {
     pub const fn enforced_when_cast(text: &'static str, _explanation: &'static str) -> Self {
         Self {
             text,
+            label: None,
             definition: DeclarativeAbilityDef::Static(StaticAbilityDef::new()),
             effect: AbilityEffectDef::declarative(EffectDef::None),
         }
@@ -490,6 +500,7 @@ impl AbilityDef {
     ) -> Self {
         Self {
             text,
+            label: None,
             definition: DeclarativeAbilityDef::DeckConstruction(permission),
             effect: AbilityEffectDef::declarative(EffectDef::None),
         }
@@ -519,6 +530,7 @@ impl AbilityDef {
     ) -> Self {
         Self {
             text,
+            label: None,
             definition: DeclarativeAbilityDef::Replacement(definition),
             effect: AbilityEffectDef::replacement_program(effect),
         }
@@ -585,6 +597,7 @@ impl AbilityDef {
     ) -> Self {
         Self {
             text,
+            label: None,
             definition,
             effect: AbilityEffectDef::declarative(effect),
         }

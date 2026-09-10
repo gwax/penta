@@ -1,37 +1,30 @@
 impl Game {
-    pub(in crate::game) fn resolved_cumulative_upkeep_payment(
-        costs: &'static [crate::CostDef],
-        source: GameObjectId,
-        age: u16,
-    ) -> crate::game::ResolvedEffectPayment {
-        crate::game::ResolvedEffectPayment::all(
-            costs
-                .iter()
-                .map(|cost| Self::resolved_cumulative_upkeep_cost(*cost, source, age))
-                .collect(),
-        )
-    }
-}
-impl Game {
-    pub(in crate::game) fn resolved_cumulative_upkeep_cost(
+    pub(in crate::game) fn resolved_repeated_payment(
         cost: crate::card::CostDef,
         source: GameObjectId,
-        age: u16,
+        times: u16,
+        label: Option<crate::card::AbilityLabel>,
     ) -> crate::game::ResolvedEffectPayment {
         use crate::card::CostDef as Cost;
         use crate::game::ResolvedEffectPayment as Resolved;
 
-        let repeated = |amount: u16| amount.saturating_mul(age);
+        let repeated = |amount: u16| amount.saturating_mul(times);
         match cost {
-            Cost::All(costs) => Self::resolved_cumulative_upkeep_payment(costs, source, age),
-            Cost::Mana(cost) => Resolved::CumulativeMana {
-                source,
-                cost: repeat_mana_cost(cost, age),
+            Cost::Mana(cost) => match label {
+                Some(label) => Resolved::LabeledMana {
+                    source,
+                    label,
+                    cost: repeat_mana_cost(cost, times),
+                },
+                None => Resolved::Mana(repeat_mana_cost(cost, times)),
             },
             Cost::SnowMana(amount) => Resolved::SnowMana {
+                label,
                 source,
                 amount: repeated(amount),
             },
+            Cost::Energy(amount) => Resolved::Energy(repeated(amount)),
+            Cost::MillCards(amount) => Resolved::Mill(repeated(amount)),
             Cost::PayLife(amount) => Resolved::Life(repeated(amount)),
             Cost::DrawCards(amount) => Resolved::DrawCards(repeated(amount)),
             Cost::DiscardCards(amount) => Resolved::DiscardCards(repeated(amount)),
@@ -39,7 +32,7 @@ impl Game {
                 object: source,
                 kind,
                 amount,
-                times: age,
+                times,
             },
             Cost::SacrificePermanents {
                 object,
@@ -54,7 +47,7 @@ impl Game {
                 let crate::card::ManaSelectionDef::One(crate::card::ManaTypeDef::Fixed(color)) =
                     effect.mana
                 else {
-                    panic!("unsupported cumulative-upkeep mana output")
+                    panic!("unsupported repeated payment mana output")
                 };
                 assert!(
                     effect.also.is_none()
@@ -64,7 +57,7 @@ impl Game {
                         && effect.sacrifice_source_when_out_of.is_none()
                         && effect.restrictions.is_empty()
                         && effect.spend_effects.is_empty(),
-                    "unsupported cumulative-upkeep mana output",
+                    "unsupported repeated payment mana output",
                 );
                 Resolved::AddMana {
                     color,
@@ -89,7 +82,7 @@ impl Game {
                 amount: repeated(amount),
             },
             Cost::FlipCoins(amount) => Resolved::FlipCoins(repeated(amount)),
-            _ => panic!("unsupported cumulative-upkeep cost"),
+            _ => panic!("unsupported repeated payment cost"),
         }
     }
 }

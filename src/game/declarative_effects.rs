@@ -9,7 +9,6 @@ use crate::card::{AppliedRuleDef, ArrivalAttachmentDef};
 mod attachment;
 mod bound_outputs;
 mod copy;
-mod cumulative_upkeep;
 mod damage;
 mod exile_to_play;
 mod forage;
@@ -156,7 +155,7 @@ impl Game {
                         object.controller,
                         context.trigger,
                         object.ability.as_ref().map(|ability| ability.origin),
-                        Some((object, scoped, &context)),
+                        Some((object, &scoped, &context)),
                     )
                 }) {
                     if let Some(otherwise) = definition.otherwise {
@@ -172,12 +171,12 @@ impl Game {
                     }
                     return;
                 };
-                let payment =
-                    self.resolved_effect_costs(definition.payment.costs, object, &context, scoped);
+                let (payment, provenance) =
+                    self.resolve_payment_offer(definition, object, &context, scoped);
                 self.queue_pay_or(
                     *player,
                     payment,
-                    None,
+                    provenance,
                     definition.visibility,
                     scoped,
                     object,
@@ -188,8 +187,12 @@ impl Game {
                         .map(|effect| scoped.with_effect(*effect)),
                 );
             }
-            EffectDef::CumulativeUpkeep(cost) => {
-                self.resolve_cumulative_upkeep(cost, scoped, object, context);
+            EffectDef::WithCosts { costs, effect } => {
+                self.resolve_effect_def(
+                    scoped.with_costs(costs).with_effect(*effect),
+                    object,
+                    context,
+                );
             }
             EffectDef::AddMana(_) | EffectDef::AddManaEqualTo { .. } => {
                 self.resolve_mana_effect(scoped, object, &context);
@@ -689,7 +692,7 @@ impl Game {
                     object.controller,
                     context.trigger,
                     object.ability.as_ref().map(|ability| ability.origin),
-                    Some((object, scoped, &context)),
+                    Some((object, &scoped, &context)),
                 );
                 if let Some(branch) = conditional.branch(condition_holds) {
                     self.resolve_effect_def(scoped.with_effect(*branch), object, context);

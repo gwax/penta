@@ -10,6 +10,7 @@ use super::stack::{
     trigger_capture_has_unrebindable_hidden_reference_except,
 };
 use super::*;
+use crate::card::EffectDef;
 
 pub(super) fn draw_replacement_snapshot(
     game: &Game,
@@ -57,6 +58,7 @@ pub(super) fn parse_draw_replacement(
     })
 }
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn pending_procedure_snapshot(
     game: &Game,
     viewer: PlayerId,
@@ -64,6 +66,35 @@ pub(super) fn pending_procedure_snapshot(
     visible_rebindings: &[GameObjectId],
 ) -> Option<PendingProcedureSnapshot> {
     Some(match procedure {
+        super::super::PendingProcedure::CompletePayment {
+            player,
+            provenance,
+            paid,
+            definition,
+            object,
+            context,
+        } => PendingProcedureSnapshot::CompletePayment {
+            player: player.index(),
+            provenance: provenance.map(|p| p.label.0.to_owned()),
+            paid: paid.as_ref().map(|receipt| {
+                (
+                    receipt.paid_amount,
+                    receipt
+                        .mana_spent
+                        .iter()
+                        .map(|mana| mana_snapshot(&game.catalog, *mana))
+                        .collect(),
+                )
+            }),
+            continuation: effect_continuation_snapshot(
+                game,
+                viewer,
+                object,
+                context,
+                *definition,
+                visible_rebindings,
+            )?,
+        },
         super::super::PendingProcedure::DrawCards { player, remaining } => {
             PendingProcedureSnapshot::DrawCards {
                 player: player.index(),
@@ -156,11 +187,51 @@ pub(super) fn pending_procedure_snapshot(
     })
 }
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn parse_pending_procedure(
     snapshot: &PendingProcedureSnapshot,
     game: &Game,
 ) -> Result<super::super::PendingProcedure, String> {
     Ok(match snapshot {
+        PendingProcedureSnapshot::CompletePayment {
+            player,
+            provenance,
+            paid,
+            continuation,
+        } => {
+            let continuation = parse_effect_continuation(continuation, game)?;
+            let EffectDef::PayOr(definition) = continuation.effect.effect else {
+                return Err("payment completion must identify PayOr".into());
+            };
+            let label = definition.label;
+            let provenance = match (label, provenance) {
+                (Some(label), Some(recorded)) if label.0 == recorded => {
+                    Some(super::super::PaymentProvenance { label })
+                }
+                (None, None) => None,
+                _ => {
+                    return Err(
+                        "payment completion provenance disagrees with its authored offer".into(),
+                    );
+                }
+            };
+            super::super::PendingProcedure::CompletePayment {
+                player: player_from_index(*player)?,
+                provenance,
+                paid: paid
+                    .as_ref()
+                    .map(|(amount, mana)| {
+                        Ok::<_, String>(super::super::SettledEffectPayment {
+                            paid_amount: *amount,
+                            mana_spent: super::wire::parse_mana(mana, &game.catalog)?,
+                        })
+                    })
+                    .transpose()?,
+                definition: continuation.effect,
+                object: continuation.object,
+                context: continuation.context,
+            }
+        }
         PendingProcedureSnapshot::DrawCards { player, remaining } => {
             super::super::PendingProcedure::DrawCards {
                 player: player_from_index(*player)?,
@@ -253,6 +324,23 @@ pub(super) fn pending_procedure_referenced_object_ids(
     procedure: &super::super::PendingProcedure,
 ) -> Vec<GameObjectId> {
     match procedure {
+        super::super::PendingProcedure::CompletePayment {
+            object,
+            context,
+            paid,
+            ..
+        } => {
+            let mut ids = continuation_referenced_object_ids(object, context);
+            if let Some(receipt) = paid {
+                ids.extend(
+                    receipt
+                        .mana_spent
+                        .iter()
+                        .filter_map(|mana| mana.source.map(|source| source.object)),
+                );
+            }
+            ids
+        }
         super::super::PendingProcedure::ResolveEffects {
             object, context, ..
         }
