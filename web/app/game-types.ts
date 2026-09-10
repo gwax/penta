@@ -236,6 +236,8 @@ export type DecisionState = {
   maximum: number;
   cancellable: boolean;
   visibility: string;
+  /** False when this viewer receives only a public pending-choice notice. */
+  optionsVisible?: boolean;
   options: DecisionOption[];
 };
 
@@ -249,7 +251,20 @@ export type MoveClock = {
   deadline: number;
 };
 
+export type MatchState = {
+  wins: [number, number];
+  game: number;
+  finished: boolean;
+  mode: "one-conclusion" | "first-to-two-wins";
+  draws: number;
+  stage: "playing" | "sideboarding" | "play-draw" | "complete";
+  canChoose: boolean;
+  main: { id: number; name: string }[];
+  sideboard: { id: number; name: string }[];
+};
+
 export type GameState = {
+  match?: MatchState | null;
   format: FormatId;
   /** Only in a hosted game, and only while it is live. */
   moveClock?: MoveClock;

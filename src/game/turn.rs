@@ -208,7 +208,7 @@ impl Game {
             Step::Upkeep => {
                 self.step = Step::Draw;
                 self.draw_step_draw_taken[self.active_player.index()] = false;
-                if !(self.turn == 1 && self.active_player == PlayerId::One) {
+                if !(self.turn == 1 && self.active_player == self.starting_player) {
                     self.draw_instruction(self.active_player, 1);
                     if !self.pending_decisions.is_empty() || !self.pending_events.is_empty() {
                         self.pending_procedures
@@ -705,6 +705,7 @@ impl Game {
                 permanent.resolving_control_timestamp = None;
                 permanent.controller = owner;
                 permanent.suspend_haste = false;
+                permanent.entered_controller_turn = self.turns_started[owner.index()];
             }
             permanent.destroy_at_end = false;
             permanent.regeneration_shields = 0;
@@ -730,6 +731,7 @@ impl Game {
     /// before state-based actions and trigger placement.
     pub(super) fn continue_pending_procedures(&mut self) {
         while self.result.is_none()
+            && self.pending_restart.is_none()
             && self.pending_decisions.is_empty()
             && self.pending_events.is_empty()
         {
@@ -805,6 +807,9 @@ impl Game {
                 self.resolve_effect_def(effect, object, context.fork_resolution());
                 context
             };
+            if self.pending_restart.is_some() {
+                return;
+            }
             if let Some(super::PendingDecision {
                 continuation: super::DecisionContinuation::CardNameChoice { resume, .. },
                 ..

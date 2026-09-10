@@ -105,3 +105,25 @@ registry from the disabled route:
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' https://penta.lacker.workers.dev/_bots
 ```
+
+## Tournament matches
+
+Choose **First to 2 wins · Sideboarding** in setup for local or hosted play.
+Deck choices (including Random) resolve once. The initially selected seat
+chooses play or draw before either opening hand is visible. After every game
+conclusion that continues the match, each seat privately submits a main deck
+from its registered main-plus-sideboard pool. Format deck-size rules still apply.
+The previous loser then chooses play or draw; a draw preserves the previous
+chooser. Draws have a separate count and never advance the two-win threshold.
+Hosted first-to-two matches have no move clock.
+
+The same match state and decisions run in the native engine, built-in policies,
+remote bots, bindings and headless runner. Handcrafted uses the generic decision
+policy; external bots may submit explicit option IDs. Replays cover the whole
+match, including every sideboard selection and starting-player choice. Local
+page reloads still start a new session; hosted rooms reconstruct saved commands.
+
+**One game conclusion** ends at the first win, loss or draw. Karn Liberated
+restarts the game in either mode without scoring a conclusion or sideboarding.
+Its controller starts the restarted game; retained cards enter after mulligans
+and opening-hand actions, before the first turn.
