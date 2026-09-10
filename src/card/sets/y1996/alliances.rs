@@ -913,11 +913,9 @@ pub(in crate::card::sets) static BALDUVIAN_DEAD: CardRecord = CardRecord::new(
                             step: TurnStepDef::End,
                             player: PlayerRelation::Any,
                         },
-                        EffectDef::Sacrifice {
-                            object: EffectRecipientDef::objects(ObjectSetDef::Binding(
-                                crate::ParentBinding,
-                            )),
-                        },
+                        EffectDef::sacrifice(EffectRecipientDef::objects(
+                            ObjectSetDef::Binding(crate::ParentBinding),
+                        )),
                     ),
                 )),
             }),
@@ -1254,11 +1252,11 @@ pub(in crate::card::sets) static RITUAL_OF_THE_MACHINE: CardRecord = CardRecord:
                 ObjectPredicateDef::HasType(CardType::Creature),
                 CostQuantityDef::Fixed(1),
             ),
-            EffectDef::GainControl {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                duration: ControlDurationDef::Indefinitely,
-                controller: PlayerRefDef::EffectController,
-            },
+            EffectDef::gain_control(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                PlayerRefDef::EffectController,
+                ControlDurationDef::Indefinitely,
+            ),
         ),
     ),
 );
@@ -1774,9 +1772,7 @@ pub(in crate::card::sets) static VARCHILD_S_CRUSADER: CardRecord = CardRecord::n
                         step: TurnStepDef::End,
                         player: PlayerRelation::Any,
                     },
-                    EffectDef::Sacrifice {
-                        object: EffectRecipientDef::Source,
-                    },
+                    EffectDef::sacrifice(EffectRecipientDef::Source),
                 ))),
             ]),
         ),

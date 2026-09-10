@@ -485,9 +485,7 @@ pub(in crate::card::sets) static PEACEKEEPER: CardRecord = CardRecord::new(
             },
             EffectDef::PayOr(PayOrDef::unless(
                 &[CostDef::Mana(mana_cost!("{1}{W}"))],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
         AbilityDef::static_ability(
@@ -938,9 +936,7 @@ pub(in crate::card::sets) static PENDRELL_MISTS: CardRecord = CardRecord::new(
                 },
                 EffectDef::PayOr(PayOrDef::unless(
                     &[CostDef::Mana(mana_cost!("{1}"))],
-                    &EffectDef::Sacrifice {
-                        object: EffectRecipientDef::Source,
-                    },
+                    &EffectDef::sacrifice(EffectRecipientDef::Source),
                 )),
             )),
         },
@@ -1417,9 +1413,7 @@ pub(in crate::card::sets) static HIDDEN_HORROR: CardRecord = CardRecord::new(
                 &[crate::card::CostDef::discard(ObjectPredicateDef::HasType(
                     CardType::Creature,
                 ))],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
     ),
@@ -2578,9 +2572,7 @@ pub(in crate::card::sets) static FALLOW_WURM: CardRecord = CardRecord::new(
                 &[crate::card::CostDef::discard(ObjectPredicateDef::HasType(
                     CardType::Land,
                 ))],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
     ),
@@ -2812,9 +2804,7 @@ pub(in crate::card::sets) static ROGUE_ELEPHANT: CardRecord = CardRecord::new(
                 &[crate::card::CostDef::sacrifice_permanent(
                     ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
                 )],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
     ),
@@ -3213,9 +3203,7 @@ pub(in crate::card::sets) static STRAW_GOLEM: CardRecord = CardRecord::new(
                 ObjectPredicateDef::HasType(CardType::Creature),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
             ])),
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::Source,
-            },
+            EffectDef::sacrifice(EffectRecipientDef::Source),
         ),
     ),
 );

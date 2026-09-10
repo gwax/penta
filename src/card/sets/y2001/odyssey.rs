@@ -1710,13 +1710,13 @@ pub(in crate::card::sets) static PERSUASION: CardRecord = CardRecord::new(
             abilities::enchant_creature(),
             AbilityDef::static_ability(
                 "You control enchanted creature.",
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::AttachedPermanent,
-                    duration: ControlDurationDef::WhileSourceRemains {
+                EffectDef::gain_control(
+                    EffectRecipientDef::AttachedPermanent,
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::WhileSourceRemains {
                         while_tapped: false,
                     },
-                    controller: PlayerRefDef::EffectController,
-                },
+                ),
             ),
         ]),
 );
@@ -1886,9 +1886,7 @@ pub(in crate::card::sets) static STANDSTILL: CardRecord = CardRecord::new_with_l
         // resolve against you. In a two-player game that is the opponent alone.
         EffectDef::Sequence(&const {
             [
-                EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                EffectDef::sacrifice(EffectRecipientDef::Source),
                 EffectDef::DrawCards {
                     recipient: EffectRecipientDef::players(PlayerSetDef::Related(
                         PlayerRelation::Opponent,

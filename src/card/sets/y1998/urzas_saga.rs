@@ -1037,9 +1037,7 @@ pub(in crate::card::sets) static GILDED_DRAKE: CardRecord = CardRecord::new_with
             )], EffectDef::ExchangeControl {
                 first: EffectRecipientDef::Source,
                 second: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                otherwise: Some(&EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                }),
+                otherwise: Some(&EffectDef::sacrifice(EffectRecipientDef::Source)),
             })
             .resolves_with_illegal_targets(),
     ]),
@@ -2333,13 +2331,11 @@ pub(in crate::card::sets) static SPINED_FLUKE: CardRecord = CardRecord::new(
             "When this creature enters, sacrifice a creature.",
             // Not "another creature", so with nothing else out it eats
             // itself, which is the drawback the body is priced on.
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::matching_objects(
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                    &[ZoneKind::Battlefield],
-                    PlayerRelation::You,
-                ),
-            },
+            EffectDef::sacrifice(EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            )),
         ),
         abilities::regenerate_self(
             "{B}: Regenerate this creature.",
@@ -3350,11 +3346,9 @@ pub(in crate::card::sets) static SNEAK_ATTACK: CardRecord = CardRecord::new(
                                             step: TurnStepDef::End,
                                             player: PlayerRelation::Any,
                                         },
-                                        EffectDef::SacrificeYours {
-                                            object: EffectRecipientDef::objects(
+                                        EffectDef::sacrifice_yours(EffectRecipientDef::objects(
                                                 ObjectSetDef::Binding(ParentBinding),
-                                            ),
-                                        },
+                                            )),
                                     )
                                 })),
                             ]

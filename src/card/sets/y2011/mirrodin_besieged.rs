@@ -400,13 +400,13 @@ pub(in crate::card::sets) static CORRUPTED_CONSCIENCE: CardRecord = CardRecord::
             abilities::enchant_creature(),
             AbilityDef::static_ability(
                 "You control enchanted creature.",
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::AttachedPermanent,
-                    controller: PlayerRefDef::EffectController,
-                    duration: ControlDurationDef::WhileSourceRemains {
+                EffectDef::gain_control(
+                    EffectRecipientDef::AttachedPermanent,
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::WhileSourceRemains {
                         while_tapped: false,
                     },
-                },
+                ),
             ),
             AbilityDef::static_ability(
                 "Enchanted creature has infect.",
@@ -1510,11 +1510,11 @@ pub(in crate::card::sets) static METALLIC_MASTERY: CardRecord = CardRecord::new(
                 ObjectPredicateDef::HasType(CardType::Artifact),
             )],
             EffectDef::Sequence(&[
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    controller: PlayerRefDef::EffectController,
-                    duration: ControlDurationDef::UntilEndOfTurn,
-                },
+                EffectDef::gain_control(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::UntilEndOfTurn,
+                ),
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 },
@@ -3230,11 +3230,11 @@ pub(in crate::card::sets) static CONTESTED_WAR_ZONE: CardRecord = CardRecord::ne
             TriggerEventDef::DamageDealt(DamageEventMatcherDef::combat_to(
                 EffectRecipientDef::Controller,
             )),
-            EffectDef::GainControl {
-                object: EffectRecipientDef::Source,
-                controller: PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject),
-                duration: ControlDurationDef::Indefinitely,
-            },
+            EffectDef::gain_control(
+                EffectRecipientDef::Source,
+                PlayerRefDef::ControllerOf(ObjectRefDef::TriggeringObject),
+                ControlDurationDef::Indefinitely,
+            ),
         ),
         AbilityDef::activated_mana(
             "{T}: Add {C}.",

@@ -185,11 +185,11 @@ pub(in crate::card::sets) static THIEVING_SKYDIVER: CardRecord = CardRecord::new
                 ]),
             )],
             EffectDef::Sequence(&[
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    controller: PlayerRefDef::EffectController,
-                    duration: ControlDurationDef::Indefinitely,
-                },
+                EffectDef::gain_control(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::Indefinitely,
+                ),
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::TargetMatches {
                         slot: TargetIndex::PRIMARY,

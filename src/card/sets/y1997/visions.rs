@@ -37,9 +37,7 @@ static INSTANT_SPEED_ENCHANTMENT_CLEANUP: AbilityDef = AbilityDef::triggered(
                 step: TurnStepDef::Cleanup,
                 player: PlayerRelation::Any,
             },
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::Source,
-            },
+            EffectDef::sacrifice(EffectRecipientDef::Source),
         ))),
     },
 );
@@ -49,11 +47,7 @@ const fn enters_bounce_or_sacrifice(text: &'static str, costs: &'static [CostDef
         text,
         EffectDef::PayOr(PayOrDef::unless(
             costs,
-            &const {
-                EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                }
-            },
+            &const { EffectDef::sacrifice(EffectRecipientDef::Source) },
         )),
     )
 }
@@ -1038,9 +1032,7 @@ pub(in crate::card::sets) static WATERSPOUT_DJINN: CardRecord = CardRecord::new(
                     ]),
                     zone: ZoneKind::Hand,
                 }],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
     ]),
@@ -1421,9 +1413,7 @@ pub(in crate::card::sets) static NECROMANCY: CardRecord = CardRecord::new_with_l
                                         step: TurnStepDef::Cleanup,
                                         player: PlayerRelation::Any,
                                     },
-                                    EffectDef::Sacrifice {
-                                        object: EffectRecipientDef::Source,
-                                    },
+                                    EffectDef::sacrifice(EffectRecipientDef::Source),
                                 )
                             }))
                         },
@@ -1437,9 +1427,7 @@ pub(in crate::card::sets) static NECROMANCY: CardRecord = CardRecord::new_with_l
                     Some(ZoneKind::Battlefield),
                     None,
                 ),
-                EffectDef::Sacrifice {
-                    object: EffectRecipientDef::AttachedPermanent,
-                },
+                EffectDef::sacrifice(EffectRecipientDef::AttachedPermanent),
             ),
         ]),
 );
@@ -1507,9 +1495,7 @@ pub(in crate::card::sets) static PILLAR_TOMBS_OF_AKU: CardRecord = CardRecord::n
                             recipient: EffectRecipientDef::EventPlayer,
                             amount: ValueDef::Constant(5),
                         },
-                        EffectDef::Sacrifice {
-                            object: EffectRecipientDef::Source,
-                        },
+                        EffectDef::sacrifice(EffectRecipientDef::Source),
                     ]),
                 )
                 .with_payer(PlayerSetDef::One(PlayerRefDef::EventPlayer)),
@@ -1566,9 +1552,7 @@ pub(in crate::card::sets) static TAR_PIT_WARRIOR: CardRecord = CardRecord::new(
             // Any spell or ability, including its controller's own: a
             // pump spell kills it just as surely as removal does.
             TriggerEventDef::becomes_targeted(ObjectPredicateDef::Any),
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::Source,
-            },
+            EffectDef::sacrifice(EffectRecipientDef::Source),
         ),
     ),
 );
@@ -3539,9 +3523,7 @@ pub(in crate::card::sets) static JUJU_BUBBLE: CardRecord = CardRecord::new(
                     player: PlayerRelation::You,
                 },
             ]),
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::Source,
-            },
+            EffectDef::sacrifice(EffectRecipientDef::Source),
         ),
         AbilityDef::activated(
             "{2}: You gain 1 life.",

@@ -233,9 +233,7 @@ pub(in crate::card::sets) static DANDAN: CardRecord = CardRecord::new_with_legac
             "When you control no Islands, sacrifice this creature.",
             TriggerEventDef::StateCondition,
             &YOU_CONTROL_NO_ISLANDS,
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::Source,
-            },
+            EffectDef::sacrifice(EffectRecipientDef::Source),
         ),
     ]),
 );
@@ -340,9 +338,7 @@ pub(in crate::card::sets) static ISLAND_FISH_JASCONIUS: CardRecord = CardRecord:
             "When you control no Islands, sacrifice this creature.",
             TriggerEventDef::StateCondition,
             &YOU_CONTROL_NO_ISLANDS,
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::Source,
-            },
+            EffectDef::sacrifice(EffectRecipientDef::Source),
         ),
     ]),
 );
@@ -372,9 +368,7 @@ pub(in crate::card::sets) static MERCHANT_SHIP: CardRecord = CardRecord::new_wit
             "When you control no Islands, sacrifice this creature.",
             TriggerEventDef::StateCondition,
             &YOU_CONTROL_NO_ISLANDS,
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::Source,
-            },
+            EffectDef::sacrifice(EffectRecipientDef::Source),
         ),
     ]),
 );
@@ -586,9 +580,7 @@ pub(in crate::card::sets) static JUNUN_EFREET: CardRecord = CardRecord::new_with
             },
             EffectDef::PayOr(PayOrDef::unless(
                 &[CostDef::Mana(mana_cost!("{B}{B}"))],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
     ]),
@@ -708,13 +700,13 @@ pub(in crate::card::sets) static ALADDIN: CardRecord = CardRecord::new_with_lega
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::HasType(CardType::Artifact),
             )],
-            EffectDef::GainControl {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                duration: ControlDurationDef::WhileSourceRemains {
+            EffectDef::gain_control(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                PlayerRefDef::EffectController,
+                ControlDurationDef::WhileSourceRemains {
                     while_tapped: false,
                 },
-                controller: PlayerRefDef::EffectController,
-            },
+            ),
         ),
     ),
 );
@@ -951,9 +943,7 @@ pub(in crate::card::sets) static CYCLONE: CardRecord = CardRecord::new_with_lega
                             ValueDef::CountersOnSource(CounterKind::named("wind")),
                         ),
                     ]),
-                    &EffectDef::Sacrifice {
-                        object: EffectRecipientDef::Source,
-                    },
+                    &EffectDef::sacrifice(EffectRecipientDef::Source),
                 )
                 .with_visibility(ChoiceVisibilityDef::Public),
             ),
@@ -1258,9 +1248,11 @@ pub(in crate::card::sets) static CITY_IN_A_BOTTLE: CardRecord = CardRecord::new_
                 comparison: ComparisonDef::GreaterOrEqual,
                 amount: 1,
             },
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::matching_objects(BOTTLED, &[ZoneKind::Battlefield], PlayerRelation::Any),
-            },
+            EffectDef::sacrifice(EffectRecipientDef::matching_objects(
+                BOTTLED,
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            )),
         ),
         AbilityDef::static_ability(
             "Players can't cast spells or play lands with a name originally printed in the Arabian Nights expansion.",

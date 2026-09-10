@@ -1540,9 +1540,9 @@ pub(in crate::card::sets) static DEVOUR_FLESH: CardRecord = CardRecord::new_with
             // The life follows the sacrifice, so it belongs to the same continuation --
             // and it goes to the player who paid, not to whoever cast the spell.
             then: &EffectDef::Sequence(&[
-                EffectDef::Sacrifice {
-                    object: EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
-                },
+                EffectDef::sacrifice(EffectRecipientDef::objects(
+                    ObjectSetDef::Binding(ParentBinding),
+                )),
                 EffectDef::GainLife {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     amount: ValueDef::AggregateObjectValues(&ObjectValueAggregateDef {
@@ -2085,11 +2085,11 @@ pub(in crate::card::sets) static ACT_OF_TREASON: CardRecord = CardRecord::new_wi
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
             EffectDef::Sequence(&[
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    duration: ControlDurationDef::UntilEndOfTurn,
-                    controller: PlayerRefDef::EffectController,
-                },
+                EffectDef::gain_control(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::UntilEndOfTurn,
+                ),
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 },
@@ -2287,15 +2287,15 @@ pub(in crate::card::sets) static HELLKITE_TYRANT: CardRecord = CardRecord::new(
         AbilityDef::triggered(
             "Whenever this creature deals combat damage to a player, gain control of all artifacts that player controls.",
             TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
-            EffectDef::GainControl {
-                object: EffectRecipientDef::matching_objects(
+            EffectDef::gain_control(
+                EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::HasType(CardType::Artifact),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::EventPlayer,
                 ),
-                controller: PlayerRefDef::EffectController,
-                duration: ControlDurationDef::Indefinitely,
-            },
+                PlayerRefDef::EffectController,
+                ControlDurationDef::Indefinitely,
+            ),
         ),
         AbilityDef::triggered_if(
             "At the beginning of your upkeep, if you control twenty or more artifacts, you win the game.",
@@ -2482,11 +2482,11 @@ pub(in crate::card::sets) static MOLTEN_PRIMORDIAL: CardRecord = CardRecord::new
                 },
                 1,
             )], EffectDef::Sequence(&[
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    duration: ControlDurationDef::UntilEndOfTurn,
-                    controller: PlayerRefDef::EffectController,
-                },
+                EffectDef::gain_control(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::UntilEndOfTurn,
+                ),
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 },
@@ -2627,9 +2627,9 @@ pub(in crate::card::sets) static STRUCTURAL_COLLAPSE: CardRecord = CardRecord::n
                 chosen: ParentBinding,
                 unchosen: Binding!("objects_2"),
                 then: &EffectDef::Sequence(&[
-                    EffectDef::Sacrifice {
-                        object: EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
-                    },
+                    EffectDef::sacrifice(EffectRecipientDef::objects(
+                        ObjectSetDef::Binding(ParentBinding),
+                    )),
                     EffectDef::ChooseForEachPlayer(ChooseForEachPlayerDef {
                         player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                         candidates: ObjectPredicateDef::HasType(CardType::Land),
@@ -2639,11 +2639,9 @@ pub(in crate::card::sets) static STRUCTURAL_COLLAPSE: CardRecord = CardRecord::n
                         chosen: ParentBinding,
                         unchosen: Binding!("objects"),
                         then: &EffectDef::Sequence(&[
-                            EffectDef::Sacrifice {
-                                object: EffectRecipientDef::objects(ObjectSetDef::Binding(
-                                    ParentBinding,
-                                )),
-                            },
+                            EffectDef::sacrifice(EffectRecipientDef::objects(
+                                ObjectSetDef::Binding(ParentBinding),
+                            )),
                             EffectDef::damage(
                                 EffectRecipientDef::Target(TargetIndex::PRIMARY),
                                 ValueDef::Constant(2),
@@ -4351,17 +4349,15 @@ pub(in crate::card::sets) static GRUUL_CHARM: CardRecord = CardRecord::new(
             ),
             AbilityDef::spell(
                 "Gain control of all permanents you own",
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::objects(ObjectSetDef::Query(
-                        ObjectQueryDef::owned_by(
-                            ObjectPredicateDef::Any,
-                            &[ZoneKind::Battlefield],
-                            PlayerSetDef::Related(PlayerRelation::You),
-                        ),
-                    )),
-                    controller: PlayerRefDef::EffectController,
-                    duration: ControlDurationDef::Indefinitely,
-                },
+                EffectDef::gain_control(
+                    EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::owned_by(
+                        ObjectPredicateDef::Any,
+                        &[ZoneKind::Battlefield],
+                        PlayerSetDef::Related(PlayerRelation::You),
+                    ))),
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::Indefinitely,
+                ),
             ),
             AbilityDef::spell(
                 "Gruul Charm deals 3 damage to each creature with flying",
@@ -5143,9 +5139,7 @@ pub(in crate::card::sets) static SPARK_TROOPER: CardRecord = CardRecord::new_wit
                     step: TurnStepDef::End,
                     player: PlayerRelation::Any,
                 },
-                EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                EffectDef::sacrifice(EffectRecipientDef::Source),
             ),
         ]),
 );

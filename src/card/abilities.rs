@@ -584,9 +584,7 @@ pub const fn echo(text: &'static str, costs: &'static [CostDef]) -> AbilityDef {
     )
 }
 
-static SACRIFICE_SOURCE: EffectDef = EffectDef::Sacrifice {
-    object: EffectRecipientDef::Source,
-};
+static SACRIFICE_SOURCE: EffectDef = EffectDef::sacrifice(EffectRecipientDef::Source);
 
 /// Implementation for the [`bloodrush!`] constructor after its costs are composed.
 #[doc(hidden)]

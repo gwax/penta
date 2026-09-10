@@ -690,11 +690,11 @@ pub(in crate::card::sets) static BEGUILER_OF_WILLS: CardRecord = CardRecord::new
                     right: ValueDef::Constant(1),
                 })),
             ]))],
-            EffectDef::GainControl {
-                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                controller: PlayerRefDef::EffectController,
-                duration: ControlDurationDef::Indefinitely,
-            },
+            EffectDef::gain_control(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                PlayerRefDef::EffectController,
+                ControlDurationDef::Indefinitely,
+            ),
         )),
 );
 

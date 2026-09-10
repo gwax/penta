@@ -3028,11 +3028,9 @@ pub(in crate::card::sets) static LILIANA_OF_THE_VEIL: CardRecord = CardRecord::n
                         chosen: LILIANA_CHOSEN_PILE,
                         unchosen: Binding!("liliana_spared_pile"),
                         visibility: ChoiceVisibilityDef::Public,
-                        then: &EffectDef::Sacrifice {
-                            object: EffectRecipientDef::objects(ObjectSetDef::Binding(
-                                LILIANA_CHOSEN_PILE,
-                            )),
-                        },
+                        then: &EffectDef::sacrifice(EffectRecipientDef::objects(
+                            ObjectSetDef::Binding(LILIANA_CHOSEN_PILE),
+                        )),
                     }) },
                 }),
             ),
@@ -4595,11 +4593,11 @@ pub(in crate::card::sets) static TRAITOROUS_BLOOD: CardRecord = CardRecord::new_
                 ObjectPredicateDef::HasType(CardType::Creature),
             )],
             EffectDef::Sequence(&[
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    duration: ControlDurationDef::UntilEndOfTurn,
-                    controller: PlayerRefDef::EffectController,
-                },
+                EffectDef::gain_control(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::UntilEndOfTurn,
+                ),
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 },
@@ -6003,13 +6001,13 @@ pub(in crate::card::sets) static OLIVIA_VOLDAREN: CardRecord = CardRecord::new(
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::Subtype("Vampire"),
                 )],
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    controller: PlayerRefDef::EffectController,
-                    duration: ControlDurationDef::WhileSourceRemains {
+                EffectDef::gain_control(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::WhileSourceRemains {
                         while_tapped: false,
                     },
-                },
+                ),
             ),
         ]),
 );

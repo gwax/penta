@@ -945,11 +945,11 @@ pub(in crate::card::sets) static SMELT_WARD_GATEKEEPERS: CardRecord = CardRecord
                 },
             )],
             EffectDef::Sequence(&[
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    duration: ControlDurationDef::UntilEndOfTurn,
-                    controller: PlayerRefDef::EffectController,
-                },
+                EffectDef::gain_control(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::UntilEndOfTurn,
+                ),
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 },
@@ -3121,11 +3121,11 @@ pub(in crate::card::sets) static CATCH_RELEASE: CardRecord = CardRecord::new_fus
                         ObjectPredicateDef::Any,
                     )],
                     EffectDef::Sequence(&[
-                        EffectDef::GainControl {
-                            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                            duration: ControlDurationDef::UntilEndOfTurn,
-                            controller: PlayerRefDef::EffectController,
-                        },
+                        EffectDef::gain_control(
+                            EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                            PlayerRefDef::EffectController,
+                            ControlDurationDef::UntilEndOfTurn,
+                        ),
                         EffectDef::Untap {
                             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                         },
@@ -3156,11 +3156,9 @@ pub(in crate::card::sets) static CATCH_RELEASE: CardRecord = CardRecord::new_fus
                     visibility: ChoiceVisibilityDef::Public,
                     chosen: Binding!("release_sacrificed_permanents"),
                     unchosen: Binding!("release_spared_permanents"),
-                    then: &EffectDef::Sacrifice {
-                        object: EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!(
-                            "release_sacrificed_permanents"
-                        ))),
-                    },
+                    then: &EffectDef::sacrifice(EffectRecipientDef::objects(
+                        ObjectSetDef::Binding(Binding!("release_sacrificed_permanents")),
+                    )),
                 }),
             )),
         ),

@@ -901,17 +901,15 @@ pub(in crate::card::sets) static CABAL_THERAPY: CardRecord = CardRecord::new_wit
                 EffectDef::RevealHand {
                     player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 },
-                EffectDef::DiscardCards {
-                    object: EffectRecipientDef::objects(ObjectSetDef::Query(
-                        ObjectQueryDef::owned_by(
-                            ObjectPredicateDef::NameEquals(CardNameDef::Binding(Binding!(
-                                "cabal_therapy_name"
-                            ))),
-                            &[ZoneKind::Hand],
-                            PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
-                        ),
+                EffectDef::discard_cards(EffectRecipientDef::objects(
+                    ObjectSetDef::Query(ObjectQueryDef::owned_by(
+                        ObjectPredicateDef::NameEquals(CardNameDef::Binding(Binding!(
+                            "cabal_therapy_name"
+                        ))),
+                        &[ZoneKind::Hand],
+                        PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
                     )),
-                },
+                )),
             ]),
         ),
         AbilityDef::alternative_cast(

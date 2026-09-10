@@ -301,9 +301,7 @@ pub(in crate::card::sets) static GLINT_HAWK: CardRecord = CardRecord::new(
                     object: ObjectPredicateDef::HasType(CardType::Artifact),
                     zone: ZoneKind::Hand,
                 }],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
     ]),
@@ -994,9 +992,7 @@ pub(in crate::card::sets) static SHAPE_ANEW: CardRecord = CardRecord::new(
                 ObjectPredicateDef::HasType(CardType::Artifact),
             )],
             EffectDef::Sequence(&[
-                EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                },
+                EffectDef::sacrifice(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
                 EffectDef::RevealAndClassifyCards(RevealAndClassifyCardsDef {
                     source: ObjectCollectionSourceDef::TopCardsThroughFirstMatching {
                         player: PlayerRefDef::ControllerOf(ObjectRefDef::Target(
@@ -1284,13 +1280,13 @@ pub(in crate::card::sets) static VOLITION_REINS: CardRecord = CardRecord::new(
             ),
             AbilityDef::static_ability(
                 "You control enchanted permanent.",
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::AttachedPermanent,
-                    duration: ControlDurationDef::WhileSourceRemains {
+                EffectDef::gain_control(
+                    EffectRecipientDef::AttachedPermanent,
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::WhileSourceRemains {
                         while_tapped: false,
                     },
-                    controller: PlayerRefDef::EffectController,
-                },
+                ),
             ),
         ]),
 );
@@ -3084,9 +3080,7 @@ pub(in crate::card::sets) static PUTREFAX: CardRecord = CardRecord::new(
                     step: TurnStepDef::End,
                     player: PlayerRelation::Any,
                 },
-                EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                EffectDef::sacrifice(EffectRecipientDef::Source),
             ),
         ]),
 );
@@ -4407,9 +4401,7 @@ pub(in crate::card::sets) static MOLTEN_TAIL_MASTICORE: CardRecord = CardRecord:
             },
             EffectDef::PayOr(PayOrDef::unless(
                 &[CostDef::DiscardCards(1)],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
         AbilityDef::activated_with_targets(

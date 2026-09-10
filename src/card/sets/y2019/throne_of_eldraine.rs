@@ -331,13 +331,13 @@ pub(in crate::card::sets) static WISHCLAW_TALISMAN: CardRecord = CardRecord::new
                     binding: None,
                     then: None,
                 },
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Source,
-                    controller: PlayerRefDef::Opponent,
+                EffectDef::gain_control(
+                    EffectRecipientDef::Source,
+                    PlayerRefDef::Opponent,
                     // Nothing holds the change and no cleanup ends it: the artifact is
                     // theirs from here (CR 611.2b).
-                    duration: ControlDurationDef::Indefinitely,
-                },
+                    ControlDurationDef::Indefinitely,
+                ),
             ]),
         )
         .with_activation_timing(ActivationTimingDef::YourTurn),

@@ -3085,9 +3085,7 @@ pub(in crate::card::sets) static SKIZZIK: CardRecord = CardRecord::new(
                     AlternativeCastKindDef::Kicked,
                 ))
             },
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::Source,
-            },
+            EffectDef::sacrifice(EffectRecipientDef::Source),
         ),
     ]),
 );

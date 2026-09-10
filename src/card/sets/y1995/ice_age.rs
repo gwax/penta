@@ -14,7 +14,7 @@ use crate::card::{
     ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetCountConditionDef, ObjectSetDef,
     ObjectSetPredicateDef, PayOrDef, PlayerRefDef, PlayerRelation, ResolvedEffectDurationDef,
     ScaledValueDef, StaticApplyDef, TargetChooserDef, TriggerConditionDef, TriggerEventDef,
-    TurnStepDef, ValueDef, ZoneKind, abilities,
+    TurnStepDef, ValueDef, ZoneKind, abilities, actions,
 };
 use crate::{TargetIndex, mana_cost};
 
@@ -1212,11 +1212,9 @@ pub(in crate::card::sets) static POLAR_KRAKEN: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{8}{U}{U}{U}"), &["Kraken"], 11, 11).with_abilities(&[
         abilities::trample(),
         abilities::enters_tapped(CardType::Creature),
-        abilities::cumulative_upkeep(&[CostDef::sacrifice_permanents(
-            ObjectPredicateDef::HasType(CardType::Land),
-            PlayerRelation::You,
-            1,
-        )])
+        abilities::cumulative_upkeep(&[actions::choose_sacrifice(1)
+            .matching(ObjectPredicateDef::HasType(CardType::Land))
+            .as_cost()])
         .override_text("Cumulative upkeep—Sacrifice a land."),
     ]),
 );
@@ -1914,13 +1912,11 @@ pub(in crate::card::sets) static KJELDORAN_DEAD: CardRecord = CardRecord::new(
             "When this creature enters, sacrifice a creature.",
             // Not "another creature", so with nothing else out it eats
             // itself, which is the drawback the body is priced on.
-            EffectDef::Sacrifice {
-                object: EffectRecipientDef::matching_objects(
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                    &[ZoneKind::Battlefield],
-                    PlayerRelation::You,
-                ),
-            },
+            EffectDef::sacrifice(EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            )),
         ),
         abilities::regenerate_self(
             "{B}: Regenerate this creature.",
@@ -2529,13 +2525,13 @@ pub(in crate::card::sets) static CONQUER: CardRecord = CardRecord::new(
             abilities::enchant_land(),
             AbilityDef::static_ability(
                 "You control enchanted land.",
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::AttachedPermanent,
-                    duration: ControlDurationDef::WhileSourceRemains {
+                EffectDef::gain_control(
+                    EffectRecipientDef::AttachedPermanent,
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::WhileSourceRemains {
                         while_tapped: false,
                     },
-                    controller: PlayerRefDef::EffectController,
-                },
+                ),
             ),
         ]),
 );

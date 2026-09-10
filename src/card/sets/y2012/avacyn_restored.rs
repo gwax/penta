@@ -1367,9 +1367,7 @@ pub(in crate::card::sets) static FETTERGEIST: CardRecord = CardRecord::new_with_
                             PlayerRelation::You,
                         ),
                     ))],
-                    &EffectDef::Sacrifice {
-                        object: EffectRecipientDef::Source,
-                    },
+                    &EffectDef::sacrifice(EffectRecipientDef::Source),
                 )
                 .with_visibility(ChoiceVisibilityDef::Public),
             ),
@@ -1954,9 +1952,9 @@ pub(in crate::card::sets) static SPECTRAL_PRISON: CardRecord = CardRecord::new(
                     effect: AppliedEffectDef::add_ability(&AbilityDef::triggered(
                         "Whenever this creature becomes the target of a spell, sacrifice the Aura granting this ability.",
                         TriggerEventDef::becomes_targeted(ObjectPredicateDef::Spell),
-                        EffectDef::Sacrifice {
-                            object: EffectRecipientDef::object(ObjectRefDef::AbilityGrantSource),
-                        },
+                        EffectDef::sacrifice(EffectRecipientDef::object(
+                            ObjectRefDef::AbilityGrantSource,
+                        )),
                     )),
                 },
             ),
@@ -1975,13 +1973,13 @@ pub(in crate::card::sets) static SPIRIT_AWAY: CardRecord = CardRecord::new(
             abilities::enchant_creature(),
             AbilityDef::static_ability(
                 "You control enchanted creature.",
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::AttachedPermanent,
-                    controller: PlayerRefDef::EffectController,
-                    duration: ControlDurationDef::WhileSourceRemains {
+                EffectDef::gain_control(
+                    EffectRecipientDef::AttachedPermanent,
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::WhileSourceRemains {
                         while_tapped: false,
                     },
-                },
+                ),
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/+2 and has flying.",
@@ -2308,11 +2306,9 @@ pub(in crate::card::sets) static CORPSE_TRADERS: CardRecord = CardRecord::new(
                 minimum: 0,
                 maximum: 1,
                 visibility: ChoiceVisibilityDef::Public,
-                then: &EffectDef::DiscardCards {
-                    object: EffectRecipientDef::objects(ObjectSetDef::Binding(
-                        ParentBinding,
-                    )),
-                },
+                then: &EffectDef::discard_cards(EffectRecipientDef::objects(
+                    ObjectSetDef::Binding(ParentBinding),
+                )),
             }),
         )
         .with_activation_timing(ActivationTimingDef::SorcerySpeed),
@@ -3062,11 +3058,11 @@ pub(in crate::card::sets) static TREACHEROUS_PIT_DWELLER: CardRecord = CardRecor
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Player(PlayerRelation::Opponent),
             )],
-            EffectDef::GainControl {
-                object: EffectRecipientDef::Source,
-                controller: PlayerRefDef::Target(TargetIndex::PRIMARY),
-                duration: ControlDurationDef::Indefinitely,
-            },
+            EffectDef::gain_control(
+                EffectRecipientDef::Source,
+                PlayerRefDef::Target(TargetIndex::PRIMARY),
+                ControlDurationDef::Indefinitely,
+            ),
         ),
         abilities::undying(),
     ]),
@@ -3957,11 +3953,9 @@ pub(in crate::card::sets) static THATCHER_REVOLT: CardRecord = CardRecord::new(
                             step: TurnStepDef::End,
                             player: PlayerRelation::Any,
                         },
-                        EffectDef::Sacrifice {
-                            object: EffectRecipientDef::objects(ObjectSetDef::Binding(
-                                ParentBinding,
-                            )),
-                        },
+                        EffectDef::sacrifice(EffectRecipientDef::objects(
+                            ObjectSetDef::Binding(ParentBinding),
+                        )),
                     ),
                 )),
             }),
@@ -4127,11 +4121,11 @@ pub(in crate::card::sets) static ZEALOUS_CONSCRIPTS: CardRecord = CardRecord::ne
         )], // Control first: the untap and the haste are worth having only
             // on a permanent that is already yours to use.
             EffectDef::Sequence(&[
-                EffectDef::GainControl {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    duration: ControlDurationDef::UntilEndOfTurn,
-                    controller: PlayerRefDef::EffectController,
-                },
+                EffectDef::gain_control(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    PlayerRefDef::EffectController,
+                    ControlDurationDef::UntilEndOfTurn,
+                ),
                 EffectDef::Untap {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 },

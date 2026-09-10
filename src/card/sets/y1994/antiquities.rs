@@ -223,9 +223,7 @@ pub(in crate::card::sets) static ENERGY_FLUX: CardRecord = CardRecord::new_with_
                     EffectDef::PayOr(PayOrDef::unless(
                         &[CostDef::Mana(mana_cost!("{2}"))],
                         &const {
-                            EffectDef::Sacrifice {
-                                object: EffectRecipientDef::Source,
-                            }
+                            EffectDef::sacrifice(EffectRecipientDef::Source)
                         },
                     )),
                 )
@@ -1170,16 +1168,14 @@ pub(in crate::card::sets) static GOLGOTHIAN_SYLEX: CardRecord = CardRecord::new_
             CostDef::Mana(mana_cost!("{1}")),
             CostDef::TapSource,
         ],
-        EffectDef::Sacrifice {
-            object: EffectRecipientDef::matching_objects(
-                ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
-                    ObjectPredicateDef::DebutSet(CardSet::Antiquities),
-                ]),
-                &[ZoneKind::Battlefield],
-                PlayerRelation::Any,
-            ),
-        },
+        EffectDef::sacrifice(EffectRecipientDef::matching_objects(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+                ObjectPredicateDef::DebutSet(CardSet::Antiquities),
+            ]),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::Any,
+        )),
     )]),
 );
 

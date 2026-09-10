@@ -2340,9 +2340,7 @@ pub(in crate::card::sets) static CROSIS_S_CATACOMBS: CardRecord = CardRecord::ne
                     ]),
                     zone: ZoneKind::Hand,
                 }],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
         AbilityDef::activated_mana(
@@ -2378,9 +2376,7 @@ pub(in crate::card::sets) static DARIGAAZ_S_CALDERA: CardRecord = CardRecord::ne
                     ]),
                     zone: ZoneKind::Hand,
                 }],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
         AbilityDef::activated_mana(
@@ -2416,9 +2412,7 @@ pub(in crate::card::sets) static DROMAR_S_CAVERN: CardRecord = CardRecord::new(
                     ]),
                     zone: ZoneKind::Hand,
                 }],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
         AbilityDef::activated_mana(
@@ -2532,9 +2526,7 @@ pub(in crate::card::sets) static RITH_S_GROVE: CardRecord = CardRecord::new(
                     ]),
                     zone: ZoneKind::Hand,
                 }],
-                &EffectDef::Sacrifice {
-                    object: EffectRecipientDef::Source,
-                },
+                &EffectDef::sacrifice(EffectRecipientDef::Source),
             )),
         ),
         AbilityDef::activated_mana(
@@ -2608,9 +2600,7 @@ pub(in crate::card::sets) static TREVAS_RUINS: CardRecord = CardRecord::new_with
                 ]),
                 zone: ZoneKind::Hand,
             }],
-            &EffectDef::Sacrifice {
-                object: EffectRecipientDef::Source,
-            },
+            &EffectDef::sacrifice(EffectRecipientDef::Source),
         ))),
         AbilityDef::activated_mana(
             "{T}: Add {G}, {W}, or {U}.",

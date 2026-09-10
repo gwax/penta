@@ -100,9 +100,7 @@ pub(in crate::card::sets) static NALATHNI_DRAGON: CardRecord = CardRecord::new_w
                             step: TurnStepDef::End,
                             player: PlayerRelation::Any,
                         },
-                        EffectDef::Sacrifice {
-                            object: EffectRecipientDef::Source,
-                        },
+                        EffectDef::sacrifice(EffectRecipientDef::Source),
                     ))),
                 },
             ]),
