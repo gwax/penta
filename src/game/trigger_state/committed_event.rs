@@ -28,14 +28,12 @@ pub(super) enum CommittedTriggerEvent {
     PaymentPaid {
         object: TriggerEventObject,
         player: PlayerId,
-        repetitions: u16,
         label: crate::card::AbilityLabel,
         mana_spent: Vec<crate::ManaColor>,
     },
     PaymentNotPaid {
         object: TriggerEventObject,
         player: PlayerId,
-        repetitions: u16,
         label: crate::card::AbilityLabel,
     },
     CoinFlipped {
@@ -278,20 +276,18 @@ impl CommittedTriggerEvent {
             Self::PaymentPaid {
                 object,
                 player,
-                repetitions,
                 ..
             }
             | Self::PaymentNotPaid {
                 object,
                 player,
-                repetitions,
                 ..
             } => TriggerContext {
                 object: Some(object.id),
                 zone_change_result: None,
                 object_controller: Some(object.controller),
                 event_player: Some(*player),
-                amount: Some(i32::from(*repetitions)),
+                amount: None,
                 damaged_object: None,
                 sacrificed_object: None,
                 cast_from_zone: None,

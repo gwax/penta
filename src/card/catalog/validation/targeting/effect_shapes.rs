@@ -208,7 +208,6 @@ fn validate_effect_target_shapes(
         ),
         EffectDef::PayOr(payment) => {
             validate_payment_shape(payment.payment, targets)?;
-            if let Some(value) = payment.repeat { validate_value_shape(*value, targets)?; }
             for effect in payment.if_paid.iter().chain(payment.otherwise.iter()) {
                 validate_effect_target_shapes(**effect, targets, triggering_object_zone)?;
             }
@@ -648,7 +647,7 @@ fn validate_effect_target_shapes(
         },
         // The ballot is a predicate, not a target: nothing is pointed at.
         EffectDef::WithCosts { costs, effect } => {
-            costs.iter().try_for_each(|cost| validate_upkeep_cost_shape(*cost, targets))?;
+            costs.iter().try_for_each(|cost| validate_program_cost_shape(*cost, targets))?;
             validate_effect_target_shapes(*effect, targets, triggering_object_zone)
         }
         EffectDef::PutSourceOntoBattlefieldAttacking
@@ -678,29 +677,6 @@ fn validate_effect_target_shapes(
 #[cfg(test)]
 #[path = "effect_shape_entry_choice_tests.rs"]
 mod entry_choice_tests;
-
-fn validate_upkeep_cost_shape(
-    cost: crate::CostDef,
-    targets: &[AbilityTargetDef],
-) -> Result<(), GrantedAbilityValidationError> {
-    match cost {
-        crate::card::CostDef::SacrificePermanents { object, .. }
-        | crate::card::CostDef::GainControlPermanents { object, .. } => {
-            validate_object_predicate_shape(object, targets)
-        }
-        crate::card::CostDef::CreateTokens { token, .. } => match token.creation_stats {
-            Some(stats) => {
-                validate_value_shape(stats.power, targets)?;
-                validate_value_shape(stats.toughness, targets)
-            }
-            None => Ok(()),
-        },
-        crate::CostDef::All(costs) => costs
-            .iter()
-            .try_for_each(|cost| validate_upkeep_cost_shape(*cost, targets)),
-        _ => Ok(()),
-    }
-}
 
 #[cfg(test)]
 mod recipient_shape_tests {

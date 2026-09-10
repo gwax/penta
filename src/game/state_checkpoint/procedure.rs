@@ -75,7 +75,7 @@ pub(super) fn pending_procedure_snapshot(
             context,
         } => PendingProcedureSnapshot::CompletePayment {
             player: player.index(),
-            provenance: provenance.map(|p| (p.label.0.to_owned(), p.repetitions)),
+            provenance: provenance.map(|p| p.label.0.to_owned()),
             paid: paid.as_ref().map(|receipt| {
                 (
                     receipt.paid_amount,
@@ -205,11 +205,8 @@ pub(super) fn parse_pending_procedure(
             };
             let label = definition.label;
             let provenance = match (label, provenance) {
-                (Some(label), Some((recorded, repetitions))) if label.0 == recorded => {
-                    Some(super::super::PaymentProvenance {
-                        label,
-                        repetitions: *repetitions,
-                    })
+                (Some(label), Some(recorded)) if label.0 == recorded => {
+                    Some(super::super::PaymentProvenance { label })
                 }
                 (None, None) => None,
                 _ => {

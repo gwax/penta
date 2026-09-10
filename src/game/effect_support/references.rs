@@ -127,6 +127,9 @@ impl Game {
         };
         match cost {
             Cost::All(costs) => self.resolved_effect_costs(costs, object, context, scoped),
+            Cost::Parameter | Cost::Repeated { .. } | Cost::Choice(_) => {
+                self.resolved_program_cost(cost, object, context, scoped, None, None)
+            }
             Cost::Mana(cost) => Resolved::Mana(cost),
             Cost::GenericMana(amount) => Resolved::Mana(crate::ManaCost::new(amount_of(amount), 0)),
             Cost::ColoredMana { color, amount } => {

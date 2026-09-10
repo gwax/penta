@@ -19,7 +19,6 @@ use super::{
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct PaymentProvenance {
     pub(super) label: crate::card::AbilityLabel,
-    pub(super) repetitions: u16,
 }
 
 /// What runs once a demanded sacrifice has been chosen and made. The

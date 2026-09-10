@@ -1131,8 +1131,9 @@ above. Replay version 2 is unchanged.
 ### Migrating checkpoint format 14 to 15
 
 The bot protocol and replay format are unchanged. Checkpoint format 15 replaces
-cumulative-upkeep-only metadata with a generic payment purpose and repetition
-count. Labeled mana payments retain that purpose; complete repeated alternatives
+cumulative-upkeep-only metadata with a generic payment purpose. Repetition is
+evaluated from the cost tree when offered; provenance carries only the purpose.
+Labeled mana payments retain that purpose; complete repeated alternatives
 use `choice` obligations within the shared `all` cost-list representation.
 The `completePayment` pending procedure retains the result until cost actions
 and replacement choices finish, then publishes the outcome and resumes the

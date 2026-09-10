@@ -222,7 +222,7 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         player: usize,
         payment: ResolvedEffectPaymentSnapshot,
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        payment_provenance: Option<(String, u16)>,
+        payment_provenance: Option<String>,
         object: DetachedStackSnapshot,
         ability: AbilityLocator,
         context: EffectResolutionContextSnapshot,

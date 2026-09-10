@@ -12,19 +12,7 @@ fn validate_cost_program(
     }
     if let EffectDef::PayOr(payment) = effect {
         for cost in payment.payment.costs {
-            let costs = if matches!(cost, CostDef::Parameter) {
-                parameter.ok_or("unbound cost parameter")?
-            } else {
-                if contains_cost_parameter(*cost) {
-                    return Err("cost parameters must be whole list components");
-                }
-                std::slice::from_ref(cost)
-            };
-            if (payment.repeat.is_some() || payment.label.is_some())
-                && !costs.iter().all(|cost| repeatable_payment_cost(*cost))
-            {
-                return Err("unsupported repeated or labeled payment cost");
-            }
+            validate_program_cost(*cost, parameter, payment.label.is_some(), false)?;
         }
     }
     for child in crate::card::child_effects(effect) {
@@ -33,10 +21,39 @@ fn validate_cost_program(
     Ok(())
 }
 
+fn validate_program_cost(
+    cost: CostDef,
+    parameter: Option<&'static [CostDef]>,
+    repeated_or_labeled: bool,
+    scalar_only: bool,
+) -> Result<(), &'static str> {
+    let (costs, repeated_or_labeled, scalar_only) = match cost {
+        CostDef::Parameter => (
+            parameter.ok_or("unbound cost parameter")?,
+            repeated_or_labeled,
+            scalar_only,
+        ),
+        CostDef::All(costs) => (costs, repeated_or_labeled, scalar_only),
+        CostDef::Repeated { costs, .. } => (costs, true, scalar_only),
+        CostDef::Choice(costs) => (costs, repeated_or_labeled, true),
+        _ if scalar_only && !scalar_batch_cost(cost) => {
+            return Err("unsupported non-scalar cost choice");
+        }
+        _ if repeated_or_labeled && !repeatable_payment_cost(cost) => {
+            return Err("unsupported repeated or labeled payment cost");
+        }
+        _ => return Ok(()),
+    };
+    for cost in costs {
+        validate_program_cost(*cost, parameter, repeated_or_labeled, scalar_only)?;
+    }
+    Ok(())
+}
+
 fn contains_cost_parameter(cost: CostDef) -> bool {
     match cost {
         CostDef::Parameter => true,
-        CostDef::All(costs) | CostDef::Choice(costs) => {
+        CostDef::All(costs) | CostDef::Choice(costs) | CostDef::Repeated { costs, .. } => {
             costs.iter().any(|cost| contains_cost_parameter(*cost))
         }
         _ => false,
@@ -108,10 +125,15 @@ mod tests {
     ];
 
     static PAY_PARAMETER: EffectDef = EffectDef::PayOr(
-        PayOrDef::optional(&[CostDef::Parameter], &EffectDef::None)
-            .labeled(AbilityLabel("test purpose"))
-            .repeated(&ValueDef::Constant(2))
-            .with_visibility(crate::card::ChoiceVisibilityDef::Public),
+        PayOrDef::optional(
+            &[CostDef::repeated(
+                &[CostDef::Parameter],
+                &ValueDef::Constant(2),
+            )],
+            &EffectDef::None,
+        )
+        .labeled(AbilityLabel("test purpose"))
+        .with_visibility(crate::card::ChoiceVisibilityDef::Public),
     );
 
     #[test]

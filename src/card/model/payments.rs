@@ -6,7 +6,6 @@
 
 use super::{
     ChoiceVisibilityDef, CostDef, EffectDef, PlayerRefDef, PlayerSetDef, TriggerConditionDef,
-    ValueDef,
 };
 
 /// A payment offered while an effect or replacement procedure resolves.
@@ -33,8 +32,6 @@ impl EffectPaymentDef {
 pub struct PayOrDef {
     /// Semantic purpose used by mana restrictions and payment observers.
     pub label: Option<super::AbilityLabel>,
-    /// Repetitions of the complete cost list, evaluated when offered.
-    pub repeat: Option<&'static ValueDef>,
     pub payment: EffectPaymentDef,
     pub if_paid: Option<&'static EffectDef>,
     pub otherwise: Option<&'static EffectDef>,
@@ -52,7 +49,6 @@ impl PayOrDef {
     pub const fn new(costs: &'static [CostDef]) -> Self {
         Self {
             label: None,
-            repeat: None,
             payment: EffectPaymentDef::new(
                 PlayerSetDef::One(PlayerRefDef::EffectController),
                 costs,
@@ -77,13 +73,6 @@ impl PayOrDef {
     #[must_use]
     pub const fn labeled(mut self, label: super::AbilityLabel) -> Self {
         self.label = Some(label);
-        self
-    }
-
-    /// Repeat the complete cost list as one all-or-nothing obligation.
-    #[must_use]
-    pub const fn repeated(mut self, repeat: &'static ValueDef) -> Self {
-        self.repeat = Some(repeat);
         self
     }
 

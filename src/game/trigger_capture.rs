@@ -45,7 +45,6 @@ impl Game {
         self.capture_battlefield_triggers(&CommittedTriggerEvent::PaymentPaid {
             object,
             player,
-            repetitions: provenance.repetitions,
             label: provenance.label,
             mana_spent: mana_spent.iter().map(|mana| mana.color).collect(),
         });
@@ -77,7 +76,6 @@ impl Game {
         self.capture_battlefield_triggers(&CommittedTriggerEvent::PaymentNotPaid {
             object,
             player,
-            repetitions: provenance.repetitions,
             label: provenance.label,
         });
     }

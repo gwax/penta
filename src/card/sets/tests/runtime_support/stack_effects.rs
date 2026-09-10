@@ -39,6 +39,12 @@ fn shared_effect_payment(payment: EffectPaymentDef) -> bool {
             crate::card::CostDef::All(costs) => {
                 shared_effect_payment(EffectPaymentDef::new(payment.payer, costs))
             }
+            crate::card::CostDef::Repeated { costs, .. } => {
+                costs.iter().all(|cost| shared_program_cost(*cost))
+            }
+            crate::card::CostDef::Choice(costs) => {
+                costs.iter().all(|cost| scalar_program_cost(*cost))
+            }
             crate::card::CostDef::RemoveAnyNumberOfCounters { object, .. } => {
                 shared_effect_recipient(*object)
             }
@@ -340,7 +346,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         }
         EffectDef::PayOr(payment) => {
             deferred_decision_allowed
-                && (if payment.repeat.is_some() || payment.label.is_some() {
+                && (if payment.label.is_some() {
                     payment.payment.costs.iter().all(|cost| shared_program_cost(*cost))
                 } else { shared_effect_payment(payment.payment) })
                 && (payment.if_paid.is_some() || payment.otherwise.is_some() || payment.label.is_some())
@@ -850,7 +856,9 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
 // this independent runtime audit also checks predicates inside a supplied cost.
 fn shared_program_cost(cost: CostDef) -> bool {
     match cost {
-        CostDef::All(costs) => costs.iter().all(|cost| shared_program_cost(*cost)),
+        CostDef::All(costs) | CostDef::Repeated { costs, .. } => {
+            costs.iter().all(|cost| shared_program_cost(*cost))
+        }
         CostDef::Choice(costs) => costs.iter().all(|cost| scalar_program_cost(*cost)),
         CostDef::Mana(cost) => !cost.variable_x,
         CostDef::SacrificePermanents {
@@ -895,11 +903,11 @@ fn shared_program_cost(cost: CostDef) -> bool {
 
 fn scalar_program_cost(cost: CostDef) -> bool {
     match cost {
-        CostDef::All(costs) | CostDef::Choice(costs) => {
+        CostDef::All(costs) | CostDef::Choice(costs) | CostDef::Repeated { costs, .. } => {
             costs.iter().all(|cost| scalar_program_cost(*cost))
         }
         CostDef::Mana(cost) => !cost.variable_x,
-        CostDef::PayLife(_) => true,
+        CostDef::PayLife(_) | CostDef::Parameter => true,
         _ => false,
     }
 }

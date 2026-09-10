@@ -29,7 +29,7 @@ const fn default_true() -> bool {
 pub(super) enum PendingProcedureSnapshot {
     CompletePayment {
         player: usize,
-        provenance: Option<(String, u16)>,
+        provenance: Option<String>,
         paid: Option<(u16, Vec<super::model::ManaSnapshot>)>,
         continuation: EffectContinuationSnapshot,
     },

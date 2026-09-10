@@ -2133,7 +2133,7 @@ pub(in crate::card::sets) static HEART_OF_BOGARDAN: CardRecord = CardRecord::new
                     EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     ValueDef::Sum(&crate::card::SumValueDef::new(
                         ValueDef::Scaled(&crate::card::ScaledValueDef::new(
-                            ValueDef::TriggerEventAmount,
+                            ValueDef::CountersOnSource(CounterKind::named("age")),
                             2,
                         )),
                         ValueDef::Constant(-2),
@@ -2146,7 +2146,7 @@ pub(in crate::card::sets) static HEART_OF_BOGARDAN: CardRecord = CardRecord::new
                     ),
                     ValueDef::Sum(&crate::card::SumValueDef::new(
                         ValueDef::Scaled(&crate::card::ScaledValueDef::new(
-                            ValueDef::TriggerEventAmount,
+                            ValueDef::CountersOnSource(CounterKind::named("age")),
                             2,
                         )),
                         ValueDef::Constant(-2),

@@ -14,6 +14,13 @@ include!("costs/quantities.rs");
 pub enum CostDef {
     /// Expand the cost list supplied by the enclosing `WithCosts` program.
     Parameter,
+    /// Repeat this cost list a computed number of times. Each repetition
+    /// chooses its alternatives independently; the surrounding payment
+    /// procedure settles the entire obligation atomically.
+    Repeated {
+        costs: &'static [CostDef],
+        count: &'static ValueDef,
+    },
     Mana(ManaCost),
     /// Pay the same mana cost a computed number of times. Fixed single
     /// payments should use [`Self::Mana`]; this form preserves quantities
@@ -258,6 +265,11 @@ pub enum CostDef {
 }
 
 impl CostDef {
+    #[must_use]
+    pub const fn repeated(costs: &'static [Self], count: &'static ValueDef) -> Self {
+        Self::Repeated { costs, count }
+    }
+
     #[must_use]
     pub const fn mana(cost: ManaCost) -> Self {
         Self::Mana(cost)

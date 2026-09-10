@@ -29,7 +29,7 @@ fn composed_mechanic_programs_reconstruct_each_lexical_cost_scope() {
     assert_eq!(restored.players[0].life, 20);
     let mut tampered = wire.clone();
     tampered["checkpoint"]["decisionState"]["continuation"]["paymentProvenance"] =
-        serde_json::json!(["cycling", 2]);
+        serde_json::json!("cycling");
     assert!(
         Game::from_observation_checkpoint(
             game.catalog.clone(),
@@ -116,4 +116,33 @@ fn composed_mechanic_programs_reconstruct_batch_choices() {
             .unwrap();
     choose_decision_by_label(&mut restored, PlayerId::One, "Pay {1}, Pay 2 life");
     assert_eq!(restored.players[0].life, 4);
+}
+
+#[test]
+fn composed_mechanic_programs_reconstruct_cost_local_repetition_without_a_label() {
+    use crate::game::tests::choose_decision_by_label;
+    use crate::game::tests::composed_mechanic_programs::{PARTIALLY_REPEATED, staged, start};
+    let (mut game, id) = staged(&PARTIALLY_REPEATED);
+    game.battlefield
+        .iter_mut()
+        .find(|p| p.card.id == id)
+        .unwrap()
+        .set_counters(crate::card::CounterKind::named("age"), 2);
+    start(&mut game);
+    assert_reconstructs(&game, "a repeated sub-list and a once-only sibling");
+    let observation = game.observe(PlayerId::One);
+    let actions = crate::protocol::protocol_actions(&observation);
+    let wire = crate::protocol::observation_json_for_format(
+        &game.catalog,
+        game.format,
+        &observation,
+        game.in_pregame(),
+        &actions,
+    );
+    let hidden = true_hidden_hypothesis(&game, PlayerId::One);
+    let mut restored =
+        Game::from_observation_checkpoint(game.catalog.clone(), game.format, &wire, &hidden, 4242)
+            .unwrap();
+    choose_decision_by_label(&mut restored, PlayerId::One, "Pay 5 life");
+    assert_eq!(restored.players[0].life, 18);
 }

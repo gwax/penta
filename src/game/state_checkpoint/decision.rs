@@ -576,7 +576,7 @@ fn continuation_snapshot(
             DecisionContinuationSnapshot::PayOr {
                 player: player.index(),
                 payment: resolved_effect_payment_snapshot(payment.clone()),
-                payment_provenance: payment_provenance.map(|p| (p.label.0.to_owned(), p.repetitions)),
+                payment_provenance: payment_provenance.map(|p| p.label.0.to_owned()),
                 object: detached_stack_snapshot_allowing(game, viewer, object, visible_rebindings)?,
                 ability,
                 context: effect_resolution_context_snapshot(context),

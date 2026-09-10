@@ -26,7 +26,7 @@ distinguishes snapshots of the covered source and build inputs.
 ### Changed
 
 - Cycling and cumulative upkeep now use named ordinary ability programs.
-  Cumulative upkeep composes counter placement with a repeated payment;
+  Cumulative upkeep composes counter placement with `CostDef::Repeated`;
   restricted mana and payment triggers inspect semantic labels. Shared payment
   completion preserves ordering across suspended cost actions. Checkpoint format
   15 replaces upkeep-specific payment state and records generic completion;

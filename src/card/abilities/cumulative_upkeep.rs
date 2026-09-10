@@ -105,13 +105,15 @@ static CUMULATIVE_UPKEEP_PROGRAM: EffectDef = EffectDef::IfCondition {
         },
         EffectDef::PayOr(
             PayOrDef::unless(
-                &[CostDef::Parameter],
+                &[CostDef::repeated(
+                    &[CostDef::Parameter],
+                    &ValueDef::CountersOnSource(CounterKind::named("age")),
+                )],
                 &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
                 },
             )
-            .labeled(crate::card::AbilityLabel::CUMULATIVE_UPKEEP)
-            .repeated(&ValueDef::CountersOnSource(CounterKind::named("age"))),
+            .labeled(crate::card::AbilityLabel::CUMULATIVE_UPKEEP),
         ),
     ]),
 };

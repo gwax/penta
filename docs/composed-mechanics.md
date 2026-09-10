@@ -49,7 +49,8 @@ parameter to a reusable body. `CostDef::Parameter` expands that parameter into t
 payment instruction. Nested suppliers shadow it; a later sibling retains its
 own scope. Supplied costs are borrowed static slices, just like composite
 bodies, so a suspended scope retains a reference rather than another copy of
-the cost list. Catalog validation rejects unbound parameters.
+the cost list. Parameters can appear within repeated lists and scalar choices.
+Catalog validation rejects unbound parameters and recursive parameter suppliers.
 
 The cumulative-upkeep constructor supplies its cost to this ordinary program:
 
@@ -58,27 +59,37 @@ if source is on the battlefield:
     add one age counter
     offer payment:
         purpose: cumulative upkeep
-        cost: supplied parameter
-        repetitions: current age-counter count
+        costs: repeat(supplied parameter, current age-counter count)
         otherwise: sacrifice source
 ```
 
-`PayOrDef::repeat` evaluates the repetition count when the payment is offered.
-It constructs one obligation rather than a loop of independently optional
-payments. The source counter update runs before this evaluation. The frozen
-obligation remains attached to the payment decision.
+`CostDef::Repeated { costs, count }` evaluates its count when the payment is
+offered. `CostDef::repeated(costs, count)` constructs that node. Repetition
+belongs to the cost tree: a list may combine costs paid once with repeated
+sub-lists, and repeated nodes may nest or occur inside scalar choices. Each
+repetition chooses its alternatives independently. Zero repetitions add no
+cost, including no mana-payment component.
+
+`PayOrDef` offers the resulting complete obligation atomically and chooses its
+continuation. For cumulative upkeep, adding the age counter runs before the
+cost expression is evaluated. The frozen obligation remains attached to the
+payment decision.
 
 Authors normally use `PayOrDef::optional`, `optional_or`, or `unless`; their
 shared `new(costs)` constructor defaults to an unlabeled, single payment
 with private visibility and the effect controller as payer. `.with_payer(...)`
-selects a different payer. `.labeled(purpose)` and `.repeated(count)` opt into
-named or repeated obligations, and `.with_visibility(visibility)` overrides
-the default. Ordinary payment clauses do not need to specify those fields.
+selects a different payer, `.labeled(purpose)` supplies the payment's semantic
+purpose, and `.with_visibility(visibility)` overrides the default. Repetition
+is expressed in the supplied costs; it is not metadata on the payment offer.
+Ordinary payment clauses do not need to specify unused fields.
 
 `ManaRestrictionDef::Payment(label)` restricts mana by the purpose of that
 obligation. Adarkar Unicorn therefore participates in payment planning before
 anything is spent. `PaymentPaid` and `PaymentNotPaid` trigger matchers inspect
 that purpose; Balduvian Fallen reads the colors actually spent on its payment.
+Payment events do not infer a repetition count from a potentially mixed cost
+tree. Heart of Bogardan reads the source's current or last-known age counters
+through the ordinary value expression.
 
 ## Suspension and reconstruction
 
@@ -118,7 +129,9 @@ different components cannot spend the same selected object. The shared
 completion procedure waits for suspended cost actions and replacement choices
 before publishing the payment result. Arbitrary action programs and choices
 between non-scalar costs still need further ordering and replacement support,
-and remain rejected for repeated/labeled payment programs.
+and remain rejected for repeated/labeled payment programs. The new dynamic
+repetition node is supported by resolving payment procedures; casting and
+activation retain their existing supported quantity expressions.
 
 The initial payment trigger matchers observe the source's own named payment.
 A broader event query for other objects' payments, linked cost-component

@@ -3,7 +3,7 @@ fn parse_authored_pay_or_continuation(
     object: &super::super::StackObject,
     context: &super::super::EffectResolutionContext,
     payer: PlayerId,
-    payment_provenance: Option<&(String, u16)>,
+    payment_provenance: Option<&String>,
     scoped: ScopedEffect,
     authored: crate::card::PayOrDef,
 ) -> Result<
@@ -21,7 +21,7 @@ fn parse_authored_pay_or_continuation(
     // longer be derived is the recorded one, while a payer that derives to
     // somebody else is a disagreement.
     let (resolved, provenance) = game.resolve_payment_offer(authored, object, context, scoped);
-    if provenance.map(|p| (p.label.0.to_owned(), p.repetitions)).as_ref() != payment_provenance {
+    if provenance.map(|p| p.label.0.to_owned()).as_ref() != payment_provenance {
         return Err("payment provenance disagrees with its authored program".into());
     }
     let payers = game.effect_players(authored.payment.payer, object, context, scoped);

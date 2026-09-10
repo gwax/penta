@@ -112,7 +112,7 @@ fn cumulative_upkeep_draw_cost_repeats_each_draw() {
         game.pending_decisions[0].continuation,
         DecisionContinuation::PayOr {
             payment: ResolvedEffectPayment::DrawCards(1),
-            payment_provenance: Some(crate::game::PaymentProvenance { repetitions: 1, .. }),
+            payment_provenance: Some(crate::game::PaymentProvenance { .. }),
             ..
         }
     ));
@@ -124,7 +124,7 @@ fn cumulative_upkeep_draw_cost_repeats_each_draw() {
         game.pending_decisions[0].continuation,
         DecisionContinuation::PayOr {
             payment: ResolvedEffectPayment::DrawCards(2),
-            payment_provenance: Some(crate::game::PaymentProvenance { repetitions: 2, .. }),
+            payment_provenance: Some(crate::game::PaymentProvenance { .. }),
             ..
         }
     ));
@@ -157,7 +157,7 @@ fn unpaid_cumulative_upkeep_is_captured_before_sacrifice() {
     };
     assert_eq!(trigger.source.object, id);
     assert_eq!(trigger.context.trigger.event_player, Some(PlayerId::One));
-    assert_eq!(trigger.context.trigger.amount, Some(2));
+    assert_eq!(trigger.context.trigger.amount, None);
 
     game.finish_rules_procedure();
     choose_decision_by_label(&mut game, PlayerId::One, "your opponent");

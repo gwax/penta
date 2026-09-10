@@ -741,28 +741,3 @@ fn validate_card_name_references(
 }
 
 include!("name_references.rs");
-
-fn validate_payment_cost_references(
-    cost: CostDef,
-    target_count: usize,
-    scope: BindingScope<'_>,
-) -> Result<(), GrantedAbilityValidationError> {
-    match cost {
-        CostDef::All(costs) => costs
-            .iter()
-            .try_for_each(|cost| validate_payment_cost_references(*cost, target_count, scope)),
-        CostDef::GenericMana(amount) | CostDef::ColoredMana { amount, .. } => {
-            validate_value_target_references(amount, target_count, scope)
-        }
-        CostDef::ObjectManaCostReducedBy { object, .. }
-        | CostDef::RemoveAnyNumberOfCounters { object, .. } => {
-            validate_recipient_target_references(*object, target_count, scope)
-        }
-        CostDef::DiscardMatching(object)
-        | CostDef::SacrificePermanent { object, .. }
-        | CostDef::MovePermanentMatching { object, .. } => {
-            validate_object_predicate_references(object, target_count, scope)
-        }
-        _ => Ok(()),
-    }
-}

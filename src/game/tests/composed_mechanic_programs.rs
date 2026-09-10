@@ -4,7 +4,10 @@ use crate::card::{AbilityLabel, AbilityPredicateDef, PayOrDef};
 const MAINTENANCE: AbilityLabel = AbilityLabel("test maintenance");
 static PAY: EffectDef = EffectDef::PayOr(
     PayOrDef::optional_or(
-        &[CostDef::Parameter],
+        &[CostDef::repeated(
+            &[CostDef::Parameter],
+            &ValueDef::Constant(2),
+        )],
         &EffectDef::GainLife {
             recipient: EffectRecipientDef::Controller,
             amount: ValueDef::Constant(3),
@@ -12,7 +15,6 @@ static PAY: EffectDef = EffectDef::PayOr(
         &EffectDef::None,
     )
     .labeled(MAINTENANCE)
-    .repeated(&ValueDef::Constant(2))
     .with_visibility(ChoiceVisibilityDef::Public),
 );
 
@@ -98,6 +100,128 @@ fn composed_mechanic_programs_do_not_partially_pay_a_repeated_cost() {
     start(&mut game);
     assert!(game.pending_decisions.is_empty());
     assert_eq!(game.players[0].life, 1);
+}
+
+pub(in crate::game) static PARTIALLY_REPEATED: [AbilityDef; 1] = [AbilityDef::triggered(
+    "Pay once plus a repeated sub-list",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::Upkeep,
+        player: PlayerRelation::You,
+    },
+    EffectDef::WithCosts {
+        costs: &[CostDef::PayLife(2)],
+        effect: &EffectDef::PayOr(PayOrDef::optional(
+            &[CostDef::All(&[
+                CostDef::PayLife(1),
+                CostDef::repeated(
+                    &[CostDef::Parameter],
+                    &ValueDef::CountersOnSource(CounterKind::named("age")),
+                ),
+            ])],
+            &EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(3),
+            },
+        )),
+    },
+)];
+
+#[test]
+fn composed_mechanic_programs_repeat_only_the_selected_cost_subtree() {
+    for (life, can_pay) in [(4, false), (10, true)] {
+        let (mut game, id) = staged(&PARTIALLY_REPEATED);
+        game.players[0].life = life;
+        game.battlefield
+            .iter_mut()
+            .find(|p| p.card.id == id)
+            .unwrap()
+            .set_counters(CounterKind::named("age"), 2);
+        start(&mut game);
+        if can_pay {
+            choose_decision_by_label(&mut game, PlayerId::One, "Pay 5 life");
+            assert_eq!(game.players[0].life, life - 5 + 3);
+        } else {
+            assert_eq!(game.pending_decisions[0].observation.options.len(), 1);
+            choose_decision_by_label(&mut game, PlayerId::One, "Decline");
+            assert_eq!(
+                game.players[0].life, life,
+                "the unrepeated sibling must not be paid on its own"
+            );
+        }
+    }
+}
+
+static NESTED_REPETITION: [AbilityDef; 1] = [AbilityDef::triggered(
+    "Repeat nested cost choices",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::Upkeep,
+        player: PlayerRelation::You,
+    },
+    EffectDef::WithCosts {
+        costs: &[CostDef::Mana(ManaCost::new(1, 0)), CostDef::PayLife(1)],
+        effect: &EffectDef::PayOr(PayOrDef::optional(
+            &[CostDef::repeated(
+                &[CostDef::Choice(&[
+                    CostDef::repeated(&[CostDef::Parameter], &ValueDef::Constant(2)),
+                    CostDef::PayLife(5),
+                ])],
+                &ValueDef::Constant(2),
+            )],
+            &EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(3),
+            },
+        )),
+    },
+)];
+
+#[test]
+fn composed_mechanic_programs_choose_independently_through_nested_repeated_costs() {
+    let (mut game, _) = staged(&NESTED_REPETITION);
+    game.players[0].life = 8;
+    game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+    start(&mut game);
+    // Only one outer repetition can choose the mana/life branch. The other
+    // chooses five life; repeating the same selected branch cannot be paid.
+    choose_decision_by_label(&mut game, PlayerId::One, "Pay {2}, Pay 7 life");
+    assert_eq!(game.players[0].life, 4);
+    assert_eq!(game.players[0].mana_pool.total(), 0);
+}
+
+static ZERO_REPETITION: [AbilityDef; 1] = [AbilityDef::triggered(
+    "Pay life and repeat a mana cost zero times",
+    TriggerEventDef::StepBegins {
+        step: TurnStepDef::Upkeep,
+        player: PlayerRelation::You,
+    },
+    EffectDef::PayOr(PayOrDef::optional(
+        &[
+            CostDef::PayLife(1),
+            CostDef::repeated(
+                &[CostDef::Mana(ManaCost::new(1, 0))],
+                &ValueDef::Constant(0),
+            ),
+        ],
+        &EffectDef::GainLife {
+            recipient: EffectRecipientDef::Controller,
+            amount: ValueDef::Constant(3),
+        },
+    )),
+)];
+
+#[test]
+fn composed_mechanic_programs_zero_repetition_introduces_no_mana_payment() {
+    let (mut game, _) = staged(&ZERO_REPETITION);
+    start(&mut game);
+    assert!(matches!(
+        &game.pending_decisions[0].continuation,
+        DecisionContinuation::PayOr {
+            payment: ResolvedEffectPayment::All(payments),
+            ..
+        } if matches!(payments.as_slice(), [ResolvedEffectPayment::Life(1)])
+    ));
+    choose_decision_by_label(&mut game, PlayerId::One, "Pay 1 life");
+    assert_eq!(game.players[0].life, 22);
 }
 
 static TWO_UPKEEPS: [AbilityDef; 2] = [

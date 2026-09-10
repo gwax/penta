@@ -29,6 +29,16 @@ impl ScalarCostPlan {
 /// `None` means the program needs a non-scalar planner. An empty vector means
 /// there is no complete way to pay. Each repetition makes its own choices.
 pub(super) fn scalar_cost_plans(cost: CostDef, repetitions: u16) -> Option<Vec<ScalarCostPlan>> {
+    scalar_cost_plans_with(cost, repetitions, &|_| None)
+}
+
+/// Resolve lexical or computed cost nodes without coupling the pure planner to
+/// a game or a particular payment procedure.
+pub(super) fn scalar_cost_plans_with(
+    cost: CostDef,
+    repetitions: u16,
+    resolve: &impl Fn(CostDef) -> Option<Vec<ScalarCostPlan>>,
+) -> Option<Vec<ScalarCostPlan>> {
     fn combine(left: &[ScalarCostPlan], right: &[ScalarCostPlan]) -> Vec<ScalarCostPlan> {
         let mut result = Vec::new();
         for left in left {
@@ -55,18 +65,18 @@ pub(super) fn scalar_cost_plans(cost: CostDef, repetitions: u16) -> Option<Vec<S
         CostDef::Choice(costs) => {
             let mut ways = Vec::new();
             for cost in costs {
-                ways.extend(scalar_cost_plans(*cost, 1)?);
+                ways.extend(scalar_cost_plans_with(*cost, 1, resolve)?);
             }
             ways
         }
         CostDef::All(costs) => {
             let mut ways = vec![ScalarCostPlan::free()];
             for cost in costs {
-                ways = combine(&ways, &scalar_cost_plans(*cost, 1)?);
+                ways = combine(&ways, &scalar_cost_plans_with(*cost, 1, resolve)?);
             }
             ways
         }
-        _ => return None,
+        _ => resolve(cost)?,
     };
     let mut plans = vec![ScalarCostPlan::free()];
     for _ in 0..repetitions {

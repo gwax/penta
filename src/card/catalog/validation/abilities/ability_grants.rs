@@ -247,7 +247,7 @@ fn collect_cost_tokens(
     for cost in costs {
         match cost {
             crate::CostDef::CreateTokens { token, .. } => tokens.push(**token),
-            crate::CostDef::All(costs) => {
+            crate::CostDef::All(costs) | crate::CostDef::Choice(costs) | crate::CostDef::Repeated { costs, .. } => {
                 collect_cost_tokens(costs, tokens);
             }
             _ => {}
