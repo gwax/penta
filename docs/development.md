@@ -50,12 +50,20 @@ checks Rust, Node, pnpm, the WASM target and generator, binding prerequisites,
 ShellCheck, and Actionlint. It is a diagnostic, not a routine preflight.
 
 Cargo uses incremental compilation for local development, test, release, and
-profiling builds. The repository's Rust compiler wrapper also uses `sccache`
-when it is installed and falls back transparently to `rustc` otherwise. The
-wrapper sends incremental calls directly to rustc because sccache cannot cache
-them; it caches non-incremental builds such as CI and explicit
-`CARGO_INCREMENTAL=0 cargo ...` clean builds. Install the optional cache with
-`brew install sccache`; `make doctor` reports whether it is available.
+profiling builds. The `Makefile` points `RUSTC_WRAPPER` at the repository's Rust
+compiler wrapper, which uses `sccache` when it is installed and falls back
+transparently to `rustc` otherwise. The wrapper sends incremental calls directly
+to rustc because sccache cannot cache them; it caches non-incremental builds such
+as CI and explicit `CARGO_INCREMENTAL=0 cargo ...` clean builds. Install the
+optional cache with `brew install sccache`; `make doctor` reports whether it is
+available.
+
+The wrapper is wired up through `make` rather than a committed
+`.cargo/config.toml` so that a bare `cargo ...` invocation needs nothing from the
+repository root. Dependabot materializes `bindings/penta-py` without the root
+`scripts/` directory, so a relative `rustc-wrapper` path in cargo config dangled
+there and broke that directory's cargo updates. Run Rust builds through `make`
+to get the cache; setting `RUSTC_WRAPPER` yourself overrides this default.
 
 CI deliberately disables incremental compilation: its clean jobs use sccache,
 and rustc outputs compiled with `-C incremental` are not cacheable by sccache.

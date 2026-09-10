@@ -1,3 +1,12 @@
+# sccache is optional locally. The wrapper falls back to rustc when the cache
+# is not installed. This lives here rather than in a committed .cargo/config.toml
+# because Dependabot materializes bindings/penta-py without the repository root's
+# scripts/ directory, leaving a relative wrapper path dangling and breaking its
+# cargo updates. CI sets RUSTC_WRAPPER=sccache directly, and any RUSTC_WRAPPER
+# already in the environment wins over this default.
+RUSTC_WRAPPER ?= $(CURDIR)/scripts/rustc-wrapper.sh
+export RUSTC_WRAPPER
+
 FILTER ?=
 PATTERN ?=
 WEB_TEST_CONCURRENCY ?=
