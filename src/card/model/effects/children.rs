@@ -9,6 +9,7 @@ use super::EffectDef;
 pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
     match effect {
         EffectDef::Sequence(effects) => effects.to_vec(),
+        EffectDef::DealDamage(damage) => damage.continuation().into_iter().copied().collect(),
         EffectDef::Randomized {
             on_success,
             on_failure,
@@ -131,10 +132,6 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::Endure { .. }
         | EffectDef::CreateMyriadTokens
-        | EffectDef::DealDamage { .. }
-        | EffectDef::DealDamageSimultaneously(_)
-        | EffectDef::DealDamageFrom { .. }
-        | EffectDef::DealDamageAndApply { .. }
         | EffectDef::Destroy { then: None, .. }
         | EffectDef::Detain { .. }
         | EffectDef::DiscardCards { .. }
