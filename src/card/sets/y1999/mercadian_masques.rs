@@ -2688,7 +2688,7 @@ pub(in crate::card::sets) static NOTORIOUS_ASSASSIN: CardRecord = CardRecord::ne
         &[
             CostDef::Mana(mana_cost!("{2}{B}")),
             CostDef::TapSource,
-            CostDef::DiscardCardMatching(ObjectPredicateDef::Any),
+            CostDef::discard(ObjectPredicateDef::Any),
         ],
         &[AbilityTargetDef::exactly_one_permanent(
             ObjectPredicateDef::All(&[
@@ -3082,7 +3082,7 @@ pub(in crate::card::sets) static UNDERTAKER: CardRecord = CardRecord::new(
             &[
                 CostDef::Mana(mana_cost!("{B}")),
                 CostDef::TapSource,
-                CostDef::DiscardCardMatching(ObjectPredicateDef::Any),
+                CostDef::discard(ObjectPredicateDef::Any),
             ],
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
@@ -4387,7 +4387,7 @@ pub(in crate::card::sets) static DAWNSTRIDER: CardRecord = CardRecord::new(
             &[
                 CostDef::Mana(mana_cost!("{G}")),
                 CostDef::TapSource,
-                CostDef::DiscardCardMatching(ObjectPredicateDef::Any),
+                CostDef::discard(ObjectPredicateDef::Any),
             ],
             EffectDef::PreventDamage {
                 prevention: crate::card::DamagePreventionDef::unlimited(
@@ -4966,7 +4966,7 @@ pub(in crate::card::sets) static SILVERGLADE_PATHFINDER: CardRecord = CardRecord
             &[
                 CostDef::Mana(mana_cost!("{1}{G}")),
                 CostDef::TapSource,
-                CostDef::DiscardCardMatching(ObjectPredicateDef::Any),
+                CostDef::discard(ObjectPredicateDef::Any),
             ],
             EffectDef::SearchZone {
                 player: EffectRecipientDef::Controller,
