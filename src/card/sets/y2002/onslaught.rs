@@ -285,7 +285,7 @@ pub(in crate::card::sets) static CHAIN_OF_SILENCE: CardRecord = CardRecord::new(
             },
             EffectDef::PayOr(
                 PayOrDef::optional(
-                    &[CostDef::SacrificePermanentMatching(
+                    &[CostDef::sacrifice_permanent(
                         ObjectPredicateDef::HasType(CardType::Land),
                     )],
                     &EffectDef::May {
@@ -1348,7 +1348,7 @@ pub(in crate::card::sets) static CHAIN_OF_VAPOR: CardRecord = CardRecord::new_wi
             // a board sweep in a deck holding the lands to spend.
             EffectDef::PayOr(
                 PayOrDef::optional(
-                    &[CostDef::SacrificePermanentMatching(
+                    &[CostDef::sacrifice_permanent(
                         ObjectPredicateDef::HasType(CardType::Land),
                     )],
                     &EffectDef::May {

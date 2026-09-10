@@ -104,6 +104,10 @@ pub enum CostDef {
         kind: CounterKind,
         amount: u16,
     },
+    /// Sacrifice one matching permanent. `controller` is relative to the
+    /// payer; resolving payments support [`PlayerRelation::You`]. The
+    /// surrounding payment procedure determines when the permanent is chosen.
+    /// Use [`Self::sacrifice_permanent`] for a permanent the payer controls.
     SacrificePermanent {
         object: ObjectPredicateDef,
         controller: PlayerRelation,
@@ -241,8 +245,6 @@ pub enum CostDef {
     },
     /// Discard one matching card as part of a resolving payment.
     DiscardMatching(ObjectPredicateDef),
-    /// Sacrifice one matching permanent as part of a resolving payment.
-    SacrificePermanentMatching(ObjectPredicateDef),
     /// Forage (CR 701.59): exile three cards from the graveyard or sacrifice
     /// a Food.
     Forage,
@@ -282,6 +284,15 @@ impl CostDef {
     #[must_use]
     pub const fn put_counters_on_source(kind: CounterKind, amount: u16) -> Self {
         Self::PutCountersOnSource { kind, amount }
+    }
+
+    /// Sacrifice one matching permanent controlled by the payer.
+    #[must_use]
+    pub const fn sacrifice_permanent(object: ObjectPredicateDef) -> Self {
+        Self::SacrificePermanent {
+            object,
+            controller: PlayerRelation::You,
+        }
     }
 
     #[must_use]

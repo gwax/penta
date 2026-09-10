@@ -1009,9 +1009,9 @@ pub(in crate::card::sets) static BOG_ELEMENTAL: CardRecord = CardRecord::new(
                 player: PlayerRelation::You,
             },
             EffectDef::PayOr(PayOrDef::unless(
-                &[CostDef::SacrificePermanentMatching(
-                    ObjectPredicateDef::HasType(CardType::Land),
-                )],
+                &[CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(
+                    CardType::Land,
+                ))],
                 &EffectDef::Sacrifice {
                     object: EffectRecipientDef::Source,
                 },
