@@ -499,14 +499,25 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(object, targets, RecipientExpectation::Object)?;
             validate_value_shape(amount, targets)
         }
-        EffectDef::CreateToken {
+        EffectDef::CreateToken(crate::card::CreateTokenDef {
+            token,
             count,
-            copy,
             created,
+            tapped,
+            attacking,
+            counters,
             ..
-        } => {
+        }) => {
             validate_value_shape(count, targets)?;
-            if let Some(copy) = copy {
+            if let crate::card::TokenDef::Copy(copy) = token {
+                if tapped || attacking || counters.is_some() {
+                    return Err(
+                        GrantedAbilityValidationError::UnsupportedEffectProgramContext {
+                            context: "resolving",
+                            operation: "token copies with entry modifiers",
+                        },
+                    );
+                }
                 validate_recipient_shape(*copy.object, targets, RecipientExpectation::Object)?;
             }
             match created {

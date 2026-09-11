@@ -9,6 +9,7 @@ use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectPredicateDef;
@@ -16,6 +17,7 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::QuantifierDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
@@ -178,7 +180,7 @@ pub(in crate::card::sets) static JEWEL_THIEF: CardRecord = CardRecord::new(
         abilities::trample(),
         abilities::enters_trigger(
             "When this creature enters, create a Treasure token.",
-            EffectDef::create_token(tokens::treasure()),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(tokens::treasure()))),
         ),
     ]),
 );

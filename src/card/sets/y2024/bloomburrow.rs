@@ -18,6 +18,7 @@ use crate::card::CopyExceptionsDef;
 use crate::card::CopyStackObjectDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -26,6 +27,8 @@ use crate::card::ObjectPredicateDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -131,13 +134,14 @@ pub(in crate::card::sets) static KITSA_OTTERBALL_ELITE: CardRecord = CardRecord:
 );
 
 // BLB 75 — Stormchaser's Talent
-static MAKE_AN_OTTER: EffectDef =
-    EffectDef::create_creature_token(&["Otter"], &[ManaColor::Blue, ManaColor::Red], 1, 1)
+static MAKE_AN_OTTER: EffectDef = EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+    TokenCharacteristics::creature(&["Otter"], &[ManaColor::Blue, ManaColor::Red], 1, 1)
         .with_abilities(&[abilities::prowess()])
         .with_art(CardArt::new(
             "e6b2c465-c446-4dee-9101-763105dcf813",
             "Julia Griffin",
-        ));
+        )),
+)));
 
 pub(in crate::card::sets) static STORMCHASERS_TALENT: CardRecord = CardRecord::new(
     "Stormchaser's Talent",
@@ -257,10 +261,12 @@ pub(in crate::card::sets) static THUNDERTRAP_TRAINER: CardRecord = CardRecord::n
             &TriggerConditionDef::SourceCastWith(AlternativeCastKindDef::Offspring),
             // A 1/1 copy of himself, which arrives with his own look at four attached
             // to it -- the whole reason the extra four mana is worth paying.
-            EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-                object: &EffectRecipientDef::Source,
-                exceptions: CopyExceptionsDef::power_toughness(1, 1),
-            }),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Copy(
+                &crate::card::TokenCopyDef {
+                    object: &EffectRecipientDef::Source,
+                    exceptions: CopyExceptionsDef::power_toughness(1, 1),
+                },
+            ))),
         ),
         AbilityDef::triggered(
             "When this creature enters, look at the top four cards of your library. You may \

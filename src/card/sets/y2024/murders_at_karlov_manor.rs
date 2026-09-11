@@ -19,6 +19,7 @@ use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
@@ -27,6 +28,7 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SumValueDef;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -73,10 +75,12 @@ pub(in crate::card::sets) static NOVICE_INSPECTOR: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{W}"), &["Human", "Detective"], 1, 2).with_ability(
         abilities::enters_trigger(
             "When this creature enters, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
-            EffectDef::create_token(tokens::clue()).with_art(CardArt::new(
-                "ef607895-d6d2-44ab-a6b4-84af55fce593",
-                "Daneen Wilkerson",
-            )),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                tokens::clue().with_art(CardArt::new(
+                    "ef607895-d6d2-44ab-a6b4-84af55fce593",
+                    "Daneen Wilkerson",
+                )),
+            ))),
         ),
     ),
 );
@@ -98,10 +102,12 @@ pub(in crate::card::sets) static FORENSIC_GADGETEER: CardRecord = CardRecord::ne
                     ObjectPredicateDef::HasType(CardType::Artifact),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ])),
-                EffectDef::create_token(tokens::clue()).with_art(CardArt::new(
-                    "ef607895-d6d2-44ab-a6b4-84af55fce593",
-                    "Daneen Wilkerson",
-                )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    tokens::clue().with_art(CardArt::new(
+                        "ef607895-d6d2-44ab-a6b4-84af55fce593",
+                        "Daneen Wilkerson",
+                    )),
+                ))),
             ),
             AbilityDef::static_ability(
                 "Activated abilities of artifacts you control cost {1} less to activate. This effect can't reduce the mana in that cost to less than one mana.",

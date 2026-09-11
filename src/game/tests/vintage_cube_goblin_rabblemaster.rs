@@ -25,7 +25,7 @@ fn staged(
     for index in 0..goblin_tokens {
         let permanent = token_permanent(
             90_000 + u32::try_from(index).expect("the fixture has few tokens"),
-            tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
+            crate::card::TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
             PlayerId::One,
         );
         friends.push(permanent.card.id);
@@ -74,7 +74,12 @@ fn goblin_tokens(game: &Game) -> usize {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                token_with_haste(tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1)),
+                token_with_haste(crate::card::TokenCharacteristics::creature(
+                    &["Goblin"],
+                    &[ManaColor::Red],
+                    1,
+                    1,
+                )),
             )
         })
         .count()
@@ -103,7 +108,12 @@ fn it_makes_a_hasty_goblin_at_the_beginning_of_combat() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                token_with_haste(tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1)),
+                token_with_haste(crate::card::TokenCharacteristics::creature(
+                    &["Goblin"],
+                    &[ManaColor::Red],
+                    1,
+                    1,
+                )),
             )
         })
         .expect("a token was made");
@@ -213,7 +223,12 @@ fn attacking_alone_grows_it_by_nothing() {
     game.battlefield.retain(|permanent| {
         !is_token_with(
             permanent,
-            token_with_haste(tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1)),
+            token_with_haste(crate::card::TokenCharacteristics::creature(
+                &["Goblin"],
+                &[ManaColor::Red],
+                1,
+                1,
+            )),
         )
     });
     let action = game
@@ -263,7 +278,7 @@ fn a_goblin_that_arrived_this_turn_stays_home() {
     let (mut game, _rabblemaster, _friends) = staged(&[], 0);
     let newcomer = token_permanent(
         90_500,
-        tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
         PlayerId::One,
     );
     let newcomer_id = newcomer.card.id;
@@ -417,7 +432,12 @@ fn a_tapped_goblin_stays_home() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                token_with_haste(tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1)),
+                token_with_haste(crate::card::TokenCharacteristics::creature(
+                    &["Goblin"],
+                    &[ManaColor::Red],
+                    1,
+                    1,
+                )),
             )
         })
         .expect("a token was made")

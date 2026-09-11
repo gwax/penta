@@ -69,16 +69,9 @@ fn creator_owned_token_rules_receive_catalog_composition_validation() {
     static CREATE_TOKEN: [AbilityDef; 1] = [AbilityDef::activated(
         "Create a token.",
         &[],
-        EffectDef::CreateToken {
-            token: INCOHERENT_TOKEN,
-            copy: None,
-            controller: None,
-            count: ValueDef::Constant(1),
-            tapped: false,
-            attacking: false,
-            counters: None,
-            created: None,
-        },
+        EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+            crate::card::TokenDef::Literal(INCOHERENT_TOKEN),
+        )),
     )];
 
     let mut creator = definition(1, "Token Creator", sets::alpha::SET);

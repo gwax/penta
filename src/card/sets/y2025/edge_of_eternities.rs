@@ -19,6 +19,7 @@ use crate::card::ChooseDef;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamageRecipientMatcherDef;
@@ -49,6 +50,8 @@ use crate::card::ResolvedEffectDurationDef;
 use crate::card::RoundingDef;
 use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TriggeredAbilityDef;
@@ -222,8 +225,15 @@ pub(in crate::card::sets) static COSMOGRAND_ZENITH: CardRecord = CardRecord::new
                 .with_modes(ModalSpellDef::choose_one(&[
                     AbilityDef::spell(
                         "Create two 1/1 white Human Soldier creature tokens.",
-                        EffectDef::create_creature_token(&["Human", "Soldier"], &[ManaColor::White], 1, 1)
+                        EffectDef::CreateToken(
+                            CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                                &["Human", "Soldier"],
+                                &[ManaColor::White],
+                                1,
+                                1,
+                            )))
                             .with_count(ValueDef::Constant(2)),
+                        ),
                     ),
                     // Each creature you control as the trigger resolves, which includes the
                     // tokens the other mode would have made and the Zenith itself.

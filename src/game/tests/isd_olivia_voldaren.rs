@@ -34,7 +34,7 @@ fn activation(game: &Game, source: GameObjectId, index: usize, target: GameObjec
 fn bear(id: u32, controller: PlayerId) -> Permanent {
     token_permanent(
         id,
-        tokens::creature(&["Bear"], &[ManaColor::Green], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Bear"], &[ManaColor::Green], 2, 2),
         controller,
     )
 }
@@ -42,7 +42,7 @@ fn bear(id: u32, controller: PlayerId) -> Permanent {
 fn vampire(id: u32, controller: PlayerId) -> Permanent {
     token_permanent(
         id,
-        tokens::creature(&["Vampire"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Vampire"], &[ManaColor::Black], 2, 2),
         controller,
     )
 }

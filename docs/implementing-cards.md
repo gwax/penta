@@ -176,6 +176,41 @@ from effect-output bindings; `ParentBinding` cannot name a cost.
 `SourceCastWith` instead asks about a cost family such as escape. External
 alternatives such as Omniscience do not acquire the card's cost bindings.
 
+### Token declarations and creation
+
+Use `TokenCharacteristics` to declare what a token is, `TokenDef` to select its
+source, and `CreateTokenDef` to declare the creation operation:
+
+```rust
+EffectDef::CreateToken(
+    CreateTokenDef::new(TokenDef::Literal(
+        TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1)
+            .with_abilities(&[abilities::vigilance()]),
+    ))
+    .with_amount(2)
+    .entering_tapped(),
+)
+```
+
+Characteristics builders such as `with_name`, `with_art`, and `with_abilities`
+belong on the declaration. Quantity, controller, entry counters, tapped or
+attacking status, and created-object continuations belong on `CreateTokenDef`.
+Its constructor creates one token with ordinary entry conditions; add builders
+only for the differences the clause specifies.
+
+Use `TokenDef::Copy(&TokenCopyDef { object, exceptions })` for copiable values
+read at resolution. Copy exceptions belong to that source. Copy creation
+currently supports ordinary entry; the catalog rejects tapped, attacking, or
+entry-counter modifiers on a copy source. Ordinary token
+constructors live on `TokenCharacteristics`; `card::tokens` contains complete
+reusable declarations, including standardized artifact tokens. Keep unique token
+rules inline with their creating card.
+
+Token creation as a payment remains `CostDef::create_tokens`, because payment
+owns its timing and atomicity. `CreateAttachedToken` retains the attachment
+operation's entry sequencing. Neither needs a dummy copy source or a second
+representation of token characteristics.
+
 ### Bound entry choices in mana restrictions
 
 Wrap an entry-time creature-type choice in `ReplacementEffectDef::BindOutput`

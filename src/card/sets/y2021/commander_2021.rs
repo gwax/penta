@@ -11,12 +11,14 @@ use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ExilePlayDurationDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::ScaledValueDef;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -112,14 +114,15 @@ pub(in crate::card::sets) static PEST_INFESTATION: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 then: None,
             },
-            EffectDef::create_token(tokens::pest())
-                // Twice X, and X is paid twice over in the cost, so every Pest costs a
-                // mana and every artifact destroyed comes with two of them.
-                .with_count(ValueDef::Scaled(&ScaledValueDef::new(ValueDef::ChosenX, 2)))
-                .with_art(CardArt::new(
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(tokens::pest().with_art(CardArt::new(
                     "d0ddbe3e-4a66-494d-9304-7471232549bf",
                     "Ilse Gort",
-                )),
+                ))))
+                // Twice X, and X is paid twice over in the cost, so every Pest costs a
+                // mana and every artifact destroyed comes with two of them.
+                .with_count(ValueDef::Scaled(&ScaledValueDef::new(ValueDef::ChosenX, 2))),
+            ),
         ]),
     )),
 );

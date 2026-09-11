@@ -73,7 +73,7 @@ fn humans(game: &Game) -> Vec<&Permanent> {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+                crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1),
             )
         })
         .collect()

@@ -31,7 +31,10 @@ use crate::ValueDef;
 use crate::ZoneKind;
 use crate::ZonePlacement;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -89,12 +92,16 @@ pub(in crate::card::sets) static CAPTAIN_OF_THE_WATCH: CardRecord = CardRecord::
             ),
             abilities::enters_trigger(
                 "When this creature enters, create three 1/1 white Soldier creature tokens.",
-                EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1)
-                    .with_art(CardArt::new(
-                        "86272c08-c5f2-413f-87ea-b135aca2d9c5",
-                        "Greg Staples",
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1)
+                            .with_art(CardArt::new(
+                                "86272c08-c5f2-413f-87ea-b135aca2d9c5",
+                                "Greg Staples",
+                            )),
                     ))
                     .with_amount(3),
+                ),
             ),
         ],
     ),
@@ -507,12 +514,10 @@ CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Zombie"], 2, 2).with_abiliti
                 owner: None,
             })],
             EffectDef::Sequence(&[
-                EffectDef::move_to_zone(
-                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    ZoneKind::Exile,
-                    ZonePlacement::Top,
-                ),
-                EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2),
+                EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY),ZoneKind::Exile,ZonePlacement::Top),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+                ))),
             ]),
         ),
     ]),

@@ -119,9 +119,10 @@ fn collect_effects(
     found: &mut AuthoredVirtualObjects,
 ) {
     match effect {
-        EffectDef::CreateToken {
-            token, copy: None, ..
-        }
+        EffectDef::CreateToken(crate::card::CreateTokenDef {
+            token: crate::card::TokenDef::Literal(token),
+            ..
+        })
         | EffectDef::CreateAttachedToken { token, .. } => {
             found.tokens.push((
                 token,

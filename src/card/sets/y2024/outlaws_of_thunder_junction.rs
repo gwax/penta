@@ -17,6 +17,7 @@ use crate::card::ChangeStackTargetsDef;
 use crate::card::CopyStackObjectDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -34,6 +35,8 @@ use crate::card::RevealObjectsDef;
 use crate::card::ScaledValueDef;
 use crate::card::StackTargetChangeDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TokenStatsDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -171,8 +174,10 @@ pub(in crate::card::sets) static PHANTOM_INTERFERENCE: CardRecord = CardRecord::
             &[CostDef::Mana(mana_cost!("{3}"))],
             AbilityDef::spell(
                 "Create a 2/2 white Spirit creature token with flying.",
-                EffectDef::create_creature_token(&["Spirit"], &[ManaColor::White], 2, 2)
-                    .with_abilities(&const { [abilities::flying()] }),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 2, 2)
+                        .with_abilities(&const { [abilities::flying()] }),
+                ))),
             ),
         ),
         (
@@ -430,14 +435,16 @@ CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(spree(&[(&[CostDef::Ma
             )),
 (&[CostDef::Mana(mana_cost!("{3}"))], AbilityDef::spell(
                 "Create an X/X green Elemental creature token, where X is the number of lands you control.",
-                EffectDef::create_creature_token_with_stats(
-                    &["Elemental"],
-                    &[ManaColor::Green],
-                    &TokenStatsDef {
-                        power: ValueDef::CountMatchingObjects(&DANCE_LANDS_YOU_CONTROL),
-                        toughness: ValueDef::CountMatchingObjects(&DANCE_LANDS_YOU_CONTROL),
-                    },
-                ),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature_with_stats(
+                        &["Elemental"],
+                        &[ManaColor::Green],
+                        &TokenStatsDef {
+                            power: ValueDef::CountMatchingObjects(&DANCE_LANDS_YOU_CONTROL),
+                            toughness: ValueDef::CountMatchingObjects(&DANCE_LANDS_YOU_CONTROL),
+                        },
+                    ),
+                ))),
             ),
         ),
     ])),

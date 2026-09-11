@@ -263,7 +263,12 @@ fn nettlecyst_arrives_with_a_germ_that_it_alone_keeps_alive() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Phyrexian", "Germ"], &[ManaColor::Black], 0, 0),
+                crate::card::TokenCharacteristics::creature(
+                    &["Phyrexian", "Germ"],
+                    &[ManaColor::Black],
+                    0,
+                    0,
+                ),
             )
         })
         .expect("living weapon made a Germ and the Germ survived");
@@ -285,7 +290,12 @@ fn nettlecyst_arrives_with_a_germ_that_it_alone_keeps_alive() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Phyrexian", "Germ"], &[ManaColor::Black], 0, 0),
+                crate::card::TokenCharacteristics::creature(
+                    &["Phyrexian", "Germ"],
+                    &[ManaColor::Black],
+                    0,
+                    0,
+                ),
             )
         })
         .expect("still there");
@@ -300,7 +310,12 @@ fn nettlecyst_arrives_with_a_germ_that_it_alone_keeps_alive() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Phyrexian", "Germ"], &[ManaColor::Black], 0, 0),
+                crate::card::TokenCharacteristics::creature(
+                    &["Phyrexian", "Germ"],
+                    &[ManaColor::Black],
+                    0,
+                    0,
+                ),
             )
         })
         .expect("still there");
@@ -338,7 +353,12 @@ fn moving_nettlecyst_takes_the_bonus_with_it() {
     assert!(
         game.battlefield.iter().all(|permanent| !is_token_with(
             permanent,
-            tokens::creature(&["Phyrexian", "Germ"], &[ManaColor::Black], 0, 0)
+            crate::card::TokenCharacteristics::creature(
+                &["Phyrexian", "Germ"],
+                &[ManaColor::Black],
+                0,
+                0
+            )
         )),
         "the Germ is a 0/0 once the Equipment leaves it",
     );
@@ -568,7 +588,12 @@ fn killing_the_germ_leaves_the_nettlecyst_behind() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Phyrexian", "Germ"], &[ManaColor::Black], 0, 0),
+                crate::card::TokenCharacteristics::creature(
+                    &["Phyrexian", "Germ"],
+                    &[ManaColor::Black],
+                    0,
+                    0,
+                ),
             )
         })
         .expect("living weapon made one")

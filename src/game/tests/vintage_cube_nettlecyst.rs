@@ -10,7 +10,12 @@ fn germ(game: &Game) -> &Permanent {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Phyrexian", "Germ"], &[ManaColor::Black], 0, 0),
+                crate::card::TokenCharacteristics::creature(
+                    &["Phyrexian", "Germ"],
+                    &[ManaColor::Black],
+                    0,
+                    0,
+                ),
             )
         })
         .expect("living weapon made a Germ and the count kept it alive")

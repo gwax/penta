@@ -43,7 +43,12 @@ fn spirits(game: &Game) -> Vec<&Permanent> {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                token_with_flying(tokens::creature(&["Spirit"], &[ManaColor::White], 1, 1)),
+                token_with_flying(crate::card::TokenCharacteristics::creature(
+                    &["Spirit"],
+                    &[ManaColor::White],
+                    1,
+                    1,
+                )),
             )
         })
         .collect()

@@ -12,12 +12,15 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -110,21 +113,23 @@ pub(in crate::card::sets) static SHORIKAI_GENESIS_ENGINE: CardRecord = CardRecor
                         selection: DiscardSelectionDef::RecipientChooses,
                         then: None,
                     },
-                    EffectDef::create_creature_token(&["Pilot"], &[], 1, 1)
-                        // The Pilot is worth three power to a Vehicle and one to everything else,
-                        // so the loot pays for its own crew: three activations put an 8/8 in the
-                        // air, and every one of them drew two cards on the way.
-                        .with_abilities(&[AbilityDef::static_ability(
-                            "This token crews Vehicles as though its power were 2 greater.",
-                            EffectDef::StaticApply {
-                                recipient: EffectRecipientDef::Source,
-                                effect: AppliedEffectDef::Rule(AppliedRuleDef::CrewsAsThoughPowerGreater(2)),
-                            },
-                        )])
-                        .with_art(CardArt::new(
-                            "be84f259-2809-48c9-9c70-861437f08c23",
-                            "Mila Pesic",
-                        )),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Pilot"], &[], 1, 1)
+                            // The Pilot is worth three power to a Vehicle and one to everything else,
+                            // so the loot pays for its own crew: three activations put an 8/8 in the
+                            // air, and every one of them drew two cards on the way.
+                            .with_abilities(&[AbilityDef::static_ability(
+                                "This token crews Vehicles as though its power were 2 greater.",
+                                EffectDef::StaticApply {
+                                    recipient: EffectRecipientDef::Source,
+                                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CrewsAsThoughPowerGreater(2)),
+                                },
+                            )])
+                            .with_art(CardArt::new(
+                                "be84f259-2809-48c9-9c70-861437f08c23",
+                                "Mila Pesic",
+                            )),
+                    ))),
                 ]),
             ),
             abilities::crew(

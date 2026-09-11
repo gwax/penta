@@ -10,6 +10,7 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::CopyExceptionsDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectPredicateDef;
@@ -17,6 +18,7 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerRuleDef;
 use crate::card::PlayerSetDef;
 use crate::card::SpellCastQueryDef;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -77,10 +79,12 @@ CardRules::new_creature(
                 player: PlayerRelation::You,
             },
             &TriggerConditionDef::ValueComparison(&CAST_A_NONCREATURE_SPELL_THIS_TURN),
-            EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-                object: &EffectRecipientDef::Source,
-                exceptions: CopyExceptionsDef::NONE,
-            }),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Copy(
+                &crate::card::TokenCopyDef {
+                    object: &EffectRecipientDef::Source,
+                    exceptions: CopyExceptionsDef::NONE,
+                },
+            ))),
         ),
     ]),
 );

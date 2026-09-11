@@ -607,7 +607,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::Unattach { .. }
                     | EffectDef::PairWithSource { .. }
                     | EffectDef::PhaseOut { .. }
-                    | EffectDef::CreateToken { .. }
+                    | EffectDef::CreateToken(_)
                     | EffectDef::CreateAttachedToken { .. }
                     | EffectDef::Endure { .. }
                     | EffectDef::CreateMyriadTokens

@@ -22,6 +22,7 @@ use crate::card::ColorSet;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DiscardSelectionDef;
@@ -40,6 +41,8 @@ use crate::card::ReplacementEventDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SacrificedAmountDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -69,13 +72,14 @@ use crate::ids::ParentBinding;
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
-static TAPPED_ZOMBIE: EffectDef =
-    EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2)
-        .with_art(CardArt::new(
-            "07d82a8d-4c57-401f-92c3-8fd9ba20174a",
-            "Lucas Graciano",
-        ))
-        .entering_tapped();
+static TAPPED_ZOMBIE: EffectDef = EffectDef::CreateToken(
+    CreateTokenDef::new(TokenDef::Literal(
+        TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2).with_art(
+            CardArt::new("07d82a8d-4c57-401f-92c3-8fd9ba20174a", "Lucas Graciano"),
+        ),
+    ))
+    .entering_tapped(),
+);
 
 /// Printed set identity and stable catalog slug.
 pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
@@ -316,12 +320,15 @@ pub(in crate::card::sets) static HIVE_STIRRINGS: CardRecord = CardRecord::new(
     "Maciej Kuciara",
     CardRules::new_sorcery(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell(
         "Create two 1/1 colorless Sliver creature tokens.",
-        EffectDef::create_creature_token(&["Sliver"], &[], 1, 1)
-            .with_art(CardArt::new(
-                "68353af0-9cd0-43c0-9b39-8f904c618e3a",
-                "Igor Kieryluk",
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Sliver"], &[], 1, 1).with_art(CardArt::new(
+                    "68353af0-9cd0-43c0-9b39-8f904c618e3a",
+                    "Igor Kieryluk",
+                )),
             ))
             .with_amount(2),
+        ),
     )),
 );
 
@@ -1707,12 +1714,14 @@ pub(in crate::card::sets) static DRAGON_EGG: CardRecord = CardRecord::new(
     "Jack Wang",
 CardRules::new_creature(mana_cost!("{2}{R}"), &["Dragon", "Egg"], 0, 2).with_abilities(&[
         abilities::defender(),
-        abilities::dies_trigger("When this creature dies, create a 2/2 red Dragon creature token with flying and \"{R}: This token gets +1/+0 until end of turn.\"", EffectDef::create_creature_token(&["Dragon"], &[ManaColor::Red], 2, 2)
+        abilities::dies_trigger("When this creature dies, create a 2/2 red Dragon creature token with flying and \"{R}: This token gets +1/+0 until end of turn.\"", EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::creature(&["Dragon"], &[ManaColor::Red], 2, 2)
                 .with_abilities(&[abilities::flying(), tokens::dragon_pump()])
                 .with_art(CardArt::new(
                     "0efaa5b5-984d-4eff-81b6-9b4989f149eb",
                     "Jack Wang",
-                ))),
+                )),
+        )))),
     ]),
 );
 
@@ -2070,7 +2079,12 @@ CardRules::new_creature(mana_cost!("{1}{R}"), &["Human", "Shaman"], 2, 1).with_a
                     ObjectPredicateDef::HasType(CardType::Sorcery),
                 ]),
             ])),
-            EffectDef::create_creature_token(&["Elemental"], &[ManaColor::Red], 1, 1).with_art(CardArt::new("fc7315d5-26d9-4ecc-bca2-b75c6fb12597", "Winona Nelson")),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Elemental"], &[ManaColor::Red], 1, 1).with_art(CardArt::new(
+                    "fc7315d5-26d9-4ecc-bca2-b75c6fb12597",
+                    "Winona Nelson",
+                )),
+            ))),
         ),
     ),
 );
@@ -2454,7 +2468,12 @@ CardRules::new_enchantment(mana_cost!("{5}{G}")).with_abilities(&[
                 ObjectPredicateDef::HasType(CardType::Creature),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
-            EffectDef::create_creature_token(&["Beast"], &[ManaColor::Green], 3, 3).with_art(CardArt::new("a8fc2dc9-40df-46d8-98c0-ca4919bd5524", "John Donahue")),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3).with_art(CardArt::new(
+                    "a8fc2dc9-40df-46d8-98c0-ca4919bd5524",
+                    "John Donahue",
+                )),
+            ))),
         ),
         AbilityDef::triggered_with_targets("Whenever you cast a noncreature spell, put three +1/+1 counters on target creature you control.", TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::NoncreatureSpell,
@@ -2533,7 +2552,11 @@ CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Fungus"], 3, 3).with_ability
                     ObjectPredicateDef::HasType(CardType::Land),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ]), None, Some(ZoneKind::Battlefield)),
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(CardArt::new("afd66b96-eccb-44ce-9125-063d34af2ff8", "Brad Rigney")),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(
+                    CardArt::new("afd66b96-eccb-44ce-9125-063d34af2ff8", "Brad Rigney"),
+                ),
+            ))),
         ),
     ),
 );

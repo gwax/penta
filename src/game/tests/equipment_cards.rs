@@ -133,14 +133,14 @@ fn the_bracers_split_their_two_clauses() {
     // A Human with no printed vigilance, so the grant is the only source.
     let (game, _, human) = equip_onto(
         cards::BLADED_BRACERS,
-        tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1),
     );
     assert_eq!(stats(&game, human), (Some(2), Some(2)));
     assert!(vigilant(&game, human), "a Human gets the vigilance");
 
     let (game, _, zombie) = equip_onto(
         cards::BLADED_BRACERS,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
     );
     assert_eq!(
         stats(&game, zombie),

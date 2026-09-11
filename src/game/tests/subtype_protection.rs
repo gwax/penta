@@ -34,7 +34,7 @@ fn a_zombie_cannot_damage_what_is_protected_from_zombies() {
     game.battlefield.push(bramble);
     let zombie = token_permanent(
         10_100,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::Two,
     );
     let zombie_id = zombie.card.id;
@@ -70,7 +70,7 @@ fn a_zombie_cannot_block_a_creature_protected_from_zombies() {
     game.battlefield.push(bear);
     let zombie = token_permanent(
         10_100,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::Two,
     );
     let zombie_id = zombie.card.id;
@@ -111,7 +111,7 @@ fn a_vampires_protection_ignores_zombies_entirely() {
     game.battlefield.push(duelist);
     let zombie = token_permanent(
         10_100,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::Two,
     );
     let zombie_id = zombie.card.id;
@@ -157,7 +157,12 @@ fn the_inquisitor_carries_one_combined_protection_ability() {
             "Vampire",
             token_permanent(
                 10_100,
-                tokens::creature(&["Vampire"], &[ManaColor::Black], 2, 2),
+                crate::card::TokenCharacteristics::creature(
+                    &["Vampire"],
+                    &[ManaColor::Black],
+                    2,
+                    2,
+                ),
                 PlayerId::Two,
             ),
         ),
@@ -165,7 +170,12 @@ fn the_inquisitor_carries_one_combined_protection_ability() {
             "Werewolf",
             token_permanent(
                 10_101,
-                tokens::creature(&["Werewolf"], &[ManaColor::Black], 2, 2),
+                crate::card::TokenCharacteristics::creature(
+                    &["Werewolf"],
+                    &[ManaColor::Black],
+                    2,
+                    2,
+                ),
                 PlayerId::Two,
             ),
         ),
@@ -173,7 +183,7 @@ fn the_inquisitor_carries_one_combined_protection_ability() {
             "Zombie",
             token_permanent(
                 10_102,
-                tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+                crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
                 PlayerId::Two,
             ),
         ),

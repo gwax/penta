@@ -117,7 +117,10 @@ fn golems(game: &Game) -> usize {
     game.battlefield
         .iter()
         .filter(|permanent| {
-            is_token_with(permanent, tokens::artifact_creature(&["Golem"], &[], 3, 3))
+            is_token_with(
+                permanent,
+                crate::card::TokenCharacteristics::artifact_creature(&["Golem"], &[], 3, 3),
+            )
         })
         .count()
 }
@@ -175,7 +178,10 @@ fn it_turns_a_spare_artifact_into_a_golem() {
         .battlefield
         .iter()
         .find(|permanent| {
-            is_token_with(permanent, tokens::artifact_creature(&["Golem"], &[], 3, 3))
+            is_token_with(
+                permanent,
+                crate::card::TokenCharacteristics::artifact_creature(&["Golem"], &[], 3, 3),
+            )
         })
         .expect("it is here");
     assert_eq!(

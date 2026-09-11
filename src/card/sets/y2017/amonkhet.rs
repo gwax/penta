@@ -11,12 +11,15 @@ use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::ConditionalValueDef;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -151,7 +154,9 @@ pub(in crate::card::sets) static CRADLE_OF_THE_ACCURSED: CardRecord = CardRecord
                 CostDef::TapSource,
                 CostDef::SacrificeSource,
             ],
-            EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+            ))),
         )
         .with_activation_timing(ActivationTimingDef::SorcerySpeed),
     ]),

@@ -106,7 +106,12 @@ fn soldier_tokens(game: &Game) -> Vec<&Permanent> {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1),
+                crate::card::TokenCharacteristics::creature(
+                    &["Soldier"],
+                    &[ManaColor::White],
+                    1,
+                    1,
+                ),
             )
         })
         .collect()

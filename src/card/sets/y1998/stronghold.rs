@@ -22,6 +22,7 @@ use crate::card::CardType;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamageKindDef;
 use crate::card::DamagePreventionDef;
@@ -43,6 +44,8 @@ use crate::card::PlayerSetDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -949,7 +952,9 @@ pub(in crate::card::sets) static LAB_RATS: CardRecord = CardRecord::new(
         abilities::buyback(&[CostDef::Mana(mana_cost!("{4}"))]),
         AbilityDef::spell(
             "Create a 1/1 black Rat creature token.",
-            EffectDef::create_creature_token(&["Rat"], &[ManaColor::Black], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Rat"], &[ManaColor::Black], 1, 1),
+            ))),
         ),
     ]),
 );
@@ -1926,7 +1931,9 @@ CardRules::new_creature(mana_cost!("{3}{G}"), &["Spike"], 0, 0).with_abilities(&
                     amount: 1,
                 },
             ],
-            EffectDef::create_creature_token(&["Spike"], &[ManaColor::Green], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Spike"], &[ManaColor::Green], 1, 1),
+            ))),
         ),
     ]),
 );
@@ -2190,7 +2197,9 @@ pub(in crate::card::sets) static SLIVER_QUEEN: CardRecord = CardRecord::new(
         .with_ability(AbilityDef::activated(
             "{2}: Create a 1/1 colorless Sliver creature token.",
             &[CostDef::Mana(mana_cost!("{2}"))],
-            EffectDef::create_creature_token(&["Sliver"], &[], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Sliver"], &[], 1, 1),
+            ))),
         )),
 );
 

@@ -67,7 +67,7 @@ fn a_token_returned_to_hand_ceases_to_exist() {
     let (mut game, upheaval) = staged();
     game.battlefield.push(token_permanent(
         76_200,
-        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1),
         PlayerId::One,
     ));
 

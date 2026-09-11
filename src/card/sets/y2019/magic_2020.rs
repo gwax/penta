@@ -14,6 +14,7 @@ use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
@@ -26,6 +27,8 @@ use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::StackTargetAggregationDef;
 use crate::card::StackTargetFilterDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueComparisonDef;
@@ -58,7 +61,9 @@ pub(in crate::card::sets) static ANCESTRAL_BLADE: CardRecord = CardRecord::new(
                 "When this Equipment enters, create a 1/1 white Soldier creature token, then \
                  attach this Equipment to it.",
                 EffectDef::Sequence(&[
-                    EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1),
+                    ))),
                     // The attach names the token this resolution just made
                     // rather than any Soldier, so an existing one is never
                     // picked up instead.
@@ -306,9 +311,11 @@ pub(in crate::card::sets) static FIELD_OF_THE_DEAD: CardRecord = CardRecord::new
                     comparison: ComparisonDef::GreaterOrEqual,
                     right: ValueDef::Constant(7),
                 }),
-            EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2).with_art(
-                CardArt::new("18f0436e-9328-4266-9cf8-80b557a0c17c", "Anna Steinbauer"),
-            ),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2).with_art(
+                    CardArt::new("18f0436e-9328-4266-9cf8-80b557a0c17c", "Anna Steinbauer"),
+                ),
+            ))),
         ),
     ]),
 );

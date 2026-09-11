@@ -65,7 +65,12 @@ fn ajani_brings_a_cat_with_him() {
     assert!(
         game.battlefield.iter().any(|permanent| is_token_with(
             permanent,
-            tokens::creature(&["Cat", "Warrior"], &[ManaColor::White], 2, 1)
+            crate::card::TokenCharacteristics::creature(
+                &["Cat", "Warrior"],
+                &[ManaColor::White],
+                2,
+                1
+            )
         )),
         "the token is there",
     );
@@ -82,7 +87,12 @@ fn another_cat_dying_returns_ajani_transformed() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Cat", "Warrior"], &[ManaColor::White], 2, 1),
+                crate::card::TokenCharacteristics::creature(
+                    &["Cat", "Warrior"],
+                    &[ManaColor::White],
+                    2,
+                    1,
+                ),
             )
         })
         .map(|permanent| permanent.card.id)
@@ -136,14 +146,19 @@ fn the_plus_two_grows_every_cat() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Cat", "Warrior"], &[ManaColor::White], 2, 1),
+                crate::card::TokenCharacteristics::creature(
+                    &["Cat", "Warrior"],
+                    &[ManaColor::White],
+                    2,
+                    1,
+                ),
             )
         })
         .map(|permanent| permanent.card.id)
         .expect("the token is there");
     let second_cat = token_permanent(
         91_001,
-        tokens::creature(&["Cat", "Warrior"], &[ManaColor::White], 2, 1),
+        crate::card::TokenCharacteristics::creature(&["Cat", "Warrior"], &[ManaColor::White], 2, 1),
         PlayerId::One,
     );
     let second_cat_id = second_cat.card.id;
@@ -202,7 +217,12 @@ fn avenger(game: &mut Game) -> GameObjectId {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Cat", "Warrior"], &[ManaColor::White], 2, 1),
+                crate::card::TokenCharacteristics::creature(
+                    &["Cat", "Warrior"],
+                    &[ManaColor::White],
+                    2,
+                    1,
+                ),
             )
         })
         .map(|permanent| permanent.card.id)
@@ -265,7 +285,12 @@ fn the_zero_burns_when_you_control_a_red_permanent() {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Cat", "Warrior"], &[ManaColor::White], 2, 1),
+                crate::card::TokenCharacteristics::creature(
+                    &["Cat", "Warrior"],
+                    &[ManaColor::White],
+                    2,
+                    1,
+                ),
             )
         })
         .count();
@@ -297,7 +322,12 @@ fn the_zero_makes_a_cat_and_nothing_else_without_red() {
     assert!(
         game.battlefield.iter().any(|permanent| is_token_with(
             permanent,
-            tokens::creature(&["Cat", "Warrior"], &[ManaColor::White], 2, 1)
+            crate::card::TokenCharacteristics::creature(
+                &["Cat", "Warrior"],
+                &[ManaColor::White],
+                2,
+                1
+            )
         )),
         "the Cat is there either way",
     );

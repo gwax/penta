@@ -179,7 +179,7 @@ fn a_token_she_takes_never_comes_back() {
     let (mut game, phelia, _) = staged(&[]);
     let token = token_permanent(
         94_500,
-        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1),
         PlayerId::One,
     );
     let token_id = token.card.id;
@@ -199,7 +199,7 @@ fn a_token_she_takes_never_comes_back() {
     assert!(
         !game.battlefield.iter().any(|permanent| is_token_with(
             permanent,
-            tokens::creature(&["Bird"], &[ManaColor::White], 1, 1)
+            crate::card::TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1)
         )),
         "a token that left the battlefield has nothing to come back as",
     );

@@ -53,7 +53,7 @@ fn otters(game: &Game) -> usize {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                token_with_prowess(tokens::creature(
+                token_with_prowess(crate::card::TokenCharacteristics::creature(
                     &["Otter"],
                     &[ManaColor::Blue, ManaColor::Red],
                     1,
@@ -205,7 +205,7 @@ fn the_otter_has_prowess() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                token_with_prowess(tokens::creature(
+                token_with_prowess(crate::card::TokenCharacteristics::creature(
                     &["Otter"],
                     &[ManaColor::Blue, ManaColor::Red],
                     1,

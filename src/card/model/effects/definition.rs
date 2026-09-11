@@ -226,37 +226,8 @@ pub enum EffectDef {
     /// permanent, but its activated ability uses the ordinary action, cost,
     /// stack, response, and resolution machinery.
     CreateOngoingEffect(OngoingEffectDef),
-    /// Creates tokens with `token`'s complete authored characteristics under
-    /// the resolving object's controller.
-    CreateToken {
-        token: TokenCharacteristics,
-        /// When present, the authored token shell is replaced by the named
-        /// object's copiable values before it enters the battlefield.
-        copy: Option<&'static TokenCopyDef>,
-        /// Who the tokens arrive under. `None` is the resolving object's own
-        /// controller, which is what "create a token" means; a clause that
-        /// hands them to somebody else -- "its controller creates two Map
-        /// tokens" -- names that player instead.
-        controller: Option<PlayerRefDef>,
-        count: ValueDef,
-        /// Whether the created token arrives tapped.
-        tapped: bool,
-        /// Whether it also arrives attacking. It was never declared as an
-        /// attacker, so nothing that watches a declaration sees it, but it
-        /// is an attacking creature in every other respect.
-        attacking: bool,
-        /// Counters the token arrives carrying. Incubate makes a token with
-        /// X +1/+1 counters on it, where X is what the effect worked out
-        /// rather than anything the token prints: the same Incubator token
-        /// comes out of every Incubate. `None` for the ordinary token, which
-        /// arrives with nothing on it.
-        counters: Option<TokenCountersDef>,
-        /// What to do with the tokens this made, when a following clause has
-        /// to name exactly them. Mobilize sacrifices the tokens it created
-        /// and no others, and by the time the delayed clause fires nothing
-        /// about the board could tell them apart.
-        created: Option<CreatedTokensDef>,
-    },
+    /// Creates a batch of tokens using a typed creation instruction.
+    CreateToken(CreateTokenDef),
     /// Creates one token and attaches it in whichever direction the clause
     /// says: `host` is what the token goes onto, which is how a Role is made,
     /// and `None` is living weapon, where the permanent goes onto the token.

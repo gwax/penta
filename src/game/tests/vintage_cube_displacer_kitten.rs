@@ -258,7 +258,7 @@ fn a_token_it_blinks_never_comes_back() {
     let (mut game, _) = staged(&[cards::ANCESTRAL_RECALL], &[]);
     game.create_token(
         PlayerId::One,
-        tokens::creature(&["Bear"], &[ManaColor::Green], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Bear"], &[ManaColor::Green], 2, 2),
     );
     drain_pending(&mut game);
     game.priority = PlayerId::One;

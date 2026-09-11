@@ -38,6 +38,7 @@ use crate::card::CostDef;
 use crate::card::CounterKind;
 use crate::card::CounterKindDef;
 use crate::card::CounterOperationDef;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageAssignmentDef;
 use crate::card::DamageEventMatcherDef;
@@ -81,6 +82,8 @@ use crate::card::ResolvedEffectDurationDef;
 use crate::card::RevealObjectsDef;
 use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TokenStatsDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -613,13 +616,17 @@ pub(in crate::card::sets) static KNIGHT_WATCH: CardRecord = CardRecord::new(
     "Matt Stewart",
     CardRules::new_sorcery(mana_cost!("{4}{W}")).with_ability(AbilityDef::spell(
         "Create two 2/2 white Knight creature tokens with vigilance.",
-        EffectDef::create_creature_token(&["Knight"], &[ManaColor::White], 2, 2)
-            .with_abilities(&[abilities::vigilance()])
-            .with_art(CardArt::new(
-                "67d3d039-248a-4eb8-be5c-12959b458fea",
-                "Matt Stewart",
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Knight"], &[ManaColor::White], 2, 2)
+                    .with_abilities(&[abilities::vigilance()])
+                    .with_art(CardArt::new(
+                        "67d3d039-248a-4eb8-be5c-12959b458fea",
+                        "Matt Stewart",
+                    )),
             ))
             .with_amount(2),
+        ),
     )),
 );
 
@@ -665,12 +672,16 @@ pub(in crate::card::sets) static MURDER_INVESTIGATION: CardRecord = CardRecord::
                 "When enchanted creature dies, create X 1/1 white Soldier creature tokens, \
                  where X is its power.",
                 ENCHANTED_CREATURE_DIES,
-                EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1)
-                    .with_art(CardArt::new(
-                        "944a40e8-5469-4d8b-b044-67ff3382ec92",
-                        "Steve Prescott",
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1)
+                            .with_art(CardArt::new(
+                                "944a40e8-5469-4d8b-b044-67ff3382ec92",
+                                "Steve Prescott",
+                            )),
                     ))
                     .with_count(ValueDef::TriggeringObjectPower),
+                ),
             ),
         ]),
 );
@@ -751,12 +762,14 @@ pub(in crate::card::sets) static URBIS_PROTECTOR: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{4}{W}{W}"), &["Human", "Cleric"], 1, 1).with_ability(
         abilities::enters_trigger(
             "When this creature enters, create a 4/4 white Angel creature token with flying.",
-            EffectDef::create_creature_token(&["Angel"], &[ManaColor::White], 4, 4)
-                .with_abilities(&[abilities::flying()])
-                .with_art(CardArt::new(
-                    "71766a5a-ce00-4e48-b4f6-0d1a7f5b2691",
-                    "Steve Argyle",
-                )),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Angel"], &[ManaColor::White], 4, 4)
+                    .with_abilities(&[abilities::flying()])
+                    .with_art(CardArt::new(
+                        "71766a5a-ce00-4e48-b4f6-0d1a7f5b2691",
+                        "Steve Argyle",
+                    )),
+            ))),
         ),
     ),
 );
@@ -1122,15 +1135,17 @@ CardRules::new_instant(mana_cost!("{U}")).with_ability(AbilityDef::spell_with_ta
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 then: None,
             },
-            EffectDef::create_creature_token(
-                &["Frog", "Lizard"],
-                &[ManaColor::Green],
-                3,
-                3,
-            )
-            .with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
-                TargetIndex::PRIMARY,
-            ))),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Frog", "Lizard"],
+                    &[ManaColor::Green],
+                    3,
+                    3,
+                )))
+                .with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
+                    TargetIndex::PRIMARY,
+                ))),
+            ),
         ]),
     )),
 );
@@ -1795,11 +1810,11 @@ pub(in crate::card::sets) static OGRE_SLUMLORD: CardRecord = CardRecord::new(
             ),
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
-                effect: &EffectDef::create_creature_token(&["Rat"], &[ManaColor::Black], 1, 1)
-                    .with_art(CardArt::new(
-                        "f1fb8ca6-7351-457a-b2a4-48f57ec3c64a",
-                        "Nils Hamm",
-                    )),
+                effect: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Rat"], &[ManaColor::Black], 1, 1).with_art(
+                        CardArt::new("f1fb8ca6-7351-457a-b2a4-48f57ec3c64a", "Nils Hamm"),
+                    ),
+                ))),
             },
         ),
         // "Rats you control", with no "other" -- the Slumlord is an Ogre Rogue, so
@@ -2829,10 +2844,12 @@ pub(in crate::card::sets) static GIANT_ADEPHAGE: CardRecord = CardRecord::new(
         AbilityDef::triggered(
             "Whenever this creature deals combat damage to a player, create a token that's a copy of this creature.",
             TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
-            EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-                object: &EffectRecipientDef::Source,
-                exceptions: CopyExceptionsDef::NONE,
-            }),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Copy(
+                &crate::card::TokenCopyDef {
+                    object: &EffectRecipientDef::Source,
+                    exceptions: CopyExceptionsDef::NONE,
+                },
+            ))),
         ),
     ]),
 );
@@ -2932,14 +2949,16 @@ pub(in crate::card::sets) static MIMING_SLIME: CardRecord = CardRecord::new(
     "Svetlin Velinov",
 CardRules::new_sorcery(mana_cost!("{2}{G}")).with_ability(AbilityDef::spell(
         "Create an X/X green Ooze creature token, where X is the greatest power among creatures you control.",
-        EffectDef::create_creature_token_with_stats(
-            &["Ooze"],
-            &[ManaColor::Green],
-            &TokenStatsDef {
-                power: abilities::greatest_power_you_control(),
-                toughness: abilities::greatest_power_you_control(),
-            },
-        ),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::creature_with_stats(
+                &["Ooze"],
+                &[ManaColor::Green],
+                &TokenStatsDef {
+                    power: abilities::greatest_power_you_control(),
+                    toughness: abilities::greatest_power_you_control(),
+                },
+            ),
+        ))),
     )),
 );
 
@@ -3329,7 +3348,17 @@ CardRules::new_enchantment(mana_cost!("{3}{R}{W}")).with_ability(
                     kind: CounterKind::named("muster"),
                     amount: ValueDef::Constant(1),
                 },
-                EffectDef::create_creature_token(&["Soldier"], &[ManaColor::Red, ManaColor::White], 1, 1).with_abilities(&[abilities::haste()]).with_art(CardArt::new("aae7bdfe-fe14-4a18-b2b0-16e9175a0441", "Justine Cruz")).with_count(ValueDef::CountersOnSource(CounterKind::named("muster"))),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Soldier"], &[ManaColor::Red, ManaColor::White], 1, 1)
+                            .with_abilities(&[abilities::haste()])
+                            .with_art(CardArt::new(
+                                "aae7bdfe-fe14-4a18-b2b0-16e9175a0441",
+                                "Justine Cruz",
+                            )),
+                    ))
+                    .with_count(ValueDef::CountersOnSource(CounterKind::named("muster"))),
+                ),
             ]),
         ),
     ),
@@ -3626,41 +3655,36 @@ CardRules::new_creature(mana_cost!("{3}{W}{B}{B}"), &["Angel"], 5, 5)
             abilities::flying(),
             abilities::dies_trigger(
                 "When this creature dies, create a 1/1 white and black Cleric creature token. It has \"{3}{W}{B}{B}, {T}, Sacrifice this token: Return a card named Deathpact Angel from your graveyard to the battlefield.\"",
-                EffectDef::create_creature_token(
-                    &["Cleric"],
-                    &[ManaColor::White, ManaColor::Black],
-                    1,
-                    1,
-                )
-                .with_abilities(&[AbilityDef::activated(
-                    "{3}{W}{B}{B}, {T}, Sacrifice this token: Return a card named Deathpact Angel from your graveyard to the battlefield.",
-                    &[
-                        CostDef::Mana(mana_cost!("{3}{W}{B}{B}")),
-                        CostDef::TapSource,
-                        CostDef::SacrificeSource,
-                    ],
-                    EffectDef::Choose(ChooseDef {
-                        binding: ObjectChoiceBindingDef::Object(ParentBinding),
-                        unchosen: None,
-                        chooser: PlayerRefDef::EffectController,
-                        candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                            ObjectPredicateDef::NameEquals(CardNameDef::Literal(
-                                "Deathpact Angel",
-                            )),
-                            &[ZoneKind::Graveyard],
-                            PlayerRelation::You,
-                        )),
-                        exclude: None,
-                        minimum: 1,
-                        maximum: 1,
-                        visibility: ChoiceVisibilityDef::Public,
-                        then: &EffectDef::move_to_zone(
-                            EffectRecipientDef::object(ObjectRefDef::Binding(ParentBinding)),
-                            ZoneKind::Battlefield,
-                            ZonePlacement::Top,
-                        ),
-                    }),
-                )]),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                                                    &["Cleric"],
+                                                    &[ManaColor::White, ManaColor::Black],
+                                                    1,
+                                                    1,
+                                                ).with_abilities(&[AbilityDef::activated(
+                                                    "{3}{W}{B}{B}, {T}, Sacrifice this token: Return a card named Deathpact Angel from your graveyard to the battlefield.",
+                                                    &[
+                                                        CostDef::Mana(mana_cost!("{3}{W}{B}{B}")),
+                                                        CostDef::TapSource,
+                                                        CostDef::SacrificeSource,
+                                                    ],
+                                                    EffectDef::Choose(ChooseDef {
+                                                        binding: ObjectChoiceBindingDef::Object(ParentBinding),
+                                                        unchosen: None,
+                                                        chooser: PlayerRefDef::EffectController,
+                                                        candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
+                                                            ObjectPredicateDef::NameEquals(CardNameDef::Literal(
+                                                                "Deathpact Angel",
+                                                            )),
+                                                            &[ZoneKind::Graveyard],
+                                                            PlayerRelation::You,
+                                                        )),
+                                                        exclude: None,
+                                                        minimum: 1,
+                                                        maximum: 1,
+                                                        visibility: ChoiceVisibilityDef::Public,
+                                                        then: &EffectDef::move_to_zone(EffectRecipientDef::object(ObjectRefDef::Binding(ParentBinding)),ZoneKind::Battlefield,ZonePlacement::Top),
+                                                    }),
+                                                )])))),
             ),
         ]),
 );
@@ -4482,14 +4506,16 @@ CardRules::new_instant(mana_cost!("{2}{G}{U}{U}")).with_ability(
                     zone: ZoneKind::Graveyard,
                     placement: ZonePlacement::Top,
                 },
-                EffectDef::create_creature_token_with_stats(
-                    &["Ooze"],
-                    &[ManaColor::Green],
-                    &TokenStatsDef {
-                        power: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
-                        toughness: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
-                    },
-                ),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature_with_stats(
+                        &["Ooze"],
+                        &[ManaColor::Green],
+                        &TokenStatsDef {
+                            power: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+                            toughness: ValueDef::TargetManaValue(TargetIndex::PRIMARY),
+                        },
+                    ),
+                ))),
             ]),
         ),
     ),
@@ -4939,17 +4965,19 @@ pub(in crate::card::sets) static SUNHOME_GUILDMAGE: CardRecord = CardRecord::new
         AbilityDef::activated(
             "{2}{R}{W}: Create a 1/1 red and white Soldier creature token with haste.",
             &[CostDef::Mana(mana_cost!("{2}{R}{W}"))],
-            EffectDef::create_creature_token(
-                &["Soldier"],
-                &[ManaColor::Red, ManaColor::White],
-                1,
-                1,
-            )
-            .with_abilities(&[abilities::haste()])
-            .with_art(CardArt::new(
-                "aae7bdfe-fe14-4a18-b2b0-16e9175a0441",
-                "Justine Cruz",
-            )),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(
+                    &["Soldier"],
+                    &[ManaColor::Red, ManaColor::White],
+                    1,
+                    1,
+                )
+                .with_abilities(&[abilities::haste()])
+                .with_art(CardArt::new(
+                    "aae7bdfe-fe14-4a18-b2b0-16e9175a0441",
+                    "Justine Cruz",
+                )),
+            ))),
         ),
     ]),
 );

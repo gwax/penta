@@ -14,6 +14,7 @@ use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
@@ -22,6 +23,8 @@ use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::ValueDef;
 use crate::card::abilities;
@@ -143,12 +146,15 @@ CardRules::new_instant(mana_cost!("{W/B}")).with_ability(
                 owner: None,
             })],
             EffectDef::Sequence(&[
-                EffectDef::move_to_zone(
-                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    ZoneKind::Exile,
-                    ZonePlacement::Top,
-),
-                EffectDef::create_creature_token(&["Spirit"], &[ManaColor::White, ManaColor::Black], 1, 1).with_abilities(&[abilities::flying()]).with_art(CardArt::new("91f3a4b0-0992-4245-b245-033ad1083a93", "Cliff Childs")),
+                EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY),ZoneKind::Exile,ZonePlacement::Top),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White, ManaColor::Black], 1, 1)
+                        .with_abilities(&[abilities::flying()])
+                        .with_art(CardArt::new(
+                            "91f3a4b0-0992-4245-b245-033ad1083a93",
+                            "Cliff Childs",
+                        )),
+                ))),
             ]),
         ),
     ),

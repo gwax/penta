@@ -15,6 +15,7 @@ use crate::card::CardType;
 use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ExilePlayDurationDef;
@@ -25,6 +26,8 @@ use crate::card::ObjectSetDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -92,10 +95,12 @@ pub(in crate::card::sets) static GOLDSPAN_DRAGON: CardRecord = CardRecord::new(
                 TriggerEventDef::attacks(ObjectPredicateDef::Source),
                 TriggerEventDef::becomes_targeted(ObjectPredicateDef::Spell),
             ]),
-            EffectDef::create_token(tokens::treasure()).with_art(CardArt::new(
-                "4ae9f454-4f8c-4123-9886-674bc439dfe7",
-                "Olena Richards",
-            )),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                tokens::treasure().with_art(CardArt::new(
+                    "4ae9f454-4f8c-4123-9886-674bc439dfe7",
+                    "Olena Richards",
+                )),
+            ))),
         ),
         AbilityDef::static_ability(
             "Treasures you control have \"{T}, Sacrifice this artifact: Add two mana of any one \
@@ -158,10 +163,12 @@ pub(in crate::card::sets) static MAGDA_BRAZEN_OUTLAW: CardRecord = CardRecord::n
                     ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dwarf")),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ])),
-                EffectDef::create_token(tokens::treasure()).with_art(CardArt::new(
-                    "4ae9f454-4f8c-4123-9886-674bc439dfe7",
-                    "Olena Richards",
-                )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    tokens::treasure().with_art(CardArt::new(
+                        "4ae9f454-4f8c-4123-9886-674bc439dfe7",
+                        "Olena Richards",
+                    )),
+                ))),
             ),
             AbilityDef::activated(
                 "Sacrifice five Treasures: Search your library for an artifact or Dragon card, put that \
@@ -290,12 +297,15 @@ pub(in crate::card::sets) static ESIKA_S_CHARIOT: CardRecord = CardRecord::new(
         .with_abilities(&[
             abilities::enters_trigger(
                 "When Esika's Chariot enters, create two 2/2 green Cat creature tokens.",
-                EffectDef::create_creature_token(&["Cat"], &[ManaColor::Green], 2, 2)
-                    .with_count(ValueDef::Constant(2))
-                    .with_art(CardArt::new(
-                        "2e07758f-0d1c-47d9-ba5a-43bc2a7423cd",
-                        "Raoul Vitale",
-                    )),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Cat"], &[ManaColor::Green], 2, 2).with_art(CardArt::new(
+                            "2e07758f-0d1c-47d9-ba5a-43bc2a7423cd",
+                            "Raoul Vitale",
+                        )),
+                    ))
+                    .with_count(ValueDef::Constant(2)),
+                ),
             ),
             AbilityDef::triggered_with_targets(
                 "Whenever Esika's Chariot attacks, create a token that's a copy of target token you \
@@ -310,10 +320,12 @@ pub(in crate::card::sets) static ESIKA_S_CHARIOT: CardRecord = CardRecord::new(
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ]),
                 )],
-                EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Copy(
+                    &crate::card::TokenCopyDef {
                         object: &EffectRecipientDef::Target(TargetIndex::PRIMARY),
                         exceptions: CopyExceptionsDef::NONE,
-                    }),
+                    },
+                ))),
             ),
             abilities::crew(
                 "Crew 4 (Tap any number of creatures you control with total power 4 or more: This \

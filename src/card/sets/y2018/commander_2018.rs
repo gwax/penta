@@ -10,6 +10,7 @@ use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::ControlDurationDef;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectPredicateDef;
@@ -21,6 +22,8 @@ use crate::card::ObjectSetPredicateDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
@@ -160,7 +163,9 @@ pub(in crate::card::sets) static RETROFITTER_FOUNDRY: CardRecord = CardRecord::n
             // untaps and makes a Servo, and the Servo becomes a Thopter and the Thopter
             // a 4/4, one tap at a time.
             &[CostDef::Mana(mana_cost!("{2}")), CostDef::TapSource],
-            EffectDef::create_artifact_creature_token(&["Servo"], &[], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Servo"], &[], 1, 1),
+            ))),
         ),
         AbilityDef::activated(
             "{1}, {T}, Sacrifice a Servo: Create a 1/1 colorless Thopter artifact creature token \
@@ -173,8 +178,10 @@ pub(in crate::card::sets) static RETROFITTER_FOUNDRY: CardRecord = CardRecord::n
                     controller: PlayerRelation::You,
                 },
             ],
-            EffectDef::create_artifact_creature_token(&["Thopter"], &[], 1, 1)
-                .with_abilities(&[abilities::flying()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Thopter"], &[], 1, 1)
+                    .with_abilities(&[abilities::flying()]),
+            ))),
         ),
         AbilityDef::activated(
             "{T}, Sacrifice a Thopter: Create a 4/4 colorless Construct artifact creature token.",
@@ -185,7 +192,9 @@ pub(in crate::card::sets) static RETROFITTER_FOUNDRY: CardRecord = CardRecord::n
                     controller: PlayerRelation::You,
                 },
             ],
-            EffectDef::create_artifact_creature_token(&["Construct"], &[], 4, 4),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Construct"], &[], 4, 4),
+            ))),
         ),
     ]),
 );

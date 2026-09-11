@@ -12,6 +12,7 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -22,11 +23,12 @@ use crate::card::ObjectRefDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::abilities;
-use crate::card::tokens;
 use crate::ids::ParentBinding;
 use crate::mana_cost;
 
@@ -80,16 +82,9 @@ pub(in crate::card::sets) static ELSPETH_KNIGHT_ERRANT: CardRecord = CardRecord:
             AbilityDef::activated(
                 "+1: Create a 1/1 white Soldier creature token.",
                 &[CostDef::Loyalty(1)],
-                EffectDef::CreateToken {
-                    token: tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1),
-                    copy: None,
-                    controller: None,
-                    count: ValueDef::Constant(1),
-                    tapped: false,
-                    attacking: false,
-                    counters: None,
-                    created: None,
-                },
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1),
+                ))),
             ),
             // The second plus is what makes her a threat rather than a hedge: any
             // creature, so the token she made last turn is a 4/4 flier this one.

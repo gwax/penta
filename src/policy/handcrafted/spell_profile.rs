@@ -630,7 +630,7 @@ impl HandcraftedPolicy {
             | EffectDef::Unattach { .. }
             | EffectDef::PairWithSource { .. }
             | EffectDef::PhaseOut { .. }
-            | EffectDef::CreateToken { .. }
+            | EffectDef::CreateToken(_)
             | EffectDef::CreateAttachedToken { .. }
             | EffectDef::Endure { .. }
             | EffectDef::CreateMyriadTokens

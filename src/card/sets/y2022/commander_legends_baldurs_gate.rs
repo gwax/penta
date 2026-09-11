@@ -23,6 +23,7 @@ use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DeckConstructionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -42,6 +43,7 @@ use crate::card::SpellForm;
 use crate::card::SpellResolutionDestinationDef;
 use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -535,14 +537,18 @@ pub(in crate::card::sets) static GUT_TRUE_SOUL_ZEALOT: CardRecord = CardRecord::
                     // The token arrives already attacking, which is the whole point: it was
                     // never declared, so nothing that watches a declaration sees it, and it
                     // still connects this combat.
-                    then: Some(&EffectDef::create_creature_token(&["Skeleton"], &[ManaColor::Black], 4, 1)
-                            .with_abilities(&[abilities::menace()])
-                            .with_art(CardArt::new(
-                                "cf4c245f-af2f-46a7-81f3-670a04940901",
-                                "David Astruga",
-                            ))
-                            .entering_tapped()
-                            .entering_attacking()),
+                    then: Some(&EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::creature(&["Skeleton"], &[ManaColor::Black], 4, 1)
+                                .with_abilities(&[abilities::menace()])
+                                .with_art(CardArt::new(
+                                    "cf4c245f-af2f-46a7-81f3-670a04940901",
+                                    "David Astruga",
+                                )),
+                        ))
+                        .entering_tapped()
+                        .entering_attacking(),
+                    )),
                     amount: SacrificedAmountDef::Power,
                     otherwise: None,
                     optional: true,
@@ -593,12 +599,12 @@ CardRules::new_planeswalker(mana_cost!("{2}{R}{G}"), &["Minsc"], 3)
                     // Boo is a particular hamster rather than a kind of one,
                     // which is why the legend rule keeps there being only the
                     // one however many upkeeps go by.
-                    effect: &EffectDef::create_token(
+                    effect: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
                         TokenCharacteristics::creature(&["Hamster"], &[ManaColor::Red], 1, 1)
                             .with_name("Boo")
                             .with_supertype(CardSupertype::Legendary)
                             .with_abilities(&[abilities::trample(), abilities::haste()]),
-                    ),
+                    ))),
                 },
             ),
             AbilityDef::activated_with_targets(

@@ -104,6 +104,13 @@ impl Hash for TokenStructure {
     }
 }
 
+/// The source of a token-creation instruction's characteristics.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum TokenDef {
+    Literal(TokenCharacteristics),
+    Copy(&'static crate::card::TokenCopyDef),
+}
+
 /// Complete characteristics needed to create a token without a card catalog
 /// definition or separately named global constant.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

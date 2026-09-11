@@ -17,6 +17,7 @@ use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::KeywordAbility;
@@ -28,6 +29,8 @@ use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -432,7 +435,8 @@ pub(in crate::card::sets) static NEST_INVADER: CardRecord = CardRecord::new(
     "24517d9c-6cde-41e8-9e82-ee73f069379a",
     "Trevor Claxton",
 CardRules::new_creature(mana_cost!("{1}{G}"), &["Eldrazi", "Drone"], 2, 2).with_ability(
-        abilities::enters_trigger("When this creature enters, create a 0/1 colorless Eldrazi Spawn creature token. It has \"Sacrifice this token: Add {C}.\"", EffectDef::create_creature_token(&["Eldrazi", "Spawn"], &[], 0, 1)
+        abilities::enters_trigger("When this creature enters, create a 0/1 colorless Eldrazi Spawn creature token. It has \"Sacrifice this token: Add {C}.\"", EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::creature(&["Eldrazi", "Spawn"], &[], 0, 1)
                 .with_abilities(&[AbilityDef::activated_mana(
                     "Sacrifice this creature: Add {C}.",
                     &[CostDef::SacrificeSource],
@@ -441,7 +445,8 @@ CardRules::new_creature(mana_cost!("{1}{G}"), &["Eldrazi", "Drone"], 2, 2).with_
                 .with_art(CardArt::new(
                     "d0da4f8d-cce9-4d08-8d11-792e0b2af7d0",
                     "Véronique Meignaud",
-                ))),
+                )),
+        )))),
     ),
 );
 

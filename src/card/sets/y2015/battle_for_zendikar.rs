@@ -11,6 +11,7 @@ use crate::card::AppliedRuleDef;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
@@ -18,6 +19,8 @@ use crate::card::ObjectPredicateDef;
 use crate::card::ObjectRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::ZoneKind;
 use crate::card::abilities;
 use crate::ids::TargetIndex;
@@ -26,13 +29,15 @@ use crate::mana_cost;
 /// The Scion token that every BFZ Scion-maker prints in full: a 1/1 body
 /// whose only job is to be sacrificed for one colourless mana.
 static ELDRAZI_SCION_TOKEN: EffectDef =
-    EffectDef::create_creature_token(&["Eldrazi", "Scion"], &[], 1, 1).with_abilities(&[
-        AbilityDef::activated_mana(
-            "Sacrifice this creature: Add {C}.",
-            &[CostDef::SacrificeSource],
-            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
-        ),
-    ]);
+    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+        TokenCharacteristics::creature(&["Eldrazi", "Scion"], &[], 1, 1).with_abilities(&[
+            AbilityDef::activated_mana(
+                "Sacrifice this creature: Add {C}.",
+                &[CostDef::SacrificeSource],
+                EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+            ),
+        ]),
+    )));
 
 /// Printed set identity and stable catalog slug.
 pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {

@@ -13,6 +13,7 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
@@ -20,6 +21,8 @@ use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -78,13 +81,15 @@ pub(in crate::card::sets) static ADELINE_RESPLENDENT_CATHAR: CardRecord =
                         1,
                         None,
                     ),
-                    EffectDef::create_creature_token(&["Human"], &[ManaColor::White], 1, 1)
-                        .with_art(CardArt::new(
-                            "7d13a93a-a43d-4cf5-8300-8341f3b7f1b1",
-                            "Miguel Mercado",
+                    EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1).with_art(
+                                CardArt::new("7d13a93a-a43d-4cf5-8300-8341f3b7f1b1", "Miguel Mercado"),
+                            ),
                         ))
                         .entering_tapped()
                         .entering_attacking(),
+                    ),
                 ),
             ]),
 );

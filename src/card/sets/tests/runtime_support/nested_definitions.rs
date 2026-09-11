@@ -547,9 +547,10 @@ pub(in super::super) fn assert_nested_definition_abilities(card_name: &str, effe
                 }
             }
         }
-        EffectDef::CreateToken {
-            copy: Some(copy), ..
-        } => {
+        EffectDef::CreateToken(crate::card::CreateTokenDef {
+            token: crate::card::TokenDef::Copy(copy),
+            ..
+        }) => {
             for addition in copy.exceptions.added_abilities {
                 if let CopyAbilityDef::Ability(ability) = addition {
                     assert_nested_installed_ability(card_name, ability);

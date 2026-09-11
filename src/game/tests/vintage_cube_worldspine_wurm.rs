@@ -65,7 +65,12 @@ fn tokens(game: &Game) -> usize {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                token_with_trample(tokens::creature(&["Wurm"], &[ManaColor::Green], 5, 5)),
+                token_with_trample(crate::card::TokenCharacteristics::creature(
+                    &["Wurm"],
+                    &[ManaColor::Green],
+                    5,
+                    5,
+                )),
             )
         })
         .count()
@@ -206,7 +211,12 @@ fn the_tokens_are_five_five_tramplers() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                token_with_trample(tokens::creature(&["Wurm"], &[ManaColor::Green], 5, 5)),
+                token_with_trample(crate::card::TokenCharacteristics::creature(
+                    &["Wurm"],
+                    &[ManaColor::Green],
+                    5,
+                    5,
+                )),
             )
         })
         .expect("a token was made");

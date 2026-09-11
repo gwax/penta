@@ -29,6 +29,7 @@ use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageAssignmentDef;
 use crate::card::DamageEventMatcherDef;
@@ -62,6 +63,8 @@ use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
 use crate::card::TargetChooserDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -399,8 +402,10 @@ CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_ability(
                 ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
                 ObjectPredicateDef::OwnedBy(PlayerRelation::You),
             ]),
-            EffectDef::create_creature_token(&["Spirit"], &[ManaColor::White], 1, 1)
-                .with_abilities(&[abilities::flying()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
+                    .with_abilities(&[abilities::flying()]),
+            ))),
         ),
     ),
 );
@@ -718,8 +723,10 @@ pub(in crate::card::sets) static PEGASUS_REFUGE: CardRecord = CardRecord::new(
             CostDef::Mana(mana_cost!("{2}")),
             CostDef::discard(ObjectPredicateDef::Any),
         ],
-        EffectDef::create_creature_token(&["Pegasus"], &[ManaColor::White], 1, 1)
-            .with_abilities(&[abilities::flying()]),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::creature(&["Pegasus"], &[ManaColor::White], 1, 1)
+                .with_abilities(&[abilities::flying()]),
+        ))),
     )),
 );
 
@@ -965,7 +972,9 @@ CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_abilities(&[
                 comparison: ComparisonDef::Equal,
                 amount: 0,
             },
-            EffectDef::create_creature_token(&["Reflection"], &[ManaColor::White], 2, 2),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Reflection"], &[ManaColor::White], 2, 2),
+            ))),
         ),
         AbilityDef::activated_with_targets(
             "{0}: Destroy target Reflection.",
@@ -2838,7 +2847,9 @@ pub(in crate::card::sets) static SARCOMANCY: CardRecord = CardRecord::new(
 CardRules::new_enchantment(mana_cost!("{B}")).with_abilities(&[
         abilities::enters_trigger(
             "When this enchantment enters, create a 2/2 black Zombie creature token.",
-            EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+            ))),
         ),
         AbilityDef::triggered_if(
             "At the beginning of your upkeep, if there are no Zombies on the battlefield, this enchantment deals 1 damage to you.",
@@ -3994,8 +4005,10 @@ pub(in crate::card::sets) static TOOTH_AND_CLAW: CardRecord = CardRecord::new(
             controller: PlayerRelation::You,
             count: 2,
         }],
-        EffectDef::create_creature_token(&["Beast"], &[ManaColor::Red], 3, 1)
-            .with_name("Carnivore"),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::creature(&["Beast"], &[ManaColor::Red], 3, 1)
+                .with_name("Carnivore"),
+        ))),
     )),
 );
 
@@ -4948,7 +4961,9 @@ pub(in crate::card::sets) static VERDANT_FORCE: CardRecord = CardRecord::new(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::Any,
             },
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+            ))),
         ),
     ),
 );

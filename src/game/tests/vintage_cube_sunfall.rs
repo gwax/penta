@@ -255,7 +255,7 @@ fn a_token_ceases_to_exist_and_still_counts_for_x() {
     let (mut game, sunfall) = staged(&[cards::SAVANNAH_LIONS], &[]);
     game.create_token(
         PlayerId::Two,
-        tokens::creature(&["Bear"], &[ManaColor::Green], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Bear"], &[ManaColor::Green], 2, 2),
     );
     drain_pending(&mut game);
     game.priority = PlayerId::One;

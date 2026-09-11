@@ -104,7 +104,7 @@ fn hunting() -> (Game, GameObjectId, GameObjectId) {
     game.battlefield.push(bear);
     let token = token_permanent(
         83_202,
-        tokens::creature(&["Squirrel"], &[ManaColor::Green], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Squirrel"], &[ManaColor::Green], 1, 1),
         PlayerId::Two,
     );
     let token_id = token.card.id;

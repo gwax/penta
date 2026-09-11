@@ -7,6 +7,7 @@ use crate::card::AppliedEffectDef;
 use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardType;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
@@ -16,6 +17,8 @@ use crate::card::ObjectSetDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -79,9 +82,13 @@ pub(in crate::card::sets) static TRIPLICATE_SPIRITS: CardRecord = CardRecord::ne
         abilities::convoke(),
         AbilityDef::spell(
             "Create three 1/1 white Spirit creature tokens with flying.",
-            EffectDef::create_creature_token(&["Spirit"], &[ManaColor::White], 1, 1)
-                .with_abilities(&[abilities::flying()])
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
+                        .with_abilities(&[abilities::flying()]),
+                ))
                 .with_amount(3),
+            ),
         ),
     ]),
 );
@@ -126,12 +133,14 @@ pub(in crate::card::sets) static GOBLIN_RABBLEMASTER: CardRecord = CardRecord::n
                     step: TurnStepDef::BeginningOfCombat,
                     player: PlayerRelation::You,
                 },
-                EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1)
-                    .with_abilities(&[abilities::haste()])
-                    .with_art(CardArt::new(
-                        "98993a45-4aff-4f9b-a030-7d72fbb4ec6c",
-                        "Karl Kopinski",
-                    )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1)
+                        .with_abilities(&[abilities::haste()])
+                        .with_art(CardArt::new(
+                            "98993a45-4aff-4f9b-a030-7d72fbb4ec6c",
+                            "Karl Kopinski",
+                        )),
+                ))),
             ),
             AbilityDef::triggered(
                 "Whenever this creature attacks, it gets +1/+0 until end of turn for each other attacking \

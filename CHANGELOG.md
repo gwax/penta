@@ -33,6 +33,10 @@ the bot-wire epoch.
 - Binding names no longer require global registration. They are scoped to
   effect resolutions or card parts, with private runtime slots reconstructed
   from natural names in checkpoints. Unrelated cards may reuse names freely.
+- Native token creation now uses `EffectDef::CreateToken(CreateTokenDef)` and
+  `TokenDef::{Literal, Copy}`. Declare characteristics on `TokenCharacteristics`
+  and creation options on `CreateTokenDef`; the token helpers and builders on
+  `EffectDef` are removed. Wire observations and checkpoint formats are unchanged.
 
 - Replace the native `EffectDef::MoveToZone` variant with
   `EffectDef::move_to_zone(object, zone, placement)`, a shorthand for the shared

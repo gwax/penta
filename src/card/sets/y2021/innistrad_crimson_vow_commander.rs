@@ -6,12 +6,15 @@ use crate::ParentBinding;
 use crate::card::AbilityDef;
 use crate::card::CardArt;
 use crate::card::CardRules;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardFollowUpDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::ValueDef;
 use crate::card::abilities;
 use crate::mana_cost;
@@ -50,20 +53,19 @@ pub(in crate::card::sets) static OCCULT_EPIPHANY: CardRecord = CardRecord::new(
                     // A Spirit for every card type the discard turned up. Every discarded card
                     // is counted, so the predicate is anything at all; what the value counts is
                     // the types between them rather than the cards.
-                    effect: &EffectDef::create_creature_token(
-                        &["Spirit"],
-                        &[ManaColor::White],
-                        1,
-                        1,
-                    )
-                    .with_abilities(&[abilities::flying()])
-                    .with_art(CardArt::new(
-                        "6bee4081-5d74-4cc2-ba2f-887bc8799513",
-                        "Kim Sokol",
-                    ))
-                    .with_count(ValueDef::CardTypesAmongObjects(
-                        &crate::card::ObjectSetDef::Binding(ParentBinding),
-                    )),
+                    effect: &EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
+                                .with_abilities(&[abilities::flying()])
+                                .with_art(CardArt::new(
+                                    "6bee4081-5d74-4cc2-ba2f-887bc8799513",
+                                    "Kim Sokol",
+                                )),
+                        ))
+                        .with_count(ValueDef::CardTypesAmongObjects(
+                            &crate::card::ObjectSetDef::Binding(ParentBinding),
+                        )),
+                    ),
                 }),
             },
         ]),

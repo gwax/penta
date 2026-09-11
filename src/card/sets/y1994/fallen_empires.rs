@@ -19,6 +19,7 @@ use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamagePreventionDef;
 use crate::card::DiscardSelectionDef;
@@ -35,6 +36,8 @@ use crate::card::PlayerRelation;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -479,12 +482,14 @@ pub(in crate::card::sets) static ICATIAN_TOWN: CardRecord = CardRecord::new(
     "Tom Wänerstrand",
     CardRules::new_sorcery(mana_cost!("{5}{W}")).with_abilities(&[AbilityDef::spell(
         "Create four 1/1 white Citizen creature tokens.",
-        EffectDef::create_creature_token(&["Citizen"], &[ManaColor::White], 1, 1)
-            .with_amount(4)
-            .with_art(CardArt::new(
-                "165164e7-5693-4d65-b789-8ed8a222365b",
-                "Michael Phillippi",
-            )),
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Citizen"], &[ManaColor::White], 1, 1).with_art(
+                    CardArt::new("165164e7-5693-4d65-b789-8ed8a222365b", "Michael Phillippi"),
+                ),
+            ))
+            .with_amount(4),
+        ),
     )]),
 );
 
@@ -1116,9 +1121,11 @@ pub(in crate::card::sets) static BREEDING_PIT: CardRecord = CardRecord::new(
                 step: TurnStepDef::End,
                 player: PlayerRelation::You,
             },
-            EffectDef::create_creature_token(&["Thrull"], &[ManaColor::Black], 0, 1).with_art(
-                CardArt::new("b9f3042b-784c-4006-9bf1-60a323e60c5c", "Véronique Meignaud"),
-            ),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Thrull"], &[ManaColor::Black], 0, 1).with_art(
+                    CardArt::new("b9f3042b-784c-4006-9bf1-60a323e60c5c", "Véronique Meignaud"),
+                ),
+            ))),
         ),
     ]),
 );
@@ -2024,16 +2031,11 @@ CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf"], 0, 2).with_abilities(&[
                     kind: CounterKind::named("spore"),
                     amount: 3,
                 }],
-                EffectDef::create_creature_token(
-                    &["Saproling"],
-                    &[ManaColor::Green],
-                    1,
-                    1,
-                )
-                .with_art(CardArt::new(
-                    "248ade83-ac57-42d6-985c-1e4cc3639f36",
-                    "Joseph Meehan",
-                )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(
+                        CardArt::new("248ade83-ac57-42d6-985c-1e4cc3639f36", "Joseph Meehan"),
+                    ),
+                ))),
             ),
             AbilityDef::activated(
                 "Sacrifice a Saproling: You gain 2 life.",
@@ -2336,16 +2338,11 @@ CardRules::new_creature(mana_cost!("{G}"), &["Fungus"], 1, 1)
                     kind: CounterKind::named("spore"),
                     amount: 3,
                 }],
-                EffectDef::create_creature_token(
-                    &["Saproling"],
-                    &[ManaColor::Green],
-                    1,
-                    1,
-                )
-                .with_art(CardArt::new(
-                    "248ade83-ac57-42d6-985c-1e4cc3639f36",
-                    "Joseph Meehan",
-                )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(
+                        CardArt::new("248ade83-ac57-42d6-985c-1e4cc3639f36", "Joseph Meehan"),
+                    ),
+                ))),
             ),
         ]),
 );
@@ -2398,16 +2395,11 @@ CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Fungus"], 2, 2).with_abiliti
                     kind: CounterKind::named("spore"),
                     amount: 3,
                 }],
-                EffectDef::create_creature_token(
-                    &["Saproling"],
-                    &[ManaColor::Green],
-                    1,
-                    1,
-                )
-                .with_art(CardArt::new(
-                    "248ade83-ac57-42d6-985c-1e4cc3639f36",
-                    "Joseph Meehan",
-                )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(
+                        CardArt::new("248ade83-ac57-42d6-985c-1e4cc3639f36", "Joseph Meehan"),
+                    ),
+                ))),
             ),
             AbilityDef::activated(
                 "Sacrifice a Saproling: This creature gets +1/+2 until end of turn.",

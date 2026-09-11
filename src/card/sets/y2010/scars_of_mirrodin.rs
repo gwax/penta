@@ -29,6 +29,7 @@ use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CountConditionDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamagePreventionDef;
@@ -58,6 +59,8 @@ use crate::card::SacrificedAmountDef;
 use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
 use crate::card::TargetChooserDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -270,8 +273,15 @@ pub(in crate::card::sets) static ELSPETH_TIREL: CardRecord = CardRecord::new(
             AbilityDef::activated(
                 "−2: Create three 1/1 white Soldier creature tokens.",
                 &[CostDef::Loyalty(-2)],
-                EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1)
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                        &["Soldier"],
+                        &[ManaColor::White],
+                        1,
+                        1,
+                    )))
                     .with_amount(3),
+                ),
             ),
             AbilityDef::activated(
                 "−5: Destroy all other permanents except for lands and tokens.",
@@ -399,8 +409,17 @@ CardRules::new_creature(mana_cost!("{1}{W}{W}"), &["Cat", "Cleric"], 2, 4)
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::create_creature_token(&["Cat"], &[ManaColor::White], 2, 2)
-                .with_count(ValueDef::CountMatchingObjects(&EQUIPMENT_ATTACHED_TO_SOURCE)),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Cat"],
+                    &[ManaColor::White],
+                    2,
+                    2,
+                )))
+                .with_count(ValueDef::CountMatchingObjects(
+                    &EQUIPMENT_ATTACHED_TO_SOURCE,
+                )),
+            ),
         )),
 );
 
@@ -452,7 +471,9 @@ CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Artificer"], 2, 1).wit
             ])),
             EffectDef::PayOr(PayOrDef::optional(
                 &[CostDef::Mana(mana_cost!("{1}"))],
-                &EffectDef::create_artifact_creature_token(&["Myr"], &[], 1, 1),
+                &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::artifact_creature(&["Myr"], &[], 1, 1),
+                ))),
             )),
         ),
     ),
@@ -2402,8 +2423,15 @@ CardRules::new_sorcery(mana_cost!("{R}")).with_ability(
                 ObjectPredicateDef::HasType(CardType::Artifact),
                 CostQuantityDef::Fixed(1),
             ),
-            EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1)
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Goblin"],
+                    &[ManaColor::Red],
+                    1,
+                    1,
+                )))
                 .with_count(ValueDef::Constant(3)),
+            ),
         ),
     ),
 );
@@ -2710,9 +2738,13 @@ pub(in crate::card::sets) static CARRION_CALL: CardRecord = CardRecord::new(
     "Adrian Smith",
     CardRules::new_instant(mana_cost!("{3}{G}")).with_ability(AbilityDef::spell(
         "Create two 1/1 green Phyrexian Insect creature tokens with infect.",
-        EffectDef::create_creature_token(&["Phyrexian", "Insect"], &[ManaColor::Green], 1, 1)
-            .with_abilities(&[abilities::infect()])
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Phyrexian", "Insect"], &[ManaColor::Green], 1, 1)
+                    .with_abilities(&[abilities::infect()]),
+            ))
             .with_amount(2),
+        ),
     )),
 );
 
@@ -3898,7 +3930,9 @@ CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
                 kind: CounterKind::named("charge"),
                 amount: 3,
             }],
-            EffectDef::create_artifact_creature_token(&["Golem"], &[], 3, 3),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Golem"], &[], 3, 3),
+            ))),
         ),
     ]),
 );
@@ -4344,7 +4378,15 @@ pub(in crate::card::sets) static MYR_BATTLESPHERE: CardRecord = CardRecord::new(
         .with_abilities(&[
             abilities::enters_trigger(
                 "When this creature enters, create four 1/1 colorless Myr artifact creature tokens.",
-                EffectDef::create_artifact_creature_token(&["Myr"], &[], 1, 1).with_amount(4),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::artifact_creature(
+                        &["Myr"],
+                        &[],
+                        1,
+                        1,
+                    )))
+                    .with_amount(4),
+                ),
             ),
             AbilityDef::triggered(
                 "Whenever this creature attacks, you may tap X untapped Myr you control. If you do, this \
@@ -4449,10 +4491,12 @@ pub(in crate::card::sets) static MYR_PROPAGATOR: CardRecord = CardRecord::new(
         AbilityDef::activated(
             "{3}, {T}: Create a token that's a copy of this creature.",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
-            EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-                object: &EffectRecipientDef::Source,
-                exceptions: CopyExceptionsDef::NONE,
-            }),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Copy(
+                &crate::card::TokenCopyDef {
+                    object: &EffectRecipientDef::Source,
+                    exceptions: CopyExceptionsDef::NONE,
+                },
+            ))),
         ),
     ),
 );
@@ -4658,7 +4702,9 @@ CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
                 CostDef::TapSource,
                 CostDef::SacrificeSource,
             ],
-            EffectDef::create_artifact_creature_token(&["Myr"], &[], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Myr"], &[], 1, 1),
+            ))),
         ),
         AbilityDef::triggered(
             "When this artifact is put into a graveyard from the battlefield, you may pay {W}. If you do, draw a card.",
@@ -5030,12 +5076,9 @@ CardRules::new_artifact(mana_cost!("{3}"))
                 "Whenever equipped creature deals combat damage to a player, you create a 2/2 green Wolf creature token and that player mills ten cards.",
                 TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::AttachedToSource),
                 EffectDef::Sequence(&[
-                    EffectDef::create_creature_token(
-                        &["Wolf"],
-                        &[ManaColor::Green],
-                        2,
-                        2,
-                    ),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Wolf"], &[ManaColor::Green], 2, 2),
+                    ))),
                     EffectDef::Mill {
                         player: EffectRecipientDef::EventPlayer,
                         amount: ValueDef::Constant(10),
@@ -5228,13 +5271,10 @@ CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[
                     amount: 1,
                 },
             ],
-            EffectDef::create_creature_token(
-                &["Phyrexian", "Insect"],
-                &[ManaColor::Green],
-                1,
-                1,
-            )
-            .with_abilities(&[abilities::infect()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Phyrexian", "Insect"], &[ManaColor::Green], 1, 1)
+                    .with_abilities(&[abilities::infect()]),
+            ))),
         ),
     ]),
 );
@@ -5510,20 +5550,14 @@ CardRules::new_artifact_creature(mana_cost!("{6}"), &["Phyrexian", "Wurm"], 6, 6
             abilities::dies_trigger(
                 "When this creature dies, create a 3/3 colorless Phyrexian Wurm artifact creature token with deathtouch and a 3/3 colorless Phyrexian Wurm artifact creature token with lifelink.",
                 EffectDef::Sequence(&[
-                    EffectDef::create_artifact_creature_token(
-                        &["Phyrexian", "Wurm"],
-                        &[],
-                        3,
-                        3,
-                    )
-                    .with_abilities(&[abilities::deathtouch()]),
-                    EffectDef::create_artifact_creature_token(
-                        &["Phyrexian", "Wurm"],
-                        &[],
-                        3,
-                        3,
-                    )
-                    .with_abilities(&[abilities::lifelink()]),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::artifact_creature(&["Phyrexian", "Wurm"], &[], 3, 3)
+                            .with_abilities(&[abilities::deathtouch()]),
+                    ))),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::artifact_creature(&["Phyrexian", "Wurm"], &[], 3, 3)
+                            .with_abilities(&[abilities::lifelink()]),
+                    ))),
                 ]),
             ),
         ]),

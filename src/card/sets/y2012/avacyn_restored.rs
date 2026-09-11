@@ -25,6 +25,7 @@ use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatedTokensDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageEventMatcherDef;
@@ -61,6 +62,8 @@ use crate::card::SacrificedAmountDef;
 use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
 use crate::card::TargetChooserDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -409,10 +412,12 @@ CardRules::new_enchantment(mana_cost!("{4}{W}"))
                             step: TurnStepDef::Upkeep,
                             player: PlayerRelation::You,
                         },
-                        EffectDef::create_creature_token(&["Human"], &[ManaColor::White], 1, 1).with_art(CardArt::new(
-                            "8894949b-f190-461e-996a-cf2b39f08a5d",
-                            "Michael C. Hayes",
-                        )),
+                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1).with_art(CardArt::new(
+                                "8894949b-f190-461e-996a-cf2b39f08a5d",
+                                "Michael C. Hayes",
+                            )),
+                        ))),
                     )),
                 },
             ),
@@ -584,13 +589,17 @@ pub(in crate::card::sets) static ENTREAT_THE_ANGELS: CardRecord = CardRecord::ne
     CardRules::new_sorcery(mana_cost!("{X}{X}{W}{W}{W}")).with_abilities(&[
         AbilityDef::spell(
             "Create X 4/4 white Angel creature tokens with flying.",
-            EffectDef::create_creature_token(&["Angel"], &[ManaColor::White], 4, 4)
-                .with_abilities(&[abilities::flying()])
-                .with_art(CardArt::new(
-                    "68dd1682-a5d5-4323-b876-66a86c311c43",
-                    "Anthony Palumbo",
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Angel"], &[ManaColor::White], 4, 4)
+                        .with_abilities(&[abilities::flying()])
+                        .with_art(CardArt::new(
+                            "68dd1682-a5d5-4323-b876-66a86c311c43",
+                            "Anthony Palumbo",
+                        )),
                 ))
                 .with_count(ValueDef::ChosenX),
+            ),
         ),
         abilities::miracle(&[CostDef::Mana(mana_cost!("{X}{W}{W}"))]),
     ]),
@@ -1021,9 +1030,11 @@ pub(in crate::card::sets) static VOICE_OF_THE_PROVINCES: CardRecord = CardRecord
         abilities::flying(),
         abilities::enters_trigger(
             "When this creature enters, create a 1/1 white Human creature token.",
-            EffectDef::create_creature_token(&["Human"], &[ManaColor::White], 1, 1).with_art(
-                CardArt::new("8894949b-f190-461e-996a-cf2b39f08a5d", "Michael C. Hayes"),
-            ),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1).with_art(
+                    CardArt::new("8894949b-f190-461e-996a-cf2b39f08a5d", "Michael C. Hayes"),
+                ),
+            ))),
         ),
     ]),
 );
@@ -1433,12 +1444,14 @@ pub(in crate::card::sets) static GEIST_SNATCH: CardRecord = CardRecord::new(
                 zone: ZoneKind::Graveyard,
                 placement: ZonePlacement::Top,
             },
-            EffectDef::create_creature_token(&["Spirit"], &[ManaColor::Blue], 1, 1)
-                .with_abilities(&[abilities::flying()])
-                .with_art(CardArt::new(
-                    "44c14591-f807-40cf-9c00-4c94b85fff44",
-                    "Dan Murayama Scott",
-                )),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Spirit"], &[ManaColor::Blue], 1, 1)
+                    .with_abilities(&[abilities::flying()])
+                    .with_art(CardArt::new(
+                        "44c14591-f807-40cf-9c00-4c94b85fff44",
+                        "Dan Murayama Scott",
+                    )),
+            ))),
         ]),
     )),
 );
@@ -2300,7 +2313,14 @@ CardRules::new_enchantment(mana_cost!("{3}{B}{B}")).with_ability(
                 comparison: ComparisonDef::Equal,
                 amount: 1,
             },
-            EffectDef::create_creature_token(&["Demon"], &[ManaColor::Black], 5, 5).with_abilities(&[abilities::flying()]).with_art(CardArt::new("6a3fc83f-ab02-4a44-910a-bfadc71cf162", "Kev Walker")),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Demon"], &[ManaColor::Black], 5, 5)
+                    .with_abilities(&[abilities::flying()])
+                    .with_art(CardArt::new(
+                        "6a3fc83f-ab02-4a44-910a-bfadc71cf162",
+                        "Kev Walker",
+                    )),
+            ))),
         ),
     ),
 );
@@ -2710,12 +2730,16 @@ pub(in crate::card::sets) static MAALFELD_TWINS: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{5}{B}"), &["Zombie"], 4, 4).with_ability(
         abilities::dies_trigger(
             "When this creature dies, create two 2/2 black Zombie creature tokens.",
-            EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2)
-                .with_art(CardArt::new(
-                    "b877c19d-6022-4377-92e7-4511e24eb98e",
-                    "Lucas Graciano",
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
+                        .with_art(CardArt::new(
+                            "b877c19d-6022-4377-92e7-4511e24eb98e",
+                            "Lucas Graciano",
+                        )),
                 ))
                 .with_amount(2),
+            ),
         ),
     ),
 );
@@ -3739,24 +3763,26 @@ pub(in crate::card::sets) static THATCHER_REVOLT: CardRecord = CardRecord::new(
     "Ryan Pancoast",
 CardRules::new_sorcery(mana_cost!("{2}{R}")).with_ability(AbilityDef::spell(
         "Create three 1/1 red Human creature tokens with haste. Sacrifice those tokens at the beginning of the next end step.",
-        EffectDef::create_creature_token(&["Human"], &[ManaColor::Red], 1, 1)
-            .with_abilities(&[abilities::haste()])
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Human"], &[ManaColor::Red], 1, 1)
+                    .with_abilities(&[abilities::haste()]),
+            ))
             .with_amount(3)
             .with_created_tokens(CreatedTokensDef {
                 binding: ParentBinding,
-                then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(
-                    &AbilityDef::triggered(
-                        "At the beginning of the next end step, sacrifice those tokens.",
-                        TriggerEventDef::StepBegins {
-                            step: TurnStepDef::End,
-                            player: PlayerRelation::Any,
-                        },
-                        EffectDef::sacrifice(EffectRecipientDef::objects(
-                            ObjectSetDef::Binding(ParentBinding),
-                        )),
-                    ),
-                )),
+                then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+                    "At the beginning of the next end step, sacrifice those tokens.",
+                    TriggerEventDef::StepBegins {
+                        step: TurnStepDef::End,
+                        player: PlayerRelation::Any,
+                    },
+                    EffectDef::sacrifice(EffectRecipientDef::objects(ObjectSetDef::Binding(
+                        ParentBinding,
+                    ))),
+                ))),
             }),
+        ),
     )),
 );
 
@@ -5009,10 +5035,14 @@ CardRules::new_artifact(mana_cost!("{4}"))
             AbilityDef::triggered(
                 "Whenever equipped creature attacks, create a 4/4 white Angel creature token with flying.",
                 TriggerEventDef::attacks(ObjectPredicateDef::AttachedToSource),
-                EffectDef::create_creature_token(&["Angel"], &[ManaColor::White], 4, 4).with_abilities(&[abilities::flying()]).with_art(CardArt::new(
-                        "68dd1682-a5d5-4323-b876-66a86c311c43",
-                        "Anthony Palumbo",
-                    )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Angel"], &[ManaColor::White], 4, 4)
+                        .with_abilities(&[abilities::flying()])
+                        .with_art(CardArt::new(
+                            "68dd1682-a5d5-4323-b876-66a86c311c43",
+                            "Anthony Palumbo",
+                        )),
+                ))),
             ),
             abilities::equip(&[CostDef::Mana(mana_cost!("{4}"))], "Equip {4}"),
         ]),

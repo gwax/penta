@@ -196,7 +196,7 @@ fn a_token_ceases_to_exist_and_the_life_is_still_paid() {
     let (mut game, oust) = staged();
     game.create_token(
         PlayerId::Two,
-        tokens::creature(&["Bear"], &[ManaColor::Green], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Bear"], &[ManaColor::Green], 2, 2),
     );
     drain_pending(&mut game);
     let token = game

@@ -28,6 +28,7 @@ use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureStats;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageEventMatcherDef;
@@ -60,6 +61,7 @@ use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenCountersDef;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnPhaseDef;
@@ -797,15 +799,17 @@ pub(in crate::card::sets) static GLIMMERLIGHT: CardRecord = CardRecord::new(
                 "When this Equipment enters, create a 1/1 white Glimmer enchantment creature token.",
                 // An enchantment creature, so it needs the general token
                 // constructor rather than the creature-only shorthand.
-                EffectDef::create_token(TokenCharacteristics::new(
-                    CardTypeSet::single(CardType::Enchantment).with(CardType::Creature),
-                    &["Glimmer"],
-                    &[ManaColor::White],
-                    Some(CreatureStats {
-                        power: 1,
-                        toughness: 1,
-                    }),
-                )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::new(
+                        CardTypeSet::single(CardType::Enchantment).with(CardType::Creature),
+                        &["Glimmer"],
+                        &[ManaColor::White],
+                        Some(CreatureStats {
+                            power: 1,
+                            toughness: 1,
+                        }),
+                    ),
+                ))),
             ),
             AbilityDef::static_ability(
                 "Equipped creature gets +1/+1.",
@@ -1121,9 +1125,13 @@ pub(in crate::card::sets) static OVERLORD_OF_THE_MISTMOORS: CardRecord = CardRec
                 ]),
                 // Two at a time, which is one instruction rather than two: what watches
                 // for tokens being created sees one batch of two.
-                EffectDef::create_creature_token(&["Insect"], &[ManaColor::White], 2, 1)
-                        .with_abilities(&[abilities::flying()])
-                        .with_amount(2),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Insect"], &[ManaColor::White], 2, 1)
+                            .with_abilities(&[abilities::flying()]),
+                    ))
+                    .with_amount(2),
+                ),
             ),
         ]),
 );

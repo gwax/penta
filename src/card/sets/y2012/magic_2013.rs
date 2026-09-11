@@ -26,6 +26,7 @@ use crate::card::ConditionalStaticEffectDef;
 use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamageKindDef;
 use crate::card::DamageLimitDef;
@@ -56,6 +57,8 @@ use crate::card::SacrificedAmountDef;
 use crate::card::StaticApplyDef;
 use crate::card::SubtypeDef;
 use crate::card::TargetChooserDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -144,12 +147,16 @@ pub(in crate::card::sets) static AJANI_CALLER_OF_THE_PRIDE: CardRecord = CardRec
             AbilityDef::activated(
                 "−8: Create X 2/2 white Cat creature tokens, where X is your life total.",
                 &[CostDef::Loyalty(-8)],
-                EffectDef::create_creature_token(&["Cat"], &[ManaColor::White], 2, 2)
-                    .with_art(CardArt::new(
-                        "f97868f6-a9ce-4ce9-bc3f-b535f3202602",
-                        "Jesper Ejsing",
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Cat"], &[ManaColor::White], 2, 2)
+                            .with_art(CardArt::new(
+                                "f97868f6-a9ce-4ce9-bc3f-b535f3202602",
+                                "Jesper Ejsing",
+                            )),
                     ))
                     .with_count(ValueDef::LifeTotal(PlayerRelation::You)),
+                ),
             ),
         ]),
 );
@@ -186,9 +193,11 @@ pub(in crate::card::sets) static ATTENDED_KNIGHT: CardRecord = CardRecord::new(
         abilities::first_strike(),
         abilities::enters_trigger(
             "When this creature enters, create a 1/1 white Soldier creature token.",
-            EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1).with_art(
-                CardArt::new("86272c08-c5f2-413f-87ea-b135aca2d9c5", "Greg Staples"),
-            ),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1).with_art(
+                    CardArt::new("86272c08-c5f2-413f-87ea-b135aca2d9c5", "Greg Staples"),
+                ),
+            ))),
         ),
     ]),
 );
@@ -234,12 +243,14 @@ pub(in crate::card::sets) static CAPTAINS_CALL: CardRecord = CardRecord::new(
     "Greg Staples",
     CardRules::new_sorcery(mana_cost!("{3}{W}")).with_ability(AbilityDef::spell(
         "Create three 1/1 white Soldier creature tokens.",
-        EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1)
-            .with_art(CardArt::new(
-                "86272c08-c5f2-413f-87ea-b135aca2d9c5",
-                "Greg Staples",
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1).with_art(
+                    CardArt::new("86272c08-c5f2-413f-87ea-b135aca2d9c5", "Greg Staples"),
+                ),
             ))
             .with_amount(3),
+        ),
     )),
 );
 
@@ -1089,7 +1100,14 @@ CardRules::new_creature(
                 ObjectPredicateDef::HasType(CardType::Sorcery),
             ]),
         ])),
-        EffectDef::create_creature_token(&["Drake"], &[ManaColor::Blue], 2, 2).with_abilities(&[abilities::flying()]).with_art(CardArt::new("93679bb9-ee1c-4eea-bcdd-72785d5788af", "Svetlin Velinov")),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::creature(&["Drake"], &[ManaColor::Blue], 2, 2)
+                .with_abilities(&[abilities::flying()])
+                .with_art(CardArt::new(
+                    "93679bb9-ee1c-4eea-bcdd-72785d5788af",
+                    "Svetlin Velinov",
+                )),
+        ))),
     )),
 );
 
@@ -1100,13 +1118,17 @@ pub(in crate::card::sets) static TALRANDS_INVOCATION: CardRecord = CardRecord::n
     "Svetlin Velinov",
     CardRules::new_sorcery(mana_cost!("{2}{U}{U}")).with_ability(AbilityDef::spell(
         "Create two 2/2 blue Drake creature tokens with flying.",
-        EffectDef::create_creature_token(&["Drake"], &[ManaColor::Blue], 2, 2)
-            .with_abilities(&[abilities::flying()])
-            .with_art(CardArt::new(
-                "93679bb9-ee1c-4eea-bcdd-72785d5788af",
-                "Svetlin Velinov",
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Drake"], &[ManaColor::Blue], 2, 2)
+                    .with_abilities(&[abilities::flying()])
+                    .with_art(CardArt::new(
+                        "93679bb9-ee1c-4eea-bcdd-72785d5788af",
+                        "Svetlin Velinov",
+                    )),
             ))
             .with_amount(2),
+        ),
     )),
 );
 
@@ -1812,9 +1834,11 @@ pub(in crate::card::sets) static VILE_REBIRTH: CardRecord = CardRecord::new(
                 ZoneKind::Exile,
                 ZonePlacement::Top,
             ),
-            EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2).with_art(
-                CardArt::new("1966d7e6-cd4a-47ff-bc3e-f8e0db8a3439", "Lucas Graciano"),
-            ),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2).with_art(
+                    CardArt::new("1966d7e6-cd4a-47ff-bc3e-f8e0db8a3439", "Lucas Graciano"),
+                ),
+            ))),
         ]),
     )),
 );
@@ -2145,14 +2169,21 @@ CardRules::new_creature(
     .with_ability(AbilityDef::activated(
         "{T}: Create X 1/1 red Goblin creature tokens, where X is the number of Goblins you control.",
         &[CostDef::TapSource],
-        EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1).with_art(CardArt::new("0e67efea-8a80-42ec-8e77-07d387d933d4", "Karl Kopinski")).with_count(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-            ObjectPredicateDef::All(&[
-                ObjectPredicateDef::HasType(CardType::Creature),
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
-            ]),
-            &[ZoneKind::Battlefield],
-            PlayerRelation::You,
-        ))),
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1).with_art(
+                    CardArt::new("0e67efea-8a80-42ec-8e77-07d387d933d4", "Karl Kopinski"),
+                ),
+            ))
+            .with_count(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ))),
+        ),
     )),
 );
 
@@ -2163,12 +2194,14 @@ pub(in crate::card::sets) static KRENKOS_COMMAND: CardRecord = CardRecord::new(
     "Karl Kopinski",
     CardRules::new_sorcery(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell(
         "Create two 1/1 red Goblin creature tokens.",
-        EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1)
-            .with_art(CardArt::new(
-                "0e67efea-8a80-42ec-8e77-07d387d933d4",
-                "Karl Kopinski",
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1).with_art(
+                    CardArt::new("0e67efea-8a80-42ec-8e77-07d387d933d4", "Karl Kopinski"),
+                ),
             ))
             .with_amount(2),
+        ),
     )),
 );
 
@@ -2682,7 +2715,14 @@ pub(in crate::card::sets) static FUNGAL_SPROUTING: CardRecord = CardRecord::new(
     "Brad Rigney",
 CardRules::new_sorcery(mana_cost!("{3}{G}")).with_ability(AbilityDef::spell(
         "Create X 1/1 green Saproling creature tokens, where X is the greatest power among creatures you control.",
-        EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(CardArt::new("dd67de8a-3879-4d03-a716-6e907d597b25", "Brad Rigney")).with_count(abilities::greatest_power_you_control()),
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(
+                    CardArt::new("dd67de8a-3879-4d03-a716-6e907d597b25", "Brad Rigney"),
+                ),
+            ))
+            .with_count(abilities::greatest_power_you_control()),
+        ),
     )),
 );
 
@@ -2956,9 +2996,11 @@ pub(in crate::card::sets) static THRAGTUSK: CardRecord = CardRecord::new(
                 Some(ZoneKind::Battlefield),
                 None,
             ),
-            EffectDef::create_creature_token(&["Beast"], &[ManaColor::Green], 3, 3).with_art(
-                CardArt::new("c94010f1-cd4b-4f65-8a0e-2df6eec058ec", "John Donahue"),
-            ),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3).with_art(
+                    CardArt::new("c94010f1-cd4b-4f65-8a0e-2df6eec058ec", "John Donahue"),
+                ),
+            ))),
         ),
     ]),
 );
@@ -3468,7 +3510,9 @@ CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[
                 CostDef::TapSource,
                 CostDef::PayLife(1),
             ],
-            EffectDef::create_creature_token(&["Goat"], &[ManaColor::White], 0, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Goat"], &[ManaColor::White], 0, 1),
+            ))),
         ),
         AbilityDef::activated_with_targets(
             "{1}, {T}, Sacrifice a creature: Return target artifact card from your graveyard to your hand.",
@@ -3588,8 +3632,10 @@ CardRules::new_land(&[]).with_abilities(&[
                 },
                 CostDef::SacrificeSource,
             ],
-            EffectDef::create_creature_token(&["Hellion"], &[ManaColor::Red], 4, 4)
-                .with_abilities(&[abilities::haste()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Hellion"], &[ManaColor::Red], 4, 4)
+                    .with_abilities(&[abilities::haste()]),
+            ))),
         ),
     ]),
 );

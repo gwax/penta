@@ -44,7 +44,7 @@ fn white_suns_zenith_creates_cats_then_returns_and_shuffles() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Cat"], &[ManaColor::White], 2, 2)
+                crate::card::TokenCharacteristics::creature(&["Cat"], &[ManaColor::White], 2, 2)
             ))
             .count(),
         2,

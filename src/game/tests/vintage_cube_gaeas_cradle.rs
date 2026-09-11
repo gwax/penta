@@ -102,7 +102,7 @@ fn tokens_and_animated_lands_count_too() {
     let (mut game, cradle) = staged(&[cards::JADE_STATUE], &[]);
     game.battlefield.push(token_permanent(
         64_100,
-        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1),
         PlayerId::One,
     ));
     assert_eq!(

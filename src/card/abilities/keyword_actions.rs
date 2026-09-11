@@ -273,10 +273,12 @@ pub const fn manifest_dread() -> EffectDef {
 }
 
 /// Populate's copy step, made once its choice has landed.
-static POPULATE_COPY: EffectDef = EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-    object: &EffectRecipientDef::object(ObjectRefDef::Binding(ParentBinding)),
-    exceptions: CopyExceptionsDef::NONE,
-});
+static POPULATE_COPY: EffectDef = EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+    crate::card::TokenDef::Copy(&crate::card::TokenCopyDef {
+        object: &EffectRecipientDef::object(ObjectRefDef::Binding(ParentBinding)),
+        exceptions: CopyExceptionsDef::NONE,
+    }),
+));
 
 /// Populate: choose a creature token you control, then create a copy of it.
 /// The choice is not a target -- nothing about it is checked again -- and a

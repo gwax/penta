@@ -25,6 +25,7 @@ use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatedTokensDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamagePreventionDef;
@@ -56,6 +57,8 @@ use crate::card::RoundingDef;
 use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -135,11 +138,15 @@ pub(in crate::card::sets) static AFTERLIFE: CardRecord = CardRecord::new(
             },
             // The Spirit is theirs, not yours: it is compensation rather than
             // a second half of the removal.
-            EffectDef::create_creature_token(&["Spirit"], &[ManaColor::White], 1, 1)
-                .with_abilities(&const { [abilities::flying()] })
-                .with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
-                    TargetIndex::PRIMARY,
-                ))),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
+                        .with_abilities(&const { [abilities::flying()] }),
+                ))
+                .with_controller(PlayerRefDef::ControllerOf(
+                    ObjectRefDef::Target(TargetIndex::PRIMARY),
+                )),
+            ),
         ]),
     )),
 );
@@ -1517,8 +1524,11 @@ pub(in crate::card::sets) static TIDAL_WAVE: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{2}{U}")).with_ability(AbilityDef::spell(
         "Create a 5/5 blue Wall creature token with defender. Sacrifice it at the beginning of \
          the next end step.",
-        EffectDef::create_creature_token(&["Wall"], &[ManaColor::Blue], 5, 5)
-            .with_abilities(&const { [abilities::defender()] })
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Wall"], &[ManaColor::Blue], 5, 5)
+                    .with_abilities(&const { [abilities::defender()] }),
+            ))
             .with_created_tokens(CreatedTokensDef {
                 // Bound as it is created, so the delayed clause sacrifices
                 // this Wall rather than any Wall on the board.
@@ -1540,6 +1550,7 @@ pub(in crate::card::sets) static TIDAL_WAVE: CardRecord = CardRecord::new(
                     ))
                 },
             }),
+        ),
     )),
 );
 

@@ -200,7 +200,7 @@ fn the_commander_arrives_with_three_goblins() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1)
+                crate::card::TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1)
             ))
             .count(),
         3,

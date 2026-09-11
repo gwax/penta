@@ -24,6 +24,7 @@ use crate::card::ConditionDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DrawEventMatcherDef;
 use crate::card::EffectDef;
@@ -41,6 +42,8 @@ use crate::card::PlayerSetDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -239,9 +242,11 @@ pub(in crate::card::sets) static ORCISH_BOWMASTERS: CardRecord = CardRecord::new
                             comparison: ComparisonDef::Equal,
                             amount: 0,
                         },
-                        then: &EffectDef::create_creature_token(&["Orc", "Army"], &[ManaColor::Black], 0, 0).with_art(
+                        then: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::creature(&["Orc", "Army"], &[ManaColor::Black], 0, 0).with_art(
                                 CardArt::new("6943f966-fd21-427c-a13f-44727edcaa4b", "Veli Nyström"),
                             ),
+                        ))),
                     },
                     EffectDef::Choose(ChooseDef {
                         binding: ObjectChoiceBindingDef::Objects(ParentBinding),
@@ -386,8 +391,15 @@ pub(in crate::card::sets) static RALLY_AT_THE_HORNBURG: CardRecord = CardRecord:
         "Create two 1/1 white Human Soldier creature tokens. Humans you control gain haste until \
          end of turn.",
         EffectDef::Sequence(&[
-            EffectDef::create_creature_token(&["Human", "Soldier"], &[ManaColor::White], 1, 1)
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Human", "Soldier"],
+                    &[ManaColor::White],
+                    1,
+                    1,
+                )))
                 .with_amount(2),
+            ),
             // Read after the tokens arrive, which is what lets them attack
             // the turn this resolves.
             EffectDef::Apply {
@@ -435,10 +447,12 @@ pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new(
     "Simon Dominic",
 CardRules::new_creature(mana_cost!("{5}{G}"), &["Treefolk"], 5, 7).with_abilities(&[
         abilities::reach(),
-        abilities::enters_trigger("When this creature enters, create a Food token.", EffectDef::create_token(tokens::food()).with_art(CardArt::new(
+        abilities::enters_trigger("When this creature enters, create a Food token.", EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            tokens::food().with_art(CardArt::new(
                 "4a029bdc-92e3-4d85-8af5-e33429a5f017",
                 "L J Koh",
-            ))),
+            )),
+        )))),
         // Six mana is not what this card is for. Forestcycling is: one mana
         // from hand, and the Ent becomes the land the draw did not give you.
         abilities::typecycling!(

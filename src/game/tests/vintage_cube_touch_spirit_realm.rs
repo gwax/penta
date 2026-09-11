@@ -251,7 +251,7 @@ fn a_token_it_blinks_never_comes_back() {
     let (mut game, touch, _) = staged(&[]);
     let token = token_permanent(
         107_500,
-        tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
         PlayerId::One,
     );
     let token_id = token.card.id;

@@ -23,6 +23,7 @@ use crate::card::ChooseDef;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatedTokensDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -46,6 +47,8 @@ use crate::card::QuantifierDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SpellForm;
 use crate::card::SpellResolutionDestinationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -98,10 +101,14 @@ pub(in crate::card::sets) const fn mobilize(count: u16, text: &'static str) -> A
     AbilityDef::triggered(
         text,
         TriggerEventDef::attacks(ObjectPredicateDef::Source),
-        EffectDef::create_creature_token(&["Warrior"], &[ManaColor::Red], 1, 1)
-            .with_art(crate::card::CardArt::new(
-                "7edc0515-a130-45a7-aa09-0e23bba41587",
-                "Forrest Imel",
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Warrior"], &[ManaColor::Red], 1, 1).with_art(
+                    crate::card::CardArt::new(
+                        "7edc0515-a130-45a7-aa09-0e23bba41587",
+                        "Forrest Imel",
+                    ),
+                ),
             ))
             .with_amount(count)
             .entering_tapped()
@@ -110,6 +117,7 @@ pub(in crate::card::sets) const fn mobilize(count: u16, text: &'static str) -> A
                 binding: ParentBinding,
                 then: &MOBILIZE_SACRIFICE,
             }),
+        ),
     )
 }
 
@@ -322,12 +330,14 @@ fn riling_dawnbreaker_composition() -> CardComposition {
             .with_ability(
                 AbilityDef::spell(
                     "Create a 2/2 white Soldier creature token.",
-                    EffectDef::create_creature_token(
-                        &const { ["Soldier"] },
-                        &const { [ManaColor::White] },
-                        2,
-                        2,
-                    ),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(
+                            &const { ["Soldier"] },
+                            &const { [ManaColor::White] },
+                            2,
+                            2,
+                        ),
+                    ))),
                 )
                 .with_resolution_destination(SpellResolutionDestinationDef::LibraryShuffled),
             )
@@ -819,11 +829,14 @@ pub(in crate::card::sets) static CORI_STEEL_CUTTER: CardRecord = CardRecord::new
                     comparison: ComparisonDef::Equal,
                     amount: 2,
                 },
-                EffectDef::create_creature_token(&["Monk"], &[ManaColor::White], 1, 1)
-                    .with_abilities(&[abilities::prowess()])
-                    .with_art(CardArt::new(
-                        "633d2d10-def7-426f-8496-ed6b45684299",
-                        "Elizabeth Peiró",
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Monk"], &[ManaColor::White], 1, 1)
+                            .with_abilities(&[abilities::prowess()])
+                            .with_art(CardArt::new(
+                                "633d2d10-def7-426f-8496-ed6b45684299",
+                                "Elizabeth Peiró",
+                            )),
                     ))
                     .with_created_tokens(CreatedTokensDef {
                         binding: ParentBinding,
@@ -839,6 +852,7 @@ pub(in crate::card::sets) static CORI_STEEL_CUTTER: CardRecord = CardRecord::new
                             },
                         },
                     }),
+                ),
             ),
             abilities::equip(&[CostDef::Mana(mana_cost!("{1}{R}"))], "Equip {1}{R}"),
         ]),
@@ -875,7 +889,9 @@ pub(in crate::card::sets) static ELSPETH_STORM_SLAYER: CardRecord = CardRecord::
             AbilityDef::activated(
                 "+1: Create a 1/1 white Soldier creature token.",
                 &[CostDef::Loyalty(1)],
-                EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1),
+                ))),
             ),
             AbilityDef::activated(
                 "0: Put a +1/+1 counter on each creature you control. Those creatures gain flying until \

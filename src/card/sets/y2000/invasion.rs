@@ -24,6 +24,7 @@ use crate::card::ChooseGroupDef;
 use crate::card::ColorSet;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -48,6 +49,8 @@ use crate::card::RevealObjectsDef;
 use crate::card::SacrificedAmountDef;
 use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -4252,8 +4255,15 @@ pub(in crate::card::sets) static ARTIFACT_MUTATION: CardRecord = CardRecord::new
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 then: None,
             },
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1)
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Saproling"],
+                    &[ManaColor::Green],
+                    1,
+                    1,
+                )))
                 .with_count(ValueDef::TargetManaValue(TargetIndex::PRIMARY)),
+            ),
         ]),
     )),
 );
@@ -4278,8 +4288,15 @@ pub(in crate::card::sets) static AURA_MUTATION: CardRecord = CardRecord::new(
             },
             // X is read after the destruction, from last-known
             // information about the enchantment that just left.
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1)
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Saproling"],
+                    &[ManaColor::Green],
+                    1,
+                    1,
+                )))
                 .with_count(ValueDef::TargetManaValue(TargetIndex::PRIMARY)),
+            ),
         ]),
     )),
 );

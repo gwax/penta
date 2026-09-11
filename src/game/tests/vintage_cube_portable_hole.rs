@@ -313,7 +313,7 @@ fn a_token_it_swallows_never_comes_back() {
     let (mut game, hole, _) = staged(&[]);
     let token = token_permanent(
         118_400,
-        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1),
         PlayerId::Two,
     );
     let token_id = token.card.id;
@@ -343,7 +343,7 @@ fn a_token_it_swallows_never_comes_back() {
     assert!(
         !game.battlefield.iter().any(|permanent| is_token_with(
             permanent,
-            tokens::creature(&["Bird"], &[ManaColor::White], 1, 1)
+            crate::card::TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1)
         )),
         "a token that left the battlefield has nothing to come back as",
     );

@@ -14,6 +14,7 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -23,6 +24,8 @@ use crate::card::PlayerRelation;
 use crate::card::ReplacementEffectDef;
 use crate::card::ReplacementEventDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnKindDef;
 use crate::card::ValueDef;
@@ -156,7 +159,15 @@ pub(in crate::card::sets) static HORDELING_OUTBURST: CardRecord = CardRecord::ne
     // sorcery speed is the price for not paying one mana each.
     CardRules::new_sorcery(mana_cost!("{1}{R}{R}")).with_ability(AbilityDef::spell(
         "Create three 1/1 red Goblin creature tokens.",
-        EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1).with_amount(3),
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                &["Goblin"],
+                &[ManaColor::Red],
+                1,
+                1,
+            )))
+            .with_amount(3),
+        ),
     )),
 );
 

@@ -14,6 +14,7 @@ use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -25,6 +26,7 @@ use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -124,7 +126,9 @@ pub(in crate::card::sets) static CARNAGE_INTERPRETER: CardRecord = CardRecord::n
                         selection: DiscardSelectionDef::RecipientChooses,
                         then: None,
                     },
-                    EffectDef::create_token(tokens::clue()).with_count(ValueDef::Constant(4)),
+                    EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Literal(tokens::clue())).with_count(ValueDef::Constant(4)),
+                    ),
                 ]),
             ),
             AbilityDef::static_ability(

@@ -269,7 +269,7 @@ fn a_token_of_theirs_still_dies() {
     let (mut game, _voidwalker, _ids) = staged(&[]);
     let token = token_permanent(
         95_400,
-        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1),
         PlayerId::Two,
     );
     let token_id = token.card.id;

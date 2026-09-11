@@ -498,7 +498,9 @@ pub const fn eternalize_with_costs(text: &'static str, costs: &'static [CostDef]
         text,
         costs,
         &[],
-        EffectDef::create_token_from_copy(&ETERNALIZE_COPY),
+        EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+            crate::card::TokenDef::Copy(&ETERNALIZE_COPY),
+        )),
     )
     .with_source_zones(&[ZoneKind::Graveyard])
     .with_activation_timing(ActivationTimingDef::SorcerySpeed)

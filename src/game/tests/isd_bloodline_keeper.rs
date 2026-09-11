@@ -61,7 +61,7 @@ fn settle(game: &mut Game) {
 fn vampire_token(id: u32, controller: PlayerId) -> Permanent {
     token_permanent(
         id,
-        tokens::creature(&["Vampire"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Vampire"], &[ManaColor::Black], 2, 2),
         controller,
     )
 }

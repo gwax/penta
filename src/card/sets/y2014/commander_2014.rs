@@ -10,6 +10,7 @@ use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
@@ -17,6 +18,8 @@ use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::ReplacementEffectDef;
 use crate::card::ReplacementEventDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
@@ -100,9 +103,11 @@ pub(in crate::card::sets) static TITANIA_PROTECTOR_OF_ARGOTH: CardRecord =
                         Some(ZoneKind::Battlefield),
                         Some(ZoneKind::Graveyard),
                     ),
-                    EffectDef::create_creature_token(&["Elemental"], &[ManaColor::Green], 5, 3).with_art(
-                        CardArt::new("27440269-3b09-4010-8401-f159dc49a4cd", "Nils Hamm"),
-                    ),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Elemental"], &[ManaColor::Green], 5, 3).with_art(
+                            CardArt::new("27440269-3b09-4010-8401-f159dc49a4cd", "Nils Hamm"),
+                        ),
+                    ))),
                 ),
             ]),
 );

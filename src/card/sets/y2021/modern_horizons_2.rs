@@ -28,6 +28,7 @@ use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamageKindDef;
 use crate::card::DamageRecipientMatcherDef;
@@ -61,6 +62,8 @@ use crate::card::SacrificedAmountDef;
 use crate::card::SetOperationDef;
 use crate::card::SubtypeDef;
 use crate::card::TargetChooserDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueComparisonDef;
@@ -182,8 +185,10 @@ pub(in crate::card::sets) static HARD_EVIDENCE: CardRecord = CardRecord::new(
         "Create a 0/3 blue Crab creature token. Investigate. (Create a Clue token. It's an \
          artifact with \"{2}, Sacrifice this token: Draw a card.\")",
         EffectDef::Sequence(&[
-            EffectDef::create_creature_token(&["Crab"], &[ManaColor::Blue], 0, 3),
-            EffectDef::create_token(tokens::clue()),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Crab"], &[ManaColor::Blue], 0, 3),
+            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(tokens::clue()))),
         ]),
     )),
 );
@@ -525,9 +530,16 @@ pub(in crate::card::sets) static NESTED_SHAMBLER: CardRecord = CardRecord::new(
             // Last-known power: it is already in the graveyard by the time
             // the trigger resolves, so a pump that resolved first still
             // counts.
-            EffectDef::create_creature_token(&["Squirrel"], &[ManaColor::Green], 1, 1)
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Squirrel"],
+                    &[ManaColor::Green],
+                    1,
+                    1,
+                )))
                 .with_count(ValueDef::SourcePower)
                 .entering_tapped(),
+            ),
         ),
     ),
 );
@@ -738,10 +750,12 @@ pub(in crate::card::sets) static RAGAVAN_NIMBLE_PILFERER: CardRecord = CardRecor
                  exile the top card of that player's library. Until end of turn, you may cast that card.",
                 TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
                 EffectDef::Sequence(&[
-                    EffectDef::create_token(tokens::treasure()).with_art(CardArt::new(
-                        "630c0d1c-9ddb-4e76-a82a-9cdd8a5b487b",
-                        "Alayna Danner",
-                    )),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        tokens::treasure().with_art(CardArt::new(
+                            "630c0d1c-9ddb-4e76-a82a-9cdd8a5b487b",
+                            "Alayna Danner",
+                        )),
+                    ))),
                     // "That player's library", and the permission is yours: what the Monkey
                     // steals is theirs to lose and yours to cast.
                     EffectDef::ExileTopOfLibraryToPlay {
@@ -1056,7 +1070,9 @@ pub(in crate::card::sets) static GRIST_THE_HUNGER_TIDE: CardRecord = CardRecord:
                 // a process with nothing to stop it still stops.
                 EffectDef::MillWhileMatching(&MillLoopDef {
                     player: EffectRecipientDef::Controller,
-                    body: &EffectDef::create_creature_token(&["Insect"], &[ManaColor::Black, ManaColor::Green], 1, 1),
+                    body: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Insect"], &[ManaColor::Black, ManaColor::Green], 1, 1),
+                    ))),
                     // An Insect card in the library keeps the process going -- and a Grist on
                     // top is one, which is what his own first clause is for.
                     object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Insect")),
@@ -1347,19 +1363,21 @@ pub(in crate::card::sets) static URZA_S_SAGA: CardRecord = CardRecord::new(
                             CostDef::Mana(mana_cost!("{2}")),
                             CostDef::TapSource,
                         ],
-                        EffectDef::create_artifact_creature_token(&["Construct"], &[], 0, 0)
-                            // The token's own clause, printed on the token rather than on the Saga:
-                            // it counts itself, so the first one is a 1/1 on an otherwise empty board.
-                            .with_abilities(&[AbilityDef::static_ability(
-                                "This token gets +1/+1 for each artifact you control.",
-                                EffectDef::StaticApply {
-                                    recipient: EffectRecipientDef::Source,
-                                    effect: AppliedEffectDef::modify_power_toughness(
-                                        ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL_SAGA),
-                                        ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL_SAGA),
-                                    ),
-                                },
-                            )]),
+                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::artifact_creature(&["Construct"], &[], 0, 0)
+                                // The token's own clause, printed on the token rather than on the Saga:
+                                // it counts itself, so the first one is a 1/1 on an otherwise empty board.
+                                .with_abilities(&[AbilityDef::static_ability(
+                                    "This token gets +1/+1 for each artifact you control.",
+                                    EffectDef::StaticApply {
+                                        recipient: EffectRecipientDef::Source,
+                                        effect: AppliedEffectDef::modify_power_toughness(
+                                            ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL_SAGA),
+                                            ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL_SAGA),
+                                        ),
+                                    },
+                                )]),
+                        ))),
                     )),
                     duration: ResolvedEffectDurationDef::Permanent,
                 },

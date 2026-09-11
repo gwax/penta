@@ -4,11 +4,13 @@ use super::CardRecord;
 use super::PrintingRecord;
 use crate::card::AbilityDef;
 use crate::card::CardRules;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::PlayerRelation;
 use crate::card::ReplacementAbilityDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ReplacementEventDef;
+use crate::card::TokenDef;
 use crate::card::abilities;
 use crate::card::tokens;
 use crate::mana_cost;
@@ -49,7 +51,7 @@ pub(in crate::card::sets) static HULLBREACHER: CardRecord = CardRecord::new(
                 // the card they would have drawn stays in their library.
                 ReplacementEffectDef::Sequence(&[
                     ReplacementEffectDef::ReplaceEventWithNothing,
-                    ReplacementEffectDef::Perform(&EffectDef::create_token(tokens::treasure())),
+                    ReplacementEffectDef::Perform(&EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(tokens::treasure())))),
                 ]),
             ),
         ]),

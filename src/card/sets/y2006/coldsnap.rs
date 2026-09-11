@@ -19,6 +19,7 @@ use crate::card::ComparisonDef;
 use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::InstalledTriggerDef;
@@ -34,6 +35,7 @@ use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::ScaledValueDef;
 use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -400,10 +402,12 @@ pub(in crate::card::sets) static DARK_DEPTHS: CardRecord = CardRecord::new(
                         EffectDef::sacrifice(EffectRecipientDef::Source),
                         // Twenty power for no mana at all, which is what the ten counters are
                         // paying for. Legendary, so a second one is not a plan.
-                        EffectDef::create_token(TokenCharacteristics::creature(&["Avatar"], &[ManaColor::Black], 20, 20)
+                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::creature(&["Avatar"], &[ManaColor::Black], 20, 20)
                                 .with_supertype(CardSupertype::Legendary)
                                 .with_name("Marit Lage")
-                                .with_abilities(&[abilities::flying(), abilities::indestructible()])),
+                                .with_abilities(&[abilities::flying(), abilities::indestructible()]),
+                        ))),
                     ]),
                 },
             ),

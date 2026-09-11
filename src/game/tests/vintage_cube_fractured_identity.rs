@@ -237,7 +237,7 @@ fn a_token_is_taken_and_copied_like_anything_else() {
     let (mut game, held, _) = staged(&[]);
     let token = token_permanent(
         86_100,
-        tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+        crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3),
         PlayerId::Two,
     );
     let token_id = token.card.id;

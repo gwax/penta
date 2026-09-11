@@ -85,7 +85,12 @@ fn fungal_sprouting_makes_one_saproling_per_greatest_power() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Saproling"], &[ManaColor::Green], 1, 1)
+                crate::card::TokenCharacteristics::creature(
+                    &["Saproling"],
+                    &[ManaColor::Green],
+                    1,
+                    1
+                )
             ))
             .count(),
         4,

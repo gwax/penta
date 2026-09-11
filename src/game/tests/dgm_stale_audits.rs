@@ -140,7 +140,7 @@ fn emmara_shields_creature_tokens_only() {
     game.battlefield.push(emmara);
     let token = token_permanent(
         10_100,
-        tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1),
         PlayerId::One,
     );
     let token_id = token.card.id;
@@ -182,7 +182,7 @@ fn emmara_covers_a_token_that_arrives_later() {
     game.enqueue_battlefield_entry(PendingBattlefieldEntry {
         permanent: token_permanent(
             10_100,
-            tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+            crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1),
             PlayerId::One,
         ),
         from: ZoneKind::Battlefield,
@@ -197,7 +197,7 @@ fn emmara_covers_a_token_that_arrives_later() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+                crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1),
             )
         })
         .expect("it arrived")

@@ -27,6 +27,7 @@ use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardFollowUpDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
@@ -55,6 +56,8 @@ use crate::card::RevealAndClassifyCardsDef;
 use crate::card::SacrificedAmountDef;
 use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -1032,9 +1035,11 @@ pub(in crate::card::sets) static WALL_OF_KELP: CardRecord = CardRecord::new(
         AbilityDef::activated(
             "{U}{U}, {T}: Create a 0/1 blue Plant Wall creature token with defender named Kelp.",
             &[CostDef::Mana(mana_cost!("{U}{U}")), CostDef::TapSource],
-            EffectDef::create_creature_token(&["Plant", "Wall"], &[ManaColor::Blue], 0, 1)
-                .with_name("Kelp")
-                .with_abilities(&[abilities::defender()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Plant", "Wall"], &[ManaColor::Blue], 0, 1)
+                    .with_name("Kelp")
+                    .with_abilities(&[abilities::defender()]),
+            ))),
         ),
     ]),
 );
@@ -1145,14 +1150,17 @@ CardRules::new_enchantment(mana_cost!("{B}{B}")).with_abilities(&[
                     2,
                 )),
             ],
-            EffectDef::create_creature_token(&["Skeleton"], &[ManaColor::Black], 1, 1)
-                .with_abilities(&[AbilityDef::activated(
-                    "{B}: Regenerate this token.",
-                    &[CostDef::Mana(mana_cost!("{B}"))],
-                    EffectDef::Regenerate {
-                        object: EffectRecipientDef::Source,
-                    },
-                )]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Skeleton"], &[ManaColor::Black], 1, 1).with_abilities(&[
+                    AbilityDef::activated(
+                        "{B}: Regenerate this token.",
+                        &[CostDef::Mana(mana_cost!("{B}"))],
+                        EffectDef::Regenerate {
+                            object: EffectRecipientDef::Source,
+                        },
+                    ),
+                ]),
+            ))),
         ),
         AbilityDef::triggered(
             "When this enchantment leaves the battlefield, destroy all Skeleton tokens. They can't be regenerated.",
@@ -1430,7 +1438,15 @@ pub(in crate::card::sets) static SENGIR_AUTOCRAT: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{B}"), &["Human"], 2, 2).with_abilities(&[
         abilities::enters_trigger(
             "When this creature enters, create three 0/1 black Serf creature tokens.",
-            EffectDef::create_creature_token(&["Serf"], &[ManaColor::Black], 0, 1).with_amount(3),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Serf"],
+                    &[ManaColor::Black],
+                    0,
+                    1,
+                )))
+                .with_amount(3),
+            ),
         ),
         AbilityDef::triggered(
             "When this creature leaves the battlefield, exile all Serf tokens.",

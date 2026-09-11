@@ -16,6 +16,7 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureStats;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -27,6 +28,8 @@ use crate::card::ReplacementConditionDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SpellResolutionDestinationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -196,7 +199,9 @@ CardRules::new_enchantment(mana_cost!("{B}{B}{B}")).with_abilities(&[
                 Some(ZoneKind::Graveyard),
             ),
             &BRIDGE_FROM_BELOW_IS_IN_GRAVEYARD,
-            EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+            ))),
         )
         .with_source_zones(&[ZoneKind::Graveyard]),
         AbilityDef::triggered_if(
@@ -331,7 +336,9 @@ pub(in crate::card::sets) static SPROUT_SWARM: CardRecord = CardRecord::new(
         abilities::buyback(&[CostDef::Mana(mana_cost!("{3}"))]),
         AbilityDef::spell(
             "Create a 1/1 green Saproling creature token.",
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+            ))),
         ),
     ]),
 );

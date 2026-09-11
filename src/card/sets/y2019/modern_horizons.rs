@@ -21,6 +21,7 @@ use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DiscardFollowUpDef;
 use crate::card::DiscardSelectionDef;
@@ -41,13 +42,13 @@ use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::RevealAndClassifyCardsDef;
 use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
-use crate::card::tokens;
 use crate::ids::ParentBinding;
 use crate::mana_cost;
 
@@ -443,7 +444,7 @@ pub(in crate::card::sets) static URZA_LORD_HIGH_ARTIFICER: CardRecord = CardReco
             abilities::enters_trigger(
                 "When this creature enters, create a 0/0 colorless Construct artifact creature \
                  token with \"This token gets +1/+1 for each artifact you control.\"",
-                EffectDef::create_token(
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
                     TokenCharacteristics::artifact_creature(&["Construct"], &[], 0, 0)
                         .with_abilities(&[AbilityDef::static_ability(
                             "This token gets +1/+1 for each artifact you control.",
@@ -454,12 +455,12 @@ pub(in crate::card::sets) static URZA_LORD_HIGH_ARTIFICER: CardRecord = CardReco
                                     ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL),
                                 ),
                             },
-                        )]),
-                )
-                .with_art(CardArt::new(
-                    "85f212cd-4fc6-42fe-b268-22d8e3b2b7eb",
-                    "Victor Adame Minguez",
-                )),
+                        )])
+                        .with_art(CardArt::new(
+                            "85f212cd-4fc6-42fe-b268-22d8e3b2b7eb",
+                            "Victor Adame Minguez",
+                        )),
+                ))),
             ),
             AbilityDef::activated(
                 "Tap an untapped artifact you control: Add {U}.",
@@ -571,7 +572,7 @@ const RECKLESS_CHARGE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 /// pays one per nonland card it threw away, and the graveyard ability pays
 /// two flat.
 static PYROMANCER_ELEMENTAL: TokenCharacteristics =
-    tokens::creature(&["Elemental"], &[ManaColor::Red], 1, 1);
+    TokenCharacteristics::creature(&["Elemental"], &[ManaColor::Red], 1, 1);
 
 pub(in crate::card::sets) static SEASONED_PYROMANCER: CardRecord = CardRecord::new(
     "Seasoned Pyromancer",
@@ -600,16 +601,10 @@ pub(in crate::card::sets) static SEASONED_PYROMANCER: CardRecord = CardRecord::n
                                     recipient: EffectRecipientDef::Controller,
                                     amount: ValueDef::Constant(2),
                                 },
-                                EffectDef::CreateToken {
-                                    token: PYROMANCER_ELEMENTAL,
-                                    copy: None,
-                                    controller: None,
-                                    count: ValueDef::BoundObjectCount(ParentBinding),
-                                    tapped: false,
-                                    attacking: false,
-                                    counters: None,
-                                    created: None,
-                                },
+                                EffectDef::CreateToken(
+                                    CreateTokenDef::new(TokenDef::Literal(PYROMANCER_ELEMENTAL))
+                                        .with_count(ValueDef::BoundObjectCount(ParentBinding)),
+                                ),
                             ]),
                     }),
                 },
@@ -623,16 +618,9 @@ pub(in crate::card::sets) static SEASONED_PYROMANCER: CardRecord = CardRecord::n
                     CostDef::Mana(mana_cost!("{3}{R}{R}")),
                     CostDef::ExileSource,
                 ],
-                EffectDef::CreateToken {
-                    token: PYROMANCER_ELEMENTAL,
-                    copy: None,
-                    controller: None,
-                    count: ValueDef::Constant(2),
-                    tapped: false,
-                    attacking: false,
-                    counters: None,
-                    created: None,
-                },
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(PYROMANCER_ELEMENTAL)).with_count(ValueDef::Constant(2)),
+                ),
             )
             .with_source_zones(&[ZoneKind::Graveyard]),
         ]),
@@ -812,7 +800,15 @@ pub(in crate::card::sets) static MOTHER_BEAR: CardRecord = CardRecord::new(
                 CostDef::Mana(mana_cost!("{3}{G}{G}")),
                 CostDef::ExileSource,
             ],
-            EffectDef::create_creature_token(&["Bear"], &[ManaColor::Green], 2, 2).with_amount(2),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Bear"],
+                    &[ManaColor::Green],
+                    2,
+                    2,
+                )))
+                .with_amount(2),
+            ),
         )
         // Activated from the graveyard rather than the battlefield, the same
         // way scavenge is, and at sorcery speed.
@@ -831,7 +827,9 @@ pub(in crate::card::sets) static TRUMPETING_HERD: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{2}{G}{G}")).with_abilities(&[
         AbilityDef::spell(
             "Create a 3/3 green Elephant creature token.",
-            EffectDef::create_creature_token(&["Elephant"], &[ManaColor::Green], 3, 3),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Elephant"], &[ManaColor::Green], 3, 3),
+            ))),
         ),
         abilities::rebound(),
     ]),

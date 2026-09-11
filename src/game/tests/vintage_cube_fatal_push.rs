@@ -200,7 +200,7 @@ fn a_token_of_yours_leaving_sets_revolt() {
     let (mut game, spell, specter) = staged(cards::HYPNOTIC_SPECTER);
     let token = token_permanent(
         95_900,
-        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1),
         PlayerId::One,
     );
     let token_id = token.card.id;

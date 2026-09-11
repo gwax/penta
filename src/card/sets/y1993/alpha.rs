@@ -29,6 +29,7 @@ use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamagePreventionDef;
@@ -67,6 +68,8 @@ use crate::card::ResolvedEffectDurationDef;
 use crate::card::RoundingDef;
 use crate::card::SourceMatchValueDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnKindDef;
@@ -5462,13 +5465,15 @@ pub(in crate::card::sets) static THE_HIVE: CardRecord = CardRecord::new(
     CardRules::new_artifact(mana_cost!("{5}")).with_ability(AbilityDef::activated(
         "{5}, {T}: Create a 1/1 colorless Insect artifact creature token with flying named Wasp.",
         &[CostDef::Mana(mana_cost!("{5}")), CostDef::TapSource],
-        EffectDef::create_artifact_creature_token(&["Insect"], &[], 1, 1)
-            .with_name("Wasp")
-            .with_abilities(&[abilities::flying()])
-            .with_art(CardArt::new(
-                "09921372-126f-4c81-b6d8-ea50b1d0eb44",
-                "Sandra Everingham",
-            )),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::artifact_creature(&["Insect"], &[], 1, 1)
+                .with_name("Wasp")
+                .with_abilities(&[abilities::flying()])
+                .with_art(CardArt::new(
+                    "09921372-126f-4c81-b6d8-ea50b1d0eb44",
+                    "Sandra Everingham",
+                )),
+        ))),
     )),
 );
 

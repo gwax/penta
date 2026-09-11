@@ -25,6 +25,7 @@ use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamageKindDef;
 use crate::card::DamageLimitDef;
@@ -60,6 +61,8 @@ use crate::card::SpellResolutionDestinationDef;
 use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
 use crate::card::TargetChooserDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -3673,9 +3676,13 @@ pub(in crate::card::sets) static MASTER_OF_THE_HUNT: CardRecord = CardRecord::ne
             "{2}{G}{G}: Create a 1/1 green Wolf creature token named Wolves of the Hunt. It \
              has \"bands with other creatures named Wolves of the Hunt.\"",
             &[CostDef::Mana(mana_cost!("{2}{G}{G}"))],
-            EffectDef::create_creature_token(&["Wolf"], &[ManaColor::Green], 1, 1)
-                .with_name("Wolves of the Hunt")
-                .with_abilities(&[abilities::bands_with_other(BandingQuality::WolvesOfTheHunt)]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Wolf"], &[ManaColor::Green], 1, 1)
+                    .with_name("Wolves of the Hunt")
+                    .with_abilities(&[abilities::bands_with_other(
+                        BandingQuality::WolvesOfTheHunt,
+                    )]),
+            ))),
         ),
     ),
 );
@@ -4266,8 +4273,15 @@ pub(in crate::card::sets) static BORIS_DEVILBOON: CardRecord = CardRecord::new(
         .with_ability(AbilityDef::activated(
             "{2}{B}{R}, {T}: Create a 1/1 black and red Demon creature token named Minor Demon.",
             &[CostDef::Mana(mana_cost!("{2}{B}{R}")), CostDef::TapSource],
-            EffectDef::create_creature_token(&["Demon"], &[ManaColor::Black, ManaColor::Red], 1, 1)
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(
+                    &["Demon"],
+                    &[ManaColor::Black, ManaColor::Red],
+                    1,
+                    1,
+                )
                 .with_name("Minor Demon"),
+            ))),
         )),
 );
 
@@ -5536,12 +5550,14 @@ CardRules::new_artifact(mana_cost!("{6}")).with_ability(AbilityDef::activated(
             CostDef::Mana(mana_cost!("{4}")),
             CostDef::TapSource,
         ],
-        EffectDef::create_artifact_creature_token(&["Snake"], &[], 1, 1).with_abilities(&[
-            abilities::poisonous_damage(
-                1,
-                "Whenever this creature deals damage to a player, that player gets a poison counter.",
-            ),
-        ]),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::artifact_creature(&["Snake"], &[], 1, 1).with_abilities(&[
+                abilities::poisonous_damage(
+                    1,
+                    "Whenever this creature deals damage to a player, that player gets a poison counter.",
+                ),
+            ]),
+        ))),
     )),
 );
 

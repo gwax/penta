@@ -14,12 +14,14 @@ use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
@@ -205,10 +207,12 @@ CardRules::new_creature(mana_cost!("{1}{R}"), &["Vampire", "Warrior"], 1, 1)
                     ),
                     TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
                 ]),
-                EffectDef::create_token(tokens::blood()).with_art(CardArt::new(
-                    "6b563165-b97f-42c6-82a8-65d8ee69e381",
-                    "Stephen Andrade",
-                )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    tokens::blood().with_art(CardArt::new(
+                        "6b563165-b97f-42c6-82a8-65d8ee69e381",
+                        "Stephen Andrade",
+                    )),
+                ))),
             ),
             // Any discard, including one paid as a cost -- which is how her own Blood
             // token feeds her.

@@ -37,7 +37,7 @@ fn populate_copies_a_creature_token_you_control() {
     let mut game = ready_game();
     let token = token_permanent(
         10_001,
-        tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1),
         PlayerId::One,
     );
     game.battlefield.push(token);
@@ -47,7 +47,7 @@ fn populate_copies_a_creature_token_you_control() {
     assert_eq!(
         tokens_of(
             &game,
-            tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1)
+            crate::card::TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1)
         ),
         2,
         "the chosen token was copied"
@@ -59,12 +59,22 @@ fn populate_preserves_the_tokens_complete_copiable_values() {
     let mut game = ready_game();
     let mut original = token_permanent(
         10_001,
-        token_with_vigilance(tokens::creature(&["Knight"], &[ManaColor::White], 2, 2)),
+        token_with_vigilance(crate::card::TokenCharacteristics::creature(
+            &["Knight"],
+            &[ManaColor::White],
+            2,
+            2,
+        )),
         PlayerId::One,
     );
     original.copy_effect = Some(CopiableCharacteristics {
         base: ObjectCharacteristics::token(
-            token_with_vigilance(tokens::creature(&["Knight"], &[ManaColor::White], 2, 2)),
+            token_with_vigilance(crate::card::TokenCharacteristics::creature(
+                &["Knight"],
+                &[ManaColor::White],
+                2,
+                2,
+            )),
             CardPartId::PRIMARY,
         ),
         name: None,
@@ -88,7 +98,12 @@ fn populate_preserves_the_tokens_complete_copiable_values() {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                token_with_vigilance(tokens::creature(&["Knight"], &[ManaColor::White], 2, 2)),
+                token_with_vigilance(crate::card::TokenCharacteristics::creature(
+                    &["Knight"],
+                    &[ManaColor::White],
+                    2,
+                    2,
+                )),
             )
         })
         .collect::<Vec<_>>();
@@ -129,7 +144,7 @@ fn an_opponents_token_is_not_copied() {
     let mut game = ready_game();
     let theirs = token_permanent(
         10_001,
-        tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1),
         PlayerId::Two,
     );
     game.battlefield.push(theirs);
@@ -139,7 +154,7 @@ fn an_opponents_token_is_not_copied() {
     assert_eq!(
         tokens_of(
             &game,
-            tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1)
+            crate::card::TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1)
         ),
         1
     );
@@ -191,7 +206,7 @@ fn making_a_token_first_gives_populate_something_to_copy() {
     assert_eq!(
         tokens_of(
             &game,
-            tokens::creature(&["Centaur"], &[ManaColor::Green], 3, 3)
+            crate::card::TokenCharacteristics::creature(&["Centaur"], &[ManaColor::Green], 3, 3)
         ),
         2,
         "one made, then one copied from it"

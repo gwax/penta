@@ -76,7 +76,7 @@ fn phantom_general_pumps_tokens_only() {
     game.battlefield.push(general);
     let token = token_permanent(
         10_100,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::One,
     );
     let token_id = token.card.id;
@@ -102,14 +102,14 @@ fn illness_in_the_ranks_shrinks_every_players_tokens() {
         .push(creature(10_000, cards::ILLNESS_IN_THE_RANKS, PlayerId::One));
     let mine = token_permanent(
         10_100,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::One,
     );
     let mine_id = mine.card.id;
     game.battlefield.push(mine);
     let theirs = token_permanent(
         10_101,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::Two,
     );
     let theirs_id = theirs.card.id;
@@ -135,7 +135,7 @@ fn illness_in_the_ranks_kills_one_toughness_tokens() {
         .push(creature(10_000, cards::ILLNESS_IN_THE_RANKS, PlayerId::Two));
     game.battlefield.push(token_permanent(
         10_100,
-        tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1),
         PlayerId::One,
     ));
 
@@ -143,7 +143,7 @@ fn illness_in_the_ranks_kills_one_toughness_tokens() {
     assert!(
         !game.battlefield.iter().any(|permanent| is_token_with(
             permanent,
-            tokens::creature(&["Human"], &[ManaColor::White], 1, 1)
+            crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1)
         )),
         "a 1/1 token is a 0/0",
     );
@@ -178,7 +178,7 @@ fn the_harvester_draws_off_creature_cards_only() {
     assert_eq!(
         cards_drawn_when_dying(token_permanent(
             10_100,
-            tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+            crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
             PlayerId::One,
         )),
         0,
@@ -216,7 +216,7 @@ fn the_soul_draws_off_creature_cards_entering() {
     assert_eq!(
         entering(token_permanent(
             10_100,
-            tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+            crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
             PlayerId::One,
         )),
         0,

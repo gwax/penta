@@ -84,7 +84,7 @@ fn spare_from_evil_grants_temporary_protection_to_the_creatures_it_resolves_over
 
     let human = token_permanent(
         20_003,
-        tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1),
         PlayerId::Two,
     );
     let human_id = human.card.id;

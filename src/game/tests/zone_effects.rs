@@ -844,7 +844,7 @@ fn thragtusk_leaves_a_beast_behind() {
         if game.battlefield.iter().any(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+                crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3),
             )
         }) {
             break;
@@ -860,7 +860,7 @@ fn thragtusk_leaves_a_beast_behind() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+                crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3),
             )
         })
         .expect("a Beast token replaced it");
@@ -874,7 +874,7 @@ fn a_token_ceases_to_exist_rather_than_reaching_a_graveyard() {
     let mut game = ready_game();
     game.create_token(
         PlayerId::One,
-        tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+        crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3),
     );
     let token_id = game.battlefield[0].card.id;
     assert!(game.players[0].graveyard.is_empty());
@@ -897,7 +897,10 @@ fn a_token_is_never_deck_legal() {
     let catalog = poc::catalog().expect("catalog builds");
     assert!(
         catalog
-            .find_by_name(&tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3).name())
+            .find_by_name(
+                &crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3)
+                    .name()
+            )
             .is_none(),
         "a token is absent from the card catalog rather than merely format-illegal",
     );

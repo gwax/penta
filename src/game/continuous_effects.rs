@@ -633,7 +633,7 @@ impl Game {
                 | EffectDef::CannotAttackUnless(_)
                 | EffectDef::PutIntoLibraryBeneathTop { .. }
                 | EffectDef::PhaseOut { .. }
-                | EffectDef::CreateToken { .. }
+                | EffectDef::CreateToken(_)
                 | EffectDef::CreateAttachedToken { .. }
                 | EffectDef::ConditionalStatic(_)
                 | EffectDef::StaticApply { .. }

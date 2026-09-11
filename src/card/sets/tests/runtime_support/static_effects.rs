@@ -410,7 +410,7 @@ fn shared_static_effect_at(source_zones: &[ZoneKind], effect: EffectDef, root: b
         | EffectDef::Unattach { .. }
         | EffectDef::PairWithSource { .. }
         | EffectDef::PhaseOut { .. }
-        | EffectDef::CreateToken { .. }
+        | EffectDef::CreateToken(_)
         | EffectDef::CreateAttachedToken { .. }
         | EffectDef::Endure { .. }
         | EffectDef::Destroy { .. }

@@ -60,7 +60,7 @@ fn cats(game: &Game) -> usize {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Cat"], &[ManaColor::White], 1, 1),
+                crate::card::TokenCharacteristics::creature(&["Cat"], &[ManaColor::White], 1, 1),
             )
         })
         .count()

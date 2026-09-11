@@ -95,7 +95,7 @@ fn miming_slime_fixes_its_token_stats_on_creation() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Ooze"], &[ManaColor::Green], 2, 2),
+                crate::card::TokenCharacteristics::creature(&["Ooze"], &[ManaColor::Green], 2, 2),
             )
         })
         .expect("the 2/2 Ooze was created")
@@ -327,7 +327,12 @@ fn rapid_hybridization_gives_the_frog_lizard_to_the_victim() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Frog", "Lizard"], &[ManaColor::Green], 3, 3),
+                crate::card::TokenCharacteristics::creature(
+                    &["Frog", "Lizard"],
+                    &[ManaColor::Green],
+                    3,
+                    3,
+                ),
             )
         })
         .expect("the Frog Lizard was created");

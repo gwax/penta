@@ -63,7 +63,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::RemoveFromCombat { .. } => "RemoveFromCombat",
         EffectDef::Untap { .. } => "Untap",
         EffectDef::Saddle { .. } => "Saddle",
-        EffectDef::CreateToken { .. } => "CreateToken",
+        EffectDef::CreateToken(_) => "CreateToken",
         EffectDef::CreateAttachedToken { .. } => "CreateAttachedToken",
         EffectDef::Endure { .. } => "Endure",
         EffectDef::CreateMyriadTokens => "CreateMyriadTokens",

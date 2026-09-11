@@ -241,7 +241,12 @@ fn selesnya_charm_can_instead_make_a_knight() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                token_with_vigilance(tokens::creature(&["Knight"], &[ManaColor::White], 2, 2)),
+                token_with_vigilance(crate::card::TokenCharacteristics::creature(
+                    &["Knight"],
+                    &[ManaColor::White],
+                    2,
+                    2,
+                )),
             )
         })
         .expect("a Knight token arrived");
@@ -509,11 +514,17 @@ fn primeval_bounty_makes_a_beast_only_for_its_controller() {
         game.apply(caster, cast_action(lions.id, Vec::new(), Vec::new(), 0))
             .unwrap();
         for _ in 0..8 {
-            if game
-                .battlefield
-                .iter()
-                .any(|p| is_token_with(p, tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3)))
-            {
+            if game.battlefield.iter().any(|p| {
+                is_token_with(
+                    p,
+                    crate::card::TokenCharacteristics::creature(
+                        &["Beast"],
+                        &[ManaColor::Green],
+                        3,
+                        3,
+                    ),
+                )
+            }) {
                 break;
             }
             let player = game.priority;
@@ -522,10 +533,12 @@ fn primeval_bounty_makes_a_beast_only_for_its_controller() {
             }
         }
 
-        let made_token = game
-            .battlefield
-            .iter()
-            .any(|p| is_token_with(p, tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3)));
+        let made_token = game.battlefield.iter().any(|p| {
+            is_token_with(
+                p,
+                crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+            )
+        });
         assert_eq!(
             made_token,
             expect_token,
@@ -951,7 +964,7 @@ fn assemble_the_legion_musters_one_more_soldier_every_upkeep() {
                 .filter(|permanent| {
                     is_token_with(
                         permanent,
-                        token_with_haste(tokens::creature(
+                        token_with_haste(crate::card::TokenCharacteristics::creature(
                             &["Soldier"],
                             &[ManaColor::Red, ManaColor::White],
                             1,
