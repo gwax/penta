@@ -18,6 +18,8 @@ impl Game {
         self.complete_spell_cast(stack_object, targets);
     }
 
+    // Keep each semantic cost's commit/resume branch in one dispatch table.
+    #[allow(clippy::too_many_lines)]
     fn pay_spell_object_costs(
         &mut self,
         mut stack_object: StackObject,
@@ -34,29 +36,62 @@ impl Game {
                 stack_object.chosen_permanents.push(spent);
             }
             match cost {
-                CostDef::Forage => {
-                    if self.players[stack_object.controller.index()]
-                        .graveyard
-                        .iter()
-                        .any(|card| card.id == spent)
-                    {
-                        self.pay_spell_graveyard_forage(
-                            &mut stack_object,
-                            spent,
-                            &mut remaining_sacrifices,
-                        )?;
-                        continue;
+                CostDef::Perform(program) => {
+                    let context = super::TriggerContext::empty().into();
+                    let scoped =
+                        super::ScopedEffect::primary(crate::card::EffectDef::Perform(*program));
+                    let payment = program.alternatives().into_iter().find_map(|action| {
+                        let super::ResolvedEffectPayment::Action(payment) = self.resolve_action_payment(action, &stack_object, &context, scoped, 1) else { return None; };
+                        self.action_payment_candidates(stack_object.controller, &payment).iter().any(|target| {
+                            matches!(target, Target::Card(id) | Target::Permanent(id) if *id == spent)
+                        }).then_some(payment)
+                    })?;
+                    let mut cards = vec![spent];
+                    for _ in 1..payment.amount {
+                        let (id, next) = remaining_sacrifices.first().copied()?;
+                        if next != cost {
+                            return None;
+                        }
+                        remaining_sacrifices.remove(0);
+                        cards.push(id);
+                        stack_object.chosen_permanents.push(id);
                     }
-                    self.sacrifice_food_to_forage(
+                    let selected = self.selected_action_payment_targets(
                         stack_object.controller,
-                        spent,
-                        Some(BattlefieldExitCompletion::CompleteSpellCast {
-                            object: Box::new(stack_object),
-                            targets,
-                            remaining_sacrifices,
-                        }),
+                        &payment,
+                        &cards,
+                    )?;
+                    let performer = stack_object.controller;
+                    let source = stack_object.source.unwrap_or(stack_object.id);
+                    let action = payment.program.selected_action();
+                    if matches!(
+                        action.unnamed(),
+                        crate::card::GameActionDef::Sacrifice { .. }
+                            | crate::card::GameActionDef::SacrificeYours { .. }
+                    ) {
+                        self.perform_selected_game_action_then(
+                            action,
+                            &selected,
+                            performer,
+                            performer,
+                            source,
+                            Some(BattlefieldExitCompletion::CompleteSpellCast {
+                                object: Box::new(stack_object),
+                                targets,
+                                remaining_sacrifices,
+                            }),
+                        );
+                        return None;
+                    }
+                    let exiled = self.perform_selected_game_action_then(
+                        action, &selected, performer, performer, source, None,
                     );
-                    return None;
+                    stack_object
+                        .cast
+                        .as_mut()?
+                        .exiled_payment_cards
+                        .extend(exiled);
+                    continue;
                 }
                 CostDef::Sacrifice { .. } => {
                     self.capture_sacrifices(&[spent]);
@@ -108,8 +143,7 @@ impl Game {
                     );
                     continue;
                 }
-                CostDef::Discard { .. }
-                | CostDef::Exile { .. } => {}
+                CostDef::Discard { .. } | CostDef::Exile { .. } => {}
                 CostDef::ManaTimes { .. }
                 | CostDef::Mana(_)
                 | CostDef::PayLife(_)
@@ -152,32 +186,6 @@ impl Game {
             .expect("a cast spell retains its context through payment")
             .exiled_payment_cards
             .extend(exiled_payment_cards);
-    }
-
-    fn pay_spell_graveyard_forage(
-        &mut self,
-        stack_object: &mut StackObject,
-        spent: GameObjectId,
-        remaining_payments: &mut Vec<(GameObjectId, CostDef)>,
-    ) -> Option<()> {
-        // Retain each forage's three-card boundary even when another forage
-        // or exile cost follows this payment.
-        let mut cards = vec![spent];
-        for _ in 0..2 {
-            let (id, CostDef::Forage) = remaining_payments.first().copied()? else {
-                return None;
-            };
-            remaining_payments.remove(0);
-            cards.push(id);
-            stack_object.chosen_permanents.push(id);
-        }
-        let exiled = self.exile_to_forage(stack_object.controller, &cards)?;
-        stack_object
-            .cast
-            .as_mut()?
-            .exiled_payment_cards
-            .extend(exiled);
-        Some(())
     }
 
     fn pay_nonbattlefield_spell_object_cost(
@@ -270,24 +278,23 @@ impl Game {
                 self.players[owner.index()].exile.push(card.clone());
                 exiled.push(card);
             }
-            next =
-                remaining_sacrifices
-                    .first()
-                    .copied()
-                    .and_then(|(candidate, candidate_cost)| {
-                        let (candidate_zone, candidate_card) =
-                            self.card_in_nonbattlefield_zone(candidate)?;
-                        (candidate_zone == ZoneKind::Graveyard
-                            && matches!(
-                                candidate_cost,
-                                CostDef::Exile {
-                                    from: ZoneKind::Graveyard,
-                                    ..
-                                }
-                            )
-                            && candidate_card.owner == owner)
-                            .then_some(candidate)
-                    });
+            next = remaining_sacrifices
+                .first()
+                .copied()
+                .and_then(|(candidate, candidate_cost)| {
+                    let (candidate_zone, candidate_card) =
+                        self.card_in_nonbattlefield_zone(candidate)?;
+                    (candidate_zone == ZoneKind::Graveyard
+                        && matches!(
+                            candidate_cost,
+                            CostDef::Exile {
+                                from: ZoneKind::Graveyard,
+                                ..
+                            }
+                        )
+                        && candidate_card.owner == owner)
+                        .then_some(candidate)
+                });
             if next.is_some() {
                 remaining_sacrifices.remove(0);
             }

@@ -61,12 +61,27 @@ the bot-wire epoch.
   registration metadata. Existing catalog JSON slugs and protocol shapes are
   unchanged.
 
-
 - Cavern of Souls binds its entry-time creature-type choice and uses an ordinary
   spell predicate for its restricted mana. The binding follows the producing
   object incarnation, including after it leaves and returns with a new choice.
   An optional checkpoint `chosenCreatureTypeBinding` field preserves that label;
   the protocol epoch and checkpoint format are unchanged.
+- Restore narrow ownership of set mechanics and card-local effect compositions.
+  Mechanic identities are numeric, with constants defined beside their owners.
+  Forage labels a shared game-action program, consumed by both effect and cost
+  wrappers. Its linear selection window and
+  replacement-aware completion are shared infrastructure rather than a core
+  forage operation. Endurance composes collection ordering and movement.
+- Checkpoint format 17 replaces forage-specific decisions with authored game-action
+  selections and encodes numeric mechanic identities as hexadecimal text.
+  Permanent `activatedAbilities` replaces exhaust-specific history with generic
+  per-object activation history, including mana abilities.
+  Require `reconstruction.checkpoint.v17` and a matching simulation fingerprint;
+  ordinary bot protocol and replay versions are unchanged.
+- Spree, escalate, and exhaust construction moves to their originating sets.
+  The core uses costed modes, quantified additional costs, and a generic
+  once-per-object activation restriction. Exhaust mana abilities now correctly
+  remain spent after untapping, turn changes, and checkpoint reconstruction.
 - Protocol 31 adds `PublicNotice` decisions for card naming and scalar choices.
   Opponents see that a choice is pending, then its public result; candidate
   options, ordering, policy hints, and checkpoint continuations stay with the

@@ -20,14 +20,14 @@ Shared discard, sacrifice, and control operations now use
 
 ## Ability identity
 
-`AbilityDef::labeled(AbilityLabel(...))` attaches identity to the entire ordinary
+`AbilityDef::labeled(mechanic_id)` attaches identity to the entire ordinary
 clause. Its activation/trigger category, costs, targets, and executable body stay
 in the usual fields. `AbilityPredicateDef::Label` uses that identity when
 querying or removing abilities. Granting and copying a complete `AbilityDef`
 carry the label together with its behavior. Existing `AbilityOrigin` and stack
 object identities distinguish separate instances and invocations.
 
-The initial label constants are `CYCLING` and `CUMULATIVE_UPKEEP`. Other labels
+The shared label constants are `abilities::CYCLING` and `abilities::CUMULATIVE_UPKEEP`. Other labels
 use the same representation; the interpreter does not match those constants.
 Label names are authored semantic vocabulary, independent of displayed text
 and local object bindings.
@@ -140,8 +140,10 @@ activation retain their existing supported quantity expressions.
 The initial payment trigger matchers observe the source's own named payment.
 A broader event query for other objects' payments, linked cost-component
 references, and bundles containing several named clauses need further design.
-Forage, Class levels, persist/undying, and the other candidate mechanics have
-not been migrated in this slice.
+Forage now uses a [named game-action program](effect-programs.md#identities-and-named-actions)
+through the ordinary cost and effect wrappers.
+Persist and undying now compose ordinary death triggers and shared zone-move
+actions. Class levels and other candidate mechanics remain follow-ups.
 
 Review should focus on whether:
 

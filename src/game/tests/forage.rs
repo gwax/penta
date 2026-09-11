@@ -2,6 +2,138 @@
 
 use super::*;
 
+#[test]
+fn named_actions_cast_selection_uses_the_payment_source_not_each_candidate() {
+    const ID: crate::card::MechanicId = crate::card::MechanicId::from_name("test:source-cost");
+    for object in [
+        ObjectPredicateDef::Source,
+        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+    ] {
+        for sacrifice in [false, true] {
+            let program = Box::leak(Box::new(if sacrifice {
+                crate::card::actions::choose_sacrifice(1).matching(object)
+            } else {
+                crate::card::actions::choose_exile_from_graveyard(1).matching(object)
+            }));
+            let (mut game, source) = super::cost_lists::game_with_cost_rules(
+                &CardRules::new_sorcery(mana_cost!("{0}")).with_ability(
+                    AbilityDef::spell_with_additional_cost(
+                        "Pay a named object cost.",
+                        &[],
+                        Box::leak(Box::new(program.named(ID))).as_cost(),
+                        EffectDef::None,
+                    ),
+                ),
+            );
+            let payer = GameObjectId(181_100);
+            if sacrifice {
+                game.battlefield
+                    .push(creature(payer.0, cards::GRIZZLY_BEARS, PlayerId::One));
+            } else {
+                game.players[0]
+                    .graveyard
+                    .push(card(payer.0, cards::FOREST, PlayerId::One));
+            }
+            let casts = game
+                .legal_actions(PlayerId::One)
+                .into_iter()
+                .filter(
+                    |action| matches!(action, Action::CastSpell { card, .. } if *card == source),
+                )
+                .collect::<Vec<_>>();
+            if object == ObjectPredicateDef::Source {
+                assert!(
+                    casts.is_empty(),
+                    "the spell itself is not an eligible payment object"
+                );
+            } else {
+                assert_eq!(casts.len(), 1, "a different object can pay the cost");
+                game.apply(PlayerId::One, casts[0].clone()).unwrap();
+                assert_eq!(
+                    game.stack.len(),
+                    1,
+                    "the advertised plan commits successfully"
+                );
+                assert!(
+                    !game
+                        .battlefield
+                        .iter()
+                        .any(|permanent| permanent.card.id == payer)
+                );
+                assert_eq!(game.players[0].exile.len(), usize::from(!sacrifice));
+            }
+        }
+    }
+}
+
+#[test]
+fn named_actions_use_authored_identity_filter_and_quantity() {
+    const RECLAIM: crate::card::MechanicId = crate::card::MechanicId::from_name("test:reclaim");
+    static RULES: [AbilityDef; 2] = [
+        AbilityDef::triggered(
+            "You may reclaim two lands",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::PayOr(PayOrDef::optional(
+                &[crate::card::actions::choice(&[
+                    crate::card::actions::choose_exile_from_graveyard(2)
+                        .matching(ObjectPredicateDef::HasType(CardType::Land))
+                        .named(RECLAIM),
+                ])
+                .as_cost()],
+                &EffectDef::None,
+            )),
+        ),
+        AbilityDef::triggered(
+            "Whenever you reclaim, gain 4 life",
+            TriggerEventDef::MechanicPerformed {
+                mechanic: RECLAIM,
+                player: PlayerRelation::You,
+            },
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(4),
+            },
+        ),
+    ];
+    for prepared in [false, true] {
+        let (mut game, _) = super::composed_mechanic_programs::staged(&RULES);
+        game.set_prepared_engine_enabled(prepared);
+        for (index, definition) in [cards::FOREST, cards::SWAMP, cards::LIGHTNING_BOLT]
+            .into_iter()
+            .enumerate()
+        {
+            game.players[0].graveyard.push(card(
+                181_000 + u32::try_from(index).unwrap(),
+                definition,
+                PlayerId::One,
+            ));
+        }
+        super::composed_mechanic_programs::start(&mut game);
+        game = reconstruct(&game);
+        game.set_prepared_engine_enabled(prepared);
+        choose(&mut game, vec![1]);
+        assert_eq!(game.pending_decisions[0].observation.options.len(), 2);
+        assert_eq!(game.pending_decisions[0].observation.minimum, 2);
+        game = reconstruct(&game);
+        game.set_prepared_engine_enabled(prepared);
+        choose(&mut game, vec![0, 1]);
+        drain_pending(&mut game);
+        assert_eq!(
+            game.players[0].life, 24,
+            "one named occurrence, not one per object"
+        );
+        assert_eq!(game.players[0].graveyard.len(), 1);
+        assert_eq!(
+            game.players[0].graveyard[0].definition,
+            cards::LIGHTNING_BOLT
+        );
+        assert_eq!(game.players[0].exile.len(), 2);
+    }
+}
+
 fn staged(graveyard_cards: u32) -> (Game, GameObjectId, GameObjectId) {
     let mut game = ready_game();
     let cultivator = game
@@ -51,7 +183,7 @@ fn begin_combat(game: &mut Game) {
     }
     assert!(matches!(
         game.pending_decisions[0].continuation,
-        DecisionContinuation::Forage { from: None, .. }
+        DecisionContinuation::OptionalEffect { .. }
     ));
 }
 
@@ -70,7 +202,9 @@ fn combat_forage_selects_exactly_three_with_linear_options_and_a_separate_counte
         .push(card(180_100, cards::SWAMP, PlayerId::Two));
     begin_combat(&mut game);
     game = reconstruct(&game);
-    choose(&mut game, vec![1]);
+    choose(&mut game, vec![1]); // Accept the optional instruction.
+    game = reconstruct(&game);
+    choose(&mut game, vec![1]); // Select the exile alternative.
     let decision = game.pending_decisions[0].observation.clone();
     assert_eq!((decision.minimum, decision.maximum), (3, 3));
     assert_eq!(decision.options.len(), 40);
@@ -112,7 +246,7 @@ fn optional_forage_can_be_declined_and_never_spends_an_incomplete_payment() {
         let choices = &game.pending_decisions[0].observation.options;
         assert_eq!(
             choices.iter().map(|option| option.id).collect::<Vec<_>>(),
-            if count == 3 { vec![0, 1] } else { vec![0] }
+            vec![0, 1]
         );
         choose(&mut game, vec![0]);
         drain_pending(&mut game);
@@ -130,7 +264,7 @@ fn only_the_active_controllers_cultivator_offers_combat_forage() {
     let decision = &game.pending_decisions[0].observation;
     assert_eq!(decision.player, PlayerId::Two);
     assert_eq!(decision.source, Some(opponent));
-    assert_eq!(decision.options.len(), 1);
+    assert_eq!(decision.options.len(), 2);
     choose(&mut game, vec![0]);
     assert!(game.stack.is_empty());
     assert_eq!(counters(&game, cultivator), 0);
@@ -143,6 +277,7 @@ fn food_forage_uses_only_your_food_and_preserves_sacrifice_events() {
     game.create_token(PlayerId::Two, tokens::food());
     game.tap_permanent(food).unwrap();
     begin_combat(&mut game);
+    choose(&mut game, vec![1]);
     choose(&mut game, vec![2]);
     let decision = &game.pending_decisions[0].observation;
     assert_eq!(decision.options.len(), 1);
@@ -236,6 +371,7 @@ fn food_forage_waits_for_exit_replacements_before_publishing_its_event() {
     }
     let food = game.create_token_from(PlayerId::One, tokens::food(), None);
     begin_combat(&mut game);
+    choose(&mut game, vec![1]);
     choose(&mut game, vec![2]);
     choose(&mut game, vec![0]);
     assert!(matches!(
@@ -263,4 +399,18 @@ fn food_forage_waits_for_exit_replacements_before_publishing_its_event() {
             .iter()
             .any(|permanent| permanent.card.id == food)
     );
+}
+
+#[test]
+fn accepting_optional_forage_without_a_complete_alternative_moves_nothing() {
+    for count in [0, 2] {
+        let (mut game, cultivator, _) = staged(count);
+        begin_combat(&mut game);
+        choose(&mut game, vec![1]);
+        drain_pending(&mut game);
+        assert!(game.pending_decisions.is_empty());
+        assert_eq!(game.players[0].graveyard.len(), count as usize);
+        assert!(game.players[0].exile.is_empty());
+        assert_eq!(counters(&game, cultivator), 0);
+    }
 }

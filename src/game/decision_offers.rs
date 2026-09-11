@@ -79,7 +79,7 @@ impl Game {
     /// A resolving ability has already left the stack by the time its choice
     /// is observed. Preserve the battlefield source explicitly so clients do
     /// not have to guess which same-name permanent the choice belongs to.
-    fn associate_latest_decision_with(&mut self, object: &StackObject) {
+    pub(in crate::game) fn associate_latest_decision_with(&mut self, object: &StackObject) {
         if let Some(source) = object.source
             && let Some(decision) = self.pending_decisions.last_mut()
         {

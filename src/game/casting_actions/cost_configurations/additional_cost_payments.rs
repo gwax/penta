@@ -61,7 +61,7 @@ impl Game {
                     .into_iter()
                     .collect()
             }
-            CostDef::Forage => self.spell_forage_payments(card, player, scale),
+            CostDef::Perform(program) => self.spell_action_cost_payments(program, card, player),
             CostDef::Choice(costs) => costs
                 .iter()
                 .flat_map(|cost| {
@@ -98,33 +98,40 @@ impl Game {
         }
     }
 
-    fn spell_forage_payments(
+    fn spell_action_cost_payments(
         &self,
+        program: &'static crate::card::GameActionDef,
         card: &CardInstance,
         player: PlayerId,
-        scale: CastScale,
     ) -> Vec<SpellAdditionalCostPayment> {
-        let forage = [
-            CostDef::exile(
-                crate::card::ObjectPredicateDef::Any,
-                ZoneKind::Graveyard,
-                crate::card::CostQuantityDef::Fixed(3),
-            ),
-            CostDef::sacrifice(
-                crate::card::ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Food")),
-                crate::card::CostQuantityDef::Fixed(1),
-            ),
-        ];
-        forage
+        if !program.spell_payment_supported() {
+            return Vec::new();
+        }
+        program
+            .alternatives()
             .into_iter()
-            .flat_map(|cost| self.spell_additional_cost_payment_options(cost, card, player, scale))
-            .map(|mut payment| {
-                // These objects pay the forage action, whose event
-                // must survive lowering to concrete payment choices.
-                for (_, cost) in &mut payment.objects {
-                    *cost = CostDef::Forage;
-                }
-                payment
+            .flat_map(|action| {
+                let payment = self.cast_action_payment(action, card, player);
+                let candidates = self
+                    .action_payment_candidates(player, &payment)
+                    .into_iter()
+                    .filter_map(|target| match target {
+                        crate::Target::Card(id) | crate::Target::Permanent(id) if id != card.id => {
+                            Some(id)
+                        }
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>();
+                Self::object_combinations(&candidates, usize::from(payment.amount))
+                    .into_iter()
+                    .map(|objects| SpellAdditionalCostPayment {
+                        objects: objects
+                            .into_iter()
+                            .map(|id| (id, CostDef::Perform(program)))
+                            .collect(),
+                        ..SpellAdditionalCostPayment::free()
+                    })
+                    .collect::<Vec<_>>()
             })
             .collect()
     }

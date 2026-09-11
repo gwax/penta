@@ -13,31 +13,75 @@ fn parse_continuation(
     game: &Game,
 ) -> Result<DecisionContinuation, String> {
     Ok(match value {
-        DecisionContinuationSnapshot::Forage {
+        DecisionContinuationSnapshot::ActionChoice {
             player: chooser,
-            optional,
-            from,
+            branch,
+            continuation,
         } => {
             let player = player(*chooser)?;
-            let from = from.map(parse_zone_kind);
-            let (prompt, count, options) = game
-                .forage_options(player, *optional, from)
-                .ok_or("forage decision has no complete legal payment")?;
+            let restored = parse_effect_continuation(continuation, game)?;
+            if !ability_locator_matches_origin(&continuation.ability, &restored.object) {
+                return Err("action-choice locator disagrees with its resolving ability".into());
+            }
+            let choices = match restored.effect.effect {
+                EffectDef::PayOr(authored) => {
+                    let (payment, _, _, _) = parse_authored_pay_or_continuation(
+                        game,
+                        &restored.object,
+                        &restored.context,
+                        player,
+                        authored.label.map(|label| label.to_string()).as_ref(),
+                        restored.effect,
+                        authored,
+                    )?;
+                    let crate::game::ResolvedEffectPayment::Choice(choices) = payment else {
+                        return Err("action choice payment changed".into());
+                    };
+                    choices
+                }
+                EffectDef::Perform(action)
+                    if matches!(action.unnamed(), crate::card::GameActionDef::Choice(_)) =>
+                {
+                    if player != restored.object.controller {
+                        return Err("action performer changed".into());
+                    }
+                    action
+                        .alternatives()
+                        .into_iter()
+                        .map(|action| {
+                            game.resolve_action_payment(
+                                action,
+                                &restored.object,
+                                &restored.context,
+                                restored.effect,
+                                1,
+                            )
+                        })
+                        .collect()
+                }
+                _ => return Err("action choice requires an authored action or payment".into()),
+            };
+            let (prompt, count, visibility, options) = game
+                .action_choice_options(player, &choices, *branch, restored.effect)
+                .ok_or("action selection has no legal completion")?;
             validate_authored_decision(
                 observation,
                 player,
                 prompt,
-                DecisionVisibility::Public,
+                visibility,
                 DecisionPreference::Neutral,
                 count,
                 count,
                 &options,
-                "forage",
+                "action choice",
             )?;
-            DecisionContinuation::Forage {
+            DecisionContinuation::ActionChoice {
                 player,
-                optional: *optional,
-                from,
+                choices,
+                branch: *branch,
+                definition: restored.effect,
+                object: restored.object,
+                context: restored.context,
             }
         }
         pregame @ (DecisionContinuationSnapshot::PregameActions { .. }
@@ -675,17 +719,15 @@ fn parse_continuation(
             let scoped = catalog_scoped_effect(&game.catalog, ability, definition)
                 .ok_or("pay-or locator is absent from this catalog")?;
             let (payment, visibility, if_paid, otherwise) = match scoped.effect {
-                EffectDef::PayOr(authored) => {
-                    parse_authored_pay_or_continuation(
-                        game,
-                        &object,
-                        &context,
-                        payer,
-                        payment_provenance.as_ref(),
-                        scoped,
-                        authored,
-                    )?
-                }
+                EffectDef::PayOr(authored) => parse_authored_pay_or_continuation(
+                    game,
+                    &object,
+                    &context,
+                    payer,
+                    payment_provenance.as_ref(),
+                    scoped,
+                    authored,
+                )?,
                 _ => {
                     return Err("pay-or locator does not identify an optional payment".into());
                 }
@@ -697,7 +739,8 @@ fn parse_continuation(
                 return Err("pay-or payer or payment disagrees with its authored effect".into());
             }
             let can_pay = game.can_pay_effect_payment(payer, payment.clone());
-            if (if_paid.is_none() && otherwise.is_none() && payment_provenance.is_none()) || (!can_pay && otherwise.is_some())
+            if (if_paid.is_none() && otherwise.is_none() && payment_provenance.is_none())
+                || (!can_pay && otherwise.is_some())
             {
                 return Err(
                     "pay-or checkpoint encodes a choice that would resolve automatically".into(),
@@ -719,7 +762,13 @@ fn parse_continuation(
             DecisionContinuation::PayOr {
                 player: payer,
                 payment,
-                payment_provenance: match scoped.effect { EffectDef::PayOr(authored) => game.resolve_payment_offer(authored, &object, &context, scoped).1, _ => unreachable!() },
+                payment_provenance: match scoped.effect {
+                    EffectDef::PayOr(authored) => {
+                        game.resolve_payment_offer(authored, &object, &context, scoped)
+                            .1
+                    }
+                    _ => unreachable!(),
+                },
                 definition: scoped,
                 object,
                 context,

@@ -27,7 +27,9 @@ fn escalate_cost(definition: CardDefinitionId) -> CostDef {
         .ability_clauses()
         .iter()
         .find_map(|ability| match ability.definition {
-            DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(modal)) => modal.escalate_cost,
+            DeclarativeAbilityDef::Spell(SpellAbilityDef::Modal(modal)) => {
+                modal.additional_cost.map(|(cost, _)| cost)
+            }
             _ => None,
         })
         .expect("the modal spell declares its Escalate cost")
@@ -72,7 +74,7 @@ fn card_definitions_name_the_game_actions_their_costs_use() {
     ));
     assert!(matches!(
         spell_cost(cards::FEED_THE_CYCLE),
-        CostDef::Choice([CostDef::Forage, CostDef::Mana(_)])
+        CostDef::Choice([CostDef::Perform(_), CostDef::Mana(_)])
     ));
     assert!(matches!(
         spell_cost(cards::VICIOUS_RIVALRY),

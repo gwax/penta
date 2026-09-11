@@ -46,6 +46,19 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+pub(in crate::card::sets) const FORAGE: crate::card::MechanicId =
+    crate::card::MechanicId::from_name("mtg:forage");
+
+const fn forage() -> crate::card::GameActionDef {
+    const ACTION: crate::card::GameActionDef = crate::card::actions::choice(&[
+        crate::card::actions::choose_exile_from_graveyard(3),
+        crate::card::actions::choose_sacrifice(1).matching(ObjectPredicateDef::Subtype(
+            crate::card::SubtypeDef::Literal("Food"),
+        )),
+    ]);
+    ACTION.named(FORAGE)
+}
+
 // BLB 54 — Kitsa, Otterball Elite
 pub(in crate::card::sets) static KITSA_OTTERBALL_ELITE: CardRecord = CardRecord::new(
     "Kitsa, Otterball Elite",
@@ -285,7 +298,7 @@ pub(in crate::card::sets) static FEED_THE_CYCLE: CardRecord = CardRecord::new(
                     ObjectPredicateDef::HasType(CardType::Planeswalker),
                 ]),
             )],
-            CostDef::choice(&[CostDef::forage(), CostDef::pay_mana(mana_cost!("{B}"))]),
+            CostDef::choice(&[forage().as_cost(), CostDef::pay_mana(mana_cost!("{B}"))]),
             EffectDef::destroy_target(TargetIndex::PRIMARY),
         ),
     ),
@@ -314,11 +327,17 @@ pub(in crate::card::sets) static CORPSEBERRY_CULTIVATOR: CardRecord = CardRecord
                     step: TurnStepDef::BeginningOfCombat,
                     player: PlayerRelation::You,
                 },
-                EffectDef::Forage { optional: true },
+                EffectDef::May {
+                    player: EffectRecipientDef::Controller,
+                    effect: &forage().as_effect(),
+                },
             ),
             AbilityDef::triggered(
                 "Whenever you forage, put a +1/+1 counter on this creature.",
-                TriggerEventDef::Foraged(PlayerRelation::You),
+                TriggerEventDef::MechanicPerformed {
+                    mechanic: FORAGE,
+                    player: PlayerRelation::You,
+                },
                 EffectDef::AddCounters {
                     object: EffectRecipientDef::Source,
                     kind: CounterKind::PlusOnePlusOne,

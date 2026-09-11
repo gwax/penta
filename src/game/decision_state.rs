@@ -233,10 +233,13 @@ pub(super) enum CounteredSpellZone {
 
 #[derive(Clone, Debug)]
 pub(super) enum DecisionContinuation {
-    Forage {
+    ActionChoice {
         player: PlayerId,
-        optional: bool,
-        from: Option<ZoneKind>,
+        choices: Vec<ResolvedEffectPayment>,
+        branch: Option<usize>,
+        definition: ScopedEffect,
+        object: Box<StackObject>,
+        context: EffectResolutionContext,
     },
     /// The chooser may take any remaining opening-hand action, in any order,
     /// or answer this zero-option decision to finish their window.
@@ -760,7 +763,7 @@ pub(super) enum DecisionContinuation {
         trigger: PendingTrigger,
         pending: Vec<PendingTrigger>,
         remaining: Vec<TriggerPlacementBatch>,
-        modes: ModalSpellDef,
+        modes: Box<ModalSpellDef>,
     },
     TriggerDivision {
         trigger: PendingTrigger,

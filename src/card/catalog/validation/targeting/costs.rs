@@ -71,7 +71,9 @@ fn validate_program_cost_references(
     scope: BindingScope<'_>,
 ) -> Result<(), GrantedAbilityValidationError> {
     match cost {
-        crate::card::CostDef::SacrificePermanents { object, .. } => {
+        CostDef::Sacrifice { object, .. }
+        | CostDef::Exile { object, .. }
+        | CostDef::SacrificePermanents { object, .. } => {
             validate_object_predicate_references(object, target_count, scope)
         }
         crate::card::CostDef::CreateTokens { token, .. } => match token.creation_stats {
@@ -99,7 +101,9 @@ fn validate_program_cost_shape(
     targets: &[AbilityTargetDef],
 ) -> Result<(), GrantedAbilityValidationError> {
     match cost {
-        crate::card::CostDef::SacrificePermanents { object, .. } => {
+        CostDef::Sacrifice { object, .. }
+        | CostDef::Exile { object, .. }
+        | CostDef::SacrificePermanents { object, .. } => {
             validate_object_predicate_shape(object, targets)
         }
         crate::card::CostDef::CreateTokens { token, .. } => match token.creation_stats {

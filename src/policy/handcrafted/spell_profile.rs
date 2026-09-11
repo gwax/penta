@@ -342,7 +342,10 @@ impl HandcraftedPolicy {
     ) {
         match effect {
             effect @ EffectDef::Perform(
-                crate::card::GameActionDef::Choose(_) | crate::card::GameActionDef::Sequence(_),
+                crate::card::GameActionDef::Choose(_)
+                | crate::card::GameActionDef::Sequence(_)
+                | crate::card::GameActionDef::Choice(_)
+                | crate::card::GameActionDef::Named { .. },
             ) => {
                 for child in crate::card::child_effects(effect) {
                     Self::collect_spell_effect_profile(child, x, targets, profile);
@@ -544,7 +547,6 @@ impl HandcraftedPolicy {
             | EffectDef::AddMana(_)
             | EffectDef::AddManaEqualTo { .. }
             | EffectDef::ShuffleLibrary { .. }
-            | EffectDef::BuryGraveyard { .. }
             | EffectDef::EmptyManaPool { .. }
             | EffectDef::GainLife { .. }
             | EffectDef::AddPlayerCounters { .. }
@@ -554,6 +556,7 @@ impl HandcraftedPolicy {
                 crate::card::GameActionDef::Sacrifice { .. }
                 | crate::card::GameActionDef::SacrificeYours { .. }
                 | crate::card::GameActionDef::DiscardCards { .. }
+                | crate::card::GameActionDef::Exile { .. }
                 | crate::card::GameActionDef::GainControl { .. }
                 | crate::card::GameActionDef::MoveToZone { .. },
             )
@@ -590,7 +593,6 @@ impl HandcraftedPolicy {
             | EffectDef::ModifyCounters { .. }
             | EffectDef::BecomeCopyOf { .. }
             | EffectDef::CannotBeForcedToSacrifice
-            | EffectDef::Forage { .. }
             | EffectDef::CannotBeForcedToDiscard
             | EffectDef::GainClassLevel { .. }
             | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }

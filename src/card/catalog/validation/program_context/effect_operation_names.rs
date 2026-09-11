@@ -9,6 +9,9 @@
 #[allow(clippy::too_many_lines)]
 const fn effect_operation_name(effect: EffectDef) -> &'static str {
     match effect {
+        EffectDef::Perform(crate::card::GameActionDef::Named { .. }) => "NamedAction",
+        EffectDef::Perform(crate::card::GameActionDef::Choice(_)) => "ActionChoice",
+        EffectDef::Perform(crate::card::GameActionDef::Exile { .. }) => "Exile",
         EffectDef::None => "None",
         EffectDef::Sequence(_) | EffectDef::Perform(crate::card::GameActionDef::Sequence(_)) => {
             "Sequence"
@@ -39,7 +42,6 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::ForEachInBinding { .. } => "ForEachInBinding",
         EffectDef::SelectAtRandomFromZone { .. } => "SelectAtRandomFromZone",
         EffectDef::PayOr(_) => "PayOr",
-        EffectDef::Forage { .. } => "Forage",
         EffectDef::WithCosts { .. } => "WithCosts",
         EffectDef::PreventDamage { .. } => "PreventDamage",
         EffectDef::AddMana(_) => "AddMana",
@@ -51,7 +53,6 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::DrawCards { .. } => "DrawCards",
         EffectDef::ContinueReplacedDraw => "ContinueReplacedDraw",
         EffectDef::ShuffleLibrary { .. } => "ShuffleLibrary",
-        EffectDef::BuryGraveyard { .. } => "BuryGraveyard",
         EffectDef::EmptyManaPool { .. } => "EmptyManaPool",
         EffectDef::Discard { .. } => "Discard",
         EffectDef::Perform(crate::card::GameActionDef::DiscardCards { .. }) => "DiscardCards",

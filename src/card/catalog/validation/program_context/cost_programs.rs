@@ -138,9 +138,29 @@ mod tests {
             )],
             &EffectDef::None,
         )
-        .labeled(AbilityLabel("test purpose"))
+        .labeled(AbilityLabel::from_name("test:purpose"))
         .with_visibility(crate::card::ChoiceVisibilityDef::Public),
     );
+
+    #[test]
+    fn named_actions_compose_with_payment_purpose_and_other_costs() {
+        const ID: crate::card::MechanicId = crate::card::MechanicId::from_name("test:selection");
+        const NAMED: CostDef = actions::choose_sacrifice(2).named(ID).as_cost();
+        for costs in [
+            &[NAMED][..],
+            &[CostDef::All(&[NAMED])][..],
+            &[NAMED, CostDef::PayLife(1)][..],
+        ] {
+            let costs = Box::leak(costs.to_vec().into_boxed_slice());
+            assert!(
+                validate_cost_program(
+                    EffectDef::PayOr(PayOrDef::optional(costs, &EffectDef::None).labeled(ID)),
+                    None
+                )
+                .is_ok()
+            );
+        }
+    }
 
     #[test]
     fn game_action_programs_reject_unplannable_payments() {

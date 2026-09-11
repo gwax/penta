@@ -172,6 +172,12 @@ fn shared_sacrifice_of_choice(effect: EffectDef) -> bool {
 #[allow(clippy::too_many_lines)]
 fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed: bool) -> bool {
     match effect {
+        EffectDef::Perform(action @ GameActionDef::Named { action: inner, .. }) => {
+            action.named_program_supported() && shared_stack_effect_at_position(EffectDef::Perform(*inner), deferred_decision_allowed)
+        }
+        EffectDef::Perform(action @ GameActionDef::Choice(_)) => deferred_decision_allowed && action.payment_program_supported()
+            && crate::card::child_effects(effect).into_iter().all(|effect| shared_stack_effect_at_position(effect, true)),
+        EffectDef::Perform(GameActionDef::Exile { object, from }) => from == ZoneKind::Graveyard && shared_effect_recipient(object),
         EffectDef::Perform(GameActionDef::Sequence(effects)) => {
             !effects.is_empty()
                 && effects.iter().copied().all(|effect| {
@@ -377,7 +383,6 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                             || shared_stack_effect_at_position(**effect, true)
                     })
         }
-        EffectDef::Forage { .. } => deferred_decision_allowed,
         EffectDef::WithCosts { costs, effect } => costs.iter().all(|cost| shared_program_cost(*cost)) && shared_stack_effect_at_position(*effect, deferred_decision_allowed),
         // A spell copying itself asks its chooser for targets, which is a
         // decision window like any other. Proliferate asks over permanents
@@ -443,7 +448,6 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::AddPlayerCounters { recipient, .. }
         | EffectDef::DrawCards { recipient, .. }
         | EffectDef::ShuffleLibrary { player: recipient }
-        | EffectDef::BuryGraveyard { player: recipient }
         | EffectDef::EmptyManaPool { player: recipient }
         | EffectDef::TakeExtraTurn { player: recipient }
         | EffectDef::LoseLife { recipient, .. }
@@ -824,6 +828,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
                 && definition.targets.is_empty()
                 && definition.modes.is_none()
                 && definition.activation_limit.is_none()
+                && !definition.once_per_object
                 && definition.activation_permission
                     == crate::card::ActivationPermissionDef::Controller
                 && definition.condition.is_none()

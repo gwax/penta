@@ -247,9 +247,6 @@ pub enum CostDef {
         object: ObjectPredicateDef,
         zone: ZoneKind,
     },
-    /// Forage (CR 701.59): exile three cards from the graveyard or sacrifice
-    /// a Food.
-    Forage,
     /// Pay every child cost as one cost expression.
     All(&'static [CostDef]),
     /// Choose exactly one child cost to pay.
@@ -419,11 +416,6 @@ impl CostDef {
     #[must_use]
     pub const fn tap(object: ObjectPredicateDef, quantity: CostQuantityDef) -> Self {
         Self::Tap { object, quantity }
-    }
-
-    #[must_use]
-    pub const fn forage() -> Self {
-        Self::Forage
     }
 
     #[must_use]
