@@ -475,7 +475,12 @@ impl HandcraftedPolicy {
             }
             // Returning a spell is not a counter, but it answers one the
             // same way, so the policy weighs it as one.
-            EffectDef::MoveToZone {
+            EffectDef::Perform(crate::card::GameActionDef::MoveToZone {
+                object,
+                zone: ZoneKind::Hand,
+                ..
+            })
+            | EffectDef::MoveToZone {
                 object,
                 zone: ZoneKind::Hand,
                 ..
@@ -554,7 +559,8 @@ impl HandcraftedPolicy {
                 crate::card::GameActionDef::Sacrifice { .. }
                 | crate::card::GameActionDef::SacrificeYours { .. }
                 | crate::card::GameActionDef::DiscardCards { .. }
-                | crate::card::GameActionDef::GainControl { .. },
+                | crate::card::GameActionDef::GainControl { .. }
+                | crate::card::GameActionDef::MoveToZone { .. },
             )
             | EffectDef::SacrificeOfChoice { .. }
             | EffectDef::ExileTopOfLibraryToPlay { .. }

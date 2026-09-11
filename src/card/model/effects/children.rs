@@ -147,7 +147,8 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
             crate::card::GameActionDef::DiscardCards { .. }
             | crate::card::GameActionDef::GainControl { .. }
             | crate::card::GameActionDef::Sacrifice { .. }
-            | crate::card::GameActionDef::SacrificeYours { .. },
+            | crate::card::GameActionDef::SacrificeYours { .. }
+            | crate::card::GameActionDef::MoveToZone { .. },
         )
         | EffectDef::DrainLife { .. }
         | EffectDef::DrawCards { .. }

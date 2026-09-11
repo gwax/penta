@@ -624,7 +624,8 @@ fn validate_effect_references(
             GameActionDef::Sacrifice { object }
             | GameActionDef::SacrificeYours { object }
             | GameActionDef::DiscardCards { object }
-            | GameActionDef::GainControl { object, .. },
+            | GameActionDef::GainControl { object, .. }
+            | GameActionDef::MoveToZone { object, .. },
         )
         | EffectDef::PermitCastFromGraveyardThisTurn { object }
         | EffectDef::ChangeTextBasicLandType { object }

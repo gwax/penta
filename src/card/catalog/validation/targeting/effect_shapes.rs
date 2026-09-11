@@ -413,7 +413,8 @@ fn validate_effect_target_shapes(
             GameActionDef::DiscardCards { object }
             | GameActionDef::Sacrifice { object }
             | GameActionDef::SacrificeYours { object }
-            | GameActionDef::GainControl { object, .. },
+            | GameActionDef::GainControl { object, .. }
+            | GameActionDef::MoveToZone { object, .. },
         )
         | EffectDef::Explore { object }
         | EffectDef::Regenerate { object }

@@ -164,7 +164,8 @@ impl Game {
                 | crate::card::GameActionDef::DiscardCards { .. }
                 | crate::card::GameActionDef::Sacrifice { .. }
                 | crate::card::GameActionDef::SacrificeYours { .. }
-                | crate::card::GameActionDef::GainControl { .. },
+                | crate::card::GameActionDef::GainControl { .. }
+                | crate::card::GameActionDef::MoveToZone { .. },
             )
             | EffectDef::ShuffleLibrary { .. }
             | EffectDef::BuryGraveyard { .. }
