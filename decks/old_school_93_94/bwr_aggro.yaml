@@ -1,3 +1,5 @@
+name: "BWR Aggro"
+description: "A representative powered BWR aggro deck."
 main:
   Badlands: 3
   Scrubland: 3

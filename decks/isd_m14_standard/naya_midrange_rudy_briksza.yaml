@@ -2,6 +2,9 @@
 # MTGTop8 records the tournament as 2013-09-14.
 # Source: https://www.mtgtop8.com/event?e=5640&d=232697&f=ST
 # Contemporary source: https://articles.starcitygames.com/articles/putting-the-cap-on-standard/
+name: "Briksza Naya Midrange"
+aliases: ["rudy briksza naya midrange", "naya midrange rudy briksza"]
+description: "Rudy Briksza's first-place Naya Midrange deck from SCG Open Atlanta."
 main:
   Clifftop Retreat: 3
   Forest: 1

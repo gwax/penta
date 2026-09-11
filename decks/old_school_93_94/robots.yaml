@@ -1,3 +1,5 @@
+name: "Robots"
+description: "A representative powered EC mono-red Robots deck."
 main:
   Mountain: 15
   Mishra's Factory: 4

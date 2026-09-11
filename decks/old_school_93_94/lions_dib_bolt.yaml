@@ -1,3 +1,6 @@
+name: "Lion Dib Bolt"
+aliases: ["lions/dib bolt", "lions dib bolt"]
+description: "The Lion/Dib shell with its burn package."
 main:
   Island: 5
   Plains: 5

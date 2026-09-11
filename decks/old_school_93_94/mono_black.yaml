@@ -1,3 +1,5 @@
+name: "Mono Black"
+description: "A representative powered EC Mono Black deck."
 main:
   Swamp: 17
   Mishra's Factory: 4

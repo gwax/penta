@@ -1,3 +1,5 @@
+name: "Counterburn"
+description: "A representative powered EC Counterburn deck."
 main:
   Island: 8
   Volcanic Island: 4

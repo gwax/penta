@@ -1,3 +1,5 @@
+name: "Erhnamgeddon"
+description: "A representative powered EC Erhnamgeddon deck."
 main:
   Forest: 8
   Savannah: 4

@@ -1,5 +1,8 @@
 # Omnidoor Thragfire — Todd Anderson test deck (Standard, 2013-01-02).
 # Source: https://articles.starcitygames.com/articles/todd-vs-bbd-omnidoor-thragfire-vs-naya-midrange/
+name: "Anderson Omnidoor Thragfire"
+aliases: ["todd anderson omnidoor thragfire", "omnidoor thragfire todd anderson"]
+description: "Todd Anderson's Omnidoor Thragfire test deck from January 2013."
 main:
   Griselbrand: 1
   Thragtusk: 1

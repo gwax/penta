@@ -1,3 +1,6 @@
+name: "Lions DIB"
+aliases: ["lions/dib"]
+description: "A representative powered EC Lions/Dib deck."
 main:
   Island: 5
   Plains: 5

@@ -1,3 +1,5 @@
+name: "Jeskai Aggro"
+description: "A representative powered Jeskai tempo deck."
 main:
   Island: 4
   Plains: 4

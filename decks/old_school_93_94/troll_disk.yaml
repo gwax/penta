@@ -1,3 +1,5 @@
+name: "Troll Disk"
+description: "A representative powered Sedge Troll / Disk deck."
 main:
   Swamp: 7
   Badlands: 4

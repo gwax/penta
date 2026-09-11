@@ -1,3 +1,6 @@
+name: "GR Aggro"
+aliases: ["g/r aggro"]
+description: "A representative powered green-red aggro deck."
 main:
   Forest: 6
   Mountain: 5

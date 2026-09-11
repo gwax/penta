@@ -2,6 +2,9 @@
 # MTGTop8 records the tournament as 2013-09-14.
 # Source: https://www.mtgtop8.com/event?e=5640&d=232698&f=ST
 # Contemporary source: https://articles.starcitygames.com/articles/putting-the-cap-on-standard/
+name: "Greer G/R Aggro"
+aliases: ["joseph greer g/r aggro", "g/r aggro joseph greer"]
+description: "Joseph Greer's second-place G/R Aggro deck from SCG Open Atlanta."
 main:
   Forest: 8
   Mountain: 6
