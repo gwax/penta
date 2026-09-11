@@ -97,6 +97,15 @@ const fn enters_bounce_or_sacrifice(text: &'static str, costs: &'static [CostDef
     )
 }
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "VIS",
+    slug: "visions",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // VIS 1 — Archangel
 pub(in crate::card::sets) static ARCHANGEL: CardRecord = CardRecord::new(
     "Archangel",

@@ -72,6 +72,15 @@ use crate::card::abilities;
 use crate::ids::ParentBinding;
 use crate::mana_cost;
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "UDS",
+    slug: "urzas-destiny",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // UDS 1 — Academy Rector
 pub(in crate::card::sets) static ACADEMY_RECTOR: CardRecord = CardRecord::new(
     "Academy Rector",

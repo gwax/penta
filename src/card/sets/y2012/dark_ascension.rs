@@ -105,6 +105,15 @@ static FETCH_A_BASIC_TAPPED: EffectDef = EffectDef::SearchZone {
     then: None,
 };
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "DKA",
+    slug: "dark-ascension",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // DKA 1 — Archangel's Light
 pub(in crate::card::sets) static ARCHANGELS_LIGHT: CardRecord = CardRecord::new(
     "Archangel's Light",

@@ -47,6 +47,15 @@ use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::ids::ParentBinding;
 use crate::mana_cost;
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "TOR",
+    slug: "torment",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // TOR 1 — Angel of Retribution
 pub(in crate::card::sets) static ANGEL_OF_RETRIBUTION: CardRecord = CardRecord::new(
     "Angel of Retribution",

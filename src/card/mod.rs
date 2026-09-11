@@ -18,7 +18,7 @@ mod compatibility;
 mod creature_types;
 mod model;
 mod record;
-pub(crate) mod sets;
+pub mod sets;
 
 pub use catalog::{CardCatalog, CatalogError, EffectSubjectKind, GrantedAbilityValidationError};
 pub(crate) use characteristics::applicable_part_ids_ref;
@@ -38,8 +38,8 @@ pub use model::{
     BlockRestrictionDef, BlockRestrictionMatchDef, BlockRestrictionSubjectDef, CardAbilityList,
     CardArt, CardArtPreference, CardChoiceSourceDef, CardComposition, CardDefinition,
     CardEffectStatus, CardNameDef, CardNameSetDef, CardPart, CardPrinting, CardPrintingId,
-    CardRules, CardSet, CardStructure, CardSupertype, CardSupertypeSet, CardType, CardTypeSet,
-    CastTimingPermissionDef, ChangeStackTargetsDef, CharacteristicOperationDef,
+    CardRules, CardSet, CardSetMetadata, CardStructure, CardSupertype, CardSupertypeSet, CardType,
+    CardTypeSet, CastTimingPermissionDef, ChangeStackTargetsDef, CharacteristicOperationDef,
     ChoiceVisibilityDef, ChooseCardsFromCollectionDef, ChooseDef, ChooseExactDef,
     ChooseForEachPlayerDef, ChooseGroupDef, ChooseObjectOrderDef, ChooseOneOfEachDef,
     ClassifyObjectsDef, CollectionInspectionDef, ColorChoiceOperationDef, ColorSet,

@@ -21,6 +21,15 @@ use crate::card::ZonePlacement;
 use crate::card::abilities;
 use crate::mana_cost;
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "ARB",
+    slug: "alara-reborn",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // ARB 29 — Soul Manipulation
 pub(in crate::card::sets) static SOUL_MANIPULATION: CardRecord = CardRecord::new(
     "Soul Manipulation",

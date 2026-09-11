@@ -66,6 +66,15 @@ const fn servo_for_two_energy_on_attack() -> AbilityDef {
     )
 }
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "AER",
+    slug: "aether-revolt",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // AER 51 — Aether Poisoner
 pub(in crate::card::sets) static AETHER_POISONER: CardRecord = CardRecord::new(
     "Aether Poisoner",

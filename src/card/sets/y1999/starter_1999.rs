@@ -20,6 +20,15 @@ use crate::card::ZoneKind;
 use crate::card::abilities;
 use crate::mana_cost;
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "S99",
+    slug: "starter-1999",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // S99 15 — Eager Cadet
 pub(in crate::card::sets) static EAGER_CADET: CardRecord = CardRecord::new(
     "Eager Cadet",

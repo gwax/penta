@@ -142,6 +142,15 @@ const fn keyrune_animation(
     ]
 }
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "RTR",
+    slug: "return-to-ravnica",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // RTR 1 — Angel of Serenity
 pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new(
     "Angel of Serenity",

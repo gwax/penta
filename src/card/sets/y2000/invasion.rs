@@ -66,6 +66,15 @@ use crate::card::sets::y1998::portal_second_age as catalog_p02;
 use crate::card::sets::y1998::urzas_saga as catalog_usg;
 use crate::mana_cost;
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "INV",
+    slug: "invasion",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // INV 1 — Alabaster Leech
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static ALABASTER_LEECH: CardRecord = CardRecord::new(

@@ -11,6 +11,15 @@ use crate::card::abilities;
 use crate::card::sets::y1993::alpha as catalog_lea;
 use crate::mana_cost;
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "LEB",
+    slug: "beta",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // LEB 1 — Animate Wall (reprint)
 const ANIMATE_WALL_REPRINT: PrintingRecord = PrintingRecord::reprint(
     &catalog_lea::ANIMATE_WALL,

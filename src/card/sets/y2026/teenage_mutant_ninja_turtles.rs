@@ -7,6 +7,15 @@ use crate::card::CardType;
 use crate::card::abilities;
 use crate::mana_cost;
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "TLE",
+    slug: "teenage-mutant-ninja-turtles",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // TLE 276 — Wolf Cove Villager
 pub(in crate::card::sets) static WOLF_COVE_VILLAGER: CardRecord = CardRecord::new(
     "Wolf Cove Villager",

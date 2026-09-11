@@ -72,6 +72,15 @@ const fn conspire(spell: &'static AbilityDef, costs: &'static [CostDef]) -> [Abi
     ]
 }
 
+/// Printed set identity and stable catalog slug.
+pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
+    code: "SHM",
+    slug: "shadowmoor",
+});
+
+pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
+    crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
 // SHM 33 — Counterbore
 pub(in crate::card::sets) static COUNTERBORE: CardRecord = CardRecord::new(
     "Counterbore",
