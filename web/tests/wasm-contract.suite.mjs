@@ -3,6 +3,126 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { initializeWasm, WebGame } from "./wasm-test-support.mjs";
+import { SessionClient } from "../../tools/penta-mcp/client.mjs";
+import "./wasm-session-roundtrips.mjs";
+
+test("session API controls either seat and advances only forced continuations in the browser match", async () => {
+  await initializeWasm();
+  const game = new WebGame("Sligh", "The Deck", "External", false, 42);
+  game.enableSessionApi();
+  try {
+    const first = JSON.parse(game.sessionObserveJson("bot"));
+    assert.equal(first.seat, "p1");
+    assert.equal(JSON.parse(game.sessionObserveJson("human")).seat, "p2");
+    assert.throws(() => game.sessionAct("human", 0), /does not hold/);
+    game.sessionAct("bot", first.legalActions.find(action => action.type === "KeepHand").index);
+    assert.equal(game.sessionDecisionRole(), "human");
+    const human = JSON.parse(game.sessionObserveJson("human"));
+    const keep = human.legalActions.find(action => action.type === "KeepHand");
+    game.sessionAct("human", keep.index);
+    const role = game.sessionDecisionRole();
+    const before = game.sessionObserveJson(role);
+    assert.equal(JSON.parse(before).forcedAction, null);
+    assert.ok(Array.isArray(JSON.parse(before).updates));
+    game.set_autopass(true);
+    assert.equal(game.sessionObserveJson(role), before, "UI preferences never move an externally controlled seat");
+    assert.equal(JSON.parse(game.state_json()).autopassEnabled, false);
+    assert.equal(JSON.parse(game.state_json()).passLabel, null, "the browser delegates no optional passing choices");
+    const replay = WebGame.fromReplayJson(game.replayJson());
+    try { assert.equal(replay.sessionObserveJson(role), before); } finally { replay.free(); }
+    assert.ok(JSON.parse(game.sessionCatalogJson()).cards.length > 0);
+    assert.ok(JSON.parse(WebGame.sessionOptionsJson()).formats.find(format => format.id === "old-school-93-94").decks.includes("Sligh"));
+  } finally { game.free(); }
+});
+
+test("session API decision-v1 tickets share browser commands, sideboarding, seat views, and durable replay", async () => {
+  await initializeWasm();
+  const { HostedGame } = await import("../app/wasm/penta_wasm.js");
+  const support = await import("./game-room-support.mjs");
+  const HttpResponse = globalThis.Response;
+  support.installRoomGlobals({ WebGame, HostedGame });
+  try {
+    const { GameRoom } = await support.loadGameRoom();
+    const storage = new support.MemoryStorage();
+    let room = new GameRoom(support.durableState(storage));
+    const call = async (route, token, body) => {
+      const response = await room.fetch(support.request(route, { token, body }));
+      const value = await response.json();
+      assert.equal(response.status, 200, JSON.stringify(value));
+      return value;
+    };
+    const opened = await call("start", undefined, { format: "old-school-93-94", humanDeck: "Sligh", botDeck: "The Deck",
+      botPolicy: "external", humanFirst: false, seed: 42, sessionApi: true, matchMode: "first-to-two-wins" });
+    const client = new SessionClient("http://localhost", async (url, init) => {
+      const response = await room.fetch(new Request(url, init));
+      return HttpResponse.json(await response.json(), { status: response.status });
+    });
+    const { connection } = await client.attach({ room: "test", token: opened.botToken, presentation: "decision-v1" });
+    const choose = async (action, options) => {
+      const presented = await client.next({ connection, waitMs: 0 });
+      let choices = presented.choices;
+      if (choices.reference) {
+        const all = [];
+        let offset = 0;
+        while (offset !== null) {
+          const page = await client.inspectReference({ reference: choices.reference, offset });
+          all.push(...page.items); offset = page.nextOffset;
+        }
+        choices = all;
+      } else if (!Array.isArray(choices)) choices = choices.rows.map(row => ({ ...choices.shared, ...row }));
+      const ticket = choices.find(choice => choice.index === action.index).ticket;
+      const result = await client.choose({ ticket, options, waitMs: 0 });
+      assert.equal(result.receipt.accepted, 1);
+      const commandCount = storage.values.get("hosted-game").commands.length;
+      // A receipt survives eviction of the real hosted room/engine.
+      room = new GameRoom(support.durableState(storage));
+      await client.choose({ ticket, options, waitMs: 0 });
+      assert.equal(storage.values.get("hosted-game").commands.length, commandCount);
+    };
+    let sideboarded = false;
+    let complete = false;
+    for (let step = 0; step < 100; step++) {
+      let view = await call("session", opened.humanToken);
+      let token = opened.humanToken;
+      if (view.status === "waiting") { token = opened.botToken; view = await call("session", token); }
+      assert.equal(view.observation.seat, token === opened.humanToken ? "p2" : "p1");
+      if (view.status === "complete") { complete = true; break; }
+      const decision = view.observation.decision;
+      if (decision) {
+        sideboarded ||= view.observation.match.stage === "sideboarding";
+        const options = decision.options.slice(0, decision.minimum).map(option => option.id);
+        if (token === opened.botToken) await choose(view.observation.legalActions.find(action => action.type === "ChooseDecision"), options);
+        else await call("play", token, { revision: view.revision, requestId: `step-${step}`, choices: [{ decision: decision.id, options }] });
+      } else {
+        const keep = view.observation.legalActions.find(action => action.type === "KeepHand");
+        if (token === opened.humanToken && !keep) {
+          const browser = await call("state", token);
+          const concede = browser.actions.find(action => /concede/i.test(action.label));
+          assert.ok(concede);
+          await call("command", token, { t: "act", index: concede.index, revision: browser.sessionRevision });
+        } else {
+          const action = keep ?? view.observation.legalActions.find(action => action.type === "PassPriority");
+          assert.ok(action);
+          if (token === opened.botToken) await choose(action);
+          else await call("play", token, { revision: view.revision, requestId: `step-${step}`, choices: [{ index: action.index }] });
+        }
+      }
+      // Evict and rebuild while both seats submit match and in-game decisions.
+      const before = await call("session", opened.humanToken);
+      room = new GameRoom(support.durableState(storage));
+      assert.deepEqual(await call("session", opened.humanToken), before);
+    }
+    assert.ok(sideboarded);
+    assert.ok(complete);
+    const record = await call("record", opened.botToken);
+    const replay = WebGame.fromReplayJson(JSON.stringify(record));
+    try {
+      for (const [role, token] of [["human", opened.humanToken], ["bot", opened.botToken]]) {
+        assert.deepEqual(JSON.parse(replay.sessionObserveJson(role)), (await call("session", token)).observation);
+      }
+    } finally { replay.free(); }
+  } finally { support.restoreRoomGlobals(); }
+});
 
 test("naming choices expose a pending notice and then the selected answer", async () => {
   await initializeWasm();

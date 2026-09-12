@@ -94,6 +94,28 @@ the bot-wire epoch.
   through catalog locators, including retired sources and tokens with abilities.
   Existing decision vocabulary, protocol epoch, and checkpoint format are
   unchanged; reconstruction still requires the simulation fingerprint.
+- Add an opt-in hosted session API for either-seat bots and human-versus-bot
+  matches, with exact decisions, revision checks, durable play receipts, explicit
+  batches, and browser reattachment. A stdio MCP adapter provides compact exact
+  observation changes, paged menus, and on-demand catalog/checkpoint lookup.
+  Its opt-in `decision-v1` presentation supplies self-contained current
+  positions, descriptive exact choices, visible printed card references, and
+  frozen inspection pages. `choose` resolves short revision-bound tickets and
+  retains idempotent retries; `inspect_ref` reads their issuing view. A small
+  `play-penta` skill and stdio probe support direct model tool invocation.
+  `play` accepts groups of current-view tickets, resolved to exact action
+  values before submission, so combat groups do not need per-creature model
+  calls or manual reconstruction of action payloads.
+  Shared `forcedAction` classification (`actions.forced.v1`) lets sessions
+  advance unique continuations while preserving optional mana actions and all
+  genuine selections. Seat-safe session updates retain public reveals and
+  skipped private inspections, including across reconnects and replay.
+  Face-down spell cast/resolution events withhold physical card identities in
+  both browser logs and the structured session history.
+  No gameplay policy is added. Browser/host replay version 4 records the new
+  `sessionApi` pacing configuration and `sessionAct` command; version-2 and
+  version-3 journals are refused. Bot protocol and checkpoint versions are
+  unchanged. See [bot sessions and MCP](docs/bot-sessions.md) for setup and migration details.
 
 - Protocol 31 adds `PublicNotice` decisions for card naming and scalar choices.
   Opponents see that a choice is pending, then its public result; candidate

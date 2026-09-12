@@ -32,6 +32,15 @@ The decision player is normally the player with priority, but differs during
 mulligans, blocker declaration, restricted untaps, cleanup discards, and
 triggered or combat-damage choices.
 
+`Game::forced_action()` and `PlayerObservation::forced_action()` identify a
+unique continuation, excluding concession. They return a concrete action only
+when the legal action list and decision selection schema leave no alternative.
+Runners may submit it through ordinary `apply`; they must retain visible events
+and any decision information before advancing. The canonical JSON observation
+offers the same query as optional `forcedAction` (`actions.forced.v1`). Existing
+native runners retain their explicit one-action semantics; hosted sessions use
+the query to advance forced steps after each submitted command.
+
 ## Observations and events
 
 `PlayerObservation` is the hidden-information-safe input for a player or bot.
@@ -107,6 +116,10 @@ not one exact-version comparison:
 - The nested checkpoint payload and browser command journal have independent
   `version` and `replayVersion` fields. Their encodings can therefore move
   without changing the ordinary bot wire epoch.
+- The optional [hosted session API](bot-sessions.md) uses envelope `apiVersion: 1`
+  around unchanged canonical bot observations. Its exact-pacing configuration
+  and `sessionAct` journal command require browser/host replay version 4. MCP
+  presentation deltas and menu references are adapter output, not bot-wire changes.
 
 Query `protocol_version()`, `simulation_fingerprint()`, and `engine_version()`
 through the relevant binding. Release history and migration notes live in the

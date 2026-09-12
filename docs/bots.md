@@ -204,8 +204,11 @@ current `main`/`sideboard`. Native callers use `Game::match_json(viewer)` and
 `Game::current_game_result()` to distinguish game and match outcomes.
 Play/draw and sideboarding use ordinary `ChooseDecision` selections. For
 sideboarding, select the main-deck option IDs; all other registered copies form
-the sideboard. The indexed default selects the first minimum options, while
-`choose_decision` supports any legal split. No card can be added or removed.
+the sideboard. Option `zone: "Library"` marks the current registered main deck;
+`"OutsideGame"` marks the current sideboard. These labels identify registered
+piles, not an in-game shuffled library order. The indexed default selects the
+first minimum options, while `choose_decision` supports any legal split. No
+card can be added or removed.
 The loser chooses play/draw, and draws retain the preceding chooser. First-game
 play/draw happens before hands are revealed; the configured first seat chooses.
 
@@ -524,6 +527,12 @@ world it can search.
 | `decision` | a pending choice (see below), or null |
 | `result` | null while running, else `{winner, reason}`; `reason` is `OpponentConceded`, `OpponentLostAllLife`, `OpponentTriedToDrawFromEmptyLibrary`, `OpponentLostToAnEffect`, `OpponentRanOutOfTime`, or `OpponentPoisoned` |
 | `legalActions` | what you can do, each with an `index` |
+
+The legacy permanent field `enteredThisTurn` reflects the controller-turn
+timestamp also used for summoning sickness. It can remain true during the next
+opponent turn and is updated on control changes; it does not mean the permanent
+entered during the current global `turn`. Use `canAttack` and `legalActions`
+for permissions.
 
 Every protocol-27 JSON object is open-world: ignore members you do not use
 rather than rejecting the whole observation or catalog. Treat documented
@@ -1769,6 +1778,11 @@ neither the registry nor a room's own deck configuration exists there.
 
 ## Hosted games over WebSocket
 
+For either-seat control, human versus Astra, compact observations, and MCP tools,
+see [bot sessions and MCP](bot-sessions.md). That opt-in mode advances only
+unique continuations, retains seat-visible events and inspection information,
+and has no move clock. It shares the hosted engine and match journal.
+
 Polling as above is the simplest way in. A bot that wants to answer the
 instant it is asked can hold a socket instead: same contract, pushed rather
 than pulled.
@@ -1899,5 +1913,7 @@ Neither changes the bot protocol epoch. Reveals are historical public facts;
 private looks, unrevealed draws, and hidden-zone hypotheses never create them.
 
 Browser/host replay version 3 adds the explicit `botConcede` command.
+Version 4 adds exact-session pacing and `sessionAct` commands; regenerate
+older journals with their original build before migrating.
 Exact replay still requires both the recorded replay version and simulation
 fingerprint; an older engine must not interpret an unknown command as a choice.

@@ -18,3 +18,7 @@ Future or exploratory architecture belongs under
 [`design-notes/`](design-notes/) rather than in documentation of the current
 engine. Release history and compatibility changes remain in the repository
 [changelog](../CHANGELOG.md).
+
+The [model-facing bot interface note](design-notes/model-facing-bot-interface.md)
+records the implemented opt-in decision view, exact action tickets, and the
+remaining evaluation plan. Setup and operation are in [bot sessions](bot-sessions.md).
