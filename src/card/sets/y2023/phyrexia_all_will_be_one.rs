@@ -19,10 +19,14 @@ use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
+use crate::card::CreatedTokensDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::ManaColor;
 use crate::card::MoveObjectsDef;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
@@ -31,7 +35,10 @@ use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::RevealObjectsDef;
 use crate::card::SacrificedAmountDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
+use crate::card::TriggerEventDef;
 use crate::card::ValueComparisonDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -98,6 +105,29 @@ pub(in crate::card::sets) static ANNIHILATING_GLARE: CardRecord = CardRecord::ne
         ]),
         EffectDef::destroy_target(crate::TargetIndex::PRIMARY),
     )),
+);
+
+// ONE 102 — Offer Immortality
+pub(in crate::card::sets) static OFFER_IMMORTALITY: CardRecord = CardRecord::new(
+    "Offer Immortality",
+    "b0aac10a-6d47-4a6c-8a10-2b7c06f3ff32",
+    "A. M. Sartor",
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Target creature gains deathtouch and indestructible until end \
+         of turn. (Damage and effects that say \"destroy\" don't \
+         destroy it.)",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Composite(&[
+                AppliedEffectDef::add_ability(&abilities::deathtouch()),
+                AppliedEffectDef::add_ability(&abilities::indestructible()),
+            ]),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )]),
 );
 
 // ONE 108 — Sheoldred's Edict
@@ -177,6 +207,15 @@ pub(in crate::card::sets) static BARBED_BATTERFIST: CardRecord = CardRecord::new
             ),
             abilities::equip(&[CostDef::Mana(mana_cost!("{1}"))], "Equip {1}"),
         ]),
+);
+
+// ONE 123 — Blazing Crescendo
+// Audit: unsupported — Needs an exile-play permission expiring at cleanup of its controller's next turn; the current turn-count duration also permits plays during the following opponent turn.
+pub(in crate::card::sets) static BLAZING_CRESCENDO: CardRecord = CardRecord::new(
+    "Blazing Crescendo",
+    "d6bfc16a-2871-40a4-b279-636b80491a06",
+    "Tiffany Turrill",
+    CardRules::unsupported(),
 );
 
 // ONE 133 — Furnace Strider
@@ -384,15 +423,62 @@ pub(in crate::card::sets) static ATRAXA_GRAND_UNIFIER: CardRecord = CardRecord::
         ]),
 );
 
+// ONE 213 — Ovika, Enigma Goliath
+pub(in crate::card::sets) static OVIKA_ENIGMA_GOLIATH: CardRecord = CardRecord::new(
+    "Ovika, Enigma Goliath",
+    "b298cf34-7aa5-4f97-a86c-7f28d2113b87",
+    "Antonio José Manzanedo",
+    CardRules::new_creature(mana_cost!("{5}{U}{R}"), &["Phyrexian", "Nightmare"], 6, 6)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::flying(),
+            abilities::ward(
+                &[CostDef::Mana(mana_cost!("{3}")), CostDef::PayLife(3)],
+                "Ward—{3}, Pay 3 life.",
+            ),
+            AbilityDef::triggered(
+                "Whenever you cast a noncreature spell, create X 1/1 red \
+                 Phyrexian Goblin creature tokens, where X is the mana value \
+                 of that spell. They gain haste until end of turn.",
+                TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ])),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                        &["Phyrexian", "Goblin"],
+                        &[ManaColor::Red],
+                        1,
+                        1,
+                    )))
+                    .with_count(ValueDef::ObjectManaValue(ObjectRefDef::TriggeringObject))
+                    .with_created_tokens(CreatedTokensDef {
+                        binding: crate::Binding!("goblins"),
+                        then: &EffectDef::Apply {
+                            recipient: EffectRecipientDef::objects(ObjectSetDef::Binding(
+                                crate::Binding!("goblins"),
+                            )),
+                            effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                        },
+                    }),
+                ),
+            ),
+        ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PLANAR_DISRUPTION,
     &ANNIHILATING_GLARE,
+    &OFFER_IMMORTALITY,
     &SHEOLDRED_S_EDICT,
     &BARBED_BATTERFIST,
+    &BLAZING_CRESCENDO,
     &FURNACE_STRIDER,
     &CANKERBLOOM,
     &CONTAGIOUS_VORRAC,
     &ATRAXA_GRAND_UNIFIER,
+    &OVIKA_ENIGMA_GOLIATH,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

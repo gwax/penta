@@ -8,10 +8,12 @@ use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
+use crate::card::AppliedEffectDef;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectChoiceDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -19,9 +21,13 @@ use crate::card::FreePlayDef;
 use crate::card::FreePlayDurationDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectQueryDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::ValueComparisonDef;
 use crate::card::ValueDef;
@@ -39,6 +45,15 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// LRW 11 — Crib Swap
+// Audit: unsupported — Needs an all-zone creature-type characteristic-defining ability whose all-types value is copiable; battlefield all-type modifiers do not implement changeling.
+pub(in crate::card::sets) static CRIB_SWAP: CardRecord = CardRecord::new(
+    "Crib Swap",
+    "a9044585-4d44-42fb-ad7b-e0e224fbc502",
+    "Brandon Dorman",
+    CardRules::unsupported(),
+);
 
 // LRW 34 — Oblivion Ring
 pub(in crate::card::sets) static OBLIVION_RING: CardRecord = CardRecord::new(
@@ -231,6 +246,15 @@ pub(in crate::card::sets) static PONDER: CardRecord = CardRecord::new(
     )),
 );
 
+// LRW 128 — Nameless Inversion
+// Audit: unsupported — Needs an all-zone creature-type characteristic-defining ability whose all-types value is copiable; battlefield all-type modifiers do not implement changeling.
+pub(in crate::card::sets) static NAMELESS_INVERSION: CardRecord = CardRecord::new(
+    "Nameless Inversion",
+    "94b4e4d2-2358-48d2-9a2a-3d17afea28f5",
+    "Jeff Miracola",
+    CardRules::unsupported(),
+);
+
 // LRW 145 — Thoughtseize
 pub(in crate::card::sets) static THOUGHTSEIZE: CardRecord = CardRecord::new(
     "Thoughtseize",
@@ -360,6 +384,50 @@ CardRules::new_instant(mana_cost!("{2}{R}{R}")).with_ability(
     ),
 );
 
+// LRW 220 — Imperious Perfect
+pub(in crate::card::sets) static IMPERIOUS_PERFECT: CardRecord = CardRecord::new(
+    "Imperious Perfect",
+    "706fce74-fed9-4bf7-949d-7df6bef29238",
+    "Scott M. Fischer",
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Elf", "Warrior"], 2, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "Other Elves you control get +1/+1.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                    ObjectQueryDef::matching(
+                        ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                        ]),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                )),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+            },
+        ),
+        AbilityDef::activated(
+            "{G}, {T}: Create a 1/1 green Elf Warrior creature token.",
+            &[CostDef::Mana(mana_cost!("{G}")), CostDef::TapSource],
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Elf", "Warrior"], &[ManaColor::Green], 1, 1),
+            ))),
+        ),
+    ]),
+);
+
+// LRW 261 — Springleaf Drum
+// Audit: unsupported — Needs an immediate mana-ability payment combining TapSource with a chosen untapped creature; ordinary nonmana activations support that tap payment but the immediate mana path does not.
+pub(in crate::card::sets) static SPRINGLEAF_DRUM: CardRecord = CardRecord::new(
+    "Springleaf Drum",
+    "fa8b09d0-fbd2-4441-9d87-02450412e0db",
+    "Cyril Van Der Haegen",
+    CardRules::unsupported(),
+);
+
 // LRW 262 — Thorn of Amethyst
 pub(in crate::card::sets) static THORN_OF_AMETHYST: CardRecord = CardRecord::new(
     "Thorn of Amethyst",
@@ -441,15 +509,19 @@ pub(in crate::card::sets) static SHIMMERING_GROTTO: CardRecord = CardRecord::new
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &CRIB_SWAP,
     &OBLIVION_RING,
     &CRYPTIC_COMMAND,
     &MULLDRIFTER,
     &PESTERMITE,
     &PONDER,
+    &NAMELESS_INVERSION,
     &THOUGHTSEIZE,
     &HAMLETBACK_GOLIATH,
     &TARFIRE,
     &WILD_RICOCHET,
+    &IMPERIOUS_PERFECT,
+    &SPRINGLEAF_DRUM,
     &THORN_OF_AMETHYST,
     &SHELLDOCK_ISLE,
     &SHIMMERING_GROTTO,

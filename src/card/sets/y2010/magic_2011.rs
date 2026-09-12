@@ -21,6 +21,7 @@ use crate::card::CardType;
 use crate::card::CastTimingPermissionDef;
 use crate::card::ConditionalStaticEffectDef;
 use crate::card::CostDef;
+use crate::card::CounterKind;
 use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::DividedTotal;
@@ -52,6 +53,24 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// M11 3 — Ajani's Pridemate
+pub(in crate::card::sets) static AJANI_S_PRIDEMATE: CardRecord = CardRecord::new(
+    "Ajani's Pridemate",
+    "f70d1452-6b61-4c63-841f-4256ac498e9f",
+    "Svetlin Velinov",
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Cat", "Soldier"], 2, 2).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever you gain life, put a +1/+1 counter on this creature.",
+            TriggerEventDef::LifeGained(PlayerRelation::You),
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
 
 // M11 6 — Assault Griffin
 pub(in crate::card::sets) static ASSAULT_GRIFFIN: CardRecord = CardRecord::new(
@@ -212,6 +231,7 @@ pub(in crate::card::sets) static WAR_PRIEST_OF_THUNE: CardRecord = CardRecord::n
         ),
     ]),
 );
+
 // M11 41 — Aether Adept
 pub(in crate::card::sets) static AETHER_ADEPT: CardRecord = CardRecord::new(
     "Aether Adept",
@@ -642,6 +662,62 @@ pub(in crate::card::sets) static COMBUST: CardRecord = CardRecord::new(
     crate::card::CardRules::unsupported(),
 );
 
+// M11 144 — Hoarding Dragon
+pub(in crate::card::sets) static HOARDING_DRAGON: CardRecord = CardRecord::new(
+    "Hoarding Dragon",
+    "1f8b6932-e62d-4d38-bd0e-9ab8d4a56762",
+    "Matt Cavotta",
+    CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Dragon"], 4, 4).with_abilities(&[
+        abilities::flying(),
+        abilities::enters_trigger(
+            "When this creature enters, you may search your library for an \
+             artifact card, exile it, then shuffle.",
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::SearchZone {
+                    player: EffectRecipientDef::Controller,
+                    source: ZoneKind::Library,
+                    object: ObjectPredicateDef::HasType(CardType::Artifact),
+                    minimum: 0,
+                    maximum: ValueDef::Constant(1),
+                    reveal: false,
+                    destination: ZoneKind::Library,
+                    placement: ZonePlacement::Top,
+                    shuffle: false,
+                    enters_tapped: false,
+                    attachment: None,
+                    binding: Some(crate::Binding!("found")),
+                    then: Some(&EffectDef::Sequence(&[
+                        EffectDef::ExileLinkedToSource {
+                            object: EffectRecipientDef::objects(ObjectSetDef::Binding(
+                                crate::Binding!("found"),
+                            )),
+                            face_down: false,
+                            until_source_leaves: false,
+                            then: None,
+                        },
+                        EffectDef::ShuffleLibrary {
+                            player: EffectRecipientDef::Controller,
+                        },
+                    ])),
+                },
+            },
+        ),
+        abilities::dies_trigger(
+            "When this creature dies, you may put the exiled card into its \
+             owner's hand.",
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::move_to_zone(
+                    EffectRecipientDef::objects(ObjectSetDef::LinkedExiles),
+                    ZoneKind::Hand,
+                    ZonePlacement::Top,
+                ),
+            },
+        ),
+    ]),
+);
+
 // M11 146 — Inferno Titan
 pub(in crate::card::sets) static INFERNO_TITAN: CardRecord = CardRecord::new(
     "Inferno Titan",
@@ -1003,7 +1079,37 @@ CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated(
     )),
 );
 
+// M11 216 — Sword of Vengeance
+pub(in crate::card::sets) static SWORD_OF_VENGEANCE: CardRecord = CardRecord::new(
+    "Sword of Vengeance",
+    "96fc0138-46fc-493c-8a28-8630c4759193",
+    "Dan Murayama Scott",
+    CardRules::new_artifact(mana_cost!("{3}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +2/+0 and has first strike, vigilance, \
+                 trample, and haste.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(2),
+                            ValueDef::Constant(0),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::first_strike()),
+                        AppliedEffectDef::add_ability(&abilities::vigilance()),
+                        AppliedEffectDef::add_ability(&abilities::trample()),
+                        AppliedEffectDef::add_ability(&abilities::haste()),
+                    ]),
+                },
+            ),
+            abilities::equip(&[CostDef::Mana(mana_cost!("{3}"))], "Equip {3}"),
+        ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &AJANI_S_PRIDEMATE,
     &ASSAULT_GRIFFIN,
     &LEYLINE_OF_SANCTITY,
     &MIGHTY_LEAP,
@@ -1030,6 +1136,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PHYLACTERY_LICH,
     &QUAG_SICKNESS,
     &COMBUST,
+    &HOARDING_DRAGON,
     &INFERNO_TITAN,
     &LEYLINE_OF_PUNISHMENT,
     &MANIC_VANDAL,
@@ -1045,6 +1152,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PRIMEVAL_TITAN,
     &SACRED_WOLF,
     &ELIXIR_OF_IMMORTALITY,
+    &SWORD_OF_VENGEANCE,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[SILENCE_REPRINT];

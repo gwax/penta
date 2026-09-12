@@ -341,6 +341,15 @@ pub(in crate::card::sets) static SPROUT_SWARM: CardRecord = CardRecord::new(
     ]),
 );
 
+// FUT 154 — Thornweald Archer
+pub(in crate::card::sets) static THORNWEALD_ARCHER: CardRecord = CardRecord::new(
+    "Thornweald Archer",
+    "783a50a0-9394-4d97-856f-21eb126a0018",
+    "Dave Kendall",
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Archer"], 2, 1)
+        .with_abilities(&[abilities::reach(), abilities::deathtouch()]),
+);
+
 // FUT 157 — Jhoira of the Ghitu
 pub(in crate::card::sets) static JHOIRA_OF_THE_GHITU: CardRecord = CardRecord::new(
     "Jhoira of the Ghitu",
@@ -636,6 +645,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLOODSHOT_TRAINEE,
     &RITES_OF_FLOURISHING,
     &SPROUT_SWARM,
+    &THORNWEALD_ARCHER,
     &JHOIRA_OF_THE_GHITU,
     &AKROMAS_MEMORIAL,
     &COALITION_RELIC,

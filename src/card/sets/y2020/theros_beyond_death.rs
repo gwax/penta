@@ -25,6 +25,7 @@ use crate::card::ManaColor;
 use crate::card::MoveObjectsDef;
 use crate::card::ObjectChoiceBindingDef;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectQueryDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
@@ -333,6 +334,42 @@ pub(in crate::card::sets) static UNDERWORLD_RAGE_HOUND: CardRecord = CardRecord:
     ]),
 );
 
+// THB 182 — Nessian Hornbeetle
+pub(in crate::card::sets) static NESSIAN_HORNBEETLE: CardRecord = CardRecord::new(
+    "Nessian Hornbeetle",
+    "8200fcda-e30c-460f-9964-47e657b7c758",
+    "Jason Felix",
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Insect"], 2, 2).with_abilities(&[
+        AbilityDef::triggered_if(
+            "At the beginning of combat on your turn, if you control \
+             another creature with power 4 or greater, put a +1/+1 counter \
+             on this creature.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::BeginningOfCombat,
+                player: PlayerRelation::You,
+            },
+            &TriggerConditionDef::ObjectCount {
+                query: ObjectQueryDef::matching(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                        ObjectPredicateDef::PowerAtLeast(4),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                comparison: ComparisonDef::GreaterOrEqual,
+                amount: 1,
+            },
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
+
 // THB 229 — Uro, Titan of Nature's Wrath
 pub(in crate::card::sets) static URO_TITAN_OF_NATURE_S_WRATH: CardRecord = CardRecord::new(
     "Uro, Titan of Nature's Wrath",
@@ -461,6 +498,32 @@ pub(in crate::card::sets) static SOUL_GUIDE_LANTERN: CardRecord = CardRecord::ne
     ]),
 );
 
+// THB 295 — Terror of Mount Velus
+pub(in crate::card::sets) static TERROR_OF_MOUNT_VELUS: CardRecord = CardRecord::new(
+    "Terror of Mount Velus",
+    "332dc6c3-7802-4bde-aa4e-0feab70c216f",
+    "Billy Christian",
+    CardRules::new_creature(mana_cost!("{5}{R}{R}"), &["Dragon"], 5, 5).with_abilities(&[
+        abilities::flying(),
+        abilities::double_strike(),
+        abilities::enters_trigger(
+            "When this creature enters, creatures you control gain double \
+             strike until end of turn.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                    ObjectQueryDef::matching(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                )),
+                effect: AppliedEffectDef::add_ability(&abilities::double_strike()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &THASSAS_ORACLE,
     &MIRE_TRITON,
@@ -468,8 +531,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLOOD_ASPIRANT,
     &UNDERWORLD_BREACH,
     &UNDERWORLD_RAGE_HOUND,
+    &NESSIAN_HORNBEETLE,
     &URO_TITAN_OF_NATURE_S_WRATH,
     &SOUL_GUIDE_LANTERN,
+    &TERROR_OF_MOUNT_VELUS,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =

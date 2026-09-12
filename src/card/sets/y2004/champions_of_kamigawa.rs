@@ -60,6 +60,15 @@ pub(in crate::card::sets) static KONDA_LORD_OF_EIGANJO: CardRecord = CardRecord:
         ]),
 );
 
+// CHK 97 — Time Stop
+// Audit: unsupported — Needs an end-the-turn rules procedure that exiles the stack, ends resolving procedures, skips directly to cleanup, and performs the special cleanup rules.
+pub(in crate::card::sets) static TIME_STOP: CardRecord = CardRecord::new(
+    "Time Stop",
+    "f968c5e9-12a8-4542-90b4-84e0238fa375",
+    "Scott M. Fischer",
+    CardRules::unsupported(),
+);
+
 // CHK 107 — Cursed Ronin
 pub(in crate::card::sets) static CURSED_RONIN: CardRecord = CardRecord::new(
     "Cursed Ronin",
@@ -99,6 +108,15 @@ CardRules::new_sorcery(mana_cost!("{B}{B}")).with_ability(
             )),
         ),
     ),
+);
+
+// CHK 126 — Myojin of Night's Reach
+// Audit: unsupported — Needs a positive cast-from-hand entry condition; SourceNotCastFrom cannot distinguish an actual hand cast from a non-cast battlefield arrival when inverted by the current entry condition vocabulary.
+pub(in crate::card::sets) static MYOJIN_OF_NIGHT_S_REACH: CardRecord = CardRecord::new(
+    "Myojin of Night's Reach",
+    "13a295b0-535e-4c2d-879d-62603d1f2f1b",
+    "Kev Walker",
+    CardRules::unsupported(),
 );
 
 // CHK 156 — Battle-Mad Ronin
@@ -176,6 +194,24 @@ CardRules::new_instant(mana_cost!("{4}{R}"))
                 &[CostDef::Mana(mana_cost!("{2}{R}{R}"))],
             ),
         ]),
+);
+
+// CHK 204 — Commune with Nature
+pub(in crate::card::sets) static COMMUNE_WITH_NATURE: CardRecord = CardRecord::new(
+    "Commune with Nature",
+    "ce0b706e-017d-4f82-b280-cf9fdf75aef8",
+    "Edward P. Beard, Jr.",
+    CardRules::new_sorcery(mana_cost!("{G}")).with_abilities(&[AbilityDef::spell(
+        "Look at the top five cards of your library. You may reveal a \
+creature card from among them and put it into your hand. Put \
+the rest on the bottom of your library in any order.",
+        abilities::look_at_top_cards_reveal_choice_to_hand_rest_bottom(
+            ValueDef::Constant(5),
+            ObjectPredicateDef::HasType(CardType::Creature),
+            0,
+            1,
+        ),
+    )]),
 );
 
 // CHK 239 — Sakura-Tribe Elder
@@ -278,11 +314,14 @@ pub(in crate::card::sets) static MINAMO_SCHOOL_AT_WATERS_EDGE: CardRecord = Card
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DEVOTED_RETAINER,
     &KONDA_LORD_OF_EIGANJO,
+    &TIME_STOP,
     &CURSED_RONIN,
     &DISTRESS,
+    &MYOJIN_OF_NIGHT_S_REACH,
     &BATTLE_MAD_RONIN,
     &BROTHERS_YAMAZAKI,
     &THROUGH_THE_BREACH,
+    &COMMUNE_WITH_NATURE,
     &SAKURA_TRIBE_ELDER,
     &SENSEIS_DIVINING_TOP,
     &MINAMO_SCHOOL_AT_WATERS_EDGE,

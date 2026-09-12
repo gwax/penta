@@ -338,6 +338,28 @@ pub(in crate::card::sets) static FERAL_ANIMIST: CardRecord = CardRecord::new(
     ),
 );
 
+// GPT 122 — Mortify
+pub(in crate::card::sets) static MORTIFY: CardRecord = CardRecord::new(
+    "Mortify",
+    "3b2c5187-71c7-4801-8a76-339c67322d35",
+    "Glen Angus",
+    CardRules::new_instant(mana_cost!("{1}{W}{B}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Destroy target creature or enchantment.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::HasType(CardType::Enchantment),
+                ]),
+            )],
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                then: None,
+            },
+        ),
+    ]),
+);
+
 // GPT 125 — Pillory of the Sleepless
 pub(in crate::card::sets) static PILLORY_OF_THE_SLEEPLESS: CardRecord = CardRecord::new(
     "Pillory of the Sleepless",
@@ -472,6 +494,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GRISTLEBACK,
     &LEYLINE_OF_LIFEFORCE,
     &FERAL_ANIMIST,
+    &MORTIFY,
     &PILLORY_OF_THE_SLEEPLESS,
     &GODLESS_SHRINE,
     &GRUUL_TURF,

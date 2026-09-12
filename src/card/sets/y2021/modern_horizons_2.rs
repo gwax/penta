@@ -590,6 +590,37 @@ pub(in crate::card::sets) static VERMIN_GORGER: CardRecord = CardRecord::new(
     ),
 );
 
+// MH2 108 — Vile Entomber
+pub(in crate::card::sets) static VILE_ENTOMBER: CardRecord = CardRecord::new(
+    "Vile Entomber",
+    "d890ae71-da2b-44fa-8cfa-9c3016c9f696",
+    "Chris Cold",
+    CardRules::new_creature(mana_cost!("{2}{B}{B}"), &["Zombie", "Warlock"], 2, 2).with_abilities(
+        &[
+            abilities::deathtouch(),
+            abilities::enters_trigger(
+                "When this creature enters, search your library for a card, \
+                 put that card into your graveyard, then shuffle.",
+                EffectDef::SearchZone {
+                    player: EffectRecipientDef::Controller,
+                    source: ZoneKind::Library,
+                    object: ObjectPredicateDef::Any,
+                    minimum: 1,
+                    maximum: ValueDef::Constant(1),
+                    reveal: false,
+                    destination: ZoneKind::Graveyard,
+                    placement: ZonePlacement::Top,
+                    shuffle: true,
+                    enters_tapped: false,
+                    attachment: None,
+                    binding: None,
+                    then: None,
+                },
+            ),
+        ],
+    ),
+);
+
 // MH2 121 — Dragon's Rage Channeler
 pub(in crate::card::sets) static DRAGON_S_RAGE_CHANNELER: CardRecord = CardRecord::new(
     "Dragon's Rage Channeler",
@@ -1522,6 +1553,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LOATHSOME_CURATOR,
     &NESTED_SHAMBLER,
     &VERMIN_GORGER,
+    &VILE_ENTOMBER,
     &DRAGON_S_RAGE_CHANNELER,
     &FURY,
     &MINE_COLLAPSE,

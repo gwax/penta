@@ -59,7 +59,8 @@ const fn two_energy_on_enters() -> AbilityDef {
 /// made attack by attack.
 const fn servo_for_two_energy_on_attack() -> AbilityDef {
     AbilityDef::triggered(
-        "Whenever this creature attacks, you may pay {E}{E}. If you do, create a 1/1 colorless Servo artifact creature token.",
+        "Whenever this creature attacks, you may pay {E}{E}. If you \
+         do, create a 1/1 colorless Servo artifact creature token.",
         TriggerEventDef::attacks(ObjectPredicateDef::Source),
         EffectDef::PayOr(PayOrDef::optional(
             &[CostDef::Energy(2)],
@@ -242,6 +243,15 @@ pub(in crate::card::sets) static WRANGLE: CardRecord = CardRecord::new(
     )),
 );
 
+// AER 106 — Druid of the Cowl
+pub(in crate::card::sets) static DRUID_OF_THE_COWL: CardRecord = CardRecord::new(
+    "Druid of the Cowl",
+    "a683f79b-0330-4fac-8279-6c0d888414b8",
+    "Magali Villeneuve",
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Druid"], 1, 3)
+        .with_abilities(&[abilities::tap_for(ManaColor::Green)]),
+);
+
 // AER 151 — Foundry Assembler
 pub(in crate::card::sets) static FOUNDRY_ASSEMBLER: CardRecord = CardRecord::new(
     "Foundry Assembler",
@@ -301,6 +311,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AETHER_CHASER,
     &KARI_ZEV_SKYSHIP_RAIDER,
     &WRANGLE,
+    &DRUID_OF_THE_COWL,
     &FOUNDRY_ASSEMBLER,
     &WALKING_BALLISTA,
 ];

@@ -255,6 +255,27 @@ pub(in crate::card::sets) static DARK_CONFIDANT: CardRecord = CardRecord::new(
     ),
 );
 
+// RAV 93 — Last Gasp
+pub(in crate::card::sets) static LAST_GASP: CardRecord = CardRecord::new(
+    "Last Gasp",
+    "34e035b3-bd83-43a4-8f31-d2393d29cd94",
+    "Thomas M. Baxa",
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Target creature gets -3/-3 until end of turn.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(-3),
+                ValueDef::Constant(-3),
+            ),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )]),
+);
+
 // RAV 125 — Frenzied Goblin
 pub(in crate::card::sets) static FRENZIED_GOBLIN: CardRecord = CardRecord::new(
     "Frenzied Goblin",
@@ -329,6 +350,15 @@ CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(
     ),
 );
 
+// RAV 158 — Doubling Season
+// Audit: unsupported — Needs prospective token-creation and counter-placement replacement events, including whether counters are placed by an effect rather than a cost or turn-based action.
+pub(in crate::card::sets) static DOUBLING_SEASON: CardRecord = CardRecord::new(
+    "Doubling Season",
+    "c7e71299-98f6-494e-b187-8d22ce5f50af",
+    "Wayne Reynolds",
+    CardRules::unsupported(),
+);
+
 // RAV 163 — Farseek
 pub(in crate::card::sets) static FARSEEK: CardRecord = CardRecord::new(
     "Farseek",
@@ -357,6 +387,29 @@ CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell(
             then: None,
         },
     )),
+);
+
+// RAV 213 — Lightning Helix
+pub(in crate::card::sets) static LIGHTNING_HELIX: CardRecord = CardRecord::new(
+    "Lightning Helix",
+    "1b2ecf55-c1cc-4b28-b7ce-e1b25305155e",
+    "Kev Walker",
+    CardRules::new_instant(mana_cost!("{R}{W}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Lightning Helix deals 3 damage to any target and you gain 3 life.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::AnyTarget,
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::damage(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ValueDef::Constant(3),
+            ),
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(3),
+            },
+        ]),
+    )]),
 );
 
 // RAV 221 — Putrefy
@@ -547,9 +600,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &REMAND,
     &VEDALKEN_ENTRANCER,
     &DARK_CONFIDANT,
+    &LAST_GASP,
     &FRENZIED_GOBLIN,
     &REROUTE,
+    &DOUBLING_SEASON,
     &FARSEEK,
+    &LIGHTNING_HELIX,
     &PUTREFY,
     &SKYKNIGHT_LEGIONNAIRE,
     &DIMIR_GUILDMAGE,

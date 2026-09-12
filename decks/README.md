@@ -5,8 +5,10 @@ Adding, editing, or removing a file updates the registry on the next build;
 no Rust registration or runtime filesystem access is needed. Native callers,
 bindings, and the browser use the same registry.
 
-The directory names match the format slugs with underscores, for example
-`old_school_93_94`, `premodern`, and `isd_m14_standard`.
+Directories matching registered format slugs, such as `old_school_93_94`,
+`premodern`, and `isd_m14_standard`, supply that format's deck collection.
+Other directories, such as `woe_hob_standard`, retain inventories before their
+format profile is registered; `make deck-report` reports that separately.
 
 ```yaml
 name: Example Deck
@@ -44,3 +46,14 @@ unless you intend to change the deck order used by seeded games.
 
 Run `make test-engine-unit FILTER=decks` to check YAML validation, registry
 lookup, card resolution, and deck legality.
+
+Implementation coverage is derived from the catalog. Run `make deck-report` to
+list every unsupported card in each deck, including its sideboard. There is no
+manual readiness flag: implementing a card changes the next validation result.
+Unknown cards are errors; cataloged unsupported cards are named diagnostics.
+
+Native callers can use `Deck::validate_supported_cards(&catalog)`. It returns
+`DeckError::UnsupportedCards` with sorted, distinct names, or `UnknownCard` for
+a missing definition. This check is independent of `validate_for_format`, which
+checks construction and legality. A legal deck can still contain unsupported
+cards, and an inventory can be checked before its format profile exists.

@@ -10,12 +10,16 @@ use crate::card::AbilityPredicateDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::ActivationTimingDef;
+use crate::card::AddManaEffectDef;
 use crate::card::AlternateSpellKind;
 use crate::card::AlternativeCastKindDef;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
 use crate::card::BasicLandType;
+use crate::card::BattlefieldArrivalDef;
+use crate::card::BattlefieldEntryChoiceDestinationDef;
 use crate::card::BattlefieldEntryModificationDef;
+use crate::card::BattlefieldEntryScalarChoiceDef;
 use crate::card::BlockRestrictionDef;
 use crate::card::BlockRestrictionMatchDef;
 use crate::card::BlockRestrictionSubjectDef;
@@ -40,8 +44,10 @@ use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ExilePlayConditionDef;
 use crate::card::ExilePlayDurationDef;
+use crate::card::InstalledTriggerDef;
 use crate::card::KeywordAbility;
 use crate::card::ManaColor;
+use crate::card::ManaTypeDef;
 use crate::card::ObjectCountConditionDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
@@ -49,6 +55,7 @@ use crate::card::ObjectSetDef;
 use crate::card::PlayOptionDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::ReplacementChoiceDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SpellForm;
@@ -57,6 +64,7 @@ use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
+use crate::card::TurnStepDef;
 use crate::card::ValueComparisonDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -158,6 +166,82 @@ pub(in crate::card::sets) static ARDENVALE_TACTICIAN: CardRecord = CardRecord::n
 )
 .with_composition(ardenvale_tactician_composition);
 
+// ELD 8 — Charming Prince
+pub(in crate::card::sets) static CHARMING_PRINCE: CardRecord = CardRecord::new(
+    "Charming Prince",
+    "dcb94950-3f3e-4876-84f8-d5e4d9cfecee",
+    "Randy Vargas",
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Noble"], 2, 2).with_abilities(&[
+        AbilityDef::modal_triggered(
+            "When this creature enters, choose one —",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &[
+                AbilityDef::spell("Scry 2.", abilities::scry(ValueDef::Constant(2))),
+                AbilityDef::spell(
+                    "You gain 3 life.",
+                    EffectDef::GainLife {
+                        recipient: EffectRecipientDef::Controller,
+                        amount: ValueDef::Constant(3),
+                    },
+                ),
+                AbilityDef::spell_with_targets(
+                    "Exile another target creature you own. Return it to the \
+                     battlefield under your control at the beginning of the next \
+                     end step.",
+                    &[AbilityTargetDef::exactly_one(
+                        AbilityTargetPredicate::Object {
+                            object: ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::HasType(CardType::Creature),
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                            ]),
+                            zones: &[ZoneKind::Battlefield],
+                            controller: None,
+                            owner: Some(PlayerRelation::You),
+                        },
+                    )],
+                    EffectDef::WithZoneMoveResult {
+                        effect: &EffectDef::move_to_zone(
+                            EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                            ZoneKind::Exile,
+                            ZonePlacement::Top,
+                        ),
+                        binding: crate::Binding!("blinked"),
+                        then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(
+                            &AbilityDef::triggered(
+                                "At the beginning of the next end step, return that card to \
+                                 the battlefield.",
+                                TriggerEventDef::StepBegins {
+                                    step: TurnStepDef::End,
+                                    player: PlayerRelation::Any,
+                                },
+                                EffectDef::WithBattlefieldArrival {
+                                    effect: &EffectDef::move_to_zone(
+                                        EffectRecipientDef::objects(
+                                            ObjectSetDef::ZoneChangeSuccessorsOfBinding(
+                                                crate::Binding!("blinked"),
+                                            ),
+                                        ),
+                                        ZoneKind::Battlefield,
+                                        ZonePlacement::Top,
+                                    ),
+                                    arrival: BattlefieldArrivalDef {
+                                        controller: Some(PlayerRelation::You),
+                                        ..BattlefieldArrivalDef::DEFAULT
+                                    },
+                                },
+                            ),
+                        )),
+                    },
+                ),
+            ],
+        ),
+    ]),
+);
+
 // ELD 11 — Faerie Guidemother
 const fn faerie_guidemother_rules() -> CardRules {
     CardRules::new_creature(mana_cost!("{W}"), &["Faerie"], 1, 1).with_ability(abilities::flying())
@@ -240,6 +324,75 @@ pub(in crate::card::sets) static FAERIE_GUIDEMOTHER: CardRecord = CardRecord::ne
 )
 .with_composition(faerie_guidemother_composition);
 
+// ELD 15 — Glass Casket
+// Audit: unsupported — Needs an immediate linked return when the source leaves, without a return trigger using the stack; the available exile-until helper installs a triggered return.
+pub(in crate::card::sets) static GLASS_CASKET: CardRecord = CardRecord::new(
+    "Glass Casket",
+    "562f1c51-d245-4771-bf61-415297e4f9d5",
+    "Anastasia Ovchinnikova",
+    crate::card::CardRules::unsupported(),
+);
+
+// ELD 20 — Linden, the Steadfast Queen
+pub(in crate::card::sets) static LINDEN_THE_STEADFAST_QUEEN: CardRecord = CardRecord::new(
+    "Linden, the Steadfast Queen",
+    "fa3ab467-be97-4b84-a73d-b03484d06b97",
+    "Ryan Pancoast",
+    CardRules::new_creature(mana_cost!("{W}{W}{W}"), &["Human", "Noble"], 3, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::vigilance(),
+            AbilityDef::triggered(
+                "Whenever a white creature you control attacks, you gain 1 life.",
+                TriggerEventDef::attacks(ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Color(ManaColor::White),
+                    ]),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ])),
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+        ]),
+);
+
+// ELD 32 — Syr Alin, the Lion's Claw
+pub(in crate::card::sets) static SYR_ALIN_THE_LION_S_CLAW: CardRecord = CardRecord::new(
+    "Syr Alin, the Lion's Claw",
+    "4cddb2d2-d813-4b83-a592-380ba4edf54f",
+    "Paul Scott Canavan",
+    CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Human", "Knight"], 4, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::first_strike(),
+            AbilityDef::triggered(
+                "Whenever Syr Alin attacks, other creatures you control get \
+                 +1/+1 until end of turn.",
+                TriggerEventDef::attacks(ObjectPredicateDef::Source),
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                        ObjectQueryDef::matching(
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::HasType(CardType::Creature),
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                            ]),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::You,
+                        ),
+                    )),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(1),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
+);
+
 // ELD 39 — Brazen Borrower
 const fn brazen_borrower_rules() -> CardRules {
     CardRules::new_creature(mana_cost!("{1}{U}{U}"), &["Faerie", "Rogue"], 3, 1).with_abilities(
@@ -270,7 +423,8 @@ fn brazen_borrower_composition() -> CardComposition {
             .with_subtypes(&["Adventure"])
             .with_ability(
                 AbilityDef::spell_with_targets(
-                    "Return target nonland permanent an opponent controls to its owner's hand.",
+                    "Return target nonland permanent an opponent controls to its \
+                     owner's hand.",
                     &const {
                         [AbilityTargetDef::exactly_one(
                             AbilityTargetPredicate::Object {
@@ -335,6 +489,117 @@ pub(in crate::card::sets) static BRAZEN_BORROWER: CardRecord = CardRecord::new(
     brazen_borrower_rules(),
 )
 .with_composition(brazen_borrower_composition);
+
+// ELD 40 — Charmed Sleep
+pub(in crate::card::sets) static CHARMED_SLEEP: CardRecord = CardRecord::new(
+    "Charmed Sleep",
+    "f1f97d9e-650b-4b69-8733-d80c8e0f723f",
+    "Titus Lunter",
+    CardRules::new_enchantment(mana_cost!("{1}{U}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            abilities::enters_trigger(
+                "When this Aura enters, tap enchanted creature.",
+                EffectDef::Tap {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature doesn't untap during its controller's \
+                 untap step.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+                },
+            ),
+        ]),
+);
+
+// ELD 62 — Run Away Together
+pub(in crate::card::sets) static RUN_AWAY_TOGETHER: CardRecord = CardRecord::new(
+    "Run Away Together",
+    "aeffc3c0-567c-442f-ba06-b7d9617c5789",
+    "Filip Burburan",
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Choose two target creatures controlled by different players. \
+         Return those creatures to their owners' hands.",
+        &[
+            AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            }),
+            AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::Opponent),
+                owner: None,
+            }),
+        ],
+        EffectDef::Sequence(&[
+            EffectDef::move_to_zone(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ZoneKind::Hand,
+                ZonePlacement::Top,
+            ),
+            EffectDef::move_to_zone(
+                EffectRecipientDef::Target(TargetIndex(1)),
+                ZoneKind::Hand,
+                ZonePlacement::Top,
+            ),
+        ]),
+    )]),
+);
+
+// ELD 76 — Bake into a Pie
+pub(in crate::card::sets) static BAKE_INTO_A_PIE: CardRecord = CardRecord::new(
+    "Bake into a Pie",
+    "42a4d090-1bb7-4334-ab22-e2527391e79b",
+    "Zoltan Boros",
+    CardRules::new_instant(mana_cost!("{2}{B}{B}")).with_abilities(&[
+        AbilityDef::spell_with_targets(
+            "Destroy target creature. Create a Food token. (It's an \
+             artifact with \"{2}, {T}, Sacrifice this token: You gain 3 \
+             life.\")",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::Destroy {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    then: None,
+                },
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(FOOD_TOKEN))
+                        .with_count(ValueDef::Constant(1)),
+                ),
+            ]),
+        ),
+    ]),
+);
+
+// ELD 85 — Epic Downfall
+pub(in crate::card::sets) static EPIC_DOWNFALL: CardRecord = CardRecord::new(
+    "Epic Downfall",
+    "63da83fe-fa59-40cb-a42e-e1b14b650bc8",
+    "Eric Deschamps",
+    CardRules::new_sorcery(mana_cost!("{1}{B}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Exile target creature with mana value 3 or greater.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::ManaValueAtMost(2)),
+            ]),
+        )],
+        EffectDef::move_to_zone(
+            EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            ZoneKind::Exile,
+            ZonePlacement::Top,
+        ),
+    )]),
+);
 
 // ELD 110 — Wishclaw Talisman
 pub(in crate::card::sets) static WISHCLAW_TALISMAN: CardRecord = CardRecord::new(
@@ -403,7 +668,8 @@ const fn bonecrusher_rules() -> CardRules {
         // life whether or not the spell works, which is what makes it awkward to
         // answer at all.
         .with_ability(AbilityDef::triggered(
-            "Whenever this creature becomes the target of a spell, this creature deals 2 damage to that spell's controller.",
+            "Whenever this creature becomes the target of a spell, this \
+             creature deals 2 damage to that spell's controller.",
             TriggerEventDef::becomes_targeted(ObjectPredicateDef::Spell),
             EffectDef::damage(EffectRecipientDef::EventPlayer, ValueDef::Constant(2)),
         ))
@@ -414,7 +680,8 @@ fn bonecrusher_composition() -> CardComposition {
     let stomp = const {
         CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(
             AbilityDef::spell_with_targets(
-                "Damage can't be prevented this turn.\nStomp deals 2 damage to any target.",
+                "Damage can't be prevented this turn.\nStomp deals 2 damage to \
+                 any target.",
                 &const {
                     [AbilityTargetDef::exactly_one(
                         AbilityTargetPredicate::AnyTarget,
@@ -550,6 +817,15 @@ pub(in crate::card::sets) static EMBERETH_SHIELDBREAKER: CardRecord = CardRecord
 )
 .with_composition(embereth_shieldbreaker_composition);
 
+// ELD 134 — Raging Redcap
+pub(in crate::card::sets) static RAGING_REDCAP: CardRecord = CardRecord::new(
+    "Raging Redcap",
+    "d9325398-41c3-4177-a64d-ea38cb7a8737",
+    "Dan Murayama Scott",
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Knight"], 1, 2)
+        .with_abilities(&[abilities::double_strike()]),
+);
+
 // ELD 137 — Rimrock Knight
 const fn rimrock_knight_rules() -> CardRules {
     CardRules::new_creature(mana_cost!("{1}{R}"), &["Dwarf", "Knight"], 3, 1).with_ability(
@@ -679,6 +955,48 @@ pub(in crate::card::sets) static ROBBER_OF_THE_RICH: CardRecord = CardRecord::ne
         ]),
 );
 
+// ELD 139 — Scorching Dragonfire
+pub(in crate::card::sets) static SCORCHING_DRAGONFIRE: CardRecord = CardRecord::new(
+    "Scorching Dragonfire",
+    "3b74a806-ed74-458e-8903-d3d084e9f507",
+    "Eric Velhagen",
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Scorching Dragonfire deals 3 damage to target creature or \
+         planeswalker. If that creature or planeswalker would die this \
+         turn, exile it instead.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::HasType(CardType::Planeswalker),
+            ]),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::damage(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ValueDef::Constant(3),
+            ),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::ExileInsteadOfDying),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ]),
+    )]),
+);
+
+// ELD 146 — Thrill of Possibility
+pub(in crate::card::sets) static THRILL_OF_POSSIBILITY: CardRecord = CardRecord::new(
+    "Thrill of Possibility",
+    "c9021f85-7ab4-4a78-a398-1611fe09cd14",
+    "Steve Argyle",
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_abilities(&[AbilityDef::spell(
+        "As an additional cost to cast this spell, discard a \
+         card.\nDraw two cards.",
+        abilities::draw_cards(ValueDef::Constant(2)),
+    )
+    .with_spell_additional_cost(&CostDef::discard(ObjectPredicateDef::Any))]),
+);
+
 // ELD 169 — Once Upon a Time
 pub(in crate::card::sets) static ONCE_UPON_A_TIME: CardRecord = CardRecord::new(
     "Once Upon a Time",
@@ -722,6 +1040,15 @@ pub(in crate::card::sets) static ONCE_UPON_A_TIME: CardRecord = CardRecord::new(
             ),
         ),
     ]),
+);
+
+// ELD 182 — Wildborn Preserver
+// Audit: unsupported — Needs a reflexive trigger tied to successful variable mana payment, retaining the paid X for the counter placement; the generic payment result does not expose that X to a later trigger.
+pub(in crate::card::sets) static WILDBORN_PRESERVER: CardRecord = CardRecord::new(
+    "Wildborn Preserver",
+    "55f76830-369e-4224-9ded-7d1ce04c87e4",
+    "Lius Lasahido",
+    CardRules::unsupported(),
 );
 
 // ELD 197 — Oko, Thief of Crowns
@@ -859,6 +1186,47 @@ pub(in crate::card::sets) static GINGERBRUTE: CardRecord = CardRecord::new(
             ),
         ],
     ),
+);
+
+// ELD 222 — Heraldic Banner
+pub(in crate::card::sets) static HERALDIC_BANNER: CardRecord = CardRecord::new(
+    "Heraldic Banner",
+    "2e349af5-3f25-46d3-908e-83b2f6028b95",
+    "Ravenna Tran",
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::as_enters(
+            "As this permanent enters, choose a color.",
+            ReplacementEffectDef::Choose(ReplacementChoiceDef::Scalar(
+                BattlefieldEntryScalarChoiceDef::COLOR,
+            )),
+        ),
+        AbilityDef::static_ability(
+            "Creatures you control of the chosen color get +1/+0.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                    ObjectQueryDef::matching(
+                        ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Creature),
+                            ObjectPredicateDef::HasSourcesChosenScalar(
+                                BattlefieldEntryChoiceDestinationDef::Color,
+                            ),
+                        ]),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                )),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add one mana of the chosen color.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one_of_type(ManaTypeDef::ChosenColor)),
+        ),
+    ]),
 );
 
 // ELD 235 — Stonecoil Serpent
@@ -1172,16 +1540,29 @@ pub(in crate::card::sets) static FABLED_PASSAGE: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARDENVALE_TACTICIAN,
+    &CHARMING_PRINCE,
     &FAERIE_GUIDEMOTHER,
+    &GLASS_CASKET,
+    &LINDEN_THE_STEADFAST_QUEEN,
+    &SYR_ALIN_THE_LION_S_CLAW,
     &BRAZEN_BORROWER,
+    &CHARMED_SLEEP,
+    &RUN_AWAY_TOGETHER,
+    &BAKE_INTO_A_PIE,
+    &EPIC_DOWNFALL,
     &WISHCLAW_TALISMAN,
     &BONECRUSHER_GIANT,
     &EMBERETH_SHIELDBREAKER,
+    &RAGING_REDCAP,
     &RIMROCK_KNIGHT,
     &ROBBER_OF_THE_RICH,
+    &SCORCHING_DRAGONFIRE,
+    &THRILL_OF_POSSIBILITY,
     &ONCE_UPON_A_TIME,
+    &WILDBORN_PRESERVER,
     &OKO_THIEF_OF_CROWNS,
     &GINGERBRUTE,
+    &HERALDIC_BANNER,
     &STONECOIL_SERPENT,
     &MYSTIC_SANCTUARY,
     &WITCH_S_COTTAGE,

@@ -7,10 +7,16 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::CardRules;
 use crate::card::CardType;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectSetDef;
+use crate::card::ObjectSetFilterDef;
 use crate::card::PlayerRelation;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
@@ -78,6 +84,43 @@ pub(in crate::card::sets) static MYSTIC_CONFLUENCE: CardRecord = CardRecord::new
         )
         .with_mode_selection(3, 3, true),
     ),
+);
+
+// C15 20 — Dread Summons
+pub(in crate::card::sets) static DREAD_SUMMONS: CardRecord = CardRecord::new(
+    "Dread Summons",
+    "b2c20cb1-3e3d-4fea-b617-bd6d796c8d10",
+    "Izzy",
+    CardRules::new_sorcery(mana_cost!("{X}{B}{B}")).with_abilities(&[AbilityDef::spell(
+        "Each player mills X cards. For each creature card put into a \
+         graveyard this way, you create a tapped 2/2 black Zombie \
+         creature token. (To mill a card, a player puts the top card \
+         of their library into their graveyard.)",
+        EffectDef::Sequence(&[
+            EffectDef::BindOutput {
+                binding: crate::Binding!("milled"),
+                effect: &EffectDef::Mill {
+                    player: EffectRecipientDef::EachPlayer,
+                    amount: ValueDef::ChosenX,
+                },
+            },
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Zombie"],
+                    &[ManaColor::Black],
+                    2,
+                    2,
+                )))
+                .with_count(ValueDef::CountObjects(&ObjectSetDef::Matching {
+                    objects: &ObjectSetDef::Binding(crate::Binding!("milled")),
+                    object: ObjectSetFilterDef::Predicate(&ObjectPredicateDef::HasType(
+                        CardType::Creature,
+                    )),
+                }))
+                .entering_tapped(),
+            ),
+        ]),
+    )]),
 );
 
 // C15 26 — Fiery Confluence
@@ -151,8 +194,12 @@ const NINJA_OF_THE_DEEP_HOURS_REPRINT: PrintingRecord = PrintingRecord::reprint(
     "Dan Murayama Scott",
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&MYSTIC_CONFLUENCE, &FIERY_CONFLUENCE, &CALLER_OF_THE_PACK];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &MYSTIC_CONFLUENCE,
+    &DREAD_SUMMONS,
+    &FIERY_CONFLUENCE,
+    &CALLER_OF_THE_PACK,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
     &[FAITH_S_FETTERS_REPRINT, NINJA_OF_THE_DEEP_HOURS_REPRINT];

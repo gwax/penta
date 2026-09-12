@@ -8,8 +8,10 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
 use crate::card::AlternativeCastKindDef;
+use crate::card::AppliedEffectDef;
 use crate::card::CardArt;
 use crate::card::CardRules;
+use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
@@ -28,6 +30,7 @@ use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
+use crate::card::ResolvedEffectDurationDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
@@ -112,6 +115,36 @@ pub(in crate::card::sets) static ELITE_SPELLBINDER: CardRecord = CardRecord::new
                 ]),
             ),
         ]),
+);
+
+// STX 38 — Burrog Befuddler
+pub(in crate::card::sets) static BURROG_BEFUDDLER: CardRecord = CardRecord::new(
+    "Burrog Befuddler",
+    "6040c573-cd8c-4593-8ade-d9922482035c",
+    "Zoltan Boros",
+    CardRules::new_creature(mana_cost!("{1}{U}"), &["Frog", "Wizard"], 2, 1).with_abilities(&[
+        abilities::flash(),
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, target creature an opponent \
+             controls gets -1/-0 until end of turn.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(-1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 // STX 43 — Frost Trickster
@@ -225,6 +258,15 @@ pub(in crate::card::sets) static UNWILLING_INGREDIENT: CardRecord = CardRecord::
         // available with the mana held up.
         .with_source_zones(&[ZoneKind::Graveyard]),
     ]),
+);
+
+// STX 176 — Deadly Brew
+// Audit: unsupported — Needs a sacrifice result binding containing the actual sacrificed objects and their player attribution, retained across each player's sacrifice and the later graveyard choice.
+pub(in crate::card::sets) static DEADLY_BREW: CardRecord = CardRecord::new(
+    "Deadly Brew",
+    "87d33e48-90fc-4aac-b09a-68050bc053b5",
+    "Randy Vargas",
+    CardRules::unsupported(),
 );
 
 // STX 186 — Expressive Iteration
@@ -343,6 +385,15 @@ pub(in crate::card::sets) static QUANDRIX_PLEDGEMAGE: CardRecord = CardRecord::n
     ),
 );
 
+// STX 241 — Teach by Example
+// Audit: unsupported — Needs a delayed trigger expiring after either one matching spell or this turn; installed triggers provide separate once and turn lifetimes without their intersection.
+pub(in crate::card::sets) static TEACH_BY_EXAMPLE: CardRecord = CardRecord::new(
+    "Teach by Example",
+    "aa7fbb9b-50a8-4d18-a667-fe965468ca16",
+    "Johan Grenier",
+    CardRules::unsupported(),
+);
+
 // STX 247 — Witherbloom Apprentice
 pub(in crate::card::sets) static WITHERBLOOM_APPRENTICE: CardRecord = CardRecord::new(
     "Witherbloom Apprentice",
@@ -367,6 +418,41 @@ pub(in crate::card::sets) static WITHERBLOOM_APPRENTICE: CardRecord = CardRecord
             ]),
         ),
     ),
+);
+
+// STX 252 — Campus Guide
+pub(in crate::card::sets) static CAMPUS_GUIDE: CardRecord = CardRecord::new(
+    "Campus Guide",
+    "87a9a8a2-de81-441b-b501-418311b677f7",
+    "Slawomir Maniak",
+    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Golem"], 2, 1).with_abilities(&[
+        abilities::enters_trigger(
+            "When this creature enters, you may search your library for a \
+             basic land card, reveal it, then shuffle and put that card on \
+             top.",
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::SearchZone {
+                    player: EffectRecipientDef::Controller,
+                    source: ZoneKind::Library,
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                    ]),
+                    minimum: 0,
+                    maximum: ValueDef::Constant(1),
+                    reveal: true,
+                    destination: ZoneKind::Library,
+                    placement: ZonePlacement::Top,
+                    shuffle: true,
+                    enters_tapped: false,
+                    attachment: None,
+                    binding: None,
+                    then: None,
+                },
+            },
+        ),
+    ]),
 );
 
 // STX 271 — Quandrix Campus
@@ -436,12 +522,16 @@ pub(in crate::card::sets) static SEDGEMOOR_WITCH: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELITE_SPELLBINDER,
+    &BURROG_BEFUDDLER,
     &FROST_TRICKSTER,
     &BALEFUL_MASTERY,
     &UNWILLING_INGREDIENT,
+    &DEADLY_BREW,
     &EXPRESSIVE_ITERATION,
     &QUANDRIX_PLEDGEMAGE,
+    &TEACH_BY_EXAMPLE,
     &WITHERBLOOM_APPRENTICE,
+    &CAMPUS_GUIDE,
     &QUANDRIX_CAMPUS,
     &WITHERBLOOM_CAMPUS,
     &SEDGEMOOR_WITCH,

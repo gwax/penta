@@ -15,12 +15,19 @@ use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
 use crate::card::CreateTokenDef;
+use crate::card::DamageEventMatcherDef;
+use crate::card::DamageKindDef;
+use crate::card::DamageRecipientMatcherDef;
+use crate::card::DamageSourceMatcherDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
+use crate::card::ObjectRefDef;
+use crate::card::ObjectSetDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
@@ -46,6 +53,170 @@ const BLOOD_TOKEN: TokenCharacteristics = tokens::blood().with_art(CardArt::new(
     "a6f374bc-cd29-469f-808a-6a6c004ee8aa",
     "Miranda Meeks",
 ));
+
+// J25 1 — Dawnwing Marshal
+pub(in crate::card::sets) static DAWNWING_MARSHAL: CardRecord = CardRecord::new(
+    "Dawnwing Marshal",
+    "51258ab9-25f6-4617-9499-b17cf7a8db06",
+    "Aldo Domínguez",
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Cat", "Soldier"], 2, 2).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::activated(
+            "{4}{W}: Creatures you control get +1/+1 until end of turn.",
+            &[CostDef::Mana(mana_cost!("{4}{W}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                    ObjectQueryDef::matching(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                )),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
+
+// J25 5 — Hinterland Sanctifier
+pub(in crate::card::sets) static HINTERLAND_SANCTIFIER: CardRecord = CardRecord::new(
+    "Hinterland Sanctifier",
+    "7bd187b7-5001-4fc3-8c1e-7093827027ee",
+    "Justine Cruz",
+    CardRules::new_creature(mana_cost!("{W}"), &["Rabbit", "Cleric"], 1, 2).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever another creature you control enters, you gain 1 life.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                    ]),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ]),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
+
+// J25 9 — Starlight Snare
+pub(in crate::card::sets) static STARLIGHT_SNARE: CardRecord = CardRecord::new(
+    "Starlight Snare",
+    "80ab3040-fec2-4a65-8825-e6a1132601d1",
+    "Borja Pindado",
+    CardRules::new_enchantment(mana_cost!("{2}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            abilities::enters_trigger(
+                "When this Aura enters, tap enchanted creature.",
+                EffectDef::Tap {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature doesn't untap during its controller's \
+                 untap step.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+                },
+            ),
+        ]),
+);
+
+// J25 13 — Dropkick Bomber
+pub(in crate::card::sets) static DROPKICK_BOMBER: CardRecord = CardRecord::new(
+    "Dropkick Bomber",
+    "a5f9a7bb-4ace-4720-8651-08428494223f",
+    "Quintin Gleim",
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Warrior"], 2, 3).with_abilities(&[
+        AbilityDef::static_ability(
+            "Other Goblins you control get +1/+1.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                    ObjectQueryDef::matching(
+                        ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                        ]),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                )),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(1),
+                ),
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{R}: Until end of turn, another target Goblin you control \
+             gains flying and \"When this creature deals combat damage, \
+             sacrifice it.\"",
+            &[CostDef::Mana(mana_cost!("{R}"))],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::You),
+                    owner: None,
+                },
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::add_ability(&abilities::flying()),
+                    AppliedEffectDef::add_ability(&AbilityDef::triggered(
+                        "When this creature deals combat damage, sacrifice it.",
+                        TriggerEventDef::DamageDealt(DamageEventMatcherDef {
+                            kind: DamageKindDef::Combat,
+                            source: DamageSourceMatcherDef::Object(ObjectRefDef::Source),
+                            recipient: DamageRecipientMatcherDef::Any,
+                        }),
+                        EffectDef::sacrifice(EffectRecipientDef::Source),
+                    )),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
+
+// J25 14 — Firespitter Whelp
+pub(in crate::card::sets) static FIRESPITTER_WHELP: CardRecord = CardRecord::new(
+    "Firespitter Whelp",
+    "2f7cff11-c8c9-4ab8-af08-05be72c37cbb",
+    "David Álvarez",
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Dragon"], 2, 2).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "Whenever you cast a noncreature or Dragon spell, this \
+             creature deals 1 damage to each opponent.",
+            TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
+                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dragon")),
+                ]),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ])),
+            EffectDef::damage(EffectRecipientDef::Opponent, ValueDef::Constant(1)),
+        ),
+    ]),
+);
 
 // J25 19 — Scholar of Combustion
 // Audit: unsupported — Needs an effect that exiles a targeted card and grants a timed permission to cast it. PermitCastFromGraveyardThisTurn leaves the card in the graveyard and lasts one turn; the exile-to-play effects read the top of a library rather than a target.
@@ -281,6 +452,11 @@ const GUARDIAN_IDOL_REPRINT: PrintingRecord = PrintingRecord::reprint(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &DAWNWING_MARSHAL,
+    &HINTERLAND_SANCTIFIER,
+    &STARLIGHT_SNARE,
+    &DROPKICK_BOMBER,
+    &FIRESPITTER_WHELP,
     &SCHOLAR_OF_COMBUSTION,
     &SCYTHECAT_CUB,
     &SHARDLESS_OUTLANDER,

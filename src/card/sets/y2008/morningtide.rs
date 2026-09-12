@@ -20,6 +20,8 @@ use crate::ValueDef;
 use crate::ZoneKind;
 use crate::ZonePlacement;
 use crate::card::CostDef;
+use crate::card::PlayerRelation;
+use crate::card::SubtypeDef;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -31,6 +33,24 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// MOR 1 — Ballyrush Banneret
+pub(in crate::card::sets) static BALLYRUSH_BANNERET: CardRecord = CardRecord::new(
+    "Ballyrush Banneret",
+    "a029814e-d84d-43e5-b483-e918871b3333",
+    "Ralph Horsley",
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Kithkin", "Soldier"], 2, 1).with_abilities(&[
+        abilities::spell_cost_reduction(
+            "Kithkin spells and Soldier spells you cast cost {1} less to cast.",
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Kithkin")),
+                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Soldier")),
+            ]),
+            PlayerRelation::You,
+            ValueDef::Constant(1),
+        ),
+    ]),
+);
 
 // MOR 31 — Disperse
 pub(in crate::card::sets) static DISPERSE: CardRecord = CardRecord::new(
@@ -48,6 +68,17 @@ pub(in crate::card::sets) static DISPERSE: CardRecord = CardRecord::new(
             ZonePlacement::Top,
         ),
     )),
+);
+
+// MOR 41 — Mind Spring
+pub(in crate::card::sets) static MIND_SPRING: CardRecord = CardRecord::new(
+    "Mind Spring",
+    "7b7cd9b6-1ea8-423d-8aa0-8699fffbcf50",
+    "Mark Zug",
+    CardRules::new_sorcery(mana_cost!("{X}{U}{U}")).with_abilities(&[AbilityDef::spell(
+        "Draw X cards.",
+        abilities::draw_cards(ValueDef::ChosenX),
+    )]),
 );
 
 // MOR 43 — Negate
@@ -93,6 +124,15 @@ pub(in crate::card::sets) static KINDLED_FURY: CardRecord = CardRecord::new(
     )),
 );
 
+// MOR 109 — Taurean Mauler
+// Audit: unsupported — Needs a creature-type characteristic-defining ability applying in every zone and supplying every creature type as copiable values; battlefield all-type modifiers do not implement changeling.
+pub(in crate::card::sets) static TAUREAN_MAULER: CardRecord = CardRecord::new(
+    "Taurean Mauler",
+    "d50b5df1-b658-4df0-900e-79c44599b93e",
+    "Dominick Domingo",
+    CardRules::unsupported(),
+);
+
 // MOR 143 — Door of Destinies
 // Audit: unsupported — Predicates cannot consume a stored creature-type choice for both spell triggers and a counter-scaled continuous bonus.
 pub(in crate::card::sets) static DOOR_OF_DESTINIES: CardRecord = CardRecord::new(
@@ -128,9 +168,12 @@ CardRules::new_land(&[]).with_abilities(&[
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &BALLYRUSH_BANNERET,
     &DISPERSE,
+    &MIND_SPRING,
     &NEGATE,
     &KINDLED_FURY,
+    &TAUREAN_MAULER,
     &DOOR_OF_DESTINIES,
     &MUTAVAULT,
 ];

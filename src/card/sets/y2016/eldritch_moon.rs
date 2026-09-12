@@ -10,6 +10,7 @@ use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
+use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
@@ -21,12 +22,16 @@ use crate::card::InstalledTriggerDef;
 use crate::card::ObjectChoiceBindingDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
+use crate::card::ObjectSetCountConditionDef;
 use crate::card::ObjectSetDef;
+use crate::card::ObjectSetPredicateDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SacrificedAmountDef;
+use crate::card::SubtypeDef;
+use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -292,6 +297,15 @@ pub(in crate::card::sets) static DISPLACE: CardRecord = CardRecord::new(
     )),
 );
 
+// EMN 65 — Imprisoned in the Moon
+// Audit: unsupported — Needs a static effect that replaces the attached permanent's complete card-type set, rather than adding types; full card-type replacement is outside the shared static runtime boundary.
+pub(in crate::card::sets) static IMPRISONED_IN_THE_MOON: CardRecord = CardRecord::new(
+    "Imprisoned in the Moon",
+    "7990ebba-e9f2-4ba4-a352-e26ec81d4bed",
+    "Ryan Alexander Lee",
+    CardRules::unsupported(),
+);
+
 // EMN 82 — Borrowed Malevolence
 pub(in crate::card::sets) static BORROWED_MALEVOLENCE: CardRecord = CardRecord::new(
     "Borrowed Malevolence",
@@ -331,6 +345,44 @@ pub(in crate::card::sets) static BORROWED_MALEVOLENCE: CardRecord = CardRecord::
             ),
         ],
     )),
+);
+
+// EMN 83 — Cemetery Recruitment
+pub(in crate::card::sets) static CEMETERY_RECRUITMENT: CardRecord = CardRecord::new(
+    "Cemetery Recruitment",
+    "3a23adea-9f4a-409c-a37d-323eee781273",
+    "Kieran Yanner",
+    CardRules::new_sorcery(mana_cost!("{1}{B}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Return target creature card from your graveyard to your hand. \
+         If it's a Zombie card, draw a card.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Graveyard],
+                controller: None,
+                owner: Some(PlayerRelation::You),
+            },
+        )],
+        EffectDef::WithZoneMoveResult {
+            effect: &EffectDef::move_to_zone(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ZoneKind::Hand,
+                ZonePlacement::Top,
+            ),
+            binding: crate::Binding!("returned"),
+            then: &EffectDef::IfCondition {
+                condition: &TriggerConditionDef::ObjectSetCount(&ObjectSetCountConditionDef {
+                    objects: &ObjectSetDef::ZoneChangeSuccessorsOfBinding(crate::Binding!(
+                        "returned"
+                    )),
+                    predicate: ObjectSetPredicateDef::contains(&ObjectPredicateDef::Subtype(
+                        SubtypeDef::Literal("Zombie"),
+                    )),
+                }),
+                then: &abilities::draw_cards(ValueDef::Constant(1)),
+            },
+        },
+    )]),
 );
 
 // EMN 85 — Collective Brutality
@@ -488,6 +540,30 @@ pub(in crate::card::sets) static COLLECTIVE_DEFIANCE: CardRecord = CardRecord::n
     )),
 );
 
+// EMN 131 — Harmless Offering
+pub(in crate::card::sets) static HARMLESS_OFFERING: CardRecord = CardRecord::new(
+    "Harmless Offering",
+    "f8f3cc4f-7943-4025-b332-b40653b13014",
+    "Howard Lyon",
+    CardRules::new_sorcery(mana_cost!("{2}{R}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Target opponent gains control of target permanent you control.",
+        &[
+            AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(PlayerRelation::Opponent)),
+            AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Any,
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            }),
+        ],
+        EffectDef::gain_control(
+            EffectRecipientDef::Target(TargetIndex(1)),
+            PlayerRefDef::Target(TargetIndex::PRIMARY),
+            ControlDurationDef::Indefinitely,
+        ),
+    )]),
+);
+
 // EMN 140 — Savage Alliance
 pub(in crate::card::sets) static SAVAGE_ALLIANCE: CardRecord = CardRecord::new(
     "Savage Alliance",
@@ -591,10 +667,13 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &COLLECTIVE_EFFORT,
     &PROVIDENCE,
     &DISPLACE,
+    &IMPRISONED_IN_THE_MOON,
     &BORROWED_MALEVOLENCE,
+    &CEMETERY_RECRUITMENT,
     &COLLECTIVE_BRUTALITY,
     &BORROWED_HOSTILITY,
     &COLLECTIVE_DEFIANCE,
+    &HARMLESS_OFFERING,
     &SAVAGE_ALLIANCE,
     &GRAPPLE_WITH_THE_PAST,
 ];

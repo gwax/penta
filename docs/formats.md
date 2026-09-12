@@ -185,6 +185,22 @@ Chaos Orb interaction: Guardian Beast can prevent the Orb's final destruction,
 but destroying the Beast with a successful flip removes that protection before
 the Orb's next instruction.
 
+### WOE–HOB Standard deck inventory
+
+WOE–HOB names the fixed Standard card pool from Wilds of Eldraine through
+The Hobbit. `decks/woe_hob_standard/` contains all sixteen published lists, including
+sideboards, from the [September 8, 2026 MTGO Challenge 32][standard-challenge-90673].
+The YAML files use the shared deck generator. `make deck-report` derives each
+list's unsupported-card diagnostics from the current catalog and reports the
+missing format profile separately. The first two Izzet
+Spellementals lists retain their published 61-card main decks; the remaining
+lists have 60 cards, and all sideboards have 15. Multifaced card names are
+expanded where needed to resolve the catalog's whole-card unsupported entries.
+
+These lists are implementation inputs. The WOE–HOB Standard set inventory is
+cataloged, with missing rules explicitly unsupported; a WOE–HOB Standard
+format profile and playable-deck registration remain follow-up work.
+
 ### Standard: ISD–M14 decks
 
 The ISD–M14 profile contains the complete main deck and sideboard for each
@@ -225,3 +241,5 @@ catalog and coverage counts.
 [the-deck-data]: https://www.tcdecks.net/archetype.php?archetype=The+Deck&format=Old+School&src=all
 [scg-atlanta]: https://www.mtgtop8.com/event?e=5640&f=ST
 [scg-matchup]: https://articles.starcitygames.com/articles/todd-vs-bbd-omnidoor-thragfire-vs-naya-midrange/
+
+[standard-challenge-90673]: https://mtgtop8.com/event?e=90673&f=ST

@@ -8,7 +8,9 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::AttackEventMatcherDef;
+use crate::card::BattlefieldEntryModificationDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
@@ -19,9 +21,12 @@ use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectQueryDef;
 use crate::card::ObjectSetDef;
 use crate::card::PayOrDef;
 use crate::card::PlayerRelation;
+use crate::card::ReplacementEffectDef;
+use crate::card::ReplacementEventDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::TargetChooserDef;
 use crate::card::TriggerEventDef;
@@ -40,6 +45,78 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// KLD 5 — Authority of the Consuls
+pub(in crate::card::sets) static AUTHORITY_OF_THE_CONSULS: CardRecord = CardRecord::new(
+    "Authority of the Consuls",
+    "324b2f55-1e09-490e-8f7e-bfde85a91ac4",
+    "Lake Hurwitz",
+    CardRules::new_enchantment(mana_cost!("{W}")).with_abilities(&[
+        AbilityDef::replacement_for(
+            "Creatures your opponents control enter tapped.",
+            ReplacementEventDef::ObjectEntersBattlefield {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                controller: PlayerRelation::Opponent,
+                cast: None,
+            },
+            ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::Tapped),
+        ),
+        AbilityDef::triggered(
+            "Whenever a creature an opponent controls enters, you gain 1 life.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+                ]),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
+
+// KLD 15 — Fumigate
+// Audit: unsupported — Needs destruction-result tracking that includes a successful destruction redirected to exile; the existing destruction continuation only records permanents moved to the graveyard.
+pub(in crate::card::sets) static FUMIGATE: CardRecord = CardRecord::new(
+    "Fumigate",
+    "f00f27a7-9e92-4fbf-baa8-f47a5eee48a6",
+    "Svetlin Velinov",
+    CardRules::unsupported(),
+);
+
+// KLD 48 — Gearseeker Serpent
+pub(in crate::card::sets) static GEARSEEKER_SERPENT: CardRecord = CardRecord::new(
+    "Gearseeker Serpent",
+    "d32d8327-6ec2-4d43-b254-b04407612715",
+    "Filip Burburan",
+    CardRules::new_creature(mana_cost!("{5}{U}{U}"), &["Serpent"], 5, 6).with_abilities(&[
+        AbilityDef::static_ability(
+            "Affinity for artifacts (This spell costs {1} less to cast for \
+             each artifact you control.)",
+            EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(
+                &ObjectQueryDef::matching(
+                    ObjectPredicateDef::HasType(CardType::Artifact),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+            )),
+        )
+        .with_source_zones(&[ZoneKind::Hand]),
+        AbilityDef::activated(
+            "{5}{U}: This creature can't be blocked this turn.",
+            &[CostDef::Mana(mana_cost!("{5}{U}"))],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BE_BLOCKED),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // KLD 60 — Paradoxical Outcome
 pub(in crate::card::sets) static PARADOXICAL_OUTCOME: CardRecord = CardRecord::new(
@@ -104,6 +181,15 @@ pub(in crate::card::sets) static PARADOXICAL_OUTCOME: CardRecord = CardRecord::n
             }),
         ),
     )),
+);
+
+// KLD 107 — Brazen Scourge
+pub(in crate::card::sets) static BRAZEN_SCOURGE: CardRecord = CardRecord::new(
+    "Brazen Scourge",
+    "68c6fbdb-7b5c-4ad0-88f5-4779deae16ce",
+    "Kev Walker",
+    CardRules::new_creature(mana_cost!("{1}{R}{R}"), &["Gremlin"], 3, 3)
+        .with_abilities(&[abilities::haste()]),
 );
 
 // KLD 110 — Chandra, Torch of Defiance
@@ -197,6 +283,72 @@ pub(in crate::card::sets) static THRIVING_GRUBS: CardRecord = CardRecord::new(
                 },
             )),
         ),
+    ]),
+);
+
+// KLD 146 — Blossoming Defense
+pub(in crate::card::sets) static BLOSSOMING_DEFENSE: CardRecord = CardRecord::new(
+    "Blossoming Defense",
+    "5c026c39-b09c-408a-844f-fb5eb785862a",
+    "Anastasia Ovchinnikova",
+    CardRules::new_instant(mana_cost!("{G}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Target creature you control gets +2/+2 and gains hexproof \
+         until end of turn. (It can't be the target of spells or \
+         abilities your opponents control.)",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            },
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Composite(&[
+                AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
+                AppliedEffectDef::add_ability(&abilities::hexproof()),
+            ]),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )]),
+);
+
+// KLD 176 — Cloudblazer
+pub(in crate::card::sets) static CLOUDBLAZER: CardRecord = CardRecord::new(
+    "Cloudblazer",
+    "3cb12355-abd8-4bf3-aac1-f710ac162585",
+    "Dan Murayama Scott",
+    CardRules::new_creature(mana_cost!("{3}{W}{U}"), &["Human", "Scout"], 2, 2).with_abilities(&[
+        abilities::flying(),
+        abilities::enters_trigger(
+            "When this creature enters, you gain 2 life and draw two cards.",
+            EffectDef::Sequence(&[
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(2),
+                },
+                abilities::draw_cards(ValueDef::Constant(2)),
+            ]),
+        ),
+    ]),
+);
+
+// KLD 203 — Cultivator's Caravan
+pub(in crate::card::sets) static CULTIVATOR_S_CARAVAN: CardRecord = CardRecord::new(
+    "Cultivator's Caravan",
+    "b46b3726-4bc8-4e3a-bc6d-402c81663712",
+    "Mark Zug",
+    CardRules::new_vehicle(mana_cost!("{3}"), 5, 5).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add one mana of any color.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::any_color()),
+        ),
+        abilities::crew("Crew 3", 3),
     ]),
 );
 
@@ -390,10 +542,34 @@ pub(in crate::card::sets) static SPIREBLUFF_CANAL: CardRecord = CardRecord::new(
     ]),
 );
 
+// KLD 266 — Flame Lash
+pub(in crate::card::sets) static FLAME_LASH: CardRecord = CardRecord::new(
+    "Flame Lash",
+    "ac44e3cb-cc69-4222-87bc-ffa54b7ab34a",
+    "Viktor Titov",
+    CardRules::new_instant(mana_cost!("{3}{R}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Flame Lash deals 4 damage to any target.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::AnyTarget,
+        )],
+        EffectDef::damage(
+            EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            ValueDef::Constant(4),
+        ),
+    )]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &AUTHORITY_OF_THE_CONSULS,
+    &FUMIGATE,
+    &GEARSEEKER_SERPENT,
     &PARADOXICAL_OUTCOME,
+    &BRAZEN_SCOURGE,
     &CHANDRA_TORCH_OF_DEFIANCE,
     &THRIVING_GRUBS,
+    &BLOSSOMING_DEFENSE,
+    &CLOUDBLAZER,
+    &CULTIVATOR_S_CARAVAN,
     &FILIGREE_FAMILIAR,
     &RENEGADE_FREIGHTER,
     &SMUGGLER_S_COPTER,
@@ -402,6 +578,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CONCEALED_COURTYARD,
     &INSPIRING_VANTAGE,
     &SPIREBLUFF_CANAL,
+    &FLAME_LASH,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

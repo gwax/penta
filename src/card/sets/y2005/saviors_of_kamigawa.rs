@@ -52,10 +52,12 @@ pub(in crate::card::sets) static ARABA_MOTHRIDER: CardRecord = CardRecord::new(
 
 // SOK 53 — Sakashima the Impostor
 static SAKASHIMA_RETURN: AbilityDef = AbilityDef::activated(
-    "{2}{U}{U}: Return Sakashima the Impostor to its owner's hand at the beginning of the next end step.",
+    "{2}{U}{U}: Return Sakashima the Impostor to its owner's hand \
+     at the beginning of the next end step.",
     &[CostDef::Mana(mana_cost!("{2}{U}{U}"))],
     EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
-        "At the beginning of the next end step, return Sakashima the Impostor to its owner's hand.",
+        "At the beginning of the next end step, return Sakashima the \
+         Impostor to its owner's hand.",
         TriggerEventDef::StepBegins {
             step: TurnStepDef::End,
             player: PlayerRelation::Any,
@@ -117,6 +119,15 @@ pub(in crate::card::sets) static DEATH_DENIED: CardRecord = CardRecord::new(
                 ZonePlacement::Top,
             ),
         )),
+);
+
+// SOK 102 — Hidetsugu's Second Rite
+// Audit: unsupported — Needs a value expression reading the life total of an indexed target player; LifeTotal accepts source and event player relations but cannot resolve a target slot.
+pub(in crate::card::sets) static HIDETSUGU_S_SECOND_RITE: CardRecord = CardRecord::new(
+    "Hidetsugu's Second Rite",
+    "2e48eb77-3bd7-444a-9262-799cc706c05a",
+    "Jeff Miracola",
+    CardRules::unsupported(),
 );
 
 // SOK 104 — Iizuka the Ruthless
@@ -207,6 +218,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARABA_MOTHRIDER,
     &SAKASHIMA_THE_IMPOSTOR,
     &DEATH_DENIED,
+    &HIDETSUGU_S_SECOND_RITE,
     &IIZUKA_THE_RUTHLESS,
     &SEEK_THE_HORIZON,
     &PITHING_NEEDLE,

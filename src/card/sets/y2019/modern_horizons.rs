@@ -18,6 +18,7 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ColorChoiceOperationDef;
 use crate::card::ComparisonDef;
+use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
@@ -36,15 +37,18 @@ use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
+use crate::card::PayOrDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::RevealAndClassifyCardsDef;
+use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
+use crate::card::TurnStepDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
@@ -512,6 +516,15 @@ pub(in crate::card::sets) static FIRST_SPHERE_GARGANTUA: CardRecord = CardRecord
     crate::card::CardRules::unsupported(),
 );
 
+// MH1 94 — Graveshifter
+// Audit: unsupported — Needs an all-zone creature-type characteristic-defining ability whose all-types value is copiable; battlefield all-type modifiers do not implement changeling.
+pub(in crate::card::sets) static GRAVESHIFTER: CardRecord = CardRecord::new(
+    "Graveshifter",
+    "128c516b-7eb1-4f81-8b54-428bd0649d92",
+    "Jakub Kasper",
+    CardRules::unsupported(),
+);
+
 // MH1 101 — Putrid Goblin
 pub(in crate::card::sets) static PUTRID_GOBLIN: CardRecord = CardRecord::new(
     "Putrid Goblin",
@@ -558,6 +571,92 @@ pub(in crate::card::sets) static BOGARDAN_DRAGONHEART: CardRecord = CardRecord::
             },
         ),
     ),
+);
+
+// MH1 126 — Goatnap
+pub(in crate::card::sets) static GOATNAP: CardRecord = CardRecord::new(
+    "Goatnap",
+    "709d4928-e976-4c7c-ba09-cce95d1797b2",
+    "Mark Zug",
+    CardRules::new_sorcery(mana_cost!("{2}{R}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Gain control of target creature until end of turn. Untap that \
+         creature. It gains haste until end of turn. If that creature \
+         is a Goat, it also gets +3/+0 until end of turn.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::gain_control(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                PlayerRefDef::EffectController,
+                ControlDurationDef::UntilEndOfTurn,
+            ),
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::TargetMatches {
+                    slot: TargetIndex::PRIMARY,
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goat")),
+                },
+                then: &EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(3),
+                        ValueDef::Constant(0),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            },
+        ]),
+    )]),
+);
+
+// MH1 130 — Goblin Oriflamme
+pub(in crate::card::sets) static GOBLIN_ORIFLAMME: CardRecord = CardRecord::new(
+    "Goblin Oriflamme",
+    "33ec7cbe-16a0-4dbb-91fe-7e445a5268c8",
+    "David Palumbo",
+    CardRules::new_enchantment(mana_cost!("{1}{R}")).with_abilities(&[AbilityDef::static_ability(
+        "Attacking creatures you control get +1/+0.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::matching(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Attacking,
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            ))),
+            effect: AppliedEffectDef::modify_power_toughness(
+                ValueDef::Constant(1),
+                ValueDef::Constant(0),
+            ),
+        },
+    )]),
+);
+
+// MH1 143 — Ravenous Giant
+pub(in crate::card::sets) static RAVENOUS_GIANT: CardRecord = CardRecord::new(
+    "Ravenous Giant",
+    "52337d8d-e0ee-4229-848d-9bbd989e15b7",
+    "Milivoj Ćeran",
+    CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Giant"], 5, 5).with_abilities(&[
+        AbilityDef::triggered(
+            "At the beginning of your upkeep, this creature deals 1 damage \
+             to you.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::Upkeep,
+                player: PlayerRelation::You,
+            },
+            EffectDef::damage(EffectRecipientDef::Controller, ValueDef::Constant(1)),
+        ),
+    ]),
 );
 
 // MH1 144 — Reckless Charge (reprint)
@@ -817,6 +916,43 @@ pub(in crate::card::sets) static MOTHER_BEAR: CardRecord = CardRecord::new(
     ),
 );
 
+// MH1 181 — Springbloom Druid
+pub(in crate::card::sets) static SPRINGBLOOM_DRUID: CardRecord = CardRecord::new(
+    "Springbloom Druid",
+    "6161d2ed-7cff-4c90-9e74-1d179a6c1498",
+    "Randy Gallegos",
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Elf", "Druid"], 1, 1).with_abilities(&[
+        abilities::enters_trigger(
+            "When this creature enters, you may sacrifice a land. If you \
+             do, search your library for up to two basic land cards, put \
+             them onto the battlefield tapped, then shuffle.",
+            EffectDef::PayOr(PayOrDef::optional(
+                &[CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(
+                    CardType::Land,
+                ))],
+                &EffectDef::SearchZone {
+                    player: EffectRecipientDef::Controller,
+                    source: ZoneKind::Library,
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                    ]),
+                    minimum: 0,
+                    maximum: ValueDef::Constant(2),
+                    reveal: true,
+                    destination: ZoneKind::Battlefield,
+                    placement: ZonePlacement::Top,
+                    shuffle: true,
+                    enters_tapped: true,
+                    attachment: None,
+                    binding: None,
+                    then: None,
+                },
+            )),
+        ),
+    ]),
+);
+
 // MH1 187 — Trumpeting Herd
 pub(in crate::card::sets) static TRUMPETING_HERD: CardRecord = CardRecord::new(
     "Trumpeting Herd",
@@ -926,6 +1062,35 @@ pub(in crate::card::sets) static FALLEN_SHINOBI: CardRecord = CardRecord::new(
                 },
             ),
         ]),
+);
+
+// MH1 201 — Good-Fortune Unicorn
+pub(in crate::card::sets) static GOOD_FORTUNE_UNICORN: CardRecord = CardRecord::new(
+    "Good-Fortune Unicorn",
+    "49d68905-e13e-4751-b028-90c795c11cd5",
+    "Kee Lo",
+    CardRules::new_creature(mana_cost!("{1}{G}{W}"), &["Unicorn"], 2, 2).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever another creature you control enters, put a +1/+1 \
+             counter on that creature.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                    ]),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ]),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::TriggeringObject,
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // MH1 217 — Wrenn and Six
@@ -1161,16 +1326,22 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FORCE_OF_NEGATION,
     &URZA_LORD_HIGH_ARTIFICER,
     &FIRST_SPHERE_GARGANTUA,
+    &GRAVESHIFTER,
     &PUTRID_GOBLIN,
     &BOGARDAN_DRAGONHEART,
+    &GOATNAP,
+    &GOBLIN_ORIFLAMME,
+    &RAVENOUS_GIANT,
     &SEASONED_PYROMANCER,
     &COLLECTOR_OUPHE,
     &FORCE_OF_VIGOR,
     &HEXDRINKER,
     &MOTHER_BEAR,
+    &SPRINGBLOOM_DRUID,
     &TRUMPETING_HERD,
     &WINDING_WAY,
     &FALLEN_SHINOBI,
+    &GOOD_FORTUNE_UNICORN,
     &WRENN_AND_SIX,
     &FARMSTEAD_GLEANER,
     &TALISMAN_OF_CONVICTION,

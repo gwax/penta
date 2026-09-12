@@ -32,6 +32,7 @@ use crate::card::PlayerSetDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
+use crate::card::TurnStepDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
@@ -305,6 +306,37 @@ const VENDETTA_REPRINT: PrintingRecord = PrintingRecord::reprint(
     "Karl Kopinski",
 );
 
+// ROE 136 — Battle-Rattle Shaman
+pub(in crate::card::sets) static BATTLE_RATTLE_SHAMAN: CardRecord = CardRecord::new(
+    "Battle-Rattle Shaman",
+    "aa1df08a-ccef-44cf-936a-838e238c27c1",
+    "Warren Mahy",
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Goblin", "Shaman"], 2, 2).with_abilities(&[
+        AbilityDef::triggered_with_targets(
+            "At the beginning of combat on your turn, you may have target \
+             creature get +2/+0 until end of turn.",
+            TriggerEventDef::StepBegins {
+                step: TurnStepDef::BeginningOfCombat,
+                player: PlayerRelation::You,
+            },
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(2),
+                        ValueDef::Constant(0),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            },
+        ),
+    ]),
+);
+
 // ROE 145 — Flame Slash
 pub(in crate::card::sets) static FLAME_SLASH: CardRecord = CardRecord::new(
     "Flame Slash",
@@ -450,6 +482,56 @@ CardRules::new_creature(mana_cost!("{1}{G}"), &["Eldrazi", "Drone"], 2, 2).with_
     ),
 );
 
+// ROE 204 — Pelakka Wurm
+pub(in crate::card::sets) static PELAKKA_WURM: CardRecord = CardRecord::new(
+    "Pelakka Wurm",
+    "8e732593-0bdc-4dd4-9b07-9aa1a780e6e8",
+    "Daniel Ljunggren",
+    CardRules::new_creature(mana_cost!("{4}{G}{G}{G}"), &["Wurm"], 7, 7).with_abilities(&[
+        abilities::trample(),
+        abilities::enters_trigger(
+            "When this creature enters, you gain 7 life.",
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(7),
+            },
+        ),
+        abilities::dies_trigger(
+            "When this creature dies, draw a card.",
+            abilities::draw_cards(ValueDef::Constant(1)),
+        ),
+    ]),
+);
+
+// ROE 213 — Wildheart Invoker
+pub(in crate::card::sets) static WILDHEART_INVOKER: CardRecord = CardRecord::new(
+    "Wildheart Invoker",
+    "dc8315bf-03af-4f19-92c7-556e486cb099",
+    "Erica Yang",
+    CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Elf", "Shaman"], 4, 3).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{8}: Target creature gets +5/+5 and gains trample until end \
+             of turn. (It can deal excess combat damage to the player or \
+             planeswalker it's attacking.)",
+            &[CostDef::Mana(mana_cost!("{8}"))],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(5),
+                        ValueDef::Constant(5),
+                    ),
+                    AppliedEffectDef::add_ability(&abilities::trample()),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
+
 // ROE 222 — Prophetic Prism
 pub(in crate::card::sets) static PROPHETIC_PRISM: CardRecord = CardRecord::new(
     "Prophetic Prism",
@@ -512,12 +594,15 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CONTAMINATED_GROUND,
     &INQUISITION_OF_KOZILEK,
     &SHRIVEL,
+    &BATTLE_RATTLE_SHAMAN,
     &FLAME_SLASH,
     &GOBLIN_ARSONIST,
     &GOBLIN_TUNNELER,
     &RAID_BOMBARDMENT,
     &TRAITOROUS_INSTINCT,
     &NEST_INVADER,
+    &PELAKKA_WURM,
+    &WILDHEART_INVOKER,
     &PROPHETIC_PRISM,
     &EVOLVING_WILDS,
 ];

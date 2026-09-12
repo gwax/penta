@@ -102,6 +102,29 @@ pub(in crate::card::sets) static YOU_HEAR_SOMETHING_ON_WATCH: CardRecord = CardR
     )),
 );
 
+// AFR 123 — Vampire Spawn
+pub(in crate::card::sets) static VAMPIRE_SPAWN: CardRecord = CardRecord::new(
+    "Vampire Spawn",
+    "b8975c72-b2ec-4c5f-86a4-4e1e3bb41c15",
+    "Alex Brock",
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Vampire"], 2, 3).with_abilities(&[
+        abilities::enters_trigger(
+            "When this creature enters, each opponent loses 2 life and you \
+             gain 2 life.",
+            EffectDef::Sequence(&[
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::Opponent,
+                    amount: ValueDef::Constant(2),
+                },
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(2),
+                },
+            ]),
+        ),
+    ]),
+);
+
 // AFR 198 — Owlbear
 pub(in crate::card::sets) static OWLBEAR: CardRecord = CardRecord::new(
     "Owlbear",
@@ -166,6 +189,7 @@ pub(in crate::card::sets) static YOU_MEET_IN_A_TAVERN: CardRecord = CardRecord::
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PORTABLE_HOLE,
     &YOU_HEAR_SOMETHING_ON_WATCH,
+    &VAMPIRE_SPAWN,
     &OWLBEAR,
     &YOU_MEET_IN_A_TAVERN,
 ];

@@ -7,7 +7,8 @@ use crate::card::{self, CardCatalog};
 use crate::{Deck, Format};
 
 pub(crate) struct BuiltinDeck {
-    pub(crate) format: Format,
+    // None means the directory has no registered format; card support is validated separately.
+    pub(crate) format: Option<Format>,
     pub(crate) id: &'static str,
     pub(crate) name: &'static str,
     pub(crate) aliases: &'static [&'static str],

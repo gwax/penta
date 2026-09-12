@@ -19,10 +19,13 @@ use crate::card::EffectRecipientDef;
 use crate::card::KeywordAbility;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
+use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
@@ -167,6 +170,61 @@ pub(in crate::card::sets) static BONE_SPLINTERS: CardRecord = CardRecord::new(
             then: None,
         },
     )),
+);
+
+// ALA 70 — Death Baron
+pub(in crate::card::sets) static DEATH_BARON: CardRecord = CardRecord::new(
+    "Death Baron",
+    "4d59b5e5-fc16-4f1a-9f17-f42908473531",
+    "Nils Hamm",
+    CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Zombie", "Wizard"], 2, 2).with_abilities(
+        &[AbilityDef::static_ability(
+            "Skeletons you control and other Zombies you control get +1/+1 \
+             and have deathtouch. (Any amount of damage they deal to a \
+             creature is enough to destroy it.)",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                    ObjectQueryDef::matching(
+                        ObjectPredicateDef::AnyOf(&[
+                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Skeleton")),
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
+                            ]),
+                        ]),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                )),
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(1),
+                    ),
+                    AppliedEffectDef::add_ability(&abilities::deathtouch()),
+                ]),
+            },
+        )],
+    ),
+);
+
+// ALA 97 — Dragon Fodder
+pub(in crate::card::sets) static DRAGON_FODDER: CardRecord = CardRecord::new(
+    "Dragon Fodder",
+    "9eab4120-e7d8-4132-a304-30b88e3175e2",
+    "Jaime Jones",
+    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_abilities(&[AbilityDef::spell(
+        "Create two 1/1 red Goblin creature tokens.",
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                &["Goblin"],
+                &[ManaColor::Red],
+                1,
+                1,
+            )))
+            .with_count(ValueDef::Constant(2)),
+        ),
+    )]),
 );
 
 // ALA 100 — Flameblast Dragon
@@ -386,6 +444,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ELSPETH_KNIGHT_ERRANT,
     &GUARDIANS_OF_AKRASA,
     &BONE_SPLINTERS,
+    &DEATH_BARON,
+    &DRAGON_FODDER,
     &FLAMEBLAST_DRAGON,
     &HISSING_IGUANAR,
     &LIGHTNING_TALONS,

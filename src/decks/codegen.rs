@@ -25,16 +25,16 @@ struct DeckFile {
     sideboard: Mapping,
 }
 
-fn format_variant(directory: &str) -> &'static str {
-    match directory {
+fn format_variant(directory: &str) -> Option<&'static str> {
+    Some(match directory {
         "old_school_93_94" => "OldSchool9394",
         "premodern" => "Premodern",
         "isd_m14_standard" => "IsdM14Standard",
         "som_m13_standard" => "SomM13Standard",
         "vintage_cube" => "VintageCube",
         "pauper_cube" => "PauperCube",
-        _ => panic!("unknown deck format directory: {directory}"),
-    }
+        _ => return None,
+    })
 }
 
 fn identifier(value: &str) -> bool {
@@ -79,7 +79,10 @@ impl Source {
             "expected decks/<format>/<deck>.yaml: {path}"
         );
         let module = path_parts[1].to_owned();
-        format_variant(&module);
+        assert!(
+            identifier(&module),
+            "{path}: invalid deck directory {module:?}"
+        );
         let deck: DeckFile =
             serde_yaml_ng::from_str(yaml).unwrap_or_else(|error| panic!("{path}: {error}"));
         let id = Path::new(path)
@@ -185,9 +188,13 @@ fn registry(mut sources: Vec<Source>) -> String {
                 "{path}: duplicate Rust deck identifier {symbol:?} in {module}"
             );
         }
+        let format = format_variant(module).map_or_else(
+            || "None".to_owned(),
+            |variant| format!("Some(crate::Format::{variant})"),
+        );
         writeln!(output,
-            "BuiltinDeck {{ format: crate::Format::{}, id: {id:?}, name: {:?}, aliases: &{:?}, source: {:?}, main: &{:?}, sideboard: &{:?} }},",
-            format_variant(module), deck.name, deck.aliases, path,
+            "BuiltinDeck {{ format: {format}, id: {id:?}, name: {:?}, aliases: &{:?}, source: {:?}, main: &{:?}, sideboard: &{:?} }},",
+            deck.name, deck.aliases, path,
             entries(&deck.main, path), entries(&deck.sideboard, path)).unwrap();
         modules.entry(module).or_default().push((index, source));
     }
@@ -256,6 +263,24 @@ mod tests {
         );
         assert!(entries(&source.deck.sideboard, &source.path).is_empty());
         assert_eq!(source.id, "example");
+    }
+
+    #[test]
+    fn inventories_can_precede_format_registration_without_bypassing_yaml_checks() {
+        let path = "decks/future_pool/example.yaml";
+        let output = registry(vec![Source::parse(path, YAML)]);
+        assert!(output.contains("format: None"));
+        assert!(output.contains("pub mod future_pool"));
+        assert!(
+            std::panic::catch_unwind(|| {
+                Source::parse(path, &YAML.replace("Mountain: 2", "Mountain: 0"))
+            })
+            .is_err()
+        );
+        assert!(
+            std::panic::catch_unwind(|| { Source::parse(path, &format!("{YAML}staged: true\n")) })
+                .is_err()
+        );
     }
 
     #[test]

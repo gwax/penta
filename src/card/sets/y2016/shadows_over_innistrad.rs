@@ -3,14 +3,19 @@
 use super::CardRecord;
 use super::PrintingRecord;
 use crate::card::AbilityDef;
+use crate::card::AbilityTargetDef;
+use crate::card::AbilityTargetPredicate;
 use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardType;
+use crate::card::CostDef;
 use crate::card::CounterKind;
 use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectRefDef;
 use crate::card::PlayerRelation;
 use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
@@ -20,6 +25,7 @@ use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::abilities;
 use crate::card::tokens;
+use crate::ids::TargetIndex;
 use crate::mana_cost;
 
 /// Printed set identity and stable catalog slug.
@@ -50,6 +56,66 @@ pub(in crate::card::sets) static THRABEN_INSPECTOR: CardRecord = CardRecord::new
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(CLUE_TOKEN))),
         ),
     ),
+);
+
+// SOI 105 — Crow of Dark Tidings
+pub(in crate::card::sets) static CROW_OF_DARK_TIDINGS: CardRecord = CardRecord::new(
+    "Crow of Dark Tidings",
+    "14e4d1b5-72de-4062-9fdd-e9bfd655ee79",
+    "Tianhua X",
+    CardRules::new_creature(mana_cost!("{2}{B}"), &["Zombie", "Bird"], 2, 1).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::triggered(
+            "When this creature enters or dies, mill two cards. (Put the \
+             top two cards of your library into your graveyard.)",
+            TriggerEventDef::AnyOf(&[
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    Some(ZoneKind::Battlefield),
+                    Some(ZoneKind::Graveyard),
+                ),
+            ]),
+            EffectDef::Mill {
+                player: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+    ]),
+);
+
+// SOI 223 — Rabid Bite
+pub(in crate::card::sets) static RABID_BITE: CardRecord = CardRecord::new(
+    "Rabid Bite",
+    "2f573622-877b-4d21-adfc-40a32b7c2e6d",
+    "Karl Kopinski",
+    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Target creature you control deals damage equal to its power \
+         to target creature you don't control.",
+        &[
+            AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            }),
+            AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::Opponent),
+                owner: None,
+            }),
+        ],
+        EffectDef::damage_from(
+            ObjectRefDef::Target(TargetIndex::PRIMARY),
+            EffectRecipientDef::Target(TargetIndex(1)),
+            ValueDef::TargetPower(TargetIndex::PRIMARY),
+        ),
+    )]),
 );
 
 // SOI 233 — Tireless Tracker
@@ -90,6 +156,31 @@ pub(in crate::card::sets) static TIRELESS_TRACKER: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&THRABEN_INSPECTOR, &TIRELESS_TRACKER];
+// SOI 258 — Magnifying Glass
+pub(in crate::card::sets) static MAGNIFYING_GLASS: CardRecord = CardRecord::new(
+    "Magnifying Glass",
+    "f7a708d5-f757-4fcf-a167-5b5920c6adeb",
+    "Dan Murayama Scott",
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated(
+            "{4}, {T}: Investigate. (Create a Clue token. It's an artifact \
+             with \"{2}, Sacrifice this token: Draw a card.\")",
+            &[CostDef::Mana(mana_cost!("{4}")), CostDef::TapSource],
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(CLUE_TOKEN))
+                    .with_count(ValueDef::Constant(1)),
+            ),
+        ),
+    ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &THRABEN_INSPECTOR,
+    &CROW_OF_DARK_TIDINGS,
+    &RABID_BITE,
+    &TIRELESS_TRACKER,
+    &MAGNIFYING_GLASS,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

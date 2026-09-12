@@ -480,7 +480,6 @@ mod vintage_cube_abrade;
 mod vintage_cube_adeline;
 mod vintage_cube_adventure;
 mod vintage_cube_aether_spellbomb;
-mod vintage_cube_agathas_soul_cauldron;
 mod vintage_cube_ajani;
 mod vintage_cube_amped_raptor;
 mod vintage_cube_ancient_tomb;
@@ -581,7 +580,6 @@ mod vintage_cube_elvish_reclaimer;
 mod vintage_cube_emperor_of_bones;
 mod vintage_cube_emry;
 mod vintage_cube_endurance;
-mod vintage_cube_enduring_innocence;
 mod vintage_cube_ephemerate;
 mod vintage_cube_ertai_resurrected;
 mod vintage_cube_esikas_chariot;
@@ -620,9 +618,7 @@ mod vintage_cube_galvanic_blast;
 mod vintage_cube_galvanic_discharge;
 mod vintage_cube_gau;
 mod vintage_cube_generous_ent;
-mod vintage_cube_generous_plunderer;
 mod vintage_cube_get_lost;
-mod vintage_cube_ghost_vacuum;
 mod vintage_cube_gitaxian_probe;
 mod vintage_cube_giver_of_runes;
 mod vintage_cube_glimmer_lens;
@@ -655,7 +651,6 @@ mod vintage_cube_infect;
 mod vintage_cube_infernal_grasp;
 mod vintage_cube_inquisition_of_kozilek;
 mod vintage_cube_inspiring_vantage;
-mod vintage_cube_inti;
 mod vintage_cube_invigorate;
 mod vintage_cube_ivora;
 mod vintage_cube_jace_the_mind_sculptor;
@@ -712,7 +707,6 @@ mod vintage_cube_mastery;
 mod vintage_cube_memory_jar;
 mod vintage_cube_memory_lapse;
 mod vintage_cube_metamorphosis_fanatic;
-mod vintage_cube_mightform_harmonizer;
 mod vintage_cube_mind_twist;
 mod vintage_cube_mine_collapse;
 mod vintage_cube_minsc_and_boo;
@@ -778,7 +772,6 @@ mod vintage_cube_prismatic_vista;
 mod vintage_cube_profts_eidetic_memory;
 mod vintage_cube_psychic_frog;
 mod vintage_cube_pyrogoyf;
-mod vintage_cube_quantum_riddler;
 mod vintage_cube_questing_beast;
 mod vintage_cube_ragavan;
 mod vintage_cube_rancor;
@@ -835,7 +828,6 @@ mod vintage_cube_stern_scolding;
 mod vintage_cube_stock_up;
 mod vintage_cube_stomping_ground;
 mod vintage_cube_stoneforge;
-mod vintage_cube_stormchasers_talent;
 mod vintage_cube_strip_mine;
 mod vintage_cube_subtlety;
 mod vintage_cube_sunfall;
@@ -906,7 +898,6 @@ mod vintage_cube_vivi_ornitier;
 mod vintage_cube_voice_of_victory;
 mod vintage_cube_voldaren_epicure;
 mod vintage_cube_vote;
-mod vintage_cube_walk_in_closet;
 mod vintage_cube_walking_ballista;
 mod vintage_cube_wandering_emperor;
 mod vintage_cube_wasteland;
@@ -947,3 +938,36 @@ use search_and_reveal::stack_library;
 pub(in crate::game) mod composed_mechanic_programs;
 
 mod playtest_regressions;
+
+mod bloomburrow;
+mod lost_caverns_of_ixalan;
+mod wilds_of_eldraine;
+
+mod duskmourn;
+
+mod big_score;
+mod foundations;
+mod karlov_manor;
+mod thunder_junction;
+
+mod aetherdrift;
+
+mod avatar;
+
+mod edge_of_eternities;
+
+mod final_fantasy;
+
+mod spider_man;
+
+mod lorwyn_eclipsed;
+mod tarkir_dragonstorm;
+
+mod marvel_super_heroes;
+
+mod secrets_of_strixhaven;
+
+mod teenage_mutant_ninja_turtles;
+
+#[path = "tests/the_hobbit.rs"]
+mod the_hobbit;

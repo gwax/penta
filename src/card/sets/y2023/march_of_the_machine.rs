@@ -6,6 +6,8 @@ use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::ActivationTimingDef;
+use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::BasicLandType;
 use crate::card::CardArt;
 use crate::card::CardRules;
@@ -24,6 +26,7 @@ use crate::card::ObjectQueryDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
+use crate::card::ResolvedEffectDurationDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenCountersDef;
 use crate::card::TokenDef;
@@ -81,6 +84,38 @@ pub(in crate::card::sets) static ALABASTER_HOST_INTERCESSOR: CardRecord = CardRe
             ),
         ],
     ),
+);
+
+// MOM 13 — Elspeth's Smite
+pub(in crate::card::sets) static ELSPETH_S_SMITE: CardRecord = CardRecord::new(
+    "Elspeth's Smite",
+    "f03a480f-de67-4611-9db7-c0c3d020f597",
+    "Livia Prima",
+    CardRules::new_instant(mana_cost!("{W}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Elspeth's Smite deals 3 damage to target attacking or \
+         blocking creature. If that creature would die this turn, \
+         exile it instead.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::AnyOf(&[
+                    ObjectPredicateDef::Attacking,
+                    ObjectPredicateDef::Blocking,
+                ]),
+            ]),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::damage(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ValueDef::Constant(3),
+            ),
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::ExileInsteadOfDying),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ]),
+    )]),
 );
 
 // MOM 40 — Sunfall
@@ -205,6 +240,29 @@ pub(in crate::card::sets) static PREENING_CHAMPION: CardRecord = CardRecord::new
     ]),
 );
 
+// MOM 80 — Temporal Cleansing
+// Audit: unsupported — Needs a library insertion at the second position from the top; ZonePlacement supports top and bottom but not an indexed position.
+pub(in crate::card::sets) static TEMPORAL_CLEANSING: CardRecord = CardRecord::new(
+    "Temporal Cleansing",
+    "6e67031a-8216-4c66-b6fb-6628bd02d279",
+    "Dominik Mayer",
+    CardRules::unsupported(),
+);
+
+// MOM 98 — Corrupted Conviction
+pub(in crate::card::sets) static CORRUPTED_CONVICTION: CardRecord = CardRecord::new(
+    "Corrupted Conviction",
+    "ce133ad5-8748-4a3d-ae8c-7b2a5938927d",
+    "Joseph Weston",
+    CardRules::new_instant(mana_cost!("{B}")).with_abilities(&[AbilityDef::spell(
+        "Draw two cards.",
+        abilities::draw_cards(ValueDef::Constant(2)),
+    )
+    .with_spell_additional_cost(&CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(
+        CardType::Creature,
+    )))]),
+);
+
 // MOM 173 — Wrenn's Resolve
 // Audit: unsupported — Needs an exile-play permission lasting until the end of your next turn. ExilePlayDurationDef offers ThisTurn, UntilYourNextEndStep and WhileExiled, and FreePlayDurationDef only WhileResolving and UntilEndOfTurn; none of them reaches the end of the following turn, and UntilYourNextEndStep expires a turn early when the spell is cast on your own turn.
 pub(in crate::card::sets) static WRENN_S_RESOLVE: CardRecord = CardRecord::new(
@@ -212,6 +270,33 @@ pub(in crate::card::sets) static WRENN_S_RESOLVE: CardRecord = CardRecord::new(
     "9a47999c-12d5-4e1a-a9c1-40a1757007f1",
     "Viko Menezes",
     crate::card::CardRules::unsupported(),
+);
+
+// MOM 215 — Wary Thespian
+pub(in crate::card::sets) static WARY_THESPIAN: CardRecord = CardRecord::new(
+    "Wary Thespian",
+    "675b29bf-0b64-410f-9a92-c88e5615c27f",
+    "Billy Christian",
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Cat", "Druid"], 3, 1).with_abilities(&[
+        AbilityDef::triggered(
+            "When this creature enters or dies, surveil 1. (Look at the \
+             top card of your library. You may put it into your \
+             graveyard.)",
+            TriggerEventDef::AnyOf(&[
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    Some(ZoneKind::Battlefield),
+                    Some(ZoneKind::Graveyard),
+                ),
+            ]),
+            abilities::surveil(ValueDef::Constant(1)),
+        ),
+    ]),
 );
 
 // MOM 298 — Etali, Primal Conqueror // Etali, Primal Sickness
@@ -317,11 +402,15 @@ pub(in crate::card::sets) static ZEPHYR_WINDER: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ALABASTER_HOST_INTERCESSOR,
+    &ELSPETH_S_SMITE,
     &SUNFALL,
     &FAERIE_MASTERMIND,
     &MEETING_OF_MINDS,
     &PREENING_CHAMPION,
+    &TEMPORAL_CLEANSING,
+    &CORRUPTED_CONVICTION,
     &WRENN_S_RESOLVE,
+    &WARY_THESPIAN,
     &ETALI_PRIMAL_CONQUEROR,
     &ZEPHYR_WINDER,
 ];

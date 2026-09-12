@@ -6,21 +6,27 @@ use crate::TargetIndex;
 use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
+use crate::card::AppliedEffectDef;
 use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
+use crate::card::CostDef;
 use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectQueryDef;
+use crate::card::ObjectSetDef;
 use crate::card::PlayerRelation;
 use crate::card::ReplacementEffectDef;
 use crate::card::ReplacementEventDef;
+use crate::card::ResolvedEffectDurationDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
+use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
@@ -60,6 +66,54 @@ pub(in crate::card::sets) static CONTAINMENT_PRIEST: CardRecord = CardRecord::ne
             ReplacementEffectDef::MoveToZone(ZoneKind::Exile),
         ),
     ]),
+);
+
+// C14 9 — Jazal Goldmane
+pub(in crate::card::sets) static JAZAL_GOLDMANE: CardRecord = CardRecord::new(
+    "Jazal Goldmane",
+    "c410d530-e9fc-4dc0-a4bd-70bd70aaf0c7",
+    "Aaron Miller",
+    CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Cat", "Warrior"], 4, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::first_strike(),
+            AbilityDef::activated(
+                "{3}{W}{W}: Attacking creatures you control get +X/+X until \
+                 end of turn, where X is the number of attacking creatures.",
+                &[CostDef::Mana(mana_cost!("{3}{W}{W}"))],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                        ObjectQueryDef::matching(
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::HasType(CardType::Creature),
+                                ObjectPredicateDef::Attacking,
+                            ]),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::You,
+                        ),
+                    )),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::HasType(CardType::Creature),
+                                ObjectPredicateDef::Attacking,
+                            ]),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::Any,
+                        )),
+                        ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::HasType(CardType::Creature),
+                                ObjectPredicateDef::Attacking,
+                            ]),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::Any,
+                        )),
+                    ),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                },
+            ),
+        ]),
 );
 
 // C14 50 — Titania, Protector of Argoth
@@ -112,7 +166,10 @@ pub(in crate::card::sets) static TITANIA_PROTECTOR_OF_ARGOTH: CardRecord =
             ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&CONTAINMENT_PRIEST, &TITANIA_PROTECTOR_OF_ARGOTH];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &CONTAINMENT_PRIEST,
+    &JAZAL_GOLDMANE,
+    &TITANIA_PROTECTOR_OF_ARGOTH,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

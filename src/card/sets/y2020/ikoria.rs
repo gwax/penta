@@ -14,6 +14,10 @@ use crate::card::CompanionConditionDef;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CostModificationDef;
+use crate::card::DamageEventMatcherDef;
+use crate::card::DamageKindDef;
+use crate::card::DamageRecipientMatcherDef;
+use crate::card::DamageSourceMatcherDef;
 use crate::card::DeckConstructionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -57,6 +61,89 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+// IKO 39 — Aegis Turtle
+pub(in crate::card::sets) static AEGIS_TURTLE: CardRecord = CardRecord::new(
+    "Aegis Turtle",
+    "e433e7f0-7417-4dfe-a7a4-3f222b0a835f",
+    "Milivoj Ćeran",
+    CardRules::new_creature(mana_cost!("{U}"), &["Turtle"], 0, 5),
+);
+
+// IKO 69 — Thieving Otter
+pub(in crate::card::sets) static THIEVING_OTTER: CardRecord = CardRecord::new(
+    "Thieving Otter",
+    "07f84b0a-37d9-4b0f-8d75-1fab45a12d44",
+    "Jakub Kasper",
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Otter"], 2, 2).with_abilities(&[
+        AbilityDef::triggered(
+            "Whenever this creature deals damage to an opponent, draw a card.",
+            TriggerEventDef::DamageDealt(DamageEventMatcherDef {
+                kind: DamageKindDef::Any,
+                source: DamageSourceMatcherDef::Matching(ObjectPredicateDef::Source),
+                recipient: DamageRecipientMatcherDef::Recipients(EffectRecipientDef::Opponent),
+            }),
+            abilities::draw_cards(ValueDef::Constant(1)),
+        ),
+    ]),
+);
+
+// IKO 70 — Voracious Greatshark
+pub(in crate::card::sets) static VORACIOUS_GREATSHARK: CardRecord = CardRecord::new(
+    "Voracious Greatshark",
+    "1400155f-8911-45fd-aab2-998c8a28292c",
+    "Mathias Kollros",
+    CardRules::new_creature(mana_cost!("{3}{U}{U}"), &["Shark"], 5, 4).with_abilities(&[
+        abilities::flash(),
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, counter target artifact or \
+             creature spell.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Artifact),
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                    ]),
+                    zones: &[ZoneKind::Stack],
+                    controller: None,
+                    owner: None,
+                },
+            )],
+            EffectDef::counter_target(TargetIndex::PRIMARY),
+        ),
+    ]),
+);
+
+// IKO 91 — Heartless Act
+// Audit: unsupported — Needs one up-to-three counter-removal choice distributed among any counter kinds on the target; current removal effects specify one kind or remove every counter.
+pub(in crate::card::sets) static HEARTLESS_ACT: CardRecord = CardRecord::new(
+    "Heartless Act",
+    "e4e6794a-feeb-4fc8-a2ee-38c75c18aaae",
+    "Ryan Pancoast",
+    CardRules::unsupported(),
+);
+
+// IKO 134 — Rumbling Rockslide
+pub(in crate::card::sets) static RUMBLING_ROCKSLIDE: CardRecord = CardRecord::new(
+    "Rumbling Rockslide",
+    "96f9aaa7-11c7-4cd0-9803-9471c14ab846",
+    "Adam Paquette",
+    CardRules::new_sorcery(mana_cost!("{3}{R}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Rumbling Rockslide deals damage to target creature equal to \
+         the number of lands you control.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::damage(
+            EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                ObjectPredicateDef::HasType(CardType::Land),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
+            )),
+        ),
+    )]),
+);
+
 // IKO 137 — Spelleater Wolverine
 pub(in crate::card::sets) static SPELLEATER_WOLVERINE: CardRecord = CardRecord::new(
     "Spelleater Wolverine",
@@ -90,6 +177,34 @@ pub(in crate::card::sets) static SPELLEATER_WOLVERINE: CardRecord = CardRecord::
             },
         ),
     ),
+);
+
+// IKO 148 — Colossification
+pub(in crate::card::sets) static COLOSSIFICATION: CardRecord = CardRecord::new(
+    "Colossification",
+    "7b6e6f2a-5015-44c6-aa8d-85188494d1a6",
+    "Johan Grenier",
+    CardRules::new_enchantment(mana_cost!("{5}{G}{G}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            abilities::enters_trigger(
+                "When this Aura enters, tap enchanted creature.",
+                EffectDef::Tap {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature gets +20/+20.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(20),
+                        ValueDef::Constant(20),
+                    ),
+                },
+            ),
+        ]),
 );
 
 // IKO 170 — Ram Through
@@ -309,7 +424,13 @@ pub(in crate::card::sets) static LUTRI_THE_SPELLCHASER: CardRecord = CardRecord:
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &AEGIS_TURTLE,
+    &THIEVING_OTTER,
+    &VORACIOUS_GREATSHARK,
+    &HEARTLESS_ACT,
+    &RUMBLING_ROCKSLIDE,
     &SPELLEATER_WOLVERINE,
+    &COLOSSIFICATION,
     &RAM_THROUGH,
     &LURRUS_OF_THE_DREAM_DEN,
     &ZIRDA_THE_DAWNWAKER,

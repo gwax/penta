@@ -10,6 +10,7 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
+use crate::card::ComparisonDef;
 use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
@@ -30,8 +31,10 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::RevealObjectsDef;
+use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
+use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -173,6 +176,105 @@ pub(in crate::card::sets) static KARN_SCION_OF_URZA: CardRecord = CardRecord::ne
         ]),
 );
 
+// DOM 2 — Adamant Will
+pub(in crate::card::sets) static ADAMANT_WILL: CardRecord = CardRecord::new(
+    "Adamant Will",
+    "3dfb8817-ca3c-44ba-92f2-e9d6294cd25d",
+    "Alex Konstad",
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Target creature gets +2/+2 and gains indestructible until end \
+         of turn. (Damage and effects that say \"destroy\" don't \
+         destroy it.)",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Composite(&[
+                AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
+                AppliedEffectDef::add_ability(&abilities::indestructible()),
+            ]),
+            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+        },
+    )]),
+);
+
+// DOM 23 — Knight of Grace
+// Audit: unsupported — Needs hexproof filtered by an opposing spell or ability source being black; protection from black would incorrectly also prevent damage, blocking, and attachments.
+pub(in crate::card::sets) static KNIGHT_OF_GRACE: CardRecord = CardRecord::new(
+    "Knight of Grace",
+    "7bbbddc0-f8b3-4255-bd82-d50f829ca009",
+    "Sidharth Chaturvedi",
+    CardRules::unsupported(),
+);
+
+// DOM 26 — Lyra Dawnbringer
+pub(in crate::card::sets) static LYRA_DAWNBRINGER: CardRecord = CardRecord::new(
+    "Lyra Dawnbringer",
+    "93be6799-7b9d-44d4-84dc-2961692b5a85",
+    "Chris Rahn",
+    CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Angel"], 5, 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::flying(),
+            abilities::first_strike(),
+            abilities::lifelink(),
+            AbilityDef::static_ability(
+                "Other Angels you control get +1/+1 and have lifelink.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                        ObjectQueryDef::matching(
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel")),
+                            ]),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::You,
+                        ),
+                    )),
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(1),
+                            ValueDef::Constant(1),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::lifelink()),
+                    ]),
+                },
+            ),
+        ]),
+);
+
+// DOM 68 — Tempest Djinn
+pub(in crate::card::sets) static TEMPEST_DJINN: CardRecord = CardRecord::new(
+    "Tempest Djinn",
+    "3acc883b-3aea-4d0b-ae0f-00d4a08c47c1",
+    "Zezhou Chen",
+    CardRules::new_creature(mana_cost!("{U}{U}{U}"), &["Djinn"], 0, 4).with_abilities(&[
+        abilities::flying(),
+        AbilityDef::static_ability(
+            "This creature gets +1/+0 for each basic Island you control.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                        ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Land),
+                            ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Island")),
+                        ]),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    )),
+                    ValueDef::Constant(0),
+                ),
+            },
+        ),
+    ]),
+);
+
 // DOM 81 — Cast Down
 pub(in crate::card::sets) static CAST_DOWN: CardRecord = CardRecord::new(
     "Cast Down",
@@ -187,6 +289,148 @@ pub(in crate::card::sets) static CAST_DOWN: CardRecord = CardRecord::new(
             ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Legendary)),
         ])),
     )),
+);
+
+// DOM 97 — Knight of Malice
+// Audit: unsupported — Needs hexproof filtered by an opposing spell or ability source being white; protection from white would incorrectly also prevent damage, blocking, and attachments.
+pub(in crate::card::sets) static KNIGHT_OF_MALICE: CardRecord = CardRecord::new(
+    "Knight of Malice",
+    "b45266f0-eb4f-4a06-bc64-8c2d774b4cc5",
+    "Sidharth Chaturvedi",
+    CardRules::unsupported(),
+);
+
+// DOM 127 — Ghitu Lavarunner
+pub(in crate::card::sets) static GHITU_LAVARUNNER: CardRecord = CardRecord::new(
+    "Ghitu Lavarunner",
+    "c448ba82-a502-459f-9ebc-fc9e85674e6c",
+    "Jesper Ejsing",
+    CardRules::new_creature(mana_cost!("{R}"), &["Human", "Wizard"], 1, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "As long as there are two or more instant and/or sorcery cards \
+             in your graveyard, this creature gets +1/+0 and has haste. \
+             (It can attack and {T} as soon as it comes under your \
+             control.)",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::ObjectCount {
+                    query: ObjectQueryDef::matching(
+                        ObjectPredicateDef::AnyOf(&[
+                            ObjectPredicateDef::HasType(CardType::Instant),
+                            ObjectPredicateDef::HasType(CardType::Sorcery),
+                        ]),
+                        &[ZoneKind::Graveyard],
+                        PlayerRelation::You,
+                    ),
+                    comparison: ComparisonDef::GreaterOrEqual,
+                    amount: 2,
+                },
+                then: &EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(1),
+                            ValueDef::Constant(0),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::haste()),
+                    ]),
+                },
+            },
+        ),
+    ]),
+);
+
+// DOM 164 — Grow from the Ashes
+pub(in crate::card::sets) static GROW_FROM_THE_ASHES: CardRecord = CardRecord::new(
+    "Grow from the Ashes",
+    "51d4d1c2-671c-498c-a232-7d076e3dc3bb",
+    "Richard Wright",
+    CardRules::new_sorcery(mana_cost!("{2}{G}")).with_abilities(&[
+        abilities::kicker(&[CostDef::Mana(mana_cost!("{2}"))]),
+        AbilityDef::spell(
+            "Search your library for a basic land card, put it onto the \
+             battlefield, then shuffle. If this spell was kicked, instead \
+             search your library for two basic land cards, put them onto \
+             the battlefield, then shuffle.",
+            EffectDef::IfElseCondition {
+                condition: &TriggerConditionDef::SourcePaidAdditionalCost(
+                    crate::AdditionalCostIndex::PRIMARY,
+                ),
+                then: &EffectDef::SearchZone {
+                    player: EffectRecipientDef::Controller,
+                    source: ZoneKind::Library,
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                    ]),
+                    minimum: 0,
+                    maximum: ValueDef::Constant(2),
+                    reveal: true,
+                    destination: ZoneKind::Battlefield,
+                    placement: ZonePlacement::Top,
+                    shuffle: true,
+                    enters_tapped: false,
+                    attachment: None,
+                    binding: None,
+                    then: None,
+                },
+                otherwise: &EffectDef::SearchZone {
+                    player: EffectRecipientDef::Controller,
+                    source: ZoneKind::Library,
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                    ]),
+                    minimum: 0,
+                    maximum: ValueDef::Constant(1),
+                    reveal: true,
+                    destination: ZoneKind::Battlefield,
+                    placement: ZonePlacement::Top,
+                    shuffle: true,
+                    enters_tapped: false,
+                    attachment: None,
+                    binding: None,
+                    then: None,
+                },
+            },
+        ),
+    ]),
+);
+
+// DOM 199 — Muldrotha, the Gravetide
+// Audit: unsupported — Needs a graveyard play allowance consumed by a player-chosen permanent type for each cast, with separate per-turn allowances for every permanent type and lands.
+pub(in crate::card::sets) static MULDROTHA_THE_GRAVETIDE: CardRecord = CardRecord::new(
+    "Muldrotha, the Gravetide",
+    "c654737d-34ac-42ff-ae27-3a3bbb930fc1",
+    "Jason Rainville",
+    CardRules::unsupported(),
+);
+
+// DOM 206 — Tatyova, Benthic Druid
+pub(in crate::card::sets) static TATYOVA_BENTHIC_DRUID: CardRecord = CardRecord::new(
+    "Tatyova, Benthic Druid",
+    "93657aaa-7a0f-49ad-b026-6f79b3bd6768",
+    "Mathias Kollros",
+    CardRules::new_creature(mana_cost!("{3}{G}{U}"), &["Merfolk", "Druid"], 3, 3)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[AbilityDef::triggered(
+            "Landfall — Whenever a land you control enters, you gain 1 \
+             life and draw a card.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ]),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::Sequence(&[
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+                abilities::draw_cards(ValueDef::Constant(1)),
+            ]),
+        )]),
 );
 
 // DOM 207 — Teferi, Hero of Dominaria
@@ -322,7 +566,16 @@ CardRules::new_artifact(mana_cost!("{4}"))
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KARN_SCION_OF_URZA,
+    &ADAMANT_WILL,
+    &KNIGHT_OF_GRACE,
+    &LYRA_DAWNBRINGER,
+    &TEMPEST_DJINN,
     &CAST_DOWN,
+    &KNIGHT_OF_MALICE,
+    &GHITU_LAVARUNNER,
+    &GROW_FROM_THE_ASHES,
+    &MULDROTHA_THE_GRAVETIDE,
+    &TATYOVA_BENTHIC_DRUID,
     &TEFERI_HERO_OF_DOMINARIA,
     &DAMPING_SPHERE,
     &HELM_OF_THE_HOST,
