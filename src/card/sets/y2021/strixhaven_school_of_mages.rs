@@ -28,6 +28,7 @@ use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -35,7 +36,6 @@ use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
-use crate::card::tokens;
 use crate::ids::Binding;
 use crate::ids::ParentBinding;
 use crate::mana_cost;
@@ -48,6 +48,20 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const PEST_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Pest"], &[ManaColor::Black, ManaColor::Green], 1, 1)
+        .with_abilities(&[abilities::dies_trigger(
+            "When this token dies, you gain 1 life.",
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        )])
+        .with_art(CardArt::new(
+            "d0ddbe3e-4a66-494d-9304-7471232549bf",
+            "Ilse Gort",
+        ));
 
 // STX 17 — Elite Spellbinder
 pub(in crate::card::sets) static ELITE_SPELLBINDER: CardRecord = CardRecord::new(
@@ -421,12 +435,7 @@ pub(in crate::card::sets) static SEDGEMOOR_WITCH: CardRecord = CardRecord::new(
             "Magecraft — Whenever you cast or copy an instant or sorcery spell, create a 1/1 black \
                  and green Pest creature token with \"When this token dies, you gain 1 life.\"",
             MAGECRAFT,
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                tokens::pest().with_art(CardArt::new(
-                    "d0ddbe3e-4a66-494d-9304-7471232549bf",
-                    "Ilse Gort",
-                )),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(PEST_TOKEN))),
         ),
     ]),
 );

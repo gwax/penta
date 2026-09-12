@@ -103,6 +103,26 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const SOLDIER_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1).with_art(CardArt::new(
+        "86272c08-c5f2-413f-87ea-b135aca2d9c5",
+        "Greg Staples",
+    ));
+
+const DRAKE_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Drake"], &[ManaColor::Blue], 2, 2)
+        .with_abilities(&[abilities::flying()])
+        .with_art(CardArt::new(
+            "93679bb9-ee1c-4eea-bcdd-72785d5788af",
+            "Svetlin Velinov",
+        ));
+
+const GOBLIN_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1).with_art(CardArt::new(
+        "0e67efea-8a80-42ec-8e77-07d387d933d4",
+        "Karl Kopinski",
+    ));
+
 // M13 1 — Ajani, Caller of the Pride
 pub(in crate::card::sets) static AJANI_CALLER_OF_THE_PRIDE: CardRecord = CardRecord::new(
     "Ajani, Caller of the Pride",
@@ -193,11 +213,7 @@ pub(in crate::card::sets) static ATTENDED_KNIGHT: CardRecord = CardRecord::new(
         abilities::first_strike(),
         abilities::enters_trigger(
             "When this creature enters, create a 1/1 white Soldier creature token.",
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1).with_art(
-                    CardArt::new("86272c08-c5f2-413f-87ea-b135aca2d9c5", "Greg Staples"),
-                ),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(SOLDIER_TOKEN))),
         ),
     ]),
 );
@@ -244,12 +260,7 @@ pub(in crate::card::sets) static CAPTAINS_CALL: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{3}{W}")).with_ability(AbilityDef::spell(
         "Create three 1/1 white Soldier creature tokens.",
         EffectDef::CreateToken(
-            CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1).with_art(
-                    CardArt::new("86272c08-c5f2-413f-87ea-b135aca2d9c5", "Greg Staples"),
-                ),
-            ))
-            .with_amount(3),
+            CreateTokenDef::new(TokenDef::Literal(SOLDIER_TOKEN)).with_amount(3),
         ),
     )),
 );
@@ -1101,12 +1112,7 @@ CardRules::new_creature(
             ]),
         ])),
         EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-            TokenCharacteristics::creature(&["Drake"], &[ManaColor::Blue], 2, 2)
-                .with_abilities(&[abilities::flying()])
-                .with_art(CardArt::new(
-                    "93679bb9-ee1c-4eea-bcdd-72785d5788af",
-                    "Svetlin Velinov",
-                )),
+            DRAKE_TOKEN,
         ))),
     )),
 );
@@ -1118,17 +1124,7 @@ pub(in crate::card::sets) static TALRANDS_INVOCATION: CardRecord = CardRecord::n
     "Svetlin Velinov",
     CardRules::new_sorcery(mana_cost!("{2}{U}{U}")).with_ability(AbilityDef::spell(
         "Create two 2/2 blue Drake creature tokens with flying.",
-        EffectDef::CreateToken(
-            CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Drake"], &[ManaColor::Blue], 2, 2)
-                    .with_abilities(&[abilities::flying()])
-                    .with_art(CardArt::new(
-                        "93679bb9-ee1c-4eea-bcdd-72785d5788af",
-                        "Svetlin Velinov",
-                    )),
-            ))
-            .with_amount(2),
-        ),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(DRAKE_TOKEN)).with_amount(2)),
     )),
 );
 
@@ -2171,9 +2167,7 @@ CardRules::new_creature(
         &[CostDef::TapSource],
         EffectDef::CreateToken(
             CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1).with_art(
-                    CardArt::new("0e67efea-8a80-42ec-8e77-07d387d933d4", "Karl Kopinski"),
-                ),
+                GOBLIN_TOKEN,
             ))
             .with_count(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
                 ObjectPredicateDef::All(&[
@@ -2194,14 +2188,7 @@ pub(in crate::card::sets) static KRENKOS_COMMAND: CardRecord = CardRecord::new(
     "Karl Kopinski",
     CardRules::new_sorcery(mana_cost!("{1}{R}")).with_ability(AbilityDef::spell(
         "Create two 1/1 red Goblin creature tokens.",
-        EffectDef::CreateToken(
-            CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1).with_art(
-                    CardArt::new("0e67efea-8a80-42ec-8e77-07d387d933d4", "Karl Kopinski"),
-                ),
-            ))
-            .with_amount(2),
-        ),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(GOBLIN_TOKEN)).with_amount(2)),
     )),
 );
 

@@ -3,6 +3,7 @@
 use super::CardRecord;
 use super::PrintingRecord;
 use crate::card::AbilityDef;
+use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
@@ -10,6 +11,7 @@ use crate::card::PlayerRelation;
 use crate::card::ReplacementAbilityDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ReplacementEventDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::abilities;
 use crate::card::tokens;
@@ -23,6 +25,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const TREASURE_TOKEN: TokenCharacteristics = tokens::treasure().with_art(CardArt::new(
+    "284ec798-2725-4741-8748-578c259d0623",
+    "Alayna Danner",
+));
 
 // CMR 74 — Hullbreacher
 pub(in crate::card::sets) static HULLBREACHER: CardRecord = CardRecord::new(
@@ -51,7 +58,7 @@ pub(in crate::card::sets) static HULLBREACHER: CardRecord = CardRecord::new(
                 // the card they would have drawn stays in their library.
                 ReplacementEffectDef::Sequence(&[
                     ReplacementEffectDef::ReplaceEventWithNothing,
-                    ReplacementEffectDef::Perform(&EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(tokens::treasure())))),
+                    ReplacementEffectDef::Perform(&EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(TREASURE_TOKEN)))),
                 ]),
             ),
         ]),

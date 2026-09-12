@@ -8,6 +8,7 @@ use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
+use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CostDef;
@@ -26,19 +27,6 @@ use crate::card::abilities;
 use crate::ids::TargetIndex;
 use crate::mana_cost;
 
-/// The Scion token that every BFZ Scion-maker prints in full: a 1/1 body
-/// whose only job is to be sacrificed for one colourless mana.
-static ELDRAZI_SCION_TOKEN: EffectDef =
-    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-        TokenCharacteristics::creature(&["Eldrazi", "Scion"], &[], 1, 1).with_abilities(&[
-            AbilityDef::activated_mana(
-                "Sacrifice this creature: Add {C}.",
-                &[CostDef::SacrificeSource],
-                EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
-            ),
-        ]),
-    )));
-
 /// Printed set identity and stable catalog slug.
 pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
     code: "BFZ",
@@ -47,6 +35,15 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const ELDRAZI_SCION_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Eldrazi", "Scion"], &[], 1, 1)
+        .with_abilities(&[AbilityDef::activated_mana(
+            "Sacrifice this creature: Add {C}.",
+            &[CostDef::SacrificeSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+        )])
+        .with_art(CardArt::new("b999a0fe-d2d0-4367-9abb-6ce5f3764f19", "Izzy"));
 
 // BFZ 58 — Eldrazi Skyspawner
 pub(in crate::card::sets) static ELDRAZI_SKYSPAWNER: CardRecord = CardRecord::new(
@@ -60,7 +57,7 @@ pub(in crate::card::sets) static ELDRAZI_SKYSPAWNER: CardRecord = CardRecord::ne
         abilities::flying(),
         abilities::enters_trigger(
             "When this creature enters, create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\"",
-            ELDRAZI_SCION_TOKEN,
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(ELDRAZI_SCION_TOKEN))),
         ),
     ]),
 );
@@ -76,7 +73,7 @@ pub(in crate::card::sets) static CARRIER_THRALL: CardRecord = CardRecord::new(
         abilities::devoid(),
         abilities::dies_trigger(
             "When this creature dies, create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice this token: Add {C}.\"",
-            ELDRAZI_SCION_TOKEN,
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(ELDRAZI_SCION_TOKEN))),
         ),
     ]),
 );

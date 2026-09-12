@@ -28,6 +28,7 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SumValueDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -65,6 +66,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const CLUE_TOKEN: TokenCharacteristics = tokens::clue().with_art(CardArt::new(
+    "ef607895-d6d2-44ab-a6b4-84af55fce593",
+    "Daneen Wilkerson",
+));
+
 // MKM 29 — Novice Inspector
 pub(in crate::card::sets) static NOVICE_INSPECTOR: CardRecord = CardRecord::new(
     "Novice Inspector",
@@ -76,10 +82,7 @@ pub(in crate::card::sets) static NOVICE_INSPECTOR: CardRecord = CardRecord::new(
         abilities::enters_trigger(
             "When this creature enters, investigate. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                tokens::clue().with_art(CardArt::new(
-                    "ef607895-d6d2-44ab-a6b4-84af55fce593",
-                    "Daneen Wilkerson",
-                )),
+                CLUE_TOKEN,
             ))),
         ),
     ),
@@ -103,10 +106,7 @@ pub(in crate::card::sets) static FORENSIC_GADGETEER: CardRecord = CardRecord::ne
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ])),
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    tokens::clue().with_art(CardArt::new(
-                        "ef607895-d6d2-44ab-a6b4-84af55fce593",
-                        "Daneen Wilkerson",
-                    )),
+                    CLUE_TOKEN,
                 ))),
             ),
             AbilityDef::static_ability(

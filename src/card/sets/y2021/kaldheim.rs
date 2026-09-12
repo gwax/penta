@@ -45,6 +45,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const TREASURE_TOKEN: TokenCharacteristics = tokens::treasure().with_art(CardArt::new(
+    "4ae9f454-4f8c-4123-9886-674bc439dfe7",
+    "Olena Richards",
+));
+
 // KHM 46 — Behold the Multiverse
 pub(in crate::card::sets) static BEHOLD_THE_MULTIVERSE: CardRecord = CardRecord::new(
     "Behold the Multiverse",
@@ -95,12 +100,7 @@ pub(in crate::card::sets) static GOLDSPAN_DRAGON: CardRecord = CardRecord::new(
                 TriggerEventDef::attacks(ObjectPredicateDef::Source),
                 TriggerEventDef::becomes_targeted(ObjectPredicateDef::Spell),
             ]),
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                tokens::treasure().with_art(CardArt::new(
-                    "4ae9f454-4f8c-4123-9886-674bc439dfe7",
-                    "Olena Richards",
-                )),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(TREASURE_TOKEN))),
         ),
         AbilityDef::static_ability(
             "Treasures you control have \"{T}, Sacrifice this artifact: Add two mana of any one \
@@ -164,10 +164,7 @@ pub(in crate::card::sets) static MAGDA_BRAZEN_OUTLAW: CardRecord = CardRecord::n
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ])),
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    tokens::treasure().with_art(CardArt::new(
-                        "4ae9f454-4f8c-4123-9886-674bc439dfe7",
-                        "Olena Richards",
-                    )),
+                    TREASURE_TOKEN,
                 ))),
             ),
             AbilityDef::activated(

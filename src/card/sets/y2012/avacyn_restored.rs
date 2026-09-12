@@ -142,6 +142,20 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const HUMAN_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1).with_art(CardArt::new(
+        "8894949b-f190-461e-996a-cf2b39f08a5d",
+        "Michael C. Hayes",
+    ));
+
+const ANGEL_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Angel"], &[ManaColor::White], 4, 4)
+        .with_abilities(&[abilities::flying()])
+        .with_art(CardArt::new(
+            "68dd1682-a5d5-4323-b876-66a86c311c43",
+            "Anthony Palumbo",
+        ));
+
 // AVR 1 — Angel of Glory's Rise
 pub(in crate::card::sets) static ANGEL_OF_GLORY_S_RISE: CardRecord = CardRecord::new(
     "Angel of Glory's Rise",
@@ -413,10 +427,7 @@ CardRules::new_enchantment(mana_cost!("{4}{W}"))
                             player: PlayerRelation::You,
                         },
                         EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                            TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1).with_art(CardArt::new(
-                                "8894949b-f190-461e-996a-cf2b39f08a5d",
-                                "Michael C. Hayes",
-                            )),
+                            HUMAN_TOKEN,
                         ))),
                     )),
                 },
@@ -590,15 +601,7 @@ pub(in crate::card::sets) static ENTREAT_THE_ANGELS: CardRecord = CardRecord::ne
         AbilityDef::spell(
             "Create X 4/4 white Angel creature tokens with flying.",
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Angel"], &[ManaColor::White], 4, 4)
-                        .with_abilities(&[abilities::flying()])
-                        .with_art(CardArt::new(
-                            "68dd1682-a5d5-4323-b876-66a86c311c43",
-                            "Anthony Palumbo",
-                        )),
-                ))
-                .with_count(ValueDef::ChosenX),
+                CreateTokenDef::new(TokenDef::Literal(ANGEL_TOKEN)).with_count(ValueDef::ChosenX),
             ),
         ),
         abilities::miracle(&[CostDef::Mana(mana_cost!("{X}{W}{W}"))]),
@@ -1030,11 +1033,7 @@ pub(in crate::card::sets) static VOICE_OF_THE_PROVINCES: CardRecord = CardRecord
         abilities::flying(),
         abilities::enters_trigger(
             "When this creature enters, create a 1/1 white Human creature token.",
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1).with_art(
-                    CardArt::new("8894949b-f190-461e-996a-cf2b39f08a5d", "Michael C. Hayes"),
-                ),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(HUMAN_TOKEN))),
         ),
     ]),
 );
@@ -5036,12 +5035,7 @@ CardRules::new_artifact(mana_cost!("{4}"))
                 "Whenever equipped creature attacks, create a 4/4 white Angel creature token with flying.",
                 TriggerEventDef::attacks(ObjectPredicateDef::AttachedToSource),
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Angel"], &[ManaColor::White], 4, 4)
-                        .with_abilities(&[abilities::flying()])
-                        .with_art(CardArt::new(
-                            "68dd1682-a5d5-4323-b876-66a86c311c43",
-                            "Anthony Palumbo",
-                        )),
+                    ANGEL_TOKEN,
                 ))),
             ),
             abilities::equip(&[CostDef::Mana(mana_cost!("{4}"))], "Equip {4}"),

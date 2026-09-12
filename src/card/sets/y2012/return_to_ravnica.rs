@@ -155,6 +155,42 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const BIRD_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1)
+        .with_abilities(&[abilities::flying()])
+        .with_art(CardArt::new(
+            "05b4dbe1-12ac-404f-a1fe-96e0b620533e",
+            "James Ryman",
+        ));
+
+const KNIGHT_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Knight"], &[ManaColor::White], 2, 2)
+        .with_abilities(&[abilities::vigilance()])
+        .with_art(CardArt::new(
+            "67d3d039-248a-4eb8-be5c-12959b458fea",
+            "Matt Stewart",
+        ));
+
+const GOBLIN_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1).with_art(CardArt::new(
+        "577c2e32-deb6-40d9-a050-c2acb5bfc05f",
+        "Christopher Moeller",
+    ));
+
+const CENTAUR_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Centaur"], &[ManaColor::Green], 3, 3).with_art(CardArt::new(
+        "880d5dc1-ceec-4c5f-93c2-c88b7dbfcac2",
+        "Slawomir Maniak",
+    ));
+
+const WURM_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Wurm"], &[ManaColor::Green], 5, 5)
+        .with_abilities(&[abilities::trample()])
+        .with_art(CardArt::new(
+            "33ee3f6c-5df6-4271-b2f9-86b9afffab7b",
+            "Anthony Palumbo",
+        ));
+
 // RTR 1 — Angel of Serenity
 pub(in crate::card::sets) static ANGEL_OF_SERENITY: CardRecord = CardRecord::new(
     "Angel of Serenity",
@@ -391,14 +427,7 @@ pub(in crate::card::sets) static EYES_IN_THE_SKIES: CardRecord = CardRecord::new
     CardRules::new_instant(mana_cost!("{3}{W}")).with_ability(AbilityDef::spell(
         "Create a 1/1 white Bird creature token with flying, then populate.",
         EffectDef::Sequence(&[
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1)
-                    .with_abilities(&[abilities::flying()])
-                    .with_art(CardArt::new(
-                        "05b4dbe1-12ac-404f-a1fe-96e0b620533e",
-                        "James Ryman",
-                    )),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(BIRD_TOKEN))),
             abilities::populate(),
         ]),
     )),
@@ -455,14 +484,7 @@ pub(in crate::card::sets) static KNIGHTLY_VALOR: CardRecord = CardRecord::new(
             ),
             abilities::enters_trigger(
                 "When this Aura enters, create a 2/2 white Knight creature token with vigilance.",
-                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Knight"], &[ManaColor::White], 2, 2)
-                        .with_abilities(&[abilities::vigilance()])
-                        .with_art(CardArt::new(
-                            "67d3d039-248a-4eb8-be5c-12959b458fea",
-                            "Matt Stewart",
-                        )),
-                ))),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(KNIGHT_TOKEN))),
             ),
             AbilityDef::static_ability(
                 "Enchanted creature gets +2/+2 and has vigilance.",
@@ -627,8 +649,7 @@ CardRules::new_enchantment(mana_cost!("{2}{W}"))
             abilities::enters_trigger(
                 "When this Aura enters, create a 2/2 white Knight creature token with vigilance.",
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Knight"], &[ManaColor::White], 2, 2)
-                        .with_abilities(&[abilities::vigilance()]),
+                    KNIGHT_TOKEN,
                 ))),
             ),
             AbilityDef::static_ability(
@@ -672,14 +693,7 @@ pub(in crate::card::sets) static SELLER_OF_SONGBIRDS: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{2}{W}"), &["Human"], 1, 2).with_ability(
         abilities::enters_trigger(
             "When this creature enters, create a 1/1 white Bird creature token with flying.",
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1)
-                    .with_abilities(&[abilities::flying()])
-                    .with_art(CardArt::new(
-                        "05b4dbe1-12ac-404f-a1fe-96e0b620533e",
-                        "James Ryman",
-                    )),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(BIRD_TOKEN))),
         ),
     ),
 );
@@ -2262,17 +2276,7 @@ pub(in crate::card::sets) static GOBLIN_RALLY: CardRecord = CardRecord::new(
     "Nic Klein",
     CardRules::new_sorcery(mana_cost!("{3}{R}{R}")).with_ability(AbilityDef::spell(
         "Create four 1/1 red Goblin creature tokens.",
-        EffectDef::CreateToken(
-            CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1).with_art(
-                    CardArt::new(
-                        "577c2e32-deb6-40d9-a050-c2acb5bfc05f",
-                        "Christopher Moeller",
-                    ),
-                ),
-            ))
-            .with_amount(4),
-        ),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(GOBLIN_TOKEN)).with_amount(4)),
     )),
 );
 
@@ -2637,14 +2641,7 @@ pub(in crate::card::sets) static SURVEY_THE_WRECKAGE: CardRecord = CardRecord::n
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 then: None,
             },
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1).with_art(
-                    CardArt::new(
-                        "577c2e32-deb6-40d9-a050-c2acb5bfc05f",
-                        "Christopher Moeller",
-                    ),
-                ),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(GOBLIN_TOKEN))),
         ]),
     )),
 );
@@ -2844,11 +2841,7 @@ pub(in crate::card::sets) static CENTAURS_HERALD: CardRecord = CardRecord::new(
                 CostDef::Mana(mana_cost!("{2}{G}")),
                 CostDef::SacrificeSource,
             ],
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Centaur"], &[ManaColor::Green], 3, 3).with_art(
-                    CardArt::new("880d5dc1-ceec-4c5f-93c2-c88b7dbfcac2", "Slawomir Maniak"),
-                ),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(CENTAUR_TOKEN))),
         ),
     ),
 );
@@ -3308,12 +3301,7 @@ pub(in crate::card::sets) static WORLDSPINE_WURM: CardRecord = CardRecord::new(
                 "When this creature dies, create three 5/5 green Wurm creature tokens with trample.",
                 EffectDef::CreateToken(
                     CreateTokenDef::new(TokenDef::Literal(
-                        TokenCharacteristics::creature(&["Wurm"], &[ManaColor::Green], 5, 5)
-                            .with_abilities(&[abilities::trample()])
-                            .with_art(CardArt::new(
-                                "33ee3f6c-5df6-4271-b2f9-86b9afffab7b",
-                                "Anthony Palumbo",
-                            )),
+                        WURM_TOKEN,
                     ))
                     .with_amount(3),
                 ),
@@ -3406,14 +3394,7 @@ pub(in crate::card::sets) static ARMADA_WURM: CardRecord = CardRecord::new(
         abilities::trample(),
         abilities::enters_trigger(
             "When this creature enters, create a 5/5 green Wurm creature token with trample.",
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Wurm"], &[ManaColor::Green], 5, 5)
-                    .with_abilities(&[abilities::trample()])
-                    .with_art(CardArt::new(
-                        "33ee3f6c-5df6-4271-b2f9-86b9afffab7b",
-                        "Anthony Palumbo",
-                    )),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(WURM_TOKEN))),
         ),
     ]),
 );
@@ -3491,11 +3472,7 @@ pub(in crate::card::sets) static CALL_OF_THE_CONCLAVE: CardRecord = CardRecord::
     "Terese Nielsen",
     CardRules::new_sorcery(mana_cost!("{G}{W}")).with_ability(AbilityDef::spell(
         "Create a 3/3 green Centaur creature token.",
-        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-            TokenCharacteristics::creature(&["Centaur"], &[ManaColor::Green], 3, 3).with_art(
-                CardArt::new("880d5dc1-ceec-4c5f-93c2-c88b7dbfcac2", "Slawomir Maniak"),
-            ),
-        ))),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(CENTAUR_TOKEN))),
     )),
 );
 
@@ -3682,11 +3659,7 @@ pub(in crate::card::sets) static COURSERS_ACCORD: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{4}{G}{W}")).with_ability(AbilityDef::spell(
         "Create a 3/3 green Centaur creature token, then populate.",
         EffectDef::Sequence(&[
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Centaur"], &[ManaColor::Green], 3, 3).with_art(
-                    CardArt::new("880d5dc1-ceec-4c5f-93c2-c88b7dbfcac2", "Slawomir Maniak"),
-                ),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(CENTAUR_TOKEN))),
             abilities::populate(),
         ]),
     )),
@@ -4934,14 +4907,7 @@ pub(in crate::card::sets) static SELESNYA_CHARM: CardRecord = CardRecord::new(
             ),
             AbilityDef::spell(
                 "Create a 2/2 white Knight creature token with vigilance.",
-                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Knight"], &[ManaColor::White], 2, 2)
-                        .with_abilities(&[abilities::vigilance()])
-                        .with_art(CardArt::new(
-                            "67d3d039-248a-4eb8-be5c-12959b458fea",
-                            "Matt Stewart",
-                        )),
-                ))),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(KNIGHT_TOKEN))),
             ),
         ],
     )),
@@ -5237,11 +5203,7 @@ pub(in crate::card::sets) static VITU_GHAZI_GUILDMAGE: CardRecord = CardRecord::
         AbilityDef::activated(
             "{4}{G}{W}: Create a 3/3 green Centaur creature token.",
             &[CostDef::Mana(mana_cost!("{4}{G}{W}"))],
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Centaur"], &[ManaColor::Green], 3, 3).with_art(
-                    CardArt::new("880d5dc1-ceec-4c5f-93c2-c88b7dbfcac2", "Slawomir Maniak"),
-                ),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(CENTAUR_TOKEN))),
         ),
         AbilityDef::activated(
             "{2}{G}{W}: Populate.",

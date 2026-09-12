@@ -568,11 +568,11 @@ const RECKLESS_CHARGE_REPRINT: PrintingRecord = PrintingRecord::reprint(
 );
 
 // MH1 145 — Seasoned Pyromancer
-/// A 1/1 red Elemental, which is what both halves of him make: the arrival
-/// pays one per nonland card it threw away, and the graveyard ability pays
-/// two flat.
-static PYROMANCER_ELEMENTAL: TokenCharacteristics =
-    TokenCharacteristics::creature(&["Elemental"], &[ManaColor::Red], 1, 1);
+const PYROMANCER_ELEMENTAL: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Elemental"], &[ManaColor::Red], 1, 1).with_art(CardArt::new(
+        "e5b57672-c346-42f5-ac3e-82466a13b957",
+        "Winona Nelson",
+    ));
 
 pub(in crate::card::sets) static SEASONED_PYROMANCER: CardRecord = CardRecord::new(
     "Seasoned Pyromancer",

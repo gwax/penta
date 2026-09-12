@@ -83,6 +83,16 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const CLUE_TOKEN: TokenCharacteristics = tokens::clue().with_art(CardArt::new(
+    "cfcf6efe-9f94-4a55-9994-701e596691ad",
+    "John Avon",
+));
+
+const TREASURE_TOKEN: TokenCharacteristics = tokens::treasure().with_art(CardArt::new(
+    "630c0d1c-9ddb-4e76-a82a-9cdd8a5b487b",
+    "Alayna Danner",
+));
+
 // MH2 25 — Prismatic Ending
 pub(in crate::card::sets) static PRISMATIC_ENDING: CardRecord = CardRecord::new(
     "Prismatic Ending",
@@ -188,7 +198,7 @@ pub(in crate::card::sets) static HARD_EVIDENCE: CardRecord = CardRecord::new(
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
                 TokenCharacteristics::creature(&["Crab"], &[ManaColor::Blue], 0, 3),
             ))),
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(tokens::clue()))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(CLUE_TOKEN))),
         ]),
     )),
 );
@@ -751,10 +761,7 @@ pub(in crate::card::sets) static RAGAVAN_NIMBLE_PILFERER: CardRecord = CardRecor
                 TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
                 EffectDef::Sequence(&[
                     EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                        tokens::treasure().with_art(CardArt::new(
-                            "630c0d1c-9ddb-4e76-a82a-9cdd8a5b487b",
-                            "Alayna Danner",
-                        )),
+                        TREASURE_TOKEN,
                     ))),
                     // "That player's library", and the permission is yours: what the Monkey
                     // steals is theirs to lose and yours to cast.

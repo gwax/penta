@@ -4,6 +4,7 @@
 use super::CardRecord;
 use super::PrintingRecord;
 use crate::card::AbilityDef;
+use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
@@ -39,6 +40,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const TREASURE_TOKEN: TokenCharacteristics = tokens::treasure().with_art(CardArt::new(
+    "1be23c27-d8b6-4f59-8ab8-9ce80e9e29dd",
+    "Nadia Hurianova",
+));
 
 // NCC 81 — Currency Converter
 /// The card goes back to the graveyard it came from -- its owner's, which is
@@ -114,7 +120,7 @@ pub(in crate::card::sets) static CURRENCY_CONVERTER: CardRecord = CardRecord::ne
                     },
                     then: &EffectDef::Sequence(&[
                         CONVERTER_RETURNS_THE_CARD,
-                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(tokens::treasure()))),
+                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(TREASURE_TOKEN))),
                     ]),
                     otherwise: &EffectDef::Sequence(&[
                         CONVERTER_RETURNS_THE_CARD,

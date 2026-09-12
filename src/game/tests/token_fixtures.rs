@@ -2,6 +2,16 @@
 
 use super::*;
 
+pub(in crate::game) const PEST_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Pest"], &[ManaColor::Black, ManaColor::Green], 1, 1)
+        .with_abilities(&[abilities::dies_trigger(
+            "When this token dies, you gain 1 life.",
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        )]);
+
 static ASSASSIN_ABILITIES: [AbilityDef; 1] = [AbilityDef::triggered(
     "Whenever this token deals combat damage to a player, that player loses the game.",
     TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),

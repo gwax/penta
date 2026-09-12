@@ -514,7 +514,11 @@ CardRules::new_creature(mana_cost!("{1}{B}{B}"), &["Zombie"], 2, 2).with_abiliti
                 owner: None,
             })],
             EffectDef::Sequence(&[
-                EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY),ZoneKind::Exile,ZonePlacement::Top),
+                EffectDef::move_to_zone(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    ZoneKind::Exile,
+                    ZonePlacement::Top,
+                ),
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
                     TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
                 ))),

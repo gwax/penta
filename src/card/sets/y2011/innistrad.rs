@@ -208,6 +208,27 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const SPIRIT_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
+        .with_abilities(&[abilities::flying()])
+        .with_art(CardArt::new(
+            "0dbede5b-8e61-4ed8-bccb-8b54f69cccee",
+            "Kev Walker",
+        ));
+
+const ZOMBIE_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2).with_art(CardArt::new(
+        "c9a85357-3cad-4a1e-805b-ea4146d8b05f",
+        "Lucas Graciano",
+    ));
+
+const WOLF_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&const { ["Wolf"] }, &const { [ManaColor::Green] }, 2, 2)
+        .with_art(CardArt::new(
+            "a53f8031-aaa8-424c-929a-5478538a8cc6",
+            "David Palumbo",
+        ));
+
 // ISD 1 — Abbey Griffin
 pub(in crate::card::sets) static ABBEY_GRIFFIN: CardRecord = CardRecord::new(
     "Abbey Griffin",
@@ -477,14 +498,7 @@ pub(in crate::card::sets) static DOOMED_TRAVELER: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 1, 1).with_ability(
         abilities::dies_trigger(
             "When this creature dies, create a 1/1 white Spirit creature token with flying.",
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
-                    .with_abilities(&[abilities::flying()])
-                    .with_art(CardArt::new(
-                        "59e79ba0-33c8-46c8-8694-8bf854345fe7",
-                        "Ryan Yee",
-                    )),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(SPIRIT_TOKEN))),
         ),
     ),
 );
@@ -641,12 +655,7 @@ CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Human", "Monk"], 0, 0)
             ),
             abilities::enters_trigger("When this creature enters, create two 1/1 white Spirit creature tokens with flying.", EffectDef::CreateToken(
                 CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
-                        .with_abilities(&[abilities::flying()])
-                        .with_art(CardArt::new(
-                            "59e79ba0-33c8-46c8-8694-8bf854345fe7",
-                            "Ryan Yee",
-                        )),
+                    SPIRIT_TOKEN,
                 ))
                 .with_amount(2),
             )),
@@ -723,15 +732,7 @@ pub(in crate::card::sets) static MAUSOLEUM_GUARD: CardRecord = CardRecord::new(
         abilities::dies_trigger(
             "When this creature dies, create two 1/1 white Spirit creature tokens with flying.",
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
-                        .with_abilities(&[abilities::flying()])
-                        .with_art(CardArt::new(
-                            "59e79ba0-33c8-46c8-8694-8bf854345fe7",
-                            "Ryan Yee",
-                        )),
-                ))
-                .with_amount(2),
+                CreateTokenDef::new(TokenDef::Literal(SPIRIT_TOKEN)).with_amount(2),
             ),
         ),
     ),
@@ -777,17 +778,7 @@ pub(in crate::card::sets) static MIDNIGHT_HAUNTING: CardRecord = CardRecord::new
     "Matt Stewart",
     CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell(
         "Create two 1/1 white Spirit creature tokens with flying.",
-        EffectDef::CreateToken(
-            CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
-                    .with_abilities(&[abilities::flying()])
-                    .with_art(CardArt::new(
-                        "59e79ba0-33c8-46c8-8694-8bf854345fe7",
-                        "Ryan Yee",
-                    )),
-            ))
-            .with_amount(2),
-        ),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(SPIRIT_TOKEN)).with_amount(2)),
     )),
 );
 
@@ -2379,15 +2370,9 @@ pub(in crate::card::sets) static ARMY_OF_THE_DAMNED: CardRecord = CardRecord::ne
         AbilityDef::spell(
             "Create thirteen tapped 2/2 black Zombie creature tokens.",
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
-                        .with_art(CardArt::new(
-                            "b877c19d-6022-4377-92e7-4511e24eb98e",
-                            "Lucas Graciano",
-                        )),
-                ))
-                .with_amount(13)
-                .entering_tapped(),
+                CreateTokenDef::new(TokenDef::Literal(ZOMBIE_TOKEN))
+                    .with_amount(13)
+                    .entering_tapped(),
             ),
         ),
         abilities::flashback(&[CostDef::Mana(mana_cost!("{7}{B}{B}{B}"))]),
@@ -2730,21 +2715,17 @@ pub(in crate::card::sets) static ENDLESS_RANKS_OF_THE_DEAD: CardRecord = CardRec
             player: PlayerRelation::You,
         },
         EffectDef::CreateToken(
-            CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2).with_art(
-                    CardArt::new("b877c19d-6022-4377-92e7-4511e24eb98e", "Lucas Graciano"),
-                ),
-            ))
-            // Rounded down, so a lone Zombie makes none and the engine only starts once
-            // there are two.
-            .with_count(ValueDef::Halved(&HalvedValueDef::new(
-                ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
-                    &[ZoneKind::Battlefield],
-                    PlayerRelation::You,
-                )),
-                RoundingDef::Down,
-            ))),
+            CreateTokenDef::new(TokenDef::Literal(ZOMBIE_TOKEN))
+                // Rounded down, so a lone Zombie makes none and the engine only starts once
+                // there are two.
+                .with_count(ValueDef::Halved(&HalvedValueDef::new(
+                    ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    )),
+                    RoundingDef::Down,
+                ))),
         ),
     )),
 );
@@ -3034,14 +3015,7 @@ pub(in crate::card::sets) static MOAN_OF_THE_UNHALLOWED: CardRecord = CardRecord
         AbilityDef::spell(
             "Create two 2/2 black Zombie creature tokens.",
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
-                        .with_art(CardArt::new(
-                            "b877c19d-6022-4377-92e7-4511e24eb98e",
-                            "Lucas Graciano",
-                        )),
-                ))
-                .with_amount(2),
+                CreateTokenDef::new(TokenDef::Literal(ZOMBIE_TOKEN)).with_amount(2),
             ),
         ),
         abilities::flashback(&[CostDef::Mana(mana_cost!("{5}{B}{B}"))]),
@@ -4878,11 +4852,7 @@ pub(in crate::card::sets) static GARRUK_RELENTLESS: CardRecord = CardRecord::new
                         "0: Create a 2/2 green Wolf creature token.",
                         &const { [CostDef::Loyalty(0)] },
                         EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                            TokenCharacteristics::creature(&const { ["Wolf"] }, &const { [ManaColor::Green] }, 2, 2)
-                                .with_art(CardArt::new(
-                                    "a53f8031-aaa8-424c-929a-5478538a8cc6",
-                                    "David Palumbo",
-                                )),
+                            WOLF_TOKEN,
                         ))),
                     ),
                 ] })
@@ -5156,16 +5126,12 @@ pub(in crate::card::sets) static KESSIG_CAGEBREAKERS: CardRecord = CardRecord::n
              tapped and attacking for each creature card in your graveyard.",
             TriggerEventDef::attacks(ObjectPredicateDef::Source),
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Wolf"], &[ManaColor::Green], 2, 2).with_art(
-                        CardArt::new("a53f8031-aaa8-424c-929a-5478538a8cc6", "David Palumbo"),
-                    ),
-                ))
-                .with_count(ValueDef::CountMatchingObjects(
-                    &CREATURE_CARDS_IN_YOUR_GRAVEYARD,
-                ))
-                .entering_tapped()
-                .entering_attacking(),
+                CreateTokenDef::new(TokenDef::Literal(WOLF_TOKEN))
+                    .with_count(ValueDef::CountMatchingObjects(
+                        &CREATURE_CARDS_IN_YOUR_GRAVEYARD,
+                    ))
+                    .entering_tapped()
+                    .entering_attacking(),
             ),
         ),
     ),
@@ -5308,11 +5274,7 @@ pub(in crate::card::sets) static MAYOR_OF_AVABRUCK: CardRecord = CardRecord::new
                             player: PlayerRelation::You,
                         },
                         EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                            TokenCharacteristics::creature(&const { ["Wolf"] }, &const { [ManaColor::Green] }, 2, 2)
-                                .with_art(CardArt::new(
-                                    "a53f8031-aaa8-424c-929a-5478538a8cc6",
-                                    "David Palumbo",
-                                )),
+                            WOLF_TOKEN,
                         ))),
                     ),
                     WEREWOLF_BACK_TRANSFORM,
@@ -6604,12 +6566,7 @@ CardRules::new_land(&[]).with_abilities(&[
                 )),
             ],
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
-                    .with_abilities(&[abilities::flying()])
-                    .with_art(CardArt::new(
-                        "59e79ba0-33c8-46c8-8694-8bf854345fe7",
-                        "Ryan Yee",
-                    )),
+                SPIRIT_TOKEN,
             ))),
         ),
     ]),

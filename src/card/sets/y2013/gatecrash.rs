@@ -175,6 +175,14 @@ pub(in crate::card::sets) const fn battalion(text: &'static str, effect: EffectD
 const BATTALION_EVENT: TriggerEventDef =
     TriggerEventDef::attacks_in_declaration(ObjectPredicateDef::Source, 3, None);
 
+const SOLDIER_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Soldier"], &[ManaColor::Red, ManaColor::White], 1, 1)
+        .with_abilities(&[abilities::haste()])
+        .with_art(CardArt::new(
+            "a8a5a5a5-a8ae-41ed-9af5-b99d80ce0b35",
+            "David Palumbo",
+        ));
+
 // GTC 1 — Aerial Maneuver
 pub(in crate::card::sets) static AERIAL_MANEUVER: CardRecord = CardRecord::new(
     "Aerial Maneuver",
@@ -3350,12 +3358,7 @@ CardRules::new_enchantment(mana_cost!("{3}{R}{W}")).with_ability(
                 },
                 EffectDef::CreateToken(
                     CreateTokenDef::new(TokenDef::Literal(
-                        TokenCharacteristics::creature(&["Soldier"], &[ManaColor::Red, ManaColor::White], 1, 1)
-                            .with_abilities(&[abilities::haste()])
-                            .with_art(CardArt::new(
-                                "aae7bdfe-fe14-4a18-b2b0-16e9175a0441",
-                                "Justine Cruz",
-                            )),
+                        SOLDIER_TOKEN,
                     ))
                     .with_count(ValueDef::CountersOnSource(CounterKind::named("muster"))),
                 ),
@@ -3682,7 +3685,11 @@ CardRules::new_creature(mana_cost!("{3}{W}{B}{B}"), &["Angel"], 5, 5)
                                                         minimum: 1,
                                                         maximum: 1,
                                                         visibility: ChoiceVisibilityDef::Public,
-                                                        then: &EffectDef::move_to_zone(EffectRecipientDef::object(ObjectRefDef::Binding(ParentBinding)),ZoneKind::Battlefield,ZonePlacement::Top),
+                                                        then: &EffectDef::move_to_zone(
+                                                            EffectRecipientDef::object(ObjectRefDef::Binding(ParentBinding)),
+                                                            ZoneKind::Battlefield,
+                                                            ZonePlacement::Top,
+                                                        ),
                                                     }),
                                                 )])))),
             ),
@@ -4965,19 +4972,7 @@ pub(in crate::card::sets) static SUNHOME_GUILDMAGE: CardRecord = CardRecord::new
         AbilityDef::activated(
             "{2}{R}{W}: Create a 1/1 red and white Soldier creature token with haste.",
             &[CostDef::Mana(mana_cost!("{2}{R}{W}"))],
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(
-                    &["Soldier"],
-                    &[ManaColor::Red, ManaColor::White],
-                    1,
-                    1,
-                )
-                .with_abilities(&[abilities::haste()])
-                .with_art(CardArt::new(
-                    "aae7bdfe-fe14-4a18-b2b0-16e9175a0441",
-                    "Justine Cruz",
-                )),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(SOLDIER_TOKEN))),
         ),
     ]),
 );

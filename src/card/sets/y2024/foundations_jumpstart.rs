@@ -21,6 +21,7 @@ use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -40,6 +41,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const BLOOD_TOKEN: TokenCharacteristics = tokens::blood().with_art(CardArt::new(
+    "a6f374bc-cd29-469f-808a-6a6c004ee8aa",
+    "Miranda Meeks",
+));
 
 // J25 19 — Scholar of Combustion
 // Audit: unsupported — Needs an effect that exiles a targeted card and grants a timed permission to cast it. PermitCastFromGraveyardThisTurn leaves the card in the graveyard and lasts one turn; the exile-to-play effects read the top of a library rather than a target.
@@ -208,10 +214,7 @@ CardRules::new_creature(mana_cost!("{1}{R}"), &["Vampire", "Warrior"], 1, 1)
                     TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
                 ]),
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    tokens::blood().with_art(CardArt::new(
-                        "6b563165-b97f-42c6-82a8-65d8ee69e381",
-                        "Stephen Andrade",
-                    )),
+                    BLOOD_TOKEN,
                 ))),
             ),
             // Any discard, including one paid as a cost -- which is how her own Blood

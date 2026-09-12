@@ -146,7 +146,11 @@ CardRules::new_instant(mana_cost!("{W/B}")).with_ability(
                 owner: None,
             })],
             EffectDef::Sequence(&[
-                EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY),ZoneKind::Exile,ZonePlacement::Top),
+                EffectDef::move_to_zone(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    ZoneKind::Exile,
+                    ZonePlacement::Top,
+                ),
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
                     TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White, ManaColor::Black], 1, 1)
                         .with_abilities(&[abilities::flying()])

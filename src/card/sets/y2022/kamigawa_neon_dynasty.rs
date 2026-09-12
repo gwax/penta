@@ -66,6 +66,19 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const SAMURAI_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Samurai"], &[ManaColor::White], 2, 2)
+        .with_abilities(&[abilities::vigilance()])
+        .with_art(CardArt::new(
+            "f68e5337-6e44-4f8f-a102-2f97b433beea",
+            "Gaboleps",
+        ));
+
+const TREASURE_TOKEN: TokenCharacteristics = tokens::treasure().with_art(CardArt::new(
+    "6911181d-573b-41eb-96a4-799c96e008fc",
+    "Yeong-Hao Han",
+));
+
 // NEO 17 — Imperial Oath
 pub(in crate::card::sets) static IMPERIAL_OATH: CardRecord = CardRecord::new(
     "Imperial Oath",
@@ -77,11 +90,7 @@ pub(in crate::card::sets) static IMPERIAL_OATH: CardRecord = CardRecord::new(
         "Create three 2/2 white Samurai creature tokens with vigilance. Scry 3.",
         EffectDef::Sequence(&[
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Samurai"], &[ManaColor::White], 2, 2)
-                        .with_abilities(&[abilities::vigilance()]),
-                ))
-                .with_amount(3),
+                CreateTokenDef::new(TokenDef::Literal(SAMURAI_TOKEN)).with_amount(3),
             ),
             abilities::scry(ValueDef::Constant(3)),
         ]),
@@ -287,12 +296,7 @@ pub(in crate::card::sets) static THE_WANDERING_EMPEROR: CardRecord = CardRecord:
                 "−1: Create a 2/2 white Samurai creature token with vigilance.",
                 &[CostDef::Loyalty(-1)],
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Samurai"], &[ManaColor::White], 2, 2)
-                        .with_abilities(&[abilities::vigilance()])
-                        .with_art(CardArt::new(
-                            "f68e5337-6e44-4f8f-a102-2f97b433beea",
-                            "Gaboleps",
-                        )),
+                    SAMURAI_TOKEN,
                 ))),
             ),
             AbilityDef::activated_with_targets(
@@ -847,7 +851,7 @@ pub(in crate::card::sets) static FABLE_OF_THE_MIRROR_BREAKER: CardRecord = CardR
                                     [AbilityDef::triggered(
                                         "Whenever this token attacks, create a Treasure token.",
                                         TriggerEventDef::attacks(ObjectPredicateDef::Source),
-                                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(tokens::treasure()))),
+                                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(TREASURE_TOKEN))),
                                     )]
                                 },
                             ),

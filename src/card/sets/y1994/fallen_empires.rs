@@ -56,6 +56,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const SAPROLING_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(
+        CardArt::new("248ade83-ac57-42d6-985c-1e4cc3639f36", "Joseph Meehan"),
+    );
+
 // FEM 1a — Combat Medic
 pub(in crate::card::sets) static COMBAT_MEDIC: CardRecord = CardRecord::new(
     "Combat Medic",
@@ -2032,9 +2037,7 @@ CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf"], 0, 2).with_abilities(&[
                     amount: 3,
                 }],
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(
-                        CardArt::new("248ade83-ac57-42d6-985c-1e4cc3639f36", "Joseph Meehan"),
-                    ),
+                    SAPROLING_TOKEN,
                 ))),
             ),
             AbilityDef::activated(
@@ -2339,9 +2342,7 @@ CardRules::new_creature(mana_cost!("{G}"), &["Fungus"], 1, 1)
                     amount: 3,
                 }],
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(
-                        CardArt::new("248ade83-ac57-42d6-985c-1e4cc3639f36", "Joseph Meehan"),
-                    ),
+                    SAPROLING_TOKEN,
                 ))),
             ),
         ]),
@@ -2396,9 +2397,7 @@ CardRules::new_creature(mana_cost!("{1}{G}{G}"), &["Fungus"], 2, 2).with_abiliti
                     amount: 3,
                 }],
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1).with_art(
-                        CardArt::new("248ade83-ac57-42d6-985c-1e4cc3639f36", "Joseph Meehan"),
-                    ),
+                    SAPROLING_TOKEN,
                 ))),
             ),
             AbilityDef::activated(

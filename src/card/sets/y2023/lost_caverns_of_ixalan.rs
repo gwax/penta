@@ -58,6 +58,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const MAP_TOKEN: TokenCharacteristics = tokens::map().with_art(CardArt::new(
+    "64839118-09d2-4645-9d3c-f80755ac781f",
+    "Francesca Baerald",
+));
+
 // LCI 14 — Get Lost
 pub(in crate::card::sets) static GET_LOST: CardRecord = CardRecord::new(
     "Get Lost",
@@ -84,14 +89,11 @@ pub(in crate::card::sets) static GET_LOST: CardRecord = CardRecord::new(
             // and the permanent is already destroyed by the time they arrive -- so the
             // player is read from what the target was rather than from where it is.
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(tokens::map().with_art(CardArt::new(
-                    "64839118-09d2-4645-9d3c-f80755ac781f",
-                    "Francesca Baerald",
-                ))))
-                .with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
-                    TargetIndex::PRIMARY,
-                )))
-                .with_amount(2),
+                CreateTokenDef::new(TokenDef::Literal(MAP_TOKEN))
+                    .with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
+                        TargetIndex::PRIMARY,
+                    )))
+                    .with_amount(2),
             ),
         ]),
     )),
@@ -412,12 +414,7 @@ pub(in crate::card::sets) static SENTINEL_OF_THE_NAMELESS_CITY: CardRecord = Car
                     ),
                     TriggerEventDef::attacks(ObjectPredicateDef::Source),
                 ]),
-                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    tokens::map().with_art(CardArt::new(
-                        "64839118-09d2-4645-9d3c-f80755ac781f",
-                        "Francesca Baerald",
-                    )),
-                ))),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(MAP_TOKEN))),
             ),
         ]),
 );

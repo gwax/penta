@@ -47,6 +47,10 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const TREASURE_TOKEN: TokenCharacteristics = crate::card::tokens::treasure().with_art(
+    CardArt::new("7ec6f053-96f7-4e57-b2eb-4e7699a40a4f", "Monztre"),
+);
+
 // BIG 9 — Harvester of Misery
 pub(in crate::card::sets) static HARVESTER_OF_MISERY: CardRecord = CardRecord::new(
     "Harvester of Misery",
@@ -210,7 +214,7 @@ pub(in crate::card::sets) static GENEROUS_PLUNDERER: CardRecord = CardRecord::ne
                     player: EffectRecipientDef::Controller,
                     // Yours is untapped, so the Treasure you keep is usable this turn.
                     effect: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                        crate::card::tokens::treasure(),
+                        TREASURE_TOKEN,
                     ))),
                 },
             ),
@@ -224,7 +228,7 @@ pub(in crate::card::sets) static GENEROUS_PLUNDERER: CardRecord = CardRecord::ne
                     AbilityTargetPredicate::Player(PlayerRelation::Opponent),
                 )],
                 EffectDef::CreateToken(
-                    CreateTokenDef::new(TokenDef::Literal(crate::card::tokens::treasure()))
+                    CreateTokenDef::new(TokenDef::Literal(TREASURE_TOKEN))
                         .with_controller(PlayerRefDef::Target(TargetIndex::PRIMARY))
                         .entering_tapped(),
                 ),

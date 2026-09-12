@@ -15,15 +15,16 @@ use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ExilePlayDurationDef;
+use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::ScaledValueDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::abilities;
-use crate::card::tokens;
 use crate::mana_cost;
 
 /// Printed set identity and stable catalog slug.
@@ -34,6 +35,20 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const PEST_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Pest"], &[ManaColor::Black, ManaColor::Green], 1, 1)
+        .with_abilities(&[abilities::dies_trigger(
+            "When this token dies, you gain 1 life.",
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        )])
+        .with_art(CardArt::new(
+            "d0ddbe3e-4a66-494d-9304-7471232549bf",
+            "Ilse Gort",
+        ));
 
 // C21 53 — Laelia, the Blade Reforged
 pub(in crate::card::sets) static LAELIA_THE_BLADE_REFORGED: CardRecord =
@@ -115,13 +130,10 @@ pub(in crate::card::sets) static PEST_INFESTATION: CardRecord = CardRecord::new(
                 then: None,
             },
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(tokens::pest().with_art(CardArt::new(
-                    "d0ddbe3e-4a66-494d-9304-7471232549bf",
-                    "Ilse Gort",
-                ))))
-                // Twice X, and X is paid twice over in the cost, so every Pest costs a
-                // mana and every artifact destroyed comes with two of them.
-                .with_count(ValueDef::Scaled(&ScaledValueDef::new(ValueDef::ChosenX, 2))),
+                CreateTokenDef::new(TokenDef::Literal(PEST_TOKEN))
+                    // Twice X, and X is paid twice over in the cost, so every Pest costs a
+                    // mana and every artifact destroyed comes with two of them.
+                    .with_count(ValueDef::Scaled(&ScaledValueDef::new(ValueDef::ChosenX, 2))),
             ),
         ]),
     )),

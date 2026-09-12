@@ -3063,7 +3063,11 @@ CardRules::new_artifact_creature(mana_cost!("{6}"), &["Thopter"], 5, 5)
                     amount: 0,
                 },
                 EffectDef::Sequence(&[
-                    EffectDef::move_to_zone(EffectRecipientDef::Source,ZoneKind::Hand,ZonePlacement::Top),
+                    EffectDef::move_to_zone(
+                        EffectRecipientDef::Source,
+                        ZoneKind::Hand,
+                        ZonePlacement::Top,
+                    ),
                     EffectDef::CreateToken(
                         CreateTokenDef::new(TokenDef::Literal(
                             TokenCharacteristics::artifact_creature(&["Thopter"], &[], 1, 1)

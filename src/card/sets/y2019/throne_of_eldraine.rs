@@ -53,6 +53,7 @@ use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SpellForm;
 use crate::card::SpellResolutionDestinationDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -73,6 +74,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const FOOD_TOKEN: TokenCharacteristics = tokens::food().with_art(CardArt::new(
+    "bf36408d-ed85-497f-8e68-d3a922c388a0",
+    "Steven Belledin",
+));
 
 // ELD 5 — Ardenvale Tactician
 const fn ardenvale_tactician_rules() -> CardRules {
@@ -738,10 +744,7 @@ pub(in crate::card::sets) static OKO_THIEF_OF_CROWNS: CardRecord = CardRecord::n
                 "+2: Create a Food token.",
                 &[CostDef::Loyalty(2)],
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    tokens::food().with_art(CardArt::new(
-                        "4a029bdc-92e3-4d85-8af5-e33429a5f017",
-                        "L J Koh",
-                    )),
+                    FOOD_TOKEN,
                 ))),
             ),
             AbilityDef::activated_with_targets(

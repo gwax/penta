@@ -63,6 +63,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const FOOD_TOKEN: TokenCharacteristics = tokens::food().with_art(CardArt::new(
+    "4a029bdc-92e3-4d85-8af5-e33429a5f017",
+    "L J Koh",
+));
+
 // LTR 0 — The One Ring (alternate printing)
 const THE_ONE_RING_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
     &THE_ONE_RING,
@@ -448,10 +453,7 @@ pub(in crate::card::sets) static GENEROUS_ENT: CardRecord = CardRecord::new(
 CardRules::new_creature(mana_cost!("{5}{G}"), &["Treefolk"], 5, 7).with_abilities(&[
         abilities::reach(),
         abilities::enters_trigger("When this creature enters, create a Food token.", EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-            tokens::food().with_art(CardArt::new(
-                "4a029bdc-92e3-4d85-8af5-e33429a5f017",
-                "L J Koh",
-            )),
+            FOOD_TOKEN,
         )))),
         // Six mana is not what this card is for. Forestcycling is: one mana
         // from hand, and the Ent becomes the land the draw did not give you.

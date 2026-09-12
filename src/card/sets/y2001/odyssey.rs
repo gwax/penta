@@ -96,6 +96,12 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const ELEPHANT_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Elephant"], &[ManaColor::Green], 3, 3);
+
+const SQUIRREL_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Squirrel"], &[ManaColor::Green], 1, 1);
+
 // ODY 1 — Aegis of Honor
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AEGIS_OF_HONOR: CardRecord = CardRecord::new(
@@ -4034,9 +4040,7 @@ pub(in crate::card::sets) static CALL_OF_THE_HERD: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{2}{G}")).with_abilities(&[
         AbilityDef::spell(
             "Create a 3/3 green Elephant creature token.",
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Elephant"], &[ManaColor::Green], 3, 3),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(ELEPHANT_TOKEN))),
         ),
         abilities::flashback(&[CostDef::Mana(mana_cost!("{3}{G}"))]),
     ]),
@@ -4059,9 +4063,7 @@ pub(in crate::card::sets) static CHATTER_OF_THE_SQUIRREL: CardRecord = CardRecor
     CardRules::new_sorcery(mana_cost!("{G}")).with_abilities(&[
         AbilityDef::spell(
             "Create a 1/1 green Squirrel creature token.",
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Squirrel"], &[ManaColor::Green], 1, 1),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(SQUIRREL_TOKEN))),
         ),
         abilities::flashback(&[CostDef::Mana(mana_cost!("{1}{G}"))]),
     ]),
@@ -4148,9 +4150,7 @@ pub(in crate::card::sets) static ELEPHANT_AMBUSH: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{2}{G}{G}")).with_abilities(&[
         AbilityDef::spell(
             "Create a 3/3 green Elephant creature token.",
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Elephant"], &[ManaColor::Green], 3, 3),
-            ))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(ELEPHANT_TOKEN))),
         ),
         abilities::flashback(&[CostDef::Mana(mana_cost!("{6}{G}{G}"))]),
     ]),
@@ -4734,12 +4734,7 @@ pub(in crate::card::sets) static SQUIRREL_NEST: CardRecord = CardRecord::new(
                                 "{T}: Create a 1/1 green Squirrel creature token.",
                                 &[CostDef::TapSource],
                                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                                    TokenCharacteristics::creature(
-                                        &["Squirrel"],
-                                        &[ManaColor::Green],
-                                        1,
-                                        1,
-                                    ),
+                                    SQUIRREL_TOKEN,
                                 ))),
                             )
                         },

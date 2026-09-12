@@ -13,6 +13,7 @@ use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
 use crate::card::BasicLandType;
 use crate::card::BattlefieldEntryModificationDef;
+use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
@@ -133,6 +134,20 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const MYR_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::artifact_creature(&["Myr"], &[], 1, 1).with_art(CardArt::new(
+        "182308b3-86e0-46d8-9104-95576a3d3921",
+        "Ryan Pancoast",
+    ));
+
+const PHYREXIAN_INSECT_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Phyrexian", "Insect"], &[ManaColor::Green], 1, 1)
+        .with_abilities(&[abilities::infect()])
+        .with_art(CardArt::new(
+            "85f9e977-f718-41b2-b30b-77a9a17e9733",
+            "Adrian Smith",
+        ));
 
 // SOM 1 — Abuna Acolyte
 pub(in crate::card::sets) static ABUNA_ACOLYTE: CardRecord = CardRecord::new(
@@ -472,7 +487,7 @@ CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Artificer"], 2, 1).wit
             EffectDef::PayOr(PayOrDef::optional(
                 &[CostDef::Mana(mana_cost!("{1}"))],
                 &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::artifact_creature(&["Myr"], &[], 1, 1),
+                    MYR_TOKEN,
                 ))),
             )),
         ),
@@ -2739,11 +2754,7 @@ pub(in crate::card::sets) static CARRION_CALL: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{3}{G}")).with_ability(AbilityDef::spell(
         "Create two 1/1 green Phyrexian Insect creature tokens with infect.",
         EffectDef::CreateToken(
-            CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Phyrexian", "Insect"], &[ManaColor::Green], 1, 1)
-                    .with_abilities(&[abilities::infect()]),
-            ))
-            .with_amount(2),
+            CreateTokenDef::new(TokenDef::Literal(PHYREXIAN_INSECT_TOKEN)).with_amount(2),
         ),
     )),
 );
@@ -4379,12 +4390,7 @@ pub(in crate::card::sets) static MYR_BATTLESPHERE: CardRecord = CardRecord::new(
             abilities::enters_trigger(
                 "When this creature enters, create four 1/1 colorless Myr artifact creature tokens.",
                 EffectDef::CreateToken(
-                    CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::artifact_creature(
-                        &["Myr"],
-                        &[],
-                        1,
-                        1,
-                    )))
+                    CreateTokenDef::new(TokenDef::Literal(MYR_TOKEN))
                     .with_amount(4),
                 ),
             ),
@@ -4703,7 +4709,7 @@ CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
                 CostDef::SacrificeSource,
             ],
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::artifact_creature(&["Myr"], &[], 1, 1),
+                MYR_TOKEN,
             ))),
         ),
         AbilityDef::triggered(
@@ -5272,8 +5278,7 @@ CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[
                 },
             ],
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Phyrexian", "Insect"], &[ManaColor::Green], 1, 1)
-                    .with_abilities(&[abilities::infect()]),
+                PHYREXIAN_INSECT_TOKEN,
             ))),
         ),
     ]),

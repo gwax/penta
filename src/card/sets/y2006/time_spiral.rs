@@ -116,6 +116,12 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const SAPROLING_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1);
+
+const GOBLIN_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1);
+
 // TSP 1 — Amrou Scout
 pub(in crate::card::sets) static AMROU_SCOUT: CardRecord = CardRecord::new(
     "Amrou Scout",
@@ -2915,7 +2921,7 @@ pub(in crate::card::sets) static DEATHSPORE_THALLID: CardRecord = CardRecord::ne
                 amount: 3,
             }],
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+                SAPROLING_TOKEN,
             ))),
         ),
         AbilityDef::activated_with_targets(
@@ -3708,9 +3714,11 @@ pub(in crate::card::sets) static SENGIR_NOSFERATU: CardRecord = CardRecord::new(
                                                     minimum: 1,
                                                     maximum: 1,
                                                     visibility: ChoiceVisibilityDef::Public,
-                                                    then: &EffectDef::move_to_zone(EffectRecipientDef::objects(ObjectSetDef::Binding(
-                                                            ParentBinding,
-                                                        )),ZoneKind::Battlefield,ZonePlacement::Top),
+                                                    then: &EffectDef::move_to_zone(
+                                                        EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
+                                                        ZoneKind::Battlefield,
+                                                        ZonePlacement::Top,
+                                                    ),
                                                 }),
                                             ),
                                         ],
@@ -4352,13 +4360,8 @@ pub(in crate::card::sets) static EMPTY_THE_WARRENS: CardRecord = CardRecord::new
         AbilityDef::spell(
             "Create two 1/1 red Goblin creature tokens.",
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
-                    &["Goblin"],
-                    &[ManaColor::Red],
-                    1,
-                    1,
-                )))
-                .with_count(ValueDef::Constant(2)),
+                CreateTokenDef::new(TokenDef::Literal(GOBLIN_TOKEN))
+                    .with_count(ValueDef::Constant(2)),
             ),
         ),
         abilities::storm(),
@@ -4919,7 +4922,7 @@ pub(in crate::card::sets) static MOGG_WAR_MARSHAL: CardRecord = CardRecord::new(
                 ),
             ]),
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
+                GOBLIN_TOKEN,
             ))),
         ),
     ]),
@@ -5976,7 +5979,7 @@ pub(in crate::card::sets) static SAVAGE_THALLID: CardRecord = CardRecord::new(
                 amount: 3,
             }],
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+                SAPROLING_TOKEN,
             ))),
         ),
         AbilityDef::activated_with_targets(
@@ -6209,7 +6212,7 @@ pub(in crate::card::sets) static SPORESOWER_THALLID: CardRecord = CardRecord::ne
                 amount: 3,
             }],
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+                SAPROLING_TOKEN,
             ))),
         ),
     ]),
@@ -6222,9 +6225,7 @@ pub(in crate::card::sets) static SPROUT: CardRecord = CardRecord::new(
     "Anthony S. Waters",
     CardRules::new_instant(mana_cost!("{G}")).with_abilities(&[AbilityDef::spell(
         "Create a 1/1 green Saproling creature token.",
-        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-            TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
-        ))),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(SAPROLING_TOKEN))),
     )]),
 );
 
@@ -6352,7 +6353,7 @@ pub(in crate::card::sets) static THALLID_GERMINATOR: CardRecord = CardRecord::ne
                 amount: 3,
             }],
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+                SAPROLING_TOKEN,
             ))),
         ),
         AbilityDef::activated_with_targets(
@@ -6407,7 +6408,7 @@ pub(in crate::card::sets) static THALLID_SHELL_DWELLER: CardRecord = CardRecord:
                 amount: 3,
             }],
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+                SAPROLING_TOKEN,
             ))),
         ),
     ]),
@@ -6541,7 +6542,7 @@ pub(in crate::card::sets) static VERDANT_EMBRACE: CardRecord = CardRecord::new(
                                         player: PlayerRelation::Any,
                                     },
                                     EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                                        TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+                                        SAPROLING_TOKEN,
                                     ))),
                                 )
                             },

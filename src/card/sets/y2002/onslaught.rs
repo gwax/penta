@@ -73,6 +73,9 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const INSECT_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Insect"], &[ManaColor::Green], 1, 1);
+
 // ONS 1 — Akroma's Blessing
 // Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static AKROMA_S_BLESSING: CardRecord = CardRecord::new(
@@ -4480,13 +4483,7 @@ pub(in crate::card::sets) static SYMBIOTIC_BEAST: CardRecord = CardRecord::new(
         abilities::dies_trigger(
             "When this creature dies, create four 1/1 green Insect creature tokens.",
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
-                    &["Insect"],
-                    &[ManaColor::Green],
-                    1,
-                    1,
-                )))
-                .with_amount(4),
+                CreateTokenDef::new(TokenDef::Literal(INSECT_TOKEN)).with_amount(4),
             ),
         ),
     ),
@@ -4503,13 +4500,7 @@ pub(in crate::card::sets) static SYMBIOTIC_ELF: CardRecord = CardRecord::new(
         abilities::dies_trigger(
             "When this creature dies, create two 1/1 green Insect creature tokens.",
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
-                    &["Insect"],
-                    &[ManaColor::Green],
-                    1,
-                    1,
-                )))
-                .with_amount(2),
+                CreateTokenDef::new(TokenDef::Literal(INSECT_TOKEN)).with_amount(2),
             ),
         ),
     ),
@@ -4526,13 +4517,7 @@ pub(in crate::card::sets) static SYMBIOTIC_WURM: CardRecord = CardRecord::new(
         abilities::dies_trigger(
             "When this creature dies, create seven 1/1 green Insect creature tokens.",
             EffectDef::CreateToken(
-                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
-                    &["Insect"],
-                    &[ManaColor::Green],
-                    1,
-                    1,
-                )))
-                .with_amount(7),
+                CreateTokenDef::new(TokenDef::Literal(INSECT_TOKEN)).with_amount(7),
             ),
         ),
     ),
@@ -4623,9 +4608,7 @@ pub(in crate::card::sets) static VITALITY_CHARM: CardRecord = CardRecord::new(
         &[
             AbilityDef::spell(
                 "Create a 1/1 green Insect creature token.",
-                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::creature(&["Insect"], &[ManaColor::Green], 1, 1),
-                ))),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(INSECT_TOKEN))),
             ),
             AbilityDef::spell_with_targets(
                 "Target creature gets +1/+1 and gains trample until end of turn.",

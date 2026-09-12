@@ -4,6 +4,7 @@ use super::CardRecord;
 use super::PrintingRecord;
 use crate::card::AbilityDef;
 use crate::card::AppliedEffectDef;
+use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::ComparisonDef;
@@ -17,6 +18,7 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::QuantifierDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -49,6 +51,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const TREASURE_TOKEN: TokenCharacteristics = tokens::treasure().with_art(CardArt::new(
+    "1be23c27-d8b6-4f59-8ab8-9ce80e9e29dd",
+    "Nadia Hurianova",
+));
 
 // SNC 18 — Inspiring Overseer
 pub(in crate::card::sets) static INSPIRING_OVERSEER: CardRecord = CardRecord::new(
@@ -180,7 +187,7 @@ pub(in crate::card::sets) static JEWEL_THIEF: CardRecord = CardRecord::new(
         abilities::trample(),
         abilities::enters_trigger(
             "When this creature enters, create a Treasure token.",
-            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(tokens::treasure()))),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(TREASURE_TOKEN))),
         ),
     ]),
 );
