@@ -328,7 +328,7 @@ fn the_search_finds_any_land_at_all() {
 #[test]
 fn a_token_she_eats_leaves_no_card_to_count() {
     let (mut game, wight, _) = staged(&[], &[], &[cards::FOREST]);
-    let beast = tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3);
+    let beast = crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3);
     game.create_token(PlayerId::One, beast);
     drain_pending(&mut game);
     let token = game

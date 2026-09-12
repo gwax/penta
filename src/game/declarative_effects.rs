@@ -307,7 +307,7 @@ impl Game {
                     }
                 }
             }
-            EffectDef::CreateToken { .. } | EffectDef::CreateAttachedToken { .. } => {
+            EffectDef::CreateToken(_) | EffectDef::CreateAttachedToken { .. } => {
                 self.resolve_token_effect(scoped, object, &context);
             }
             EffectDef::PreventDamage { .. } => {

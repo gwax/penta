@@ -60,7 +60,12 @@ fn army(game: &Game) -> Option<&Permanent> {
     game.battlefield.iter().find(|permanent| {
         is_token_with(
             permanent,
-            tokens::creature(&["Orc", "Army"], &[ManaColor::Black], 0, 0),
+            crate::card::TokenCharacteristics::creature(
+                &["Orc", "Army"],
+                &[ManaColor::Black],
+                0,
+                0,
+            ),
         )
     })
 }
@@ -99,7 +104,12 @@ fn each_extra_draw_grows_the_same_army() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Orc", "Army"], &[ManaColor::Black], 0, 0)
+                crate::card::TokenCharacteristics::creature(
+                    &["Orc", "Army"],
+                    &[ManaColor::Black],
+                    0,
+                    0
+                )
             ))
             .count(),
         1,

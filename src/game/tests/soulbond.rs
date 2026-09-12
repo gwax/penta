@@ -356,7 +356,7 @@ fn the_escort_shields_both_creatures_from_zombies() {
     game.battlefield.push(bear);
     let zombie = token_permanent(
         10_100,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::Two,
     );
     let zombie_id = zombie.card.id;

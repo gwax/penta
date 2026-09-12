@@ -92,11 +92,11 @@ fn the_legend_rule_compares_names_not_underlying_characteristic_records() {
 
     game.create_token(
         PlayerId::Two,
-        tokens::creature(&["Spirit"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1),
     );
     game.create_token(
         PlayerId::Two,
-        tokens::creature(&["Spirit"], &[ManaColor::Green], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Spirit"], &[ManaColor::Green], 2, 2),
     );
     game.check_state_based_actions();
     drain_pending(&mut game);

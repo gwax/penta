@@ -16,6 +16,7 @@ use crate::card::AttackDefenderScopeDef;
 use crate::card::AttackRestrictionDef;
 use crate::card::BasicLandType;
 use crate::card::BattlefieldEntryModificationDef;
+use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
@@ -27,6 +28,7 @@ use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -50,6 +52,8 @@ use crate::card::ResolvedEffectDurationDef;
 use crate::card::SacrificedAmountDef;
 use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -70,6 +74,16 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const PHYREXIAN_GOLEM_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::artifact_creature(&["Phyrexian", "Golem"], &[], 3, 3).with_art(
+        CardArt::new("fe9e8d3b-ebc0-448b-bd14-a9f418e196e7", "Volkan Baǵa"),
+    );
+
+const PHYREXIAN_MYR_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::artifact_creature(&["Phyrexian", "Myr"], &[], 1, 1).with_art(
+        CardArt::new("5c087beb-99c0-403e-bb44-33cfc549a831", "Matt Stewart"),
+    );
 
 // NPH 1 — Karn Liberated
 pub(in crate::card::sets) static KARN_LIBERATED: CardRecord = CardRecord::new(
@@ -158,7 +172,9 @@ pub(in crate::card::sets) static BLADE_SPLICER: CardRecord = CardRecord::new(
     "b8e56a28-713b-4a13-a601-1128cf117539",
     "Greg Staples",
 CardRules::new_creature(mana_cost!("{2}{W}"), &["Phyrexian", "Human", "Artificer"], 1, 1).with_abilities(&[
-        abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3)),
+        abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            PHYREXIAN_GOLEM_TOKEN,
+        )))),
         AbilityDef::static_ability(
             "Golems you control have first strike.",
             EffectDef::StaticApply {
@@ -424,7 +440,9 @@ pub(in crate::card::sets) static MASTER_SPLICER: CardRecord = CardRecord::new(
     "859d2b91-63af-4700-8ca5-b1756aa6639b",
     "Chippy",
 CardRules::new_creature(mana_cost!("{3}{W}"), &["Phyrexian", "Human", "Artificer"], 1, 1).with_abilities(&[
-        abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3)),
+        abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            PHYREXIAN_GOLEM_TOKEN,
+        )))),
         AbilityDef::static_ability(
             "Golems you control get +1/+1.",
             EffectDef::StaticApply {
@@ -572,7 +590,9 @@ pub(in crate::card::sets) static SENSOR_SPLICER: CardRecord = CardRecord::new(
     "79076264-d71c-4b30-aac9-702a4d229933",
     "Izzy",
 CardRules::new_creature(mana_cost!("{4}{W}"), &["Phyrexian", "Artificer"], 1, 1).with_abilities(&[
-        abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3)),
+        abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            PHYREXIAN_GOLEM_TOKEN,
+        )))),
         AbilityDef::static_ability(
             "Golem creatures you control have vigilance.",
             EffectDef::StaticApply {
@@ -1246,7 +1266,9 @@ pub(in crate::card::sets) static WING_SPLICER: CardRecord = CardRecord::new(
     "e2dbfb1b-092c-44a3-932d-a8b27be0a72b",
     "Kev Walker",
 CardRules::new_creature(mana_cost!("{3}{U}"), &["Phyrexian", "Human", "Artificer"], 1, 1).with_abilities(&[
-        abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3)),
+        abilities::enters_trigger("When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.", EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            PHYREXIAN_GOLEM_TOKEN,
+        )))),
         AbilityDef::static_ability(
             "Golem creatures you control have flying.",
             EffectDef::StaticApply {
@@ -1701,7 +1723,9 @@ CardRules::new_enchantment(mana_cost!("{3}{B}"))
                     )),
                     object: ObjectPredicateDef::AttachedToSource,
                     count: ValueDef::Constant(1),
-                    then: Some(&EffectDef::create_artifact_creature_token(&["Phyrexian", "Myr"], &[], 1, 1)),
+                    then: Some(&EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        PHYREXIAN_MYR_TOKEN,
+                    )))),
                     amount: SacrificedAmountDef::Power,
                     otherwise: None,
                     optional: false,
@@ -2003,6 +2027,14 @@ pub(in crate::card::sets) static BLUDGEON_BRAWL: CardRecord = CardRecord::new(
 );
 
 // NPH 81 — Chancellor of the Forge
+const PHYREXIAN_GOBLIN_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Phyrexian", "Goblin"], &[ManaColor::Red], 1, 1)
+        .with_abilities(&[abilities::haste()])
+        .with_art(CardArt::new(
+            "feeae905-e456-4598-b3de-b339397983bf",
+            "Jaime Jones",
+        ));
+
 pub(in crate::card::sets) static CHANCELLOR_OF_THE_FORGE: CardRecord = CardRecord::new(
     "Chancellor of the Forge",
     "dd3520a7-a55f-4c00-b4f1-c1c154adfc8f",
@@ -2017,26 +2049,23 @@ CardRules::new_creature(mana_cost!("{4}{R}{R}{R}"), &["Phyrexian", "Giant"], 5, 
                         step: TurnStepDef::Upkeep,
                         player: PlayerRelation::Any,
                     },
-                    EffectDef::create_creature_token(&["Phyrexian", "Goblin"], &[ManaColor::Red], 1, 1)
-                        .with_abilities(&[abilities::haste()]),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        PHYREXIAN_GOBLIN_TOKEN,
+                    ))),
                 ))),
             ),
             abilities::enters_trigger(
                 "When this creature enters, create X 1/1 red Phyrexian Goblin creature tokens with haste, where X is the number of creatures you control.",
-                EffectDef::create_creature_token(
-                    &["Phyrexian", "Goblin"],
-                    &[ManaColor::Red],
-                    1,
-                    1,
-                )
-                .with_abilities(&[abilities::haste()])
-                .with_count(ValueDef::CountMatchingObjects(
-                    &ObjectQueryDef::matching(
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        PHYREXIAN_GOBLIN_TOKEN,
+                    ))
+                    .with_count(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
                         ObjectPredicateDef::HasType(CardType::Creature),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
-                    ),
-                )),
+                    ))),
+                ),
             ),
         ]),
 );
@@ -2472,10 +2501,17 @@ pub(in crate::card::sets) static BEAST_WITHIN: CardRecord = CardRecord::new(
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 then: None,
             },
-            EffectDef::create_creature_token(&["Beast"], &[ManaColor::Green], 3, 3)
-                .with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
-                    TargetIndex::PRIMARY,
-                ))),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Beast"],
+                    &[ManaColor::Green],
+                    3,
+                    3,
+                )))
+                .with_controller(PlayerRefDef::ControllerOf(
+                    ObjectRefDef::Target(TargetIndex::PRIMARY),
+                )),
+            ),
         ]),
     )),
 );
@@ -2742,7 +2778,10 @@ pub(in crate::card::sets) static MAUL_SPLICER: CardRecord = CardRecord::new(
     "2d2c6a6d-5b59-47d7-b290-df3640d9555f",
     "Jason Chan",
 CardRules::new_creature(mana_cost!("{6}{G}"), &["Phyrexian", "Human", "Artificer"], 1, 1).with_abilities(&[
-        abilities::enters_trigger("When this creature enters, create two 3/3 colorless Phyrexian Golem artifact creature tokens.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3).with_amount(2)),
+        abilities::enters_trigger("When this creature enters, create two 3/3 colorless Phyrexian Golem artifact creature tokens.", EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(PHYREXIAN_GOLEM_TOKEN))
+            .with_amount(2),
+        )),
         AbilityDef::static_ability(
             "Golem creatures you control have trample.",
             EffectDef::StaticApply {
@@ -2834,17 +2873,16 @@ CardRules::new_creature(
                 step: TurnStepDef::Upkeep,
                 player: PlayerRelation::You,
             },
-            EffectDef::create_creature_token(
-                &["Phyrexian", "Insect"],
-                &[ManaColor::Green],
-                1,
-                1,
-            )
-            .with_abilities(&[abilities::infect()])
-            .with_count(ValueDef::PlayerCounters {
-                player: PlayerRelation::Opponent,
-                kind: CounterKind::Poison,
-            }),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Phyrexian", "Insect"], &[ManaColor::Green], 1, 1)
+                        .with_abilities(&[abilities::infect()]),
+                ))
+                .with_count(ValueDef::PlayerCounters {
+                    player: PlayerRelation::Opponent,
+                    kind: CounterKind::Poison,
+                }),
+            ),
         ),
     ]),
 );
@@ -2957,12 +2995,9 @@ CardRules::new_creature(mana_cost!("{3}{G}"), &["Phyrexian", "Human", "Artificer
         .with_abilities(&[
             abilities::enters_trigger(
                 "When this creature enters, create a 3/3 colorless Phyrexian Golem artifact creature token.",
-                EffectDef::create_artifact_creature_token(
-                    &["Phyrexian", "Golem"],
-                    &[],
-                    3,
-                    3,
-                ),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    PHYREXIAN_GOLEM_TOKEN,
+                ))),
             ),
             AbilityDef::activated_with_targets(
                 "{1}: Regenerate target Golem you control.",
@@ -3133,7 +3168,9 @@ CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
                     amount: 1,
                 },
             ],
-            EffectDef::create_artifact_creature_token(&["Phyrexian", "Golem"], &[], 3, 3),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                PHYREXIAN_GOLEM_TOKEN,
+            ))),
         ),
     ]),
 );
@@ -3603,13 +3640,10 @@ CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
                 CostDef::TapSource,
                 CostDef::SacrificeSource,
             ],
-            EffectDef::create_artifact_creature_token(
-                &["Phyrexian", "Myr"],
-                &[],
-                1,
-                1,
-            )
-            .with_count(ValueDef::CountersOnSource(CounterKind::named("charge"))),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(PHYREXIAN_MYR_TOKEN))
+                .with_count(ValueDef::CountersOnSource(CounterKind::named("charge"))),
+            ),
         ),
     ]),
 );

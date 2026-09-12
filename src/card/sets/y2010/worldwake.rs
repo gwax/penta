@@ -21,6 +21,7 @@ use crate::card::ColorSet;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -36,6 +37,7 @@ use crate::card::SpellCastQueryDef;
 use crate::card::SubtypeDef;
 use crate::card::TapEventMatcherDef;
 use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueComparisonDef;
@@ -325,15 +327,17 @@ CardRules::new_creature(mana_cost!("{2}{G}{G}"), &["Elemental"], 4, 4).with_abil
         ),
         abilities::enters_trigger(
             "When this creature enters, create a 2/2 green Wolf creature token for each time it was kicked.",
-            EffectDef::create_token(TokenCharacteristics::creature(
-                &["Wolf"],
-                &[ManaColor::Green],
-                2,
-                2,
-            ))
-            .with_count(ValueDef::AdditionalCostPayments(
-                AdditionalCostIndex::PRIMARY,
-            )),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Wolf"],
+                    &[ManaColor::Green],
+                    2,
+                    2,
+                )))
+                .with_count(ValueDef::AdditionalCostPayments(
+                    AdditionalCostIndex::PRIMARY,
+                )),
+            ),
         ),
     ]),
 );

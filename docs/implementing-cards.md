@@ -176,6 +176,50 @@ from effect-output bindings; `ParentBinding` cannot name a cost.
 `SourceCastWith` instead asks about a cost family such as escape. External
 alternatives such as Omniscience do not acquire the card's cost bindings.
 
+### Token declarations and creation
+
+Use `TokenCharacteristics` to declare what a token is, `TokenDef` to select its
+source, and `CreateTokenDef` to declare the creation operation:
+
+```rust
+EffectDef::CreateToken(
+    CreateTokenDef::new(TokenDef::Literal(
+        TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1)
+            .with_abilities(&[abilities::vigilance()]),
+    ))
+    .with_amount(2)
+    .entering_tapped(),
+)
+```
+
+Characteristics builders such as `with_name`, `with_art`, and `with_abilities`
+belong on the declaration. Quantity, controller, entry counters, tapped or
+attacking status, and created-object continuations belong on `CreateTokenDef`.
+Its constructor creates one token with ordinary entry conditions; add builders
+only for the differences the clause specifies.
+
+Use `TokenDef::Copy(&TokenCopyDef { object, exceptions })` for copiable values
+read at resolution. Copy exceptions belong to that source. Copy creation
+currently supports ordinary entry; the catalog rejects tapped, attacking, or
+entry-counter modifiers on a copy source. Ordinary token
+constructors live on `TokenCharacteristics`. Extract repeated token declarations
+into constants in the set file that uses them: put a token shared across cards in
+the set preamble, and one reused by a single card beside that card. Share concrete
+characteristics, leaving quantity, controller, and entry modifiers at each creation
+site. Keep unique ordinary token rules inline with their creating card.
+
+Prefer matching token art from that set. If it has no matching token printing,
+use its companion product or block, then an appropriate existing printing; do not
+invent art metadata. Each local constant owns its art. Keep global declarations in
+`card::tokens` limited to rules-defined tokens such as Food, Clue, and Treasure;
+even these get set-local constants with art, including when used by only one card.
+Nonstandard tokens such as Pests belong to their set files.
+
+Token creation as a payment remains `CostDef::create_tokens`, because payment
+owns its timing and atomicity. `CreateAttachedToken` retains the attachment
+operation's entry sequencing. Neither needs a dummy copy source or a second
+representation of token characteristics.
+
 ### Bound entry choices in mana restrictions
 
 Wrap an entry-time creature-type choice in `ReplacementEffectDef::BindOutput`

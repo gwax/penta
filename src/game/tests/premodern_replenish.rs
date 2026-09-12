@@ -854,7 +854,7 @@ fn a_token_the_wave_exiles_never_comes_back() {
     game.battlefield.push(wave);
     let token = token_permanent(
         10_020,
-        tokens::creature(&["Bird"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1),
         PlayerId::Two,
     );
     let token_id = token.card.id;

@@ -50,14 +50,17 @@ fn collect_ability_grants(
                 collect_applied_ability_grants(effect, grants);
             }
         }
-        EffectDef::CreateToken { token, copy, .. } => match copy {
-            Some(copy) => grants.extend(copy.exceptions.added_abilities.iter().filter_map(
-                |addition| match addition {
-                    CopyAbilityDef::This => None,
-                    CopyAbilityDef::Ability(ability) => Some(*ability),
-                },
-            )),
-            None => tokens.push(token),
+        EffectDef::CreateToken(crate::card::CreateTokenDef { token, .. }) => match token {
+            crate::card::TokenDef::Copy(copy) => grants.extend(
+                copy.exceptions
+                    .added_abilities
+                    .iter()
+                    .filter_map(|addition| match addition {
+                        CopyAbilityDef::This => None,
+                        CopyAbilityDef::Ability(ability) => Some(*ability),
+                    }),
+            ),
+            crate::card::TokenDef::Literal(token) => tokens.push(token),
         },
         EffectDef::CreateAttachedToken { token, .. } => {
             tokens.push(token);
@@ -178,9 +181,10 @@ fn ability_grant_sites(effect: EffectDef) -> usize {
             .applied_effect()
             .map_or(0, applied_ability_grant_sites),
         EffectDef::BecomeCopyOf { exceptions, .. } => exceptions.added_abilities.len(),
-        EffectDef::CreateToken {
-            copy: Some(copy), ..
-        } => copy.exceptions.added_abilities.len(),
+        EffectDef::CreateToken(crate::card::CreateTokenDef {
+            token: crate::card::TokenDef::Copy(copy),
+            ..
+        }) => copy.exceptions.added_abilities.len(),
         _ => 0,
     };
     crate::card::child_effects(effect)

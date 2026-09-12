@@ -258,7 +258,7 @@ impl Game {
             | EffectDef::CannotAttackUnless(_)
             | EffectDef::CannotAttackIf(_)
             | EffectDef::PutIntoLibraryBeneathTop { .. }
-            | EffectDef::CreateToken { .. }
+            | EffectDef::CreateToken(_)
             | EffectDef::CreateAttachedToken { .. }
             | EffectDef::Endure { .. }
             | EffectDef::CreateMyriadTokens

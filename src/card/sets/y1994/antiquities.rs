@@ -15,6 +15,7 @@ use crate::card::ChoiceVisibilityDef;
 use crate::card::ConditionDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamagePreventionDef;
@@ -41,6 +42,7 @@ use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
 use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -1613,7 +1615,9 @@ CardRules::new_artifact_creature(mana_cost!("{6}"), &["Construct"], 1, 1)
                         object: &EffectRecipientDef::Source,
                         kind: CounterKind::PlusOnePlusOne,
                     }],
-                    &EffectDef::create_token(TETRAVITE).with_count(ValueDef::PaidAmount),
+                    &EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Literal(TETRAVITE)).with_count(ValueDef::PaidAmount),
+                    ),
                 ).with_visibility(ChoiceVisibilityDef::Public)),
         ),
         AbilityDef::triggered(

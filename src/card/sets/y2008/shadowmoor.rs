@@ -20,6 +20,7 @@ use crate::card::ChooseDef;
 use crate::card::CopyStackObjectDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
@@ -34,6 +35,8 @@ use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SpellResolutionDestinationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
@@ -219,16 +222,18 @@ pub(in crate::card::sets) static HOWL_OF_THE_NIGHT_PACK: CardRecord = CardRecord
     "Lars Grant-West",
     CardRules::new_sorcery(mana_cost!("{6}{G}")).with_ability(AbilityDef::spell(
         "Create a 2/2 green Wolf creature token for each Forest you control.",
-        EffectDef::create_creature_token(&["Wolf"], &[ManaColor::Green], 2, 2)
-            .with_art(CardArt::new(
-                "309f1bd4-78af-4722-9d45-b5f40b001570",
-                "Lars Grant-West",
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Wolf"], &[ManaColor::Green], 2, 2).with_art(
+                    CardArt::new("309f1bd4-78af-4722-9d45-b5f40b001570", "Lars Grant-West"),
+                ),
             ))
             .with_count(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
                 ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             ))),
+        ),
     )),
 );
 

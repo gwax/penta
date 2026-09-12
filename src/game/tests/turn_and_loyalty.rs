@@ -460,7 +460,12 @@ fn moorland_haunt_pays_with_a_creature_card_from_its_own_graveyard() {
     assert!(
         game.battlefield.iter().any(|permanent| is_token_with(
             permanent,
-            token_with_flying(tokens::creature(&["Spirit"], &[ManaColor::White], 1, 1))
+            token_with_flying(crate::card::TokenCharacteristics::creature(
+                &["Spirit"],
+                &[ManaColor::White],
+                1,
+                1
+            ))
         )),
         "and a Spirit arrived"
     );
@@ -720,7 +725,7 @@ fn huntmaster_turns_on_a_quiet_turn_and_back_on_a_busy_one() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Wolf"], &[ManaColor::Green], 2, 2)
+                crate::card::TokenCharacteristics::creature(&["Wolf"], &[ManaColor::Green], 2, 2)
             ))
             .count(),
         1
@@ -761,7 +766,7 @@ fn huntmaster_turns_on_a_quiet_turn_and_back_on_a_busy_one() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Wolf"], &[ManaColor::Green], 2, 2)
+                crate::card::TokenCharacteristics::creature(&["Wolf"], &[ManaColor::Green], 2, 2)
             ))
             .count(),
         1
@@ -787,7 +792,7 @@ fn huntmaster_turns_on_a_quiet_turn_and_back_on_a_busy_one() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Wolf"], &[ManaColor::Green], 2, 2)
+                crate::card::TokenCharacteristics::creature(&["Wolf"], &[ManaColor::Green], 2, 2)
             ))
             .count(),
         2

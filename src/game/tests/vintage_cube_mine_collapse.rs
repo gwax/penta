@@ -156,7 +156,12 @@ fn it_deals_five() {
     let (mut game, collapse, _angel) = staged(&[cards::MOUNTAIN]);
     game.create_token(
         PlayerId::Two,
-        token_with_trample(tokens::creature(&["Wurm"], &[ManaColor::Green], 5, 5)),
+        token_with_trample(crate::card::TokenCharacteristics::creature(
+            &["Wurm"],
+            &[ManaColor::Green],
+            5,
+            5,
+        )),
     );
     drain_pending(&mut game);
     let wurm = game
@@ -165,7 +170,12 @@ fn it_deals_five() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                token_with_trample(tokens::creature(&["Wurm"], &[ManaColor::Green], 5, 5)),
+                token_with_trample(crate::card::TokenCharacteristics::creature(
+                    &["Wurm"],
+                    &[ManaColor::Green],
+                    5,
+                    5,
+                )),
             )
         })
         .expect("the Wurm token arrived")

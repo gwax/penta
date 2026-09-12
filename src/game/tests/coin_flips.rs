@@ -46,7 +46,12 @@ fn bottle_of_suleiman_reaches_both_branches() {
         let djinn = game.battlefield.iter().any(|permanent| {
             is_token_with(
                 permanent,
-                token_with_flying(tokens::artifact_creature(&["Djinn"], &[], 5, 5)),
+                token_with_flying(crate::card::TokenCharacteristics::artifact_creature(
+                    &["Djinn"],
+                    &[],
+                    5,
+                    5,
+                )),
             )
         });
         let damaged = game.players[PlayerId::One.index()].life < i16::from(rules::STARTING_LIFE);

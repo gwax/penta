@@ -14,6 +14,7 @@ use crate::card::AlternateSpellKind;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
 use crate::card::BlockRestrictionDef;
+use crate::card::CardArt;
 use crate::card::CardComposition;
 use crate::card::CardEffectStatus;
 use crate::card::CardPart;
@@ -26,6 +27,7 @@ use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::InstalledTriggerDef;
@@ -42,6 +44,7 @@ use crate::card::ResolvedEffectDurationDef;
 use crate::card::SpellForm;
 use crate::card::SpellResolutionDestinationDef;
 use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -59,6 +62,22 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const DEFENSELESS_RAT_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Rat"], &[ManaColor::Black], 1, 1)
+        .with_abilities(&[AbilityDef::static_ability(
+            "This token can't block.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::BlockRestriction(
+                    BlockRestrictionDef::CANNOT_BLOCK,
+                )),
+            },
+        )])
+        .with_art(CardArt::new(
+            "1e0205f2-25c1-403b-b408-56e3f2d63b4d",
+            "Kim Sokol",
+        ));
 
 // WOE 62 — Mocking Sprite
 pub(in crate::card::sets) static MOCKING_SPRITE: CardRecord = CardRecord::new(
@@ -136,22 +155,6 @@ pub(in crate::card::sets) static CANDY_GRAPPLE: CardRecord = CardRecord::new(
     ]),
 );
 
-/// The Rat this set's Rat deck keeps printing: a 1/1 body that attacks and
-/// never blocks. A static rather than a const fn, because the ability slice
-/// only gets a `'static` lifetime in a static initializer.
-static DEFENSELESS_RAT_TOKEN: EffectDef =
-    EffectDef::create_creature_token(&["Rat"], &[ManaColor::Black], 1, 1).with_abilities(&[
-        AbilityDef::static_ability(
-            "This token can't block.",
-            EffectDef::StaticApply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::Rule(AppliedRuleDef::BlockRestriction(
-                    BlockRestrictionDef::CANNOT_BLOCK,
-                )),
-            },
-        ),
-    ]);
-
 // WOE 116 — Voracious Vermin
 pub(in crate::card::sets) static VORACIOUS_VERMIN: CardRecord = CardRecord::new(
     "Voracious Vermin",
@@ -162,7 +165,7 @@ pub(in crate::card::sets) static VORACIOUS_VERMIN: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Rat"], 2, 1).with_abilities(&[
         abilities::enters_trigger(
             "When this creature enters, create a 1/1 black Rat creature token with \"This token can't block.\"",
-            DEFENSELESS_RAT_TOKEN,
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(DEFENSELESS_RAT_TOKEN))),
         ),
         AbilityDef::triggered(
             "Whenever another creature you control dies, put a +1/+1 counter on this creature.",
@@ -224,7 +227,7 @@ pub(in crate::card::sets) static GNAWING_CRESCENDO: CardRecord = CardRecord::new
                         Some(ZoneKind::Battlefield),
                         Some(ZoneKind::Graveyard),
                     ),
-                    DEFENSELESS_RAT_TOKEN,
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(DEFENSELESS_RAT_TOKEN))),
                 )
             })),
         ]),
@@ -475,13 +478,15 @@ fn virtue_of_loyalty_composition() -> CardComposition {
             .with_ability(
                 AbilityDef::spell(
                     "Create a 2/2 white Knight creature token with vigilance.",
-                    EffectDef::create_creature_token(
-                        &const { ["Knight"] },
-                        &const { [ManaColor::White] },
-                        2,
-                        2,
-                    )
-                    .with_abilities(&const { [abilities::vigilance()] }),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(
+                            &const { ["Knight"] },
+                            &const { [ManaColor::White] },
+                            2,
+                            2,
+                        )
+                        .with_abilities(&const { [abilities::vigilance()] }),
+                    ))),
                 )
                 .with_resolution_destination(SpellResolutionDestinationDef::ExileOnAdventure),
             )

@@ -188,7 +188,7 @@ impl Game {
             | EffectDef::Reconfigure { .. }
             | EffectDef::Unattach { .. }
             | EffectDef::PhaseOut { .. }
-            | EffectDef::CreateToken { .. }
+            | EffectDef::CreateToken(_)
             | EffectDef::CreateAttachedToken { .. }
             | EffectDef::Endure { .. }
             | EffectDef::CreateMyriadTokens

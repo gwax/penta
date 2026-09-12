@@ -108,7 +108,12 @@ fn spending_three_counters_makes_a_saproling() {
         game.battlefield.iter().any(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+                crate::card::TokenCharacteristics::creature(
+                    &["Saproling"],
+                    &[ManaColor::Green],
+                    1,
+                    1,
+                ),
             )
         }),
         "a Saproling token arrived"
@@ -129,7 +134,7 @@ mod saproling_sacrifice {
         game.battlefield.push(farmer);
         let saproling = token_permanent(
             10_001,
-            tokens::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+            crate::card::TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
             PlayerId::One,
         );
         let saproling_id = saproling.card.id;

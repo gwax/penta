@@ -60,7 +60,8 @@ fn is_tapped(game: &Game, object: GameObjectId) -> bool {
 }
 
 fn saproling_count(game: &Game) -> usize {
-    let saproling = tokens::creature(&["Saproling"], &[ManaColor::Green], 1, 1);
+    let saproling =
+        crate::card::TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1);
     game.battlefield
         .iter()
         .filter(|permanent| is_token_with(permanent, saproling))

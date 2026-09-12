@@ -143,7 +143,12 @@ fn the_guildmage_makes_one_saproling_per_toughness() {
             .filter(|permanent| {
                 is_token_with(
                     permanent,
-                    tokens::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+                    crate::card::TokenCharacteristics::creature(
+                        &["Saproling"],
+                        &[ManaColor::Green],
+                        1,
+                        1,
+                    ),
                 )
             })
             .count()
@@ -187,7 +192,7 @@ fn the_guildmage_will_not_eat_its_own_saprolings() {
     for index in 0..3 {
         game.battlefield.push(token_permanent(
             10_100 + index,
-            tokens::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+            crate::card::TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
             PlayerId::One,
         ));
     }

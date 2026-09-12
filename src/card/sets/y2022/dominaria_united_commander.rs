@@ -10,6 +10,7 @@ use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CopyExceptionsDef;
+use crate::card::CreateTokenDef;
 use crate::card::CreatedTokensDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -21,6 +22,8 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerRuleDef;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -71,30 +74,32 @@ CardRules::new_creature(mana_cost!("{2}{R}{W}"), &["Dwarf", "Wizard"], 4, 3)
                 ),
                 EffectDef::PayOr(crate::card::PayOrDef::optional(
                     &[crate::CostDef::Mana(mana_cost!("{1}"))],
-                    &EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-                        object: &EffectRecipientDef::TriggeringObject,
-                        exceptions: CopyExceptionsDef::NONE,
-                    })
-                    .with_created_tokens(CreatedTokensDef {
-                        binding: ParentBinding,
-                        then: &EffectDef::Sequence(&[
-                            EffectDef::Apply {
-                                recipient: EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
-                                effect: AppliedEffectDef::add_ability(&abilities::haste()),
-                                duration: ResolvedEffectDurationDef::Permanent,
-                            },
-                            EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
-                                "Sacrifice it at the beginning of the next end step.",
-                                TriggerEventDef::StepBegins {
-                                    step: TurnStepDef::End,
-                                    player: PlayerRelation::Any,
+                    &EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Copy(&crate::card::TokenCopyDef {
+                            object: &EffectRecipientDef::TriggeringObject,
+                            exceptions: CopyExceptionsDef::NONE,
+                        }))
+                        .with_created_tokens(CreatedTokensDef {
+                            binding: ParentBinding,
+                            then: &EffectDef::Sequence(&[
+                                EffectDef::Apply {
+                                    recipient: EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
+                                    effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                                    duration: ResolvedEffectDurationDef::Permanent,
                                 },
-                                EffectDef::sacrifice(EffectRecipientDef::objects(
-                                        ObjectSetDef::Binding(ParentBinding),
-                                    )),
-                            ))),
-                        ]),
-                    }),
+                                EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+                                    "Sacrifice it at the beginning of the next end step.",
+                                    TriggerEventDef::StepBegins {
+                                        step: TurnStepDef::End,
+                                        player: PlayerRelation::Any,
+                                    },
+                                    EffectDef::sacrifice(EffectRecipientDef::objects(ObjectSetDef::Binding(
+                                        ParentBinding,
+                                    ))),
+                                ))),
+                            ]),
+                        }),
+                    ),
                 )),
             ),
         ]),
@@ -131,12 +136,14 @@ pub(in crate::card::sets) static TORSTEN_FOUNDER_OF_BENALIA: CardRecord = CardRe
             ),
             abilities::dies_trigger(
                 "When Torsten dies, create seven 1/1 white Soldier creature tokens.",
-                EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1)
-                    .with_count(ValueDef::Constant(7))
-                    .with_art(CardArt::new(
-                        "8c4b0257-2ca5-4015-9d63-d7cf6e87ab9d",
-                        "Justine Cruz",
-                    )),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1).with_art(
+                            CardArt::new("8c4b0257-2ca5-4015-9d63-d7cf6e87ab9d", "Justine Cruz"),
+                        ),
+                    ))
+                    .with_count(ValueDef::Constant(7)),
+                ),
             ),
         ]),
 );

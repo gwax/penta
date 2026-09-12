@@ -21,6 +21,7 @@ use crate::card::CardType;
 use crate::card::CastTimingPermissionDef;
 use crate::card::ConditionalStaticEffectDef;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::DividedTotal;
 use crate::card::DrawEventMatcherDef;
@@ -34,6 +35,8 @@ use crate::card::ScaledValueDef;
 use crate::card::SpellResolutionDestinationDef;
 use crate::card::StaticApplyDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -116,8 +119,10 @@ pub(in crate::card::sets) static ROC_EGG: CardRecord = CardRecord::new(
         abilities::defender(),
         abilities::dies_trigger(
             "When this creature dies, create a 3/3 white Bird creature token with flying.",
-            EffectDef::create_creature_token(&["Bird"], &[ManaColor::White], 3, 3)
-                .with_abilities(&[abilities::flying()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 3, 3)
+                    .with_abilities(&[abilities::flying()]),
+            ))),
         ),
     ]),
 );
@@ -526,7 +531,15 @@ pub(in crate::card::sets) static GRAVE_TITAN: CardRecord = CardRecord::new(
                     ),
                     TriggerEventDef::attacks(ObjectPredicateDef::Source),
                 ]),
-                EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2).with_amount(2),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                        &["Zombie"],
+                        &[ManaColor::Black],
+                        2,
+                        2,
+                    )))
+                    .with_amount(2),
+                ),
             ),
         ]),
 );

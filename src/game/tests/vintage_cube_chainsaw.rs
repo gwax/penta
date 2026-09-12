@@ -425,7 +425,7 @@ fn a_dying_token_revs_it_too() {
 
     let token = token_permanent(
         276_000,
-        tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+        crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3),
         PlayerId::Two,
     );
     let token_id = token.card.id;
@@ -447,7 +447,7 @@ fn a_dying_token_revs_it_too() {
         .expect("cataloged");
     let second = token_permanent(
         276_001,
-        tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+        crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3),
         PlayerId::Two,
     );
     let second_id = second.card.id;

@@ -264,7 +264,12 @@ fn demonic_rising_only_pays_off_with_exactly_one_creature() {
             .filter(|permanent| {
                 is_token_with(
                     permanent,
-                    token_with_flying(tokens::creature(&["Demon"], &[ManaColor::Black], 5, 5)),
+                    token_with_flying(crate::card::TokenCharacteristics::creature(
+                        &["Demon"],
+                        &[ManaColor::Black],
+                        5,
+                        5,
+                    )),
                 )
             })
             .count();

@@ -70,7 +70,7 @@ fn settle(game: &mut Game) {
 fn pests(game: &Game) -> usize {
     game.battlefield
         .iter()
-        .filter(|permanent| is_token_with(permanent, tokens::pest()))
+        .filter(|permanent| is_token_with(permanent, token_fixtures::PEST_TOKEN))
         .count()
 }
 
@@ -194,7 +194,7 @@ fn a_pest_pays_a_life_when_it_dies() {
     let pest = game
         .battlefield
         .iter()
-        .find(|permanent| is_token_with(permanent, tokens::pest()))
+        .find(|permanent| is_token_with(permanent, token_fixtures::PEST_TOKEN))
         .expect("there are Pests")
         .card
         .id;

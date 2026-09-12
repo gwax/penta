@@ -24,6 +24,7 @@ use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
@@ -43,6 +44,8 @@ use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -1783,8 +1786,15 @@ pub(in crate::card::sets) static DERANGED_HERMIT: CardRecord = CardRecord::new(
         ),
         abilities::enters_trigger(
             "When this creature enters, create four 1/1 green Squirrel creature tokens.",
-            EffectDef::create_creature_token(&["Squirrel"], &[ManaColor::Green], 1, 1)
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Squirrel"],
+                    &[ManaColor::Green],
+                    1,
+                    1,
+                )))
                 .with_count(ValueDef::Constant(4)),
+            ),
         ),
         AbilityDef::static_ability(
             "Squirrel creatures get +1/+1.",

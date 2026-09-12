@@ -10,12 +10,15 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -86,7 +89,13 @@ pub(in crate::card::sets) static OTHARRI_SUNS_GLORY: CardRecord = CardRecord::ne
                         kind: CounterKind::named("experience"),
                         amount: ValueDef::Constant(1),
                     },
-                    EffectDef::create_creature_token(&["Rebel"], &[ManaColor::Red], 2, 2)
+                    EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                            &["Rebel"],
+                            &[ManaColor::Red],
+                            2,
+                            2,
+                        )))
                         .entering_tapped()
                         .entering_attacking()
                         // The counter goes on the player, not on him: it stays through his death
@@ -95,6 +104,7 @@ pub(in crate::card::sets) static OTHARRI_SUNS_GLORY: CardRecord = CardRecord::ne
                             player: PlayerRelation::You,
                             kind: CounterKind::named("experience"),
                         }),
+                    ),
                 ]),
             ),
             AbilityDef::activated(
@@ -136,8 +146,10 @@ pub(in crate::card::sets) static STAFF_OF_THE_STORYTELLER: CardRecord = CardReco
             "When this artifact enters, create a 1/1 white Spirit creature token with flying.",
             // The Staff pays for itself the moment it lands: the Spirit it makes is a
             // creature token you created, so its own trigger sees it.
-            EffectDef::create_creature_token(&["Spirit"], &[ManaColor::White], 1, 1)
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
                     .with_abilities(&[abilities::flying()]),
+            ))),
         ),
         AbilityDef::triggered(
             "Whenever you create one or more creature tokens, put a story counter on this artifact.",

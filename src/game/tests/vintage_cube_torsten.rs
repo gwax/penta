@@ -190,7 +190,12 @@ fn dying_leaves_seven_soldiers() {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1),
+                crate::card::TokenCharacteristics::creature(
+                    &["Soldier"],
+                    &[ManaColor::White],
+                    1,
+                    1,
+                ),
             )
         })
         .collect::<Vec<_>>();
@@ -317,7 +322,12 @@ fn soldiers(game: &Game) -> usize {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1),
+                crate::card::TokenCharacteristics::creature(
+                    &["Soldier"],
+                    &[ManaColor::White],
+                    1,
+                    1,
+                ),
             )
         })
         .count()

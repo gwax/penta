@@ -459,7 +459,7 @@ fn tokens_count_and_noncreatures_do_not() {
 
     game.battlefield.push(token_permanent(
         200_700,
-        tokens::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1),
         PlayerId::Two,
     ));
     game.turns_started[PlayerId::One.index()] += 1;

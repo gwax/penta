@@ -8,11 +8,14 @@ use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::ComparisonDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::ReplacementEffectDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueComparisonDef;
@@ -70,12 +73,14 @@ pub(in crate::card::sets) static JACKED_RABBIT: CardRecord = CardRecord::new(
                 "Whenever this creature attacks, create a number of 1/1 white Rabbit creature tokens \
                  equal to this creature's power.",
                 TriggerEventDef::attacks(ObjectPredicateDef::Source),
-                EffectDef::create_creature_token(&["Rabbit"], &[ManaColor::White], 1, 1)
-                    .with_art(CardArt::new(
-                        "81de52ef-7515-4958-abea-fb8ebdcef93c",
-                        "Gina Matarazzo",
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Rabbit"], &[ManaColor::White], 1, 1).with_art(
+                            CardArt::new("81de52ef-7515-4958-abea-fb8ebdcef93c", "Gina Matarazzo"),
+                        ),
                     ))
                     .with_count(ValueDef::SourcePower),
+                ),
             ),
         ]),
 );

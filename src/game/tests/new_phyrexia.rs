@@ -124,7 +124,12 @@ fn parasitic_implant_triggers_on_its_controllers_upkeep_and_sacrifices_the_host(
         permanent.controller == PlayerId::One
             && is_token_with(
                 permanent,
-                tokens::artifact_creature(&["Phyrexian", "Myr"], &[], 1, 1),
+                crate::card::TokenCharacteristics::artifact_creature(
+                    &["Phyrexian", "Myr"],
+                    &[],
+                    1,
+                    1,
+                ),
             )
     }));
 }

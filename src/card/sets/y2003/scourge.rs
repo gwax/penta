@@ -24,6 +24,7 @@ use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamagePreventionDef;
 use crate::card::DiscardSelectionDef;
@@ -38,6 +39,8 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerRuleDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -161,13 +164,17 @@ pub(in crate::card::sets) static DECREE_OF_JUSTICE: CardRecord = CardRecord::new
     CardRules::new_sorcery(mana_cost!("{X}{X}{2}{W}{W}")).with_abilities(&[
         AbilityDef::spell(
             "Create X 4/4 white Angel creature tokens with flying.",
-            EffectDef::create_creature_token(&["Angel"], &[ManaColor::White], 4, 4)
-                .with_count(ValueDef::ChosenX)
-                .with_abilities(&[abilities::flying()])
-                .with_art(CardArt::new(
-                    "bb6d0a6a-3007-47fc-a42c-3db311c9c41f",
-                    "Magali Villeneuve",
-                )),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Angel"], &[ManaColor::White], 4, 4)
+                        .with_abilities(&[abilities::flying()])
+                        .with_art(CardArt::new(
+                            "bb6d0a6a-3007-47fc-a42c-3db311c9c41f",
+                            "Magali Villeneuve",
+                        )),
+                ))
+                .with_count(ValueDef::ChosenX),
+            ),
         ),
         abilities::cycling!(
             "Cycling {2}{W} ({2}{W}, Discard this card: Draw a card.)",
@@ -179,12 +186,14 @@ pub(in crate::card::sets) static DECREE_OF_JUSTICE: CardRecord = CardRecord::new
             EffectDef::PayOr(PayOrDef::optional(
                 &[CostDef::ChosenGenericMana], // The cycling half: X is settled by the payment rather than by a cast, so
                 // the branch that makes the tokens reads back what was actually paid.
-                &EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1)
-                    .with_count(ValueDef::PaidAmount)
-                    .with_art(CardArt::new(
-                        "70205fb6-7722-4974-a8c6-8909dbb1c96d",
-                        "Bachzim",
-                    )),
+                &EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1).with_art(
+                            CardArt::new("70205fb6-7722-4974-a8c6-8909dbb1c96d", "Bachzim"),
+                        ),
+                    ))
+                    .with_count(ValueDef::PaidAmount),
+                ),
             )),
         ),
     ]),
@@ -1590,12 +1599,14 @@ pub(in crate::card::sets) static SIEGE_GANG_COMMANDER: CardRecord = CardRecord::
     CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Goblin"], 2, 2).with_abilities(&[
         abilities::enters_trigger(
             "When this creature enters, create three 1/1 red Goblin creature tokens.",
-            EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1)
-                .with_amount(3)
-                .with_art(CardArt::new(
-                    "09faad62-42ff-4e37-b8a5-d8e8a0f6d096",
-                    "Wizard of Barge",
-                )),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1).with_art(
+                        CardArt::new("09faad62-42ff-4e37-b8a5-d8e8a0f6d096", "Wizard of Barge"),
+                    ),
+                ))
+                .with_amount(3),
+            ),
         ),
         AbilityDef::activated_with_targets(
             "{1}{R}, Sacrifice a Goblin: This creature deals 2 damage to any target.",

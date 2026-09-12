@@ -141,7 +141,12 @@ fn gather_the_townsfolk_makes_two_or_five() {
             .filter(|permanent| {
                 is_token_with(
                     permanent,
-                    tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+                    crate::card::TokenCharacteristics::creature(
+                        &["Human"],
+                        &[ManaColor::White],
+                        1,
+                        1,
+                    ),
                 )
             })
             .count()
@@ -173,7 +178,7 @@ fn the_doomsayer_pumps_the_tokens_it_makes() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+                crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1),
             )
         })
         .expect("a token arrived")

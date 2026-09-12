@@ -81,7 +81,7 @@ fn sundering_growth_destroys_then_copies_a_token() {
     game.battlefield.push(mox);
     game.battlefield.push(token_permanent(
         10_100,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::One,
     ));
 
@@ -109,7 +109,7 @@ fn sundering_growth_destroys_then_copies_a_token() {
     assert_eq!(
         tokens(
             &game,
-            tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
+            crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
         ),
         2,
         "and the token was copied",
@@ -148,7 +148,7 @@ fn sundering_growth_still_destroys_with_no_token_to_copy() {
     assert_eq!(
         tokens(
             &game,
-            tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
+            crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
         ),
         0
     );
@@ -217,7 +217,7 @@ fn the_guildmage_offers_both_abilities_at_their_own_costs() {
     game.battlefield.push(mage);
     game.battlefield.push(token_permanent(
         10_100,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::One,
     ));
     game.players[PlayerId::One.index()].mana_pool.green = 1;
@@ -251,7 +251,7 @@ fn wake_the_reflections_copies_a_token() {
     let mut game = ready();
     game.battlefield.push(token_permanent(
         10_000,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::One,
     ));
 
@@ -272,7 +272,7 @@ fn wake_the_reflections_copies_a_token() {
     assert_eq!(
         tokens(
             &game,
-            tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
+            crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
         ),
         2
     );

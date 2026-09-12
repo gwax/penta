@@ -13,6 +13,7 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DrawEventMatcherDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -23,7 +24,9 @@ use crate::card::ObjectQueryDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenCountersDef;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -42,6 +45,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const INCUBATOR_TOKEN: TokenCharacteristics = tokens::incubator().with_art(CardArt::new(
+    "2c5ed737-657b-43bf-b222-941da7579a4a",
+    "Johann Bodin",
+));
 
 // MOM 3 — Alabaster Host Intercessor
 pub(in crate::card::sets) static ALABASTER_HOST_INTERCESSOR: CardRecord = CardRecord::new(
@@ -105,15 +113,14 @@ pub(in crate::card::sets) static SUNFALL: CardRecord = CardRecord::new(
                 ),
                 // Incubate X. One token however large X is, and X of zero still makes
                 // one: the keyword creates the token unconditionally.
-                EffectDef::create_token(tokens::incubator())
-                    .with_art(CardArt::new(
-                        "2c5ed737-657b-43bf-b222-941da7579a4a",
-                        "Johann Bodin",
-                    ))
-                    .with_counters(TokenCountersDef {
-                        kind: CounterKind::PlusOnePlusOne,
-                        amount: ValueDef::BoundObjectCount(ParentBinding),
-                    }),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(INCUBATOR_TOKEN)).with_counters(
+                        TokenCountersDef {
+                            kind: CounterKind::PlusOnePlusOne,
+                            amount: ValueDef::BoundObjectCount(ParentBinding),
+                        },
+                    ),
+                ),
             ]),
         ),
     )),
@@ -186,12 +193,14 @@ pub(in crate::card::sets) static PREENING_CHAMPION: CardRecord = CardRecord::new
         abilities::flying(),
         abilities::enters_trigger(
             "When this creature enters, create a 1/1 blue and red Elemental creature token.",
-            EffectDef::create_creature_token(
-                &["Elemental"],
-                &[ManaColor::Blue, ManaColor::Red],
-                1,
-                1,
-            ),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(
+                    &["Elemental"],
+                    &[ManaColor::Blue, ManaColor::Red],
+                    1,
+                    1,
+                ),
+            ))),
         ),
     ]),
 );

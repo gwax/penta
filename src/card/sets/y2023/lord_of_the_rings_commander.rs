@@ -11,6 +11,7 @@ use crate::card::AppliedEffectDef;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -20,6 +21,8 @@ use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::abilities;
@@ -49,9 +52,13 @@ pub(in crate::card::sets) static FORTH_EORLINGAS: CardRecord = CardRecord::new(
         // the Riders this made, and it watches for the rest of the turn -- so a
         // creature that was already attacking claims the crown just as well.
         EffectDef::Sequence(&[
-            EffectDef::create_creature_token(&["Human", "Knight"], &[ManaColor::Red], 2, 2)
-                .with_count(ValueDef::ChosenX)
-                .with_abilities(&[abilities::trample(), abilities::haste()]),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Human", "Knight"], &[ManaColor::Red], 2, 2)
+                        .with_abilities(&[abilities::trample(), abilities::haste()]),
+                ))
+                .with_count(ValueDef::ChosenX),
+            ),
             // The crown is claimed once for the whole combat damage step, however many
             // Riders connected: the batched event is one event.
             EffectDef::InstallTrigger(InstalledTriggerDef::this_turn(&AbilityDef::triggered(

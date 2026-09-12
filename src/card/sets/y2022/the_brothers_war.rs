@@ -15,6 +15,7 @@ use crate::card::CardType;
 use crate::card::CharacteristicOperationDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -26,6 +27,8 @@ use crate::card::PayOrDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SetOperationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -298,7 +301,9 @@ pub(in crate::card::sets) static THIRD_PATH_ICONOCLAST: CardRecord = CardRecord:
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
             ])),
-            EffectDef::create_artifact_creature_token(&["Soldier"], &[], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Soldier"], &[], 1, 1),
+            ))),
         ),
     ),
 );

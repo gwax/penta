@@ -32,9 +32,12 @@ fn directly_authored_token(game: &Game, definition: CardDefinitionId) -> TokenCh
         .get(definition)
         .and_then(|definition| definition.rules.ability(AbilityId::PRIMARY))
         .expect("the printed creator has its token ability");
-    let crate::card::AbilityProgramDef::Effects(crate::card::EffectDef::CreateToken {
-        token, ..
-    }) = ability.effect.definition
+    let crate::card::AbilityProgramDef::Effects(crate::card::EffectDef::CreateToken(
+        crate::card::CreateTokenDef {
+            token: crate::card::TokenDef::Literal(token),
+            ..
+        },
+    )) = ability.effect.definition
     else {
         panic!("the printed creator directly creates its token");
     };

@@ -31,6 +31,7 @@ use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamageKindDef;
 use crate::card::DamageRecipientMatcherDef;
@@ -58,6 +59,8 @@ use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
 use crate::card::TargetChooserDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnPhaseDef;
@@ -852,10 +855,17 @@ CardRules::new_creature(mana_cost!("{2}{U}"), &["Human", "Wizard"], 0, 1).with_a
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     then: None,
                 },
-                EffectDef::create_creature_token(&["Sheep"], &[ManaColor::Green], 0, 1)
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                        &["Sheep"],
+                        &[ManaColor::Green],
+                        0,
+                        1,
+                    )))
                     .with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
                         TargetIndex::PRIMARY,
                     ))),
+                ),
             ]),
         ),
     ]),
@@ -2576,9 +2586,11 @@ CardRules::new_creature(mana_cost!("{3}{G}"), &["Insect"], 3, 3).with_ability(
                     step: TurnStepDef::End,
                     player: PlayerRelation::Any,
                 },
-                EffectDef::create_creature_token(&["Insect"], &[ManaColor::Green], 1, 1)
-                    .with_name("Butterfly")
-                    .with_abilities(&[abilities::flying()]),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Insect"], &[ManaColor::Green], 1, 1)
+                        .with_name("Butterfly")
+                        .with_abilities(&[abilities::flying()]),
+                ))),
             ))),
         ),
     ),
@@ -3318,7 +3330,9 @@ pub(in crate::card::sets) static DIAMOND_KALEIDOSCOPE: CardRecord = CardRecord::
         AbilityDef::activated(
             "{3}, {T}: Create a 0/1 colorless Prism artifact creature token.",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
-            EffectDef::create_artifact_creature_token(&["Prism"], &[], 0, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Prism"], &[], 0, 1),
+            ))),
         ),
         AbilityDef::activated_mana(
             "Sacrifice a Prism token: Add one mana of any color.",
@@ -3582,8 +3596,15 @@ CardRules::new_artifact(mana_cost!("{4}")).with_ability(
                 CostDef::Mana(mana_cost!("{X}")),
                 CostDef::SacrificeSource,
             ],
-            EffectDef::create_creature_token(&["Snake"], &[ManaColor::Green], 1, 1)
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Snake"],
+                    &[ManaColor::Green],
+                    1,
+                    1,
+                )))
                 .with_count(ValueDef::ChosenX),
+            ),
         )
         .with_activation_timing(ActivationTimingDef::SorcerySpeed),
     ),

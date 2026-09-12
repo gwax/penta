@@ -19,6 +19,7 @@ use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardFollowUpDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
@@ -36,6 +37,8 @@ use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
@@ -54,6 +57,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const MAP_TOKEN: TokenCharacteristics = tokens::map().with_art(CardArt::new(
+    "64839118-09d2-4645-9d3c-f80755ac781f",
+    "Francesca Baerald",
+));
 
 // LCI 14 — Get Lost
 pub(in crate::card::sets) static GET_LOST: CardRecord = CardRecord::new(
@@ -80,15 +88,13 @@ pub(in crate::card::sets) static GET_LOST: CardRecord = CardRecord::new(
             // "Its controller creates two Map tokens." The Maps are theirs, not yours,
             // and the permanent is already destroyed by the time they arrive -- so the
             // player is read from what the target was rather than from where it is.
-            EffectDef::create_token(tokens::map())
-                .with_art(CardArt::new(
-                    "64839118-09d2-4645-9d3c-f80755ac781f",
-                    "Francesca Baerald",
-                ))
-                .with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
-                    TargetIndex::PRIMARY,
-                )))
-                .with_amount(2),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(MAP_TOKEN))
+                    .with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(
+                        TargetIndex::PRIMARY,
+                    )))
+                    .with_amount(2),
+            ),
         ]),
     )),
 );
@@ -408,10 +414,7 @@ pub(in crate::card::sets) static SENTINEL_OF_THE_NAMELESS_CITY: CardRecord = Car
                     ),
                     TriggerEventDef::attacks(ObjectPredicateDef::Source),
                 ]),
-                EffectDef::create_token(tokens::map()).with_art(CardArt::new(
-                    "64839118-09d2-4645-9d3c-f80755ac781f",
-                    "Francesca Baerald",
-                )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(MAP_TOKEN))),
             ),
         ]),
 );
@@ -499,8 +502,10 @@ pub(in crate::card::sets) static PREACHER_OF_THE_SCHISM: CardRecord = CardRecord
                 event: &TriggerEventDef::attacks_a_player(ObjectPredicateDef::Source),
                 condition: &TriggerConditionDef::PlayerHasMostLife(PlayerRelation::EventPlayer),
             },
-            EffectDef::create_creature_token(&["Vampire"], &[ManaColor::White], 1, 1)
-                .with_abilities(&[abilities::lifelink()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Vampire"], &[ManaColor::White], 1, 1)
+                    .with_abilities(&[abilities::lifelink()]),
+            ))),
         ),
         AbilityDef::triggered(
             "Whenever this creature attacks while you have the most life or are tied for most \

@@ -6,12 +6,15 @@ use crate::card::AbilityDef;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::ComparisonDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::SpellCastQueryDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -71,8 +74,10 @@ pub(in crate::card::sets) static MURMURING_MYSTIC: CardRecord = CardRecord::new(
                 ]),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
-            EffectDef::create_creature_token(&["Bird", "Illusion"], &[ManaColor::Blue], 1, 1)
-                .with_abilities(&[abilities::flying()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Bird", "Illusion"], &[ManaColor::Blue], 1, 1)
+                    .with_abilities(&[abilities::flying()]),
+            ))),
         ),
     ),
 );

@@ -441,11 +441,11 @@ fn helm_of_the_host_removes_legendary_copiably_but_grants_haste_afterward() {
         .ability_clauses()
         .first()
         .expect("the combat trigger is printed first");
-    let Some(EffectDef::CreateToken {
-        copy: Some(copy),
+    let Some(EffectDef::CreateToken(crate::card::CreateTokenDef {
+        token: crate::card::TokenDef::Copy(copy),
         created: Some(created),
         ..
-    }) = ability.declarative_effect()
+    })) = ability.declarative_effect()
     else {
         panic!("the combat trigger creates a copy token and continues with it");
     };

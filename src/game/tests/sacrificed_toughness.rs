@@ -178,7 +178,7 @@ fn wolves(game: &Game) -> usize {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Wolf"], &[ManaColor::Green], 2, 2),
+                crate::card::TokenCharacteristics::creature(&["Wolf"], &[ManaColor::Green], 2, 2),
             )
         })
         .count()

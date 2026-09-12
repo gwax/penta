@@ -8,7 +8,9 @@ use crate::{CardDefinitionId, CardPartId};
 
 static NESTED_TOKEN: TokenCharacteristics =
     TokenCharacteristics::creature(&["Test"], &[], 1, 1).with_name("Nested Locator Test");
-static CREATE_TOKEN: EffectDef = EffectDef::create_token(NESTED_TOKEN);
+static CREATE_TOKEN: EffectDef = EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+    crate::card::TokenDef::Literal(NESTED_TOKEN),
+));
 static MILL_THEN: EffectDef = EffectDef::Sequence(&[
     EffectDef::Mill {
         player: EffectRecipientDef::Controller,
@@ -77,7 +79,9 @@ fn token_and_emblem_owned_creators_form_one_semantic_chain() {
     static EMBLEM_ABILITIES: [AbilityDef; 1] = [AbilityDef::activated(
         "Create a Child token.",
         &[],
-        EffectDef::create_token(CHILD_TOKEN),
+        EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+            crate::card::TokenDef::Literal(CHILD_TOKEN),
+        )),
     )];
     static EMBLEM: EmblemCharacteristics =
         EmblemCharacteristics::new("Nested Creator emblem", &EMBLEM_ABILITIES);
@@ -93,7 +97,9 @@ fn token_and_emblem_owned_creators_form_one_semantic_chain() {
     static PRINTED_ABILITIES: [AbilityDef; 1] = [AbilityDef::activated(
         "Create a Parent token.",
         &[],
-        EffectDef::create_token(PARENT_TOKEN),
+        EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+            crate::card::TokenDef::Literal(PARENT_TOKEN),
+        )),
     )];
 
     let mut definition = CardDefinition::new(

@@ -284,7 +284,12 @@ fn the_sacrifice_feeds_a_titania() {
             .filter(|permanent| {
                 is_token_with(
                     permanent,
-                    tokens::creature(&["Elemental"], &[ManaColor::Green], 5, 3),
+                    crate::card::TokenCharacteristics::creature(
+                        &["Elemental"],
+                        &[ManaColor::Green],
+                        5,
+                        3,
+                    ),
                 )
             })
             .count()

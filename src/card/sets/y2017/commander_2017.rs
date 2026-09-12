@@ -10,6 +10,7 @@ use crate::card::AppliedRuleDef;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CopyExceptionsDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectPredicateDef;
@@ -19,6 +20,7 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerRuleDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SpellResolutionDestinationDef;
+use crate::card::TokenDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::mana_cost;
@@ -91,13 +93,15 @@ pub(in crate::card::sets) static FRACTURED_IDENTITY: CardRecord = CardRecord::ne
         // read off the target rather than off the spell: a Fractured Identity
         // pointed at your own permanent hands the copy to your opponent.
         EffectDef::Sequence(&[
-            EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-                object: &EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                exceptions: CopyExceptionsDef::NONE,
-            })
-            .with_controller(PlayerRefDef::OpponentOf(ObjectRefDef::Target(
-                TargetIndex::PRIMARY,
-            ))),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Copy(&crate::card::TokenCopyDef {
+                    object: &EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    exceptions: CopyExceptionsDef::NONE,
+                }))
+                .with_controller(PlayerRefDef::OpponentOf(ObjectRefDef::Target(
+                    TargetIndex::PRIMARY,
+                ))),
+            ),
             EffectDef::move_to_zone(
                 EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 ZoneKind::Exile,

@@ -10,7 +10,7 @@ fn chaos_orb_chooses_during_resolution_and_uses_a_seeded_success_trial() {
     target.temporary_keywords.push(KeywordAbility::Shroud);
     let token = token_permanent(
         10_002,
-        tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+        crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3),
         PlayerId::Two,
     );
     let orb_id = orb.card.id;

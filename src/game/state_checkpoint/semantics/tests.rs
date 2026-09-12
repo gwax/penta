@@ -22,16 +22,9 @@ static OUTER: AbilityDef = AbilityDef::replacement(
 
 static NESTED_TOKEN: TokenCharacteristics =
     TokenCharacteristics::creature(&["Test"], &[], 1, 1).with_name("Nested Walker Test");
-static CREATE_TOKEN: EffectDef = EffectDef::CreateToken {
-    token: NESTED_TOKEN,
-    copy: None,
-    controller: None,
-    count: ValueDef::Constant(1),
-    tapped: false,
-    attacking: false,
-    counters: None,
-    created: None,
-};
+static CREATE_TOKEN: EffectDef = EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+    crate::card::TokenDef::Literal(NESTED_TOKEN),
+));
 static MILL_THEN: EffectDef = EffectDef::Sequence(&[
     EffectDef::Mill {
         player: EffectRecipientDef::Controller,

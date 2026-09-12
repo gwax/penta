@@ -32,7 +32,7 @@ fn zombies(game: &Game) -> usize {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+                crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
             )
         })
         .count()
@@ -46,7 +46,7 @@ fn intangible_virtue_reaches_tokens_only() {
         .push(creature(10_000, cards::INTANGIBLE_VIRTUE, PlayerId::One));
     let token = token_permanent(
         10_100,
-        tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
         PlayerId::One,
     );
     let token_id = token.card.id;
@@ -95,7 +95,7 @@ fn army_of_the_damned_makes_thirteen_tapped_zombies() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
+                crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
             ))
             .all(|permanent| permanent.tapped),
         "every one of them arrived tapped",
@@ -115,7 +115,7 @@ fn endless_ranks_rounds_the_zombie_count_down() {
         for index in 0..existing {
             game.battlefield.push(token_permanent(
                 10_100 + index,
-                tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+                crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
                 PlayerId::One,
             ));
         }
@@ -178,7 +178,7 @@ fn cagebreakers_make_attacking_wolves_from_the_resolved_graveyard() {
     assert_eq!(
         token_count(
             &game,
-            tokens::creature(&["Wolf"], &[ManaColor::Green], 2, 2),
+            crate::card::TokenCharacteristics::creature(&["Wolf"], &[ManaColor::Green], 2, 2),
         ),
         2,
     );
@@ -188,7 +188,12 @@ fn cagebreakers_make_attacking_wolves_from_the_resolved_graveyard() {
             .filter(|permanent| {
                 is_token_with(
                     permanent,
-                    tokens::creature(&["Wolf"], &[ManaColor::Green], 2, 2),
+                    crate::card::TokenCharacteristics::creature(
+                        &["Wolf"],
+                        &[ManaColor::Green],
+                        2,
+                        2,
+                    ),
                 )
             })
             .all(|wolf| wolf.tapped && wolf.attacking),
@@ -218,7 +223,12 @@ fn geist_makes_an_attacking_angel_and_exiles_it_at_end_of_combat() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                token_with_flying(tokens::creature(&["Angel"], &[ManaColor::White], 4, 4)),
+                token_with_flying(crate::card::TokenCharacteristics::creature(
+                    &["Angel"],
+                    &[ManaColor::White],
+                    4,
+                    4,
+                )),
             )
         })
         .expect("Geist created its Angel");
@@ -232,7 +242,12 @@ fn geist_makes_an_attacking_angel_and_exiles_it_at_end_of_combat() {
     assert_eq!(
         token_count(
             &game,
-            token_with_flying(tokens::creature(&["Angel"], &[ManaColor::White], 4, 4,)),
+            token_with_flying(crate::card::TokenCharacteristics::creature(
+                &["Angel"],
+                &[ManaColor::White],
+                4,
+                4,
+            )),
         ),
         0,
     );

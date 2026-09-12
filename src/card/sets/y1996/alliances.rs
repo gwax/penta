@@ -20,6 +20,7 @@ use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatedTokensDef;
 use crate::card::DamageAssignmentDef;
 use crate::card::DamageEventMatcherDef;
@@ -46,6 +47,7 @@ use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
 use crate::card::TargetChooserDef;
 use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -104,8 +106,10 @@ pub(in crate::card::sets) static ERRAND_OF_DUTY: CardRecord = CardRecord::new(
     "Julie Baroh",
     CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell(
         "Create a 1/1 white Knight creature token with banding.",
-        EffectDef::create_creature_token(&["Knight"], &[ManaColor::White], 1, 1)
-            .with_abilities(&[abilities::banding()]),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::creature(&["Knight"], &[ManaColor::White], 1, 1)
+                .with_abilities(&[abilities::banding()]),
+        ))),
     )),
 );
 
@@ -1017,28 +1021,25 @@ CardRules::new_creature(mana_cost!("{3}{B}"), &["Zombie"], 2, 3).with_ability(
                     1,
                 )),
             ],
-            EffectDef::create_creature_token(
-                &["Graveborn"],
-                &[ManaColor::Black, ManaColor::Red],
-                3,
-                1,
-            )
-            .with_abilities(&[abilities::haste()])
-            .with_created_tokens(CreatedTokensDef {
-                binding: crate::ParentBinding,
-                then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(
-                    &AbilityDef::triggered(
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Graveborn"], &[ManaColor::Black, ManaColor::Red], 3, 1)
+                        .with_abilities(&[abilities::haste()]),
+                ))
+                .with_created_tokens(CreatedTokensDef {
+                    binding: crate::ParentBinding,
+                    then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
                         "At the beginning of the next end step, sacrifice that token.",
                         TriggerEventDef::StepBegins {
                             step: TurnStepDef::End,
                             player: PlayerRelation::Any,
                         },
-                        EffectDef::sacrifice(EffectRecipientDef::objects(
-                            ObjectSetDef::Binding(crate::ParentBinding),
-                        )),
-                    ),
-                )),
-            }),
+                        EffectDef::sacrifice(EffectRecipientDef::objects(ObjectSetDef::Binding(
+                            crate::ParentBinding,
+                        ))),
+                    ))),
+                }),
+            ),
         ),
     ),
 );
@@ -1128,7 +1129,9 @@ pub(in crate::card::sets) static FEAST_OR_FAMINE: CardRecord = CardRecord::new(
         &[
             AbilityDef::spell(
                 "Create a 2/2 black Zombie creature token.",
-                EffectDef::create_creature_token(&["Zombie"], &[ManaColor::Black], 2, 2),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+                ))),
             ),
             AbilityDef::spell_with_targets(
                 "Destroy target nonartifact, nonblack creature. It can't be regenerated.",
@@ -2282,36 +2285,36 @@ CardRules::new_enchantment(mana_cost!("{2}{G}{G}")).with_ability(
                     EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     ValueDef::Constant(1),
                 ),
-                EffectDef::create_token(
-                    TokenCharacteristics::creature(&["Splinter"], &[ManaColor::Green], 1, 1)
-                        .with_abilities(&[
-                            abilities::flying(),
-                            abilities::cumulative_upkeep(
-                                &[CostDef::mana(
-                                    mana_cost!("{G}"),
-                                )],
-                            ),
-                            AbilityDef::triggered(
-                                "When this creature leaves the battlefield, it deals 1 damage to you and each creature you control.",
-                                TriggerEventDef::zone_changed(
-                                    ObjectPredicateDef::Source,
-                                    Some(ZoneKind::Battlefield),
-                                    None,
-                                ),
-                                EffectDef::damage_simultaneously(&[
-                                    DamageAssignmentDef::from_effect(EffectRecipientDef::Controller, ValueDef::Constant(1)),
-                                    DamageAssignmentDef::from_effect(
-                                        EffectRecipientDef::matching_objects(
-                                            ObjectPredicateDef::HasType(CardType::Creature),
-                                            &[ZoneKind::Battlefield],
-                                            PlayerRelation::You,
-                                        ),
-                                        ValueDef::Constant(1),
-                                    ),
-                                ]),
-                            ),
-                        ]),
-                ),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                                                    TokenCharacteristics::creature(&["Splinter"], &[ManaColor::Green], 1, 1)
+                                                        .with_abilities(&[
+                                                            abilities::flying(),
+                                                            abilities::cumulative_upkeep(
+                                                                &[CostDef::mana(
+                                                                    mana_cost!("{G}"),
+                                                                )],
+                                                            ),
+                                                            AbilityDef::triggered(
+                                                                "When this creature leaves the battlefield, it deals 1 damage to you and each creature you control.",
+                                                                TriggerEventDef::zone_changed(
+                                                                    ObjectPredicateDef::Source,
+                                                                    Some(ZoneKind::Battlefield),
+                                                                    None,
+                                                                ),
+                                                                EffectDef::damage_simultaneously(&[
+                                                                    DamageAssignmentDef::from_effect(EffectRecipientDef::Controller, ValueDef::Constant(1)),
+                                                                    DamageAssignmentDef::from_effect(
+                                                                        EffectRecipientDef::matching_objects(
+                                                                            ObjectPredicateDef::HasType(CardType::Creature),
+                                                                            &[ZoneKind::Battlefield],
+                                                                            PlayerRelation::You,
+                                                                        ),
+                                                                        ValueDef::Constant(1),
+                                                                    ),
+                                                                ]),
+                                                            ),
+                                                        ]),
+                                                ))),
             ]),
         ),
     ),
@@ -2564,8 +2567,15 @@ CardRules::new_creature(mana_cost!("{1}{G}{W}{U}"), &["Phelddagrif"], 4, 4)
                         effect: AppliedEffectDef::add_ability(&abilities::trample()),
                         duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                     },
-                    EffectDef::create_creature_token(&["Hippo"], &[ManaColor::Green], 1, 1)
+                    EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                            &["Hippo"],
+                            &[ManaColor::Green],
+                            1,
+                            1,
+                        )))
                         .with_controller(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+                    ),
                 ]),
             ),
             AbilityDef::activated_with_targets(

@@ -34,6 +34,7 @@ use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DrawEventMatcherDef;
 use crate::card::EffectDef;
@@ -72,7 +73,9 @@ use crate::card::SetOperationDef;
 use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
 use crate::card::TargetConditionDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenCountersDef;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -142,6 +145,28 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const CLUE_TOKEN: TokenCharacteristics = tokens::clue().with_art(CardArt::new(
+    "e604b9ca-6c5a-459e-b509-955c3428530a",
+    "Michele Giorgi",
+));
+
+const FOOD_TOKEN: TokenCharacteristics = tokens::food().with_art(CardArt::new(
+    "14fe0b7c-2d73-4c21-98ca-ee3a7d7f20c8",
+    "Leanna Crossan",
+));
+
+const ELDRAZI_SPAWN_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Eldrazi", "Spawn"], &[], 0, 1)
+        .with_abilities(&[AbilityDef::activated_mana(
+            "Sacrifice this token: Add {C}.",
+            &[CostDef::SacrificeSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+        )])
+        .with_art(CardArt::new(
+            "0645cf05-4660-4a6e-b789-7e0f6b7660c0",
+            "Aleksi Briclot",
+        ));
 
 // MH3 2 — Devourer of Destiny
 pub(in crate::card::sets) static DEVOURER_OF_DESTINY: CardRecord = CardRecord::new(
@@ -307,15 +332,18 @@ pub(in crate::card::sets) static OCELOT_PRIDE: CardRecord = CardRecord::new(
                 },
                 &TriggerConditionDef::ControllerGainedLifeThisTurn,
                 EffectDef::Sequence(&[
-                    EffectDef::create_creature_token(&["Cat"], &[ManaColor::White], 1, 1).with_art(CardArt::new(
-                        "74bacab2-a4c6-4ba5-a208-6bd09ae4cf9f",
-                        "Maxime Minard",
-                    )),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Cat"], &[ManaColor::White], 1, 1).with_art(CardArt::new(
+                            "74bacab2-a4c6-4ba5-a208-6bd09ae4cf9f",
+                            "Maxime Minard",
+                        )),
+                    ))),
                     // The blessing half is checked as this resolves rather than as it
                     // triggers, so ascending in response still doubles.
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::ControllerHasCitysBlessing,
-                        then: &EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
+                        then: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Copy(
+                            &crate::card::TokenCopyDef {
                                 // "Until this enchantment leaves the battlefield" is one printed ability,
                                 // so the return rides on the same resolution as a delayed trigger rather
                                 // than appearing as a second clause the card does not print.
@@ -330,7 +358,8 @@ pub(in crate::card::sets) static OCELOT_PRIDE: CardRecord = CardRecord::new(
                                     PlayerSetDef::Related(PlayerRelation::You),
                                 ))),
                                 exceptions: CopyExceptionsDef::NONE,
-                            }),
+                            },
+                        ))),
                     },
                 ]),
             ),
@@ -637,7 +666,6 @@ pub(in crate::card::sets) static ACCURSED_MARAUDER: CardRecord = CardRecord::new
 );
 
 // MH3 90 — Emperor of Bones
-
 pub(in crate::card::sets) static EMPEROR_OF_BONES: CardRecord = CardRecord::new(
     "Emperor of Bones",
     "df9d9075-2d1e-4848-b661-816d539e05eb",
@@ -1061,19 +1089,6 @@ pub(in crate::card::sets) static MOLTEN_GATEKEEPER: CardRecord = CardRecord::new
 );
 
 // MH3 145 — Basking Broodscale
-/// The Spawn token that more than one MH3 card prints in full: a 0/1 body
-/// whose only job is to be sacrificed for one colourless mana. A static
-/// rather than a const fn, because the ability slice only gets a `'static`
-/// lifetime in a static initializer.
-static ELDRAZI_SPAWN_TOKEN: EffectDef =
-    EffectDef::create_creature_token(&["Eldrazi", "Spawn"], &[], 0, 1).with_abilities(&[
-        AbilityDef::activated_mana(
-            "Sacrifice this token: Add {C}.",
-            &[CostDef::SacrificeSource],
-            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
-        ),
-    ]);
-
 pub(in crate::card::sets) static BASKING_BROODSCALE: CardRecord = CardRecord::new(
     "Basking Broodscale",
     "5feba5d6-99a6-4e9b-8a7d-90d955868fc3",
@@ -1113,7 +1128,9 @@ pub(in crate::card::sets) static BASKING_BROODSCALE: CardRecord = CardRecord::ne
             },
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
-                effect: &ELDRAZI_SPAWN_TOKEN,
+                effect: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    ELDRAZI_SPAWN_TOKEN,
+                ))),
             },
         ),
     ]),
@@ -1207,7 +1224,7 @@ pub(in crate::card::sets) static ELDRAZI_REPURPOSER: CardRecord = CardRecord::ne
                     Some(ZoneKind::Graveyard),
                 ),
             ]),
-            ELDRAZI_SPAWN_TOKEN,
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(ELDRAZI_SPAWN_TOKEN))),
         ),
     ]),
 );
@@ -1405,7 +1422,7 @@ pub(in crate::card::sets) static MALEVOLENT_RUMBLE: CardRecord = CardRecord::new
                 0,
                 1,
             ),
-            ELDRAZI_SPAWN_TOKEN,
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(ELDRAZI_SPAWN_TOKEN))),
         ]),
     )),
 );
@@ -1663,13 +1680,17 @@ pub(in crate::card::sets) static SPRINGHEART_NANTUKO: CardRecord = CardRecord::n
                     PayOrDef::optional_or(
                         &[CostDef::Mana(mana_cost!("{1}{G}"))], // The whole point of bestowing it: every land is another copy of whatever
                         // it is wearing.
-                        &EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-                            object: &EffectRecipientDef::AttachedPermanent,
-                            exceptions: CopyExceptionsDef::NONE,
-                        }), // "If you didn't create a token this way": declining, being unable to pay,
+                        &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Copy(
+                            &crate::card::TokenCopyDef {
+                                object: &EffectRecipientDef::AttachedPermanent,
+                                exceptions: CopyExceptionsDef::NONE,
+                            },
+                        ))), // "If you didn't create a token this way": declining, being unable to pay,
                         // and not being attached at all are the same answer, and each leaves an
                         // Insect behind.
-                        &EffectDef::create_creature_token(&["Insect"], &[ManaColor::Green], 1, 1),
+                        &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::creature(&["Insect"], &[ManaColor::Green], 1, 1),
+                        ))),
                     )
                     // "If this permanent is attached to a creature you control": read before
                     // the offer, because a Nantuko that is a creature rather than an Aura has
@@ -1925,7 +1946,9 @@ pub(in crate::card::sets) static WRITHING_CHRYSALIS: CardRecord = CardRecord::ne
                 // A cast trigger, so the Spawn arrive while this is still on the
                 // stack and can help pay for whatever follows it.
                 TriggerEventDef::spell_cast(ObjectPredicateDef::Source),
-                ELDRAZI_SPAWN_TOKEN.with_amount(2),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(ELDRAZI_SPAWN_TOKEN)).with_amount(2),
+                ),
             ),
             abilities::reach(),
             AbilityDef::triggered(
@@ -2329,6 +2352,17 @@ pub(in crate::card::sets) static TWISTED_LANDSCAPE: CardRecord = CardRecord::new
 );
 
 // MH3 237 — Ajani, Nacatl Pariah // Ajani, Nacatl Avenger
+const CAT_WARRIOR_TOKEN: TokenCharacteristics = TokenCharacteristics::creature(
+    &const { ["Cat", "Warrior"] },
+    &const { [ManaColor::White] },
+    2,
+    1,
+)
+.with_art(CardArt::new(
+    "ce5c5bcf-1fdd-4d73-a92b-223292da00ca",
+    "Ben Wootten",
+));
+
 pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::new_dfc(
     "Ajani, Nacatl Pariah // Ajani, Nacatl Avenger",
     "0d16e8e0-31b2-4389-afd6-783c501f6fa0",
@@ -2342,9 +2376,9 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
                     .with_abilities(&const { [
                         abilities::enters_trigger(
                             "When Ajani enters, create a 2/1 white Cat Warrior creature token.",
-                            EffectDef::create_creature_token(&const { ["Cat", "Warrior"] }, &const { [ManaColor::White] }, 2, 1).with_art(
-                                CardArt::new("ce5c5bcf-1fdd-4d73-a92b-223292da00ca", "Ben Wootten"),
-                            ),
+                            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                                CAT_WARRIOR_TOKEN,
+                            ))),
                         ),
                         // One trigger per Cat rather than one per batch. Several Cats dying at
                         // once fire it several times, and every firing after the first finds
@@ -2422,9 +2456,9 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
                             // after the token appears, and there is always a legal one because a
                             // player is a legal target.
                             EffectDef::Sequence(&const { [
-                                EffectDef::create_creature_token(&const { ["Cat", "Warrior"] }, &const { [ManaColor::White] }, 2, 1).with_art(
-                                    CardArt::new("ce5c5bcf-1fdd-4d73-a92b-223292da00ca", "Ben Wootten"),
-                                ),
+                                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                                    CAT_WARRIOR_TOKEN,
+                                ))),
                                 EffectDef::IfCondition {
                                     // "If you control a red permanent other than Ajani." Ajani himself is
                                     // white, so the clause is about a second permanent rather than about him.
@@ -2768,7 +2802,7 @@ pub(in crate::card::sets) static TAMIYO_INQUISITIVE_STUDENT: CardRecord = CardRe
                             "Whenever Tamiyo attacks, investigate. (Create a Clue token. It's an artifact with \"{2}, \
                              Sacrifice this token: Draw a card.\")",
                             TriggerEventDef::Attacks(AttackEventMatcherDef::any(ObjectPredicateDef::Source)),
-                            EffectDef::create_token(tokens::clue()),
+                            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(CLUE_TOKEN))),
                         ),
                         // The third card of the turn, counted over the whole turn rather than
                         // any one step: her own attack Clue and the draw step are usually two
@@ -2969,7 +3003,7 @@ pub(in crate::card::sets) static SORIN_OF_HOUSE_MARKOV: CardRecord = CardRecord:
                     AbilityDef::activated(
                         "+2: Create a Food token.",
                         &const { [CostDef::Loyalty(2)] },
-                        EffectDef::create_token(tokens::food()),
+                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(FOOD_TOKEN))),
                     ),
                     // The same tally the front face reads to turn over, spent here as
                     // damage: the lifelink body he arrived as is what loads this.

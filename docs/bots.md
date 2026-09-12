@@ -572,13 +572,14 @@ its current zone. Its `characteristics` object says how to present that object:
   retain `kind: "faceDown"`; read the permanent's separate `faceDown` boolean
   to know whether it is actually face down.
 
-Native declarative definitions mirror those wire identities. Common token
-effects use compact by-value builders: `EffectDef::create_creature_token`,
-`create_artifact_creature_token`, and `create_artifact_token`, followed as
-needed by `with_amount` or `with_count`, `with_name`, `with_abilities`, and
-`with_art`. The default name joins the supplied subtypes in order. Standardized
-artifact rules are functions such as `tokens::treasure`, `food`, `clue`,
-`blood`, `map`, and `incubator`, rather than globally named token constants.
+Native declarative definitions mirror those wire identities. Token creation is
+`EffectDef::CreateToken(CreateTokenDef::new(source))`. Its `TokenDef` source is
+either `Literal(TokenCharacteristics)` or `Copy(&TokenCopyDef)`. Characteristics
+own the token's name, art, types, stats, and abilities; `CreateTokenDef` owns
+quantity, controller, entry options, counters, and the created-object
+continuation. The default name joins the supplied subtypes in order.
+Standardized artifact rules are complete declarations from functions such as
+`tokens::treasure`, `food`, `clue`, `blood`, `map`, and `incubator`.
 `EffectDef::create_emblem` similarly embeds a compact name-and-ability value in
 the creating card's effect. Face-down rules use compact
 `FaceDownCharacteristics` values from `face_down::morph`, `manifest`,

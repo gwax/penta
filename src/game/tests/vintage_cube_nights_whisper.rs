@@ -178,7 +178,12 @@ fn their_bowmasters_shoots_at_both_of_its_draws() {
             .find(|permanent| {
                 is_token_with(
                     permanent,
-                    tokens::creature(&["Orc", "Army"], &[ManaColor::Black], 0, 0),
+                    crate::card::TokenCharacteristics::creature(
+                        &["Orc", "Army"],
+                        &[ManaColor::Black],
+                        0,
+                        0,
+                    ),
                 )
             })
             .map_or(0, |permanent| {

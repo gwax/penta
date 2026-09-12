@@ -62,7 +62,7 @@ fn rabbits(game: &Game) -> usize {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Rabbit"], &[ManaColor::White], 1, 1),
+                crate::card::TokenCharacteristics::creature(&["Rabbit"], &[ManaColor::White], 1, 1),
             )
         })
         .count()
@@ -173,7 +173,7 @@ fn the_tokens_do_not_attack() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Rabbit"], &[ManaColor::White], 1, 1)
+                crate::card::TokenCharacteristics::creature(&["Rabbit"], &[ManaColor::White], 1, 1)
             ))
             .all(|permanent| !permanent.attacking),
         "the declaration was over before they existed",

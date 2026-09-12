@@ -50,16 +50,9 @@ fn catalog_validation_follows_nested_token_and_grant_continuations() {
         }),
     )
     .with_name("Broken Land");
-    static CREATE: EffectDef = EffectDef::CreateToken {
-        token: INCOHERENT_TOKEN,
-        copy: None,
-        controller: None,
-        count: ValueDef::Constant(1),
-        tapped: false,
-        attacking: false,
-        counters: None,
-        created: None,
-    };
+    static CREATE: EffectDef = EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+        crate::card::TokenDef::Literal(INCOHERENT_TOKEN),
+    ));
     for effect in continuation_effects(&GRANT) {
         let child = Box::leak(Box::new(AbilityDef::activated(
             "Resolve a continuation that grants an ability.",
@@ -168,4 +161,34 @@ fn continuing_a_replaced_draw_is_rejected_outside_a_replacement_program() {
             operation: "ContinueReplacedDraw",
         },
     );
+}
+
+#[test]
+fn token_copy_entry_modifiers_are_rejected_instead_of_ignored() {
+    use crate::card::{CreateTokenDef, TokenCopyDef, TokenCountersDef, TokenDef};
+    static COPY: TokenCopyDef = TokenCopyDef {
+        object: &EffectRecipientDef::Source,
+        exceptions: crate::card::CopyExceptionsDef::NONE,
+    };
+    let create = CreateTokenDef::new(TokenDef::Copy(&COPY));
+    super::validate_ability_targets(&[], EffectDef::CreateToken(create))
+        .expect("ordinary token copies are supported");
+    for unsupported in [
+        create.entering_tapped(),
+        create.entering_attacking(),
+        create.with_counters(TokenCountersDef {
+            kind: crate::card::CounterKind::PlusOnePlusOne,
+            amount: ValueDef::Constant(1),
+        }),
+    ] {
+        assert_eq!(
+            super::validate_ability_targets(&[], EffectDef::CreateToken(unsupported)),
+            Err(
+                GrantedAbilityValidationError::UnsupportedEffectProgramContext {
+                    context: "resolving",
+                    operation: "token copies with entry modifiers",
+                }
+            ),
+        );
+    }
 }

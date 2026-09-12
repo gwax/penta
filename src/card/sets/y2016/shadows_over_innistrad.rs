@@ -7,11 +7,14 @@ use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -28,6 +31,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const CLUE_TOKEN: TokenCharacteristics = tokens::clue().with_art(CardArt::new(
+    "f2c859e1-181e-44d1-afbd-bbd6e52cf42a",
+    "John Avon",
+));
+
 // SOI 44 — Thraben Inspector
 pub(in crate::card::sets) static THRABEN_INSPECTOR: CardRecord = CardRecord::new(
     "Thraben Inspector",
@@ -39,10 +47,7 @@ pub(in crate::card::sets) static THRABEN_INSPECTOR: CardRecord = CardRecord::new
         abilities::enters_trigger(
             "When this creature enters, investigate. (Create a Clue token. It's an artifact with \
              \"{2}, Sacrifice this token: Draw a card.\")",
-            EffectDef::create_token(tokens::clue()).with_art(CardArt::new(
-                "f2c859e1-181e-44d1-afbd-bbd6e52cf42a",
-                "John Avon",
-            )),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(CLUE_TOKEN))),
         ),
     ),
 );
@@ -68,10 +73,7 @@ pub(in crate::card::sets) static TIRELESS_TRACKER: CardRecord = CardRecord::new(
                 None,
                 Some(ZoneKind::Battlefield),
             ),
-            EffectDef::create_token(tokens::clue()).with_art(CardArt::new(
-                "f2c859e1-181e-44d1-afbd-bbd6e52cf42a",
-                "John Avon",
-            )),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(CLUE_TOKEN))),
         ),
         AbilityDef::triggered(
             "Whenever you sacrifice a Clue, put a +1/+1 counter on this creature.",

@@ -109,7 +109,12 @@ fn lands_and_tokens_are_not_legal_targets() {
         .expect("cataloged");
     game.create_token(
         PlayerId::One,
-        token_with_flying(tokens::creature(&["Spirit"], &[ManaColor::White], 1, 1)),
+        token_with_flying(crate::card::TokenCharacteristics::creature(
+            &["Spirit"],
+            &[ManaColor::White],
+            1,
+            1,
+        )),
     );
     drain_pending(&mut game);
     game.priority = PlayerId::One;

@@ -23,6 +23,7 @@ use crate::card::CostAdjustmentDef;
 use crate::card::CostAmountDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatedTokensDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DiscardSelectionDef;
@@ -42,6 +43,8 @@ use crate::card::ReplacementEffectDef;
 use crate::card::ReplacementEventDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SpellCostConditionDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -63,6 +66,19 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+const SAMURAI_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Samurai"], &[ManaColor::White], 2, 2)
+        .with_abilities(&[abilities::vigilance()])
+        .with_art(CardArt::new(
+            "f68e5337-6e44-4f8f-a102-2f97b433beea",
+            "Gaboleps",
+        ));
+
+const TREASURE_TOKEN: TokenCharacteristics = tokens::treasure().with_art(CardArt::new(
+    "6911181d-573b-41eb-96a4-799c96e008fc",
+    "Yeong-Hao Han",
+));
+
 // NEO 17 — Imperial Oath
 pub(in crate::card::sets) static IMPERIAL_OATH: CardRecord = CardRecord::new(
     "Imperial Oath",
@@ -73,9 +89,9 @@ pub(in crate::card::sets) static IMPERIAL_OATH: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{5}{W}")).with_ability(AbilityDef::spell(
         "Create three 2/2 white Samurai creature tokens with vigilance. Scry 3.",
         EffectDef::Sequence(&[
-            EffectDef::create_creature_token(&["Samurai"], &[ManaColor::White], 2, 2)
-                .with_abilities(&[abilities::vigilance()])
-                .with_amount(3),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(SAMURAI_TOKEN)).with_amount(3),
+            ),
             abilities::scry(ValueDef::Constant(3)),
         ]),
     )),
@@ -279,12 +295,9 @@ pub(in crate::card::sets) static THE_WANDERING_EMPEROR: CardRecord = CardRecord:
             AbilityDef::activated(
                 "−1: Create a 2/2 white Samurai creature token with vigilance.",
                 &[CostDef::Loyalty(-1)],
-                EffectDef::create_creature_token(&["Samurai"], &[ManaColor::White], 2, 2)
-                    .with_abilities(&[abilities::vigilance()])
-                    .with_art(CardArt::new(
-                        "f68e5337-6e44-4f8f-a102-2f97b433beea",
-                        "Gaboleps",
-                    )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    SAMURAI_TOKEN,
+                ))),
             ),
             AbilityDef::activated_with_targets(
                 "−2: Exile target tapped creature. You gain 2 life.",
@@ -825,13 +838,24 @@ pub(in crate::card::sets) static FABLE_OF_THE_MIRROR_BREAKER: CardRecord = CardR
                         1,
                         "I — Create a 2/2 red Goblin Shaman creature token with \"Whenever this token attacks, \
                          create a Treasure token.\"",
-                        EffectDef::create_creature_token(&const { ["Goblin", "Shaman"] }, &const { [ManaColor::Red] }, 2, 2)
+                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::creature(
+                                &const { ["Goblin", "Shaman"] },
+                                &const { [ManaColor::Red] },
+                                2,
+                                2,
+                            )
                             // The Goblin's own clause, printed on the token rather than on the Saga.
-                            .with_abilities(&const { [AbilityDef::triggered(
-                                "Whenever this token attacks, create a Treasure token.",
-                                TriggerEventDef::attacks(ObjectPredicateDef::Source),
-                                EffectDef::create_token(tokens::treasure()),
-                            )] }),
+                            .with_abilities(
+                                &const {
+                                    [AbilityDef::triggered(
+                                        "Whenever this token attacks, create a Treasure token.",
+                                        TriggerEventDef::attacks(ObjectPredicateDef::Source),
+                                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(TREASURE_TOKEN))),
+                                    )]
+                                },
+                            ),
+                        ))),
                     ),
                     abilities::saga_chapter(
                         2,
@@ -899,28 +923,36 @@ pub(in crate::card::sets) static FABLE_OF_THE_MIRROR_BREAKER: CardRecord = CardR
                         })
                         .excluding_source(),
                     ] },
-                    EffectDef::create_token_from_copy(&const { crate::card::TokenCopyDef {
-                        object: &EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                        exceptions: CopyExceptionsDef::NONE
-                            .with_abilities(&const { [CopyAbilityDef::Ability(&abilities::haste())] }),
-                    } })
-                    .with_created_tokens(CreatedTokensDef {
-                        binding: ParentBinding,
-                        then: &const {
-                            EffectDef::InstallTrigger(InstalledTriggerDef::once(&const {
-                                AbilityDef::triggered(
-                                    "Sacrifice it at the beginning of the next end step.",
-                                    TriggerEventDef::StepBegins {
-                                        step: TurnStepDef::End,
-                                        player: PlayerRelation::Any,
+                    EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Copy(
+                            &const {
+                                crate::card::TokenCopyDef {
+                                    object: &EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                                    exceptions: CopyExceptionsDef::NONE
+                                        .with_abilities(&const { [CopyAbilityDef::Ability(&abilities::haste())] }),
+                                }
+                            },
+                        ))
+                        .with_created_tokens(CreatedTokensDef {
+                            binding: ParentBinding,
+                            then: &const {
+                                EffectDef::InstallTrigger(InstalledTriggerDef::once(
+                                    &const {
+                                        AbilityDef::triggered(
+                                            "Sacrifice it at the beginning of the next end step.",
+                                            TriggerEventDef::StepBegins {
+                                                step: TurnStepDef::End,
+                                                player: PlayerRelation::Any,
+                                            },
+                                            EffectDef::sacrifice(EffectRecipientDef::objects(ObjectSetDef::Binding(
+                                                ParentBinding,
+                                            ))),
+                                        )
                                     },
-                                    EffectDef::sacrifice(EffectRecipientDef::objects(
-                                            ObjectSetDef::Binding(ParentBinding),
-                                        )),
-                                )
-                            }))
-                        },
-                    }),
+                                ))
+                            },
+                        }),
+                    ),
                 )] })
             },
         ),

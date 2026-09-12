@@ -874,9 +874,10 @@ fn collect_effect_abilities(effect: EffectDef, abilities: &mut Vec<&'static Abil
                 },
             ));
         }
-        EffectDef::CreateToken {
-            copy: Some(copy), ..
-        } => {
+        EffectDef::CreateToken(crate::card::CreateTokenDef {
+            token: crate::card::TokenDef::Copy(copy),
+            ..
+        }) => {
             abilities.extend(
                 copy.exceptions
                     .added_abilities

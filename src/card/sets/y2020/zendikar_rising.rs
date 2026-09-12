@@ -18,6 +18,7 @@ use crate::card::ComparisonDef;
 use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
@@ -31,6 +32,8 @@ use crate::card::ReplacementConditionDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TokenStatsDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -160,19 +163,21 @@ pub(in crate::card::sets) static SKYCLAVE_APPARITION: CardRecord = CardRecord::n
                         binding: ParentBinding,
                         // The token is the exiled card's owner's, not the Apparition controller's:
                         // what they get back for the permanent that is not coming back.
-                        effect: &EffectDef::create_creature_token_with_stats(
-                                &["Illusion"],
-                                &[ManaColor::Blue],
-                                // "Where X is the mana value of the exiled card": both halves read the same
-                                // card, which is the one the leave trigger just bound.
-                                &TokenStatsDef {
-                                    power: ValueDef::ObjectManaValue(ObjectRefDef::Binding(ParentBinding)),
-                                    toughness: ValueDef::ObjectManaValue(ObjectRefDef::Binding(ParentBinding)),
-                                },
-                            )
-                                .with_controller(PlayerRefDef::OwnerOf(ObjectRefDef::Binding(
-                                    ParentBinding,
-                                ))),
+                        effect: &EffectDef::CreateToken(
+                            CreateTokenDef::new(TokenDef::Literal(
+                                TokenCharacteristics::creature_with_stats(
+                                    &["Illusion"],
+                                    &[ManaColor::Blue],
+                                    // "Where X is the mana value of the exiled card": both halves read the same
+                                    // card, which is the one the leave trigger just bound.
+                                    &TokenStatsDef {
+                                        power: ValueDef::ObjectManaValue(ObjectRefDef::Binding(ParentBinding)),
+                                        toughness: ValueDef::ObjectManaValue(ObjectRefDef::Binding(ParentBinding)),
+                                    },
+                                ),
+                            ))
+                            .with_controller(PlayerRefDef::OwnerOf(ObjectRefDef::Binding(ParentBinding))),
+                        ),
                     },
                 ),
             ),

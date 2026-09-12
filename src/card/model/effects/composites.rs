@@ -248,8 +248,7 @@ pub struct CreatedTokensDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct TokenCopyDef {
     /// The source is static catalog data like the effect itself; keeping the
-    /// recipient behind a reference prevents optional copy initialization
-    /// from enlarging every ordinary authored-token instruction.
+    /// recipient behind a reference keeps copy sources compact.
     pub object: &'static EffectRecipientDef,
     pub exceptions: CopyExceptionsDef,
 }

@@ -14,6 +14,7 @@ use crate::card::CardType;
 use crate::card::CharacteristicOperationDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -25,6 +26,8 @@ use crate::card::PowerToughnessOperationDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SetOperationDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
@@ -177,8 +180,15 @@ pub(in crate::card::sets) static GOBLIN_SURPRISE: CardRecord = CardRecord::new(
             ),
             AbilityDef::spell(
                 "Create two 1/1 red Goblin creature tokens.",
-                EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1)
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                        &["Goblin"],
+                        &[ManaColor::Red],
+                        1,
+                        1,
+                    )))
                     .with_amount(2),
+                ),
             ),
         ],
     )),

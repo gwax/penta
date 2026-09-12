@@ -76,7 +76,12 @@ fn skeleton(game: &Game) -> Option<&Permanent> {
     game.battlefield.iter().find(|permanent| {
         is_token_with(
             permanent,
-            token_with_menace(tokens::creature(&["Skeleton"], &[ManaColor::Black], 4, 1)),
+            token_with_menace(crate::card::TokenCharacteristics::creature(
+                &["Skeleton"],
+                &[ManaColor::Black],
+                4,
+                1,
+            )),
         )
     })
 }
@@ -192,7 +197,12 @@ fn a_wide_attack_triggers_it_once() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                token_with_menace(tokens::creature(&["Skeleton"], &[ManaColor::Black], 4, 1))
+                token_with_menace(crate::card::TokenCharacteristics::creature(
+                    &["Skeleton"],
+                    &[ManaColor::Black],
+                    4,
+                    1
+                ))
             ))
             .count(),
         1,

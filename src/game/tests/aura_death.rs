@@ -42,7 +42,12 @@ fn murder_investigation_makes_one_soldier_per_power() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1)
+                crate::card::TokenCharacteristics::creature(
+                    &["Soldier"],
+                    &[ManaColor::White],
+                    1,
+                    1
+                )
             ))
             .count(),
         4,
@@ -70,7 +75,12 @@ fn the_aura_itself_is_gone_when_the_trigger_resolves() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1)
+                crate::card::TokenCharacteristics::creature(
+                    &["Soldier"],
+                    &[ManaColor::White],
+                    1,
+                    1
+                )
             ))
             .count(),
         2,

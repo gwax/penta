@@ -367,7 +367,7 @@ fn the_first_mode_counters_a_triggered_ability() {
     assert!(
         !game.battlefield.iter().any(|permanent| is_token_with(
             permanent,
-            tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
+            crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
         )),
         "the trigger was countered, so it made nothing",
     );

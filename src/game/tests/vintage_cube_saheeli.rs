@@ -62,7 +62,10 @@ fn servos(game: &Game) -> usize {
     game.battlefield
         .iter()
         .filter(|permanent| {
-            is_token_with(permanent, tokens::artifact_creature(&["Servo"], &[], 1, 1))
+            is_token_with(
+                permanent,
+                crate::card::TokenCharacteristics::artifact_creature(&["Servo"], &[], 1, 1),
+            )
         })
         .count()
 }

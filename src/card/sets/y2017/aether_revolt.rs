@@ -14,6 +14,7 @@ use crate::card::CardType;
 use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatedTokensDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -27,6 +28,7 @@ use crate::card::PlayerRelation;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -61,7 +63,11 @@ const fn servo_for_two_energy_on_attack() -> AbilityDef {
         TriggerEventDef::attacks(ObjectPredicateDef::Source),
         EffectDef::PayOr(PayOrDef::optional(
             &[CostDef::Energy(2)],
-            &const { EffectDef::create_artifact_creature_token(&["Servo"], &[], 1, 1) },
+            &const {
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::artifact_creature(&["Servo"], &[], 1, 1),
+                )))
+            },
         )),
     )
 }
@@ -166,13 +172,16 @@ pub(in crate::card::sets) static KARI_ZEV_SKYSHIP_RAIDER: CardRecord = CardRecor
                 // A named, legendary token: Ragavan is one of the few tokens that is a
                 // particular creature rather than a kind of one, which matters because two
                 // Kari Zevs cannot keep two of him.
-                EffectDef::create_token(TokenCharacteristics::creature(&["Monkey"], &[ManaColor::Red], 2, 1)
-                        .with_name("Ragavan")
-                        .with_supertype(CardSupertype::Legendary)
-                        .with_art(CardArt::new(
-                            "1ebc91a9-23e0-4ca1-bc6d-e710ad2efb31",
-                            "Daniel Ljunggren",
-                        )))
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Monkey"], &[ManaColor::Red], 2, 1)
+                            .with_name("Ragavan")
+                            .with_supertype(CardSupertype::Legendary)
+                            .with_art(CardArt::new(
+                                "1ebc91a9-23e0-4ca1-bc6d-e710ad2efb31",
+                                "Daniel Ljunggren",
+                            )),
+                    ))
                     .entering_tapped()
                     .entering_attacking()
                     .with_created_tokens(CreatedTokensDef {
@@ -181,20 +190,19 @@ pub(in crate::card::sets) static KARI_ZEV_SKYSHIP_RAIDER: CardRecord = CardRecor
                         // attack the same turn would make another one, and the clause exiles the
                         // Monkey this attack brought.
                         then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
-                                "Exile that token at end of combat.",
-                                TriggerEventDef::StepBegins {
-                                    step: TurnStepDef::EndOfCombat,
-                                    player: PlayerRelation::Any,
-                                },
-                                EffectDef::move_to_zone(
-                                    EffectRecipientDef::objects(ObjectSetDef::Binding(
-                                        ParentBinding,
-                                    )),
-                                    ZoneKind::Exile,
-                                    ZonePlacement::Top,
-                                ),
-                            ))),
+                            "Exile that token at end of combat.",
+                            TriggerEventDef::StepBegins {
+                                step: TurnStepDef::EndOfCombat,
+                                player: PlayerRelation::Any,
+                            },
+                            EffectDef::move_to_zone(
+                                EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
+                                ZoneKind::Exile,
+                                ZonePlacement::Top,
+                            ),
+                        ))),
                     }),
+                ),
             ),
         ]),
 );

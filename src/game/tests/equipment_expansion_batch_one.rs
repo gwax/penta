@@ -116,7 +116,7 @@ fn demonmail_hauberk_sacrifices_a_creature_to_equip() {
 fn avacyns_collar_watches_only_its_equipped_human_die() {
     let (mut game, _collar, human_id) = attached_token_board(
         cards::AVACYNS_COLLAR,
-        tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1),
     );
     assert_eq!(stats(&game, human_id), (Some(2), Some(1)));
     assert!(
@@ -129,7 +129,7 @@ fn avacyns_collar_watches_only_its_equipped_human_die() {
 
     let bystander = token_permanent(
         10_200,
-        tokens::creature(&["Human"], &[ManaColor::White], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Human"], &[ManaColor::White], 1, 1),
         PlayerId::One,
     );
     let bystander_id = bystander.card.id;
@@ -140,7 +140,12 @@ fn avacyns_collar_watches_only_its_equipped_human_die() {
     assert!(
         game.battlefield.iter().all(|permanent| !is_token_with(
             permanent,
-            token_with_flying(tokens::creature(&["Spirit"], &[ManaColor::White], 1, 1))
+            token_with_flying(crate::card::TokenCharacteristics::creature(
+                &["Spirit"],
+                &[ManaColor::White],
+                1,
+                1
+            ))
         )),
         "an unequipped Human dying does not trigger the Collar",
     );
@@ -154,7 +159,12 @@ fn avacyns_collar_watches_only_its_equipped_human_die() {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                token_with_flying(tokens::creature(&["Spirit"], &[ManaColor::White], 1, 1)),
+                token_with_flying(crate::card::TokenCharacteristics::creature(
+                    &["Spirit"],
+                    &[ManaColor::White],
+                    1,
+                    1,
+                )),
             )
         })
         .collect::<Vec<_>>();
@@ -224,7 +234,12 @@ fn moonsilver_spear_triggers_only_for_the_equipped_attacker() {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                token_with_flying(tokens::creature(&["Angel"], &[ManaColor::White], 4, 4)),
+                token_with_flying(crate::card::TokenCharacteristics::creature(
+                    &["Angel"],
+                    &[ManaColor::White],
+                    4,
+                    4,
+                )),
             )
         })
         .collect::<Vec<_>>();

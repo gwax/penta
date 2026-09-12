@@ -26,6 +26,7 @@ use crate::card::ConditionalStaticEffectDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectChoiceDef;
 use crate::card::EffectDef;
@@ -57,6 +58,8 @@ use crate::card::RevealObjectsDef;
 use crate::card::ScaledValueDef;
 use crate::card::StaticApplyDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -325,22 +328,10 @@ CardRules::new_sorcery(mana_cost!("{1}{W}")).with_abilities(&[
         ).override_text("Buyback—Sacrifice a land. (You may sacrifice a land in addition to any other costs as you cast this spell. If you do, put this card into your hand as it resolves.)"),
         AbilityDef::spell(
             "Create a 1/1 white Pegasus creature token with flying.",
-            EffectDef::CreateToken {
-                token: crate::card::TokenCharacteristics::creature(
-                    &["Pegasus"],
-                    &[ManaColor::White],
-                    1,
-                    1,
-                )
-                .with_abilities(&[abilities::flying()]),
-                copy: None,
-                controller: None,
-                count: ValueDef::Constant(1),
-                tapped: false,
-                attacking: false,
-                counters: None,
-                created: None,
-            },
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Pegasus"], &[ManaColor::White], 1, 1)
+                    .with_abilities(&[abilities::flying()]),
+            ))),
         ),
     ]),
 );
@@ -2610,21 +2601,9 @@ CardRules::new_creature(mana_cost!("{G}{G}"), &["Human", "Wizard"], 1, 2).with_a
                     zones: &[ZoneKind::Battlefield],
                 },
             )],
-            EffectDef::CreateToken {
-                token: crate::card::TokenCharacteristics::creature(
-                    &["Beast"],
-                    &[ManaColor::Green],
-                    2,
-                    2,
-                ),
-                copy: None,
-                controller: None,
-                count: ValueDef::Constant(1),
-                tapped: false,
-                attacking: false,
-                counters: None,
-                created: None,
-            },
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 2, 2),
+            ))),
         ),
     ),
 );
@@ -3357,22 +3336,10 @@ CardRules::new_artifact_creature(mana_cost!("{5}"), &["Thopter"], 0, 0).with_abi
                     amount: 1,
                 },
             ],
-            EffectDef::CreateToken {
-                token: crate::card::TokenCharacteristics::artifact_creature(
-                    &["Thopter"],
-                    &[],
-                    1,
-                    1,
-                )
-                .with_abilities(&[abilities::flying()]),
-                copy: None,
-                controller: None,
-                count: ValueDef::Constant(1),
-                tapped: false,
-                attacking: false,
-                counters: None,
-                created: None,
-            },
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Thopter"], &[], 1, 1)
+                    .with_abilities(&[abilities::flying()]),
+            ))),
         )
         .with_activation_timing(ActivationTimingDef::SorcerySpeed),
         AbilityDef::activated(

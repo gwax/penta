@@ -39,6 +39,7 @@ use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
 use crate::card::CounterKindDef;
 use crate::card::CounterOperationDef;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageAssignmentDef;
 use crate::card::DamageDef;
@@ -91,7 +92,9 @@ use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
 use crate::card::SuspendAbilityDef;
 use crate::card::TargetChooserDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenCountersDef;
+use crate::card::TokenDef;
 use crate::card::TokenStatsDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -112,6 +115,12 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const SAPROLING_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1);
+
+const GOBLIN_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1);
 
 // TSP 1 — Amrou Scout
 pub(in crate::card::sets) static AMROU_SCOUT: CardRecord = CardRecord::new(
@@ -666,8 +675,10 @@ pub(in crate::card::sets) static GRIFFIN_GUIDE: CardRecord = CardRecord::new(
                     Some(ZoneKind::Battlefield),
                     Some(ZoneKind::Graveyard),
                 ),
-                EffectDef::create_creature_token(&["Griffin"], &[ManaColor::White], 2, 2)
-                    .with_abilities(&[abilities::flying()]),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Griffin"], &[ManaColor::White], 2, 2)
+                        .with_abilities(&[abilities::flying()]),
+                ))),
             ),
         ]),
 );
@@ -728,8 +739,15 @@ pub(in crate::card::sets) static ICATIAN_CRIER: CardRecord = CardRecord::new(
                 CostDef::TapSource,
                 CostDef::discard(ObjectPredicateDef::Any),
             ],
-            EffectDef::create_creature_token(&["Citizen"], &[ManaColor::White], 1, 1)
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Citizen"],
+                    &[ManaColor::White],
+                    1,
+                    1,
+                )))
                 .with_count(ValueDef::Constant(2)),
+            ),
         )],
     ),
 );
@@ -2902,7 +2920,9 @@ pub(in crate::card::sets) static DEATHSPORE_THALLID: CardRecord = CardRecord::ne
                 kind: CounterKind::named("spore"),
                 amount: 3,
             }],
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                SAPROLING_TOKEN,
+            ))),
         ),
         AbilityDef::activated_with_targets(
             "Sacrifice a Saproling: Target creature gets -1/-1 until end of turn.",
@@ -3022,12 +3042,19 @@ pub(in crate::card::sets) static ENDREK_SAHR_MASTER_BREEDER: CardRecord = CardRe
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ])),
-                EffectDef::create_creature_token(&["Thrull"], &[ManaColor::Black], 1, 1)
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                        &["Thrull"],
+                        &[ManaColor::Black],
+                        1,
+                        1,
+                    )))
                     .with_count(ValueDef::AggregateObjectValues(&ObjectValueAggregateDef {
                         objects: ObjectSetDef::One(ObjectRefDef::TriggeringObject),
                         select: ObjectValueDef::ManaValue,
                         operation: AggregateOperationDef::Sum,
                     })),
+                ),
             ),
             AbilityDef::triggered_if(
                 "When you control seven or more Thrulls, sacrifice Endrek Sahr.",
@@ -3663,41 +3690,39 @@ pub(in crate::card::sets) static SENGIR_NOSFERATU: CardRecord = CardRecord::new(
         AbilityDef::activated(
             "{1}{B}, Exile this creature: Create a 1/2 black Bat creature token with flying. It has \"{1}{B}, Sacrifice this token: Return an exiled card named Sengir Nosferatu to the battlefield under its owner's control.\"",
             &[CostDef::Mana(mana_cost!("{1}{B}")), CostDef::ExileSource],
-            EffectDef::create_creature_token(&["Bat"], &[ManaColor::Black], 1, 2).with_abilities(
-                &[
-                    abilities::flying(),
-                    AbilityDef::activated(
-                        "{1}{B}, Sacrifice this token: Return an exiled card named Sengir Nosferatu to the battlefield under its owner's control.",
-                        &[
-                            CostDef::Mana(mana_cost!("{1}{B}")),
-                            CostDef::SacrificeSource,
-                        ],
-                        EffectDef::Choose(ChooseDef {
-                            binding: ObjectChoiceBindingDef::Objects(ParentBinding),
-                            unchosen: None,
-                            chooser: PlayerRefDef::EffectController,
-                            candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                                ObjectPredicateDef::NameEquals(CardNameDef::Literal(
-                                    "Sengir Nosferatu",
-                                )),
-                                &[ZoneKind::Exile],
-                                PlayerRelation::Any,
-                            )),
-                            exclude: None,
-                            minimum: 1,
-                            maximum: 1,
-                            visibility: ChoiceVisibilityDef::Public,
-                            then: &EffectDef::move_to_zone(
-                                EffectRecipientDef::objects(ObjectSetDef::Binding(
-                                    ParentBinding,
-                                )),
-                                ZoneKind::Battlefield,
-                                ZonePlacement::Top,
-                            ),
-                        }),
-                    ),
-                ],
-            ),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(&["Bat"], &[ManaColor::Black], 1, 2).with_abilities(
+                                        &[
+                                            abilities::flying(),
+                                            AbilityDef::activated(
+                                                "{1}{B}, Sacrifice this token: Return an exiled card named Sengir Nosferatu to the battlefield under its owner's control.",
+                                                &[
+                                                    CostDef::Mana(mana_cost!("{1}{B}")),
+                                                    CostDef::SacrificeSource,
+                                                ],
+                                                EffectDef::Choose(ChooseDef {
+                                                    binding: ObjectChoiceBindingDef::Objects(ParentBinding),
+                                                    unchosen: None,
+                                                    chooser: PlayerRefDef::EffectController,
+                                                    candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
+                                                        ObjectPredicateDef::NameEquals(CardNameDef::Literal(
+                                                            "Sengir Nosferatu",
+                                                        )),
+                                                        &[ZoneKind::Exile],
+                                                        PlayerRelation::Any,
+                                                    )),
+                                                    exclude: None,
+                                                    minimum: 1,
+                                                    maximum: 1,
+                                                    visibility: ChoiceVisibilityDef::Public,
+                                                    then: &EffectDef::move_to_zone(
+                                                        EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
+                                                        ZoneKind::Battlefield,
+                                                        ZonePlacement::Top,
+                                                    ),
+                                                }),
+                                            ),
+                                        ],
+                                    )))),
         ),
     ]),
 );
@@ -4334,8 +4359,10 @@ pub(in crate::card::sets) static EMPTY_THE_WARRENS: CardRecord = CardRecord::new
     CardRules::new_sorcery(mana_cost!("{3}{R}")).with_abilities(&[
         AbilityDef::spell(
             "Create two 1/1 red Goblin creature tokens.",
-            EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1)
-                .with_count(ValueDef::Constant(2)),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(GOBLIN_TOKEN))
+                    .with_count(ValueDef::Constant(2)),
+            ),
         ),
         abilities::storm(),
     ]),
@@ -4894,7 +4921,9 @@ pub(in crate::card::sets) static MOGG_WAR_MARSHAL: CardRecord = CardRecord::new(
                     Some(ZoneKind::Graveyard),
                 ),
             ]),
-            EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                GOBLIN_TOKEN,
+            ))),
         ),
     ]),
 );
@@ -5879,8 +5908,10 @@ pub(in crate::card::sets) static PENUMBRA_SPIDER: CardRecord = CardRecord::new(
                 Some(ZoneKind::Battlefield),
                 Some(ZoneKind::Graveyard),
             ),
-            EffectDef::create_creature_token(&["Spider"], &[ManaColor::Black], 2, 4)
-                .with_abilities(&[abilities::reach()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Spider"], &[ManaColor::Black], 2, 4)
+                    .with_abilities(&[abilities::reach()]),
+            ))),
         ),
     ]),
 );
@@ -5947,7 +5978,9 @@ pub(in crate::card::sets) static SAVAGE_THALLID: CardRecord = CardRecord::new(
                 kind: CounterKind::named("spore"),
                 amount: 3,
             }],
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                SAPROLING_TOKEN,
+            ))),
         ),
         AbilityDef::activated_with_targets(
             "Sacrifice a Saproling: Regenerate target Fungus.",
@@ -6178,7 +6211,9 @@ pub(in crate::card::sets) static SPORESOWER_THALLID: CardRecord = CardRecord::ne
                 kind: CounterKind::named("spore"),
                 amount: 3,
             }],
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                SAPROLING_TOKEN,
+            ))),
         ),
     ]),
 );
@@ -6190,7 +6225,7 @@ pub(in crate::card::sets) static SPROUT: CardRecord = CardRecord::new(
     "Anthony S. Waters",
     CardRules::new_instant(mana_cost!("{G}")).with_abilities(&[AbilityDef::spell(
         "Create a 1/1 green Saproling creature token.",
-        EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(SAPROLING_TOKEN))),
     )]),
 );
 
@@ -6317,7 +6352,9 @@ pub(in crate::card::sets) static THALLID_GERMINATOR: CardRecord = CardRecord::ne
                 kind: CounterKind::named("spore"),
                 amount: 3,
             }],
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                SAPROLING_TOKEN,
+            ))),
         ),
         AbilityDef::activated_with_targets(
             "Sacrifice a Saproling: Target creature gets +1/+1 until end of turn.",
@@ -6370,7 +6407,9 @@ pub(in crate::card::sets) static THALLID_SHELL_DWELLER: CardRecord = CardRecord:
                 kind: CounterKind::named("spore"),
                 amount: 3,
             }],
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                SAPROLING_TOKEN,
+            ))),
         ),
     ]),
 );
@@ -6502,12 +6541,9 @@ pub(in crate::card::sets) static VERDANT_EMBRACE: CardRecord = CardRecord::new(
                                         step: TurnStepDef::Upkeep,
                                         player: PlayerRelation::Any,
                                     },
-                                    EffectDef::create_creature_token(
-                                        &["Saproling"],
-                                        &[ManaColor::Green],
-                                        1,
-                                        1,
-                                    ),
+                                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                                        SAPROLING_TOKEN,
+                                    ))),
                                 )
                             },
                         ),
@@ -6563,14 +6599,16 @@ pub(in crate::card::sets) static WURMCALLING: CardRecord = CardRecord::new(
         abilities::buyback(&[CostDef::Mana(mana_cost!("{2}{G}"))]),
         AbilityDef::spell(
             "Create an X/X green Wurm creature token.",
-            EffectDef::create_creature_token_with_stats(
-                &["Wurm"],
-                &[ManaColor::Green],
-                &TokenStatsDef {
-                    power: ValueDef::ChosenX,
-                    toughness: ValueDef::ChosenX,
-                },
-            ),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature_with_stats(
+                    &["Wurm"],
+                    &[ManaColor::Green],
+                    &TokenStatsDef {
+                        power: ValueDef::ChosenX,
+                        toughness: ValueDef::ChosenX,
+                    },
+                ),
+            ))),
         ),
     ]),
 );
@@ -7597,8 +7635,8 @@ pub(in crate::card::sets) static TRISKELAVUS: CardRecord = CardRecord::new(
                     amount: 1,
                 },
             ],
-            EffectDef::create_artifact_creature_token(&["Triskelavite"], &[], 1, 1).with_abilities(
-                &[
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Triskelavite"], &[], 1, 1).with_abilities(&[
                     abilities::flying(),
                     AbilityDef::activated_with_targets(
                         "Sacrifice this token: This token deals 1 damage to any target.",
@@ -7611,8 +7649,8 @@ pub(in crate::card::sets) static TRISKELAVUS: CardRecord = CardRecord::new(
                             ValueDef::Constant(1),
                         ),
                     ),
-                ],
-            ),
+                ]),
+            ))),
         ),
     ]),
 );
@@ -7827,8 +7865,10 @@ pub(in crate::card::sets) static KHER_KEEP: CardRecord = CardRecord::new(
             AbilityDef::activated(
                 "{1}{R}, {T}: Create a 0/1 red Kobold creature token named Kobolds of Kher Keep.",
                 &[CostDef::Mana(mana_cost!("{1}{R}")), CostDef::TapSource],
-                EffectDef::create_creature_token(&["Kobold"], &[ManaColor::Red], 0, 1)
-                    .with_name("Kobolds of Kher Keep"),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Kobold"], &[ManaColor::Red], 0, 1)
+                        .with_name("Kobolds of Kher Keep"),
+                ))),
             ),
         ]),
 );
@@ -7920,7 +7960,9 @@ pub(in crate::card::sets) static URZA_S_FACTORY: CardRecord = CardRecord::new(
         AbilityDef::activated(
             "{7}, {T}: Create a 2/2 colorless Assembly-Worker artifact creature token.",
             &[CostDef::Mana(mana_cost!("{7}")), CostDef::TapSource],
-            EffectDef::create_artifact_creature_token(&["Assembly-Worker"], &[], 2, 2),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Assembly-Worker"], &[], 2, 2),
+            ))),
         ),
     ]),
 );

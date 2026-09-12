@@ -19,7 +19,7 @@ fn lensed() -> (Game, GameObjectId, GameObjectId) {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Rebel"], &[ManaColor::Red], 2, 2),
+                crate::card::TokenCharacteristics::creature(&["Rebel"], &[ManaColor::Red], 2, 2),
             )
         })
         .expect("For Mirrodin! made one")
@@ -349,7 +349,7 @@ fn a_doubled_rebel_leaves_one_of_them_bare() {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Rebel"], &[ManaColor::Red], 2, 2),
+                crate::card::TokenCharacteristics::creature(&["Rebel"], &[ManaColor::Red], 2, 2),
             )
         })
         .map(|permanent| permanent.card.id)

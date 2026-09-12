@@ -29,6 +29,7 @@ use crate::card::CopyAbilityDef;
 use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -51,6 +52,8 @@ use crate::card::RevealObjectsDef;
 use crate::card::StaticApplyDef;
 use crate::card::SubtypeDef;
 use crate::card::TapEventMatcherDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -2268,9 +2271,11 @@ pub(in crate::card::sets) static GARRUK_PRIMAL_HUNTER: CardRecord = CardRecord::
             AbilityDef::activated(
                 "+1: Create a 3/3 green Beast creature token.",
                 &[CostDef::Loyalty(1)],
-                EffectDef::create_creature_token(&["Beast"], &[ManaColor::Green], 3, 3).with_art(
-                    CardArt::new("c94010f1-cd4b-4f65-8a0e-2df6eec058ec", "John Donahue"),
-                ),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3).with_art(
+                        CardArt::new("c94010f1-cd4b-4f65-8a0e-2df6eec058ec", "John Donahue"),
+                    ),
+                ))),
             ),
             AbilityDef::activated(
                 "−3: Draw cards equal to the greatest power among creatures you control.",
@@ -2283,16 +2288,22 @@ pub(in crate::card::sets) static GARRUK_PRIMAL_HUNTER: CardRecord = CardRecord::
             AbilityDef::activated(
                 "−6: Create a 6/6 green Wurm creature token for each land you control.",
                 &[CostDef::Loyalty(-6)],
-                EffectDef::create_creature_token(&["Wurm"], &[ManaColor::Green], 6, 6)
-                    .with_art(CardArt::new(
-                        "a4d87f38-c342-4186-8768-c3f1aceb680a",
-                        "Anthony Francisco",
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Wurm"], &[ManaColor::Green], 6, 6)
+                            .with_art(CardArt::new(
+                                "a4d87f38-c342-4186-8768-c3f1aceb680a",
+                                "Anthony Francisco",
+                            )),
                     ))
-                    .with_count(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::HasType(CardType::Land),
-                        &[ZoneKind::Battlefield],
-                        PlayerRelation::You,
-                    ))),
+                    .with_count(ValueDef::CountMatchingObjects(
+                        &ObjectQueryDef::matching(
+                            ObjectPredicateDef::HasType(CardType::Land),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::You,
+                        ),
+                    )),
+                ),
             ),
         ]),
 );
@@ -2354,7 +2365,9 @@ pub(in crate::card::sets) static JADE_MAGE: CardRecord = CardRecord::new(
         AbilityDef::activated(
             "{2}{G}: Create a 1/1 green Saproling creature token.",
             &[CostDef::Mana(mana_cost!("{2}{G}"))],
-            EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Saproling"], &[ManaColor::Green], 1, 1),
+            ))),
         ),
     ),
 );
@@ -2917,8 +2930,14 @@ CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::activated(
             CostDef::Mana(mana_cost!("{1}")),
             CostDef::TapSource,
         ],
-        EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1).with_count(
-            ValueDef::IfCondition(&ConditionValueDef {
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                &["Soldier"],
+                &[ManaColor::White],
+                1,
+                1,
+            )))
+            .with_count(ValueDef::IfCondition(&ConditionValueDef {
                 condition: &TriggerConditionDef::All(&[
                     TriggerConditionDef::ObjectCount {
                         query: ObjectQueryDef::matching(
@@ -2947,7 +2966,7 @@ CardRules::new_artifact(mana_cost!("{4}")).with_ability(AbilityDef::activated(
                 ]),
                 then: ValueDef::Constant(5),
                 otherwise: ValueDef::Constant(1),
-            }),
+            })),
         ),
     )),
 );

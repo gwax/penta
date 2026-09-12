@@ -109,13 +109,13 @@ fn the_squadron_puts_a_counter_on_every_creature_token_you_control() {
 
     game.create_token(
         PlayerId::One,
-        tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3),
+        crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3),
     );
     drain_pending(&mut game);
     assert_eq!(
         size_of(
             &game,
-            tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3)
+            crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3)
         ),
         (Some(4), Some(4)),
         "a 3/3 token arrives and is grown",
@@ -134,13 +134,23 @@ fn the_squadron_puts_a_counter_on_every_creature_token_you_control() {
     // An opponent's token is not one you control.
     game.create_token(
         PlayerId::Two,
-        token_with_vigilance(tokens::creature(&["Knight"], &[ManaColor::White], 2, 2)),
+        token_with_vigilance(crate::card::TokenCharacteristics::creature(
+            &["Knight"],
+            &[ManaColor::White],
+            2,
+            2,
+        )),
     );
     drain_pending(&mut game);
     assert_eq!(
         size_of(
             &game,
-            token_with_vigilance(tokens::creature(&["Knight"], &[ManaColor::White], 2, 2))
+            token_with_vigilance(crate::card::TokenCharacteristics::creature(
+                &["Knight"],
+                &[ManaColor::White],
+                2,
+                2
+            ))
         ),
         (Some(2), Some(2)),
         "and the other player's token is untouched",

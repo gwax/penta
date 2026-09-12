@@ -9,12 +9,14 @@ use crate::card::ActivationTimingDef;
 use crate::card::AppliedEffectDef;
 use crate::card::BattlefieldArrivalDef;
 use crate::card::BattlefieldEntryModificationDef;
+use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ExilePlayDurationDef;
@@ -30,7 +32,9 @@ use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
 use crate::card::TokenCountersDef;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -49,6 +53,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const BLOOD_TOKEN: TokenCharacteristics = tokens::blood().with_art(CardArt::new(
+    "a6f374bc-cd29-469f-808a-6a6c004ee8aa",
+    "Miranda Meeks",
+));
 
 // VOW 55 — Cruel Witness
 pub(in crate::card::sets) static CRUEL_WITNESS: CardRecord = CardRecord::new(
@@ -83,7 +92,7 @@ pub(in crate::card::sets) static BLOOD_FOUNTAIN: CardRecord = CardRecord::new(
         abilities::enters_trigger(
             "When this artifact enters, create a Blood token. (It's an artifact with \"{1}, {T}, \
              Discard a card, Sacrifice this token: Draw a card.\")",
-            EffectDef::create_token(tokens::blood()),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(BLOOD_TOKEN))),
         ),
         AbilityDef::activated_with_targets(
             "{3}{B}, {T}, Sacrifice this artifact: Return up to two target creature cards from \
@@ -302,7 +311,7 @@ pub(in crate::card::sets) static VOLDAREN_EPICURE: CardRecord = CardRecord::new(
             // behind.
             EffectDef::Sequence(&[
                 EffectDef::damage(EffectRecipientDef::Opponent, ValueDef::Constant(1)),
-                EffectDef::create_token(crate::card::tokens::blood()),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(BLOOD_TOKEN))),
             ]),
         ),
     ),
@@ -428,7 +437,9 @@ pub(in crate::card::sets) static BLOODTITHE_HARVESTER: CardRecord = CardRecord::
         .with_abilities(&[
             abilities::enters_trigger(
                 "When this creature enters, create a Blood token.",
-                EffectDef::create_token(crate::card::tokens::blood()),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    BLOOD_TOKEN,
+                ))),
             ),
             // Sacrificing the Harvester is what pays for the removal, so the body
             // and the answer are the same card twice rather than both at once.

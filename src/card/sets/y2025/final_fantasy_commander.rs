@@ -6,12 +6,15 @@ use crate::card::AbilityDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -54,20 +57,18 @@ CardRules::new_instant(mana_cost!("{2}{B}")).with_abilities(&[
                 },
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::SourceCastFrom(ZoneKind::Hand),
-                    then: &EffectDef::create_creature_token(
-                        &["Wizard"],
-                        &[ManaColor::Black],
-                        0,
-                        1,
-                    )
-                    .with_abilities(&[AbilityDef::triggered(
-                        "Whenever you cast a noncreature spell, this token deals 1 damage to each opponent.",
-                        TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::NoncreatureSpell,
-                            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                        ])),
-                        EffectDef::damage(EffectRecipientDef::Opponent, ValueDef::Constant(1)),
-                    )]),
+                    then: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::creature(&["Wizard"], &[ManaColor::Black], 0, 1).with_abilities(&[
+                            AbilityDef::triggered(
+                                "Whenever you cast a noncreature spell, this token deals 1 damage to each opponent.",
+                                TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+                                    ObjectPredicateDef::NoncreatureSpell,
+                                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                                ])),
+                                EffectDef::damage(EffectRecipientDef::Opponent, ValueDef::Constant(1)),
+                            ),
+                        ]),
+                    ))),
                 },
             ]),
         ),

@@ -4,11 +4,13 @@
 use super::CardRecord;
 use super::PrintingRecord;
 use crate::card::AbilityDef;
+use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -19,6 +21,8 @@ use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
@@ -36,6 +40,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const TREASURE_TOKEN: TokenCharacteristics = tokens::treasure().with_art(CardArt::new(
+    "1be23c27-d8b6-4f59-8ab8-9ce80e9e29dd",
+    "Nadia Hurianova",
+));
 
 // NCC 81 — Currency Converter
 /// The card goes back to the graveyard it came from -- its owner's, which is
@@ -111,16 +120,13 @@ pub(in crate::card::sets) static CURRENCY_CONVERTER: CardRecord = CardRecord::ne
                     },
                     then: &EffectDef::Sequence(&[
                         CONVERTER_RETURNS_THE_CARD,
-                        EffectDef::create_token(tokens::treasure()),
+                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(TREASURE_TOKEN))),
                     ]),
                     otherwise: &EffectDef::Sequence(&[
                         CONVERTER_RETURNS_THE_CARD,
-                        EffectDef::create_token(tokens::creature(
-                            &["Rogue"],
-                            &[ManaColor::Black],
-                            2,
-                            2,
-                        )),
+                        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::creature(&["Rogue"], &[ManaColor::Black], 2, 2),
+                        ))),
                     ]),
                 },
             }),

@@ -100,7 +100,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         EffectDef::SacrificeOfChoice {
             then, otherwise, ..
         } => then.into_iter().chain(otherwise).copied().collect(),
-        EffectDef::CreateToken { created, .. } => {
+        EffectDef::CreateToken(crate::card::CreateTokenDef { created, .. }) => {
             created.into_iter().map(|created| *created.then).collect()
         }
         EffectDef::SearchZone { then, .. }
@@ -244,8 +244,8 @@ mod tests {
     use super::*;
     use crate::card::{
         BattlefieldEntryModificationDef, CreatedTokensDef, DestroyFollowUpDef, EffectRecipientDef,
-        MillUntilDef, ObjectPredicateDef, ObjectSetPredicateDef, TokenCharacteristics, ValueDef,
-        ZoneKind, ZonePlacement,
+        MillUntilDef, ObjectPredicateDef, ObjectSetPredicateDef, TokenCharacteristics, ZoneKind,
+        ZonePlacement,
     };
     use crate::ids::TargetIndex;
 
@@ -255,15 +255,12 @@ mod tests {
 
     #[test]
     fn created_token_continuation_is_a_child() {
-        let create = |created| EffectDef::CreateToken {
-            token: TOKEN,
-            copy: None,
-            controller: None,
-            count: ValueDef::Constant(1),
-            tapped: false,
-            attacking: false,
-            counters: None,
-            created,
+        let create = |created: Option<CreatedTokensDef>| {
+            let instruction =
+                crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(TOKEN));
+            EffectDef::CreateToken(
+                created.map_or(instruction, |next| instruction.with_created_tokens(next)),
+            )
         };
 
         assert_eq!(

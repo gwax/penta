@@ -18,6 +18,7 @@ use crate::card::ComparisonDef;
 use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamageKindDef;
 use crate::card::DamageLimitDef;
@@ -44,6 +45,8 @@ use crate::card::ReplacementEventDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SacrificedAmountDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -948,12 +951,14 @@ CardRules::new_creature(mana_cost!("{3}{R}"), &["Bird", "Egg"], 0, 3).with_abili
                     step: TurnStepDef::End,
                     player: PlayerRelation::Any,
                 },
-                EffectDef::create_creature_token(&["Bird"], &[ManaColor::Red], 4, 4)
-                    .with_abilities(&[abilities::flying()])
-                    .with_art(CardArt::new(
-                        "b5489e26-6aec-4706-9c3e-8454878fa6c3",
-                        "Edward P. Beard, Jr.",
-                    )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Bird"], &[ManaColor::Red], 4, 4)
+                        .with_abilities(&[abilities::flying()])
+                        .with_art(CardArt::new(
+                            "b5489e26-6aec-4706-9c3e-8454878fa6c3",
+                            "Edward P. Beard, Jr.",
+                        )),
+                ))),
             )))),
     ]),
 );
@@ -1264,8 +1269,10 @@ pub(in crate::card::sets) static BOTTLE_OF_SULEIMAN: CardRecord = CardRecord::ne
          damage to you.",
         &[CostDef::Mana(mana_cost!("{1}")), CostDef::SacrificeSource],
         EffectDef::FlipCoin {
-            on_win: &EffectDef::create_artifact_creature_token(&["Djinn"], &[], 5, 5)
-                .with_abilities(&[abilities::flying()]),
+            on_win: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Djinn"], &[], 5, 5)
+                    .with_abilities(&[abilities::flying()]),
+            ))),
             on_loss: &EffectDef::damage(EffectRecipientDef::Controller, ValueDef::Constant(5)),
         },
     )),

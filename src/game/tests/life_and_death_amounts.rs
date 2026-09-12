@@ -139,7 +139,7 @@ fn ajanis_ultimate_counts_your_life_total() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Cat"], &[ManaColor::White], 2, 2)
+                crate::card::TokenCharacteristics::creature(&["Cat"], &[ManaColor::White], 2, 2)
             ))
             .count(),
         17,

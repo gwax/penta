@@ -141,7 +141,7 @@ fn a_token_is_named_and_then_ceases_to_exist() {
     let (mut game, absent) = staged(0);
     game.create_token(
         PlayerId::Two,
-        tokens::creature(&["Bear"], &[ManaColor::Green], 2, 2),
+        crate::card::TokenCharacteristics::creature(&["Bear"], &[ManaColor::Green], 2, 2),
     );
     drain_pending(&mut game);
     let token = game

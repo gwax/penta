@@ -8,12 +8,14 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
+use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -25,6 +27,8 @@ use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -42,6 +46,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const CLUE_TOKEN: TokenCharacteristics = tokens::clue().with_art(CardArt::new(
+    "ee022200-f589-4f06-8de8-d313e29f7be8",
+    "Mike Burns",
+));
 
 // CLU 4 — Headliner Scarlett
 pub(in crate::card::sets) static HEADLINER_SCARLETT: CardRecord = CardRecord::new(
@@ -124,7 +133,9 @@ pub(in crate::card::sets) static CARNAGE_INTERPRETER: CardRecord = CardRecord::n
                         selection: DiscardSelectionDef::RecipientChooses,
                         then: None,
                     },
-                    EffectDef::create_token(tokens::clue()).with_count(ValueDef::Constant(4)),
+                    EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Literal(CLUE_TOKEN)).with_count(ValueDef::Constant(4)),
+                    ),
                 ]),
             ),
             AbilityDef::static_ability(

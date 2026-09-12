@@ -64,7 +64,7 @@ fn cats(game: &Game) -> Vec<&Permanent> {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Cat"], &[ManaColor::Green], 2, 2),
+                crate::card::TokenCharacteristics::creature(&["Cat"], &[ManaColor::Green], 2, 2),
             )
         })
         .collect()

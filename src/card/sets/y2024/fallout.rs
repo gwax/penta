@@ -8,10 +8,12 @@ use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CopyExceptionsDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -40,13 +42,15 @@ pub(in crate::card::sets) static SECURITRON_SQUADRON: CardRecord = CardRecord::n
             // "Create that many tokens that are copies of it": the count is how many
             // times the squad cost was paid, which the permanent carries over from the
             // cast that made it.
-            EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-                object: &EffectRecipientDef::Source,
-                exceptions: CopyExceptionsDef::NONE,
-            })
-            .with_count(ValueDef::AdditionalCostPayments(
-                AdditionalCostIndex::PRIMARY,
-            )),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Copy(&crate::card::TokenCopyDef {
+                    object: &EffectRecipientDef::Source,
+                    exceptions: CopyExceptionsDef::NONE,
+                }))
+                .with_count(ValueDef::AdditionalCostPayments(
+                    AdditionalCostIndex::PRIMARY,
+                )),
+            ),
         ),
         AbilityDef::triggered(
             "Whenever a creature token you control enters, put a +1/+1 counter on it.",

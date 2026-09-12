@@ -10,11 +10,14 @@ use crate::card::AppliedEffectDef;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
@@ -121,8 +124,10 @@ pub(in crate::card::sets) static THOPTER_FOUNDRY: CardRecord = CardRecord::new(
             },
         ],
         EffectDef::Sequence(&[
-            EffectDef::create_artifact_creature_token(&["Thopter"], &[ManaColor::Blue], 1, 1)
-                .with_abilities(&[abilities::flying()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Thopter"], &[ManaColor::Blue], 1, 1)
+                    .with_abilities(&[abilities::flying()]),
+            ))),
             EffectDef::GainLife {
                 recipient: EffectRecipientDef::Controller,
                 amount: ValueDef::Constant(1),

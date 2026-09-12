@@ -13,6 +13,7 @@ use crate::card::ChooseDef;
 use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatedTokensDef;
 use crate::card::DrawEventMatcherDef;
 use crate::card::EffectDef;
@@ -30,6 +31,7 @@ use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::RevealObjectsDef;
 use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -157,8 +159,9 @@ pub(in crate::card::sets) static KARN_SCION_OF_URZA: CardRecord = CardRecord::ne
                 "\u{2212}2: Create a 0/0 colorless Construct artifact creature token with \"This token \
                  gets +1/+1 for each artifact you control.\"",
                 &[CostDef::Loyalty(-2)],
-                EffectDef::create_token(TokenCharacteristics::artifact_creature(&["Construct"], &[], 0, 0)
-                        .with_abilities(&[AbilityDef::static_ability(
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::artifact_creature(&["Construct"], &[], 0, 0).with_abilities(&[
+                        AbilityDef::static_ability(
                             "This token gets +1/+1 for each artifact you control.",
                             EffectDef::StaticApply {
                                 recipient: EffectRecipientDef::Source,
@@ -167,7 +170,9 @@ pub(in crate::card::sets) static KARN_SCION_OF_URZA: CardRecord = CardRecord::ne
                                     ValueDef::CountMatchingObjects(&ARTIFACTS_YOU_CONTROL),
                                 ),
                             },
-                        )])),
+                        ),
+                    ]),
+                ))),
             ),
         ]),
 );
@@ -300,21 +305,20 @@ CardRules::new_artifact(mana_cost!("{4}"))
                     step: TurnStepDef::BeginningOfCombat,
                     player: PlayerRelation::You,
                 },
-                EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-                    object: &EffectRecipientDef::AttachedPermanent,
-                    exceptions: CopyExceptionsDef::NONE
-                        .without_supertypes(&[CardSupertype::Legendary]),
-                })
-                .with_created_tokens(CreatedTokensDef {
-                    binding: ParentBinding,
-                    then: &EffectDef::Apply {
-                        recipient: EffectRecipientDef::objects(ObjectSetDef::Binding(
-                            ParentBinding,
-                        )),
-                        effect: AppliedEffectDef::add_ability(&abilities::haste()),
-                        duration: ResolvedEffectDurationDef::Permanent,
-                    },
-                }),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Copy(&crate::card::TokenCopyDef {
+                        object: &EffectRecipientDef::AttachedPermanent,
+                        exceptions: CopyExceptionsDef::NONE.without_supertypes(&[CardSupertype::Legendary]),
+                    }))
+                    .with_created_tokens(CreatedTokensDef {
+                        binding: ParentBinding,
+                        then: &EffectDef::Apply {
+                            recipient: EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
+                            effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                            duration: ResolvedEffectDurationDef::Permanent,
+                        },
+                    }),
+                ),
             ),
             abilities::equip(&[CostDef::Mana(mana_cost!("{5}"))], "Equip {5}"),
         ]),

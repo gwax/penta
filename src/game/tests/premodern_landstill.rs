@@ -290,7 +290,12 @@ fn cycling_decree_of_justice_buys_soldiers_by_the_mana() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1)
+                crate::card::TokenCharacteristics::creature(
+                    &["Soldier"],
+                    &[ManaColor::White],
+                    1,
+                    1
+                )
             ))
             .count(),
         3,
@@ -336,7 +341,7 @@ fn declining_the_decrees_trigger_makes_no_soldiers() {
     assert!(
         !game.battlefield.iter().any(|permanent| is_token_with(
             permanent,
-            tokens::creature(&["Soldier"], &[ManaColor::White], 1, 1)
+            crate::card::TokenCharacteristics::creature(&["Soldier"], &[ManaColor::White], 1, 1)
         )),
         "nothing was paid, so nothing arrived",
     );

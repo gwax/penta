@@ -18,6 +18,7 @@ use crate::card::AttackEventMatcherDef;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamagePreventionDef;
 use crate::card::DiscardFollowUpDef;
@@ -36,6 +37,8 @@ use crate::card::ResolvedEffectDurationDef;
 use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
 use crate::card::TargetChooserDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -1560,7 +1563,9 @@ pub(in crate::card::sets) static PENUMBRA_BOBCAT: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{G}"), &["Cat"], 2, 1).with_ability(
         abilities::dies_trigger(
             "When this creature dies, create a 2/1 black Cat creature token.",
-            EffectDef::create_creature_token(&["Cat"], &[ManaColor::Black], 2, 1),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Cat"], &[ManaColor::Black], 2, 1),
+            ))),
         ),
     ),
 );
@@ -1575,7 +1580,9 @@ pub(in crate::card::sets) static PENUMBRA_KAVU: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{4}{G}"), &["Kavu"], 3, 3).with_ability(
         abilities::dies_trigger(
             "When this creature dies, create a 3/3 black Kavu creature token.",
-            EffectDef::create_creature_token(&["Kavu"], &[ManaColor::Black], 3, 3),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Kavu"], &[ManaColor::Black], 3, 3),
+            ))),
         ),
     ),
 );
@@ -1591,8 +1598,10 @@ pub(in crate::card::sets) static PENUMBRA_WURM: CardRecord = CardRecord::new(
         abilities::trample(),
         abilities::dies_trigger(
             "When this creature dies, create a 6/6 black Wurm creature token with trample.",
-            EffectDef::create_creature_token(&["Wurm"], &[ManaColor::Black], 6, 6)
-                .with_abilities(&[abilities::trample()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Wurm"], &[ManaColor::Black], 6, 6)
+                    .with_abilities(&[abilities::trample()]),
+            ))),
         ),
     ]),
 );
@@ -1979,13 +1988,15 @@ pub(in crate::card::sets) static GOBLIN_TRENCHES: CardRecord = CardRecord::new(
                 controller: PlayerRelation::You,
             },
         ],
-        EffectDef::create_creature_token(
-            &["Goblin", "Soldier"],
-            &[ManaColor::Red, ManaColor::White],
-            1,
-            1,
-        )
-        .with_count(ValueDef::Constant(2)),
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                &["Goblin", "Soldier"],
+                &[ManaColor::Red, ManaColor::White],
+                1,
+                1,
+            )))
+            .with_count(ValueDef::Constant(2)),
+        ),
     )),
 );
 

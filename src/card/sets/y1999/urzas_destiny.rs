@@ -30,6 +30,7 @@ use crate::card::CostDef;
 use crate::card::CostModificationDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamagePreventionDef;
 use crate::card::DestroyFollowUpDef;
@@ -62,6 +63,8 @@ use crate::card::StackTargetAggregationDef;
 use crate::card::StackTargetFilterDef;
 use crate::card::StaticApplyDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -2235,8 +2238,15 @@ CardRules::new_creature(mana_cost!("{4}{R}{R}"), &["Goblin", "Warrior"], 3, 3)
                         Some(ZoneKind::Graveyard),
                     ),
                 ]),
-                EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1)
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                        &["Goblin"],
+                        &[ManaColor::Red],
+                        1,
+                        1,
+                    )))
                     .with_count(ValueDef::Constant(2)),
+                ),
             ),
         ]),
 );

@@ -273,8 +273,25 @@ fn only_the_active_controllers_cultivator_offers_combat_forage() {
 #[test]
 fn food_forage_uses_only_your_food_and_preserves_sacrifice_events() {
     let (mut game, cultivator, _) = staged(0);
-    let food = game.create_token_from(PlayerId::One, tokens::food(), None);
-    game.create_token(PlayerId::Two, tokens::food());
+    // Checkpoints address authored declarations, including their set-local art.
+    let ability = game
+        .catalog
+        .get(cards::OKO_THIEF_OF_CROWNS)
+        .unwrap()
+        .rules
+        .ability(AbilityId::PRIMARY)
+        .unwrap();
+    let crate::card::AbilityProgramDef::Effects(EffectDef::CreateToken(
+        crate::card::CreateTokenDef {
+            token: crate::card::TokenDef::Literal(food_token),
+            ..
+        },
+    )) = ability.effect.definition
+    else {
+        panic!("Oko's first ability creates its Food token");
+    };
+    let food = game.create_token_from(PlayerId::One, food_token, None);
+    game.create_token(PlayerId::Two, food_token);
     game.tap_permanent(food).unwrap();
     begin_combat(&mut game);
     choose(&mut game, vec![1]);

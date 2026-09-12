@@ -459,7 +459,7 @@ fn garruk_offers_only_supported_modes_and_makes_one_wurm_per_controlled_land() {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Wurm"], &[ManaColor::Green], 6, 6),
+                crate::card::TokenCharacteristics::creature(&["Wurm"], &[ManaColor::Green], 6, 6),
             )
         })
         .collect::<Vec<_>>();

@@ -59,7 +59,7 @@ fn settle(game: &mut Game) {
 fn pests(game: &Game) -> usize {
     game.battlefield
         .iter()
-        .filter(|permanent| is_token_with(permanent, tokens::pest()))
+        .filter(|permanent| is_token_with(permanent, token_fixtures::PEST_TOKEN))
         .count()
 }
 
@@ -167,7 +167,7 @@ fn a_spell_makes_a_pest_that_pays_on_the_way_out() {
     let pest = game
         .battlefield
         .iter()
-        .find(|permanent| is_token_with(permanent, tokens::pest()))
+        .find(|permanent| is_token_with(permanent, token_fixtures::PEST_TOKEN))
         .expect("it is there")
         .card
         .id;

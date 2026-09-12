@@ -26,6 +26,7 @@ use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DestroyFollowUpDef;
@@ -51,6 +52,8 @@ use crate::card::ScaledValueDef;
 use crate::card::SpellResolutionDestinationDef;
 use crate::card::SubtypeDef;
 use crate::card::TargetChooserDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TokenStatsDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -241,10 +244,17 @@ CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Human", "Knight"], 3, 4).wit
             AbilityDef::triggered(
                 "Whenever this creature attacks, create two 1/1 white Soldier creature tokens that are tapped and attacking.",
                 TriggerEventDef::attacks(ObjectPredicateDef::Source),
-                EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1)
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                        &["Soldier"],
+                        &[ManaColor::White],
+                        1,
+                        1,
+                    )))
                     .with_amount(2)
                     .entering_tapped()
                     .entering_attacking(),
+                ),
             ),
         ],
     ),
@@ -307,7 +317,15 @@ pub(in crate::card::sets) static MASTER_S_CALL: CardRecord = CardRecord::new(
     "David Rapoza",
     CardRules::new_instant(mana_cost!("{2}{W}")).with_ability(AbilityDef::spell(
         "Create two 1/1 colorless Myr artifact creature tokens.",
-        EffectDef::create_artifact_creature_token(&["Myr"], &[], 1, 1).with_amount(2),
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::artifact_creature(
+                &["Myr"],
+                &[],
+                1,
+                1,
+            )))
+            .with_amount(2),
+        ),
     )),
 );
 
@@ -338,7 +356,8 @@ CardRules::new_sorcery(mana_cost!("{4}{W}{W}")).with_ability(AbilityDef::spell(
             ),
             then: Some(DestroyFollowUpDef {
                 binding: ParentBinding,
-                effect: &EffectDef::create_artifact_creature_token_with_stats(
+                effect: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::artifact_creature_with_stats(
                         &["Phyrexian", "Horror"],
                         &[],
                         &TokenStatsDef {
@@ -346,6 +365,7 @@ CardRules::new_sorcery(mana_cost!("{4}{W}{W}")).with_ability(AbilityDef::spell(
                             toughness: ValueDef::BoundObjectCount(ParentBinding),
                         },
                     ),
+                ))),
             }),
         },
     )),
@@ -406,7 +426,15 @@ pub(in crate::card::sets) static WHITE_SUNS_ZENITH: CardRecord = CardRecord::new
 CardRules::new_instant(mana_cost!("{X}{W}{W}")).with_ability(
         AbilityDef::spell(
             "Create X 2/2 white Cat creature tokens. Shuffle White Sun's Zenith into its owner's library.",
-            EffectDef::create_creature_token(&["Cat"], &[ManaColor::White], 2, 2).with_art(CardArt::new("5252ab51-43e8-4b24-9830-de0ad9b9d3dc", "Scott Chou")).with_count(ValueDef::ChosenX),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Cat"], &[ManaColor::White], 2, 2).with_art(CardArt::new(
+                        "5252ab51-43e8-4b24-9830-de0ad9b9d3dc",
+                        "Scott Chou",
+                    )),
+                ))
+                .with_count(ValueDef::ChosenX),
+            ),
         )
         .with_resolution_destination(SpellResolutionDestinationDef::LibraryShuffled),
     ),
@@ -1043,12 +1071,9 @@ CardRules::new_creature(
     .with_ability(AbilityDef::triggered(
         "Whenever a source deals damage to this creature, create a 2/2 black Phyrexian Zombie creature token.",
         TriggerEventDef::DamageDealt(DamageEventMatcherDef::to(EffectRecipientDef::Source)),
-        EffectDef::create_creature_token(
-            &["Phyrexian", "Zombie"],
-            &[ManaColor::Black],
-            2,
-            2,
-        ),
+        EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::creature(&["Phyrexian", "Zombie"], &[ManaColor::Black], 2, 2),
+        ))),
     )),
 );
 
@@ -2406,10 +2431,12 @@ CardRules::new_artifact(mana_cost!("{5}")).with_ability(AbilityDef::triggered(
         ),
         EffectDef::PayOr(PayOrDef::optional(
             &[CostDef::Mana(mana_cost!("{2}"))],
-            &EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
-                object: &EffectRecipientDef::TriggeringObject,
-                exceptions: CopyExceptionsDef::NONE,
-            }),
+            &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Copy(
+                &crate::card::TokenCopyDef {
+                    object: &EffectRecipientDef::TriggeringObject,
+                    exceptions: CopyExceptionsDef::NONE,
+                },
+            ))),
         )),
     )),
 );
@@ -2454,7 +2481,9 @@ pub(in crate::card::sets) static MYR_SIRE: CardRecord = CardRecord::new(
     "507979fd-5459-4933-8707-adc303750ce9",
     "Jaime Jones",
 CardRules::new_artifact_creature(mana_cost!("{2}"), &["Phyrexian", "Myr"], 1, 1).with_ability(
-        abilities::dies_trigger("When this creature dies, create a 1/1 colorless Phyrexian Myr artifact creature token.", EffectDef::create_artifact_creature_token(&["Phyrexian", "Myr"], &[], 1, 1)),
+        abilities::dies_trigger("When this creature dies, create a 1/1 colorless Phyrexian Myr artifact creature token.", EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+            TokenCharacteristics::artifact_creature(&["Phyrexian", "Myr"], &[], 1, 1),
+        )))),
     ),
 );
 
@@ -3039,9 +3068,13 @@ CardRules::new_artifact_creature(mana_cost!("{6}"), &["Thopter"], 5, 5)
                         ZoneKind::Hand,
                         ZonePlacement::Top,
                     ),
-                    EffectDef::create_artifact_creature_token(&["Thopter"], &[], 1, 1)
-                        .with_abilities(&[abilities::flying()])
+                    EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Literal(
+                            TokenCharacteristics::artifact_creature(&["Thopter"], &[], 1, 1)
+                                .with_abilities(&[abilities::flying()]),
+                        ))
                         .with_amount(5),
+                    ),
                 ]),
             ),
         ]),
@@ -3074,7 +3107,9 @@ CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
                     amount: 3,
                 },
             ],
-            EffectDef::create_artifact_creature_token(&["Golem"], &[], 9, 9),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Golem"], &[], 9, 9),
+            ))),
         ),
     ]),
 );

@@ -34,6 +34,7 @@ use crate::card::ConditionDef;
 use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -52,6 +53,8 @@ use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SpellForm;
 use crate::card::SpellResolutionDestinationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueComparisonDef;
@@ -71,6 +74,11 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const FOOD_TOKEN: TokenCharacteristics = tokens::food().with_art(CardArt::new(
+    "bf36408d-ed85-497f-8e68-d3a922c388a0",
+    "Steven Belledin",
+));
 
 // ELD 5 — Ardenvale Tactician
 const fn ardenvale_tactician_rules() -> CardRules {
@@ -735,10 +743,9 @@ pub(in crate::card::sets) static OKO_THIEF_OF_CROWNS: CardRecord = CardRecord::n
             AbilityDef::activated(
                 "+2: Create a Food token.",
                 &[CostDef::Loyalty(2)],
-                EffectDef::create_token(tokens::food()).with_art(CardArt::new(
-                    "4a029bdc-92e3-4d85-8af5-e33429a5f017",
-                    "L J Koh",
-                )),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    FOOD_TOKEN,
+                ))),
             ),
             AbilityDef::activated_with_targets(
                 "+1: Target artifact or creature loses all abilities and becomes a green Elk creature \

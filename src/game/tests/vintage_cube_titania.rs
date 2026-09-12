@@ -108,7 +108,12 @@ fn elementals(game: &Game) -> usize {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Elemental"], &[ManaColor::Green], 5, 3),
+                crate::card::TokenCharacteristics::creature(
+                    &["Elemental"],
+                    &[ManaColor::Green],
+                    5,
+                    3,
+                ),
             )
         })
         .count()
@@ -176,7 +181,12 @@ fn a_land_dying_makes_a_five_three() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Elemental"], &[ManaColor::Green], 5, 3),
+                crate::card::TokenCharacteristics::creature(
+                    &["Elemental"],
+                    &[ManaColor::Green],
+                    5,
+                    3,
+                ),
             )
         })
         .expect("it is here");

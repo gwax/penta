@@ -404,7 +404,7 @@ fn the_minus_one_can_take_back_your_own_and_unmakes_a_token() {
 
     // The same ability, pointed at something with no card behind it.
     let (mut game, jace) = staged(&[]);
-    let beast = tokens::creature(&["Beast"], &[ManaColor::Green], 3, 3);
+    let beast = crate::card::TokenCharacteristics::creature(&["Beast"], &[ManaColor::Green], 3, 3);
     game.create_token(PlayerId::Two, beast);
     drain_pending(&mut game);
     let token = game

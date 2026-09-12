@@ -93,7 +93,7 @@ fn the_life_is_paid_with_the_titan_out_and_its_zombies_still_waiting() {
     assert!(
         !game.battlefield.iter().any(|permanent| is_token_with(
             permanent,
-            tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
+            crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
         )),
         "so there are no Zombies yet",
     );
@@ -104,7 +104,7 @@ fn the_life_is_paid_with_the_titan_out_and_its_zombies_still_waiting() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
+                crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
             ))
             .count(),
         2,
@@ -134,7 +134,7 @@ fn dying_to_the_cost_leaves_the_enters_trigger_unresolved() {
     assert!(
         !game.battlefield.iter().any(|permanent| is_token_with(
             permanent,
-            tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
+            crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2)
         )),
         "the Zombies never arrived",
     );

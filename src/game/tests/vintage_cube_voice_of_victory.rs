@@ -61,7 +61,7 @@ fn warriors(game: &Game) -> Vec<&Permanent> {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Warrior"], &[ManaColor::Red], 1, 1),
+                crate::card::TokenCharacteristics::creature(&["Warrior"], &[ManaColor::Red], 1, 1),
             )
         })
         .collect()
@@ -182,7 +182,7 @@ fn it_sacrifices_only_the_tokens_it_made() {
     let (mut game, voice) = staged();
     game.create_token(
         PlayerId::One,
-        tokens::creature(&["Warrior"], &[ManaColor::Red], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Warrior"], &[ManaColor::Red], 1, 1),
     );
     drain_pending(&mut game);
     let bystander = game
@@ -191,7 +191,7 @@ fn it_sacrifices_only_the_tokens_it_made() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Warrior"], &[ManaColor::Red], 1, 1),
+                crate::card::TokenCharacteristics::creature(&["Warrior"], &[ManaColor::Red], 1, 1),
             )
         })
         .expect("the bystander entered")

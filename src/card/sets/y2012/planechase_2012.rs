@@ -3,9 +3,12 @@
 use super::CardRecord;
 use super::PrintingRecord;
 use crate::card::CardRules;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::ValueDef;
 use crate::card::abilities;
 use crate::mana_cost;
@@ -29,7 +32,15 @@ pub(in crate::card::sets) static BEETLEBACK_CHIEF: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{2}{R}{R}"), &["Goblin", "Warrior"], 2, 2).with_ability(
         abilities::enters_trigger(
             "When this creature enters, create two 1/1 red Goblin creature tokens.",
-            EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1).with_amount(2),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Goblin"],
+                    &[ManaColor::Red],
+                    1,
+                    1,
+                )))
+                .with_amount(2),
+            ),
         ),
     ),
 );

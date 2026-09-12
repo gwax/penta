@@ -21,6 +21,7 @@ use crate::card::CardType;
 use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamagePreventionDef;
 use crate::card::DiscardSelectionDef;
@@ -41,6 +42,8 @@ use crate::card::ResolvedEffectDurationDef;
 use crate::card::SacrificedAmountDef;
 use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -52,7 +55,6 @@ use crate::card::sets::y1996::mirage as catalog_mir;
 use crate::card::sets::y1998::urzas_saga as catalog_usg;
 use crate::card::sets::y1999::urzas_destiny as catalog_uds;
 use crate::card::sets::y1999::urzas_legacy as catalog_ulg;
-use crate::card::tokens;
 use crate::mana_cost;
 
 const fn fetch_land(text: &'static str, land_types: &'static [BasicLandType]) -> CardRules {
@@ -70,6 +72,9 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const INSECT_TOKEN: TokenCharacteristics =
+    TokenCharacteristics::creature(&["Insect"], &[ManaColor::Green], 1, 1);
 
 // ONS 1 — Akroma's Blessing
 // Audit: unsupported — Card rules have not been implemented.
@@ -4477,8 +4482,9 @@ pub(in crate::card::sets) static SYMBIOTIC_BEAST: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{4}{G}{G}"), &["Insect", "Beast"], 4, 4).with_ability(
         abilities::dies_trigger(
             "When this creature dies, create four 1/1 green Insect creature tokens.",
-            EffectDef::create_token(tokens::creature(&["Insect"], &[ManaColor::Green], 1, 1))
-                .with_amount(4),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(INSECT_TOKEN)).with_amount(4),
+            ),
         ),
     ),
 );
@@ -4493,8 +4499,9 @@ pub(in crate::card::sets) static SYMBIOTIC_ELF: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{3}{G}"), &["Elf"], 2, 2).with_ability(
         abilities::dies_trigger(
             "When this creature dies, create two 1/1 green Insect creature tokens.",
-            EffectDef::create_token(tokens::creature(&["Insect"], &[ManaColor::Green], 1, 1))
-                .with_amount(2),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(INSECT_TOKEN)).with_amount(2),
+            ),
         ),
     ),
 );
@@ -4509,8 +4516,9 @@ pub(in crate::card::sets) static SYMBIOTIC_WURM: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{5}{G}{G}{G}"), &["Wurm"], 7, 7).with_ability(
         abilities::dies_trigger(
             "When this creature dies, create seven 1/1 green Insect creature tokens.",
-            EffectDef::create_token(tokens::creature(&["Insect"], &[ManaColor::Green], 1, 1))
-                .with_amount(7),
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(INSECT_TOKEN)).with_amount(7),
+            ),
         ),
     ),
 );
@@ -4600,7 +4608,7 @@ pub(in crate::card::sets) static VITALITY_CHARM: CardRecord = CardRecord::new(
         &[
             AbilityDef::spell(
                 "Create a 1/1 green Insect creature token.",
-                EffectDef::create_creature_token(&["Insect"], &[ManaColor::Green], 1, 1),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(INSECT_TOKEN))),
             ),
             AbilityDef::spell_with_targets(
                 "Target creature gets +1/+1 and gains trample until end of turn.",

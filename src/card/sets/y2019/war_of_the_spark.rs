@@ -22,6 +22,7 @@ use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
 use crate::card::CountConditionDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -34,6 +35,8 @@ use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TopOfLibraryCostDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -592,10 +595,12 @@ pub(in crate::card::sets) static SAHEELI_SUBLIME_ARTIFICER: CardRecord =
                         ObjectPredicateDef::NoncreatureSpell,
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ])),
-                    EffectDef::create_artifact_creature_token(&["Servo"], &[], 1, 1).with_art(CardArt::new(
-                        "761507d5-d36a-4123-a074-95d7f6ffb4c5",
-                        "Victor Adame Minguez",
-                    )),
+                    EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TokenCharacteristics::artifact_creature(&["Servo"], &[], 1, 1).with_art(CardArt::new(
+                            "761507d5-d36a-4123-a074-95d7f6ffb4c5",
+                            "Victor Adame Minguez",
+                        )),
+                    ))),
                 ),
                 AbilityDef::activated_with_targets(
                     "−2: Target artifact you control becomes a copy of another target artifact or creature \

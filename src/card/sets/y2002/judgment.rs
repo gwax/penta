@@ -24,6 +24,7 @@ use crate::card::ConditionalStaticEffectDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -46,6 +47,8 @@ use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::StaticApplyDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueComparisonDef;
@@ -110,9 +113,13 @@ pub(in crate::card::sets) static BATTLE_SCREECH: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{2}{W}")).with_abilities(&[
         AbilityDef::spell(
             "Create two 1/1 white Bird creature tokens with flying.",
-            EffectDef::create_creature_token(&["Bird"], &[ManaColor::White], 1, 1)
-                .with_abilities(&[abilities::flying()])
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 1, 1)
+                        .with_abilities(&[abilities::flying()]),
+                ))
                 .with_amount(2),
+            ),
         ),
         AbilityDef::alternative_cast(
             &[CostDef::tap(
@@ -1645,8 +1652,15 @@ pub(in crate::card::sets) static CRUSH_OF_WURMS: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{6}{G}{G}{G}")).with_abilities(&[
         AbilityDef::spell(
             "Create three 6/6 green Wurm creature tokens.",
-            EffectDef::create_creature_token(&["Wurm"], &[ManaColor::Green], 6, 6)
+            EffectDef::CreateToken(
+                CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                    &["Wurm"],
+                    &[ManaColor::Green],
+                    6,
+                    6,
+                )))
                 .with_count(ValueDef::Constant(3)),
+            ),
         ),
         abilities::flashback(&[CostDef::Mana(mana_cost!("{9}{G}{G}{G}"))]),
     ]),
@@ -1676,7 +1690,9 @@ pub(in crate::card::sets) static ELEPHANT_GUIDE: CardRecord = CardRecord::new(
             abilities::dies_trigger_matching(
                 "When enchanted creature dies, create a 3/3 green Elephant creature token.",
                 ObjectPredicateDef::AttachedToSource,
-                EffectDef::create_creature_token(&["Elephant"], &[ManaColor::Green], 3, 3),
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                    TokenCharacteristics::creature(&["Elephant"], &[ManaColor::Green], 3, 3),
+                ))),
             ),
         ]),
 );

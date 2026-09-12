@@ -235,7 +235,7 @@ fn the_arrival_triggers_even_when_the_payment_is_declined() {
         !on_battlefield(&game, cards::MYR_BATTLESPHERE),
         "seven mana went unpaid, so it was sacrificed",
     );
-    let myr = tokens::artifact_creature(&["Myr"], &[], 1, 1);
+    let myr = crate::card::TokenCharacteristics::artifact_creature(&["Myr"], &[], 1, 1);
     assert_eq!(
         game.battlefield
             .iter()

@@ -8,7 +8,9 @@ use crate::{CardCatalog, CardDefinitionId, CardPartId};
 fn token_owned_abilities_can_locate_tokens_they_create() {
     static CHILD_TOKEN: TokenCharacteristics =
         TokenCharacteristics::creature(&["Child"], &[], 1, 1).with_name("Child Token");
-    static CREATE_CHILD: EffectDef = EffectDef::create_token(CHILD_TOKEN);
+    static CREATE_CHILD: EffectDef = EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+        crate::card::TokenDef::Literal(CHILD_TOKEN),
+    ));
     static PARENT_TOKEN_ABILITIES: [AbilityDef; 1] = [AbilityDef::activated(
         "Create a Child token.",
         &[],
@@ -18,7 +20,9 @@ fn token_owned_abilities_can_locate_tokens_they_create() {
         TokenCharacteristics::creature(&["Parent"], &[], 2, 2)
             .with_name("Parent Token")
             .with_abilities(&PARENT_TOKEN_ABILITIES);
-    static CREATE_PARENT: EffectDef = EffectDef::create_token(PARENT_TOKEN);
+    static CREATE_PARENT: EffectDef = EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+        crate::card::TokenDef::Literal(PARENT_TOKEN),
+    ));
     static CREATOR_ABILITIES: [AbilityDef; 1] = [AbilityDef::activated(
         "Create a Parent token.",
         &[],

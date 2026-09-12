@@ -8,15 +8,17 @@ use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::ReplacementEffectDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
-use crate::card::tokens;
 use crate::mana_cost;
 
 /// Printed set identity and stable catalog slug.
@@ -62,16 +64,15 @@ pub(in crate::card::sets) static BALOTH_PRIME: CardRecord = CardRecord::new(
                 // The untap is what pays the counters off: while any are left the clause
                 // removes one instead of untapping him, so the lands are what wake him up.
                 EffectDef::Sequence(&[
-                    EffectDef::CreateToken {
-                        token: tokens::creature(&["Beast"], &[ManaColor::Green], 4, 4),
-                        copy: None,
-                        controller: None,
-                        count: ValueDef::Constant(1),
-                        tapped: true,
-                        attacking: false,
-                        counters: None,
-                        created: None,
-                    },
+                    EffectDef::CreateToken(
+                        CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                            &["Beast"],
+                            &[ManaColor::Green],
+                            4,
+                            4,
+                        )))
+                        .entering_tapped(),
+                    ),
                     EffectDef::Untap {
                         object: EffectRecipientDef::Source,
                     },

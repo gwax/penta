@@ -680,23 +680,20 @@ fn validate_effect_references(
             }
             Ok(())
         }
-        EffectDef::CreateToken {
-            token,
-            controller,
-            count,
-            copy,
-            created,
-            ..
-        } => {
+        EffectDef::CreateToken(crate::card::CreateTokenDef {
+            token, controller, count, created, ..
+        }) => {
             validate_value_target_references(count, target_count, scope)?;
             if let Some(controller) = controller {
                 validate_player_reference(controller, target_count, scope)?;
             }
-            if let Some(stats) = token.creation_stats {
+            if let crate::card::TokenDef::Literal(token) = token
+                && let Some(stats) = token.creation_stats
+            {
                 validate_value_target_references(stats.power, target_count, scope)?;
                 validate_value_target_references(stats.toughness, target_count, scope)?;
             }
-            if let Some(copy) = copy {
+            if let crate::card::TokenDef::Copy(copy) = token {
                 validate_recipient_target_references(*copy.object, target_count, scope)?;
             }
             match created {

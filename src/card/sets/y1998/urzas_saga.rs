@@ -25,6 +25,7 @@ use crate::card::ChooseDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamagePreventionDef;
 use crate::card::DiscardFollowUpDef;
@@ -52,6 +53,8 @@ use crate::card::ResolvedEffectDurationDef;
 use crate::card::ScaledValueDef;
 use crate::card::SpellResolutionDestinationDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -2867,8 +2870,15 @@ pub(in crate::card::sets) static GOBLIN_OFFENSIVE: CardRecord = CardRecord::new(
     // cares about the count would pay.
     CardRules::new_sorcery(mana_cost!("{X}{1}{R}{R}")).with_ability(AbilityDef::spell(
         "Create X 1/1 red Goblin creature tokens.",
-        EffectDef::create_creature_token(&["Goblin"], &[ManaColor::Red], 1, 1)
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                &["Goblin"],
+                &[ManaColor::Red],
+                1,
+                1,
+            )))
             .with_count(ValueDef::ChosenX),
+        ),
     )),
 );
 

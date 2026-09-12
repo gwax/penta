@@ -28,6 +28,7 @@ use crate::card::ComparisonDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::DamageEventMatcherDef;
 use crate::card::DamageKindDef;
 use crate::card::DamagePreventionDef;
@@ -53,6 +54,8 @@ use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
@@ -4928,12 +4931,9 @@ CardRules::new_enchantment(mana_cost!("{3}{G}")).with_ability(AbilityDef::trigge
         ])),
         EffectDef::May {
             player: EffectRecipientDef::Controller,
-            effect: &EffectDef::create_creature_token(
-                &["Snake"],
-                &[ManaColor::Green],
-                1,
-                1,
-            ),
+            effect: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(&["Snake"], &[ManaColor::Green], 1, 1),
+            ))),
         },
     )),
 );
@@ -4996,11 +4996,17 @@ pub(in crate::card::sets) static SPONTANEOUS_GENERATION: CardRecord = CardRecord
     // cards it could not cast anyway.
     CardRules::new_sorcery(mana_cost!("{3}{G}")).with_ability(AbilityDef::spell(
         "Create a 1/1 green Saproling creature token for each card in your hand.",
-        EffectDef::create_creature_token(&["Saproling"], &[ManaColor::Green], 1, 1).with_count(
-            ValueDef::CardsInHandAbove {
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                &["Saproling"],
+                &[ManaColor::Green],
+                1,
+                1,
+            )))
+            .with_count(ValueDef::CardsInHandAbove {
                 player: PlayerRelation::You,
                 threshold: 0,
-            },
+            }),
         ),
     )),
 );

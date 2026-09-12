@@ -19,6 +19,7 @@ use crate::card::CostAdjustmentDef;
 use crate::card::CostAmountDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
@@ -34,6 +35,8 @@ use crate::card::ReplacementEffectDef;
 use crate::card::SacrificedAmountDef;
 use crate::card::SpellCostConditionDef;
 use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -69,7 +72,15 @@ pub(in crate::card::sets) static RAISE_THE_ALARM: CardRecord = CardRecord::new(
     // mana for: it holds up the trick and still develops the board.
     CardRules::new_instant(mana_cost!("{1}{W}")).with_ability(AbilityDef::spell(
         "Create two 1/1 white Soldier creature tokens.",
-        EffectDef::create_creature_token(&["Soldier"], &[ManaColor::White], 1, 1).with_amount(2),
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(TokenCharacteristics::creature(
+                &["Soldier"],
+                &[ManaColor::White],
+                1,
+                1,
+            )))
+            .with_amount(2),
+        ),
     )),
 );
 
@@ -473,8 +484,10 @@ CardRules::new_artifact_creature(mana_cost!("{7}"), &["Construct"], 0, 0).with_a
                     amount: 1,
                 },
             ],
-            EffectDef::create_artifact_creature_token(&["Pentavite"], &[], 1, 1)
-                .with_abilities(&[abilities::flying()]),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Pentavite"], &[], 1, 1)
+                    .with_abilities(&[abilities::flying()]),
+            ))),
         ),
         AbilityDef::activated(
             "{1}, Sacrifice a Pentavite: Put a +1/+1 counter on this creature.",

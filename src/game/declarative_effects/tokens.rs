@@ -191,18 +191,17 @@ impl Game {
         context: &EffectResolutionContext,
     ) {
         match scoped.effect {
-            EffectDef::CreateToken {
+            EffectDef::CreateToken(crate::card::CreateTokenDef {
                 token,
-                copy,
                 controller,
                 count,
                 tapped,
                 attacking,
                 counters,
                 created,
-            } => {
+            }) => {
                 let creator = object.source.unwrap_or(object.id);
-                if let Some(copy) = copy {
+                if let crate::card::TokenDef::Copy(copy) = token {
                     debug_assert!(!tapped && !attacking && counters.is_none());
                     self.resolve_token_copies(
                         TokenCopyRequest {
@@ -219,6 +218,9 @@ impl Game {
                     );
                     return;
                 }
+                let crate::card::TokenDef::Literal(token) = token else {
+                    unreachable!("copy creation returned above")
+                };
                 // "Its controller creates two Map tokens": the tokens are
                 // that player's, and everything else about them -- including
                 // who an arriving attacker attacks -- follows from that.

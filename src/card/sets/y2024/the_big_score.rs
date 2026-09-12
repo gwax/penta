@@ -15,6 +15,7 @@ use crate::card::CardType;
 use crate::card::CardTypeSet;
 use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectPredicateDef;
@@ -22,6 +23,8 @@ use crate::card::ObjectQueryDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -43,6 +46,10 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+const TREASURE_TOKEN: TokenCharacteristics = crate::card::tokens::treasure().with_art(
+    CardArt::new("7ec6f053-96f7-4e57-b2eb-4e7699a40a4f", "Monztre"),
+);
 
 // BIG 9 — Harvester of Misery
 pub(in crate::card::sets) static HARVESTER_OF_MISERY: CardRecord = CardRecord::new(
@@ -127,9 +134,11 @@ pub(in crate::card::sets) static LEGION_EXTRUDER: CardRecord = CardRecord::new(
                     controller: PlayerRelation::You,
                 },
             ],
-            EffectDef::create_artifact_creature_token(&["Golem"], &[], 3, 3).with_art(
-                CardArt::new("406e2960-f560-48bb-b4a6-4bd35889a8f8", "Brian Valeza"),
-            ),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::artifact_creature(&["Golem"], &[], 3, 3).with_art(
+                    CardArt::new("406e2960-f560-48bb-b4a6-4bd35889a8f8", "Brian Valeza"),
+                ),
+            ))),
         ),
     ]),
 );
@@ -204,7 +213,9 @@ pub(in crate::card::sets) static GENEROUS_PLUNDERER: CardRecord = CardRecord::ne
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,
                     // Yours is untapped, so the Treasure you keep is usable this turn.
-                    effect: &EffectDef::create_token(crate::card::tokens::treasure()),
+                    effect: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                        TREASURE_TOKEN,
+                    ))),
                 },
             ),
             // "When you do": a reflexive trigger, which is why the opponent is named
@@ -216,9 +227,11 @@ pub(in crate::card::sets) static GENEROUS_PLUNDERER: CardRecord = CardRecord::ne
                 &[AbilityTargetDef::exactly_one(
                     AbilityTargetPredicate::Player(PlayerRelation::Opponent),
                 )],
-                EffectDef::create_token(crate::card::tokens::treasure())
-                    .with_controller(PlayerRefDef::Target(TargetIndex::PRIMARY))
-                    .entering_tapped(),
+                EffectDef::CreateToken(
+                    CreateTokenDef::new(TokenDef::Literal(TREASURE_TOKEN))
+                        .with_controller(PlayerRefDef::Target(TargetIndex::PRIMARY))
+                        .entering_tapped(),
+                ),
             ),
             // "Defending player" is the opponent in a two-player game, whether the
             // attack is aimed at them or at something they control.
@@ -292,11 +305,13 @@ pub(in crate::card::sets) static VAULTBORN_TYRANT: CardRecord = CardRecord::new(
                 // The copy is of the creature as it last existed on the battlefield
                 // (CR 608.2h), which is why a Tyrant that grew before it died comes back
                 // the size it was.
-                EffectDef::create_token_from_copy(&crate::card::TokenCopyDef {
+                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Copy(
+                    &crate::card::TokenCopyDef {
                         object: &EffectRecipientDef::Source,
                         exceptions: CopyExceptionsDef::NONE
                             .with_added_types(CardTypeSet::single(CardType::Artifact)),
-                    }),
+                    },
+                ))),
             ),
         ]),
 );

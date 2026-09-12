@@ -164,7 +164,7 @@ fn a_tapped_token_arrives_tapped() {
         .filter(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
+                crate::card::TokenCharacteristics::creature(&["Zombie"], &[ManaColor::Black], 2, 2),
             )
         })
         .collect();

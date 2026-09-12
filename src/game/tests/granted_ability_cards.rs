@@ -88,7 +88,7 @@ fn the_slumlord_makes_rats_and_sharpens_them() {
         .find(|permanent| {
             is_token_with(
                 permanent,
-                tokens::creature(&["Rat"], &[ManaColor::Black], 1, 1),
+                crate::card::TokenCharacteristics::creature(&["Rat"], &[ManaColor::Black], 1, 1),
             )
         })
         .expect("the bear's death made one")
@@ -109,7 +109,7 @@ fn the_slumlord_ignores_its_own_rats_dying() {
         .push(creature(10_000, cards::OGRE_SLUMLORD, PlayerId::One));
     let rat = token_permanent(
         10_100,
-        tokens::creature(&["Rat"], &[ManaColor::Black], 1, 1),
+        crate::card::TokenCharacteristics::creature(&["Rat"], &[ManaColor::Black], 1, 1),
         PlayerId::One,
     );
     let rat_id = rat.card.id;
@@ -124,7 +124,7 @@ fn the_slumlord_ignores_its_own_rats_dying() {
             .iter()
             .filter(|permanent| is_token_with(
                 permanent,
-                tokens::creature(&["Rat"], &[ManaColor::Black], 1, 1)
+                crate::card::TokenCharacteristics::creature(&["Rat"], &[ManaColor::Black], 1, 1)
             ))
             .count(),
         0,
