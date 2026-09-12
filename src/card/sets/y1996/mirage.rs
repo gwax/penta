@@ -141,7 +141,7 @@ pub(in crate::card::sets) static AFTERLIFE: CardRecord = CardRecord::new(
             EffectDef::CreateToken(
                 CreateTokenDef::new(TokenDef::Literal(
                     TokenCharacteristics::creature(&["Spirit"], &[ManaColor::White], 1, 1)
-                        .with_abilities(&const { [abilities::flying()] }),
+                        .with_abilities(&[abilities::flying()]),
                 ))
                 .with_controller(PlayerRefDef::ControllerOf(
                     ObjectRefDef::Target(TargetIndex::PRIMARY),
@@ -1527,7 +1527,7 @@ pub(in crate::card::sets) static TIDAL_WAVE: CardRecord = CardRecord::new(
         EffectDef::CreateToken(
             CreateTokenDef::new(TokenDef::Literal(
                 TokenCharacteristics::creature(&["Wall"], &[ManaColor::Blue], 5, 5)
-                    .with_abilities(&const { [abilities::defender()] }),
+                    .with_abilities(&[abilities::defender()]),
             ))
             .with_created_tokens(CreatedTokensDef {
                 // Bound as it is created, so the delayed clause sacrifices
