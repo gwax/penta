@@ -375,3 +375,48 @@ fn catalog_printings_publish_exact_art_independently() {
         }),
     );
 }
+
+#[test]
+fn characteristic_composition_preserves_catalog_layout_contracts() {
+    let catalog = poc::catalog().expect("catalog builds");
+    let value = catalog_json(&catalog);
+    let cards = value["cards"].as_array().unwrap();
+    let structure =
+        |name: &str| &cards.iter().find(|card| card["name"] == name).unwrap()["structure"];
+    assert_eq!(
+        structure("Brazen Borrower"),
+        &json!({
+            "kind": "alternateSpell", "mainPartId": 0,
+            "alternatePartId": 1, "alternateSpellKind": "Adventure",
+        }),
+    );
+    assert_eq!(
+        structure("Marang River Regent // Coil and Catch"),
+        &json!({
+            "kind": "alternateSpell", "mainPartId": 0,
+            "alternatePartId": 1, "alternateSpellKind": "Omen",
+        }),
+    );
+    assert_eq!(
+        structure("Turn // Burn"),
+        &json!({"kind": "split", "partIds": [0, 1], "fusedPlayOptionId": 2}),
+    );
+    assert_eq!(
+        structure("Roaring Furnace // Steaming Sauna"),
+        &json!({"kind": "room", "doors": [0, 1], "combined": 2, "locked": 3}),
+    );
+    assert_eq!(
+        structure("Delver of Secrets // Insectile Aberration"),
+        &json!({
+            "kind": "doubleFaced", "frontPartId": 0,
+            "backPartId": 1, "doubleFacedKind": "Transforming",
+        }),
+    );
+    assert_eq!(
+        structure("Valakut Awakening // Valakut Stoneforge"),
+        &json!({
+            "kind": "doubleFaced", "frontPartId": 0,
+            "backPartId": 1, "doubleFacedKind": "Modal",
+        }),
+    );
+}

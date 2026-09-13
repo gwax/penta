@@ -277,7 +277,7 @@ fn checkpoint_round_trips_back_up_double_faced_copy_token() {
         .double_faced_token_copy
         .as_ref()
         .expect("both copied faces reconstruct");
-    assert_eq!(faces.kind, DoubleFacedKind::Transforming);
+    assert_eq!(faces.kind, DoubleFacedKind::Nonmodal);
     assert_eq!(faces.front_part, front);
     assert_eq!(faces.back_part, back);
     assert_eq!(

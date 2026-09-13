@@ -4,8 +4,8 @@ use std::fmt;
 
 use crate::card::{
     AbilityTargetPredicate, BattlefieldEntryChoiceDestinationDef, CardEffectStatus, CardPrintingId,
-    EffectRecipientDef, ManaCost, ObjectChoiceBindingDef, PlayActionKind, PlayerSetDef,
-    ReplacementEventDef, ScalarChoiceListDef, SpellForm, TargetSlotDef, TriggerEventDef,
+    EffectRecipientDef, ManaCost, ObjectChoiceBindingDef, PlayerSetDef, ReplacementEventDef,
+    ScalarChoiceListDef, TargetSlotDef, TriggerEventDef,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -554,6 +554,10 @@ pub enum CatalogError {
         definition: CardDefinitionId,
         part: CardPartId,
     },
+    InvalidCharacteristicStructure {
+        definition: CardDefinitionId,
+        reason: &'static str,
+    },
     InvalidSplitPartCount {
         definition: CardDefinitionId,
         actual: usize,
@@ -588,21 +592,6 @@ pub enum CatalogError {
         definition: CardDefinitionId,
         option: PlayOptionId,
         part: CardPartId,
-    },
-    MissingFusedPlayOption {
-        definition: CardDefinitionId,
-        option: PlayOptionId,
-    },
-    InvalidFusedPlayOption {
-        definition: CardDefinitionId,
-        option: PlayOptionId,
-        expected: Vec<CardPartId>,
-        actual: SpellForm,
-        actual_action: PlayActionKind,
-    },
-    UnexpectedCombinedSpellForm {
-        definition: CardDefinitionId,
-        option: PlayOptionId,
     },
     CombinedModalSpellUnsupported {
         definition: CardDefinitionId,

@@ -4,7 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use super::SET_MODULES;
-use crate::card::{CardCatalog, CardStructure};
+use crate::card::CardCatalog;
 use crate::{CardSet, Format};
 
 mod inline_helpers;
@@ -159,7 +159,7 @@ fn validate_double_faced_headers(entries: &[SourceEntry], set_source: SetSource,
 
     for (entry, record) in declarations.into_iter().zip(records) {
         let definition = record.definition(set_source.set);
-        let CardStructure::DoubleFaced { front, back, .. } = &definition.structure else {
+        let crate::card::CardFaces::Double { front, back, .. } = &definition.structure.faces else {
             continue;
         };
         let front_name = &definition

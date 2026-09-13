@@ -1,44 +1,18 @@
 use std::collections::HashSet;
 
 use crate::card::catalog::CatalogError;
-use crate::card::{
-    CardDefinition, CardStructure, ModeSetDef, PlayActionKind, PlayOptionDef, SpellForm,
-    TargetSlotDef,
-};
+use crate::card::{CardDefinition, ModeSetDef, PlayOptionDef, SpellForm, TargetSlotDef};
 use crate::{AdditionalCostId, CardPartId, ModeId, TargetSlotId};
 
 pub(super) fn structure_parts(
     definition: &CardDefinition,
 ) -> Result<Vec<CardPartId>, CatalogError> {
-    let parts = match &definition.structure {
-        CardStructure::Single { main } => vec![*main],
-        CardStructure::Split { parts, .. } => {
-            if parts.len() < 2 {
-                return Err(CatalogError::InvalidSplitPartCount {
-                    definition: definition.id,
-                    actual: parts.len(),
-                });
-            }
-            parts.clone()
-        }
-        CardStructure::Room {
-            doors,
-            combined,
-            locked,
-        } => {
-            let mut parts = doors.clone();
-            parts.push(*combined);
-            parts.push(*locked);
-            parts
-        }
-        CardStructure::Flip { normal, flipped } => vec![*normal, *flipped],
-        CardStructure::DoubleFaced { front, back, .. } => vec![*front, *back],
-        CardStructure::AlternateSpell {
-            main, alternate, ..
-        } => vec![*main, *alternate],
-        CardStructure::MeldPart { front, .. } => vec![*front],
+    let structure = &definition.structure;
+    let parts = structure.parts.clone();
+    let invalid = |reason| CatalogError::InvalidCharacteristicStructure {
+        definition: definition.id,
+        reason,
     };
-
     let mut seen = HashSet::new();
     for part in &parts {
         if !seen.insert(*part) {
@@ -48,6 +22,82 @@ pub(super) fn structure_parts(
             });
         }
     }
+    if structure.normal.parts().is_empty() {
+        return Err(invalid("the normal characteristic expression is empty"));
+    }
+    let mut normal_parts = HashSet::new();
+    if !structure
+        .normal
+        .parts()
+        .iter()
+        .all(|part| normal_parts.insert(part))
+    {
+        return Err(invalid(
+            "the normal characteristic expression repeats a part",
+        ));
+    }
+    let mut alternatives = HashSet::new();
+    for set in &structure.alternatives {
+        if !alternatives.insert(set.alternative) {
+            return Err(invalid(
+                "an alternative set has more than one normal-set relationship",
+            ));
+        }
+        let mut visited = HashSet::new();
+        let mut current = set.alternative;
+        while let Some(parent) = structure
+            .alternatives
+            .iter()
+            .find(|candidate| candidate.alternative == current)
+        {
+            if !visited.insert(current) {
+                return Err(invalid(
+                    "alternative characteristic relationships form a cycle",
+                ));
+            }
+            current = parent.normal;
+        }
+    }
+    if let crate::card::CharacteristicExpression::Combined(parts) = &structure.normal
+        && parts.len() < 2
+    {
+        return Err(CatalogError::InvalidSplitPartCount {
+            definition: definition.id,
+            actual: parts.len(),
+        });
+    }
+    let mut referenced = structure.normal.parts().to_vec();
+    match structure.faces {
+        crate::card::CardFaces::Single => {}
+        crate::card::CardFaces::Double { front, back, .. } => referenced.extend([front, back]),
+        crate::card::CardFaces::MeldComponent { front, .. } => referenced.push(front),
+    }
+    match &structure.battlefield {
+        crate::card::BattlefieldPresentation::Fixed(part) => referenced.push(*part),
+        crate::card::BattlefieldPresentation::Flip { normal, flipped } => {
+            referenced.extend([*normal, *flipped]);
+        }
+        crate::card::BattlefieldPresentation::Unlock {
+            doors,
+            combined,
+            locked,
+        } => {
+            referenced.extend(doors);
+            referenced.extend([*combined, *locked]);
+        }
+    }
+    for alternative in &structure.alternatives {
+        referenced.extend([alternative.normal, alternative.alternative]);
+    }
+    for part in referenced {
+        if !parts.contains(&part) {
+            return Err(CatalogError::UndefinedStructurePart {
+                definition: definition.id,
+                part,
+            });
+        }
+    }
+
     Ok(parts)
 }
 
@@ -280,53 +330,6 @@ fn validate_target_slots(
                 maximum: slot.maximum,
             });
         }
-    }
-    Ok(())
-}
-
-pub(super) fn validate_fused_option(definition: &CardDefinition) -> Result<(), CatalogError> {
-    let CardStructure::Split { parts, fused } = &definition.structure else {
-        if let Some(option) = definition
-            .play_options
-            .iter()
-            .find(|option| matches!(option.form, SpellForm::Combined(_)))
-        {
-            return Err(CatalogError::UnexpectedCombinedSpellForm {
-                definition: definition.id,
-                option: option.id,
-            });
-        }
-        return Ok(());
-    };
-
-    for option in &definition.play_options {
-        if matches!(option.form, SpellForm::Combined(_)) && Some(option.id) != *fused {
-            return Err(CatalogError::UnexpectedCombinedSpellForm {
-                definition: definition.id,
-                option: option.id,
-            });
-        }
-    }
-
-    let Some(fused) = fused else {
-        return Ok(());
-    };
-    let Some(option) = definition.play_option(*fused) else {
-        return Err(CatalogError::MissingFusedPlayOption {
-            definition: definition.id,
-            option: *fused,
-        });
-    };
-    if option.action != PlayActionKind::CastSpell
-        || option.form != SpellForm::Combined(parts.clone())
-    {
-        return Err(CatalogError::InvalidFusedPlayOption {
-            definition: definition.id,
-            option: *fused,
-            expected: parts.clone(),
-            actual: option.form.clone(),
-            actual_action: option.action,
-        });
     }
     Ok(())
 }

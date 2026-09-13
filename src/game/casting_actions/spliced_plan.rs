@@ -40,8 +40,14 @@ impl Game {
     ) -> Option<Vec<AbilityDef>> {
         let mut clauses = Vec::with_capacity(spliced.len());
         for card in spliced {
-            let (_, instance) = self.card_in_nonbattlefield_zone(*card)?;
-            let definition = self.catalog.get(instance.definition)?;
+            let definition = self
+                .card_in_nonbattlefield_zone(*card)
+                .map(|(_, instance)| instance.definition)
+                .or_else(|| match self.retired_objects.get(card) {
+                    Some(crate::game::RetiredObject::Card(instance)) => Some(instance.definition),
+                    _ => None,
+                })?;
+            let definition = self.catalog.get(definition)?;
             Self::splice_cost(definition)?;
             let option = definition.play_options.first()?;
             let (_, ability) = Self::spell_ability(definition, option)?;

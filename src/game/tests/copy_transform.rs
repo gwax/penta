@@ -103,7 +103,7 @@ fn physical_double_faced_card_transforms_without_changing_its_copy_effect() {
     assert_eq!(
         game.observe(PlayerId::One).battlefield[0].physical_face,
         Some(PhysicalFaceObservation {
-            kind: DoubleFacedKind::Transforming,
+            kind: DoubleFacedKind::Nonmodal,
             side: PhysicalFaceSide::Back,
         }),
     );
@@ -166,7 +166,7 @@ fn token_copy_of_back_face_up_transforming_card_keeps_both_faces() {
             .unwrap()
             .physical_face,
         Some(PhysicalFaceObservation {
-            kind: DoubleFacedKind::Transforming,
+            kind: DoubleFacedKind::Nonmodal,
             side: PhysicalFaceSide::Back,
         }),
     );
@@ -192,14 +192,14 @@ fn token_copy_of_back_face_up_transforming_card_keeps_both_faces() {
             .unwrap()
             .physical_face,
         Some(PhysicalFaceObservation {
-            kind: DoubleFacedKind::Transforming,
+            kind: DoubleFacedKind::Nonmodal,
             side: PhysicalFaceSide::Front,
         }),
     );
 }
 
 #[test]
-fn modal_and_instant_back_faces_do_not_transform() {
+fn modal_faces_can_transform_but_instant_back_faces_cannot() {
     let mut game = ready_game();
     game.battlefield.clear();
     let modal = synthetic_double_faced_token(
@@ -209,7 +209,7 @@ fn modal_and_instant_back_faces_do_not_transform() {
     );
     let instant_back = synthetic_double_faced_token(
         90_004,
-        DoubleFacedKind::Transforming,
+        DoubleFacedKind::Nonmodal,
         ObjectCharacteristics::card(cards::ANCESTRAL_RECALL, CardPartId::PRIMARY),
     );
     let ids = [modal.card.id, instant_back.card.id];
@@ -219,11 +219,8 @@ fn modal_and_instant_back_faces_do_not_transform() {
         game.transform_permanent(id);
     }
 
-    assert!(
-        game.battlefield
-            .iter()
-            .all(|permanent| permanent.presented == CardPartId::PRIMARY),
-    );
+    assert_eq!(game.battlefield[0].presented, CardPartId(1));
+    assert_eq!(game.battlefield[1].presented, CardPartId::PRIMARY);
 }
 
 #[test]

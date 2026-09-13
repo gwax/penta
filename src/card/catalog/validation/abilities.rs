@@ -154,7 +154,7 @@ pub(super) fn validate_optional_additional_cost_abilities(
 pub(super) fn validate_abilities(
     definition: &CardDefinition,
     part: CardPartId,
-    abilities: &[AbilityDef],
+    abilities: crate::card::AbilityClauses<'_>,
 ) -> Result<(), CatalogError> {
     validate_abilities_with_created_virtuals(
         definition,
@@ -173,7 +173,7 @@ struct CreatedVirtualObjects {
 fn validate_abilities_with_created_virtuals(
     definition: &CardDefinition,
     part: CardPartId,
-    abilities: &[AbilityDef],
+    abilities: crate::card::AbilityClauses<'_>,
     created: &mut CreatedVirtualObjects,
 ) -> Result<(), CatalogError> {
     if abilities.len() > usize::from(u8::MAX) + 1 {
@@ -399,7 +399,7 @@ fn validate_created_emblem(
     validate_abilities_with_created_virtuals(
         definition,
         CardPartId::PRIMARY,
-        emblem.abilities(),
+        emblem.abilities().into(),
         created,
     )
 }

@@ -5,18 +5,18 @@ use super::{
 use crate::card::sets;
 use crate::card::{
     AbilityDef, AbilityEffectDef, AbilityTargetDef, AbilityTargetPredicate, ActivatedAbilityDef,
-    AdditionalCostDef, AlternateSpellKind, AlternativeCastKindDef, AlternativeCostDef,
-    AppliedEffectDef, AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardArtPreference,
-    CardDefinition, CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardSet,
-    CardStructure, CardType, ChoiceVisibilityDef, ChooseDef, CostDef, DamageEventMatcherDef,
-    DamageRecipientMatcherDef, DamageSourceMatcherDef, DeclarativeAbilityDef, DoubleFacedKind,
-    EffectDef, EffectRecipientDef, InstalledTriggerDef, ManaCost, ModeDef, ModeSetDef,
-    ObjectChoiceBindingDef, ObjectPredicateDef, ObjectQueryDef, ObjectRefDef, ObjectSetDef,
-    PlayActionMatcherDef, PlayOptionDef, PlayRestrictionDef, PlayerRefDef, PlayerRelation,
-    PlayerSetDef, PrintedManaCost, ReplacementAbilityDef, ReplacementEffectDef,
-    ReplacementEventDef, ResolvedEffectDurationDef, SpellForm, TargetChooserDef,
-    TargetConditionDef, TargetPredicate, TargetSlotDef, TokenCharacteristics, TriggerConditionDef,
-    TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef, ZoneKind, ZoneMoveCauseDef,
+    AdditionalCostDef, AlternativeCastKindDef, AlternativeCostDef, AppliedEffectDef,
+    AppliedRuleDef, BattlefieldEntryModificationDef, CardArt, CardArtPreference, CardDefinition,
+    CardEffectStatus, CardPart, CardPrinting, CardPrintingId, CardSet, CardStructure, CardType,
+    ChoiceVisibilityDef, ChooseDef, CostDef, DamageEventMatcherDef, DamageRecipientMatcherDef,
+    DamageSourceMatcherDef, DeclarativeAbilityDef, DoubleFacedKind, EffectDef, EffectRecipientDef,
+    InstalledTriggerDef, ManaCost, ModeDef, ModeSetDef, ObjectChoiceBindingDef, ObjectPredicateDef,
+    ObjectQueryDef, ObjectRefDef, ObjectSetDef, PlayActionMatcherDef, PlayOptionDef,
+    PlayRestrictionDef, PlayerRefDef, PlayerRelation, PlayerSetDef, PrintedManaCost,
+    ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef, ResolvedEffectDurationDef,
+    SpellForm, TargetChooserDef, TargetConditionDef, TargetPredicate, TargetSlotDef,
+    TokenCharacteristics, TriggerConditionDef, TriggerEventDef, TurnKindDef, TurnStepDef, ValueDef,
+    ZoneKind, ZoneMoveCauseDef,
 };
 use crate::{
     AbilityId, AdditionalCostId, AlternativeCostId, CardDefinitionId, CardPartId, Format, GrantId,
@@ -109,17 +109,14 @@ fn semantic_spell_definition(
     card
 }
 
-fn split_definition(fused: Option<PlayOptionId>) -> CardDefinition {
+fn split_definition() -> CardDefinition {
     let mut card = definition(1, "Left // Right", sets::alpha::SET);
     let spell_rules = crate::CardRules::new_instant(ManaCost::default());
     card.rules = spell_rules;
     card.parts[0].rules = spell_rules;
     card.parts
         .push(CardPart::new(CardPartId(1), "Right", spell_rules));
-    card.structure = CardStructure::Split {
-        parts: vec![CardPartId::PRIMARY, CardPartId(1)],
-        fused,
-    };
+    card.structure = CardStructure::split(vec![CardPartId::PRIMARY, CardPartId(1)]);
     card.play_options[0].label = "Left".into();
     card.play_options[0].mana_cost = Some(ManaCost::default());
     card.play_options.push(PlayOptionDef::cast(

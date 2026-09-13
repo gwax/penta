@@ -1,4 +1,4 @@
-//! Rooms (CR 714).
+//! Rooms (CR 709.5).
 //!
 //! A Room is a split enchantment whose halves are doors. Casting one half
 //! puts the enchantment onto the battlefield with that door unlocked; the
@@ -9,7 +9,7 @@
 //! Unlocking is a special action: it uses no stack and cannot be responded
 //! to, so a door opens between two priorities rather than during one.
 
-use crate::card::{AbilityProcedureDef, CardStructure, DeclarativeAbilityDef, TriggerEventDef};
+use crate::card::{AbilityProcedureDef, DeclarativeAbilityDef, TriggerEventDef};
 use crate::ids::{CardPartId, GameObjectId};
 
 use super::{
@@ -97,7 +97,7 @@ impl Game {
     }
 
     /// A Room that came off the stack arrives with the door you cast already
-    /// open, and that opening is what its clause is about (CR 714.4c). It
+    /// open, and that opening is what its clause is about (CR 709.5h). It
     /// happens as part of entering rather than because of it, which is why an
     /// effect that doubles enter triggers leaves it alone.
     pub(super) fn capture_room_entry_unlock(&mut self, permanent: GameObjectId) {
@@ -109,7 +109,9 @@ impl Game {
             .and_then(|entered| {
                 let definition = entered.card.definition.card_definition()?;
                 let card = self.catalog.get(definition)?;
-                let CardStructure::Room { doors, .. } = &card.structure else {
+                let crate::card::BattlefieldPresentation::Unlock { doors, .. } =
+                    &card.structure.battlefield
+                else {
                     return None;
                 };
                 doors

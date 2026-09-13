@@ -25,6 +25,7 @@ pub enum CardAbilityList {
     None,
     One(AbilityDef),
     Many(&'static [AbilityDef]),
+    Joined(&'static CardRules, &'static CardRules),
 }
 
 /// One reusable ability definition attached to a card part at a stable
@@ -86,17 +87,6 @@ impl AttachedAbilityDef {
     }
 }
 
-impl CardAbilityList {
-    #[must_use]
-    pub fn as_slice(&self) -> &[AbilityDef] {
-        match self {
-            Self::None => &[],
-            Self::One(ability) => std::slice::from_ref(ability),
-            Self::Many(abilities) => abilities,
-        }
-    }
-}
-
 /// Declarative rules metadata for one card or token face.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
@@ -151,6 +141,84 @@ static VEHICLE_SUBTYPES: &[&str] = &["Vehicle"];
 const VEHICLE: &[u8] = b"Vehicle";
 
 impl CardRules {
+    /// Combines the costs, colors, and ordered rules of two components that
+    /// share a type line (CR 709.5). The components remain the only authored
+    /// ability trees; the combined view borrows both.
+    #[must_use]
+    pub(crate) fn combine_shared_type_line(left: &'static Self, right: &'static Self) -> Self {
+        assert_eq!(
+            left.card_types, right.card_types,
+            "combined components share their type line"
+        );
+        assert_eq!(
+            left.supertypes, right.supertypes,
+            "combined components share their type line"
+        );
+        assert_eq!(
+            left.subtypes, right.subtypes,
+            "combined components share their type line"
+        );
+        let mut combined = *left;
+        combined.printed_mana_cost = match (left.mana_cost(), right.mana_cost()) {
+            (Some(left), Some(right)) => PrintedManaCost::Cost(left.plus(right)),
+            (Some(cost), None) | (None, Some(cost)) => PrintedManaCost::Cost(cost),
+            (None, None) => PrintedManaCost::None,
+        };
+        for color in [
+            super::ManaColor::White,
+            super::ManaColor::Blue,
+            super::ManaColor::Black,
+            super::ManaColor::Red,
+            super::ManaColor::Green,
+        ] {
+            if right.colors.contains(color) {
+                combined.colors = combined.colors.with(color);
+            }
+        }
+        combined.abilities = CardAbilityList::Joined(left, right);
+        combined.supported &= right.supported;
+        combined
+    }
+
+    /// Applies an explicitly selected field overlay. The untouched fields
+    /// remain those of the normal set, including its abilities and mana cost.
+    #[must_use]
+    pub(crate) fn replace_characteristic_fields(
+        mut self,
+        replacement: &Self,
+        fields: &[super::CharacteristicField],
+    ) -> Self {
+        for field in fields {
+            match field {
+                super::CharacteristicField::Name => {}
+                super::CharacteristicField::ManaCost => {
+                    self.printed_mana_cost = replacement.printed_mana_cost;
+                }
+                super::CharacteristicField::Color => self.colors = replacement.colors,
+                super::CharacteristicField::TypeLine => {
+                    self.card_types = replacement.card_types;
+                    self.supertypes = replacement.supertypes;
+                    self.subtypes = replacement.subtypes;
+                }
+                super::CharacteristicField::RulesText => {
+                    self.abilities = replacement.abilities;
+                    self.play_restriction = replacement.play_restriction;
+                    self.x_spend_restriction = replacement.x_spend_restriction;
+                    self.enchant = replacement.enchant;
+                    self.morph = replacement.morph;
+                }
+                super::CharacteristicField::PowerToughness => {
+                    self.creature_stats = replacement.creature_stats;
+                }
+                super::CharacteristicField::Loyalty => {
+                    self.starting_loyalty = replacement.starting_loyalty;
+                }
+            }
+        }
+        self.supported &= replacement.supported;
+        self
+    }
+
     /// The characteristic-level constructor used when a typed convenience
     /// constructor cannot represent a card face exactly.
     pub(in crate::card) const fn base(
@@ -621,8 +689,15 @@ impl CardRules {
     }
 
     #[must_use]
-    pub fn ability_clauses(&self) -> &[AbilityDef] {
-        self.abilities.as_slice()
+    pub fn ability_clauses(&self) -> super::AbilityClauses<'_> {
+        match &self.abilities {
+            CardAbilityList::None => super::AbilityClauses::Slice(&[]),
+            CardAbilityList::One(ability) => {
+                super::AbilityClauses::Slice(std::slice::from_ref(ability))
+            }
+            CardAbilityList::Many(abilities) => super::AbilityClauses::Slice(abilities),
+            CardAbilityList::Joined(left, right) => super::AbilityClauses::Joined(left, right),
+        }
     }
 
     pub(super) fn presentation_spell_modes(&self) -> Option<ModeSetDef> {
@@ -689,8 +764,8 @@ impl CardRules {
         match self.abilities {
             CardAbilityList::None => Cow::Borrowed(""),
             CardAbilityList::One(ability) => ability.rules_text(),
-            CardAbilityList::Many(abilities) => Cow::Owned(
-                abilities
+            CardAbilityList::Many(_) | CardAbilityList::Joined(..) => Cow::Owned(
+                self.ability_clauses()
                     .iter()
                     .map(AbilityDef::rules_text)
                     .collect::<Vec<_>>()

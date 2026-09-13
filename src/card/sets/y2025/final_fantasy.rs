@@ -144,8 +144,7 @@ fn adventure_land(
     alternate: &CardRules,
 ) -> crate::card::CardComposition {
     use crate::card::{
-        AlternateSpellKind, CardComposition, CardEffectStatus, CardPart, CardStructure,
-        PlayOptionDef, SpellForm,
+        CardComposition, CardEffectStatus, CardPart, CardStructure, PlayOptionDef, SpellForm,
     };
     use crate::{CardPartId, PlayOptionId};
     let primary_name = record
@@ -158,11 +157,8 @@ fn adventure_land(
             CardPart::new(CardPartId::PRIMARY, primary_name, record.rules),
             CardPart::new(CardPartId(1), name, *alternate),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::play_land(
                 PlayOptionId::DEFAULT,

@@ -237,9 +237,7 @@ impl CardComposition {
         }
         Self {
             parts: vec![part],
-            structure: CardStructure::Single {
-                main: CardPartId::PRIMARY,
-            },
+            structure: CardStructure::single(CardPartId::PRIMARY),
             play_options: vec![option],
         }
         .with_derived_spell_targets()
@@ -272,11 +270,7 @@ impl CardComposition {
                 CardPart::new(CardPartId::PRIMARY, front_name, front_rules),
                 CardPart::new(CardPartId(1), back_name, back_rules),
             ],
-            structure: CardStructure::DoubleFaced {
-                front: CardPartId::PRIMARY,
-                back: CardPartId(1),
-                kind,
-            },
+            structure: CardStructure::double_faced(CardPartId::PRIMARY, CardPartId(1), kind),
             play_options,
         }
         .with_derived_spell_targets()
@@ -301,7 +295,7 @@ impl CardComposition {
             ),
             Self::face_play_option(PlayOptionId(1), CardPartId(1), second_name, &second_rules),
         ];
-        let fused = fuse_cost.map(|cost| {
+        if let Some(cost) = fuse_cost {
             let id = PlayOptionId(2);
             let status = if Self::effect_status(&first_rules) == CardEffectStatus::Implemented
                 && Self::effect_status(&second_rules) == CardEffectStatus::Implemented
@@ -320,20 +314,19 @@ impl CardComposition {
                 )
                 .restricted_to_hand(),
             );
-            id
-        });
+        }
         Self {
             parts: vec![
                 CardPart::new(CardPartId::PRIMARY, first_name, first_rules),
                 CardPart::new(CardPartId(1), second_name, second_rules),
             ],
-            structure: CardStructure::Split { parts, fused },
+            structure: CardStructure::split(parts),
             play_options,
         }
         .with_derived_spell_targets()
     }
 
-    /// A Room (CR 714): two doors, the pair of them, and neither of them.
+    /// A Room (CR 709.5): two doors, the pair of them, and neither of them.
     ///
     /// `combined` is what the permanent is once both doors are open -- the
     /// two halves' abilities together, for the two halves' costs added up --
@@ -345,16 +338,15 @@ impl CardComposition {
     /// # Panics
     ///
     /// Panics if either door has no printed mana cost. A door is a half you
-    /// cast, so there is always something to pay.
+    /// cast, so there is always something to pay. Both doors must also share
+    /// the same type line.
     #[must_use]
-    #[allow(clippy::large_types_passed_by_value)]
     pub fn room(
         combined_name: impl Into<String>,
         first_name: &str,
-        first: CardRules,
+        first: &'static CardRules,
         second_name: &str,
-        second: CardRules,
-        combined: CardRules,
+        second: &'static CardRules,
     ) -> Self {
         const COMBINED: CardPartId = CardPartId(2);
         const LOCKED: CardPartId = CardPartId(3);
@@ -378,26 +370,30 @@ impl CardComposition {
                 PlayOptionId::DEFAULT,
                 CardPartId::PRIMARY,
                 first_name,
-                &first,
+                first,
             ),
-            door_option(PlayOptionId(1), CardPartId(1), second_name, &second),
+            door_option(PlayOptionId(1), CardPartId(1), second_name, second),
         ];
         Self {
             parts: vec![
-                CardPart::new(CardPartId::PRIMARY, first_name, first),
-                CardPart::new(CardPartId(1), second_name, second),
-                CardPart::new(COMBINED, combined_name.clone(), combined),
+                CardPart::new(CardPartId::PRIMARY, first_name, *first),
+                CardPart::new(CardPartId(1), second_name, *second),
+                CardPart::new(
+                    COMBINED,
+                    combined_name.clone(),
+                    CardRules::combine_shared_type_line(first, second),
+                ),
                 CardPart::new(
                     LOCKED,
                     combined_name,
                     CardRules::new_enchantment_without_mana_cost().with_subtypes(&["Room"]),
                 ),
             ],
-            structure: CardStructure::Room {
-                doors: vec![CardPartId::PRIMARY, CardPartId(1)],
-                combined: COMBINED,
-                locked: LOCKED,
-            },
+            structure: CardStructure::room(
+                vec![CardPartId::PRIMARY, CardPartId(1)],
+                COMBINED,
+                LOCKED,
+            ),
             play_options: options,
         }
         .with_derived_spell_targets()
@@ -485,6 +481,55 @@ pub struct CardDefinition {
 }
 
 impl CardDefinition {
+    /// Compile partial alternative sets once when a definition enters a
+    /// catalog. Runtime characteristic queries use the resulting ordinary
+    /// part views, so field inheritance cannot drift across callers.
+    pub(crate) fn materialize_alternative_characteristics(&mut self) {
+        // Resolve parents before their partial children regardless of declaration
+        // order. Cycles are rejected by catalog validation and cannot loop here.
+        let mut pending = self
+            .structure
+            .alternatives
+            .iter()
+            .filter(|set| set.fields.is_some())
+            .collect::<Vec<_>>();
+        while !pending.is_empty() {
+            let Some(index) = pending.iter().position(|set| {
+                !pending
+                    .iter()
+                    .any(|parent| parent.alternative == set.normal)
+            }) else {
+                break;
+            };
+            let set = pending.remove(index);
+            let fields = set
+                .fields
+                .as_deref()
+                .expect("only partial alternatives are pending");
+            let Some(normal) = self
+                .parts
+                .iter()
+                .find(|part| part.id == set.normal)
+                .cloned()
+            else {
+                continue;
+            };
+            let Some(alternative) = self
+                .parts
+                .iter_mut()
+                .find(|part| part.id == set.alternative)
+            else {
+                continue;
+            };
+            if !fields.contains(&super::CharacteristicField::Name) {
+                alternative.name.clone_from(&normal.name);
+            }
+            alternative.rules = normal
+                .rules
+                .replace_characteristic_fields(&alternative.rules, fields);
+        }
+    }
+
     /// Creates a single-part definition from the supplied declarative rules.
     #[must_use]
     pub fn new(
@@ -622,11 +667,7 @@ impl CardDefinition {
     /// rather than the card, and is unaffected by this.
     #[must_use]
     pub fn card_mana_value(&self) -> u16 {
-        let (CardStructure::Split { parts, .. } | CardStructure::Room { doors: parts, .. }) =
-            &self.structure
-        else {
-            return self.rules.printed_mana_cost().mana_value();
-        };
+        let parts = self.structure.normal.parts();
         parts
             .iter()
             .filter_map(|id| self.part(*id))
@@ -656,29 +697,22 @@ impl CardDefinition {
 
     #[must_use]
     pub fn primary_part_id(&self) -> CardPartId {
-        match &self.structure {
-            CardStructure::Single { main } | CardStructure::AlternateSpell { main, .. } => *main,
-            CardStructure::Split { parts, .. } | CardStructure::Room { doors: parts, .. } => {
-                parts.first().copied().unwrap_or(CardPartId::PRIMARY)
-            }
-            CardStructure::Flip { normal, .. } => *normal,
-            CardStructure::DoubleFaced { front, .. } | CardStructure::MeldPart { front, .. } => {
-                *front
-            }
-        }
+        self.structure
+            .normal
+            .parts()
+            .first()
+            .copied()
+            .unwrap_or(CardPartId::PRIMARY)
     }
 
     /// The part a permanent of this card presents when it arrives from
     /// anywhere but the stack.
     ///
     /// Only a Room has an answer other than its primary part: it enters with
-    /// both doors locked, because nothing chose a door for it (CR 714.3d).
+    /// both doors locked, because nothing chose a door for it (CR 709.5d).
     #[must_use]
     pub fn battlefield_entry_part(&self) -> CardPartId {
-        match &self.structure {
-            CardStructure::Room { locked, .. } => *locked,
-            _ => self.primary_part_id(),
-        }
+        self.structure.battlefield.initial()
     }
 
     /// The doors of this Room that are locked while it presents `presented`.
@@ -687,11 +721,11 @@ impl CardDefinition {
     /// doors already open.
     #[must_use]
     pub fn locked_doors(&self, presented: CardPartId) -> Vec<CardPartId> {
-        let CardStructure::Room {
+        let super::BattlefieldPresentation::Unlock {
             doors,
             combined,
             locked,
-        } = &self.structure
+        } = &self.structure.battlefield
         else {
             return Vec::new();
         };
@@ -712,18 +746,18 @@ impl CardDefinition {
     ///
     /// `None` when the card is not a Room, when `door` is not one of its
     /// doors, or when that door is already unlocked -- a door that is already
-    /// open cannot be opened again (CR 714.4b).
+    /// open cannot be opened again (CR 709.5f).
     #[must_use]
     pub fn presentation_after_unlocking(
         &self,
         presented: CardPartId,
         door: CardPartId,
     ) -> Option<CardPartId> {
-        let CardStructure::Room {
+        let super::BattlefieldPresentation::Unlock {
             doors,
             combined,
             locked,
-        } = &self.structure
+        } = &self.structure.battlefield
         else {
             return None;
         };
@@ -743,7 +777,7 @@ impl CardDefinition {
     /// card has only one side to present.
     #[must_use]
     pub fn other_face(&self, presented: CardPartId) -> Option<CardPartId> {
-        let CardStructure::DoubleFaced { front, back, .. } = &self.structure else {
+        let super::CardFaces::Double { front, back, .. } = &self.structure.faces else {
             return None;
         };
         if presented == *front {

@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
 use super::{
-    BattlefieldExitSnapshot, CardPartId, CardRules, CardStructure, CardSupertype, CardType,
-    CardTypeSet, CopiableCharacteristics, CounterKind, DeclarativeAbilityDef,
+    BattlefieldExitSnapshot, CardPartId, CardRules, CardSupertype, CardType, CardTypeSet,
+    CopiableCharacteristics, CounterKind, DeclarativeAbilityDef,
     DoubleFacedCopiableCharacteristics, Game, ObjectCharacteristics, ObjectKind, Permanent,
     PermanentLastKnownInformation, Target, TriggerEventObject,
 };
@@ -226,11 +226,7 @@ impl Game {
         match permanent.card.definition {
             ObjectKind::Card(definition) => {
                 let definition = self.catalog.get(definition)?;
-                let CardStructure::DoubleFaced {
-                    kind: crate::card::DoubleFacedKind::Transforming,
-                    ..
-                } = definition.structure
-                else {
+                let crate::card::CardFaces::Double { .. } = definition.structure.faces else {
                     return None;
                 };
                 let other = definition.other_face(permanent.presented)?;
@@ -240,9 +236,6 @@ impl Game {
             }
             ObjectKind::Token => {
                 if let Some(faces) = &permanent.double_faced_token_copy {
-                    if faces.kind != crate::card::DoubleFacedKind::Transforming {
-                        return None;
-                    }
                     let other = faces.other_face(permanent.presented)?;
                     let copy = faces.face(other)?;
                     return self.copiable_face_can_be_up(copy).then_some(other);
@@ -298,7 +291,8 @@ impl Game {
         let mut faces = match permanent.card.definition {
             ObjectKind::Card(definition) => {
                 let definition_record = self.catalog.get(definition)?;
-                let CardStructure::DoubleFaced { front, back, kind } = definition_record.structure
+                let crate::card::CardFaces::Double { front, back, kind } =
+                    definition_record.structure.faces
                 else {
                     return None;
                 };
@@ -318,7 +312,7 @@ impl Game {
                     let front_part = token.primary_part_id();
                     let back_part = token.other_face(front_part)?;
                     DoubleFacedCopiableCharacteristics {
-                        kind: crate::card::DoubleFacedKind::Transforming,
+                        kind: crate::card::DoubleFacedKind::Nonmodal,
                         front_part,
                         back_part,
                         front: unmodified(ObjectCharacteristics::token(token, front_part)),
@@ -335,6 +329,34 @@ impl Game {
         Some(faces)
     }
 
+    pub(super) fn presentation_alternative_characteristics(
+        &self,
+        presentation: ObjectCharacteristics,
+    ) -> Vec<(crate::CardDefinitionId, CardPartId)> {
+        let ObjectCharacteristics::Card { definition, part } = presentation else {
+            return Vec::new();
+        };
+        self.catalog.get(definition).map_or_else(Vec::new, |card| {
+            card.structure
+                .alternatives_for(part)
+                .map(|alternative| (definition, alternative))
+                .collect()
+        })
+    }
+
+    pub(super) fn alternative_characteristics_match(
+        &self,
+        alternatives: &[(crate::CardDefinitionId, CardPartId)],
+        predicate: crate::card::CharacteristicPredicateDef,
+    ) -> bool {
+        alternatives.iter().any(|(definition, part)| {
+            self.catalog
+                .get(*definition)
+                .and_then(|definition| definition.part(*part))
+                .is_some_and(|part| predicate.matches(part))
+        })
+    }
+
     pub(super) fn trigger_event_object(&self, permanent: &Permanent) -> TriggerEventObject {
         let rules = self
             .effective_rules(permanent)
@@ -343,6 +365,8 @@ impl Game {
         TriggerEventObject {
             id: permanent.card.id,
             token: permanent.card.definition.is_token(),
+            alternative_characteristics: self
+                .presentation_alternative_characteristics(Self::effective_rules_source(permanent)),
             types: self
                 .permanent_types(permanent)
                 .expect("a battlefield object has effective types"),
@@ -399,6 +423,8 @@ impl Game {
         TriggerEventObject {
             id: permanent.card.id,
             token: permanent.card.definition.is_token(),
+            alternative_characteristics: self
+                .presentation_alternative_characteristics(Self::effective_rules_source(permanent)),
             types: self
                 .permanent_types(permanent)
                 .expect("a battlefield object has effective types"),

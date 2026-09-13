@@ -1,6 +1,6 @@
 use super::{
     ArrivalAttachment, BattlefieldArrival, CardDefinitionId, CardInstance, CardPartId,
-    CardStructure, CharacteristicContext, CharacteristicSource, CommittedTriggerEvent, CounterKind,
+    CharacteristicContext, CharacteristicSource, CommittedTriggerEvent, CounterKind,
     DecisionContinuation, DeclarativeAbilityDef, EffectDef, EffectRecipientDef, EntryCompletion,
     Game, GameEvent, GameObjectId, KeywordAbility, ObjectBacking, PendingBattlefieldEntry,
     Permanent, PhysicalCard, PhysicalCardId, PlayerId, PublicCard, ReplacementEffectDef,
@@ -701,7 +701,10 @@ impl Game {
             .unwrap_or(CardPartId::PRIMARY);
         // A Room that arrives from anywhere but the stack has had no door
         // chosen for it, so it arrives with both of them locked.
-        let front = if matches!(definition.structure, CardStructure::Room { .. }) {
+        let front = if matches!(
+            definition.structure.battlefield,
+            crate::card::BattlefieldPresentation::Unlock { .. }
+        ) {
             definition.battlefield_entry_part()
         } else {
             front

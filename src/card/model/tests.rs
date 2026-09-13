@@ -13,6 +13,7 @@ use crate::{
     AbilityId, AlternativeCostId, CardDefinitionId, CardPartId, ModeId, PlayOptionId, TargetIndex,
 };
 
+mod characteristic_sets;
 mod composition;
 
 #[test]

@@ -542,6 +542,13 @@ impl Game {
             ObjectPredicateDef::Source => source.card.id == affected.card.id,
             ObjectPredicateDef::Commander => self.is_commander(affected.card.id),
             ObjectPredicateDef::Token => affected.card.definition.is_token(),
+            ObjectPredicateDef::HasAlternativeCharacteristics(predicate) => self
+                .alternative_characteristics_match(
+                    &self.presentation_alternative_characteristics(Self::effective_rules_source(
+                        affected,
+                    )),
+                    predicate,
+                ),
             ObjectPredicateDef::HasType(CardType::Land) => self
                 .permanent_types_below_static_effects(affected)
                 .is_some_and(|types| types.contains(CardType::Land)),

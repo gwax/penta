@@ -12,7 +12,7 @@ use crate::card::{
     ActivatedAbilityDef, ActivationTimingDef, AddManaEffectDef, AlternativeCastAbilityDef,
     AlternativeCastKindDef, AppliedEffectDef, AppliedRuleDef, BandingQuality, BasicLandType,
     BattlefieldEntryModificationDef, CREATURE_TYPES, CardCatalog, CardChoiceSourceDef,
-    CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet, CardStructure, CardSupertype,
+    CardDefinition, CardEffectStatus, CardPart, CardRules, CardSet, CardSupertype,
     CardSupertypeSet, CardType, CardTypeSet, CharacteristicContext, CharacteristicOperationDef,
     ColorChoiceOperationDef, ColorSet, ComparisonDef, ConditionDef, ControlDurationDef, CostDef,
     CounterKind, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef,

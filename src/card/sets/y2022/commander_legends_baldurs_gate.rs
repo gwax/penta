@@ -9,7 +9,6 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::ActivationTimingDef;
 use crate::card::AddManaEffectDef;
-use crate::card::AlternateSpellKind;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
 use crate::card::BindObjectsDef;
@@ -187,11 +186,8 @@ fn blessed_hippogriff_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Blessed Hippogriff", hippogriff),
             CardPart::new(CardPartId(1), "Tyr's Blessing", blessing),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -322,11 +318,8 @@ fn sword_coast_serpent_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Sword Coast Serpent", serpent),
             CardPart::new(CardPartId(1), "Capsizing Wave", wave),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -396,11 +389,8 @@ fn young_blue_dragon_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Young Blue Dragon", dragon),
             CardPart::new(CardPartId(1), "Sand Augury", augury),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,

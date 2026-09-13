@@ -67,13 +67,7 @@ impl CardRecord {
         artist: &'static str,
         faces: &'static [(&'static str, CardRules); 2],
     ) -> Self {
-        Self::new_double_faced(
-            name,
-            scryfall_id,
-            artist,
-            faces,
-            DoubleFacedKind::Transforming,
-        )
+        Self::new_double_faced(name, scryfall_id, artist, faces, DoubleFacedKind::Nonmodal)
     }
 
     pub(super) const fn new_mdfc(

@@ -20,8 +20,10 @@ mod mana_cost;
 mod payments;
 mod presentation;
 mod presentation_predicates;
+mod rule_clauses;
 mod rules;
 mod rules_primitives;
+mod structure;
 mod targeting;
 mod token;
 
@@ -39,8 +41,10 @@ pub use identity::*;
 pub use mana_cost::*;
 pub use payments::*;
 pub use presentation::*;
+pub use rule_clauses::*;
 pub use rules::*;
 pub use rules_primitives::*;
+pub use structure::*;
 pub use targeting::*;
 pub use token::*;
 

@@ -3,7 +3,7 @@ use super::{
     PreparedStaticComponent, PreparedStaticLane, PreparedStaticProgram,
 };
 use crate::{
-    AbilityDef, AbilityOperationDef, AppliedEffectDef, CardCatalog, CharacteristicContext,
+    AbilityOperationDef, AppliedEffectDef, CardCatalog, CharacteristicContext,
     CharacteristicOperationDef, DeclarativeAbilityDef, EffectDef, GrantId,
     ResolvedEffectDurationDef, TriggerConditionDef, ValueDef, ZoneKind, applicable_part_ids,
 };
@@ -57,7 +57,7 @@ pub(crate) fn compile_effect(effect: EffectDef) -> Option<PreparedEffect> {
     }
 }
 
-fn compile_static_program(abilities: &[AbilityDef]) -> PreparedStaticProgram {
+fn compile_static_program(abilities: crate::card::AbilityClauses<'_>) -> PreparedStaticProgram {
     let mut prepared_abilities = Vec::new();
     for (index, ability) in abilities.iter().copied().enumerate() {
         let DeclarativeAbilityDef::Static(definition) = ability.definition else {
@@ -367,7 +367,7 @@ fn applied_effect_contains_land_type_operation(effect: AppliedEffectDef) -> bool
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::card::{CostDef, abilities};
+    use crate::card::{AbilityDef, CostDef, abilities};
 
     static TEST_FLYING: AbilityDef = abilities::flying();
     static TEST_FLYING_GRANT: AppliedEffectDef = AppliedEffectDef::add_ability(&TEST_FLYING);

@@ -1,10 +1,10 @@
 use super::{
-    AbilityOrigin, AbilityProcedureDef, Action, CardInstance, CardPart, CardStructure,
-    CharacteristicContext, ControlFlow, CostDef, DeclarativeAbilityDef, DoubleFacedKind,
-    EffectiveAbility, FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost,
-    ManaPaymentPurpose, ManaPlanOptions, ObjectCharacteristics, ObjectInstance, ObjectRefDef,
-    Permanent, PlayerId, RetiredObject, ScopedEffect, SelectedSpellPlan, StackAbilityPayload,
-    StackObject, StackObjectKind, TargetSelection, TriggerContext, ZoneKind, add_mana_cost,
+    AbilityOrigin, AbilityProcedureDef, Action, CardInstance, CardPart, CharacteristicContext,
+    ControlFlow, CostDef, DeclarativeAbilityDef, DoubleFacedKind, EffectiveAbility,
+    FrozenActivatedAbility, Game, GameEvent, GameObjectId, ManaCost, ManaPaymentPurpose,
+    ManaPlanOptions, ObjectCharacteristics, ObjectInstance, ObjectRefDef, Permanent, PlayerId,
+    RetiredObject, ScopedEffect, SelectedSpellPlan, StackAbilityPayload, StackObject,
+    StackObjectKind, TargetSelection, TriggerContext, ZoneKind, add_mana_cost,
     applicable_part_ids_ref, mana_cost_value, mode_id_selections,
 };
 use crate::card::{

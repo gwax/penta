@@ -118,8 +118,8 @@ impl Game {
                     .is_none()
                     .then(|| {
                         let definition = self.catalog.get(definition)?;
-                        let crate::card::CardStructure::DoubleFaced { front, back, kind } =
-                            definition.structure
+                        let crate::card::CardFaces::Double { front, back, kind } =
+                            definition.structure.faces
                         else {
                             return None;
                         };

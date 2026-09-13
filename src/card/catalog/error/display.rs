@@ -404,6 +404,10 @@ impl fmt::Display for CatalogError {
                 formatter,
                 "card definition {definition:?}'s structure references part {part:?} more than once"
             ),
+            Self::InvalidCharacteristicStructure { definition, reason } => write!(
+                formatter,
+                "card definition {definition:?} has invalid characteristic relationships: {reason}"
+            ),
             Self::InvalidSplitPartCount { definition, actual } => write!(
                 formatter,
                 "split card definition {definition:?} must contain at least two ordered parts, but contains {actual}"
@@ -447,24 +451,6 @@ impl fmt::Display for CatalogError {
             } => write!(
                 formatter,
                 "play option {option:?} of card definition {definition:?} uses part {part:?}, which is not in the card's structure"
-            ),
-            Self::MissingFusedPlayOption { definition, option } => write!(
-                formatter,
-                "split card definition {definition:?} names missing fused play option {option:?}"
-            ),
-            Self::InvalidFusedPlayOption {
-                definition,
-                option,
-                expected,
-                actual,
-                actual_action,
-            } => write!(
-                formatter,
-                "fused play option {option:?} of card definition {definition:?} must cast combined parts {expected:?} in printed order, but has action {actual_action:?} and form {actual:?}"
-            ),
-            Self::UnexpectedCombinedSpellForm { definition, option } => write!(
-                formatter,
-                "play option {option:?} of card definition {definition:?} has a combined spell form but is not its declared fused split option"
             ),
             Self::CombinedModalSpellUnsupported {
                 definition,

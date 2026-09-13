@@ -381,10 +381,7 @@ fn miracle_offer_names_the_exact_linked_clause_across_same_kind_play_options() {
         CardPart::new(CardPartId::PRIMARY, "First Miracle", first_rules),
         CardPart::new(CardPartId(1), "Second Miracle", second_rules),
     ];
-    definition.structure = CardStructure::Split {
-        parts: vec![CardPartId::PRIMARY, CardPartId(1)],
-        fused: None,
-    };
+    definition.structure = CardStructure::split(vec![CardPartId::PRIMARY, CardPartId(1)]);
     definition.play_options = vec![
         PlayOptionDef::cast(
             PlayOptionId::DEFAULT,

@@ -8,10 +8,7 @@ use std::sync::{Arc, Weak};
 
 use self::name::normalize_name;
 use self::validation::validate_composition;
-use super::{
-    CardArt, CardArtPreference, CardDefinition, CardPrinting, CardPrintingId, CardSet,
-    CardStructure,
-};
+use super::{CardArt, CardArtPreference, CardDefinition, CardPrinting, CardPrintingId, CardSet};
 use crate::{CardDefinitionId, Format};
 
 pub use self::error::{
@@ -141,6 +138,7 @@ impl CardCatalog {
         let mut set_metadata = set_metadata::SetMetadata::default();
         let mut definition_printings = Vec::new();
         for mut definition in definitions {
+            definition.materialize_alternative_characteristics();
             set_metadata.register(definition.debut_set)?;
             if entries.definition_index(definition.id).is_some() {
                 return Err(CatalogError::DuplicateId(definition.id));
@@ -150,7 +148,10 @@ impl CardCatalog {
                 return Err(CatalogError::DuplicateName(definition.name));
             }
             validate_composition(&definition)?;
-            let front_alias = if matches!(definition.structure, CardStructure::DoubleFaced { .. }) {
+            let front_alias = if matches!(
+                definition.structure.faces,
+                crate::card::CardFaces::Double { .. }
+            ) {
                 definition.primary_part().map(|part| part.name.clone())
             } else {
                 None

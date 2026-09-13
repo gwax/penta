@@ -11,11 +11,8 @@ fn adventure(record: &CardRecord, name: &'static str, alternate: &CardRules) -> 
             CardPart::new(CardPartId::PRIMARY, primary_name, record.rules),
             CardPart::new(CardPartId(1), name, *alternate),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -46,7 +43,6 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::ActivationTimingDef;
 use crate::card::AddManaEffectDef;
-use crate::card::AlternateSpellKind;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
 use crate::card::ArrivalAttachmentDef;

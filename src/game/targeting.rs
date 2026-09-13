@@ -140,6 +140,8 @@ impl Game {
                 token,
             )?;
             view.controller = object.controller;
+            // Source presentation does not give an ability object alternative sets.
+            view.alternative_characteristics.clear();
             Some(view)
         })
     }
@@ -175,6 +177,8 @@ impl Game {
         Some(TriggerEventObject {
             id,
             token,
+            alternative_characteristics: self
+                .presentation_alternative_characteristics(presentation),
             types: rules.types(),
             controller,
             colors: rules.colors(),
@@ -338,6 +342,15 @@ impl Game {
         let mut object = TriggerEventObject {
             id,
             token: false,
+            alternative_characteristics: parts
+                .iter()
+                .flat_map(|part| {
+                    definition
+                        .structure
+                        .alternatives_for(*part)
+                        .map(|alternative| (definition.id, alternative))
+                })
+                .collect(),
             types,
             controller,
             colors,

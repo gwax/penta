@@ -445,6 +445,10 @@ impl From<TriggerContext> for EffectResolutionContext {
 pub(super) struct TriggerEventObject {
     pub(super) id: GameObjectId,
     pub(super) token: bool,
+    /// Frozen references to the object's associated alternative sets. These
+    /// follow copiable characteristics rather than physical backing and remain
+    /// meaningful after a zone change or a later copy effect.
+    pub(super) alternative_characteristics: Vec<(crate::CardDefinitionId, crate::CardPartId)>,
     pub(super) types: CardTypeSet,
     pub(super) controller: PlayerId,
     pub(super) colors: [bool; 5],

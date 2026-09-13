@@ -13,7 +13,6 @@ use crate::card::AbilityTargetPredicate;
 use crate::card::ActivationTimingDef;
 use crate::card::AddManaEffectDef;
 use crate::card::AdditionalCostValueDef;
-use crate::card::AlternateSpellKind;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
 use crate::card::BattlefieldArrivalDef;
@@ -359,11 +358,8 @@ fn adventure(record: &CardRecord, name: &'static str, alternate: &CardRules) -> 
             CardPart::new(CardPartId::PRIMARY, primary_name, record.rules),
             CardPart::new(CardPartId(1), name, *alternate),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -4752,7 +4748,7 @@ control.",
 );
 
 // WOE 130 — Frantic Firebolt
-// Audit: unsupported — Needs an object predicate for a card having an Adventure, independently of its currently presented face; the model exposes no Adventure-composition predicate.
+// Audit: unsupported — Card rules have not been implemented using the shared alternative-characteristics query.
 pub(in crate::card::sets) static FRANTIC_FIREBOLT: CardRecord = CardRecord::new(
     "Frantic Firebolt",
     "efd85f5a-258b-4ced-bf9e-3abe7fe72395",
@@ -4894,7 +4890,7 @@ token with \"This token can't block.\"",
 );
 
 // WOE 136 — Hearth Elemental // Stoke Genius
-// Audit: unsupported — Needs an object predicate for a card having an Adventure, independently of its currently presented face; the model exposes no Adventure-composition predicate.
+// Audit: unsupported — Card rules have not been implemented using the shared alternative-characteristics query.
 pub(in crate::card::sets) static HEARTH_ELEMENTAL: CardRecord = CardRecord::new(
     "Hearth Elemental // Stoke Genius",
     "a8f5f102-cc75-4cee-a117-4bdaaf86c2e9",
@@ -6169,7 +6165,7 @@ creature later from exile.)",
 });
 
 // WOE 175 — Howling Galefang
-// Audit: unsupported — Needs an object predicate for a card having an Adventure, independently of its currently presented face; the model exposes no Adventure-composition predicate.
+// Audit: unsupported — Card rules have not been implemented using the shared alternative-characteristics query.
 pub(in crate::card::sets) static HOWLING_GALEFANG: CardRecord = CardRecord::new(
     "Howling Galefang",
     "86311523-d0eb-4db3-b586-8349de9c2d37",
@@ -6500,7 +6496,7 @@ Enchanted creature gets +1/+1 and has ward {1}.)",
 );
 
 // WOE 184 — Sentinel of Lost Lore
-// Audit: unsupported — Needs an object predicate for a card having an Adventure, independently of its currently presented face; the model exposes no Adventure-composition predicate.
+// Audit: unsupported — Card rules have not been implemented using the shared alternative-characteristics query.
 pub(in crate::card::sets) static SENTINEL_OF_LOST_LORE: CardRecord = CardRecord::new(
     "Sentinel of Lost Lore",
     "f109a5bf-1472-4b87-b3d3-70db0e123693",
@@ -7623,7 +7619,7 @@ a sorcery.",
 );
 
 // WOE 220 — Beluna Grandsquall // Seek Thrills
-// Audit: unsupported — Needs an object predicate for a card having an Adventure, independently of its currently presented face; the model exposes no Adventure-composition predicate.
+// Audit: unsupported — Card rules have not been implemented using the shared alternative-characteristics query.
 pub(in crate::card::sets) static BELUNA_GRANDSQUALL: CardRecord = CardRecord::new(
     "Beluna Grandsquall // Seek Thrills",
     "3f5acc0d-33a6-476f-95ca-a1ad788334dd",
@@ -9034,7 +9030,7 @@ const CRYSTAL_GROTTO_REPRINT: PrintingRecord = PrintingRecord::reprint(
 );
 
 // WOE 255 — Edgewall Inn
-// Audit: unsupported — Needs an object predicate for a card having an Adventure, independently of its currently presented face; the model exposes no Adventure-composition predicate.
+// Audit: unsupported — Card rules have not been implemented using the shared alternative-characteristics query.
 pub(in crate::card::sets) static EDGEWALL_INN: CardRecord = CardRecord::new(
     "Edgewall Inn",
     "ec435e54-628a-43bd-8804-cbc37e375bce",
@@ -9453,11 +9449,8 @@ fn virtue_of_loyalty_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Virtue of Loyalty", virtue),
             CardPart::new(CardPartId(1), "Ardenvale Fealty", fealty),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,

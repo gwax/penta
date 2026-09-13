@@ -4,7 +4,7 @@
 fn validate_alternative_cost_bindings(
     definition: &CardDefinition,
     part: CardPartId,
-    abilities: &[AbilityDef],
+    abilities: crate::card::AbilityClauses<'_>,
 ) -> Result<Vec<crate::Binding>, CatalogError> {
     let mut bindings = Vec::new();
     for (index, ability) in abilities.iter().enumerate() {

@@ -9,7 +9,7 @@
 use std::error::Error;
 use std::fmt;
 
-use super::{CardDefinition, CardStructure, CardTypeSet, PlayActionKind, SpellForm};
+use super::{CardDefinition, CardTypeSet, PlayActionKind, SpellForm};
 use crate::{CardDefinitionId, CardPartId};
 
 /// The zone-sensitive information needed to select printed characteristics.
@@ -94,7 +94,7 @@ pub(crate) fn applicable_part_ids_ref<'a>(
     context: &'a CharacteristicContext,
 ) -> Result<&'a [CardPartId], CharacteristicError> {
     let parts = if context.uses_canonical_outside_stack_parts() {
-        outside_stack_parts(&definition.structure)
+        definition.structure.normal.parts()
     } else {
         match context {
             CharacteristicContext::Stack { form } => {
@@ -109,7 +109,7 @@ pub(crate) fn applicable_part_ids_ref<'a>(
                 spell_form_parts(form)
             }
             CharacteristicContext::Battlefield { presented } => {
-                if !structure_contains(&definition.structure, *presented) {
+                if !definition.structure.parts.contains(presented) {
                     return Err(CharacteristicError::PartNotInStructure {
                         definition: definition.id,
                         part: *presented,
@@ -147,7 +147,7 @@ pub(crate) fn applicable_part_ids_ref<'a>(
         });
     }
     for part in parts {
-        if !structure_contains(&definition.structure, *part) {
+        if !definition.structure.parts.contains(part) {
             return Err(CharacteristicError::PartNotInStructure {
                 definition: definition.id,
                 part: *part,
@@ -163,49 +163,8 @@ pub(crate) fn applicable_part_ids_ref<'a>(
     Ok(parts)
 }
 
-fn outside_stack_parts(structure: &CardStructure) -> &[CardPartId] {
-    match structure {
-        CardStructure::Single { main } | CardStructure::AlternateSpell { main, .. } => {
-            std::slice::from_ref(main)
-        }
-        CardStructure::Split { parts, .. } => parts,
-        // A Room's doors, and only its doors: outside the battlefield a Room
-        // card is the combination of the two halves as printed, which is why
-        // Walk-In Closet // Forgotten Cellar has mana value 8 in a library.
-        // The combined and locked parts describe a permanent's state rather
-        // than anything printed, so nothing outside the battlefield uses
-        // them.
-        CardStructure::Room { doors, .. } => doors,
-        CardStructure::Flip { normal, .. } => std::slice::from_ref(normal),
-        CardStructure::DoubleFaced { front, .. } | CardStructure::MeldPart { front, .. } => {
-            std::slice::from_ref(front)
-        }
-    }
-}
-
 fn spell_form_parts(form: &SpellForm) -> &[CardPartId] {
-    match form {
-        SpellForm::Part(part) => std::slice::from_ref(part),
-        SpellForm::Combined(parts) => parts,
-    }
-}
-
-fn structure_contains(structure: &CardStructure, wanted: CardPartId) -> bool {
-    match structure {
-        CardStructure::Single { main } => *main == wanted,
-        CardStructure::Split { parts, .. } => parts.contains(&wanted),
-        CardStructure::Room {
-            doors,
-            combined,
-            locked,
-        } => doors.contains(&wanted) || *combined == wanted || *locked == wanted,
-        CardStructure::Flip { normal, flipped } => *normal == wanted || *flipped == wanted,
-        CardStructure::DoubleFaced { front, back, .. } => *front == wanted || *back == wanted,
-        CardStructure::AlternateSpell {
-            main, alternate, ..
-        } => *main == wanted || *alternate == wanted,
-        CardStructure::MeldPart { front, .. } => *front == wanted,
-    }
+    form.parts()
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -273,8 +232,8 @@ mod tests {
     use crate::card::sets;
     use crate::card::{CardCatalog, cards};
     use crate::{
-        AlternateSpellKind, CardDefinition, CardDefinitionId, CardPart, CardPartId, CardRules,
-        CardStructure, ManaCost, PlayOptionDef, PlayOptionId, SpellForm,
+        CardDefinition, CardDefinitionId, CardPart, CardPartId, CardRules, CardStructure, ManaCost,
+        PlayOptionDef, PlayOptionId, SpellForm,
     };
 
     fn definition(catalog: &CardCatalog, id: CardDefinitionId) -> crate::CardDefinition {
@@ -445,7 +404,7 @@ mod tests {
             CardPart::new(normal, "Normal", creature_rules),
             CardPart::new(flipped, "Flipped", flipped_rules),
         ];
-        flip.structure = CardStructure::Flip { normal, flipped };
+        flip.structure = CardStructure::flip(normal, flipped);
         flip.play_options = vec![PlayOptionDef::cast(
             PlayOptionId::DEFAULT,
             "Normal",
@@ -481,11 +440,7 @@ mod tests {
             CardPart::new(main, "Test adventurer", creature_rules),
             CardPart::new(adventure, "Test adventure", adventure_rules),
         ];
-        alternate.structure = CardStructure::AlternateSpell {
-            main,
-            alternate: adventure,
-            kind: AlternateSpellKind::Adventure,
-        };
+        alternate.structure = CardStructure::single(main).with_alternative(main, adventure);
         alternate.play_options = vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,

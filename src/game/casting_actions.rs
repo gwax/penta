@@ -11,7 +11,7 @@ use super::{
     mode_id_selections, positive_compositions, target_combinations,
 };
 
-use crate::card::{AlternateSpellKind, CardStructure, ModeSetDef, SpellForm};
+use crate::card::{ModeSetDef, SpellForm};
 use crate::game::mana_planning::reduce_generic;
 
 mod cost_configurations;
@@ -337,6 +337,7 @@ impl Game {
                                                         locked,
                                                         self.spell_cost_reduction(
                                                             definition.id,
+                                                            &option.form,
                                                             player,
                                                             card.id,
                                                             &[],
@@ -513,6 +514,7 @@ impl Game {
                                                     locked_cost,
                                                     self.spell_cost_reduction(
                                                         definition.id,
+                                                        &option.form,
                                                         player,
                                                         card.id,
                                                         targets,
@@ -640,15 +642,17 @@ impl Game {
         definition: &CardDefinition,
         option: &PlayOptionDef,
     ) -> bool {
-        let CardStructure::AlternateSpell {
-            main,
-            kind: AlternateSpellKind::Adventure,
-            ..
-        } = definition.structure
-        else {
+        let SpellForm::Part(part) = option.form else {
             return false;
         };
-        option.form == SpellForm::Part(main)
+        definition
+            .structure
+            .alternatives_for(part)
+            .any(|alternative| {
+                definition
+                    .part(alternative)
+                    .is_some_and(|part| part.rules.has_subtype("Adventure"))
+            })
     }
 
     pub(super) fn spell_ability(

@@ -285,7 +285,8 @@ fn labeled_choices_bind_declarations_and_compose_with_token_modifiers_and_sequen
                 .token_characteristics
                 .unwrap()
                 .rules()
-                .ability_clauses(),
+                .ability_clauses()
+                .to_vec(),
             &[crate::card::abilities::flying()]
         );
     }

@@ -1,7 +1,7 @@
 use super::continuous_effects::StaticEffectKind;
 use super::{
     AbilityDef, AbilityOrigin, Action, ActionError, ActivationChoices, CardCounterObservation,
-    CardStructure, CardType, CharacteristicContext, CombatDamageStage, ControlFlow, CounterKind,
+    CardType, CharacteristicContext, CombatDamageStage, ControlFlow, CounterKind,
     CounterObservation, DoubleFacedKind, EmblemObservation, Game, GameEvent, GameObjectId,
     GameResult, ManaActivationChoices, ObjectCharacteristics, ObjectKind, Permanent,
     PermanentObservation, PhysicalFaceObservation, PhysicalFaceSide, PlayerId, PlayerObservation,
@@ -689,8 +689,8 @@ impl Game {
         }
         let (kind, front, back) = match permanent.card.definition {
             ObjectKind::Card(definition) => {
-                let CardStructure::DoubleFaced { front, back, kind } =
-                    &self.catalog.get(definition)?.structure
+                let crate::card::CardFaces::Double { front, back, kind } =
+                    &self.catalog.get(definition)?.structure.faces
                 else {
                     return None;
                 };
@@ -702,11 +702,7 @@ impl Game {
                 } else {
                     let token = permanent.token_characteristics?;
                     let front = token.primary_part_id();
-                    (
-                        DoubleFacedKind::Transforming,
-                        front,
-                        token.other_face(front)?,
-                    )
+                    (DoubleFacedKind::Nonmodal, front, token.other_face(front)?)
                 }
             }
             ObjectKind::Emblem | ObjectKind::Ability => return None,

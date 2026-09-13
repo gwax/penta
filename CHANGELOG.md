@@ -20,6 +20,17 @@ the bot-wire epoch.
 
 ## Unreleased
 
+- Separate native card structure into normal and alternative characteristic
+  sets, physical faces, and battlefield presentations. `SpellForm` uses the
+  same `CharacteristicExpression` vocabulary; combined casts are declared
+  only by play options. Native `DoubleFacedKind::Nonmodal` replaces
+  `Transforming` because modal double-faced permanents can also transform.
+  Query associated sets with
+  `HasAlternativeCharacteristics(CharacteristicPredicateDef)`; partial sets
+  inherit unspecified fields. Rooms derive their combined rules from their
+  two doors through a borrowed `AbilityClauses` view. Existing catalog JSON
+  and checkpoint presentation IDs remain unchanged.
+
 - Implement Firemind Vessel, Guild Globe, and Component Pouch. A shared
   `RollDieDef` executes fair seeded dice and inclusive result tables. The public
   event stream adds the open-vocabulary `DieRolled` event with `seat`, `sides`,

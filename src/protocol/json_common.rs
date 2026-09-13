@@ -1,8 +1,8 @@
 use serde_json::{Value, json};
 
 use crate::card::{
-    AlternateSpellKind, BasicLandType, CardArt, CardRules, DoubleFacedKind, HybridPair,
-    ImplementationStatus, SpellForm, TargetPredicate, TokenStructure,
+    BasicLandType, CardArt, CardRules, DoubleFacedKind, HybridPair, ImplementationStatus,
+    SpellForm, TargetPredicate, TokenStructure,
 };
 use crate::casting::{CastChoices, CastSignature, ManaPaymentChoice};
 use crate::{
@@ -66,15 +66,8 @@ pub(super) const fn decision_zone_name(zone: DecisionZone) -> &'static str {
 
 pub(super) const fn double_faced_kind_name(kind: DoubleFacedKind) -> &'static str {
     match kind {
-        DoubleFacedKind::Transforming => "Transforming",
+        DoubleFacedKind::Nonmodal => "Transforming",
         DoubleFacedKind::Modal => "Modal",
-    }
-}
-
-pub(super) const fn alternate_spell_kind_name(kind: AlternateSpellKind) -> &'static str {
-    match kind {
-        AlternateSpellKind::Adventure => "Adventure",
-        AlternateSpellKind::Omen => "Omen",
     }
 }
 

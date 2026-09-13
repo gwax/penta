@@ -1,4 +1,4 @@
-use crate::ids::{CardDefinitionId, CardPartId, MeldRecipeId, PlayOptionId};
+use crate::ids::{CardDefinitionId, CardPartId, MeldRecipeId};
 
 use super::{CardRules, ManaCost};
 
@@ -143,7 +143,7 @@ pub enum CardArtPreference {
     FormatMatching,
 }
 
-/// One independently addressable bundle of printed characteristics.
+/// One independently addressable characteristic set, printed or derived.
 ///
 /// A part is broader than a physical face: the two halves of a split card are
 /// separate parts printed on one face, while a transforming card has one part
@@ -211,63 +211,8 @@ impl CardPart {
 /// The rules family used by a two-faced card.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum DoubleFacedKind {
-    Transforming,
+    Nonmodal,
     Modal,
-}
-
-/// A secondary spell frame printed alongside a card's ordinary characteristics.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum AlternateSpellKind {
-    Adventure,
-    Omen,
-}
-
-/// The physical/logical topology of a canonical card definition.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum CardStructure {
-    Single {
-        main: CardPartId,
-    },
-    Split {
-        parts: Vec<CardPartId>,
-        /// The play option that combines the parts, if the card has one.
-        fused: Option<PlayOptionId>,
-    },
-    /// A Room (CR 714): a split enchantment whose halves are doors that
-    /// unlock one at a time and stay on the same permanent.
-    ///
-    /// The doors are the halves as printed, and the other two parts are the
-    /// states the permanent can be in that no single door describes. A Room
-    /// on the battlefield has the characteristics of its unlocked doors
-    /// combined, so `combined` is that combination rather than a third
-    /// printed face, and `locked` is the enchantment with neither door open
-    /// -- which is what a Room that entered from anywhere but the stack is.
-    Room {
-        doors: Vec<CardPartId>,
-        combined: CardPartId,
-        locked: CardPartId,
-    },
-    Flip {
-        normal: CardPartId,
-        flipped: CardPartId,
-    },
-    DoubleFaced {
-        front: CardPartId,
-        back: CardPartId,
-        kind: DoubleFacedKind,
-    },
-    AlternateSpell {
-        main: CardPartId,
-        alternate: CardPartId,
-        kind: AlternateSpellKind,
-    },
-    /// A physical card that can participate in a separately cataloged meld
-    /// recipe. The recipe, rather than either component definition, supplies
-    /// the combined object's result characteristics.
-    MeldPart {
-        front: CardPartId,
-        recipe: MeldRecipeId,
-    },
 }
 
 /// One named-object condition and one physical-card requirement in a future
@@ -303,14 +248,10 @@ pub struct MeldRecipeDef {
     pub result: MeldResultDef,
 }
 
-/// The characteristic parts used by an object while it is a spell.
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub enum SpellForm {
-    Part(CardPartId),
-    /// Combined parts retain printed order, which is also resolution order for
-    /// a fused split spell.
-    Combined(Vec<CardPartId>),
-}
+/// The characteristic expression selected for a spell. Casting and ordinary
+/// characteristic queries share the same composition vocabulary; play options
+/// supply the separate permission to use an expression as a spell.
+pub type SpellForm = super::CharacteristicExpression;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PlayActionKind {

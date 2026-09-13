@@ -237,11 +237,8 @@ fn a_land_play_option_locks_the_presented_part_on_the_permanent() {
         CardPart::new(CardPartId::PRIMARY, "Test front", front_rules),
         CardPart::new(land_part, "Test back", land_rules),
     ];
-    definition.structure = CardStructure::DoubleFaced {
-        front: CardPartId::PRIMARY,
-        back: land_part,
-        kind: DoubleFacedKind::Modal,
-    };
+    definition.structure =
+        CardStructure::double_faced(CardPartId::PRIMARY, land_part, DoubleFacedKind::Modal);
     definition.play_options = vec![
         PlayOptionDef::cast(
             PlayOptionId::DEFAULT,
@@ -295,11 +292,8 @@ fn a_modal_spell_resolves_by_its_locked_part_instead_of_the_canonical_front() {
         CardPart::new(CardPartId::PRIMARY, "Test front", front_rules),
         CardPart::new(creature_part, "Test creature back", creature_rules),
     ];
-    definition.structure = CardStructure::DoubleFaced {
-        front: CardPartId::PRIMARY,
-        back: creature_part,
-        kind: DoubleFacedKind::Modal,
-    };
+    definition.structure =
+        CardStructure::double_faced(CardPartId::PRIMARY, creature_part, DoubleFacedKind::Modal);
     definition.play_options = vec![
         PlayOptionDef::cast(
             PlayOptionId::DEFAULT,
@@ -363,11 +357,8 @@ fn changing_a_permanents_presented_face_keeps_its_object_identity() {
         CardPart::new(CardPartId::PRIMARY, "Test Werewolf", front_rules),
         CardPart::new(back, "Test Ravager", back_rules),
     ];
-    definition.structure = CardStructure::DoubleFaced {
-        front: CardPartId::PRIMARY,
-        back,
-        kind: DoubleFacedKind::Transforming,
-    };
+    definition.structure =
+        CardStructure::double_faced(CardPartId::PRIMARY, back, DoubleFacedKind::Nonmodal);
     definition.play_options = vec![PlayOptionDef::cast(
         PlayOptionId::DEFAULT,
         "Cast Test Werewolf",

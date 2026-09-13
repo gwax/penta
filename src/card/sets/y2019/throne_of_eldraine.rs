@@ -13,7 +13,6 @@ use crate::card::AbilityTargetPredicate;
 use crate::card::ActivationTimingDef;
 use crate::card::AddManaEffectDef;
 use crate::card::AggregateOperationDef;
-use crate::card::AlternateSpellKind;
 use crate::card::AlternativeCastKindDef;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
@@ -137,11 +136,8 @@ fn ardenvale_tactician_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Ardenvale Tactician", knight),
             CardPart::new(CardPartId(1), "Dizzying Swoop", swoop),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -354,11 +350,8 @@ fn faerie_guidemother_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Faerie Guidemother", faerie),
             CardPart::new(CardPartId(1), "Gift of the Fae", gift),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -554,11 +547,8 @@ fn brazen_borrower_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Brazen Borrower", borrower),
             CardPart::new(CardPartId(1), "Petty Theft", theft),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -849,43 +839,42 @@ const fn bonecrusher_rules() -> CardRules {
 fn bonecrusher_composition() -> CardComposition {
     let giant = bonecrusher_rules();
     let stomp = const {
-        CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(
-            AbilityDef::spell_with_targets(
-                "Damage can't be prevented this turn.\nStomp deals 2 damage to \
+        CardRules::new_instant(mana_cost!("{1}{R}"))
+            .with_subtypes(&["Adventure"])
+            .with_ability(
+                AbilityDef::spell_with_targets(
+                    "Damage can't be prevented this turn.\nStomp deals 2 damage to \
                  any target.",
-                &const {
-                    [AbilityTargetDef::exactly_one(
-                        AbilityTargetPredicate::AnyTarget,
-                    )]
-                },
-                // The two sentences are one clause resolving in order, and the order is what
-                // the card is for: prevention is off before the damage arrives, so a
-                // protection that would have stopped it does not.
-                EffectDef::Sequence(
                     &const {
-                        [
-                            EffectDef::DamageCannotBePreventedThisTurn,
-                            EffectDef::damage(
-                                EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                                ValueDef::Constant(2),
-                            ),
-                        ]
+                        [AbilityTargetDef::exactly_one(
+                            AbilityTargetPredicate::AnyTarget,
+                        )]
                     },
-                ),
+                    // The two sentences are one clause resolving in order, and the order is what
+                    // the card is for: prevention is off before the damage arrives, so a
+                    // protection that would have stopped it does not.
+                    EffectDef::Sequence(
+                        &const {
+                            [
+                                EffectDef::DamageCannotBePreventedThisTurn,
+                                EffectDef::damage(
+                                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                                    ValueDef::Constant(2),
+                                ),
+                            ]
+                        },
+                    ),
+                )
+                .with_resolution_destination(SpellResolutionDestinationDef::ExileOnAdventure),
             )
-            .with_resolution_destination(SpellResolutionDestinationDef::ExileOnAdventure),
-        )
     };
     CardComposition {
         parts: vec![
             CardPart::new(CardPartId::PRIMARY, "Bonecrusher Giant", giant),
             CardPart::new(CardPartId(1), "Stomp", stomp),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -1027,11 +1016,8 @@ fn embereth_shieldbreaker_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Embereth Shieldbreaker", knight),
             CardPart::new(CardPartId(1), "Battle Display", display),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -1116,11 +1102,8 @@ fn rimrock_knight_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Rimrock Knight", knight),
             CardPart::new(CardPartId(1), "Boulder Rush", rush),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Adventure,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,

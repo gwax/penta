@@ -73,46 +73,63 @@ sacrificed source does not make the resolution record ambiguous.
 
 ## Card parts and contextual characteristics
 
-A `CardPart` is an independently addressable bundle of printed
-characteristics. A part is intentionally broader than a physical face: Turn
-and Burn are two parts printed on one face, while Huntmaster of the Fells and
-Ravager of the Fells occupy opposite faces. `CardStructure` records how parts
-are related for single, split, flip, double-faced, alternate-spell, and future
-meld-part cards.
+A `CardPart` is an addressable characteristic set. Parts can occupy different
+physical faces, share one face, or describe a derived presentation. The
+`CardStructure` record separates four independent relationships:
 
-Which characteristics apply is a question about an object and its zone, not
-about the physical card alone. The contextual resolver owns rules such as
-these:
+- `normal` selects one part or combines ordered parts outside the stack and
+  battlefield;
+- `alternatives` associates complete or partial characteristic sets with a
+  normal set, without granting permission to cast any of them;
+- `faces` records physical single, double, or meld-component backing; and
+- `battlefield` describes initial presentation and flip or unlock transitions.
 
-- a transforming double-faced card normally uses its front part outside the
-  stack and battlefield;
-- a spell on the stack uses the part or ordered combination selected by its
-  play option;
-- a permanent uses the part currently presented on the battlefield; and
-- structure-specific rules, such as the combined characteristics of a split
-  card outside the stack, are applied centrally rather than repeated by card
-  effects and clients.
+Adventure and Omen insets use the same alternative relationship. Preparation
+can associate an inset without offering a cast of that part of the original
+card. Partial alternatives specify the fields they replace: prototype changes
+mana cost, color, and power/toughness, while a flip presentation preserves mana
+cost and color. Catalog construction materializes field inheritance before
+runtime characteristic queries and validation.
 
-Visibility is separate from applicability. A player may be allowed to inspect
-another face without that face contributing characteristics in the current
-zone.
+Play options independently select the part or ordered combination used by a
+spell or land play. Alternative and additional costs remain payment choices.
+Physical double-faced status does not imply a back-face casting permission;
+modal casting does not prevent a permanent from transforming when instructed.
+The physical face kind still determines its mana-value convention.
 
-The catalog stores parts, structures, and play options. Ordinary cards
-receive a synthesized single primary part, while Garruk Relentless, Huntmaster
-of the Fells, Izzet Charm, and Turn // Burn exercise the structured metadata.
-The contextual part resolver implements the zone/form/presentation selection
-above. A permanent observation exposes its presented part, and baseline type,
-power/toughness, flying, trample, mana production, and land-type queries read
-that part. `CardDefinition.rules` remains a primary/front compatibility view
-for older behavior code. Cataloging both faces does not itself define the
-actions or triggers that transform an object; those remain separate runtime
-behavior.
+Rooms declare each door's program once. Their combined presentation borrows
+both programs in order through `AbilityClauses`, derives the combined cost and
+colors, and retains the existing presentation IDs for copying and checkpoints.
+The locked presentation and unlock transitions are separate from the printed
+doors and the card's normal combined characteristics.
 
-Spell resolution determines whether the result is a permanent from the locked
-spell form rather than from the canonical front face. Structured target-slot
-predicates are checked again at resolution; an object that remains on the
-battlefield but ceases to satisfy “target creature,” for example, is no longer
-a legal target.
+`HasAlternativeCharacteristics(CharacteristicPredicateDef)` queries associated
+sets rather than current characteristics or available casts. The characteristic
+predicate can combine names, types, subtypes, colors, mana value, and keywords;
+it cannot accidentally inspect a controller, zone, or combat state. Event
+snapshots retain immutable catalog references to the alternative sets of the
+effective copiable presentation. Face-down objects expose no alternative sets,
+and later copy effects or zone changes do not rewrite an earlier snapshot.
+
+Visibility remains separate from applicability. A player may inspect a face
+without that face contributing current characteristics. Physical lineage stays
+separate from copiable values, including for token copies and meld components.
+`CardDefinition.rules` remains the primary compatibility view; current queries
+use contextual parts and effective runtime presentations.
+
+A selected spell program combines its clauses, chosen modes, and ordered splice
+contributions with their target scopes. A splice donor remains a separate
+object; it is not a physical face or part of the host's physical backing.
+Spell resolution and copying retain the locked form and selected program.
+
+The model does not itself implement every mechanism that can use these
+relationships. Preparation's designation and linked exiled-copy lifetime, for
+example, require their own runtime program. Cards remain wholly unsupported
+until their complete behavior is executable.
+
+The native refactor preserves the established catalog JSON structure tags as a
+derived compatibility projection. Native relationships and play options are
+the authority; wire layout labels do not drive rules execution.
 
 ## Priority and stack actions
 
@@ -232,8 +249,10 @@ catalog can represent a form without offering an action that would resolve as
 a silent no-op.
 
 Catalog construction rejects ambiguous structured metadata: duplicate local
-IDs, missing or out-of-structure parts, invalid mode and target bounds, and a
-fused option that does not name every split part in printed order.
+IDs, missing or out-of-structure parts, invalid mode and target bounds, and
+cyclic or ambiguous alternative-characteristic relationships. Each play option
+supplies its own ordered characteristic expression; the card's normal combined
+expression does not grant or restrict combined casting.
 
 The identity model also leaves room for objects backed by multiple physical
 cards. The future design is recorded separately in

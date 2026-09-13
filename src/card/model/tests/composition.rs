@@ -12,12 +12,10 @@ fn single_composition_derives_one_primary_cast_option() {
     assert_eq!(composition.parts.len(), 1);
     assert_eq!(composition.parts[0].id, CardPartId::PRIMARY);
     assert_eq!(composition.parts[0].rules, rules);
-    assert!(matches!(
+    assert_eq!(
         composition.structure,
-        CardStructure::Single {
-            main: CardPartId::PRIMARY,
-        }
-    ));
+        CardStructure::single(CardPartId::PRIMARY)
+    );
     assert_eq!(composition.play_options.len(), 1);
     assert_eq!(composition.play_options[0].id, PlayOptionId::DEFAULT);
     assert_eq!(
@@ -37,7 +35,7 @@ fn double_faced_kind_controls_whether_the_back_face_is_playable() {
         ("Back", CardRules::new_land(&[])),
     ];
 
-    let transforming = CardComposition::double_faced(&FACES, DoubleFacedKind::Transforming);
+    let transforming = CardComposition::double_faced(&FACES, DoubleFacedKind::Nonmodal);
     assert_eq!(transforming.play_options.len(), 1);
 
     let modal = CardComposition::double_faced(&FACES, DoubleFacedKind::Modal);
@@ -71,13 +69,10 @@ fn fused_split_composition_combines_targets_in_printed_order() {
     ];
     let composition = CardComposition::split(&HALVES, Some(mana_cost!("{2}{U}{R}")));
 
-    assert!(matches!(
-        composition.structure,
-        CardStructure::Split {
-            ref parts,
-            fused: Some(PlayOptionId(2)),
-        } if parts == &[CardPartId::PRIMARY, CardPartId(1)]
-    ));
+    assert_eq!(
+        composition.structure.normal.parts(),
+        &[CardPartId::PRIMARY, CardPartId(1)]
+    );
     let fused = &composition.play_options[2];
     assert_eq!(fused.restriction, PlayRestriction::FromHandOnly);
     assert_eq!(

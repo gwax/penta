@@ -622,10 +622,7 @@ pub(super) fn game_with_test_fused_split(
     ];
     let combined = PlayOptionId(2);
     let parts = vec![CardPartId::PRIMARY, CardPartId(1)];
-    definition.structure = CardStructure::Split {
-        parts: parts.clone(),
-        fused: Some(combined),
-    };
+    definition.structure = CardStructure::split(parts.clone());
     definition.play_options = vec![
         PlayOptionDef::cast(
             PlayOptionId::DEFAULT,

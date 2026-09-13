@@ -9,7 +9,6 @@ use crate::card::AbilityTargetPredicate;
 use crate::card::ActivationTimingDef;
 use crate::card::AddManaEffectDef;
 use crate::card::AggregateOperationDef;
-use crate::card::AlternateSpellKind;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
 use crate::card::BattlefieldArrivalDef;
@@ -869,11 +868,8 @@ fn riling_dawnbreaker_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Riling Dawnbreaker", dragon),
             CardPart::new(CardPartId(1), "Signaling Roar", roar),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -1606,11 +1602,8 @@ pub(in crate::card::sets) static DIRGUR_ISLAND_DRAGON: CardRecord = CardRecord::
             CardPart::new(CardPartId::PRIMARY, "Dirgur Island Dragon", dragon),
             CardPart::new(CardPartId(1), "Skimming Strike", omen),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -1973,11 +1966,8 @@ pub(in crate::card::sets) static MARANG_RIVER_REGENT: CardRecord = CardRecord::n
             CardPart::new(CardPartId::PRIMARY, "Marang River Regent", dragon),
             CardPart::new(CardPartId(1), "Coil and Catch", omen),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -3136,11 +3126,8 @@ pub(in crate::card::sets) static SCAVENGER_REGENT: CardRecord = CardRecord::new(
             CardPart::new(CardPartId::PRIMARY, "Scavenger Regent", dragon),
             CardPart::new(CardPartId(1), "Exude Toxin", omen),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -4187,11 +4174,8 @@ abilities::draw_cards(ValueDef::Constant(2))}
             CardPart::new(CardPartId::PRIMARY, "Stormshriek Feral", dragon),
             CardPart::new(CardPartId(1), "Flush Out", omen),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -4735,10 +4719,7 @@ dragon),
 CardPart::new(CardPartId(1),
 "Claim Territory",
 omen)],
-structure:CardStructure::AlternateSpell {
-main:CardPartId::PRIMARY,
-alternate:CardPartId(1),
-kind:AlternateSpellKind::Omen}
+structure:CardStructure::single(CardPartId::PRIMARY).with_alternative(CardPartId::PRIMARY, CardPartId(1))
 ,
 play_options:vec![
 PlayOptionDef::cast(PlayOptionId::DEFAULT,
@@ -5400,11 +5381,8 @@ fn sagu_wildling_composition() -> CardComposition {
             CardPart::new(CardPartId::PRIMARY, "Sagu Wildling", wildling),
             CardPart::new(CardPartId(1), "Roost Seek", seek),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -5955,11 +5933,8 @@ pub(in crate::card::sets) static DISRUPTIVE_STORMBROOD: CardRecord = CardRecord:
             CardPart::new(CardPartId::PRIMARY, "Disruptive Stormbrood", dragon),
             CardPart::new(CardPartId(1), "Petty Revenge", omen),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -6885,11 +6860,8 @@ pub(in crate::card::sets) static PURGING_STORMBROOD: CardRecord = CardRecord::ne
             CardPart::new(CardPartId::PRIMARY, "Purging Stormbrood", dragon),
             CardPart::new(CardPartId(1), "Absorb Essence", omen),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -7207,11 +7179,8 @@ pub(in crate::card::sets) static RUNESCALE_STORMBROOD: CardRecord = CardRecord::
             CardPart::new(CardPartId::PRIMARY, "Runescale Stormbrood", dragon),
             CardPart::new(CardPartId(1), "Chilling Screech", omen),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -7423,11 +7392,8 @@ pub(in crate::card::sets) static TWINMAW_STORMBROOD: CardRecord = CardRecord::ne
             CardPart::new(CardPartId::PRIMARY, "Twinmaw Stormbrood", dragon),
             CardPart::new(CardPartId(1), "Charring Bite", omen),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,
@@ -7546,11 +7512,8 @@ pub(in crate::card::sets) static WHIRLWING_STORMBROOD: CardRecord = CardRecord::
             CardPart::new(CardPartId::PRIMARY, "Whirlwing Stormbrood", dragon),
             CardPart::new(CardPartId(1), "Dynamic Soar", omen),
         ],
-        structure: CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(1),
-            kind: AlternateSpellKind::Omen,
-        },
+        structure: CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(1)),
         play_options: vec![
             PlayOptionDef::cast(
                 PlayOptionId::DEFAULT,

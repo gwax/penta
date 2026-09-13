@@ -5642,11 +5642,8 @@ fn kellan_composition() -> crate::card::CardComposition {
             crate::card::CardPart::new(crate::CardPartId(1), "Journey On", journey),
         ],
 
-        structure: crate::card::CardStructure::AlternateSpell {
-            main: crate::CardPartId::PRIMARY,
-            alternate: crate::CardPartId(1),
-            kind: crate::card::AlternateSpellKind::Adventure,
-        },
+        structure: crate::CardStructure::single(crate::CardPartId::PRIMARY)
+            .with_alternative(crate::CardPartId::PRIMARY, crate::CardPartId(1)),
         play_options: vec![
             crate::card::PlayOptionDef::cast(
                 crate::PlayOptionId::DEFAULT,

@@ -100,6 +100,10 @@ pub enum ObjectPredicateDef {
     /// controller matches as readily as one that connected in combat.
     DealtDamageThisTurn,
     HasType(CardType),
+    /// At least one associated alternative characteristic set matches. This
+    /// reads copiable relationships even when that set is not currently used
+    /// and regardless of whether any play permission makes it castable.
+    HasAlternativeCharacteristics(super::CharacteristicPredicateDef),
     /// A land with at least one of the listed effective basic land subtypes.
     ///
     /// This uses the object's prospective/effective type line, so continuous

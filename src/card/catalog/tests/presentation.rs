@@ -5,31 +5,17 @@ use crate::card::sets;
 #[test]
 fn every_structure_family_rejects_undefined_or_repeated_parts() {
     let invalid_structures = [
-        CardStructure::Single {
-            main: CardPartId(9),
-        },
-        CardStructure::Split {
-            parts: vec![CardPartId::PRIMARY, CardPartId(9)],
-            fused: None,
-        },
-        CardStructure::Flip {
-            normal: CardPartId::PRIMARY,
-            flipped: CardPartId(9),
-        },
-        CardStructure::DoubleFaced {
-            front: CardPartId::PRIMARY,
-            back: CardPartId(9),
-            kind: DoubleFacedKind::Transforming,
-        },
-        CardStructure::AlternateSpell {
-            main: CardPartId::PRIMARY,
-            alternate: CardPartId(9),
-            kind: AlternateSpellKind::Adventure,
-        },
-        CardStructure::MeldPart {
-            front: CardPartId(9),
-            recipe: MeldRecipeId(1),
-        },
+        CardStructure::single(CardPartId(9)),
+        CardStructure::split(vec![CardPartId::PRIMARY, CardPartId(9)]),
+        CardStructure::flip(CardPartId::PRIMARY, CardPartId(9)),
+        CardStructure::double_faced(
+            CardPartId::PRIMARY,
+            CardPartId(9),
+            DoubleFacedKind::Nonmodal,
+        ),
+        CardStructure::single(CardPartId::PRIMARY)
+            .with_alternative(CardPartId::PRIMARY, CardPartId(9)),
+        CardStructure::meld_component(CardPartId(9), MeldRecipeId(1)),
     ];
     for structure in invalid_structures {
         let mut card = definition(1, "Test Card", sets::alpha::SET);
@@ -44,10 +30,7 @@ fn every_structure_family_rejects_undefined_or_repeated_parts() {
     }
 
     let mut repeated = definition(1, "Test Card", sets::alpha::SET);
-    repeated.structure = CardStructure::Flip {
-        normal: CardPartId::PRIMARY,
-        flipped: CardPartId::PRIMARY,
-    };
+    repeated.structure = CardStructure::flip(CardPartId::PRIMARY, CardPartId::PRIMARY);
     assert_eq!(
         error(repeated),
         CatalogError::DuplicateStructurePart {
@@ -70,7 +53,7 @@ fn spell_forms_must_reference_defined_structural_parts() {
         }
     );
 
-    let mut empty = split_definition(Some(PlayOptionId(2)));
+    let mut empty = split_definition();
     empty.play_options.push(PlayOptionDef::cast(
         PlayOptionId(2),
         "Left // Right",
@@ -88,48 +71,28 @@ fn spell_forms_must_reference_defined_structural_parts() {
 }
 
 #[test]
-fn fused_option_must_exist_and_match_all_split_parts_in_printed_order() {
-    assert_eq!(
-        error(split_definition(Some(PlayOptionId(2)))),
-        CatalogError::MissingFusedPlayOption {
-            definition: CardDefinitionId::from_uuid("00000000-0000-0000-0000-000000000001"),
-            option: PlayOptionId(2),
-        }
+fn normal_combined_characteristics_do_not_grant_a_combined_cast() {
+    use crate::card::{CharacteristicContext, applicable_part_ids};
+    let mut card = split_definition();
+    let context = CharacteristicContext::Stack {
+        form: SpellForm::Combined(vec![CardPartId::PRIMARY, CardPartId(1)]),
+    };
+    assert!(applicable_part_ids(&card, &context).is_err());
+    card.play_options.push(
+        PlayOptionDef::cast(
+            PlayOptionId(2),
+            "Left // Right",
+            SpellForm::Combined(vec![CardPartId::PRIMARY, CardPartId(1)]),
+            ManaCost::default(),
+            CardEffectStatus::Implemented,
+        )
+        .restricted_to_hand(),
     );
-
-    let mut reversed = split_definition(Some(PlayOptionId(2)));
-    reversed.play_options.push(PlayOptionDef::cast(
-        PlayOptionId(2),
-        "Right // Left",
-        SpellForm::Combined(vec![CardPartId(1), CardPartId::PRIMARY]),
-        ManaCost::default(),
-        CardEffectStatus::Unsupported,
-    ));
-    assert!(matches!(
-        error(reversed),
-        CatalogError::InvalidFusedPlayOption {
-            expected,
-            actual: SpellForm::Combined(actual),
-            ..
-        } if expected == vec![CardPartId::PRIMARY, CardPartId(1)]
-            && actual == vec![CardPartId(1), CardPartId::PRIMARY]
-    ));
-
-    let mut undeclared = split_definition(None);
-    undeclared.play_options.push(PlayOptionDef::cast(
-        PlayOptionId(2),
-        "Left // Right",
-        SpellForm::Combined(vec![CardPartId::PRIMARY, CardPartId(1)]),
-        ManaCost::default(),
-        CardEffectStatus::Unsupported,
-    ));
     assert_eq!(
-        error(undeclared),
-        CatalogError::UnexpectedCombinedSpellForm {
-            definition: CardDefinitionId::from_uuid("00000000-0000-0000-0000-000000000001"),
-            option: PlayOptionId(2),
-        }
+        applicable_part_ids(&card, &context).unwrap(),
+        [CardPartId::PRIMARY, CardPartId(1)]
     );
+    assert!(CardCatalog::new([card]).is_ok());
 }
 
 #[test]
@@ -183,7 +146,7 @@ fn mode_and_alternative_cost_ids_are_local_to_options() {
         }
     );
 
-    let mut alternatives_on_distinct_options = split_definition(None);
+    let mut alternatives_on_distinct_options = split_definition();
     for option in &mut alternatives_on_distinct_options.play_options {
         option.alternative_costs.push(AlternativeCostDef {
             binding: None,
@@ -529,7 +492,7 @@ fn combined_play_options_reject_modal_constituent_parts() {
     static MODES: [AbilityDef; 1] = [AbilityDef::spell("Test mode.", EffectDef::None)];
     static ABILITIES: [AbilityDef; 1] = [AbilityDef::modal_spell("Choose one.", &MODES)];
     let modal_rules = crate::CardRules::new_instant(ManaCost::default()).with_abilities(&ABILITIES);
-    let mut definition = split_definition(Some(PlayOptionId(2)));
+    let mut definition = split_definition();
     definition.rules = modal_rules;
     definition.parts[0].rules = modal_rules;
     let option = PlayOptionDef::cast(

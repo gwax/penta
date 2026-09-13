@@ -1,13 +1,12 @@
 use serde_json::{Value, json};
 
 use super::json_common::{
-    alternate_spell_kind_name, card_art_json, double_faced_kind_name, spell_form_json,
-    target_predicate_name,
+    card_art_json, double_faced_kind_name, spell_form_json, target_predicate_name,
 };
 use super::{ENGINE_VERSION, PROTOCOL_CAPABILITIES, PROTOCOL_VERSION, SIMULATION_FINGERPRINT};
 use crate::card::{
-    CardDefinition, CardRules, CardStructure, FlexibleManaSymbol, ImplementationStatus, ManaCost,
-    ModeDef, PlayActionKind, PlayOptionDef, PlayRestriction, TargetSlotDef,
+    CardDefinition, CardRules, FlexibleManaSymbol, ImplementationStatus, ManaCost, ModeDef,
+    PlayActionKind, PlayOptionDef, PlayRestriction, TargetSlotDef,
 };
 use crate::{CardCatalog, CardPart, Format};
 
@@ -56,54 +55,70 @@ fn rules_json(rules: &CardRules, mana_cost: Option<&ManaCost>) -> Value {
     })
 }
 
-fn structure_json(structure: &CardStructure) -> Value {
-    match structure {
-        CardStructure::Single { main } => json!({
-            "kind": "single",
-            "mainPartId": main.0,
-        }),
-        CardStructure::Split { parts, fused } => json!({
-            "kind": "split",
-            "partIds": parts.iter().map(|part| part.0).collect::<Vec<_>>(),
-            "fusedPlayOptionId": fused.map(|option| option.0),
-        }),
-        CardStructure::Room {
+// Preserve the established catalog wire projection while native callers use
+// independent characteristic relationships, physical faces, and play options.
+fn structure_json(definition: &CardDefinition) -> Value {
+    use crate::card::{BattlefieldPresentation, CardFaces, CharacteristicExpression};
+    let structure = &definition.structure;
+    match &structure.battlefield {
+        BattlefieldPresentation::Unlock {
             doors,
             combined,
             locked,
-        } => json!({
-            "kind": "room",
-            "doors": doors.iter().map(|part| part.0).collect::<Vec<_>>(),
-            "combined": combined.0,
-            "locked": locked.0,
-        }),
-        CardStructure::Flip { normal, flipped } => json!({
-            "kind": "flip",
-            "normalPartId": normal.0,
-            "flippedPartId": flipped.0,
-        }),
-        CardStructure::DoubleFaced { front, back, kind } => json!({
-            "kind": "doubleFaced",
-            "frontPartId": front.0,
-            "backPartId": back.0,
-            "doubleFacedKind": double_faced_kind_name(*kind),
-        }),
-        CardStructure::AlternateSpell {
-            main,
-            alternate,
-            kind,
-        } => json!({
-            "kind": "alternateSpell",
-            "mainPartId": main.0,
-            "alternatePartId": alternate.0,
-            "alternateSpellKind": alternate_spell_kind_name(*kind),
-        }),
-        CardStructure::MeldPart { front, recipe } => json!({
-            "kind": "meldPart",
-            "frontPartId": front.0,
-            "meldRecipeId": recipe.0,
-        }),
+        } => {
+            return json!({
+                "kind": "room", "doors": doors.iter().map(|part| part.0).collect::<Vec<_>>(),
+                "combined": combined.0, "locked": locked.0,
+            });
+        }
+        BattlefieldPresentation::Flip { normal, flipped } => {
+            return json!({
+                "kind": "flip", "normalPartId": normal.0, "flippedPartId": flipped.0,
+            });
+        }
+        BattlefieldPresentation::Fixed(_) => {}
     }
+    match structure.faces {
+        CardFaces::Double { front, back, kind } => {
+            return json!({
+                "kind": "doubleFaced", "frontPartId": front.0, "backPartId": back.0,
+                "doubleFacedKind": double_faced_kind_name(kind),
+            });
+        }
+        CardFaces::MeldComponent { front, recipe } => {
+            return json!({
+                "kind": "meldPart", "frontPartId": front.0, "meldRecipeId": recipe.0,
+            });
+        }
+        CardFaces::Single => {}
+    }
+    if let CharacteristicExpression::Combined(parts) = &structure.normal {
+        let fused = definition
+            .play_options
+            .iter()
+            .find(|option| matches!(option.form, crate::SpellForm::Combined(_)));
+        return json!({
+            "kind": "split", "partIds": parts.iter().map(|part| part.0).collect::<Vec<_>>(),
+            "fusedPlayOptionId": fused.map(|option| option.id.0),
+        });
+    }
+    for set in &structure.alternatives {
+        let Some(part) = definition.part(set.alternative) else {
+            continue;
+        };
+        let kind = if part.rules.has_subtype("Adventure") {
+            "Adventure"
+        } else if part.rules.has_subtype("Omen") {
+            "Omen"
+        } else {
+            continue;
+        };
+        return json!({
+            "kind": "alternateSpell", "mainPartId": set.normal.0,
+            "alternatePartId": set.alternative.0, "alternateSpellKind": kind,
+        });
+    }
+    json!({ "kind": "single", "mainPartId": definition.primary_part_id().0 })
 }
 
 fn target_slot_json(slot: &TargetSlotDef) -> Value {
@@ -202,7 +217,7 @@ fn definition_json(catalog: &CardCatalog, format: Format, card: &CardDefinition)
         "legal": allowed && !banned,
         "debutSet": card.debut_set.slug(),
         "implementationStatus": implementation_status_name(card.implementation_status()),
-        "structure": structure_json(&card.structure),
+        "structure": structure_json(card),
         "parts": card.parts.iter().map(|part| {
             let mana_cost = part.mana_cost();
             let mut value = rules_json(&part.rules, mana_cost.as_ref());

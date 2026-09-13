@@ -55,7 +55,7 @@ const fn decision_zone_name(zone: penta::DecisionZone) -> &'static str {
 fn physical_face_value(face: penta::PhysicalFaceObservation) -> Value {
     json!({
         "kind": match face.kind {
-            penta::DoubleFacedKind::Transforming => "transforming",
+            penta::DoubleFacedKind::Nonmodal => "transforming",
             penta::DoubleFacedKind::Modal => "modal",
         },
         "side": match face.side {

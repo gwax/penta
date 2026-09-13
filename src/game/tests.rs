@@ -137,6 +137,7 @@ fn protection_keyword(color: ManaColor) -> KeywordAbility {
     keyword
 }
 
+mod characteristic_composition;
 mod copy_effects;
 mod copy_transform;
 mod counted_bodies;

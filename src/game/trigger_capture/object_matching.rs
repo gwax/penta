@@ -548,6 +548,8 @@ impl Game {
             ObjectPredicateDef::Token => object.token,
             ObjectPredicateDef::Saddled => object.saddled,
             ObjectPredicateDef::HasType(card_type) => object.types.contains(card_type),
+            ObjectPredicateDef::HasAlternativeCharacteristics(predicate) => self
+                .alternative_characteristics_match(&object.alternative_characteristics, predicate),
             ObjectPredicateDef::HasAnyBasicLandType(land_types) => {
                 object.types.contains(CardType::Land)
                     && land_types

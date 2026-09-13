@@ -11,8 +11,7 @@ use self::abilities::{
     validate_optional_additional_cost_abilities,
 };
 use self::composition::{
-    structure_parts, validate_cost_ids, validate_fused_option, validate_modes_and_targets,
-    validate_spell_form,
+    structure_parts, validate_cost_ids, validate_modes_and_targets, validate_spell_form,
 };
 pub(super) use self::presentation::validate_semantic_spell_presentation;
 #[cfg(test)]
@@ -94,5 +93,5 @@ pub(super) fn validate_composition(definition: &CardDefinition) -> Result<(), Ca
     validate_alternative_cast_abilities(definition)?;
     validate_optional_additional_cost_abilities(definition)?;
 
-    validate_fused_option(definition)
+    Ok(())
 }

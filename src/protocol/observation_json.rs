@@ -24,7 +24,7 @@ fn card_name(catalog: &CardCatalog, definition: crate::CardDefinitionId) -> Valu
 fn physical_face_json(face: PhysicalFaceObservation) -> Value {
     json!({
         "kind": match face.kind {
-            crate::DoubleFacedKind::Transforming => "transforming",
+            crate::DoubleFacedKind::Nonmodal => "transforming",
             crate::DoubleFacedKind::Modal => "modal",
         },
         "side": match face.side {

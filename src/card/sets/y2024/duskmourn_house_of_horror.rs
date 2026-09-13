@@ -481,52 +481,12 @@ pub(in crate::card::sets) static GRAND_ENTRYWAY: CardRecord = CardRecord::new(
                 amount: ValueDef::Constant(1),
             },
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{3}{W}{W}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered(
-                "When you unlock this door, create a 1/1 white Glimmer \
-                 enchantment creature token.",
-                TriggerEventDef::DoorUnlocked,
-                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                    TokenCharacteristics::new(
-                        CardTypeSet::single(CardType::Enchantment).with(CardType::Creature),
-                        &["Glimmer"],
-                        &[ManaColor::White],
-                        Some(CreatureStats {
-                            power: 1,
-                            toughness: 1,
-                        }),
-                    ),
-                ))),
-            ),
-            AbilityDef::triggered_with_targets(
-                "When you unlock this door, put a +1/+1 counter on each of up \
-                 to two target creatures.",
-                TriggerEventDef::DoorUnlocked,
-                &[AbilityTargetDef::up_to(
-                    AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: None,
-                        owner: None,
-                    },
-                    2,
-                )],
-                EffectDef::AddCounters {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    kind: CounterKind::PlusOnePlusOne,
-                    amount: ValueDef::Constant(1),
-                },
-            ),
-        ]);
     CardComposition::room(
         "Grand Entryway // Elegant Rotunda",
         "Grand Entryway",
-        FRONT,
+        &FRONT,
         "Elegant Rotunda",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -1054,61 +1014,12 @@ pub(in crate::card::sets) static SURGICAL_SUITE: CardRecord = CardRecord::new(
                 amount: ValueDef::Constant(1),
             },
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{4}{W}{W}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered_with_targets(
-                "When you unlock this door, return target creature card with \
-                 mana value 3 or less from your graveyard to the battlefield.",
-                TriggerEventDef::DoorUnlocked,
-                &[AbilityTargetDef::exactly_one(
-                    AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::ManaValueAtMost(3),
-                        ]),
-                        zones: &[ZoneKind::Graveyard],
-                        controller: None,
-                        owner: Some(PlayerRelation::You),
-                    },
-                )],
-                EffectDef::move_to_zone(
-                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    ZoneKind::Battlefield,
-                    ZonePlacement::Top,
-                ),
-            ),
-            AbilityDef::triggered_with_targets(
-                "Whenever you attack, put a +1/+1 counter on target attacking \
-                 creature.",
-                TriggerEventDef::attack_declared(
-                    ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                    ]),
-                    1,
-                    None,
-                ),
-                &[AbilityTargetDef::exactly_one_permanent(
-                    ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Attacking,
-                    ]),
-                )],
-                EffectDef::AddCounters {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    kind: CounterKind::PlusOnePlusOne,
-                    amount: ValueDef::Constant(1),
-                },
-            ),
-        ]);
     CardComposition::room(
         "Surgical Suite // Hospital Room",
         "Surgical Suite",
-        FRONT,
+        &FRONT,
         "Hospital Room",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -1503,48 +1414,12 @@ pub(in crate::card::sets) static BOTTOMLESS_POOL: CardRecord = CardRecord::new(
             },
             abilities::draw_cards(ValueDef::Constant(1)),
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{4}{U}{U}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered_with_targets(
-                "When you unlock this door, return up to one target creature \
-                 to its owner's hand.",
-                TriggerEventDef::DoorUnlocked,
-                &[AbilityTargetDef::up_to(
-                    AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: None,
-                        owner: None,
-                    },
-                    1,
-                )],
-                EffectDef::move_to_zone(
-                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    ZoneKind::Hand,
-                    ZonePlacement::Top,
-                ),
-            ),
-            AbilityDef::triggered(
-                "Whenever one or more creatures you control deal combat damage \
-                 to a player, draw a card.",
-                TriggerEventDef::CombatDamageDealtToPlayers {
-                    sources: ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                    ]),
-                    players: PlayerRelation::Any,
-                },
-                abilities::draw_cards(ValueDef::Constant(1)),
-            ),
-        ]);
     CardComposition::room(
         "Bottomless Pool // Locker Room",
         "Bottomless Pool",
-        FRONT,
+        &FRONT,
         "Locker Room",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -2199,55 +2074,12 @@ pub(in crate::card::sets) static MEAT_LOCKER: CardRecord = CardRecord::new(
                 },
             ]),
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{5}{U}{U}{U}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered_with_targets(
-                "When you unlock this door, tap up to one target creature and \
-                 put two stun counters on it. (If a permanent with a stun \
-                 counter would become untapped, remove one from it instead.)",
-                TriggerEventDef::DoorUnlocked,
-                &[AbilityTargetDef::up_to(
-                    AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: None,
-                        owner: None,
-                    },
-                    1,
-                )],
-                EffectDef::Sequence(&[
-                    EffectDef::Tap {
-                        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    },
-                    EffectDef::AddCounters {
-                        object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                        kind: CounterKind::Stun,
-                        amount: ValueDef::Constant(2),
-                    },
-                ]),
-            ),
-            AbilityDef::triggered(
-                "When you unlock this door, draw three cards, then discard a card.",
-                TriggerEventDef::DoorUnlocked,
-                EffectDef::Sequence(&[
-                    abilities::draw_cards(ValueDef::Constant(3)),
-                    EffectDef::Discard {
-                        recipient: EffectRecipientDef::Controller,
-                        amount: ValueDef::Constant(1),
-                        selection: DiscardSelectionDef::RecipientChooses,
-                        then: None,
-                    },
-                ]),
-            ),
-        ]);
     CardComposition::room(
         "Meat Locker // Drowned Diner",
         "Meat Locker",
-        FRONT,
+        &FRONT,
         "Drowned Diner",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -2551,73 +2383,12 @@ pub(in crate::card::sets) static UNDERWATER_TUNNEL: CardRecord = CardRecord::new
                 }),
             ),
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{3}{U}{U}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered(
-                "When you unlock this door, surveil 2. (Look at the top two \
-                 cards of your library, then put any number of them into your \
-                 graveyard and the rest on top of your library in any order.)",
-                TriggerEventDef::DoorUnlocked,
-                abilities::surveil(ValueDef::Constant(2)),
-            ),
-            AbilityDef::triggered(
-                "When you unlock this door, manifest dread, then put a +1/+1 \
-                 counter on that creature.",
-                TriggerEventDef::DoorUnlocked,
-                abilities::bind_top_cards_then(
-                    PlayerRefDef::EffectController,
-                    ValueDef::Constant(2),
-                    &EffectDef::Choose(ChooseDef {
-                        binding: ObjectChoiceBindingDef::Objects(crate::Binding!(
-                            "dread_permanent"
-                        )),
-                        unchosen: Some(crate::Binding!("dread_graveyard")),
-                        chooser: PlayerRefDef::EffectController,
-                        candidates: ObjectSetDef::Binding(crate::ParentBinding),
-                        exclude: None,
-                        minimum: 1,
-                        maximum: 1,
-                        visibility: ChoiceVisibilityDef::Private,
-                        then: &EffectDef::PutObjectsOntoBattlefieldFaceDown(
-                            PutObjectsOntoBattlefieldFaceDownDef {
-                                input: ObjectSetDef::Binding(crate::Binding!("dread_permanent")),
-                                controller: PlayerRefDef::EffectController,
-                                characteristics: crate::card::face_down::manifest(),
-                                turn_up_for_mana_cost: true,
-                                moved: Some(crate::Binding!("manifested")),
-                                then: &EffectDef::Sequence(&[
-                                    EffectDef::MoveObjects(MoveObjectsDef {
-                                        input: ObjectSetDef::Binding(crate::Binding!(
-                                            "dread_graveyard"
-                                        )),
-                                        from: Some(ZoneKind::Library),
-                                        zone: ZoneKind::Graveyard,
-                                        placement: ZonePlacement::Top,
-                                        moved: None,
-                                        then: &EffectDef::None,
-                                    }),
-                                    EffectDef::AddCounters {
-                                        object: EffectRecipientDef::objects(ObjectSetDef::Binding(
-                                            crate::Binding!("manifested"),
-                                        )),
-                                        kind: CounterKind::PlusOnePlusOne,
-                                        amount: ValueDef::Constant(1),
-                                    },
-                                ]),
-                            },
-                        ),
-                    }),
-                ),
-            ),
-        ]);
     CardComposition::room(
         "Underwater Tunnel // Slimy Aquarium",
         "Underwater Tunnel",
-        FRONT,
+        &FRONT,
         "Slimy Aquarium",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -3047,52 +2818,12 @@ pub(in crate::card::sets) static DERELICT_ATTIC: CardRecord = CardRecord::new(
                 duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{5}{B}{B}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered(
-                "When you unlock this door, you draw two cards and you lose 2 \
-                 life.",
-                TriggerEventDef::DoorUnlocked,
-                EffectDef::Sequence(&[
-                    abilities::draw_cards(ValueDef::Constant(2)),
-                    EffectDef::LoseLife {
-                        recipient: EffectRecipientDef::Controller,
-                        amount: ValueDef::Constant(2),
-                    },
-                ]),
-            ),
-            AbilityDef::triggered(
-                "Whenever a creature you control attacks alone, it gets +1/+0 \
-                 and gains deathtouch until end of turn.",
-                TriggerEventDef::attacks_in_declaration(
-                    ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                    ]),
-                    1,
-                    Some(1),
-                ),
-                EffectDef::Apply {
-                    recipient: EffectRecipientDef::TriggeringObject,
-                    effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::modify_power_toughness(
-                            ValueDef::Constant(1),
-                            ValueDef::Constant(0),
-                        ),
-                        AppliedEffectDef::add_ability(&abilities::deathtouch()),
-                    ]),
-                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-                },
-            ),
-        ]);
     CardComposition::room(
         "Derelict Attic // Widow's Walk",
         "Derelict Attic",
-        FRONT,
+        &FRONT,
         "Widow's Walk",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -3305,53 +3036,12 @@ pub(in crate::card::sets) static FUNERAL_ROOM: CardRecord = CardRecord::new(
                 ZonePlacement::Top,
             ),
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{8}{B}{B}{B}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered(
-                "Whenever a creature you control dies, each opponent loses 1 \
-                 life and you gain 1 life.",
-                TriggerEventDef::zone_changed(
-                    ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                    ]),
-                    Some(ZoneKind::Battlefield),
-                    Some(ZoneKind::Graveyard),
-                ),
-                EffectDef::Sequence(&[
-                    EffectDef::LoseLife {
-                        recipient: EffectRecipientDef::Opponent,
-                        amount: ValueDef::Constant(1),
-                    },
-                    EffectDef::GainLife {
-                        recipient: EffectRecipientDef::Controller,
-                        amount: ValueDef::Constant(1),
-                    },
-                ]),
-            ),
-            AbilityDef::triggered(
-                "When you unlock this door, return all creature cards from \
-                 your graveyard to the battlefield.",
-                TriggerEventDef::DoorUnlocked,
-                EffectDef::move_to_zone(
-                    EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::matching(
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        &[ZoneKind::Graveyard],
-                        PlayerRelation::You,
-                    ))),
-                    ZoneKind::Battlefield,
-                    ZonePlacement::Top,
-                ),
-            ),
-        ]);
     CardComposition::room(
         "Funeral Room // Awakening Hall",
         "Funeral Room",
-        FRONT,
+        &FRONT,
         "Awakening Hall",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -3892,60 +3582,12 @@ pub(in crate::card::sets) static UNHOLY_ANNEX: CardRecord = CardRecord::new(
             TriggerEventDef::DoorUnlocked,
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(DEMON_TOKEN))),
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{5}{B}{B}{B}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered(
-                "At the beginning of your end step, draw a card. If you \
-                 control a Demon, each opponent loses 2 life and you gain 2 \
-                 life. Otherwise, you lose 2 life.",
-                TriggerEventDef::StepBegins {
-                    step: TurnStepDef::End,
-                    player: PlayerRelation::You,
-                },
-                EffectDef::Sequence(&[
-                    abilities::draw_cards(ValueDef::Constant(1)),
-                    EffectDef::IfElseCondition {
-                        condition: &TriggerConditionDef::ObjectCount {
-                            query: ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Demon")),
-                                &[ZoneKind::Battlefield],
-                                PlayerRelation::You,
-                            ),
-                            comparison: ComparisonDef::GreaterOrEqual,
-                            amount: 1,
-                        },
-                        then: &EffectDef::Sequence(&[
-                            EffectDef::LoseLife {
-                                recipient: EffectRecipientDef::Opponent,
-                                amount: ValueDef::Constant(2),
-                            },
-                            EffectDef::GainLife {
-                                recipient: EffectRecipientDef::Controller,
-                                amount: ValueDef::Constant(2),
-                            },
-                        ]),
-                        otherwise: &EffectDef::LoseLife {
-                            recipient: EffectRecipientDef::Controller,
-                            amount: ValueDef::Constant(2),
-                        },
-                    },
-                ]),
-            ),
-            AbilityDef::triggered(
-                "When you unlock this door, create a 6/6 black Demon creature \
-                 token with flying.",
-                TriggerEventDef::DoorUnlocked,
-                EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(DEMON_TOKEN))),
-            ),
-        ]);
     CardComposition::room(
         "Unholy Annex // Ritual Chamber",
         "Unholy Annex",
-        FRONT,
+        &FRONT,
         "Ritual Chamber",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -4373,43 +4015,12 @@ pub(in crate::card::sets) static GLASSWORKS: CardRecord = CardRecord::new(
             },
             EffectDef::damage(EffectRecipientDef::Opponent, ValueDef::Constant(1)),
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{6}{R}{R}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered_with_targets(
-                "When you unlock this door, this Room deals 4 damage to target \
-                 creature an opponent controls.",
-                TriggerEventDef::DoorUnlocked,
-                &[AbilityTargetDef::exactly_one(
-                    AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: Some(PlayerRelation::Opponent),
-                        owner: None,
-                    },
-                )],
-                EffectDef::damage(
-                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    ValueDef::Constant(4),
-                ),
-            ),
-            AbilityDef::triggered(
-                "At the beginning of your end step, this Room deals 1 damage \
-                 to each opponent.",
-                TriggerEventDef::StepBegins {
-                    step: TurnStepDef::End,
-                    player: PlayerRelation::You,
-                },
-                EffectDef::damage(EffectRecipientDef::Opponent, ValueDef::Constant(1)),
-            ),
-        ]);
     CardComposition::room(
         "Glassworks // Shattered Yard",
         "Glassworks",
-        FRONT,
+        &FRONT,
         "Shattered Yard",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -4832,45 +4443,12 @@ pub(in crate::card::sets) static TICKET_BOOTH: CardRecord = CardRecord::new(
                 duration: ResolvedEffectDurationDef::UntilEndOfTurn,
             },
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{6}{R}{R}{R}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered(
-                "When you unlock this door, manifest dread.",
-                TriggerEventDef::DoorUnlocked,
-                abilities::manifest_dread(),
-            ),
-            AbilityDef::triggered_with_targets(
-                "Whenever you attack, target attacking creature gains double \
-                 strike until end of turn.",
-                TriggerEventDef::attack_declared(
-                    ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                    ]),
-                    1,
-                    None,
-                ),
-                &[AbilityTargetDef::exactly_one_permanent(
-                    ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Attacking,
-                    ]),
-                )],
-                EffectDef::Apply {
-                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    effect: AppliedEffectDef::add_ability(&abilities::double_strike()),
-                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-                },
-            ),
-        ]);
     CardComposition::room(
         "Ticket Booth // Tunnel of Hate",
         "Ticket Booth",
-        FRONT,
+        &FRONT,
         "Tunnel of Hate",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -5701,74 +5279,12 @@ pub(in crate::card::sets) static GREENHOUSE: CardRecord = CardRecord::new(
                 }),
             ]),
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{5}{G}{G}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::static_ability(
-                "Lands you control have \"{T}: Add one mana of any color.\"",
-                EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
-                        ObjectQueryDef::matching(
-                            ObjectPredicateDef::HasType(CardType::Land),
-                            &[ZoneKind::Battlefield],
-                            PlayerRelation::You,
-                        ),
-                    )),
-                    effect: AppliedEffectDef::add_ability(&AbilityDef::activated_mana(
-                        "{T}: Add one mana of any color.",
-                        &[CostDef::TapSource],
-                        EffectDef::AddMana(AddManaEffectDef::any_color()),
-                    )),
-                },
-            ),
-            AbilityDef::triggered(
-                "When you unlock this door, mill four cards, then return up to \
-                 two permanent cards from among them to your hand.",
-                TriggerEventDef::DoorUnlocked,
-                EffectDef::Sequence(&[
-                    EffectDef::BindOutput {
-                        binding: crate::Binding!("milled"),
-                        effect: &EffectDef::Mill {
-                            player: EffectRecipientDef::Controller,
-                            amount: ValueDef::Constant(4),
-                        },
-                    },
-                    EffectDef::Choose(ChooseDef {
-                        binding: ObjectChoiceBindingDef::Objects(crate::Binding!("chosen")),
-                        unchosen: None,
-                        chooser: PlayerRefDef::EffectController,
-                        candidates: ObjectSetDef::Matching {
-                            objects: &ObjectSetDef::Binding(crate::Binding!("milled")),
-                            object: ObjectSetFilterDef::Predicate(&ObjectPredicateDef::AnyOf(&[
-                                ObjectPredicateDef::HasType(CardType::Creature),
-                                ObjectPredicateDef::HasType(CardType::Artifact),
-                                ObjectPredicateDef::HasType(CardType::Enchantment),
-                                ObjectPredicateDef::HasType(CardType::Land),
-                                ObjectPredicateDef::HasType(CardType::Planeswalker),
-                            ])),
-                        },
-                        exclude: None,
-                        minimum: 0,
-                        maximum: 2,
-                        visibility: ChoiceVisibilityDef::Public,
-                        then: &EffectDef::move_to_zone(
-                            EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!(
-                                "chosen"
-                            ))),
-                            ZoneKind::Hand,
-                            ZonePlacement::Top,
-                        ),
-                    }),
-                ]),
-            ),
-        ]);
     CardComposition::room(
         "Greenhouse // Rickety Gazebo",
         "Greenhouse",
-        FRONT,
+        &FRONT,
         "Rickety Gazebo",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -6046,89 +5562,12 @@ pub(in crate::card::sets) static MOLDERING_GYM: CardRecord = CardRecord::new(
                 }),
             ),
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{7}{G}{G}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered(
-                "When you unlock this door, search your library for a basic \
-                 land card, put it onto the battlefield tapped, then shuffle.",
-                TriggerEventDef::DoorUnlocked,
-                EffectDef::SearchZone {
-                    player: EffectRecipientDef::Controller,
-                    source: ZoneKind::Library,
-                    object: ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::HasType(CardType::Land),
-                        ObjectPredicateDef::Supertype(CardSupertype::Basic),
-                    ]),
-                    minimum: 0,
-                    maximum: ValueDef::Constant(1),
-                    reveal: true,
-                    destination: ZoneKind::Battlefield,
-                    placement: ZonePlacement::Top,
-                    shuffle: true,
-                    enters_tapped: true,
-                    attachment: None,
-                    binding: None,
-                    then: None,
-                },
-            ),
-            AbilityDef::triggered(
-                "When you unlock this door, manifest dread, then put three \
-                 +1/+1 counters on that creature.",
-                TriggerEventDef::DoorUnlocked,
-                abilities::bind_top_cards_then(
-                    PlayerRefDef::EffectController,
-                    ValueDef::Constant(2),
-                    &EffectDef::Choose(ChooseDef {
-                        binding: ObjectChoiceBindingDef::Objects(crate::Binding!(
-                            "dread_permanent"
-                        )),
-                        unchosen: Some(crate::Binding!("dread_graveyard")),
-                        chooser: PlayerRefDef::EffectController,
-                        candidates: ObjectSetDef::Binding(crate::ParentBinding),
-                        exclude: None,
-                        minimum: 1,
-                        maximum: 1,
-                        visibility: ChoiceVisibilityDef::Private,
-                        then: &EffectDef::PutObjectsOntoBattlefieldFaceDown(
-                            PutObjectsOntoBattlefieldFaceDownDef {
-                                input: ObjectSetDef::Binding(crate::Binding!("dread_permanent")),
-                                controller: PlayerRefDef::EffectController,
-                                characteristics: crate::card::face_down::manifest(),
-                                turn_up_for_mana_cost: true,
-                                moved: Some(crate::Binding!("manifested")),
-                                then: &EffectDef::Sequence(&[
-                                    EffectDef::MoveObjects(MoveObjectsDef {
-                                        input: ObjectSetDef::Binding(crate::Binding!(
-                                            "dread_graveyard"
-                                        )),
-                                        from: Some(ZoneKind::Library),
-                                        zone: ZoneKind::Graveyard,
-                                        placement: ZonePlacement::Top,
-                                        moved: None,
-                                        then: &EffectDef::None,
-                                    }),
-                                    EffectDef::AddCounters {
-                                        object: EffectRecipientDef::objects(ObjectSetDef::Binding(
-                                            crate::Binding!("manifested"),
-                                        )),
-                                        kind: CounterKind::PlusOnePlusOne,
-                                        amount: ValueDef::Constant(3),
-                                    },
-                                ]),
-                            },
-                        ),
-                    }),
-                ),
-            ),
-        ]);
     CardComposition::room(
         "Moldering Gym // Weight Room",
         "Moldering Gym",
-        FRONT,
+        &FRONT,
         "Weight Room",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -7231,48 +6670,12 @@ pub(in crate::card::sets) static RESTRICTED_OFFICE: CardRecord = CardRecord::new
                 effect: AppliedEffectDef::add_ability(&abilities::hexproof()),
             },
         )]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{7}{W}{W}{U}{U}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered(
-                "When you unlock this door, destroy all creatures with power 3 \
-                 or greater.",
-                TriggerEventDef::DoorUnlocked,
-                EffectDef::Destroy {
-                    object: EffectRecipientDef::objects(ObjectSetDef::Query(
-                        ObjectQueryDef::matching(
-                            ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::HasType(CardType::Creature),
-                                ObjectPredicateDef::PowerAtLeast(3),
-                            ]),
-                            &[ZoneKind::Battlefield],
-                            PlayerRelation::Any,
-                        ),
-                    )),
-                    then: None,
-                },
-            ),
-            AbilityDef::static_ability(
-                "Other permanents you control have hexproof.",
-                EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
-                        ObjectQueryDef::matching(
-                            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                            &[ZoneKind::Battlefield],
-                            PlayerRelation::You,
-                        ),
-                    )),
-                    effect: AppliedEffectDef::add_ability(&abilities::hexproof()),
-                },
-            ),
-        ]);
     CardComposition::room(
         "Restricted Office // Lecture Hall",
         "Restricted Office",
-        FRONT,
+        &FRONT,
         "Lecture Hall",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 
@@ -7398,56 +6801,12 @@ pub(in crate::card::sets) static ROARING_FURNACE: CardRecord = CardRecord::new(
                 abilities::draw_cards(ValueDef::Constant(1)),
             ),
         ]);
-    const BOTH: CardRules = CardRules::new_enchantment(mana_cost!("{4}{U}{U}{R}"))
-        .with_subtypes(&["Room"])
-        .with_abilities(&[
-            AbilityDef::triggered_with_targets(
-                "When you unlock this door, this Room deals damage equal to \
-                 the number of cards in your hand to target creature an \
-                 opponent controls.",
-                TriggerEventDef::DoorUnlocked,
-                &[AbilityTargetDef::exactly_one(
-                    AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::HasType(CardType::Creature),
-                        zones: &[ZoneKind::Battlefield],
-                        controller: Some(PlayerRelation::Opponent),
-                        owner: None,
-                    },
-                )],
-                EffectDef::damage(
-                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Any,
-                        &[ZoneKind::Hand],
-                        PlayerRelation::You,
-                    )),
-                ),
-            ),
-            AbilityDef::static_ability(
-                "You have no maximum hand size.",
-                EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::Controller,
-                    effect: AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
-                        PlayerRuleDef::NoMaximumHandSize,
-                    )),
-                },
-            ),
-            AbilityDef::triggered(
-                "At the beginning of your end step, draw a card.",
-                TriggerEventDef::StepBegins {
-                    step: TurnStepDef::End,
-                    player: PlayerRelation::You,
-                },
-                abilities::draw_cards(ValueDef::Constant(1)),
-            ),
-        ]);
     CardComposition::room(
         "Roaring Furnace // Steaming Sauna",
         "Roaring Furnace",
-        FRONT,
+        &FRONT,
         "Steaming Sauna",
-        BACK,
-        BOTH,
+        &BACK,
     )
 });
 

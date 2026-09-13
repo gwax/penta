@@ -78,7 +78,7 @@ fn parse_double_faced_copiable_characteristics(
         kind: if snapshot.modal {
             DoubleFacedKind::Modal
         } else {
-            DoubleFacedKind::Transforming
+            DoubleFacedKind::Nonmodal
         },
         front_part: CardPartId(snapshot.front_part_id),
         back_part: CardPartId(snapshot.back_part_id),

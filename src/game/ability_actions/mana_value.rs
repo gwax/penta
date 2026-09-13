@@ -1,6 +1,6 @@
 use super::{
-    CardPart, CardStructure, DoubleFacedKind, Game, GameObjectId, ObjectCharacteristics, Permanent,
-    RetiredObject, StackObject, mana_cost_value,
+    CardPart, DoubleFacedKind, Game, GameObjectId, ObjectCharacteristics, Permanent, RetiredObject,
+    StackObject, mana_cost_value,
 };
 
 impl Game {
@@ -23,7 +23,7 @@ impl Game {
         // copied characteristics continue through the ordinary path below.
         if permanent.copy_effect.is_none() {
             if let Some(faces) = &permanent.double_faced_token_copy
-                && faces.kind == DoubleFacedKind::Transforming
+                && faces.kind == DoubleFacedKind::Nonmodal
             {
                 return self.object_characteristics_mana_value(faces.front.base);
             }
@@ -35,11 +35,11 @@ impl Game {
             if permanent.copied_from.is_none()
                 && let Some(card_definition) = permanent.card.definition.card_definition()
                 && let Some(definition) = self.catalog.get(card_definition)
-                && let CardStructure::DoubleFaced {
+                && let crate::card::CardFaces::Double {
                     front,
-                    kind: DoubleFacedKind::Transforming,
+                    kind: DoubleFacedKind::Nonmodal,
                     ..
-                } = &definition.structure
+                } = &definition.structure.faces
             {
                 return definition
                     .part(*front)

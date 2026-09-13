@@ -66,7 +66,7 @@ fn observation_with_printed_and_token_permanents() -> PlayerObservation {
                 controller: PlayerId::One,
                 face_down: false,
                 physical_face: Some(crate::PhysicalFaceObservation {
-                    kind: crate::DoubleFacedKind::Transforming,
+                    kind: crate::DoubleFacedKind::Nonmodal,
                     side: crate::PhysicalFaceSide::Back,
                 }),
                 phased_out: false,
