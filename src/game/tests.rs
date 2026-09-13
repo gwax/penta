@@ -991,3 +991,5 @@ mod duel_cards;
 mod eternal_deck_cards;
 
 mod enduring_cycle;
+
+mod gift;

@@ -1884,6 +1884,18 @@ treated as level 1. Checkpoint permanent state preserves the additive
 `classLevel` field, including retired and phased-out objects; the level is not
 a copiable characteristic. Existing protocol and checkpoint epochs are unchanged.
 
+Gift promises use the existing optional `additionalCostIds` selection in a cast's
+cost configuration. Choosing that cost promises the gift to the other seat in
+this two-player engine; it does not draw or create tokens while paying. The
+optional checkpoint `giftRecipient` member on stack, detached-stack, and
+permanent states retains the chosen seat as an index (0 or 1). Its absence
+means no gift was promised. Spell copies preserve that recipient, including
+when another player controls the copy; copying a battlefield permanent does
+not copy its promise. Deferred gift effects and enters triggers reconstruct
+through the ordinary effect and trigger continuations. Existing protocol,
+checkpoint, and replay versions are unchanged; fingerprint matching continues
+to guard exact reconstruction.
+
 Entry-time creature-type choices retain their authored label in the optional
 `chosenCreatureTypeBinding` member of each checkpoint permanent's state. This
 also applies to pending and retired permanents, so floating restricted mana
