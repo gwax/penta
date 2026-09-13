@@ -5725,6 +5725,7 @@ battlefield tapped.",
             "Activated abilities of lands you control cost {1} less to \
 activate.",
             EffectDef::ModifyCost(CostModificationDef::AbilityReduction {
+                abilities: crate::card::AbilityKindDef::Activated,
                 permanent: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Land),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),

@@ -164,6 +164,22 @@ impl Game {
             taps_source: false,
             leaves_source: true,
         };
+        let mana_cost = self.priced_ability_mana_cost(source, &definition);
+        if self.probe_nonbattlefield_activation_payment(
+            player,
+            source,
+            ability,
+            mana_cost,
+            definition.costs,
+            AnnouncedActivationCost {
+                cost_objects,
+                x,
+                payment_purpose: &payment_purpose,
+                mana_payment,
+            },
+        ) {
+            return;
+        }
         self.pay_graveyard_activation_costs(
             player,
             source,
@@ -344,6 +360,21 @@ impl Game {
                 leaves_source: false,
             };
             let mana_cost = self.priced_ability_mana_cost(source, &definition);
+            if self.probe_nonbattlefield_activation_payment(
+                player,
+                source,
+                ability,
+                mana_cost,
+                definition.costs,
+                AnnouncedActivationCost {
+                    cost_objects,
+                    x,
+                    payment_purpose: &payment_purpose,
+                    mana_payment,
+                },
+            ) {
+                return;
+            }
             self.pay_nonbattlefield_activation_mana_and_life(
                 player,
                 mana_cost,
@@ -574,6 +605,43 @@ impl Game {
             } else {
                 None
             };
+            // The mana portion is one obligation even when authored as several
+            // nodes. Raise mana before paying nonmana costs, and preserve the
+            // chosen untapped payer through the planner's reservation.
+            if let Some(mana) =
+                self.activated_ability_mana_cost_for(&definition, &frozen_targets, cost_objects)
+            {
+                let cost = self.activation_mana_cost(&definition, source, mana);
+                let cost = self.announced_activation_cost(player, cost, mana_payment);
+                let payment_purpose = ManaPaymentPurpose::Ability {
+                    source,
+                    taps_source,
+                    leaves_source,
+                };
+                if self.payment_probe.is_some() {
+                    let reserved = Self::activation_payment_reservations(
+                        source,
+                        frozen_ability.origin,
+                        definition.costs,
+                        cost_objects,
+                    );
+                    if self.capture_payment_probe(player, cost, x, &payment_purpose, reserved, true)
+                    {
+                        return;
+                    }
+                }
+                self.activate_mana_for_cost_with_options_for(
+                    player,
+                    cost,
+                    x,
+                    ManaPlanOptions {
+                        avoid: (taps_source || animates_source).then_some(source),
+                        tap_cost_payer,
+                    },
+                    &payment_purpose,
+                );
+                let _ = self.pay_player_cost_for(player, cost, x, &payment_purpose);
+            }
             if definition.costs.iter().any(|cost| {
                 matches!(
                     cost,
@@ -581,79 +649,13 @@ impl Game {
                         | CostDef::TapPermanents { count: 1, .. }
                 )
             }) {
-                // Ahead of the loop, so automatic mana payment cannot tap the
-                // chosen permanent out from under the cost it is paying.
                 let chosen = *cost_objects
                     .first()
                     .expect("a legal activation chose the one to tap");
                 let _ = self.tap_permanent(chosen);
             }
-            let has_dynamic_mana = definition.costs.iter().any(|cost| {
-                matches!(
-                    cost,
-                    CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. }
-                )
-            });
-            let mut dynamic_mana_paid = false;
             for cost in definition.costs {
                 match cost {
-                    CostDef::Mana(_) if has_dynamic_mana => {}
-                    CostDef::Mana(cost) => {
-                        // Read through any increase on the battlefield and
-                        // any discount, printed or granted, so what is paid
-                        // is what the offer was priced at.
-                        let cost = self.activation_mana_cost(&definition, source, *cost);
-                        let cost = self.announced_activation_cost(player, cost, mana_payment);
-                        let payment_purpose = ManaPaymentPurpose::Ability {
-                            source,
-                            taps_source,
-                            leaves_source,
-                        };
-                        self.activate_mana_for_cost_with_options_for(
-                            player,
-                            cost,
-                            x,
-                            ManaPlanOptions {
-                                // Tapping the source to pay would hand back a
-                                // tapped creature, so auto-payment leaves it
-                                // alone even though the tap itself is legal.
-                                avoid: (taps_source || animates_source).then_some(source),
-                                tap_cost_payer,
-                            },
-                            &payment_purpose,
-                        );
-                        // The same purpose the mana was raised under. Paying
-                        // under a different one would price the cost
-                        // differently from the offer it came from.
-                        let _ = self.pay_player_cost_for(player, cost, x, &payment_purpose);
-                    }
-                    CostDef::ManaCostOf(_)
-                    | CostDef::ManaValueOfTarget { .. } => {
-                        if dynamic_mana_paid {
-                            continue;
-                        }
-                        let cost = self
-                            .activated_ability_mana_cost_for(&definition, &frozen_targets, cost_objects)
-                            .map(|cost| self.activation_mana_cost(&definition, source, cost))
-                            .expect("a legal dynamic-mana activation has its priced object");
-                        let payment_purpose = ManaPaymentPurpose::Ability {
-                            source,
-                            taps_source,
-                            leaves_source,
-                        };
-                        self.activate_mana_for_cost_with_options_for(
-                            player,
-                            cost,
-                            x,
-                            ManaPlanOptions {
-                                avoid: (taps_source || animates_source).then_some(source),
-                                tap_cost_payer,
-                            },
-                            &payment_purpose,
-                        );
-                        let _ = self.pay_player_cost_for(player, cost, x, &payment_purpose);
-                        dynamic_mana_paid = true;
-                    }
                     CostDef::TapSource => {
                         let _ = self.tap_permanent(source);
                     }
@@ -680,7 +682,8 @@ impl Game {
                     }
                     // The open-ended removal never reaches payment: mana
                     // enumeration replaced it with a sized one.
-                    CostDef::RemoveAnyNumberOfCountersFromSource(_)
+                    CostDef::Mana(_) | CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. }
+                    | CostDef::RemoveAnyNumberOfCountersFromSource(_)
                     | CostDef::ReturnUnblockedAttackerToHand
                     | CostDef::TapPermanents { .. }
                     // Paid by decision after everything else, the way a

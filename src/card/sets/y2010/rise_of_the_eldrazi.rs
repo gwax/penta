@@ -257,7 +257,7 @@ pub(in crate::card::sets) static TRAINING_GROUNDS_91: CardRecord = CardRecord::n
     "e2cf16f8-6e69-46b3-8453-1d1a2a5670e2",
     "James Ryman",
     CardRules::new_enchantment(mana_cost!("{U}")).with_abilities(&[
-AbilityDef::static_ability("Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.", EffectDef::ModifyCost(CostModificationDef::AbilityReduction { permanent: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::ControlledBy(PlayerRelation::You)]), amount: ValueDef::Constant(2), minimum: 1 }))
+AbilityDef::static_ability("Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.", EffectDef::ModifyCost(CostModificationDef::AbilityReduction { abilities: crate::card::AbilityKindDef::Activated, permanent: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::ControlledBy(PlayerRelation::You)]), amount: ValueDef::Constant(2), minimum: 1 }))
 ]),
 );
 
