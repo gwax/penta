@@ -272,6 +272,7 @@ impl Game {
             monarch: None,
             ninjutsu_returned_defender: None,
             exile_play_permissions: Vec::new(),
+            plotted_cards: BTreeMap::new(),
             damage_cannot_be_prevented_this_turn: false,
             cannot_gain_life: [false; 2],
             combat_damage_to_players: Vec::new(),
@@ -465,6 +466,7 @@ impl Game {
         mut card: CardInstance,
     ) -> (CardInstance, ZoneChangeOutcome) {
         let previous = card.id;
+        self.plotted_cards.remove(&previous);
         self.nonbattlefield_ability_grants
             .retain(|grant| grant.object != previous);
         self.retired_objects

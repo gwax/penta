@@ -963,6 +963,7 @@ mod duskmourn;
 mod big_score;
 mod foundations;
 mod karlov_manor;
+mod plot_exile;
 mod thunder_junction;
 
 mod aetherdrift;
