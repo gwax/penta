@@ -29,7 +29,7 @@ fn old_school_top_level_builders_remain_compatible() {
 }
 
 #[test]
-fn all_yaml_decks_resolve_and_are_legal_in_their_formats() {
+fn all_yaml_decks_resolve_and_validate_for_their_formats() {
     let catalog = card::catalog().unwrap();
     for source in BUILTIN_DECKS {
         let deck = source.resolve(&catalog);
@@ -106,5 +106,74 @@ fn print_deck_report() {
             Err(error @ crate::DeckError::UnsupportedCards(_)) => println!("  {error}"),
             Err(error) => panic!("{}: {error}", source.source),
         }
+    }
+}
+
+#[test]
+fn cedh_seed_decks_keep_commanders_separate() {
+    let catalog = card::catalog().expect("built-in catalog");
+    assert!(Format::Cedh.defers_deck_legality());
+    let metadata = Format::Cedh
+        .commander_definition()
+        .expect("cEDH Commander policy metadata");
+    assert_eq!(metadata.rules.starting_life, 40);
+    assert!(metadata.banned_cards.contains(&"Mana Crypt"));
+    assert_eq!(
+        metadata.companion_only_banned_cards,
+        &["Lutri, the Spellchaser"]
+    );
+    let decks = BUILTIN_DECKS
+        .iter()
+        .filter(|source| source.format == Some(Format::Cedh))
+        .collect::<Vec<_>>();
+    assert_eq!(decks.len(), 16, "cEDH keeps the top 16 seed lists");
+
+    for source in decks {
+        assert!(
+            source.source.starts_with("decks/cedh/"),
+            "{}",
+            source.source
+        );
+        let deck = source.resolve(&catalog);
+        assert!(
+            (1..=2).contains(&deck.commanders.len()),
+            "{} must retain one or two designated commanders",
+            source.source
+        );
+        assert!(
+            !deck.main.is_empty(),
+            "{} must retain its mainboard",
+            source.source
+        );
+        assert!(
+            deck.sideboard.is_empty(),
+            "{} has no gameplay sideboard in this imported corpus",
+            source.source
+        );
+        deck.validate_for_format(&catalog, Format::Cedh)
+            .unwrap_or_else(|error| panic!("{}: {error}", source.source));
+    }
+}
+
+#[test]
+fn duel_commander_seed_decks_resolve_the_published_top_eight() {
+    let catalog = card::catalog().unwrap();
+    let decks = BUILTIN_DECKS
+        .iter()
+        .filter(|source| source.format == Some(Format::DuelCommander))
+        .collect::<Vec<_>>();
+    assert_eq!(decks.len(), 8);
+    for source in decks {
+        let deck = source.resolve(&catalog);
+        assert!((1..=2).contains(&deck.commanders.len()), "{}", source.name);
+        assert_eq!(
+            deck.commanders.len() + deck.main.len(),
+            100,
+            "{}",
+            source.name
+        );
+        assert!(deck.sideboard.is_empty());
+        deck.validate_for_format(&catalog, Format::DuelCommander)
+            .unwrap();
     }
 }

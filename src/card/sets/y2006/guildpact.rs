@@ -14,6 +14,7 @@ use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
+use crate::card::EffectChoiceDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
@@ -263,6 +264,17 @@ pub(in crate::card::sets) static SCORCHED_RUSALKA: CardRecord = CardRecord::new(
     ),
 );
 
+// GPT 75 — Shattering Spree
+pub(in crate::card::sets) static SHATTERING_SPREE_75: CardRecord = CardRecord::new(
+    "Shattering Spree",
+    "d6dcff21-5900-43c4-a38b-cdc19c704ce4",
+    "Pat Lee",
+    CardRules::new_sorcery(mana_cost!("{R}")).with_abilities(&[
+abilities::replicate(&[CostDef::Mana(mana_cost!("{R}"))]),
+AbilityDef::spell_with_targets("Replicate {R} (When you cast this spell, copy it for each time you paid its replicate cost. You may choose new targets for the copies.)\nDestroy target artifact.", &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(CardType::Artifact))], EffectDef::destroy_target(TargetIndex::PRIMARY))
+]),
+);
+
 // GPT 77 — Skarrgan Firebird
 pub(in crate::card::sets) static SKARRGAN_FIREBIRD: CardRecord = CardRecord::new(
     "Skarrgan Firebird",
@@ -396,6 +408,63 @@ pub(in crate::card::sets) static PILLORY_OF_THE_SLEEPLESS: CardRecord = CardReco
         ]),
 );
 
+// GPT 149 — Wild Cantor
+pub(in crate::card::sets) static WILD_CANTOR_149: CardRecord = CardRecord::new(
+    "Wild Cantor",
+    "242dc29e-d8f5-4207-abbf-cf5425f08551",
+    "Glenn Fabry",
+    CardRules::new_creature(mana_cost!("{R/G}"), &["Human", "Druid"], 1, 1).with_abilities(&[
+        AbilityDef::activated_mana(
+            "Sacrifice this creature: Add one mana of any color.",
+            &[CostDef::SacrificeSource],
+            EffectDef::AddMana(AddManaEffectDef::any_color()),
+        ),
+    ]),
+);
+
+// GPT 152 — Izzet Signet
+pub(in crate::card::sets) static IZZET_SIGNET_152: CardRecord = CardRecord::new(
+    "Izzet Signet",
+    "f823be95-bef4-4e86-a924-239be62394bf",
+    "Greg Hildebrandt",
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[AbilityDef::activated_mana(
+        "{1}, {T}: Add {U}{R}.",
+        &[CostDef::Mana(mana_cost!("{1}")), CostDef::TapSource],
+        EffectDef::AddMana(AddManaEffectDef::one_of_each(
+            ManaColor::Blue,
+            ManaColor::Red,
+        )),
+    )]),
+);
+
+// GPT 155 — Orzhov Signet
+pub(in crate::card::sets) static ORZHOV_SIGNET_155: CardRecord = CardRecord::new(
+    "Orzhov Signet",
+    "f9298a1d-5b41-46d8-929c-b6980d1e6eb7",
+    "Greg Hildebrandt",
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[AbilityDef::activated_mana(
+        "{1}, {T}: Add {W}{B}.",
+        &[CostDef::Mana(mana_cost!("{1}")), CostDef::TapSource],
+        EffectDef::AddMana(AddManaEffectDef::one_of_each(
+            ManaColor::White,
+            ManaColor::Black,
+        )),
+    )]),
+);
+
+// GPT 156 — Sword of the Paruns
+pub(in crate::card::sets) static SWORD_OF_THE_PARUNS_156: CardRecord = CardRecord::new(
+    "Sword of the Paruns",
+    "a2225d05-d85c-4304-8226-b056e7dedad7",
+    "Greg Hildebrandt",
+    CardRules::new_artifact(mana_cost!("{4}")).with_subtypes(&["Equipment"]).with_abilities(&[
+AbilityDef::static_ability("As long as equipped creature is tapped, tapped creatures you control get +2/+0.", EffectDef::IfCondition { condition: &TriggerConditionDef::AttachedPermanentMatches { object: ObjectPredicateDef::Tapped }, then: &EffectDef::StaticApply { recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Tapped]), &[ZoneKind::Battlefield], PlayerRelation::You), effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(0)) } }),
+AbilityDef::static_ability("As long as equipped creature is untapped, untapped creatures you control get +0/+2.", EffectDef::IfCondition { condition: &TriggerConditionDef::AttachedPermanentMatches { object: ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped) }, then: &EffectDef::StaticApply { recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped)]), &[ZoneKind::Battlefield], PlayerRelation::You), effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(0), ValueDef::Constant(2)) } }),
+AbilityDef::activated("{3}: You may tap or untap equipped creature.", &[CostDef::Mana(mana_cost!("{3}"))], EffectDef::May { player: EffectRecipientDef::Controller, effect: &EffectDef::ChooseEffect { player: EffectRecipientDef::Controller, choices: &[EffectChoiceDef { label: "Tap", effect: EffectDef::Tap { object: EffectRecipientDef::AttachedPermanent } }, EffectChoiceDef { label: "Untap", effect: EffectDef::Untap { object: EffectRecipientDef::AttachedPermanent } }] } }),
+abilities::equip(&[CostDef::Mana(mana_cost!("{3}"))], "Equip {3}")
+]),
+);
+
 // GPT 157 — Godless Shrine
 pub(in crate::card::sets) static GODLESS_SHRINE: CardRecord = CardRecord::new(
     "Godless Shrine",
@@ -490,12 +559,17 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLOODSCALE_PROWLER,
     &LEYLINE_OF_LIGHTNING,
     &SCORCHED_RUSALKA,
+    &SHATTERING_SPREE_75,
     &SKARRGAN_FIREBIRD,
     &GRISTLEBACK,
     &LEYLINE_OF_LIFEFORCE,
     &FERAL_ANIMIST,
     &MORTIFY,
     &PILLORY_OF_THE_SLEEPLESS,
+    &WILD_CANTOR_149,
+    &IZZET_SIGNET_152,
+    &ORZHOV_SIGNET_155,
+    &SWORD_OF_THE_PARUNS_156,
     &GODLESS_SHRINE,
     &GRUUL_TURF,
     &IZZET_BOILERWORKS,

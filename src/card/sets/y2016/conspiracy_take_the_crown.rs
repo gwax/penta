@@ -21,6 +21,7 @@ use crate::card::StackTargetFilterDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
+use crate::card::ZonePlacement;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -102,6 +103,34 @@ pub(in crate::card::sets) static PALACE_SENTINELS: CardRecord = CardRecord::new(
     ),
 );
 
+// CN2 22 — Recruiter of the Guard
+pub(in crate::card::sets) static RECRUITER_OF_THE_GUARD_22: CardRecord = CardRecord::new(
+    "Recruiter of the Guard",
+    "bb9ad57f-cca2-4717-a951-cbe3c7782efe",
+    "Jason Rainville",
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Human", "Soldier"], 1, 1).with_abilities(&[
+abilities::enters_trigger("When this creature enters, you may search your library for a creature card with toughness 2 or less, reveal it, put it into your hand, then shuffle.", EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::ToughnessLessThan(ValueDef::Constant(3))]), minimum: 0, maximum: ValueDef::Constant(1), reveal: true, destination: ZoneKind::Hand, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None })
+]),
+);
+
+// CN2 23 — Sanctum Prelate
+// Audit: unsupported — Entry replacements cannot record an arbitrary chosen number for a continuous mana-value cast prohibition.
+pub(in crate::card::sets) static SANCTUM_PRELATE_23: CardRecord = CardRecord::new(
+    "Sanctum Prelate",
+    "1d95a7dd-2803-4164-8979-d7e8e8085ca2",
+    "Winona Nelson",
+    crate::card::CardRules::unsupported(),
+);
+
+// CN2 30 — Expropriate
+// Audit: unsupported — The engine has no ordered player voting procedure with separate per-voter consequences.
+pub(in crate::card::sets) static EXPROPRIATE_30: CardRecord = CardRecord::new(
+    "Expropriate",
+    "9c8a2a5a-cb9b-4582-a453-085da78584f9",
+    "Zack Stella",
+    crate::card::CardRules::unsupported(),
+);
+
 // CN2 48 — Thorn of the Black Rose
 pub(in crate::card::sets) static THORN_OF_THE_BLACK_ROSE: CardRecord = CardRecord::new(
     "Thorn of the Black Rose",
@@ -126,6 +155,24 @@ pub(in crate::card::sets) static ENTOURAGE_OF_TREST: CardRecord = CardRecord::ne
     "Entourage of Trest",
     "3d7ee777-6113-43f8-883e-c7569eefb872",
     "Anthony Palumbo",
+    crate::card::CardRules::unsupported(),
+);
+
+// CN2 69 — Regal Behemoth
+// Audit: unsupported — The monarch designation and its transfer rules exist, but no condition can ask whether this ability's controller is currently the monarch before triggering the additional mana.
+pub(in crate::card::sets) static REGAL_BEHEMOTH_69: CardRecord = CardRecord::new(
+    "Regal Behemoth",
+    "644e5b24-394a-43f1-8384-186d6108f540",
+    "Jakub Kasper",
+    crate::card::CardRules::unsupported(),
+);
+
+// CN2 70 — Selvala, Heart of the Wilds
+// Audit: unsupported — The resolving draw comparison is expressible, but mana_ability_value delegates aggregate power to cost_reduction_value, which returns zero for AggregateObjectValues. The greatest-power mana amount is therefore not executable by the current mana-activation planner.
+pub(in crate::card::sets) static SELVALA_HEART_OF_THE_WILDS_70: CardRecord = CardRecord::new(
+    "Selvala, Heart of the Wilds",
+    "99a3e619-fbdb-406c-9f21-eb582cb878c0",
+    "Tyler Jacobson",
     crate::card::CardRules::unsupported(),
 );
 
@@ -176,8 +223,13 @@ pub(in crate::card::sets) static LEOVOLD_EMISSARY_OF_TREST: CardRecord = CardRec
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PALACE_JAILER,
     &PALACE_SENTINELS,
+    &RECRUITER_OF_THE_GUARD_22,
+    &SANCTUM_PRELATE_23,
+    &EXPROPRIATE_30,
     &THORN_OF_THE_BLACK_ROSE,
     &ENTOURAGE_OF_TREST,
+    &REGAL_BEHEMOTH_69,
+    &SELVALA_HEART_OF_THE_WILDS_70,
     &LEOVOLD_EMISSARY_OF_TREST,
 ];
 

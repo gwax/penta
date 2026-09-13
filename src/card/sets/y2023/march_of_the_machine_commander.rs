@@ -4,11 +4,21 @@ use super::CardRecord;
 use super::PrintingRecord;
 use crate::TargetIndex;
 use crate::card::AbilityDef;
+use crate::card::AbilityTargetDef;
+use crate::card::AbilityTargetPredicate;
 use crate::card::AppliedEffectDef;
 use crate::card::CardRules;
+use crate::card::CardType;
+use crate::card::CostDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::ExilePlayDurationDef;
+use crate::card::ObjectPredicateDef;
+use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::TriggerEventDef;
+use crate::card::ValueDef;
+use crate::card::ZoneKind;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -56,6 +66,30 @@ pub(in crate::card::sets) static DEATH_GREETER_S_CHAMPION: CardRecord = CardReco
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&DEATH_GREETER_S_CHAMPION];
+// MOC 34 — Path of the Pyromancer
+// Audit: unsupported — The engine has no planar deck, planeswalk action, or chaos event. Those are required for the voting result even though the discard, mana, and draw instructions are expressible.
+pub(in crate::card::sets) static PATH_OF_THE_PYROMANCER_34: CardRecord = CardRecord::new(
+    "Path of the Pyromancer",
+    "4eeaf326-4521-4508-8032-627677a82dd4",
+    "Dominik Mayer",
+    crate::card::CardRules::unsupported(),
+);
+
+// MOC 118 — Hedron Detonator
+pub(in crate::card::sets) static HEDRON_DETONATOR_118: CardRecord = CardRecord::new(
+    "Hedron Detonator",
+    "5194978a-ebc3-442f-97f3-012b3edd92da",
+    "Caroline Gariba",
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Artificer"], 2, 3).with_abilities(&[
+AbilityDef::triggered_with_targets("Whenever an artifact you control enters, this creature deals 1 damage to target opponent.", TriggerEventDef::zone_changed(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::ControlledBy(PlayerRelation::You)]), None, Some(ZoneKind::Battlefield)), &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(PlayerRelation::Opponent))], EffectDef::damage(EffectRecipientDef::Target(TargetIndex::PRIMARY), ValueDef::Constant(1))),
+AbilityDef::activated("{T}, Sacrifice two artifacts: Exile the top card of your library. You may play that card this turn.", &[CostDef::TapSource, CostDef::SacrificePermanents { object: ObjectPredicateDef::HasType(CardType::Artifact), controller: PlayerRelation::You, count: 2 }], EffectDef::ExileTopOfLibraryToPlay { player: EffectRecipientDef::Controller, amount: ValueDef::Constant(1), free: false, face_down: false, duration: ExilePlayDurationDef::ThisTurn, spend_any_color: false, play_condition: None, cast_only: false })
+]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &DEATH_GREETER_S_CHAMPION,
+    &PATH_OF_THE_PYROMANCER_34,
+    &HEDRON_DETONATOR_118,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

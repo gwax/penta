@@ -3,11 +3,17 @@
 use super::CardRecord;
 use super::PrintingRecord;
 use crate::ParentBinding;
+use crate::TargetIndex;
 use crate::card::AbilityDef;
+use crate::card::AbilityTargetDef;
+use crate::card::AbilityTargetPredicate;
+use crate::card::AlternativeCastKindDef;
+use crate::card::AppliedEffectDef;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
+use crate::card::ComparisonDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ObjectChoiceBindingDef;
@@ -16,7 +22,12 @@ use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::ObjectSetFilterDef;
 use crate::card::PlayerRefDef;
+use crate::card::PlayerRelation;
+use crate::card::ResolvedEffectDurationDef;
+use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
+use crate::card::ValueComparisonDef;
+use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
@@ -30,6 +41,46 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// C20 26 — Flawless Maneuver
+pub(in crate::card::sets) static FLAWLESS_MANEUVER_26: CardRecord = CardRecord::new(
+    "Flawless Maneuver",
+    "c972abe6-c732-4745-bde4-8b51698f05be",
+    "Zoltan Boros",
+    CardRules::new_instant(mana_cost!("{2}{W}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            crate::NO_COSTS,
+            AlternativeCastKindDef::AlternativeCost,
+            Some(
+                "If you control a commander, you may cast this spell without paying its mana cost.",
+            ),
+            EffectDef::None,
+        )
+        .with_alternative_condition(&TriggerConditionDef::ValueComparison(
+            &ValueComparisonDef {
+                left: ValueDef::CountMatchingObjects(&crate::card::ObjectQueryDef::matching(
+                    ObjectPredicateDef::Commander,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                )),
+                comparison: ComparisonDef::GreaterOrEqual,
+                right: ValueDef::Constant(1),
+            },
+        )),
+        AbilityDef::spell(
+            "Creatures you control gain indestructible until end of turn.",
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                effect: AppliedEffectDef::add_ability(&abilities::indestructible()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
+);
 
 // C20 34 — Ethereal Forager
 pub(in crate::card::sets) static ETHEREAL_FORAGER: CardRecord = CardRecord::new(
@@ -73,6 +124,144 @@ CardRules::new_creature(mana_cost!("{4}{U}{U}"), &["Elemental", "Whale"], 3, 3)
         ]),
 );
 
+// C20 35 — Fierce Guardianship
+pub(in crate::card::sets) static FIERCE_GUARDIANSHIP_35: CardRecord = CardRecord::new(
+    "Fierce Guardianship",
+    "4c5ffa83-c88d-4f5d-851e-a642b229d596",
+    "Randy Vargas",
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            crate::NO_COSTS,
+            AlternativeCastKindDef::AlternativeCost,
+            Some(
+                "If you control a commander, you may cast this spell without paying its mana cost.",
+            ),
+            EffectDef::None,
+        )
+        .with_alternative_condition(&TriggerConditionDef::ValueComparison(
+            &ValueComparisonDef {
+                left: ValueDef::CountMatchingObjects(&crate::card::ObjectQueryDef::matching(
+                    ObjectPredicateDef::Commander,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                )),
+                comparison: ComparisonDef::GreaterOrEqual,
+                right: ValueDef::Constant(1),
+            },
+        )),
+        AbilityDef::spell_with_targets(
+            "Counter target noncreature spell.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::NoncreatureSpell,
+                    zones: &[ZoneKind::Stack],
+                    controller: None,
+                    owner: None,
+                },
+            )],
+            EffectDef::counter_target(TargetIndex::PRIMARY),
+        ),
+    ]),
+);
+
+// C20 42 — Deadly Rollick
+pub(in crate::card::sets) static DEADLY_ROLLICK_42: CardRecord = CardRecord::new(
+    "Deadly Rollick",
+    "c61fa2c0-63c0-4dc2-9f17-5a00530e3348",
+    "Izzy",
+    CardRules::new_instant(mana_cost!("{3}{B}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            crate::NO_COSTS,
+            AlternativeCastKindDef::AlternativeCost,
+            Some(
+                "If you control a commander, you may cast this spell without paying its mana cost.",
+            ),
+            EffectDef::None,
+        )
+        .with_alternative_condition(&TriggerConditionDef::ValueComparison(
+            &ValueComparisonDef {
+                left: ValueDef::CountMatchingObjects(&crate::card::ObjectQueryDef::matching(
+                    ObjectPredicateDef::Commander,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                )),
+                comparison: ComparisonDef::GreaterOrEqual,
+                right: ValueDef::Constant(1),
+            },
+        )),
+        AbilityDef::spell_with_targets(
+            "Exile target creature.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::move_to_zone(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ZoneKind::Exile,
+                ZonePlacement::Top,
+            ),
+        ),
+    ]),
+);
+
+// C20 50 — Deflecting Swat
+pub(in crate::card::sets) static DEFLECTING_SWAT_50: CardRecord = CardRecord::new(
+    "Deflecting Swat",
+    "84f035e1-6c89-457b-b05f-85680a50ed91",
+    "Izzy",
+    CardRules::new_instant(mana_cost!("{2}{R}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            crate::NO_COSTS,
+            AlternativeCastKindDef::AlternativeCost,
+            Some(
+                "If you control a commander, you may cast this spell without paying its mana cost.",
+            ),
+            EffectDef::None,
+        )
+        .with_alternative_condition(&TriggerConditionDef::ValueComparison(
+            &ValueComparisonDef {
+                left: ValueDef::CountMatchingObjects(&crate::card::ObjectQueryDef::matching(
+                    ObjectPredicateDef::Commander,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                )),
+                comparison: ComparisonDef::GreaterOrEqual,
+                right: ValueDef::Constant(1),
+            },
+        )),
+        AbilityDef::spell_with_targets(
+            "You may choose new targets for target spell or ability.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::DeclaredTargetCount {
+                        minimum: 1,
+                        maximum: u8::MAX,
+                    },
+                    zones: &[ZoneKind::Stack],
+                    controller: None,
+                    owner: None,
+                },
+            )],
+            EffectDef::ChangeStackTargets(&crate::card::ChangeStackTargetsDef {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                chooser: PlayerRefDef::EffectController,
+                change: crate::card::StackTargetChangeDef::ChooseNew {
+                    optional: true,
+                    restriction: None,
+                },
+            }),
+        ),
+    ]),
+);
+
+// C20 66 — Slippery Bogbonder
+// Audit: unsupported — Needs a kind-agnostic counter move from an arbitrary number of controlled creatures onto one target creature.
+pub(in crate::card::sets) static SLIPPERY_BOGBONDER_66: CardRecord = CardRecord::new(
+    "Slippery Bogbonder",
+    "c2f9c4a7-ea53-4da0-9746-2195579f98f6",
+    "Mila Pesic",
+    crate::card::CardRules::unsupported(),
+);
+
 // C20 67 — Bonder's Ornament
 // Audit: unsupported — Needs a player set filtered by what its members control. PlayerSetDef offers All, One, Related and LegalTargets, none of which can say "each player who controls a permanent named Bonder's Ornament"; drawing for every player instead would hand cards to opponents who control none.
 pub(in crate::card::sets) static BONDER_S_ORNAMENT: CardRecord = CardRecord::new(
@@ -89,7 +278,15 @@ const MURMURING_MYSTIC_REPRINT: PrintingRecord = PrintingRecord::reprint(
     "Mark Winters",
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&ETHEREAL_FORAGER, &BONDER_S_ORNAMENT];
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &FLAWLESS_MANEUVER_26,
+    &ETHEREAL_FORAGER,
+    &FIERCE_GUARDIANSHIP_35,
+    &DEADLY_ROLLICK_42,
+    &DEFLECTING_SWAT_50,
+    &SLIPPERY_BOGBONDER_66,
+    &BONDER_S_ORNAMENT,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =
     &[MURMURING_MYSTIC_REPRINT];

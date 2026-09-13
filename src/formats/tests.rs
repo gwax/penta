@@ -19,6 +19,29 @@ fn categories_partition_every_format_in_registry_order() {
 }
 
 #[test]
+fn cedh_is_a_commander_format_with_deferred_legality_metadata() {
+    assert_eq!(Format::Cedh.category(), FormatCategory::Commander);
+    assert_eq!(Format::Cedh.slug(), "cedh");
+    assert_eq!(Format::Cedh.rules().starting_life, 40);
+    assert!(Format::Cedh.defers_deck_legality());
+    assert!(Format::Cedh.allows_card(&CardDefinition::new(
+        CardDefinitionId::from_uuid("00000000-0000-0000-0000-000000000001"),
+        "Any catalog identity",
+        sets::alpha::SET,
+        crate::card::CardRules::unsupported(),
+    )));
+    assert!(Format::Cedh.is_banned("Mana Crypt"));
+    assert!(!Format::Cedh.is_banned("Lutri, the Spellchaser"));
+    assert_eq!(
+        Format::Cedh
+            .commander_definition()
+            .expect("Commander metadata")
+            .companion_only_banned_cards,
+        &["Lutri, the Spellchaser"]
+    );
+}
+
+#[test]
 fn cubes_are_singleton_pools_rather_than_set_windows() {
     for &format in FormatCategory::Cube.formats() {
         let definition = format.cube_definition().expect("a cube definition");
@@ -236,4 +259,29 @@ fn only_old_school_has_mana_burn_and_restrictions() {
             assert!(!format.is_restricted("Black Lotus"));
         }
     }
+}
+
+#[test]
+fn duel_commander_has_separate_gameplay_and_ban_policy() {
+    let format = Format::DuelCommander;
+    assert_eq!(format.category(), FormatCategory::Commander);
+    assert_eq!(format.slug(), "duel-commander");
+    assert!(format.defers_deck_legality());
+    let rules = format.commander_definition().unwrap();
+    assert_eq!(rules.rules.starting_life, 20);
+    assert_eq!(rules.commander_damage_limit, None);
+    assert!(rules.one_command_zone_commander && rules.commander_swapping);
+    assert!(!rules.outside_game_effects);
+    assert!(format.is_banned("Sol Ring"));
+    assert!(!Format::Cedh.is_banned("Sol Ring"));
+    assert!(
+        rules
+            .commander_only_banned_cards
+            .contains(&"Derevi, Empyrial Tactician")
+    );
+    assert!(!format.is_banned("Derevi, Empyrial Tactician"));
+    assert_eq!(
+        rules.companion_only_banned_cards,
+        &["Lutri, the Spellchaser"]
+    );
 }

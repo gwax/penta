@@ -1,6 +1,7 @@
 //! Teenage Mutant Ninja Turtles card inventory.
 
-use super::{CardRecord, PrintingRecord};
+use super::CardRecord;
+use super::PrintingRecord;
 use crate::TargetIndex;
 use crate::card::AbilityDef;
 use crate::card::AbilityPredicateDef;

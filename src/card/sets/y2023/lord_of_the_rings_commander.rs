@@ -9,6 +9,7 @@ use crate::card::AbilityTargetDef;
 use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
 use crate::card::CardRules;
+use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
 use crate::card::CreateTokenDef;
@@ -18,6 +19,7 @@ use crate::card::EffectRecipientDef;
 use crate::card::InstalledTriggerDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectQueryDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
@@ -25,6 +27,7 @@ use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
+use crate::card::ZoneKind;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -36,6 +39,37 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// LTC 32 — Gimli of the Glittering Caves
+pub(in crate::card::sets) static GIMLI_OF_THE_GLITTERING_CAVES_32: CardRecord = CardRecord::new(
+    "Gimli of the Glittering Caves",
+    "5afc0319-9e17-4e81-a0b6-e76645bacb04",
+    "Sidharth Chaturvedi",
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Dwarf", "Warrior"], 1, 1)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::double_strike(),
+            AbilityDef::triggered(
+                "Whenever another legendary creature you control enters, put a +1/+1 counter on this creature.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Supertype(CardSupertype::Legendary),
+                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                    ]),
+                    None,
+                    Some(crate::card::ZoneKind::Battlefield),
+                ),
+                EffectDef::AddCounters { object: EffectRecipientDef::Source, kind: crate::card::CounterKind::PlusOnePlusOne, amount: ValueDef::Constant(1) },
+            ),
+            AbilityDef::triggered(
+                "Whenever this creature deals combat damage to a player, create a Treasure token.",
+                TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source),
+                EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::tokens::treasure()))),
+            ),
+        ]),
+);
 
 // LTC 56 — Forth Eorlingas!
 pub(in crate::card::sets) static FORTH_EORLINGAS: CardRecord = CardRecord::new(
@@ -77,6 +111,20 @@ pub(in crate::card::sets) static FORTH_EORLINGAS: CardRecord = CardRecord::new(
             ))),
         ]),
     )),
+);
+
+// LTC 114 — Cavern-Hoard Dragon
+pub(in crate::card::sets) static CAVERN_HOARD_DRAGON_114: CardRecord = CardRecord::new(
+    "Cavern-Hoard Dragon",
+    "31540dde-7cea-4eb1-896e-27e21b56f00a",
+    "Antonio José Manzanedo",
+    CardRules::new_creature(mana_cost!("{7}{R}{R}"), &["Dragon"], 6, 6).with_abilities(&[
+abilities::spell_cost_reduction("This spell costs {X} less to cast, where X is the greatest number of artifacts an opponent controls.", ObjectPredicateDef::Source, PlayerRelation::You, ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::HasType(CardType::Artifact), &[ZoneKind::Battlefield], PlayerRelation::Opponent))),
+abilities::flying(),
+abilities::trample(),
+abilities::haste(),
+AbilityDef::triggered("Whenever this creature deals combat damage to a player, you create a Treasure token for each artifact that player controls.", TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::Source), EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::tokens::treasure())).with_count(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::HasType(CardType::Artifact), &[ZoneKind::Battlefield], PlayerRelation::EventPlayer)))))
+]),
 );
 
 // LTC 159 — Relic of Sauron
@@ -173,7 +221,24 @@ pub(in crate::card::sets) static LEGOLASS_QUICK_REFLEXES: CardRecord = CardRecor
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&FORTH_EORLINGAS, &RELIC_OF_SAURON, &LEGOLASS_QUICK_REFLEXES];
+// LTC 500 — Galadriel's Dismissal
+// Audit: unsupported — Kicker changes the target from a creature to a player. Conditional target
+// predicates exist, but catalog validation does not narrow target-reference kinds inside the
+// paid/unpaid effect branches, so the complete phase-out declaration is rejected.
+pub(in crate::card::sets) static GALADRIEL_S_DISMISSAL_500: CardRecord = CardRecord::new(
+    "Galadriel's Dismissal",
+    "2d1c66a7-a39e-4869-80c7-1cec89777e0d",
+    "Alexander Mokhov",
+    CardRules::unsupported(),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &GIMLI_OF_THE_GLITTERING_CAVES_32,
+    &FORTH_EORLINGAS,
+    &CAVERN_HOARD_DRAGON_114,
+    &RELIC_OF_SAURON,
+    &LEGOLASS_QUICK_REFLEXES,
+    &GALADRIEL_S_DISMISSAL_500,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

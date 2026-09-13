@@ -4,7 +4,9 @@ use std::fmt;
 
 use crate::card::{CardDefinition, CardSet, CardStructure};
 
+mod commander;
 pub mod cubes;
+mod duel_commander;
 mod old_school_9394;
 mod premodern;
 pub mod standards;
@@ -36,6 +38,8 @@ pub enum Format {
     SomM13Standard,
     VintageCube,
     PauperCube,
+    Cedh,
+    DuelCommander,
 }
 
 /// The family used to group formats in reports and presentation.
@@ -45,11 +49,17 @@ pub enum FormatCategory {
     Premodern,
     Standard,
     Cube,
+    Commander,
 }
 
 impl FormatCategory {
-    pub const ALL: &'static [Self] =
-        &[Self::OldSchool, Self::Premodern, Self::Standard, Self::Cube];
+    pub const ALL: &'static [Self] = &[
+        Self::OldSchool,
+        Self::Premodern,
+        Self::Standard,
+        Self::Cube,
+        Self::Commander,
+    ];
 
     #[must_use]
     pub const fn display_name(self) -> &'static str {
@@ -58,6 +68,7 @@ impl FormatCategory {
             Self::Premodern => "Premodern",
             Self::Standard => "Standard",
             Self::Cube => "Cubes",
+            Self::Commander => "Commander",
         }
     }
 
@@ -68,6 +79,7 @@ impl FormatCategory {
             Self::Premodern => &[Format::Premodern],
             Self::Standard => &[Format::IsdM14Standard, Format::SomM13Standard],
             Self::Cube => &[Format::VintageCube, Format::PauperCube],
+            Self::Commander => &[Format::Cedh, Format::DuelCommander],
         }
     }
 }
@@ -124,12 +136,34 @@ pub struct CubeFormatDefinition {
     pub cards: &'static [&'static str],
 }
 
+/// A Commander-family format with rules and sourced policy metadata.
+///
+/// `Deck::validate_for_format` currently checks only catalog identities for
+/// this definition. This keeps the policy visible without pretending the
+/// imported card corpus is a format-legality authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CommanderFormatDefinition {
+    pub rules: FormatRules,
+    /// Includes the designated commanders: one gives 99 library cards, two give 98.
+    pub total_deck_size: usize,
+    pub banned_cards: &'static [&'static str],
+    pub commander_only_banned_cards: &'static [&'static str],
+    /// None disables the commander combat-damage loss condition.
+    pub commander_damage_limit: Option<u16>,
+    /// Only the first commander cast from this zone may be cast there this game.
+    pub one_command_zone_commander: bool,
+    pub commander_swapping: bool,
+    pub outside_game_effects: bool,
+    pub companion_only_banned_cards: &'static [&'static str],
+}
+
 /// The legality model for one format. Cubes cannot accidentally be treated as
 /// empty set windows, and set formats cannot accidentally acquire a card pool.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FormatDefinition {
     Sets(&'static SetFormatDefinition),
     Cube(&'static CubeFormatDefinition),
+    Commander(&'static CommanderFormatDefinition),
 }
 
 impl Format {
@@ -141,6 +175,8 @@ impl Format {
         Self::SomM13Standard,
         Self::VintageCube,
         Self::PauperCube,
+        Self::Cedh,
+        Self::DuelCommander,
     ];
 
     #[must_use]
@@ -150,6 +186,7 @@ impl Format {
             Self::Premodern => FormatCategory::Premodern,
             Self::IsdM14Standard | Self::SomM13Standard => FormatCategory::Standard,
             Self::VintageCube | Self::PauperCube => FormatCategory::Cube,
+            Self::Cedh | Self::DuelCommander => FormatCategory::Commander,
         }
     }
 
@@ -162,6 +199,8 @@ impl Format {
             Self::SomM13Standard => FormatDefinition::Sets(&standards::som_m13::DEFINITION),
             Self::VintageCube => FormatDefinition::Cube(&cubes::vintage::DEFINITION),
             Self::PauperCube => FormatDefinition::Cube(&cubes::pauper::DEFINITION),
+            Self::Cedh => FormatDefinition::Commander(&commander::DEFINITION),
+            Self::DuelCommander => FormatDefinition::Commander(&duel_commander::DEFINITION),
         }
     }
 
@@ -170,6 +209,7 @@ impl Format {
         match self.definition() {
             FormatDefinition::Sets(definition) => &definition.rules,
             FormatDefinition::Cube(definition) => &definition.rules,
+            FormatDefinition::Commander(definition) => &definition.rules,
         }
     }
 
@@ -177,16 +217,30 @@ impl Format {
     pub const fn set_definition(self) -> Option<&'static SetFormatDefinition> {
         match self.definition() {
             FormatDefinition::Sets(definition) => Some(definition),
-            FormatDefinition::Cube(_) => None,
+            FormatDefinition::Cube(_) | FormatDefinition::Commander(_) => None,
         }
     }
 
     #[must_use]
     pub const fn cube_definition(self) -> Option<&'static CubeFormatDefinition> {
         match self.definition() {
-            FormatDefinition::Sets(_) => None,
+            FormatDefinition::Sets(_) | FormatDefinition::Commander(_) => None,
             FormatDefinition::Cube(definition) => Some(definition),
         }
+    }
+
+    #[must_use]
+    pub const fn commander_definition(self) -> Option<&'static CommanderFormatDefinition> {
+        match self.definition() {
+            FormatDefinition::Commander(definition) => Some(definition),
+            FormatDefinition::Sets(_) | FormatDefinition::Cube(_) => None,
+        }
+    }
+
+    /// Whether format deck construction is intentionally deferred.
+    #[must_use]
+    pub const fn defers_deck_legality(self) -> bool {
+        matches!(self.definition(), FormatDefinition::Commander(_))
     }
 
     #[must_use]
@@ -198,6 +252,8 @@ impl Format {
             Self::SomM13Standard => "som-m13-standard",
             Self::VintageCube => "vintage-cube",
             Self::PauperCube => "pauper-cube",
+            Self::Cedh => "cedh",
+            Self::DuelCommander => "duel-commander",
         }
     }
 
@@ -210,6 +266,8 @@ impl Format {
             Self::SomM13Standard => "Standard: SOM-M13",
             Self::VintageCube => "Cube: Vintage",
             Self::PauperCube => "Cube: The Pauper Cube",
+            Self::Cedh => "cEDH",
+            Self::DuelCommander => "Duel Commander",
         }
     }
 
@@ -241,6 +299,7 @@ impl Format {
                         .iter()
                         .any(|printing| definition.allowed_sets.contains(&printing.id.set))
             }
+            FormatDefinition::Commander(_) => true,
         }
     }
 
@@ -248,6 +307,9 @@ impl Format {
     pub fn is_banned(self, name: &str) -> bool {
         self.set_definition()
             .is_some_and(|definition| contains_name(definition.banned_cards, name))
+            || self
+                .commander_definition()
+                .is_some_and(|definition| contains_name(definition.banned_cards, name))
     }
 
     #[must_use]

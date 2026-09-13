@@ -8,15 +8,19 @@ use crate::TurnStepDef;
 use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
+use crate::card::AddManaEffectDef;
 use crate::card::AggregateOperationDef;
 use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::BasicLandType;
 use crate::card::CardNameDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
+use crate::card::ChangeStackTargetsDef;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
+use crate::card::CostDef;
 use crate::card::CounterKind;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -30,6 +34,7 @@ use crate::card::ObjectValueAggregateDef;
 use crate::card::ObjectValueDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::StackTargetChangeDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -142,6 +147,25 @@ pub(in crate::card::sets) static SUNLANCE: CardRecord = CardRecord::new(
     )),
 );
 
+// PLC 44 — Pongify
+pub(in crate::card::sets) static PONGIFY_44: CardRecord = CardRecord::new(
+    "Pongify",
+    "cce74a84-4441-4f2e-89d8-df0b096790ed",
+    "Heather Hudson",
+    CardRules::new_instant(mana_cost!("{U}")).with_abilities(&[
+AbilityDef::spell_with_targets("Destroy target creature. It can't be regenerated. Its controller creates a 3/3 green Ape creature token.", &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(CardType::Creature))], EffectDef::Sequence(&[EffectDef::WithRule { rule: AppliedRuleDef::CannotRegenerate, effect: &EffectDef::Destroy { object: EffectRecipientDef::Target(TargetIndex::PRIMARY), then: None } }, EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::TokenCharacteristics::creature(&["Ape"], &[ManaColor::Green], 3, 3))).with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(TargetIndex::PRIMARY))))]))
+]),
+);
+
+// PLC 63 — Big Game Hunter
+// Audit: unsupported — Madness needs a discard-to-exile replacement and linked triggered cast-or-graveyard procedure; the current alternative-cast model has no madness procedure.
+pub(in crate::card::sets) static BIG_GAME_HUNTER_63: CardRecord = CardRecord::new(
+    "Big Game Hunter",
+    "a61f38a9-6f15-4186-a602-78cdb00f2d75",
+    "Carl Critchlow",
+    crate::card::CardRules::unsupported(),
+);
+
 // PLC 70 — Enslave
 pub(in crate::card::sets) static ENSLAVE: CardRecord = CardRecord::new(
     "Enslave",
@@ -228,6 +252,40 @@ CardRules::new_instant(mana_cost!("{B}")).with_abilities(&[
     ]),
 );
 
+// PLC 72 — Imp's Mischief
+pub(in crate::card::sets) static IMP_S_MISCHIEF_72: CardRecord = CardRecord::new(
+    "Imp's Mischief",
+    "22ec70a6-40b7-41da-a6c0-c140cadf5509",
+    "Thomas M. Baxa",
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_abilities(&[
+AbilityDef::spell_with_targets("Change the target of target spell with a single target. You lose life equal to that spell's mana value.", &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::All(&[ObjectPredicateDef::Spell, ObjectPredicateDef::DeclaredTargetCount { minimum: 1, maximum: 1 }]), zones: &[ZoneKind::Stack], controller: None, owner: None })], EffectDef::Sequence(&[EffectDef::ChangeStackTargets(&ChangeStackTargetsDef { object: EffectRecipientDef::Target(TargetIndex::PRIMARY), chooser: PlayerRefDef::EffectController, change: StackTargetChangeDef::ChooseNew { optional: false, restriction: None } }), EffectDef::LoseLife { recipient: EffectRecipientDef::Controller, amount: ValueDef::ObjectManaValue(ObjectRefDef::Target(TargetIndex::PRIMARY)) }]))
+]),
+);
+
+// PLC 76 — Muck Drubb
+// Audit: unsupported — Madness needs a discard-to-exile replacement and linked triggered cast-or-graveyard procedure; the current alternative-cast model has no madness procedure.
+pub(in crate::card::sets) static MUCK_DRUBB_76: CardRecord = CardRecord::new(
+    "Muck Drubb",
+    "e5bda3fc-89e8-44c2-bcfb-d17064bbc391",
+    "Jim Nelson",
+    crate::card::CardRules::unsupported(),
+);
+
+// PLC 122 — Simian Spirit Guide
+pub(in crate::card::sets) static SIMIAN_SPIRIT_GUIDE_122: CardRecord = CardRecord::new(
+    "Simian Spirit Guide",
+    "5d7f701c-dcdc-4067-8d00-b4b7aadee9ba",
+    "Dave DeVries",
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Ape", "Spirit"], 2, 2).with_abilities(&[
+        AbilityDef::activated_mana(
+            "Exile this card from your hand: Add {R}.",
+            &[CostDef::ExileSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)),
+        )
+        .with_source_zones(&[ZoneKind::Hand]),
+    ]),
+);
+
 // PLC 128 — Fungal Behemoth
 pub(in crate::card::sets) static FUNGAL_BEHEMOTH: CardRecord = CardRecord::new(
     "Fungal Behemoth",
@@ -311,8 +369,13 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MANA_TITHE,
     &MESA_ENCHANTRESS,
     &SUNLANCE,
+    &PONGIFY_44,
+    &BIG_GAME_HUNTER_63,
     &ENSLAVE,
     &EXTIRPATE,
+    &IMP_S_MISCHIEF_72,
+    &MUCK_DRUBB_76,
+    &SIMIAN_SPIRIT_GUIDE_122,
     &FUNGAL_BEHEMOTH,
     &URBORG_TOMB_OF_YAWGMOTH,
 ];

@@ -8,6 +8,8 @@ use crate::ControlDurationDef;
 use crate::ResolvedEffectDurationDef;
 use crate::TargetIndex;
 use crate::card::AbilityDef;
+use crate::card::AbilityKindDef;
+use crate::card::AbilityPredicateDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
@@ -17,6 +19,7 @@ use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CostDef;
+use crate::card::CostModificationDef;
 use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -47,6 +50,24 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// ROE 1 — All Is Dust
+pub(in crate::card::sets) static ALL_IS_DUST_1: CardRecord = CardRecord::new(
+    "All Is Dust",
+    "62dba377-7446-4517-a504-ee04568fd6cf",
+    "Jason Felix",
+    CardRules::new_sorcery(mana_cost!("{7}"))
+        .with_subtypes(&["Eldrazi"])
+        .with_abilities(&[AbilityDef::spell(
+            "Each player sacrifices all permanents they control that are one or more colors.",
+            EffectDef::sacrifice(EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::Not(&ObjectPredicateDef::ColorCount(0)),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            )),
+        )])
+        .with_type(crate::card::CardType::Kindred),
+);
 
 // ROE 4 — Emrakul, the Aeons Torn
 pub(in crate::card::sets) static EMRAKUL_THE_AEONS_TORN: CardRecord = CardRecord::new(
@@ -95,6 +116,27 @@ CardRules::new_creature(mana_cost!("{15}"), &["Eldrazi"], 15, 15)
         ]),
 );
 
+// ROE 6 — Kozilek, Butcher of Truth
+pub(in crate::card::sets) static KOZILEK_BUTCHER_OF_TRUTH_6: CardRecord = CardRecord::new(
+    "Kozilek, Butcher of Truth",
+    "067fac91-2483-4678-b86a-2c54a3a480cf",
+    "Michael Komarck",
+    CardRules::new_creature(mana_cost!("{10}"), &["Eldrazi"], 12, 12).with_supertype(CardSupertype::Legendary).with_abilities(&[
+AbilityDef::triggered("When you cast this spell, draw four cards.", TriggerEventDef::spell_cast(ObjectPredicateDef::Source), abilities::draw_cards(ValueDef::Constant(4))),
+abilities::annihilator(4),
+AbilityDef::triggered("When Kozilek is put into a graveyard from anywhere, its owner shuffles their graveyard into their library.", TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Graveyard)), EffectDef::Sequence(&[EffectDef::move_to_zone(EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::owned_by(ObjectPredicateDef::Any, &[ZoneKind::Graveyard], PlayerSetDef::One(PlayerRefDef::OwnerOf(ObjectRefDef::Source))))), ZoneKind::Library, ZonePlacement::Top), EffectDef::ShuffleLibrary { player: EffectRecipientDef::player(PlayerRefDef::OwnerOf(ObjectRefDef::Source)) }])).with_source_zones(&[ZoneKind::Graveyard])
+]),
+);
+
+// ROE 8 — Not of This World
+// Audit: unsupported — The spell cost evaluator cannot condition a source-card discount on the already chosen target's own creature targets. TargetsObjectMatching supports the counter target restriction but is not a supported cast-context value for the seven-mana discount.
+pub(in crate::card::sets) static NOT_OF_THIS_WORLD_8: CardRecord = CardRecord::new(
+    "Not of This World",
+    "569e2c39-7a49-4a3b-afe5-1862a7da8026",
+    "Izzy",
+    crate::card::CardRules::unsupported(),
+);
+
 // ROE 13 — Ulamog's Crusher
 pub(in crate::card::sets) static ULAMOG_S_CRUSHER: CardRecord = CardRecord::new(
     "Ulamog's Crusher",
@@ -113,6 +155,31 @@ pub(in crate::card::sets) static GIDEON_JURA: CardRecord = CardRecord::new(
     "e0440668-1b0e-437c-9e42-7166dd14dfe5",
     "Aleksi Briclot",
     crate::card::CardRules::unsupported(),
+);
+
+// ROE 33 — Linvala, Keeper of Silence
+pub(in crate::card::sets) static LINVALA_KEEPER_OF_SILENCE_33: CardRecord = CardRecord::new(
+    "Linvala, Keeper of Silence",
+    "82b80a09-7e75-4091-a60e-04aff79339a3",
+    "Igor Kieryluk",
+    CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Angel"], 3, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::flying(),
+            AbilityDef::static_ability(
+                "Activated abilities of creatures your opponents control can't be activated.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::Opponent,
+                    ),
+                    effect: AppliedEffectDef::cannot_activate_abilities(AbilityPredicateDef::Is(
+                        AbilityKindDef::Activated,
+                    )),
+                },
+            ),
+        ]),
 );
 
 // ROE 40 — Oust
@@ -182,6 +249,16 @@ pub(in crate::card::sets) static FLEETING_DISTRACTION: CardRecord = CardRecord::
             },
         ]),
     )),
+);
+
+// ROE 91 — Training Grounds
+pub(in crate::card::sets) static TRAINING_GROUNDS_91: CardRecord = CardRecord::new(
+    "Training Grounds",
+    "e2cf16f8-6e69-46b3-8453-1d1a2a5670e2",
+    "James Ryman",
+    CardRules::new_enchantment(mana_cost!("{U}")).with_abilities(&[
+AbilityDef::static_ability("Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.", EffectDef::ModifyCost(CostModificationDef::AbilityReduction { permanent: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::ControlledBy(PlayerRelation::You)]), amount: ValueDef::Constant(2), minimum: 1 }))
+]),
 );
 
 // ROE 98 — Bloodthrone Vampire
@@ -461,6 +538,15 @@ CardRules::new_sorcery(mana_cost!("{3}{R}")).with_ability(
     ),
 );
 
+// ROE 172 — World at War
+// Audit: unsupported — Phase scheduling inserts phases after the current phase; it cannot schedule after this turn’s second main phase with an untap trigger attached to that particular combat.
+pub(in crate::card::sets) static WORLD_AT_WAR_172: CardRecord = CardRecord::new(
+    "World at War",
+    "a47a05ad-fe86-481e-b770-e1760be4f852",
+    "Igor Kieryluk",
+    crate::card::CardRules::unsupported(),
+);
+
 // ROE 201 — Nest Invader
 pub(in crate::card::sets) static NEST_INVADER: CardRecord = CardRecord::new(
     "Nest Invader",
@@ -553,6 +639,15 @@ pub(in crate::card::sets) static PROPHETIC_PRISM: CardRecord = CardRecord::new(
     ]),
 );
 
+// ROE 227 — Eldrazi Temple
+// Audit: unsupported — Mana restrictions are conjunctive; they cannot allow either casting a colorless Eldrazi or activating a colorless Eldrazi ability.
+pub(in crate::card::sets) static ELDRAZI_TEMPLE_227: CardRecord = CardRecord::new(
+    "Eldrazi Temple",
+    "315924c9-77e3-405b-9bbf-852ed563c6e3",
+    "James Paick",
+    crate::card::CardRules::unsupported(),
+);
+
 // ROE 228 — Evolving Wilds
 pub(in crate::card::sets) static EVOLVING_WILDS: CardRecord = CardRecord::new(
     "Evolving Wilds",
@@ -584,12 +679,17 @@ pub(in crate::card::sets) static EVOLVING_WILDS: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &ALL_IS_DUST_1,
     &EMRAKUL_THE_AEONS_TORN,
+    &KOZILEK_BUTCHER_OF_TRUTH_6,
+    &NOT_OF_THIS_WORLD_8,
     &ULAMOG_S_CRUSHER,
     &GIDEON_JURA,
+    &LINVALA_KEEPER_OF_SILENCE_33,
     &OUST,
     &DOMESTICATION,
     &FLEETING_DISTRACTION,
+    &TRAINING_GROUNDS_91,
     &BLOODTHRONE_VAMPIRE,
     &CONTAMINATED_GROUND,
     &INQUISITION_OF_KOZILEK,
@@ -600,10 +700,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GOBLIN_TUNNELER,
     &RAID_BOMBARDMENT,
     &TRAITOROUS_INSTINCT,
+    &WORLD_AT_WAR_172,
     &NEST_INVADER,
     &PELAKKA_WURM,
     &WILDHEART_INVOKER,
     &PROPHETIC_PRISM,
+    &ELDRAZI_TEMPLE_227,
     &EVOLVING_WILDS,
 ];
 

@@ -6,12 +6,15 @@ use crate::TargetIndex;
 use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
+use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
+use crate::card::BattlefieldEntryModificationDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
+use crate::card::CounterKind;
 use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
@@ -19,8 +22,10 @@ use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
+use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRelation;
+use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
@@ -29,6 +34,7 @@ use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
+use crate::card::ZonePlacement;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -222,6 +228,16 @@ pub(in crate::card::sets) static JHESSIAN_THIEF: CardRecord = CardRecord::new(
     ]),
 );
 
+// ORI 90 — Dark Petition
+pub(in crate::card::sets) static DARK_PETITION_90: CardRecord = CardRecord::new(
+    "Dark Petition",
+    "e9df9c5e-7087-42b2-9001-c89d40a66c68",
+    "Igor Kieryluk",
+    CardRules::new_sorcery(mana_cost!("{3}{B}{B}")).with_abilities(&[
+AbilityDef::spell("Search your library for a card, put that card into your hand, then shuffle.\nSpell mastery — If there are two or more instant and/or sorcery cards in your graveyard, add {B}{B}{B}.", EffectDef::Sequence(&[EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::Any, minimum: 0, maximum: ValueDef::Constant(1), reveal: false, destination: ZoneKind::Hand, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None }, EffectDef::IfCondition { condition: &TriggerConditionDef::ObjectCount { query: ObjectQueryDef::matching(ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Instant), ObjectPredicateDef::HasType(CardType::Sorcery)]), &[ZoneKind::Graveyard], PlayerRelation::You), comparison: ComparisonDef::GreaterOrEqual, amount: 2 }, then: &EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Black).with_amount(3)) }]))
+]),
+);
+
 // ORI 92 — Demonic Pact
 // Audit: unsupported — Needs per-incarnation history of previously selected upkeep modes, excluding them from later choices; ordinary modal triggers have no persistent used-mode set.
 pub(in crate::card::sets) static DEMONIC_PACT: CardRecord = CardRecord::new(
@@ -229,6 +245,33 @@ pub(in crate::card::sets) static DEMONIC_PACT: CardRecord = CardRecord::new(
     "82c04014-91f9-4197-b4b4-f62c4739a5c2",
     "Aleksi Briclot",
     CardRules::unsupported(),
+);
+
+// ORI 137 — Chandra's Ignition
+pub(in crate::card::sets) static CHANDRA_S_IGNITION_137: CardRecord = CardRecord::new(
+    "Chandra's Ignition",
+    "7d4c90de-49aa-43ed-a18a-f7f96268e5eb",
+    "Eric Deschamps",
+    CardRules::new_sorcery(mana_cost!("{3}{R}{R}")).with_abilities(&[
+AbilityDef::spell_with_targets("Target creature you control deals damage equal to its power to each other creature and each opponent.", &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::HasType(CardType::Creature), zones: &[ZoneKind::Battlefield], controller: Some(PlayerRelation::You), owner: None })], EffectDef::damage_simultaneously(&[
+ crate::card::DamageAssignmentDef::from(ObjectRefDef::Target(TargetIndex::PRIMARY), EffectRecipientDef::objects(crate::card::ObjectSetDef::Query(ObjectQueryDef::matching(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::Any).excluding_target(TargetIndex::PRIMARY))), ValueDef::TargetPower(TargetIndex::PRIMARY)),
+ crate::card::DamageAssignmentDef::from(ObjectRefDef::Target(TargetIndex::PRIMARY), EffectRecipientDef::Opponent, ValueDef::TargetPower(TargetIndex::PRIMARY)),
+]))]),
+);
+
+// ORI 155 — Magmatic Insight
+pub(in crate::card::sets) static MAGMATIC_INSIGHT_155: CardRecord = CardRecord::new(
+    "Magmatic Insight",
+    "f00192e0-439d-43b2-882c-90a2d52103f8",
+    "Ryan Barger",
+    CardRules::new_sorcery(mana_cost!("{R}")).with_abilities(&[
+        AbilityDef::spell_with_additional_cost(
+            "As an additional cost to cast this spell, discard a land card.\nDraw two cards.",
+            &[],
+            CostDef::discard(ObjectPredicateDef::HasType(CardType::Land)),
+            abilities::draw_cards(ValueDef::Constant(2)),
+        ),
+    ]),
 );
 
 // ORI 162 — Skyraker Giant
@@ -353,6 +396,26 @@ pub(in crate::card::sets) static DWYNEN_S_ELITE: CardRecord = CardRecord::new(
     ]),
 );
 
+// ORI 174 — Elemental Bond
+pub(in crate::card::sets) static ELEMENTAL_BOND_174: CardRecord = CardRecord::new(
+    "Elemental Bond",
+    "554a8769-c840-4c9d-9959-b075c174457b",
+    "David Gaillet",
+    CardRules::new_enchantment(mana_cost!("{2}{G}")).with_abilities(&[AbilityDef::triggered(
+        "Whenever a creature you control with power 3 or greater enters, draw a card.",
+        TriggerEventDef::zone_changed(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ObjectPredicateDef::PowerGreaterThan(ValueDef::Constant(2)),
+            ]),
+            None,
+            Some(ZoneKind::Battlefield),
+        ),
+        abilities::draw_cards(ValueDef::Constant(1)),
+    )]),
+);
+
 // ORI 183 — Joraga Invocation
 // Audit: unsupported — Needs each affected creature to be blocked by at least one creature if able; MustBeBlockedBy requires every matching creature to block, which is a different requirement.
 pub(in crate::card::sets) static JORAGA_INVOCATION: CardRecord = CardRecord::new(
@@ -360,6 +423,28 @@ pub(in crate::card::sets) static JORAGA_INVOCATION: CardRecord = CardRecord::new
     "65c89431-0881-4aa6-ac15-d4c13b075273",
     "Kieran Yanner",
     CardRules::unsupported(),
+);
+
+// ORI 207 — Woodland Bellower
+pub(in crate::card::sets) static WOODLAND_BELLOWER_207: CardRecord = CardRecord::new(
+    "Woodland Bellower",
+    "a706d4bb-0b44-4e43-b340-7de799c086b8",
+    "Jasper Sandner",
+    CardRules::new_creature(mana_cost!("{4}{G}{G}"), &["Beast"], 6, 5).with_abilities(&[
+abilities::enters_trigger("When this creature enters, you may search your library for a nonlegendary green creature card with mana value 3 or less, put it onto the battlefield, then shuffle.", EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Legendary)), ObjectPredicateDef::Color(ManaColor::Green), ObjectPredicateDef::ManaValueAtMost(3)]), minimum: 0, maximum: ValueDef::Constant(1), reveal: false, destination: ZoneKind::Battlefield, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None })
+]),
+);
+
+// ORI 229 — Hangarback Walker
+pub(in crate::card::sets) static HANGARBACK_WALKER_229: CardRecord = CardRecord::new(
+    "Hangarback Walker",
+    "791c21fb-fc78-4106-9a42-abc73f41ab8b",
+    "Daarken",
+    CardRules::new_artifact_creature(mana_cost!("{X}{X}"), &["Construct"], 0, 0).with_abilities(&[
+AbilityDef::as_enters("This creature enters with X +1/+1 counters on it.", ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::AddCastXCounters { kind: CounterKind::PlusOnePlusOne })),
+abilities::dies_trigger("When this creature dies, create a 1/1 colorless Thopter artifact creature token with flying for each +1/+1 counter on this creature.", EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::TokenCharacteristics::artifact_creature(&["Thopter"], &[], 1, 1).with_abilities(&[abilities::flying()]))).with_count(ValueDef::CountersOnSource(CounterKind::PlusOnePlusOne)))),
+AbilityDef::activated("{1}, {T}: Put a +1/+1 counter on this creature.", &[CostDef::Mana(mana_cost!("{1}")), CostDef::TapSource], EffectDef::AddCounters { object: EffectRecipientDef::Source, kind: CounterKind::PlusOnePlusOne, amount: ValueDef::Constant(1) })
+]),
 );
 
 // ORI 236 — Pyromancer's Goggles
@@ -376,12 +461,18 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HARBINGER_OF_THE_TIDES,
     &JACE_VRYN_S_PRODIGY,
     &JHESSIAN_THIEF,
+    &DARK_PETITION_90,
     &DEMONIC_PACT,
+    &CHANDRA_S_IGNITION_137,
+    &MAGMATIC_INSIGHT_155,
     &SKYRAKER_GIANT,
     &CONCLAVE_NATURALISTS,
     &DWYNEN_GILT_LEAF_DAEN,
     &DWYNEN_S_ELITE,
+    &ELEMENTAL_BOND_174,
     &JORAGA_INVOCATION,
+    &WOODLAND_BELLOWER_207,
+    &HANGARBACK_WALKER_229,
     &PYROMANCER_S_GOGGLES,
 ];
 

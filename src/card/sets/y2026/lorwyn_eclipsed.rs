@@ -6974,12 +6974,12 @@ pub(in crate::card::sets) static DAWN_BLESSED_PENNANT: CardRecord = CardRecord::
 );
 
 // ECL 255 — Firdoch Core
-// Audit: unsupported — Needs an all-zone creature-type characteristic-defining ability whose all-types value is copiable; battlefield all-type modifiers do not implement changeling.
+// Audit: unsupported — The all-zone subtype declaration is read for cards and spells but not applied by the battlefield/copy characteristic walk. Changeling needs the same intrinsic all-types value across those paths.
 pub(in crate::card::sets) static FIRDOCH_CORE: CardRecord = CardRecord::new(
     "Firdoch Core",
     "8e45cd37-bf97-4742-978d-96f96ed653cd",
     "Jason A. Engle",
-    CardRules::unsupported(),
+    crate::card::CardRules::unsupported(),
 );
 
 // ECL 256 — Foraging Wickermaw
@@ -7190,12 +7190,12 @@ const SPRINGLEAF_DRUM_REPRINT: PrintingRecord = PrintingRecord::reprint(
 );
 
 // ECL 261 — Stalactite Dagger
-// Audit: unsupported — Needs an all-zone creature-type characteristic-defining ability whose all-types value is copiable; battlefield all-type modifiers do not implement changeling.
+// Audit: unsupported — Its changeling token needs the intrinsic all-types declaration applied on the battlefield and preserved when copied. The current all-zone subtype declaration does not work through that battlefield/copy path.
 pub(in crate::card::sets) static STALACTITE_DAGGER: CardRecord = CardRecord::new(
     "Stalactite Dagger",
     "6954df09-95f3-46cf-9ba8-2a1aea653d8f",
     "Drew Tucker",
-    CardRules::unsupported(),
+    crate::card::CardRules::unsupported(),
 );
 
 // ECL 262 — Blood Crypt (reprint)

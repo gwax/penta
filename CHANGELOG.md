@@ -41,6 +41,26 @@ the bot-wire epoch.
 - Replace the native `EffectDef::MoveToZone` variant with
   `EffectDef::move_to_zone(object, zone, placement)`, a shorthand for the shared
   game action's `as_effect()`. Arrival and move-result wrappers remain supported.
+- Add the `cedh` Commander baseline to the two-player engine, with separate
+  deck commanders, a command zone, individual casting tax, optional return
+  choices, and commander combat damage. Partner and Background designations
+  share the deck model; construction and legality enforcement remain deferred.
+- Seed cEDH with the Nacional event’s top 16 lists and Duel Commander with
+  the eight published CommandFest Italy 2026 lists. Keep commanders separate
+  and omit empty sideboards. Audit needed catalog identities using complete
+  shared declarations or whole-card unsupported rules with specific reasons.
+- Add `duel-commander`: 20 life, no commander-damage loss, one commander chosen
+  by the first command-zone cast, between-game commander selection, and no
+  outside-game retrieval effects. Preserve the companion exception. Publish
+  separate committee ban metadata; construction and legality remain deferred.
+- Advertise `rules.duel-commander.v1` for the new format and its match decisions.
+- Advertise `rules.commander.v1`, optional `commandZones` and `commanders`
+  observations, and a capability-gated commander-damage result. Checkpoints
+  preserve identity and history where reconstructible; pending hand/library
+  replacement choices retain the existing fail-closed limitation. The protocol
+  and checkpoint epochs are unchanged; exact artifacts require the matching
+  simulation fingerprint. See [Commander foundation](docs/commander.md).
+
 - Undying and persist use respondable death triggers and a shared zone-move
   action program bound to the exact graveyard object. Both trigger when present;
   later zone changes cannot redirect a return to another card.

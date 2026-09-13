@@ -7,6 +7,7 @@ use crate::TargetIndex;
 use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
+use crate::card::AppliedEffectDef;
 use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardType;
@@ -16,15 +17,19 @@ use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
 use crate::card::CreateTokenDef;
 use crate::card::DiscardSelectionDef;
+use crate::card::EffectChoiceDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::GameActionDef;
 use crate::card::ManaColor;
 use crate::card::ObjectChoiceBindingDef;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::ResolvedEffectDurationDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenCopyDef;
 use crate::card::TokenDef;
@@ -34,6 +39,7 @@ use crate::card::TurnStepDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
+use crate::card::abilities;
 use crate::card::tokens;
 use crate::ids::ParentBinding;
 use crate::mana_cost;
@@ -82,6 +88,25 @@ pub(in crate::card::sets) static EXTRAVAGANT_REPLICATION: CardRecord = CardRecor
             }))),
         ),
     ]),
+);
+
+// NCC 36 — Lethal Scheme
+// Audit: unsupported — The cast context does not expose the identities of the creatures that convoked the spell for a later connive instruction.
+pub(in crate::card::sets) static LETHAL_SCHEME_36: CardRecord = CardRecord::new(
+    "Lethal Scheme",
+    "65864680-9520-4eb3-9774-fa478e54a290",
+    "Tuan Duong Chu",
+    crate::card::CardRules::unsupported(),
+);
+
+// NCC 52 — Seize the Spotlight
+pub(in crate::card::sets) static SEIZE_THE_SPOTLIGHT_52: CardRecord = CardRecord::new(
+    "Seize the Spotlight",
+    "3b4df2f7-8d17-4484-85a3-b8f3e4dd0c7c",
+    "Ernanda Souza",
+    CardRules::new_sorcery(mana_cost!("{2}{R}")).with_abilities(&[
+AbilityDef::spell("Each opponent chooses fame or fortune. For each player who chose fame, gain control of a creature that player controls until end of turn. Untap those creatures and they gain haste until end of turn. For each player who chose fortune, you draw a card and create a Treasure token.", EffectDef::ChooseEffect { player: EffectRecipientDef::Opponent, choices: &[EffectChoiceDef { label: "Fame", effect: EffectDef::Choose(ChooseDef { binding: ObjectChoiceBindingDef::Objects(Binding!("spotlight_creature")), unchosen: None, chooser: PlayerRefDef::EffectController, candidates: ObjectSetDef::Query(ObjectQueryDef::matching(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::Opponent)), exclude: None, minimum: 1, maximum: 1, visibility: ChoiceVisibilityDef::Public, then: &EffectDef::Sequence(&[EffectDef::Perform(GameActionDef::GainControl { object: EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("spotlight_creature"))), controller: PlayerRefDef::EffectController, duration: crate::card::ControlDurationDef::UntilEndOfTurn }), EffectDef::Untap { object: EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("spotlight_creature"))) }, EffectDef::Apply { recipient: EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("spotlight_creature"))), effect: AppliedEffectDef::add_ability(&abilities::haste()), duration: ResolvedEffectDurationDef::UntilEndOfTurn }]) }) }, EffectChoiceDef { label: "Fortune", effect: EffectDef::Sequence(&[abilities::draw_cards(ValueDef::Constant(1)), EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::tokens::treasure())))]) }] })
+]),
 );
 
 // NCC 81 — Currency Converter
@@ -172,7 +197,21 @@ pub(in crate::card::sets) static CURRENCY_CONVERTER: CardRecord = CardRecord::ne
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&EXTRAVAGANT_REPLICATION, &CURRENCY_CONVERTER];
+// NCC 109 — Tivit, Seller of Secrets
+// Audit: unsupported — The vote procedure cannot collect evidence/bribery votes with an additional vote by this controller and apply one different token action per vote.
+pub(in crate::card::sets) static TIVIT_SELLER_OF_SECRETS_109: CardRecord = CardRecord::new(
+    "Tivit, Seller of Secrets",
+    "5326a876-0c56-4368-af10-e9bbd1188d45",
+    "Chris Rahn",
+    crate::card::CardRules::unsupported(),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &EXTRAVAGANT_REPLICATION,
+    &LETHAL_SCHEME_36,
+    &SEIZE_THE_SPOTLIGHT_52,
+    &CURRENCY_CONVERTER,
+    &TIVIT_SELLER_OF_SECRETS_109,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

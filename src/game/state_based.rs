@@ -125,6 +125,9 @@ impl Game {
                 break;
             }
         }
+        if self.check_commander_returns() {
+            return;
+        }
         self.break_illegal_pairings();
         self.capture_state_triggers();
     }
@@ -212,9 +215,25 @@ impl Game {
             self.players[0].counters.count(CounterKind::Poison) >= LETHAL_POISON,
             self.players[1].counters.count(CounterKind::Poison) >= LETHAL_POISON,
         ];
+        let commander_damage = [PlayerId::One, PlayerId::Two].map(|player| {
+            self.format
+                .commander_definition()
+                .and_then(|rules| rules.commander_damage_limit)
+                .is_some_and(|limit| {
+                    self.commanders
+                        .iter()
+                        .any(|commander| commander.damage[player.index()] >= limit)
+                })
+        });
         let lost = [
-            self.players[0].life <= 0 || tried_to_draw_from_empty[0] || poisoned[0],
-            self.players[1].life <= 0 || tried_to_draw_from_empty[1] || poisoned[1],
+            self.players[0].life <= 0
+                || tried_to_draw_from_empty[0]
+                || poisoned[0]
+                || commander_damage[0],
+            self.players[1].life <= 0
+                || tried_to_draw_from_empty[1]
+                || poisoned[1]
+                || commander_damage[1],
         ];
         // Life is checked first because it is the ordinary case; poison is
         // last because a seat that is dead twice over is still just dead.
@@ -223,6 +242,8 @@ impl Game {
                 WinReason::OpponentTriedToDrawFromEmptyLibrary
             } else if self.players[loser.index()].life <= 0 {
                 WinReason::OpponentLostAllLife
+            } else if commander_damage[loser.index()] {
+                WinReason::OpponentCommanderDamage
             } else {
                 WinReason::OpponentPoisoned
             }

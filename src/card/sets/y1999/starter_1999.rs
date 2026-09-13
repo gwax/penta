@@ -17,6 +17,7 @@ use crate::card::ObjectPredicateDef;
 use crate::card::PlayerRelation;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
+use crate::card::ZonePlacement;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -71,6 +72,16 @@ pub(in crate::card::sets) static DAKMOR_LANCER: CardRecord = CardRecord::new(
             },
         ),
     ),
+);
+
+// S99 79 — Grim Tutor
+pub(in crate::card::sets) static GRIM_TUTOR_79: CardRecord = CardRecord::new(
+    "Grim Tutor",
+    "ff00e877-3588-4ba9-a1f2-86f726157017",
+    "Mark Tedin",
+    CardRules::new_sorcery(mana_cost!("{1}{B}{B}")).with_abilities(&[
+AbilityDef::spell("Search your library for a card, put that card into your hand, then shuffle. You lose 3 life.", EffectDef::Sequence(&[EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::Any, minimum: 0, maximum: ValueDef::Constant(1), reveal: false, destination: ZoneKind::Hand, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None }, EffectDef::LoseLife { recipient: EffectRecipientDef::Controller, amount: ValueDef::Constant(3) }]))
+]),
 );
 
 // S99 99 — Goblin Chariot
@@ -138,6 +149,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &EAGER_CADET,
     &VIZZERDRIX,
     &DAKMOR_LANCER,
+    &GRIM_TUTOR_79,
     &GOBLIN_CHARIOT,
     &TRAINED_ORGG,
     &PRIDE_OF_LIONS,

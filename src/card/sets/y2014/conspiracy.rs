@@ -6,19 +6,23 @@ use crate::TargetIndex;
 use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
+use crate::card::AddManaEffectDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ControlDurationDef;
 use crate::card::CostDef;
+use crate::card::CounterKind;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::mana_cost;
@@ -58,6 +62,17 @@ pub(in crate::card::sets) static CUSTODI_SQUIRE: CardRecord = CardRecord::new(
     "a9151422-8df1-409c-a686-0cd89247eb43",
     "Alex Horley-Orlandelli",
     crate::card::CardRules::unsupported(),
+);
+
+// CNS 36 — Treasonous Ogre
+pub(in crate::card::sets) static TREASONOUS_OGRE_36: CardRecord = CardRecord::new(
+    "Treasonous Ogre",
+    "ae48c31d-6fd9-457f-adb8-37f367724ba1",
+    "Randy Gallegos",
+    CardRules::new_creature(mana_cost!("{3}{R}"), &["Ogre", "Shaman"], 2, 3).with_abilities(&[
+AbilityDef::triggered("Dethrone (Whenever this creature attacks the player with the most life or tied for most life, put a +1/+1 counter on it.)", TriggerEventDef::While { event: &TriggerEventDef::attacks_a_player(ObjectPredicateDef::Source), condition: &TriggerConditionDef::PlayerHasMostLife(PlayerRelation::Opponent) }, EffectDef::AddCounters { object: EffectRecipientDef::Source, kind: CounterKind::PlusOnePlusOne, amount: ValueDef::Constant(1) }),
+AbilityDef::activated_mana("Pay 3 life: Add {R}.", &[CostDef::PayLife(3)], EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red)))
+]),
 );
 
 // CNS 42 — Dack Fayden
@@ -128,7 +143,21 @@ pub(in crate::card::sets) static DACK_FAYDEN: CardRecord = CardRecord::new(
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&COUNCILS_JUDGMENT, &CUSTODI_SQUIRE, &DACK_FAYDEN];
+// CNS 51 — Selvala, Explorer Returned
+// Audit: unsupported — The activated-mana runtime requires a plannable AddMana effect. It cannot reveal both libraries, compute production from those hidden cards, gain life, and draw cards within the same immediate mana resolution.
+pub(in crate::card::sets) static SELVALA_EXPLORER_RETURNED_51: CardRecord = CardRecord::new(
+    "Selvala, Explorer Returned",
+    "89d4786c-e022-4ae5-9ef3-75886db51f49",
+    "Tyler Jacobson",
+    crate::card::CardRules::unsupported(),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &COUNCILS_JUDGMENT,
+    &CUSTODI_SQUIRE,
+    &TREASONOUS_OGRE_36,
+    &DACK_FAYDEN,
+    &SELVALA_EXPLORER_RETURNED_51,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

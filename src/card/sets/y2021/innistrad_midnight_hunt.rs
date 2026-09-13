@@ -2,15 +2,26 @@
 
 use super::CardRecord;
 use super::PrintingRecord;
+use crate::ParentBinding;
 use crate::TargetIndex;
 use crate::card::AbilityDef;
+use crate::card::AbilityKindDef;
+use crate::card::AbilityPredicateDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
+use crate::card::AddManaEffectDef;
+use crate::card::AggregateOperationDef;
 use crate::card::AppliedEffectDef;
+use crate::card::BattlefieldEntryModificationDef;
+use crate::card::BindObjectsDef;
 use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
+use crate::card::ChoiceVisibilityDef;
+use crate::card::ChooseDef;
+use crate::card::ComparisonDef;
+use crate::card::ConditionDef;
 use crate::card::CostDef;
 use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
@@ -19,9 +30,19 @@ use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
+use crate::card::ObjectChoiceBindingDef;
+use crate::card::ObjectCollectionSourceDef;
+use crate::card::ObjectCountConditionDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
+use crate::card::ObjectRefDef;
+use crate::card::ObjectSetDef;
+use crate::card::ObjectValueAggregateDef;
+use crate::card::ObjectValueDef;
+use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::PlayerSetDef;
+use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
@@ -34,6 +55,25 @@ use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
 use crate::mana_cost;
+
+static TWO_OR_MORE_OTHER_LANDS: crate::card::ObjectCountConditionDef =
+    crate::card::ObjectCountConditionDef {
+        query: ObjectQueryDef::matching(
+            ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Land),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+            ]),
+            &[ZoneKind::Battlefield],
+            PlayerRelation::You,
+        ),
+        comparison: crate::card::ComparisonDef::GreaterOrEqual,
+        amount: 2,
+    };
+
+const ENTER_TAPPED: [crate::card::ReplacementEffectDef; 1] =
+    [crate::card::ReplacementEffectDef::ModifyBattlefieldEntry(
+        crate::card::BattlefieldEntryModificationDef::Tapped,
+    )];
 
 /// Printed set identity and stable catalog slug.
 pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
@@ -97,6 +137,15 @@ pub(in crate::card::sets) static ADELINE_RESPLENDENT_CATHAR: CardRecord =
                     ),
                 ),
             ]),
+);
+
+// MID 7 — Brutal Cathar // Moonrage Brute
+// Audit: unsupported — The transforming daybound/nightbound double-faced card procedure is not declaratively represented.
+pub(in crate::card::sets) static BRUTAL_CATHAR_MOONRAGE_BRUTE_7: CardRecord = CardRecord::new(
+    "Brutal Cathar // Moonrage Brute",
+    "0dbac7ce-a6fa-466e-b6ba-173cf2dec98e",
+    "Karl Kopinski",
+    crate::card::CardRules::unsupported(),
 );
 
 // MID 10 — Cathar Commando
@@ -388,8 +437,246 @@ pub(in crate::card::sets) static ARDENT_ELEMENTALIST: CardRecord = CardRecord::n
     ),
 );
 
+// MID 133 — Cathartic Pyre
+pub(in crate::card::sets) static CATHARTIC_PYRE_133: CardRecord = CardRecord::new(
+    "Cathartic Pyre",
+    "b045c28a-39f9-4cd9-8f3a-a626b697f409",
+    "Ryan Yee",
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_ability(AbilityDef::modal_spell(
+        "Choose one —",
+        &[
+            AbilityDef::spell_with_targets(
+                "Cathartic Pyre deals 3 damage to target creature or planeswalker.",
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::HasType(CardType::Planeswalker),
+                    ]),
+                )],
+                EffectDef::damage(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    ValueDef::Constant(3),
+                ),
+            ),
+            AbilityDef::spell(
+                "Discard up to two cards, then draw that many cards.",
+                EffectDef::Choose(ChooseDef {
+                    binding: ObjectChoiceBindingDef::Objects(ParentBinding),
+                    unchosen: None,
+                    chooser: PlayerRefDef::EffectController,
+                    candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+                        ObjectPredicateDef::Any,
+                        &[ZoneKind::Hand],
+                        PlayerSetDef::One(PlayerRefDef::EffectController),
+                    )),
+                    exclude: None,
+                    minimum: 0,
+                    maximum: 2,
+                    visibility: ChoiceVisibilityDef::Private,
+                    then: &EffectDef::Sequence(&[
+                        EffectDef::discard_cards(EffectRecipientDef::objects(
+                            ObjectSetDef::Binding(ParentBinding),
+                        )),
+                        EffectDef::DrawCards {
+                            recipient: EffectRecipientDef::Controller,
+                            amount: ValueDef::BoundObjectCount(ParentBinding),
+                        },
+                    ]),
+                }),
+            ),
+        ],
+    )),
+);
+
+// MID 245 — Teferi, Who Slows the Sunset
+// Audit: unsupported — The emblem requires additional untapping and drawing as turn-based actions during opponents' untap and draw steps. Installed step triggers resolve later and cannot implement those continuous turn-based-action modifications.
+pub(in crate::card::sets) static TEFERI_WHO_SLOWS_THE_SUNSET_245: CardRecord = CardRecord::new(
+    "Teferi, Who Slows the Sunset",
+    "ad2e18d4-986c-4a44-8f26-1b8689339cfb",
+    "Heonhwa",
+    crate::card::CardRules::unsupported(),
+);
+
+// MID 254 — Jack-o'-Lantern
+// Audit: unsupported — Nonpermanent mana activations support hand exile and ongoing command-zone rules objects only. The graveyard mana ability cannot be offered or paid; making it an ordinary activated ability would incorrectly use the stack.
+pub(in crate::card::sets) static JACK_O_LANTERN_254: CardRecord = CardRecord::new(
+    "Jack-o'-Lantern",
+    "21b589ab-45a0-480a-a891-581c34f8a9bf",
+    "Josu Hernaiz",
+    crate::card::CardRules::unsupported(),
+);
+
+// MID 255 — Moonsilver Key
+pub(in crate::card::sets) static MOONSILVER_KEY_255: CardRecord = CardRecord::new(
+    "Moonsilver Key",
+    "87778e37-af92-402e-b037-5fbd6112b682",
+    "Joseph Meehan",
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+AbilityDef::activated("{1}, {T}, Sacrifice this artifact: Search your library for an artifact card with a mana ability or a basic land card, reveal it, put it into your hand, then shuffle.", &[CostDef::Mana(mana_cost!("{1}")), CostDef::TapSource, CostDef::SacrificeSource], EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::HasAbility(AbilityPredicateDef::Is(AbilityKindDef::ActivatedMana))]), ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Land), ObjectPredicateDef::Supertype(CardSupertype::Basic)])]), minimum: 0, maximum: ValueDef::Constant(1), reveal: true, destination: ZoneKind::Hand, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None })
+]),
+);
+
+// MID 260 — Deserted Beach
+pub(in crate::card::sets) static DESERTED_BEACH_260: CardRecord = CardRecord::new(
+    "Deserted Beach",
+    "38367ee5-154b-44cb-8974-422038d039df",
+    "Jonas De Ro",
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::as_enters(
+            "This land enters tapped unless you control two or more other lands.",
+            ReplacementEffectDef::Conditional {
+                condition: ConditionDef::ObjectCount(&ObjectCountConditionDef {
+                    query: ObjectQueryDef::matching(
+                        ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Land),
+                            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                        ]),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                    comparison: ComparisonDef::GreaterOrEqual,
+                    amount: 2,
+                }),
+                if_true: &[],
+                if_false: &[ReplacementEffectDef::ModifyBattlefieldEntry(
+                    BattlefieldEntryModificationDef::Tapped,
+                )],
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {W} or {U}.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::choice(&[
+                ManaColor::White,
+                ManaColor::Blue,
+            ])),
+        ),
+    ]),
+);
+
+// MID 265 — Overgrown Farmland
+pub(in crate::card::sets) static OVERGROWN_FARMLAND_265: CardRecord = CardRecord::new(
+    "Overgrown Farmland",
+    "84a76e0f-49fc-4087-8859-98f4a4deacdf",
+    "Jonas De Ro",
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::as_enters(
+            "This land enters tapped unless you control two or more other lands.",
+            crate::card::ReplacementEffectDef::Conditional {
+                condition: crate::card::ConditionDef::ObjectCount(&TWO_OR_MORE_OTHER_LANDS),
+                if_true: &[],
+                if_false: &ENTER_TAPPED,
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {G} or {W}.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(crate::card::AddManaEffectDef::choice(&[
+                ManaColor::Green,
+                ManaColor::White,
+            ])),
+        ),
+    ]),
+);
+
+// MID 282 — Haunted Ridge
+pub(in crate::card::sets) static HAUNTED_RIDGE_282: CardRecord = CardRecord::new(
+    "Haunted Ridge",
+    "91f67a64-b97d-473a-be9d-c8044ff86605",
+    "Piotr Dura",
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::as_enters(
+            "This land enters tapped unless you control two or more other lands.",
+            crate::card::ReplacementEffectDef::Conditional {
+                condition: crate::card::ConditionDef::ObjectCount(&TWO_OR_MORE_OTHER_LANDS),
+                if_true: &[],
+                if_false: &ENTER_TAPPED,
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {B} or {R}.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(crate::card::AddManaEffectDef::choice(&[
+                ManaColor::Black,
+                ManaColor::Red,
+            ])),
+        ),
+    ]),
+);
+
+// MID 284 — Rockfall Vale
+pub(in crate::card::sets) static ROCKFALL_VALE_284: CardRecord = CardRecord::new(
+    "Rockfall Vale",
+    "3bfcc5d4-babd-4b66-95fa-c5ec6c49e93a",
+    "Piotr Dura",
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::as_enters(
+            "This land enters tapped unless you control two or more other lands.",
+            crate::card::ReplacementEffectDef::Conditional {
+                condition: crate::card::ConditionDef::ObjectCount(&TWO_OR_MORE_OTHER_LANDS),
+                if_true: &[],
+                if_false: &ENTER_TAPPED,
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {R} or {G}.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(crate::card::AddManaEffectDef::choice(&[
+                ManaColor::Red,
+                ManaColor::Green,
+            ])),
+        ),
+    ]),
+);
+
+// MID 285 — Shipwreck Marsh
+pub(in crate::card::sets) static SHIPWRECK_MARSH_285: CardRecord = CardRecord::new(
+    "Shipwreck Marsh",
+    "07ad2562-fc26-40a1-9e6c-21f4f88dc2d8",
+    "Steven Belledin",
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::as_enters(
+            "This land enters tapped unless you control two or more other lands.",
+            crate::card::ReplacementEffectDef::Conditional {
+                condition: crate::card::ConditionDef::ObjectCount(&TWO_OR_MORE_OTHER_LANDS),
+                if_true: &[],
+                if_false: &ENTER_TAPPED,
+            },
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {U} or {B}.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(crate::card::AddManaEffectDef::choice(&[
+                ManaColor::Blue,
+                ManaColor::Black,
+            ])),
+        ),
+    ]),
+);
+
+// MID 336 — Malevolent Hermit // Benevolent Geist
+// Audit: unsupported — Its disturb double-faced transformation is not declaratively represented.
+pub(in crate::card::sets) static MALEVOLENT_HERMIT_BENEVOLENT_GEIST_336: CardRecord =
+    CardRecord::new(
+        "Malevolent Hermit // Benevolent Geist",
+        "7d0d1d48-559f-48f9-b486-50fc81533443",
+        "Daarken",
+        crate::card::CardRules::unsupported(),
+    );
+
+// MID 365 — Unnatural Growth
+pub(in crate::card::sets) static UNNATURAL_GROWTH_365: CardRecord = CardRecord::new(
+    "Unnatural Growth",
+    "61baa102-9bc0-4f97-89e1-cca4dbd823bd",
+    "Svetlin Velinov",
+    CardRules::new_enchantment(mana_cost!("{1}{G}{G}{G}{G}")).with_abilities(&[
+AbilityDef::triggered("At the beginning of each combat, double the power and toughness of each creature you control until end of turn.", TriggerEventDef::StepBegins { step: TurnStepDef::BeginningOfCombat, player: PlayerRelation::Any }, EffectDef::BindObjects(BindObjectsDef { source: ObjectCollectionSourceDef::ObjectSet(ObjectSetDef::Query(ObjectQueryDef::matching(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You))), binding: Binding!("growth_creatures"), then: &EffectDef::ForEachInBinding { objects: Binding!("growth_creatures"), binding: Binding!("growth_creature"), effect: &EffectDef::Apply { recipient: EffectRecipientDef::object(ObjectRefDef::Binding(Binding!("growth_creature"))), effect: AppliedEffectDef::modify_power_toughness(ValueDef::ObjectPower(ObjectRefDef::Binding(Binding!("growth_creature"))), ValueDef::AggregateObjectValues(&ObjectValueAggregateDef { objects: ObjectSetDef::One(ObjectRefDef::Binding(Binding!("growth_creature"))), select: ObjectValueDef::Toughness, operation: AggregateOperationDef::Sum })), duration: ResolvedEffectDurationDef::UntilEndOfTurn } } }))
+]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ADELINE_RESPLENDENT_CATHAR,
+    &BRUTAL_CATHAR_MOONRAGE_BRUTE_7,
     &CATHAR_COMMANDO,
     &HOMESTEAD_COURAGE,
     &SEARCH_PARTY_CAPTAIN,
@@ -401,6 +688,17 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &INFERNAL_GRASP,
     &STROMKIRK_BLOODTHIEF,
     &ARDENT_ELEMENTALIST,
+    &CATHARTIC_PYRE_133,
+    &TEFERI_WHO_SLOWS_THE_SUNSET_245,
+    &JACK_O_LANTERN_254,
+    &MOONSILVER_KEY_255,
+    &DESERTED_BEACH_260,
+    &OVERGROWN_FARMLAND_265,
+    &HAUNTED_RIDGE_282,
+    &ROCKFALL_VALE_284,
+    &SHIPWRECK_MARSH_285,
+    &MALEVOLENT_HERMIT_BENEVOLENT_GEIST_336,
+    &UNNATURAL_GROWTH_365,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

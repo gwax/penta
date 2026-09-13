@@ -2,21 +2,42 @@
 
 use super::CardRecord;
 use super::PrintingRecord;
+use crate::TargetIndex;
 use crate::card::AbilityDef;
+use crate::card::AbilityTargetDef;
+use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
+use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::BattlefieldEntryModificationDef;
+use crate::card::BindObjectsDef;
 use crate::card::CardRules;
 use crate::card::CardType;
+use crate::card::CopyAbilityDef;
+use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
+use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
+use crate::card::CreatedTokensDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::InstalledTriggerDef;
 use crate::card::ManaColor;
+use crate::card::ObjectCollectionSourceDef;
+use crate::card::ObjectPredicateDef;
+use crate::card::ObjectRefDef;
+use crate::card::ObjectSetDef;
+use crate::card::PlayActionMatcherDef;
+use crate::card::PlayRestrictionDef;
 use crate::card::PlayerRelation;
+use crate::card::PlayerRuleDef;
 use crate::card::ReplacementEffectDef;
+use crate::card::TokenCopyDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
+use crate::card::ZoneKind;
+use crate::card::ZonePlacement;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -29,6 +50,17 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
+// JOU 1 — Aegis of the Gods
+pub(in crate::card::sets) static AEGIS_OF_THE_GODS_1: CardRecord = CardRecord::new(
+    "Aegis of the Gods",
+    "f2b2f381-86a2-42ac-b694-dcde437d574f",
+    "Yefim Kligerman",
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Soldier"], 2, 1).with_abilities(&[
+AbilityDef::static_ability("You have hexproof. (You can't be the target of spells or abilities your opponents control.)", EffectDef::StaticApply { recipient: EffectRecipientDef::Controller, effect: AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(PlayerRuleDef::Hexproof)) })
+])
+.with_type(crate::card::CardType::Enchantment),
+);
+
 // JOU 5 — Banishing Light
 // Audit: unsupported — Needs exile-until-source-leaves with immediate return when the duration ends (CR 610.3); an ordinary leaves trigger returns through the stack too late.
 pub(in crate::card::sets) static BANISHING_LIGHT: CardRecord = CardRecord::new(
@@ -36,6 +68,28 @@ pub(in crate::card::sets) static BANISHING_LIGHT: CardRecord = CardRecord::new(
     "fbaa4800-30cc-4a80-a6cc-9a24ada9eb40",
     "Willian Murai",
     CardRules::unsupported(),
+);
+
+// JOU 10 — Eidolon of Rhetoric
+pub(in crate::card::sets) static EIDOLON_OF_RHETORIC_10: CardRecord = CardRecord::new(
+    "Eidolon of Rhetoric",
+    "c3bc8b9e-4d22-41ba-b593-d383fd301ef9",
+    "Ryan Yee",
+    CardRules::new_creature(mana_cost!("{2}{W}"), &["Spirit"], 1, 4)
+        .with_abilities(&[AbilityDef::static_ability(
+            "Each player can't cast more than one spell each turn.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::EachPlayer,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(
+                    PlayRestrictionDef::new(
+                        PlayActionMatcherDef::CastSpell,
+                        ObjectPredicateDef::Any,
+                    )
+                    .after_spells_cast(1),
+                )),
+            },
+        )])
+        .with_type(crate::card::CardType::Enchantment),
 );
 
 // JOU 37 — Dictate of Kruphix
@@ -58,6 +112,27 @@ pub(in crate::card::sets) static DICTATE_OF_KRUPHIX: CardRecord = CardRecord::ne
             },
         ),
     ]),
+);
+
+// JOU 94 — Eidolon of the Great Revel
+pub(in crate::card::sets) static EIDOLON_OF_THE_GREAT_REVEL_94: CardRecord = CardRecord::new(
+    "Eidolon of the Great Revel",
+    "a6c10816-e825-452a-90b0-80eb9f20bd6d",
+    "Cyril Van Der Haegen",
+    CardRules::new_creature(mana_cost!("{R}{R}"), &["Spirit"], 2, 2).with_abilities(&[
+AbilityDef::triggered("Whenever a player casts a spell with mana value 3 or less, this creature deals 2 damage to that player.", TriggerEventDef::spell_cast(ObjectPredicateDef::ManaValueAtMost(3)), EffectDef::damage(EffectRecipientDef::ControllerOfTriggeringObject, ValueDef::Constant(2)))
+])
+.with_type(crate::card::CardType::Enchantment),
+);
+
+// JOU 115 — Twinflame
+pub(in crate::card::sets) static TWINFLAME_115: CardRecord = CardRecord::new(
+    "Twinflame",
+    "207128b3-2de3-495a-bf29-eec50c3bd752",
+    "Chase Stone",
+    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_abilities(&[
+AbilityDef::spell_with_additional_cost("Strive — This spell costs {2}{R} more to cast for each target beyond the first.\nChoose any number of target creatures you control. For each of them, create a token that's a copy of that creature, except it has haste. Exile those tokens at the beginning of the next end step.", &[AbilityTargetDef::any_number(AbilityTargetPredicate::Object { object: ObjectPredicateDef::HasType(CardType::Creature), zones: &[ZoneKind::Battlefield], controller: Some(PlayerRelation::You), owner: None })], CostDef::ManaTimes { cost: mana_cost!("{2}{R}"), quantity: CostQuantityDef::Subtract(&CostQuantityDef::TargetCount, &CostQuantityDef::Fixed(1)) }, EffectDef::BindObjects(BindObjectsDef { source: ObjectCollectionSourceDef::ObjectSet(ObjectSetDef::LegalTargets(TargetIndex::PRIMARY)), binding: Binding!("twinflame_targets"), then: &EffectDef::ForEachInBinding { objects: Binding!("twinflame_targets"), binding: Binding!("twinflame_original"), effect: &EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Copy(&TokenCopyDef { object: &EffectRecipientDef::object(ObjectRefDef::Binding(Binding!("twinflame_original"))), exceptions: CopyExceptionsDef::NONE.with_abilities(&[CopyAbilityDef::Ability(&abilities::haste())]) })).with_created_tokens(CreatedTokensDef { binding: Binding!("twinflame_token"), then: &EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered("At the beginning of the next end step, exile those tokens.", TriggerEventDef::StepBegins { step: TurnStepDef::End, player: PlayerRelation::Any }, EffectDef::move_to_zone(EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("twinflame_token"))), ZoneKind::Exile, ZonePlacement::Top)))) })) } }))
+]),
 );
 
 // JOU 126 — Heroes' Bane
@@ -148,8 +223,12 @@ pub(in crate::card::sets) static TEMPLE_OF_MALADY: CardRecord = CardRecord::new(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &AEGIS_OF_THE_GODS_1,
     &BANISHING_LIGHT,
+    &EIDOLON_OF_RHETORIC_10,
     &DICTATE_OF_KRUPHIX,
+    &EIDOLON_OF_THE_GREAT_REVEL_94,
+    &TWINFLAME_115,
     &HEROES_BANE,
     &MANA_CONFLUENCE,
     &TEMPLE_OF_EPIPHANY,

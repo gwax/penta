@@ -16,6 +16,7 @@ use crate::card::AppliedRuleDef;
 use crate::card::BasicLandType;
 use crate::card::BattlefieldEntryModificationDef;
 use crate::card::CardRules;
+use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
@@ -30,11 +31,13 @@ use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectChoiceBindingDef;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PerPlayerSelectionDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::QuantifierDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
@@ -245,6 +248,17 @@ pub(in crate::card::sets) static KRAKEN_HATCHLING: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{U}"), &["Kraken"], 0, 4),
 );
 
+// ZEN 57 — Mindbreak Trap
+pub(in crate::card::sets) static MINDBREAK_TRAP_57: CardRecord = CardRecord::new(
+    "Mindbreak Trap",
+    "4f51140b-6254-431a-8810-94307bfdfbbe",
+    "Christopher Moeller",
+    CardRules::new_instant(mana_cost!("{2}{U}{U}")).with_subtypes(&["Trap"]).with_abilities(&[
+AbilityDef::alternative_cast(&[CostDef::Mana(mana_cost!("{0}"))], AlternativeCastKindDef::AlternativeCost, Some("If an opponent cast three or more spells this turn, you may pay {0} rather than pay this spell’s mana cost."), EffectDef::None).with_alternative_condition(&TriggerConditionDef::SpellsCastThisTurn { quantifier: QuantifierDef::Any, player: PlayerRelation::Opponent, comparison: ComparisonDef::GreaterOrEqual, amount: 3 }),
+AbilityDef::spell_with_targets("Exile any number of target spells.", &[AbilityTargetDef::any_number(AbilityTargetPredicate::Object { object: ObjectPredicateDef::Spell, zones: &[ZoneKind::Stack], controller: None, owner: None })], EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY), ZoneKind::Exile, ZonePlacement::Top))
+]),
+);
+
 // ZEN 58 — Paralyzing Grasp
 pub(in crate::card::sets) static PARALYZING_GRASP: CardRecord = CardRecord::new(
     "Paralyzing Grasp",
@@ -375,6 +389,15 @@ CardRules::new_creature(mana_cost!("{1}{B}"), &["Vampire", "Shaman"], 1, 1).with
     ),
 );
 
+// ZEN 82 — Bloodchief Ascension
+// Audit: unsupported — The turn history does not record how much life each opponent lost; current life totals or damage-only history cannot answer the two-life-loss threshold.
+pub(in crate::card::sets) static BLOODCHIEF_ASCENSION_82: CardRecord = CardRecord::new(
+    "Bloodchief Ascension",
+    "aa213dbb-c52a-4084-92aa-d0b5d97a97d9",
+    "Adi Granov",
+    crate::card::CardRules::unsupported(),
+);
+
 // ZEN 83 — Bloodghast
 pub(in crate::card::sets) static BLOODGHAST: CardRecord = CardRecord::new(
     "Bloodghast",
@@ -491,6 +514,15 @@ pub(in crate::card::sets) static GIANT_SCORPION: CardRecord = CardRecord::new(
     "Raymond Swanland",
     CardRules::new_creature(mana_cost!("{2}{B}"), &["Scorpion"], 1, 3)
         .with_abilities(&[abilities::deathtouch()]),
+);
+
+// ZEN 109 — Ravenous Trap
+// Audit: unsupported — No per-player history counter records how many cards entered that player’s graveyard from anywhere this turn for the alternative-cost condition.
+pub(in crate::card::sets) static RAVENOUS_TRAP_109: CardRecord = CardRecord::new(
+    "Ravenous Trap",
+    "f4540013-11f9-4a8b-ad54-61f467f04756",
+    "Cyril Van Der Haegen",
+    crate::card::CardRules::unsupported(),
 );
 
 // ZEN 111 — Sorin Markov
@@ -667,6 +699,36 @@ pub(in crate::card::sets) static GOBLIN_BUSHWHACKER: CardRecord = CardRecord::ne
     ]),
 );
 
+// ZEN 127 — Goblin Ruinblaster
+pub(in crate::card::sets) static GOBLIN_RUINBLASTER_127: CardRecord = CardRecord::new(
+    "Goblin Ruinblaster",
+    "0d95d1f3-7ec1-4279-ade7-3f339f2f33da",
+    "Matt Cavotta",
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Shaman"], 2, 1).with_abilities(&[
+        abilities::kicker(&[CostDef::Mana(mana_cost!("{R}"))]),
+        abilities::haste(),
+        AbilityDef::triggered_if_with_targets(
+            "When this creature enters, if it was kicked, destroy target nonbasic land.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &TriggerConditionDef::SourcePaidAdditionalCost(crate::AdditionalCostIndex::PRIMARY),
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(CardSupertype::Basic)),
+                ]),
+            )],
+            EffectDef::Destroy {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                then: None,
+            },
+        ),
+    ]),
+);
+
 // ZEN 128 — Goblin Shortcutter
 pub(in crate::card::sets) static GOBLIN_SHORTCUTTER: CardRecord = CardRecord::new(
     "Goblin Shortcutter",
@@ -769,6 +831,17 @@ pub(in crate::card::sets) static SLAUGHTER_CRY: CardRecord = CardRecord::new(
             duration: ResolvedEffectDurationDef::UntilEndOfTurn,
         },
     )),
+);
+
+// ZEN 154 — Warren Instigator
+pub(in crate::card::sets) static WARREN_INSTIGATOR_154: CardRecord = CardRecord::new(
+    "Warren Instigator",
+    "98637219-40d8-414c-939d-e2c90b909725",
+    "Andrew Robinson",
+    CardRules::new_creature(mana_cost!("{R}{R}"), &["Goblin", "Berserker"], 1, 1).with_abilities(&[
+abilities::double_strike(),
+AbilityDef::triggered("Whenever this creature deals damage to an opponent, you may put a Goblin creature card from your hand onto the battlefield.", TriggerEventDef::damage_to_player(ObjectPredicateDef::Source, PlayerRelation::Opponent), EffectDef::Choose(ChooseDef { binding: ObjectChoiceBindingDef::Objects(ParentBinding), unchosen: None, chooser: PlayerRefDef::EffectController, candidates: ObjectSetDef::Query(ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature),ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin"))]), &[ZoneKind::Hand], PlayerRelation::You)), exclude: None, minimum: 0, maximum: 1, visibility: ChoiceVisibilityDef::Private, then: &EffectDef::move_to_zone(EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)), ZoneKind::Battlefield, ZonePlacement::Top) }))
+]),
 );
 
 // ZEN 168 — Lotus Cobra
@@ -1092,15 +1165,18 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PILLARFIELD_OX,
     &INTO_THE_ROIL,
     &KRAKEN_HATCHLING,
+    &MINDBREAK_TRAP_57,
     &PARALYZING_GRASP,
     &RITE_OF_REPLICATION,
     &SPELL_PIERCE,
     &WELKIN_TERN,
     &BLOOD_SEEKER,
+    &BLOODCHIEF_ASCENSION_82,
     &BLOODGHAST,
     &DISFIGURE,
     &GATEKEEPER_OF_MALAKIR,
     &GIANT_SCORPION,
+    &RAVENOUS_TRAP_109,
     &SORIN_MARKOV,
     &VAMPIRE_HEXMAGE,
     &VAMPIRE_LACERATOR,
@@ -1108,10 +1184,12 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BLADETUSK_BOAR,
     &BURST_LIGHTNING,
     &GOBLIN_BUSHWHACKER,
+    &GOBLIN_RUINBLASTER_127,
     &GOBLIN_SHORTCUTTER,
     &GOBLIN_WAR_PAINT,
     &MARK_OF_MUTINY,
     &SLAUGHTER_CRY,
+    &WARREN_INSTIGATOR_154,
     &LOTUS_COBRA,
     &RAMPAGING_BALOTHS,
     &VASTWOOD_GORGER,

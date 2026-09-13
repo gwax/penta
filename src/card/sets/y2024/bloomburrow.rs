@@ -6365,12 +6365,12 @@ pub(in crate::card::sets) static ZORALINE_COSMOS_CALLER: CardRecord = CardRecord
 );
 
 // BLB 243 — Barkform Harvester
-// Audit: unsupported — Needs a creature-type characteristic-defining ability that functions in every zone and supplies all creature types as copiable values; existing all-types continuous grants do not give a card changeling outside the battlefield.
+// Audit: unsupported — The all-zone subtype declaration is read for cards and spells but not applied by the battlefield/copy characteristic walk. Changeling needs the same intrinsic all-types value across those paths.
 pub(in crate::card::sets) static BARKFORM_HARVESTER: CardRecord = CardRecord::new(
     "Barkform Harvester",
     "f77049a6-0f22-415b-bc89-20bcb32accf6",
     "Zezhou Chen",
-    CardRules::unsupported(),
+    crate::card::CardRules::unsupported(),
 );
 
 // BLB 244 — Bumbleflower's Sharepot
@@ -6570,12 +6570,12 @@ pub(in crate::card::sets) static TANGLE_TUMBLER: CardRecord = CardRecord::new(
 );
 
 // BLB 251 — Three Tree Mascot
-// Audit: unsupported — Needs a creature-type characteristic-defining ability applying in every zone and supplying every creature type as copiable values; battlefield all-type modifiers do not implement changeling.
+// Audit: unsupported — The all-zone subtype declaration is read for cards and spells but not applied by the battlefield/copy characteristic walk. Changeling needs the same intrinsic all-types value across those paths.
 pub(in crate::card::sets) static THREE_TREE_MASCOT: CardRecord = CardRecord::new(
     "Three Tree Mascot",
     "aaced75b-6e07-457c-8ea2-f74d99710d15",
     "Gina Matarazzo",
-    CardRules::unsupported(),
+    crate::card::CardRules::unsupported(),
 );
 
 // BLB 252 — Fabled Passage (reprint)

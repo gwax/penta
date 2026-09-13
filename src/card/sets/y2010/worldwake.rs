@@ -20,14 +20,18 @@ use crate::card::CardTypeSet;
 use crate::card::ColorSet;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
+use crate::card::CostModificationDef;
 use crate::card::CounterKind;
 use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
+use crate::card::DestroyFollowUpDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
+use crate::card::ObjectRefDef;
+use crate::card::ObjectSetDef;
 use crate::card::PayOrDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
@@ -403,6 +407,39 @@ pub(in crate::card::sets) static ARBOR_ELF: CardRecord = CardRecord::new(
     ]),
 );
 
+// WWK 108 — Nature's Claim
+pub(in crate::card::sets) static NATURE_S_CLAIM_108: CardRecord = CardRecord::new(
+    "Nature's Claim",
+    "64ae5a91-ac54-4222-832e-d7a740a3f7cb",
+    "Daarken",
+    CardRules::new_instant(mana_cost!("{G}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Destroy target artifact or enchantment. Its controller gains 4 life.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                ObjectPredicateDef::HasType(CardType::Enchantment),
+            ]),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::destroy_target(TargetIndex::PRIMARY),
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(4),
+            },
+        ]),
+    )]),
+);
+
+// WWK 115 — Terastodon
+pub(in crate::card::sets) static TERASTODON_115: CardRecord = CardRecord::new(
+    "Terastodon",
+    "e66d2f62-8a4a-4e8d-93e1-5dc802684106",
+    "Lars Grant-West",
+    CardRules::new_creature(mana_cost!("{6}{G}{G}"), &["Elephant"], 9, 9).with_abilities(&[
+AbilityDef::triggered_with_targets("When this creature enters, you may destroy up to three target noncreature permanents. For each permanent put into a graveyard this way, its controller creates a 3/3 green Elephant creature token.", TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)), &[AbilityTargetDef::up_to(AbilityTargetPredicate::Object { object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)), zones: &[ZoneKind::Battlefield], controller: None, owner: None }, 3)], EffectDef::May { player: EffectRecipientDef::Controller, effect: &EffectDef::Destroy { object: EffectRecipientDef::Target(TargetIndex::PRIMARY), then: Some(DestroyFollowUpDef { binding: Binding!("terastodon_destroyed"), effect: &EffectDef::ForEachInBinding { objects: Binding!("terastodon_destroyed"), binding: Binding!("terastodon_permanent"), effect: &EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::TokenCharacteristics::creature(&["Elephant"], &[ManaColor::Green], 3, 3))).with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Binding(Binding!("terastodon_permanent"))))) } }) } })
+]),
+);
+
 // WWK 118 — Wolfbriar Elemental
 pub(in crate::card::sets) static WOLFBRIAR_ELEMENTAL: CardRecord = CardRecord::new(
     "Wolfbriar Elemental",
@@ -515,6 +552,58 @@ pub(in crate::card::sets) static KITESAIL: CardRecord = CardRecord::new(
         ]),
 );
 
+// WWK 127 — Lodestone Golem
+pub(in crate::card::sets) static LODESTONE_GOLEM_127: CardRecord = CardRecord::new(
+    "Lodestone Golem",
+    "9bb0ee6a-852a-4f1e-8f03-40b6d505bc82",
+    "Chris Rahn",
+    CardRules::new_artifact_creature(mana_cost!("{4}"), &["Golem"], 5, 3).with_abilities(&[
+        AbilityDef::static_ability(
+            "Nonartifact spells cost {1} more to cast.",
+            EffectDef::ModifyCost(CostModificationDef::increase_spell(
+                ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Artifact)),
+                PlayerRelation::Any,
+                mana_cost!("{1}"),
+            )),
+        ),
+    ]),
+);
+
+// WWK 132 — Bojuka Bog
+pub(in crate::card::sets) static BOJUKA_BOG_132: CardRecord = CardRecord::new(
+    "Bojuka Bog",
+    "529c38b3-7397-4dac-9859-acd9cd451c32",
+    "Howard Lyon",
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::enters_tapped(CardType::Land),
+        AbilityDef::triggered_with_targets(
+            "When this land enters, exile target player's graveyard.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            EffectDef::move_to_zone(
+                EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::owned_by(
+                    ObjectPredicateDef::Any,
+                    &[ZoneKind::Graveyard],
+                    PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+                ))),
+                ZoneKind::Exile,
+                ZonePlacement::Top,
+            ),
+        ),
+        AbilityDef::activated_mana(
+            "{T}: Add {B}.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Black)),
+        ),
+    ]),
+);
+
 // WWK 133 — Celestial Colonnade
 pub(in crate::card::sets) static CELESTIAL_COLONNADE: CardRecord = CardRecord::new(
     "Celestial Colonnade",
@@ -599,6 +688,52 @@ const QUICKSAND_REPRINT: PrintingRecord = PrintingRecord::reprint(
     "Matt Stewart",
 );
 
+// WWK 145 — Tectonic Edge
+pub(in crate::card::sets) static TECTONIC_EDGE_145: CardRecord = CardRecord::new(
+    "Tectonic Edge",
+    "fdcf5c0f-9d18-406d-a930-c179a781264f",
+    "Vincent Proce",
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::activated_mana(
+            "{T}: Add {C}.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless)),
+        ),
+        AbilityDef::activated_with_targets(
+            "{1}, {T}, Sacrifice this land: Destroy target nonbasic land. Activate only \
+             if an opponent controls four or more lands.",
+            &[
+                CostDef::Mana(mana_cost!("{1}")),
+                CostDef::TapSource,
+                CostDef::SacrificeSource,
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(
+                            CardSupertype::Basic,
+                        )),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: None,
+                    owner: None,
+                },
+            )],
+            EffectDef::destroy_target(TargetIndex::PRIMARY),
+        )
+        .with_activation_condition(&TriggerConditionDef::ObjectCount {
+            query: ObjectQueryDef::matching(
+                ObjectPredicateDef::HasType(CardType::Land),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Opponent,
+            ),
+            comparison: ComparisonDef::GreaterOrEqual,
+            amount: 4,
+        }),
+    ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &STONEFORGE_MYSTIC,
     &DISPEL,
@@ -609,12 +744,17 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &DRAGONMASTER_OUTCAST,
     &RICOCHET_TRAP,
     &ARBOR_ELF,
+    &NATURE_S_CLAIM_108,
+    &TERASTODON_115,
     &WOLFBRIAR_ELEMENTAL,
     &BASILISK_COLLAR,
     &EVERFLOWING_CHALICE,
     &KITESAIL,
+    &LODESTONE_GOLEM_127,
+    &BOJUKA_BOG_132,
     &CELESTIAL_COLONNADE,
     &CREEPING_TAR_PIT,
+    &TECTONIC_EDGE_145,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[QUICKSAND_REPRINT];

@@ -11,6 +11,8 @@ use crate::card::BasicLandType;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
+use crate::card::CardTypeSet;
+use crate::card::CharacteristicOperationDef;
 use crate::card::ColorChoiceOperationDef;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
@@ -21,9 +23,11 @@ use crate::card::ManaColor;
 use crate::card::ObjectCounterValueDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectRefDef;
+use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::SetOperationDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueComparisonDef;
@@ -73,6 +77,16 @@ pub(in crate::card::sets) static GODS_WILLING: CardRecord = CardRecord::new(
             abilities::scry(ValueDef::Constant(1)),
         ]),
     )),
+);
+
+// THS 65 — Swan Song
+pub(in crate::card::sets) static SWAN_SONG_65: CardRecord = CardRecord::new(
+    "Swan Song",
+    "efd26041-059b-4a1e-9ce8-c3cfd69a3721",
+    "Peter Mohrbacher",
+    CardRules::new_instant(mana_cost!("{U}")).with_abilities(&[
+AbilityDef::spell_with_targets("Counter target enchantment, instant, or sorcery spell. Its controller creates a 2/2 blue Bird creature token with flying.", &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::All(&[ObjectPredicateDef::Spell, ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Enchantment), ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Instant), ObjectPredicateDef::HasType(CardType::Sorcery)])])]), zones: &[ZoneKind::Stack], controller: None, owner: None })], EffectDef::Sequence(&[EffectDef::counter_target(TargetIndex::PRIMARY), EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::TokenCharacteristics::creature(&["Bird"], &[ManaColor::Blue], 2, 2).with_abilities(&[abilities::flying()]))).with_controller(PlayerRefDef::ControllerOf(ObjectRefDef::Target(TargetIndex::PRIMARY))))]))
+]),
 );
 
 // THS 89 — Gray Merchant of Asphodel
@@ -126,6 +140,40 @@ pub(in crate::card::sets) static HERO_S_DOWNFALL: CardRecord = CardRecord::new(
     ]),
 );
 
+// THS 119 — Dragon Mantle
+pub(in crate::card::sets) static DRAGON_MANTLE_119: CardRecord = CardRecord::new(
+    "Dragon Mantle",
+    "d97b1080-9001-4751-b2f5-7f56d9f58dff",
+    "Anthony Palumbo",
+    CardRules::new_enchantment(mana_cost!("{R}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::enchant_creature(),
+            abilities::enters_trigger(
+                "When this Aura enters, draw a card.",
+                abilities::draw_cards(ValueDef::Constant(1)),
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature has \"{R}: This creature gets +1/+0 until end of turn.\"",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::object(ObjectRefDef::AttachedToSource),
+                    effect: AppliedEffectDef::add_ability(&AbilityDef::activated(
+                        "{R}: This creature gets +1/+0 until end of turn.",
+                        &[CostDef::Mana(mana_cost!("{R}"))],
+                        EffectDef::Apply {
+                            recipient: EffectRecipientDef::Source,
+                            effect: AppliedEffectDef::modify_power_toughness(
+                                ValueDef::Constant(1),
+                                ValueDef::Constant(0),
+                            ),
+                            duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                        },
+                    )),
+                },
+            ),
+        ]),
+);
+
 // THS 127 — Lightning Strike
 pub(in crate::card::sets) static LIGHTNING_STRIKE: CardRecord = CardRecord::new(
     "Lightning Strike",
@@ -143,6 +191,19 @@ pub(in crate::card::sets) static LIGHTNING_STRIKE: CardRecord = CardRecord::new(
             ValueDef::Constant(3),
         ),
     )),
+);
+
+// THS 135 — Purphoros, God of the Forge
+pub(in crate::card::sets) static PURPHOROS_GOD_OF_THE_FORGE_135: CardRecord = CardRecord::new(
+    "Purphoros, God of the Forge",
+    "7bf6baf2-d20b-467d-8929-abefcf7dfa99",
+    "Eric Deschamps",
+    CardRules::new_enchantment_creature(mana_cost!("{3}{R}"), &["God"], 6, 5).with_supertype(CardSupertype::Legendary).with_abilities(&[
+abilities::indestructible(),
+AbilityDef::static_ability("As long as your devotion to red is less than five, Purphoros isn't a creature.", EffectDef::IfCondition { condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef { left: ValueDef::DevotionTo(ManaColor::Red), comparison: ComparisonDef::Less, right: ValueDef::Constant(5) }), then: &EffectDef::StaticApply { recipient: EffectRecipientDef::Source, effect: AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(SetOperationDef::Remove(CardTypeSet::single(CardType::Creature)))) } }),
+AbilityDef::triggered("Whenever another creature you control enters, Purphoros deals 2 damage to each opponent.", TriggerEventDef::zone_changed(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::ControlledBy(PlayerRelation::You), ObjectPredicateDef::Not(&ObjectPredicateDef::Source)]), None, Some(ZoneKind::Battlefield)), EffectDef::damage(EffectRecipientDef::Opponent, ValueDef::Constant(2))),
+AbilityDef::activated("{2}{R}: Creatures you control get +1/+0 until end of turn.", &[CostDef::Mana(mana_cost!("{2}{R}"))], EffectDef::Apply { recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You), effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)), duration: ResolvedEffectDurationDef::UntilEndOfTurn })
+]),
 );
 
 // THS 169 — Nylea's Presence
@@ -299,6 +360,24 @@ pub(in crate::card::sets) static BURNISHED_HART: CardRecord = CardRecord::new(
     ]),
 );
 
+// THS 220 — Pyxis of Pandemonium
+// Audit: unsupported — Revealing exiled cards emits an information event but does not turn face-down exile objects face up. Nonpermanent cards must remain face up in exile after this activation, which has no shared operation.
+pub(in crate::card::sets) static PYXIS_OF_PANDEMONIUM_220: CardRecord = CardRecord::new(
+    "Pyxis of Pandemonium",
+    "dbc6a246-f32a-4dc0-9785-4038804f372f",
+    "David Palumbo",
+    crate::card::CardRules::unsupported(),
+);
+
+// THS 223 — Nykthos, Shrine to Nyx
+// Audit: unsupported — Mana production can read devotion to a fixed color, but cannot bind the chosen output color and evaluate devotion to that same choice.
+pub(in crate::card::sets) static NYKTHOS_SHRINE_TO_NYX_223: CardRecord = CardRecord::new(
+    "Nykthos, Shrine to Nyx",
+    "834b27a0-dfd7-4f96-8cde-cacac4b24acc",
+    "Jung Park",
+    crate::card::CardRules::unsupported(),
+);
+
 // THS 224 — Temple of Abandon
 pub(in crate::card::sets) static TEMPLE_OF_ABANDON: CardRecord = CardRecord::new(
     "Temple of Abandon",
@@ -416,13 +495,18 @@ pub(in crate::card::sets) static TEMPLE_OF_TRIUMPH: CardRecord = CardRecord::new
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GODS_WILLING,
+    &SWAN_SONG_65,
     &GRAY_MERCHANT_OF_ASPHODEL,
     &HERO_S_DOWNFALL,
+    &DRAGON_MANTLE_119,
     &LIGHTNING_STRIKE,
+    &PURPHOROS_GOD_OF_THE_FORGE_135,
     &NYLEAS_PRESENCE,
     &ORDEAL_OF_NYLEA,
     &SYLVAN_CARYATID,
     &BURNISHED_HART,
+    &PYXIS_OF_PANDEMONIUM_220,
+    &NYKTHOS_SHRINE_TO_NYX_223,
     &TEMPLE_OF_ABANDON,
     &TEMPLE_OF_DECEIT,
     &TEMPLE_OF_MYSTERY,

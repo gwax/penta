@@ -2,6 +2,7 @@
 
 use super::CardRecord;
 use super::PrintingRecord;
+use crate::AdditionalCostObjectIndex;
 use crate::CardPartId;
 use crate::PlayOptionId;
 use crate::TargetIndex;
@@ -11,6 +12,7 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::ActivationTimingDef;
 use crate::card::AddManaEffectDef;
+use crate::card::AggregateOperationDef;
 use crate::card::AlternateSpellKind;
 use crate::card::AlternativeCastKindDef;
 use crate::card::AppliedEffectDef;
@@ -35,6 +37,7 @@ use crate::card::CardTypeSet;
 use crate::card::ColorSet;
 use crate::card::ComparisonDef;
 use crate::card::ConditionDef;
+use crate::card::ConditionValueDef;
 use crate::card::ControlDurationDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
@@ -51,7 +54,10 @@ use crate::card::ManaTypeDef;
 use crate::card::ObjectCountConditionDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
+use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
+use crate::card::ObjectValueAggregateDef;
+use crate::card::ObjectValueDef;
 use crate::card::PlayOptionDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
@@ -242,6 +248,15 @@ pub(in crate::card::sets) static CHARMING_PRINCE: CardRecord = CardRecord::new(
     ]),
 );
 
+// ELD 10 — Deafening Silence
+// Audit: unsupported — The cast quota counts all prior spells. It cannot count only prior noncreature spells while allowing unlimited creature spells.
+pub(in crate::card::sets) static DEAFENING_SILENCE_10: CardRecord = CardRecord::new(
+    "Deafening Silence",
+    "6072d9b0-d3c7-46f4-bd24-095bb13c4dea",
+    "Igor Kieryluk",
+    crate::card::CardRules::unsupported(),
+);
+
 // ELD 11 — Faerie Guidemother
 const fn faerie_guidemother_rules() -> CardRules {
     CardRules::new_creature(mana_cost!("{W}"), &["Faerie"], 1, 1).with_ability(abilities::flying())
@@ -330,6 +345,15 @@ pub(in crate::card::sets) static GLASS_CASKET: CardRecord = CardRecord::new(
     "Glass Casket",
     "562f1c51-d245-4771-bf61-415297e4f9d5",
     "Anastasia Ovchinnikova",
+    crate::card::CardRules::unsupported(),
+);
+
+// ELD 18 — Hushbringer
+// Audit: unsupported — Needs a continuous rule that suppresses triggered abilities by their triggering event (creature enters or dies). Existing trigger predicates select this card's triggers; they cannot prevent other abilities from triggering.
+pub(in crate::card::sets) static HUSHBRINGER_18: CardRecord = CardRecord::new(
+    "Hushbringer",
+    "663b3e6f-1099-4de8-a0a7-6f1919c38010",
+    "Bastien L. Deharme",
     crate::card::CardRules::unsupported(),
 );
 
@@ -516,6 +540,41 @@ pub(in crate::card::sets) static CHARMED_SLEEP: CardRecord = CardRecord::new(
         ]),
 );
 
+// ELD 41 — Corridor Monitor
+pub(in crate::card::sets) static CORRIDOR_MONITOR_41: CardRecord = CardRecord::new(
+    "Corridor Monitor",
+    "9347802a-0971-443c-867a-cb9400f18d5c",
+    "Jason Felix",
+    CardRules::new_artifact_creature(mana_cost!("{1}{U}"), &["Construct"], 1, 4).with_ability(
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, untap target artifact or creature you control.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Artifact),
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::You),
+                    owner: None,
+                },
+            )],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ),
+);
+
+// ELD 54 — Midnight Clock
+// Audit: unsupported — Counter placement events do not expose the previous counter total. Testing for exactly twelve misses a placement crossing twelve, while testing at least twelve retriggers on later placements; the twelfth-counter event cannot be matched faithfully.
+pub(in crate::card::sets) static MIDNIGHT_CLOCK_54: CardRecord = CardRecord::new(
+    "Midnight Clock",
+    "0f7f1148-7b1b-4969-a2f8-428de1e2e8ff",
+    "Alexander Forssberg",
+    crate::card::CardRules::unsupported(),
+);
+
 // ELD 62 — Run Away Together
 pub(in crate::card::sets) static RUN_AWAY_TOGETHER: CardRecord = CardRecord::new(
     "Run Away Together",
@@ -551,6 +610,30 @@ pub(in crate::card::sets) static RUN_AWAY_TOGETHER: CardRecord = CardRecord::new
             ),
         ]),
     )]),
+);
+
+// ELD 74 — Witching Well
+pub(in crate::card::sets) static WITCHING_WELL_74: CardRecord = CardRecord::new(
+    "Witching Well",
+    "62d3132f-f897-4a7a-9de4-c6388e83f5ad",
+    "John Avon",
+    CardRules::new_artifact(mana_cost!("{U}")).with_abilities(&[
+        abilities::enters_trigger(
+            "When this artifact enters, scry 2.",
+            abilities::scry(ValueDef::Constant(2)),
+        ),
+        AbilityDef::activated(
+            "{3}{U}, Sacrifice this artifact: Draw two cards.",
+            &[
+                CostDef::Mana(mana_cost!("{3}{U}")),
+                CostDef::SacrificeSource,
+            ],
+            EffectDef::DrawCards {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(2),
+            },
+        ),
+    ]),
 );
 
 // ELD 76 — Bake into a Pie
@@ -744,6 +827,82 @@ pub(in crate::card::sets) static BONECRUSHER_GIANT: CardRecord = CardRecord::new
     bonecrusher_rules(),
 )
 .with_composition(bonecrusher_composition);
+
+// ELD 118 — Claim the Firstborn
+pub(in crate::card::sets) static CLAIM_THE_FIRSTBORN_118: CardRecord = CardRecord::new(
+    "Claim the Firstborn",
+    "feaf1e6c-c7d9-4ac7-9aeb-c4b5d61548ec",
+    "Iain McCaig",
+    CardRules::new_sorcery(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_targets(
+        "Gain control of target creature with mana value 3 or less until end of turn. Untap that creature. It gains haste until end of turn.",
+        &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::ManaValueAtMost(3)]))],
+        EffectDef::Sequence(&[
+            EffectDef::gain_control(EffectRecipientDef::Target(TargetIndex::PRIMARY), PlayerRefDef::EffectController, ControlDurationDef::UntilEndOfTurn),
+            EffectDef::Untap { object: EffectRecipientDef::Target(TargetIndex::PRIMARY) },
+            EffectDef::Apply { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), effect: AppliedEffectDef::add_ability(&abilities::haste()), duration: ResolvedEffectDurationDef::UntilEndOfTurn },
+        ]),
+    )),
+);
+
+// ELD 120 — Embercleave
+pub(in crate::card::sets) static EMBERCLEAVE_120: CardRecord = CardRecord::new(
+    "Embercleave",
+    "aaae15dd-11b6-4421-99e9-365c7fe4a5d6",
+    "Joe Slucher",
+    CardRules::new_artifact(mana_cost!("{4}{R}{R}"))
+        .with_supertype(CardSupertype::Legendary)
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            abilities::flash(),
+            abilities::spell_cost_reduction(
+                "This spell costs {1} less to cast for each attacking creature you control.",
+                ObjectPredicateDef::Source,
+                PlayerRelation::You,
+                ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Attacking,
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                )),
+            ),
+            AbilityDef::triggered_with_targets(
+                "When Embercleave enters, attach it to target creature you control.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::HasType(CardType::Creature),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: Some(PlayerRelation::You),
+                        owner: None,
+                    },
+                )],
+                EffectDef::Attach {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                },
+            ),
+            AbilityDef::static_ability(
+                "Equipped creature gets +1/+1 and has double strike and trample.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(1),
+                            ValueDef::Constant(1),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::double_strike()),
+                        AppliedEffectDef::add_ability(&abilities::trample()),
+                    ]),
+                },
+            ),
+            abilities::equip(&[CostDef::Mana(mana_cost!("{3}"))], "Equip {3}"),
+        ]),
+);
 
 // ELD 122 — Embereth Shieldbreaker
 /// The adventure half. Answering an artifact for one red leaves the body
@@ -997,6 +1156,15 @@ pub(in crate::card::sets) static THRILL_OF_POSSIBILITY: CardRecord = CardRecord:
     .with_spell_additional_cost(&CostDef::discard(ObjectPredicateDef::Any))]),
 );
 
+// ELD 161 — The Great Henge
+// Audit: unsupported — The cast-cost interpreter returns zero for AggregateObjectValues. It cannot compute greatest controlled creature power for the intrinsic discount, even though resolution-time maximum power is supported.
+pub(in crate::card::sets) static THE_GREAT_HENGE_161: CardRecord = CardRecord::new(
+    "The Great Henge",
+    "af915ed2-1f34-43f6-85f5-2430325b720f",
+    "Adam Paquette",
+    crate::card::CardRules::unsupported(),
+);
+
 // ELD 169 — Once Upon a Time
 pub(in crate::card::sets) static ONCE_UPON_A_TIME: CardRecord = CardRecord::new(
     "Once Upon a Time",
@@ -1049,6 +1217,101 @@ pub(in crate::card::sets) static WILDBORN_PRESERVER: CardRecord = CardRecord::ne
     "55f76830-369e-4224-9ded-7d1ce04c87e4",
     "Lius Lasahido",
     CardRules::unsupported(),
+);
+
+// ELD 188 — Drown in the Loch
+pub(in crate::card::sets) static DROWN_IN_THE_LOCH_188: CardRecord = CardRecord::new(
+    "Drown in the Loch",
+    "8bf5df5b-164d-4ec2-a5e6-bbaea152e271",
+    "John Stanko",
+    CardRules::new_instant(mana_cost!("{U}{B}")).with_abilities(&[AbilityDef::modal_spell(
+        "Choose one —",
+        &[
+            AbilityDef::spell_with_targets(
+                "Counter target spell with mana value less than or equal to the number of \
+                 cards in its controller's graveyard.",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::Spell,
+                            ObjectPredicateDef::AnyOf(&[
+                                ObjectPredicateDef::All(&[
+                                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                                    ObjectPredicateDef::ManaValueAtMostValue(
+                                        ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                                            ObjectPredicateDef::Any,
+                                            &[ZoneKind::Graveyard],
+                                            PlayerRelation::You,
+                                        )),
+                                    ),
+                                ]),
+                                ObjectPredicateDef::All(&[
+                                    ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+                                    ObjectPredicateDef::ManaValueAtMostValue(
+                                        ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                                            ObjectPredicateDef::Any,
+                                            &[ZoneKind::Graveyard],
+                                            PlayerRelation::Opponent,
+                                        )),
+                                    ),
+                                ]),
+                            ]),
+                        ]),
+                        zones: &[ZoneKind::Stack],
+                        controller: None,
+                        owner: None,
+                    },
+                )],
+                EffectDef::counter_target(TargetIndex::PRIMARY),
+            ),
+            AbilityDef::spell_with_targets(
+                "Destroy target creature with mana value less than or equal to the number of \
+                 cards in its controller's graveyard.",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Creature),
+                            ObjectPredicateDef::AnyOf(&[
+                                ObjectPredicateDef::All(&[
+                                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                                    ObjectPredicateDef::ManaValueAtMostValue(
+                                        ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                                            ObjectPredicateDef::Any,
+                                            &[ZoneKind::Graveyard],
+                                            PlayerRelation::You,
+                                        )),
+                                    ),
+                                ]),
+                                ObjectPredicateDef::All(&[
+                                    ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent),
+                                    ObjectPredicateDef::ManaValueAtMostValue(
+                                        ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                                            ObjectPredicateDef::Any,
+                                            &[ZoneKind::Graveyard],
+                                            PlayerRelation::Opponent,
+                                        )),
+                                    ),
+                                ]),
+                            ]),
+                        ]),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: None,
+                        owner: None,
+                    },
+                )],
+                EffectDef::destroy_target(TargetIndex::PRIMARY),
+            ),
+        ],
+    )]),
+);
+
+// ELD 190 — Faeburrow Elder
+// Audit: unsupported — Needs the distinct colors across a set of permanents, both as a power/toughness value and as individual mana outputs. ValueDef has no color-union aggregate.
+pub(in crate::card::sets) static FAEBURROW_ELDER_190: CardRecord = CardRecord::new(
+    "Faeburrow Elder",
+    "1ca29912-88b1-413f-ad9d-63d7d1b1ca16",
+    "Raoul Vitale",
+    crate::card::CardRules::unsupported(),
 );
 
 // ELD 197 — Oko, Thief of Crowns
@@ -1141,6 +1404,29 @@ pub(in crate::card::sets) static OKO_THIEF_OF_CROWNS: CardRecord = CardRecord::n
                 },
             ),
         ]),
+);
+
+// ELD 217 — Crashing Drawbridge
+pub(in crate::card::sets) static CRASHING_DRAWBRIDGE_217: CardRecord = CardRecord::new(
+    "Crashing Drawbridge",
+    "b7d7108f-635c-423b-988a-bc8fc4c6edef",
+    "Mark Behm",
+    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Wall"], 0, 4).with_abilities(&[
+        abilities::defender(),
+        AbilityDef::activated(
+            "{T}: Creatures you control gain haste until end of turn.",
+            &[CostDef::TapSource],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ]),
 );
 
 // ELD 219 — Gingerbrute
@@ -1246,6 +1532,70 @@ pub(in crate::card::sets) static STONECOIL_SERPENT: CardRecord = CardRecord::new
         abilities::reach(),
         abilities::trample(),
         abilities::protection_from_multicolored(),
+    ]),
+);
+
+// ELD 237 — Witch's Oven
+pub(in crate::card::sets) static WITCH_S_OVEN_237: CardRecord = CardRecord::new(
+    "Witch's Oven",
+    "04ef8493-d986-45f8-a718-617b028f7ad4",
+    "Alexander Forssberg",
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[AbilityDef::activated(
+        "{T}, Sacrifice a creature: Create a Food token. If the sacrificed creature's \
+         toughness was 4 or greater, create two Food tokens instead.",
+        &[
+            CostDef::TapSource,
+            CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(CardType::Creature)),
+        ],
+        EffectDef::CreateToken(
+            CreateTokenDef::new(TokenDef::Literal(tokens::food())).with_count(
+                ValueDef::IfCondition(&ConditionValueDef {
+                    condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
+                        left: ValueDef::AggregateObjectValues(&ObjectValueAggregateDef {
+                            objects: ObjectSetDef::One(ObjectRefDef::AdditionalCostObject(
+                                AdditionalCostObjectIndex::PRIMARY,
+                            )),
+                            select: ObjectValueDef::Toughness,
+                            operation: AggregateOperationDef::Sum,
+                        }),
+                        comparison: ComparisonDef::GreaterOrEqual,
+                        right: ValueDef::Constant(4),
+                    }),
+                    then: ValueDef::Constant(2),
+                    otherwise: ValueDef::Constant(1),
+                }),
+            ),
+        ),
+    )]),
+);
+
+// ELD 239 — Castle Embereth
+pub(in crate::card::sets) static CASTLE_EMBERETH_239: CardRecord = CardRecord::new(
+    "Castle Embereth",
+    "8bb8512e-6913-4be6-8828-24cfcbec042e",
+    "Jaime Jones",
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::check_land_enters(
+            "This land enters tapped unless you control a Mountain.",
+            &[BasicLandType::Mountain],
+        ),
+        abilities::tap_for(ManaColor::Red),
+        AbilityDef::activated(
+            "{1}{R}{R}, {T}: Creatures you control get +1/+0 until end of turn.",
+            &[CostDef::Mana(mana_cost!("{1}{R}{R}")), CostDef::TapSource],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(1),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
     ]),
 );
 
@@ -1375,6 +1725,31 @@ pub(in crate::card::sets) static WITCH_S_COTTAGE: CardRecord = CardRecord::new(
     ]),
 );
 
+// ELD 303 — Kenrith, the Returned King
+pub(in crate::card::sets) static KENRITH_THE_RETURNED_KING_303: CardRecord = CardRecord::new(
+    "Kenrith, the Returned King",
+    "56c1227e-bea7-47cb-bbec-389a3d585af5",
+    "Kieran Yanner",
+    CardRules::new_creature(mana_cost!("{4}{W}"), &["Human", "Noble"], 5, 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::activated("{R}: All creatures gain trample and haste until end of turn.", &[CostDef::Mana(mana_cost!("{R}"))], EffectDef::Apply { recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::Any), effect: AppliedEffectDef::Composite(&[AppliedEffectDef::add_ability(&abilities::trample()), AppliedEffectDef::add_ability(&abilities::haste())]), duration: ResolvedEffectDurationDef::UntilEndOfTurn }),
+            AbilityDef::activated_with_targets("{1}{G}: Put a +1/+1 counter on target creature.", &[CostDef::Mana(mana_cost!("{1}{G}"))], &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(CardType::Creature))], EffectDef::AddCounters { object: EffectRecipientDef::Target(TargetIndex::PRIMARY), kind: CounterKind::PlusOnePlusOne, amount: ValueDef::Constant(1) }),
+            AbilityDef::activated_with_targets("{2}{W}: Target player gains 5 life.", &[CostDef::Mana(mana_cost!("{2}{W}"))], &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(PlayerRelation::Any))], EffectDef::GainLife { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), amount: ValueDef::Constant(5) }),
+            AbilityDef::activated_with_targets("{3}{U}: Target player draws a card.", &[CostDef::Mana(mana_cost!("{3}{U}"))], &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(PlayerRelation::Any))], EffectDef::DrawCards { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), amount: ValueDef::Constant(1) }),
+            AbilityDef::activated_with_targets("{4}{B}: Put target creature card from a graveyard onto the battlefield under its owner's control.", &[CostDef::Mana(mana_cost!("{4}{B}"))], &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::HasType(CardType::Creature), zones: &[ZoneKind::Graveyard], controller: None, owner: None })], EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY), ZoneKind::Battlefield, ZonePlacement::Top)),
+        ]),
+);
+
+// ELD 331 — Arcane Signet
+// Audit: unsupported — Needs a mana choice derived from the controller's commander's color identity. Mana selection has no commander-color-identity source.
+pub(in crate::card::sets) static ARCANE_SIGNET_331: CardRecord = CardRecord::new(
+    "Arcane Signet",
+    "84128e98-87d6-4c2f-909b-9435a7833e63",
+    "Dan Murayama Scott",
+    crate::card::CardRules::unsupported(),
+);
+
 // ELD 342 — Emry, Lurker of the Loch
 pub(in crate::card::sets) static EMRY_LURKER_OF_THE_LOCH: CardRecord = CardRecord::new(
     "Emry, Lurker of the Loch",
@@ -1424,6 +1799,41 @@ pub(in crate::card::sets) static EMRY_LURKER_OF_THE_LOCH: CardRecord = CardRecor
                 },
             ),
         ]),
+);
+
+// ELD 347 — Mirrormade
+pub(in crate::card::sets) static MIRRORMADE_347: CardRecord = CardRecord::new(
+    "Mirrormade",
+    "236b40cd-c359-41cc-b530-d7d6fbbe33bf",
+    "Volkan Baǵa",
+    CardRules::new_enchantment(mana_cost!("{1}{U}{U}")).with_ability(AbilityDef::replacement(
+        "You may have this enchantment enter as a copy of any artifact or enchantment on the battlefield.",
+        ReplacementEffectDef::CopyEntering {
+            object: ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                ObjectPredicateDef::HasType(CardType::Enchantment),
+            ]),
+            exceptions: crate::card::CopyExceptionsDef::NONE,
+        },
+    )),
+);
+
+// ELD 362 — Irencrag Feat
+// Audit: unsupported — Needs a turn-scoped rule allowing exactly one additional spell after this resolves. Existing play restrictions can prohibit an action but cannot set a remaining matching-cast allowance.
+pub(in crate::card::sets) static IRENCRAG_FEAT_362: CardRecord = CardRecord::new(
+    "Irencrag Feat",
+    "257a84d3-bc4e-4bb3-a435-6d243929bd8c",
+    "Yongjae Choi",
+    crate::card::CardRules::unsupported(),
+);
+
+// ELD 367 — Torbran, Thane of Red Fell
+// Audit: unsupported — Needs a damage replacement that filters both the source's color and the opponent-or-opponent-permanent recipient, then adds to the event amount. The replacement vocabulary has no such combined damage-event matcher.
+pub(in crate::card::sets) static TORBRAN_THANE_OF_RED_FELL_367: CardRecord = CardRecord::new(
+    "Torbran, Thane of Red Fell",
+    "24b63513-5e53-4357-8b28-cb91790e9a72",
+    "Grzegorz Rutkowski",
+    crate::card::CardRules::unsupported(),
 );
 
 // ELD 372 — Questing Beast
@@ -1487,6 +1897,30 @@ pub(in crate::card::sets) static QUESTING_BEAST: CardRecord = CardRecord::new(
         ]),
 );
 
+// ELD 388 — Castle Garenbrig
+// Audit: unsupported — Mana restrictions are conjunctive. No single restriction allows either a creature spell or an activated ability of a creature while excluding unrelated payments.
+pub(in crate::card::sets) static CASTLE_GARENBRIG_388: CardRecord = CardRecord::new(
+    "Castle Garenbrig",
+    "aca10c34-010a-4a9f-a747-2592c4d58c5d",
+    "Adam Paquette",
+    crate::card::CardRules::unsupported(),
+);
+
+// ELD 389 — Castle Locthwain
+pub(in crate::card::sets) static CASTLE_LOCTHWAIN_389: CardRecord = CardRecord::new(
+    "Castle Locthwain",
+    "12b8c2e6-5256-4e7e-8d7d-4b386419780a",
+    "Titus Lunter",
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::check_land_enters("This land enters tapped unless you control a Swamp.", &[BasicLandType::Swamp]),
+        abilities::tap_for(ManaColor::Black),
+        AbilityDef::activated("{1}{B}{B}, {T}: Draw a card, then you lose life equal to the number of cards in your hand.", &[CostDef::Mana(mana_cost!("{1}{B}{B}")), CostDef::TapSource], EffectDef::Sequence(&[
+            EffectDef::DrawCards { recipient: EffectRecipientDef::Controller, amount: ValueDef::Constant(1) },
+            EffectDef::LoseLife { recipient: EffectRecipientDef::Controller, amount: ValueDef::CardsInHandAbove { player: PlayerRelation::You, threshold: 0 } },
+        ])),
+    ]),
+);
+
 // ELD 391 — Fabled Passage
 pub(in crate::card::sets) static FABLED_PASSAGE: CardRecord = CardRecord::new(
     "Fabled Passage",
@@ -1541,33 +1975,53 @@ pub(in crate::card::sets) static FABLED_PASSAGE: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARDENVALE_TACTICIAN,
     &CHARMING_PRINCE,
+    &DEAFENING_SILENCE_10,
     &FAERIE_GUIDEMOTHER,
     &GLASS_CASKET,
+    &HUSHBRINGER_18,
     &LINDEN_THE_STEADFAST_QUEEN,
     &SYR_ALIN_THE_LION_S_CLAW,
     &BRAZEN_BORROWER,
     &CHARMED_SLEEP,
+    &CORRIDOR_MONITOR_41,
+    &MIDNIGHT_CLOCK_54,
     &RUN_AWAY_TOGETHER,
+    &WITCHING_WELL_74,
     &BAKE_INTO_A_PIE,
     &EPIC_DOWNFALL,
     &WISHCLAW_TALISMAN,
     &BONECRUSHER_GIANT,
+    &CLAIM_THE_FIRSTBORN_118,
+    &EMBERCLEAVE_120,
     &EMBERETH_SHIELDBREAKER,
     &RAGING_REDCAP,
     &RIMROCK_KNIGHT,
     &ROBBER_OF_THE_RICH,
     &SCORCHING_DRAGONFIRE,
     &THRILL_OF_POSSIBILITY,
+    &THE_GREAT_HENGE_161,
     &ONCE_UPON_A_TIME,
     &WILDBORN_PRESERVER,
+    &DROWN_IN_THE_LOCH_188,
+    &FAEBURROW_ELDER_190,
     &OKO_THIEF_OF_CROWNS,
+    &CRASHING_DRAWBRIDGE_217,
     &GINGERBRUTE,
     &HERALDIC_BANNER,
     &STONECOIL_SERPENT,
+    &WITCH_S_OVEN_237,
+    &CASTLE_EMBERETH_239,
     &MYSTIC_SANCTUARY,
     &WITCH_S_COTTAGE,
+    &KENRITH_THE_RETURNED_KING_303,
+    &ARCANE_SIGNET_331,
     &EMRY_LURKER_OF_THE_LOCH,
+    &MIRRORMADE_347,
+    &IRENCRAG_FEAT_362,
+    &TORBRAN_THANE_OF_RED_FELL_367,
     &QUESTING_BEAST,
+    &CASTLE_GARENBRIG_388,
+    &CASTLE_LOCTHWAIN_389,
     &FABLED_PASSAGE,
 ];
 

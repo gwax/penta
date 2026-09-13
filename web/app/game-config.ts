@@ -1,4 +1,7 @@
-export type FormatId = "old-school-93-94" | "isd-m14-standard" | "premodern";
+import duelCommanderDeckNotes from "./duel-commander-decks.json";
+import cedhDeckNotes from "./cedh-decks.json";
+
+export type FormatId = "old-school-93-94" | "isd-m14-standard" | "premodern" | "cedh" | "duel-commander";
 
 type FormatConfig = {
   name: string;
@@ -68,12 +71,28 @@ export const formatConfigs: Record<FormatId, FormatConfig> = {
       "Angry Hermit": "8th · Ryan Marvin · Hermit Druid combo",
     },
   },
+  "duel-commander": {
+    name: "Duel Commander",
+    shortName: "DUEL COMMANDER",
+    cardBackMark: "DC",
+    description: "20 life · one-on-one · command zone · no commander damage",
+    deckNotes: duelCommanderDeckNotes,
+  },
+  cedh: {
+    name: "cEDH",
+    shortName: "cEDH · TWO PLAYER",
+    cardBackMark: "cE",
+    description: "Two-player Commander baseline · 40 life · command zone · imported event lists may include unsupported cards",
+    deckNotes: cedhDeckNotes,
+  },
 };
 
 export const formatIds: FormatId[] = [
   "old-school-93-94",
   "isd-m14-standard",
   "premodern",
+  "cedh",
+  "duel-commander",
 ];
 
 export const defaultFormat: FormatId = "old-school-93-94";

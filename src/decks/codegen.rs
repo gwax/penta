@@ -21,7 +21,10 @@ struct DeckFile {
     rust_aliases: Vec<String>,
     #[serde(default)]
     description: String,
+    #[serde(default)]
+    commanders: Mapping,
     main: Mapping,
+    #[serde(default)]
     sideboard: Mapping,
 }
 
@@ -33,6 +36,8 @@ fn format_variant(directory: &str) -> Option<&'static str> {
         "som_m13_standard" => "SomM13Standard",
         "vintage_cube" => "VintageCube",
         "pauper_cube" => "PauperCube",
+        "cedh" => "Cedh",
+        "duel_commander" => "DuelCommander",
         _ => return None,
     })
 }
@@ -107,6 +112,7 @@ impl Source {
             );
         }
         // Check counts before emitting source, including sections with no cards.
+        entries(&deck.commanders, path);
         entries(&deck.main, path);
         entries(&deck.sideboard, path);
         Self {
@@ -193,9 +199,9 @@ fn registry(mut sources: Vec<Source>) -> String {
             |variant| format!("Some(crate::Format::{variant})"),
         );
         writeln!(output,
-            "BuiltinDeck {{ format: {format}, id: {id:?}, name: {:?}, aliases: &{:?}, source: {:?}, main: &{:?}, sideboard: &{:?} }},",
+            "BuiltinDeck {{ format: {format}, id: {id:?}, name: {:?}, aliases: &{:?}, source: {:?}, commanders: &{:?}, main: &{:?}, sideboard: &{:?} }},",
             deck.name, deck.aliases, path,
-            entries(&deck.main, path), entries(&deck.sideboard, path)).unwrap();
+            entries(&deck.commanders, path), entries(&deck.main, path), entries(&deck.sideboard, path)).unwrap();
         modules.entry(module).or_default().push((index, source));
     }
     output.push_str("];\n");
@@ -263,6 +269,38 @@ mod tests {
         );
         assert!(entries(&source.deck.sideboard, &source.path).is_empty());
         assert_eq!(source.id, "example");
+        assert!(entries(&source.deck.commanders, &source.path).is_empty());
+    }
+
+    #[test]
+    fn omitted_sideboard_generates_the_same_deck_as_an_empty_mapping() {
+        let path = "decks/premodern/example.yaml";
+        let omitted = Source::parse(path, &YAML.replace("sideboard: {}\n", ""));
+        assert_eq!(
+            registry(vec![omitted]),
+            registry(vec![Source::parse(path, YAML)])
+        );
+
+        let populated = Source::parse(
+            path,
+            &YAML.replace("sideboard: {}", "sideboard:\n  Island: 2"),
+        );
+        assert_eq!(entries(&populated.deck.sideboard, path), [("Island", 2)]);
+    }
+
+    #[test]
+    fn yaml_accepts_optional_commander_mapping() {
+        let source = Source::parse(
+            "decks/cedh/example.yaml",
+            &YAML.replace(
+                "main:\n",
+                "commanders:\n  Rograkh, Son of Rohgahh: 1\nmain:\n",
+            ),
+        );
+        assert_eq!(
+            entries(&source.deck.commanders, &source.path),
+            [("Rograkh, Son of Rohgahh", 1)]
+        );
     }
 
     #[test]
@@ -293,7 +331,8 @@ mod tests {
             YAML.replace("Mountain: 2", "Mountain: -1"),
             YAML.replace("Mountain: 2", "Mountain: 1.5"),
             YAML.replace("Mountain: 2", "Mountain: 1\n  Mountain: 2"),
-            YAML.replace("sideboard: {}\n", ""),
+            YAML.replace("sideboard: {}", "sideboard: []"),
+            YAML.replace("sideboard: {}", "sideboard:\n  Island: 0"),
             format!("{YAML}id: other\n"),
             format!("{YAML}order: 1\n"),
         ] {

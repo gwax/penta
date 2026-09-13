@@ -622,7 +622,8 @@ pub(in super::super) fn shared_static_applied_effect(
         )) => {
             types != crate::card::CardTypeSet::EMPTY
                 && (shared_direct_characteristic_recipient(recipient)
-                    || types == crate::card::CardTypeSet::single(CardType::Creature)
+                    || (types == crate::card::CardTypeSet::single(CardType::Creature)
+                        || types == crate::card::CardTypeSet::single(CardType::Land))
                         && shared_static_type_animation_query(recipient))
         }
         AppliedEffectDef::Characteristic(
@@ -645,7 +646,7 @@ pub(in super::super) fn shared_static_applied_effect(
         ) => shared_static_creature_type_query(recipient),
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
             SetOperationDef::Remove(_) | SetOperationDef::Set(_),
-        )) => false,
+        )) => shared_direct_characteristic_recipient(recipient),
         // A blocking restriction is read off the ordinary static-effect walk
         // over whichever participant carries it, so a group recipient works
         // exactly as a self-applied one does.

@@ -155,6 +155,15 @@ impl Game {
             .map(|card| (card, CastSourceZone::Hand))
             .or_else(|| {
                 state
+                    .command
+                    .iter()
+                    .find(|card| {
+                        card.id == card_id && self.can_cast_commander_from_command_zone(card.id)
+                    })
+                    .map(|card| (card, CastSourceZone::Command))
+            })
+            .or_else(|| {
+                state
                     .graveyard
                     .iter()
                     .find(|card| card.id == card_id)

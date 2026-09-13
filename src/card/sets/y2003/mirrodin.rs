@@ -8,6 +8,7 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::BattlefieldEntryModificationDef;
 use crate::card::CardNameSetDef;
 use crate::card::CardRules;
@@ -15,6 +16,7 @@ use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
+use crate::card::CopyExceptionsDef;
 use crate::card::CostAdjustmentDef;
 use crate::card::CostAmountDef;
 use crate::card::CostDef;
@@ -31,6 +33,8 @@ use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PayOrDef;
+use crate::card::PlayActionMatcherDef;
+use crate::card::PlayRestrictionDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ReplacementEffectDef;
@@ -86,6 +90,66 @@ pub(in crate::card::sets) static RAISE_THE_ALARM: CardRecord = CardRecord::new(
     )),
 );
 
+// MRD 19 — Rule of Law
+pub(in crate::card::sets) static RULE_OF_LAW_19: CardRecord = CardRecord::new(
+    "Rule of Law",
+    "246a68e9-fd19-4a1e-8c7b-fcd3f7306dfb",
+    "Scott M. Fischer",
+    CardRules::new_enchantment(mana_cost!("{2}{W}")).with_abilities(&[AbilityDef::static_ability(
+        "Each player can't cast more than one spell each turn.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::EachPlayer,
+            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(
+                PlayRestrictionDef::new(PlayActionMatcherDef::CastSpell, ObjectPredicateDef::Any)
+                    .after_spells_cast(1),
+            )),
+        },
+    )]),
+);
+
+// MRD 34 — Dream's Grip
+// Audit: unsupported — Entwine needs a cast-time choice that requires both modes exactly when its additional cost is paid; the existing conditional mode limit changes only the maximum.
+pub(in crate::card::sets) static DREAM_S_GRIP_34: CardRecord = CardRecord::new(
+    "Dream's Grip",
+    "7ffaa6a2-7c86-45b4-8892-b837e05f11a6",
+    "Jim Nelson",
+    crate::card::CardRules::unsupported(),
+);
+
+// MRD 35 — Fabricate
+pub(in crate::card::sets) static FABRICATE_35: CardRecord = CardRecord::new(
+    "Fabricate",
+    "a742e23c-1991-4dce-b670-dea92a1cf4ec",
+    "Glen Angus",
+    CardRules::new_sorcery(mana_cost!("{2}{U}")).with_abilities(&[AbilityDef::spell(
+        "Search your library for an artifact card, reveal it, put it into your hand, then shuffle.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::HasType(CardType::Artifact),
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: true,
+            destination: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    )]),
+);
+
+// MRD 47 — Quicksilver Elemental
+// Audit: unsupported — Cannot acquire all activated abilities of an arbitrary battlefield creature or restrict a spend-as-any-color permission to blue mana paying those abilities.
+pub(in crate::card::sets) static QUICKSILVER_ELEMENTAL_47: CardRecord = CardRecord::new(
+    "Quicksilver Elemental",
+    "2905f6ac-d054-454b-8e1a-9c32db13a581",
+    "Tony Szczudlo",
+    crate::card::CardRules::unsupported(),
+);
+
 // MRD 53 — Thirst for Knowledge
 pub(in crate::card::sets) static THIRST_FOR_KNOWLEDGE: CardRecord = CardRecord::new(
     "Thirst for Knowledge",
@@ -110,6 +174,17 @@ pub(in crate::card::sets) static THIRST_FOR_KNOWLEDGE: CardRecord = CardRecord::
             )),
         ]),
     )]),
+);
+
+// MRD 54 — Thoughtcast
+pub(in crate::card::sets) static THOUGHTCAST_54: CardRecord = CardRecord::new(
+    "Thoughtcast",
+    "efb965a7-877a-4302-b507-25b0a9e32d9b",
+    "Greg Hildebrandt",
+    CardRules::new_sorcery(mana_cost!("{4}{U}")).with_abilities(&[
+AbilityDef::static_ability("Affinity for artifacts (This spell costs {1} less to cast for each artifact you control.)", EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::HasType(CardType::Artifact), &[ZoneKind::Battlefield], PlayerRelation::You)))).with_source_zones(&[ZoneKind::Hand]),
+AbilityDef::spell("Draw two cards.", abilities::draw_cards(ValueDef::Constant(2)))
+]),
 );
 
 // MRD 57 — Barter in Blood
@@ -162,6 +237,45 @@ CardRules::new_sorcery(mana_cost!("{X}{1}{B}"))
         ]),
 );
 
+// MRD 62 — Disciple of the Vault
+pub(in crate::card::sets) static DISCIPLE_OF_THE_VAULT_62: CardRecord = CardRecord::new(
+    "Disciple of the Vault",
+    "644359dc-3c4c-4291-876d-7390dc466877",
+    "Matt Thompson",
+    CardRules::new_creature(mana_cost!("{B}"), &["Human", "Cleric"], 1, 1).with_abilities(&[
+abilities::dies_trigger_matching_with_targets("Whenever an artifact is put into a graveyard from the battlefield, you may have target opponent lose 1 life.", ObjectPredicateDef::HasType(CardType::Artifact), &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(PlayerRelation::Opponent))], EffectDef::May { player: EffectRecipientDef::Controller, effect: &EffectDef::LoseLife { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), amount: ValueDef::Constant(1) } })
+]),
+);
+
+// MRD 99 — Mass Hysteria
+pub(in crate::card::sets) static MASS_HYSTERIA_99: CardRecord = CardRecord::new(
+    "Mass Hysteria",
+    "1431354a-fcfa-4f67-a822-6dcc4d13ac3f",
+    "Adam Rex",
+    CardRules::new_enchantment(mana_cost!("{R}")).with_abilities(&[AbilityDef::static_ability(
+        "All creatures have haste.",
+        EffectDef::StaticApply {
+            recipient: EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Any,
+            ),
+            effect: AppliedEffectDef::add_ability(&abilities::haste()),
+        },
+    )]),
+);
+
+// MRD 104 — Seething Song
+pub(in crate::card::sets) static SEETHING_SONG_104: CardRecord = CardRecord::new(
+    "Seething Song",
+    "9213d580-7953-455f-abbe-99d3db2705cf",
+    "Martina Pilcerova",
+    CardRules::new_instant(mana_cost!("{2}{R}")).with_abilities(&[AbilityDef::spell(
+        "Add {R}{R}{R}{R}{R}.",
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red).with_amount(5)),
+    )]),
+);
+
 // MRD 122 — Hum of the Radix
 pub(in crate::card::sets) static HUM_OF_THE_RADIX: CardRecord = CardRecord::new(
     "Hum of the Radix",
@@ -182,6 +296,40 @@ pub(in crate::card::sets) static HUM_OF_THE_RADIX: CardRecord = CardRecord::new(
             ))),
         ),
     ),
+);
+
+// MRD 130 — Sylvan Scrying
+pub(in crate::card::sets) static SYLVAN_SCRYING_130: CardRecord = CardRecord::new(
+    "Sylvan Scrying",
+    "b4ff07b6-be9f-498f-9f36-cbd64f1b10cc",
+    "Scott M. Fischer",
+    CardRules::new_sorcery(mana_cost!("{1}{G}")).with_abilities(&[AbilityDef::spell(
+        "Search your library for a land card, reveal it, put it into your hand, then shuffle.",
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::HasType(CardType::Land),
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: true,
+            destination: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    )]),
+);
+
+// MRD 134 — Tooth and Nail
+// Audit: unsupported — Entwine needs a cast-time choice that requires both modes exactly when its additional cost is paid; the existing conditional mode limit changes only the maximum.
+pub(in crate::card::sets) static TOOTH_AND_NAIL_134: CardRecord = CardRecord::new(
+    "Tooth and Nail",
+    "02f0067c-2d38-46bd-b52e-070c2ce424f0",
+    "Greg Hildebrandt",
+    crate::card::CardRules::unsupported(),
 );
 
 // MRD 141 — Aether Spellbomb
@@ -438,6 +586,15 @@ pub(in crate::card::sets) static IRON_MYR: CardRecord = CardRecord::new(
     ),
 );
 
+// MRD 188 — Isochron Scepter
+// Audit: unsupported — Linked exile exists, but the engine cannot create a copy of a card in exile and offer casting that copy without paying its mana cost.
+pub(in crate::card::sets) static ISOCHRON_SCEPTER_188: CardRecord = CardRecord::new(
+    "Isochron Scepter",
+    "878b0159-6917-45d3-b9ea-562ac49f0b8f",
+    "Mark Harrison",
+    crate::card::CardRules::unsupported(),
+);
+
 // MRD 191 — Leaden Myr
 pub(in crate::card::sets) static LEADEN_MYR: CardRecord = CardRecord::new(
     "Leaden Myr",
@@ -450,6 +607,27 @@ pub(in crate::card::sets) static LEADEN_MYR: CardRecord = CardRecord::new(
             EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Black)),
         ),
     ),
+);
+
+// MRD 195 — Leveler
+pub(in crate::card::sets) static LEVELER_195: CardRecord = CardRecord::new(
+    "Leveler",
+    "03ffa3c3-dd29-47eb-abf2-7951fadb5c37",
+    "Carl Critchlow",
+    CardRules::new_artifact_creature(mana_cost!("{5}"), &["Juggernaut"], 10, 10).with_abilities(&[
+        abilities::enters_trigger(
+            "When this creature enters, exile all cards from your library.",
+            EffectDef::move_to_zone(
+                EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Any,
+                    &[ZoneKind::Library],
+                    PlayerRelation::You,
+                ),
+                ZoneKind::Exile,
+                ZonePlacement::Top,
+            ),
+        ),
+    ]),
 );
 
 // MRD 199 — Lightning Greaves
@@ -535,6 +713,84 @@ CardRules::new_artifact_creature(mana_cost!("{7}"), &["Construct"], 0, 0).with_a
     ]),
 );
 
+// MRD 228 — Platinum Angel
+// Audit: unsupported — The player-loss and win-condition pipeline has no continuous cannot-lose/cannot-win rule.
+pub(in crate::card::sets) static PLATINUM_ANGEL_228: CardRecord = CardRecord::new(
+    "Platinum Angel",
+    "59bb5aee-b334-4c24-875b-56751d4add02",
+    "Brom",
+    crate::card::CardRules::unsupported(),
+);
+
+// MRD 237 — Scrabbling Claws
+pub(in crate::card::sets) static SCRABBLING_CLAWS_237: CardRecord = CardRecord::new(
+    "Scrabbling Claws",
+    "415027f8-ccef-4b38-ace2-db4e94f066fe",
+    "Thomas M. Baxa",
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{T}: Target player exiles a card from their graveyard.",
+            &[CostDef::TapSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            EffectDef::ChooseExact(crate::card::ChooseExactDef {
+                binding: Binding!("graveyard_exile"),
+                chooser: crate::card::PlayerRefDef::Target(TargetIndex::PRIMARY),
+                candidates: ObjectSetDef::Query(crate::card::ObjectQueryDef::owned_by(
+                    ObjectPredicateDef::Any,
+                    &[ZoneKind::Graveyard],
+                    crate::card::PlayerSetDef::One(crate::card::PlayerRefDef::Target(
+                        TargetIndex::PRIMARY,
+                    )),
+                )),
+                exclude: None,
+                amount: ValueDef::Constant(1),
+                visibility: ChoiceVisibilityDef::Public,
+                then: &EffectDef::move_to_zone(
+                    EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("graveyard_exile"))),
+                    ZoneKind::Exile,
+                    ZonePlacement::Top,
+                ),
+            }),
+        ),
+        AbilityDef::activated_with_targets(
+            "{1}, Sacrifice this artifact: Exile target card from a graveyard. Draw a card.",
+            &[CostDef::Mana(mana_cost!("{1}")), CostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::Any,
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: None,
+                },
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::move_to_zone(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    ZoneKind::Exile,
+                    ZonePlacement::Top,
+                ),
+                abilities::draw_cards(ValueDef::Constant(1)),
+            ]),
+        ),
+    ]),
+);
+
+// MRD 238 — Sculpting Steel
+pub(in crate::card::sets) static SCULPTING_STEEL_238: CardRecord = CardRecord::new(
+    "Sculpting Steel",
+    "3aac5f6f-97c1-4546-94ed-016292e98c9d",
+    "Heather Hudson",
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[AbilityDef::replacement(
+        "You may have this artifact enter as a copy of any artifact on the battlefield.",
+        ReplacementEffectDef::CopyEntering {
+            object: ObjectPredicateDef::HasType(CardType::Artifact),
+            exceptions: CopyExceptionsDef::NONE,
+        },
+    )]),
+);
+
 // MRD 241 — Silver Myr
 pub(in crate::card::sets) static SILVER_MYR: CardRecord = CardRecord::new(
     "Silver Myr",
@@ -614,6 +870,42 @@ pub(in crate::card::sets) static TALISMAN_OF_DOMINANCE: CardRecord = CardRecord:
     ]),
 );
 
+// MRD 254 — Talisman of Impulse
+pub(in crate::card::sets) static TALISMAN_OF_IMPULSE_254: CardRecord = CardRecord::new(
+    "Talisman of Impulse",
+    "a00b65f7-70d0-4bbd-ac13-be24cc3374ee",
+    "Mike Dringenberg",
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated_mana(
+            "{T}: Add {R} or {G}. This artifact deals 1 damage to you.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(
+                AddManaEffectDef::choice(&[ManaColor::Red, ManaColor::Green])
+                    .with_damage_to_controller(1),
+            ),
+        ),
+    ]),
+);
+
+// MRD 255 — Talisman of Indulgence
+pub(in crate::card::sets) static TALISMAN_OF_INDULGENCE_255: CardRecord = CardRecord::new(
+    "Talisman of Indulgence",
+    "e14011b3-56ce-4b93-833f-d8403809159c",
+    "Mike Dringenberg",
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated_mana(
+            "{T}: Add {B} or {R}. This artifact deals 1 damage to you.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(
+                AddManaEffectDef::choice(&[ManaColor::Black, ManaColor::Red])
+                    .with_damage_to_controller(1),
+            ),
+        ),
+    ]),
+);
+
 // MRD 256 — Talisman of Progress
 static TALISMAN_TAP: [CostDef; 1] = [CostDef::TapSource];
 
@@ -643,6 +935,25 @@ pub(in crate::card::sets) static TALISMAN_OF_PROGRESS: CardRecord = CardRecord::
     ]),
 );
 
+// MRD 274 — Welding Jar
+pub(in crate::card::sets) static WELDING_JAR_274: CardRecord = CardRecord::new(
+    "Welding Jar",
+    "42b7b73b-4800-4fc7-9a5c-93e00ea88498",
+    "Mark Brill",
+    CardRules::new_artifact(mana_cost!("{0}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "Sacrifice this artifact: Regenerate target artifact.",
+            &[CostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+            )],
+            EffectDef::Regenerate {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
+
 // MRD 276 — Worldslayer
 pub(in crate::card::sets) static WORLDSLAYER: CardRecord = CardRecord::new(
     "Worldslayer",
@@ -667,13 +978,63 @@ CardRules::new_artifact(mana_cost!("{5}"))
         ]),
 );
 
+// MRD 278 — Ancient Den
+pub(in crate::card::sets) static ANCIENT_DEN_278: CardRecord = CardRecord::new(
+    "Ancient Den",
+    "cc857fbd-8e0f-4bff-8f14-561c9925c484",
+    "Rob Alexander",
+    CardRules::new_land(&[])
+        .with_type(CardType::Artifact)
+        .with_abilities(&[abilities::tap_for(ManaColor::White)]),
+);
+
+// MRD 282 — Great Furnace
+pub(in crate::card::sets) static GREAT_FURNACE_282: CardRecord = CardRecord::new(
+    "Great Furnace",
+    "2877281d-c85d-4f32-b40d-828b93c4ee8e",
+    "Rob Alexander",
+    CardRules::new_land(&[])
+        .with_type(CardType::Artifact)
+        .with_abilities(&[abilities::tap_for(ManaColor::Red)]),
+);
+
+// MRD 283 — Seat of the Synod
+pub(in crate::card::sets) static SEAT_OF_THE_SYNOD_283: CardRecord = CardRecord::new(
+    "Seat of the Synod",
+    "5da5587d-6b6c-4645-8cc9-2866d1e6911b",
+    "John Avon",
+    CardRules::new_land(&[])
+        .with_type(CardType::Artifact)
+        .with_abilities(&[abilities::tap_for(ManaColor::Blue)]),
+);
+
+// MRD 286 — Vault of Whispers
+pub(in crate::card::sets) static VAULT_OF_WHISPERS_286: CardRecord = CardRecord::new(
+    "Vault of Whispers",
+    "73866487-33f4-4f64-b100-2c4ddadcd74e",
+    "Rob Alexander",
+    CardRules::new_land(&[])
+        .with_type(CardType::Artifact)
+        .with_abilities(&[abilities::tap_for(ManaColor::Black)]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LEONIN_SKYHUNTER,
     &RAISE_THE_ALARM,
+    &RULE_OF_LAW_19,
+    &DREAM_S_GRIP_34,
+    &FABRICATE_35,
+    &QUICKSILVER_ELEMENTAL_47,
     &THIRST_FOR_KNOWLEDGE,
+    &THOUGHTCAST_54,
     &BARTER_IN_BLOOD,
     &CONSUME_SPIRIT,
+    &DISCIPLE_OF_THE_VAULT_62,
+    &MASS_HYSTERIA_99,
+    &SEETHING_SONG_104,
     &HUM_OF_THE_RADIX,
+    &SYLVAN_SCRYING_130,
+    &TOOTH_AND_NAIL_134,
     &AETHER_SPELLBOMB,
     &BONESPLITTER,
     &CHALICE_OF_THE_VOID,
@@ -684,15 +1045,27 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &GILDED_LOTUS,
     &GOLD_MYR,
     &IRON_MYR,
+    &ISOCHRON_SCEPTER_188,
     &LEADEN_MYR,
+    &LEVELER_195,
     &LIGHTNING_GREAVES,
     &MINDSLAVER,
     &PENTAVUS,
+    &PLATINUM_ANGEL_228,
+    &SCRABBLING_CLAWS_237,
+    &SCULPTING_STEEL_238,
     &SILVER_MYR,
     &SOLEMN_SIMULACRUM,
     &TALISMAN_OF_DOMINANCE,
+    &TALISMAN_OF_IMPULSE_254,
+    &TALISMAN_OF_INDULGENCE_255,
     &TALISMAN_OF_PROGRESS,
+    &WELDING_JAR_274,
     &WORLDSLAYER,
+    &ANCIENT_DEN_278,
+    &GREAT_FURNACE_282,
+    &SEAT_OF_THE_SYNOD_283,
+    &VAULT_OF_WHISPERS_286,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

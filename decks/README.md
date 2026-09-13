@@ -16,13 +16,17 @@ id: example_deck
 aliases: [Example]
 main:
   Mountain: 60
-sideboard: {}
 ```
 
 - `name` is the required display name and case-insensitive lookup name.
-- `main` and `sideboard` are required card-name mappings with positive integer
-  counts. Use `{}` for an empty section. Quote names containing a colon,
-  such as `"Circle of Protection: Red"`.
+- `main` is a required card-name mapping with positive integer counts.
+  Quote names containing a colon, such as `"Circle of Protection: Red"`.
+- `sideboard` is an optional card-name mapping with positive integer counts.
+  Omit it when the deck has no sideboard; an omitted section defaults to empty.
+- `commanders` optionally names the physical card or cards designated for the
+  command zone. Like the other sections, it is a card-name mapping with
+  positive counts; use it only for Commander-family formats. A commander is
+  not also listed in `main` or `sideboard`.
 - `id` defaults to the filename stem. If supplied, it must match that stem
   exactly (for example, `example_deck.yaml` has ID `example_deck`). IDs are
   accepted as lookup names and name the generated Rust constructor,
@@ -57,3 +61,10 @@ Native callers can use `Deck::validate_supported_cards(&catalog)`. It returns
 a missing definition. This check is independent of `validate_for_format`, which
 checks construction and legality. A legal deck can still contain unsupported
 cards, and an inventory can be checked before its format profile exists.
+
+`cedh` and `duel-commander` use separate Commander gameplay profiles. Their
+list files preserve designated commanders, and setup checks that every listed
+identity exists in the catalog. Color identity, singleton/count rules, pairing
+permissions, and format legality remain deferred. The seed collections contain
+16 cEDH lists and eight Duel Commander lists. See [Commander formats](../docs/commander.md)
+for gameplay, source links, ban metadata, and the limits of deck validation.

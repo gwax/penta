@@ -5,6 +5,7 @@ use super::PrintingRecord;
 use crate::TargetIndex;
 use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
+use crate::card::AbilityTargetPredicate;
 use crate::card::AppliedEffectDef;
 use crate::card::CardArt;
 use crate::card::CardRules;
@@ -73,6 +74,15 @@ pub(in crate::card::sets) static HELIOD_S_PILGRIM: CardRecord = CardRecord::new(
     ),
 );
 
+// M15 15 — Hushwing Gryff
+// Audit: unsupported — The trigger pipeline has no continuous rule suppressing triggered abilities caused by creatures entering the battlefield.
+pub(in crate::card::sets) static HUSHWING_GRYFF_15: CardRecord = CardRecord::new(
+    "Hushwing Gryff",
+    "7b44eb0d-5a3a-4624-aee4-11d6978fb4b0",
+    "John Severin Brassell",
+    crate::card::CardRules::unsupported(),
+);
+
 // M15 40 — Triplicate Spirits
 pub(in crate::card::sets) static TRIPLICATE_SPIRITS: CardRecord = CardRecord::new(
     "Triplicate Spirits",
@@ -95,11 +105,67 @@ pub(in crate::card::sets) static TRIPLICATE_SPIRITS: CardRecord = CardRecord::ne
     ]),
 );
 
+// M15 119 — Ulcerate
+pub(in crate::card::sets) static ULCERATE_119: CardRecord = CardRecord::new(
+    "Ulcerate",
+    "2e06e6c8-05c0-4d87-9961-605b888bc794",
+    "Johann Bodin",
+    CardRules::new_instant(mana_cost!("{B}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Target creature gets -3/-3 until end of turn. You lose 3 life.",
+        &[AbilityTargetDef::exactly_one_permanent(
+            ObjectPredicateDef::HasType(CardType::Creature),
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(-3),
+                    ValueDef::Constant(-3),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            EffectDef::LoseLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(3),
+            },
+        ]),
+    )]),
+);
+
+// M15 122 — Waste Not
+// Audit: unsupported — Discarded has no card predicate. Object-set conditions inspect a live zone object rather than the discarded card snapshot, so they cannot classify discard-cost events whose hand object was replaced or already moved.
+pub(in crate::card::sets) static WASTE_NOT_122: CardRecord = CardRecord::new(
+    "Waste Not",
+    "241d8f7d-3981-47c1-b7b8-748277fa452f",
+    "Matt Stewart",
+    crate::card::CardRules::unsupported(),
+);
+
+// M15 138 — Crowd's Favor
+pub(in crate::card::sets) static CROWD_S_FAVOR_138: CardRecord = CardRecord::new(
+    "Crowd's Favor",
+    "536b8104-9d8d-444b-8535-62bcbe279de2",
+    "Slawomir Maniak",
+    CardRules::new_instant(mana_cost!("{R}")).with_abilities(&[
+abilities::convoke(),
+AbilityDef::spell_with_targets("Target creature gets +1/+0 and gains first strike until end of turn. (It deals combat damage before creatures without first strike.)", &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(CardType::Creature))], EffectDef::Apply { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), effect: AppliedEffectDef::Composite(&[AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(0)), AppliedEffectDef::add_ability(&abilities::first_strike())]), duration: ResolvedEffectDurationDef::UntilEndOfTurn })
+]),
+);
+
 // M15 142 — Frenzied Goblin (reprint)
 const FRENZIED_GOBLIN_REPRINT: PrintingRecord = PrintingRecord::reprint(
     &crate::card::sets::y2005::ravnica_city_of_guilds::FRENZIED_GOBLIN,
     "7ddfe382-3a80-45f3-a022-54739c4b69a6",
     "Carl Critchlow",
+);
+
+// M15 143 — Generator Servant
+// Audit: unsupported — Mana-spend grants have no duration field; they can grant haste to a paid creature spell, but cannot expire that grant at end of turn.
+pub(in crate::card::sets) static GENERATOR_SERVANT_143: CardRecord = CardRecord::new(
+    "Generator Servant",
+    "74d0c422-4201-4d6f-9df7-659e8b78b541",
+    "Mathias Kollros",
+    crate::card::CardRules::unsupported(),
 );
 
 // M15 145 — Goblin Rabblemaster
@@ -170,6 +236,26 @@ pub(in crate::card::sets) static GOBLIN_RABBLEMASTER: CardRecord = CardRecord::n
         ]),
 );
 
+// M15 164 — Stoke the Flames
+pub(in crate::card::sets) static STOKE_THE_FLAMES_164: CardRecord = CardRecord::new(
+    "Stoke the Flames",
+    "1d94c000-52e0-4215-83af-6351dc43e636",
+    "Ryan Barger",
+    CardRules::new_instant(mana_cost!("{2}{R}{R}")).with_abilities(&[
+        abilities::convoke(),
+        AbilityDef::spell_with_targets(
+            "Stoke the Flames deals 4 damage to any target.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::damage(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ValueDef::Constant(4),
+            ),
+        ),
+    ]),
+);
+
 // M15 194 — Reclamation Sage
 pub(in crate::card::sets) static RECLAMATION_SAGE: CardRecord = CardRecord::new(
     "Reclamation Sage",
@@ -196,11 +282,37 @@ pub(in crate::card::sets) static RECLAMATION_SAGE: CardRecord = CardRecord::new(
     ]),
 );
 
+// M15 209 — Yisan, the Wanderer Bard
+// Audit: unsupported — PutCountersOnSource is supported in resolving payments but not activation-cost enumeration or payment; the counter must be paid before this ability goes on the stack.
+pub(in crate::card::sets) static YISAN_THE_WANDERER_BARD_209: CardRecord = CardRecord::new(
+    "Yisan, the Wanderer Bard",
+    "65cd97cd-6d6e-4512-a050-6851b7527567",
+    "Chase Stone",
+    crate::card::CardRules::unsupported(),
+);
+
+// M15 215 — The Chain Veil
+// Audit: unsupported — MayActivateLoyaltyAnyTime changes timing only; the engine has no additional loyalty activation allowance that composes with prior activations and repeated resolutions.
+pub(in crate::card::sets) static THE_CHAIN_VEIL_215: CardRecord = CardRecord::new(
+    "The Chain Veil",
+    "0415cc0e-979e-42cc-a56d-88d13153a7de",
+    "Volkan Baǵa",
+    crate::card::CardRules::unsupported(),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HELIOD_S_PILGRIM,
+    &HUSHWING_GRYFF_15,
     &TRIPLICATE_SPIRITS,
+    &ULCERATE_119,
+    &WASTE_NOT_122,
+    &CROWD_S_FAVOR_138,
+    &GENERATOR_SERVANT_143,
     &GOBLIN_RABBLEMASTER,
+    &STOKE_THE_FLAMES_164,
     &RECLAMATION_SAGE,
+    &YISAN_THE_WANDERER_BARD_209,
+    &THE_CHAIN_VEIL_215,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =

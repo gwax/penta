@@ -8,8 +8,10 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::BattlefieldEntryModificationDef;
 use crate::card::CardRules;
+use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ComparisonDef;
 use crate::card::CostDef;
@@ -17,6 +19,8 @@ use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::InstalledTriggerDef;
+use crate::card::InstalledTriggerLifetimeDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
@@ -42,6 +46,67 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// M21 36 — Selfless Savior
+pub(in crate::card::sets) static SELFLESS_SAVIOR_36: CardRecord = CardRecord::new(
+    "Selfless Savior",
+    "6911759c-7177-402c-a95a-f9f46efaf521",
+    "Ralph Horsley",
+    CardRules::new_creature(mana_cost!("{W}"), &["Dog"], 1, 1).with_ability(
+        AbilityDef::activated_with_targets(
+            "Sacrifice this creature: Another target creature you control gains indestructible until end of turn.",
+            &[CostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: Some(PlayerRelation::You),
+                owner: None,
+            })],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::add_ability(&abilities::indestructible()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+    ),
+);
+
+// M21 52 — Ghostly Pilferer
+// Audit: unsupported — TriggerEventDef exposes becoming tapped but has no event for becoming untapped. Its optional pay-to-draw trigger cannot be registered.
+pub(in crate::card::sets) static GHOSTLY_PILFERER_52: CardRecord = CardRecord::new(
+    "Ghostly Pilferer",
+    "2810631f-c55c-4947-a26f-4d3ce76024b3",
+    "Craig J Spearing",
+    crate::card::CardRules::unsupported(),
+);
+
+// M21 57 — Miscast
+pub(in crate::card::sets) static MISCAST_57: CardRecord = CardRecord::new(
+    "Miscast",
+    "033afbd5-9937-4957-98ba-48e469a490bb",
+    "Steve Argyle",
+    CardRules::new_instant(mana_cost!("{U}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Counter target instant or sorcery spell unless its controller pays {3}.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::Spell,
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Instant),
+                        ObjectPredicateDef::HasType(CardType::Sorcery),
+                    ]),
+                ]),
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            },
+        )],
+        abilities::counter_target_unless_paid(&[CostDef::Mana(mana_cost!("{3}"))]),
+    )]),
+);
 
 // M21 71 — Shipwreck Dowser
 pub(in crate::card::sets) static SHIPWRECK_DOWSER: CardRecord = CardRecord::new(
@@ -110,6 +175,15 @@ pub(in crate::card::sets) static VILLAGE_RITES: CardRecord = CardRecord::new(
     )),
 );
 
+// M21 139 — Conspicuous Snoop
+// Audit: unsupported — Needs continuous access to the top library card's activated abilities, with that card as each ability's source.
+pub(in crate::card::sets) static CONSPICUOUS_SNOOP_139: CardRecord = CardRecord::new(
+    "Conspicuous Snoop",
+    "5d878dab-5ed2-4ef3-b2c7-472290892854",
+    "Zoltan Boros",
+    crate::card::CardRules::unsupported(),
+);
+
 // M21 150 — Heartfire Immolator
 pub(in crate::card::sets) static HEARTFIRE_IMMOLATOR: CardRecord = CardRecord::new(
     "Heartfire Immolator",
@@ -147,6 +221,18 @@ pub(in crate::card::sets) static HEARTFIRE_IMMOLATOR: CardRecord = CardRecord::n
             ),
         ),
     ]),
+);
+
+// M21 162 — Subira, Tulzidi Caravanner
+pub(in crate::card::sets) static SUBIRA_TULZIDI_CARAVANNER_162: CardRecord = CardRecord::new(
+    "Subira, Tulzidi Caravanner",
+    "034b8d6d-95ea-434a-967a-e6675a7ce88a",
+    "Leesha Hannigan",
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Shaman"], 2, 3).with_supertype(CardSupertype::Legendary).with_abilities(&[
+abilities::haste(),
+AbilityDef::activated_with_targets("{1}: Another target creature with power 2 or less can't be blocked this turn.", &[CostDef::Mana(mana_cost!("{1}"))], &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Not(&ObjectPredicateDef::Source), ObjectPredicateDef::Not(&ObjectPredicateDef::PowerGreaterThan(ValueDef::Constant(2)))]))], EffectDef::Apply { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), effect: AppliedEffectDef::Rule(AppliedRuleDef::CANNOT_BE_BLOCKED), duration: ResolvedEffectDurationDef::UntilEndOfTurn }),
+AbilityDef::activated("{1}{R}, {T}, Discard your hand: Until end of turn, whenever a creature you control with power 2 or less deals combat damage to a player, draw a card.", &[CostDef::Mana(mana_cost!("{1}{R}")), CostDef::TapSource, CostDef::DiscardHand], EffectDef::InstallTrigger(InstalledTriggerDef { ability: &AbilityDef::triggered("Whenever a creature you control with power 2 or less deals combat damage to a player, draw a card.", TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::ControlledBy(PlayerRelation::You), ObjectPredicateDef::Not(&ObjectPredicateDef::PowerGreaterThan(ValueDef::Constant(2)))])), abilities::draw_cards(ValueDef::Constant(1))), lifetime: InstalledTriggerLifetimeDef::ThisTurn }))
+]),
 );
 
 // M21 164 — Terror of the Peaks
@@ -327,6 +413,15 @@ pub(in crate::card::sets) static WILDWOOD_SCOURGE: CardRecord = CardRecord::new(
     ]),
 );
 
+// M21 228 — Chromatic Orrery
+// Audit: unsupported — No global player rule permits spending mana as any color for every payment. The existing rule is limited to creature activated abilities.
+pub(in crate::card::sets) static CHROMATIC_ORRERY_228: CardRecord = CardRecord::new(
+    "Chromatic Orrery",
+    "3af78d76-ad5c-44ba-880d-b834bcde5398",
+    "Volkan Baǵa",
+    crate::card::CardRules::unsupported(),
+);
+
 // M21 232 — Mazemind Tome
 // Audit: unsupported — Needs a state trigger for crossing a counter threshold, with suppression while that trigger is on the stack and an actual exile-result condition before gaining life.
 pub(in crate::card::sets) static MAZEMIND_TOME: CardRecord = CardRecord::new(
@@ -336,17 +431,78 @@ pub(in crate::card::sets) static MAZEMIND_TOME: CardRecord = CardRecord::new(
     CardRules::unsupported(),
 );
 
+// M21 360 — Peer into the Abyss
+// Audit: unsupported — Values can halve another value with rounding, but LifeTotal takes a fixed PlayerRelation rather than a target-player reference. The loss cannot read the targeted player's current life total.
+pub(in crate::card::sets) static PEER_INTO_THE_ABYSS_360: CardRecord = CardRecord::new(
+    "Peer into the Abyss",
+    "a46820e5-67a4-4b28-bd0c-7ed9443d7dfb",
+    "Izzy",
+    crate::card::CardRules::unsupported(),
+);
+
+// M21 373 — Elder Gargaroth
+pub(in crate::card::sets) static ELDER_GARGAROTH_373: CardRecord = CardRecord::new(
+    "Elder Gargaroth",
+    "8ee9b3ad-0774-4952-b49b-be390182b245",
+    "Nicholas Gregory",
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Beast"], 6, 6).with_abilities(&[
+        abilities::reach(),
+        abilities::vigilance(),
+        abilities::trample(),
+        AbilityDef::modal_triggered(
+            "Whenever this creature attacks or blocks, choose one —",
+            TriggerEventDef::AnyOf(&[
+                TriggerEventDef::attacks(ObjectPredicateDef::Source),
+                TriggerEventDef::Blocks {
+                    blocked: ObjectPredicateDef::Any,
+                },
+            ]),
+            &[
+                AbilityDef::spell(
+                    "Create a Beast.",
+                    EffectDef::CreateToken(crate::card::CreateTokenDef::new(
+                        crate::card::TokenDef::Literal(
+                            crate::card::TokenCharacteristics::creature(
+                                &["Beast"],
+                                &[ManaColor::Green],
+                                3,
+                                3,
+                            ),
+                        ),
+                    )),
+                ),
+                AbilityDef::spell(
+                    "Gain 3 life.",
+                    EffectDef::GainLife {
+                        recipient: EffectRecipientDef::Controller,
+                        amount: ValueDef::Constant(3),
+                    },
+                ),
+                AbilityDef::spell("Draw a card.", abilities::draw_cards(ValueDef::Constant(1))),
+            ],
+        ),
+    ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &SELFLESS_SAVIOR_36,
+    &GHOSTLY_PILFERER_52,
+    &MISCAST_57,
     &SHIPWRECK_DOWSER,
     &SANGUINE_INDULGENCE,
     &VILLAGE_RITES,
+    &CONSPICUOUS_SNOOP_139,
     &HEARTFIRE_IMMOLATOR,
+    &SUBIRA_TULZIDI_CARAVANNER_162,
     &TERROR_OF_THE_PEAKS,
     &GARRUK_S_UPRISING,
     &LLANOWAR_VISIONARY,
     &PRIMAL_MIGHT,
     &WILDWOOD_SCOURGE,
+    &CHROMATIC_ORRERY_228,
     &MAZEMIND_TOME,
+    &PEER_INTO_THE_ABYSS_360,
+    &ELDER_GARGAROTH_373,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

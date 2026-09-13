@@ -30,12 +30,18 @@ use crate::TriggerEventDef;
 use crate::ValueDef;
 use crate::ZoneKind;
 use crate::ZonePlacement;
+use crate::card::BindObjectsDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
 use crate::card::CreateTokenDef;
+use crate::card::ObjectCollectionSourceDef;
+use crate::card::ObjectRefDef;
+use crate::card::ObjectSetDef;
+use crate::card::RevealObjectsDef;
 use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
+use crate::card::TriggerConditionDef;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -916,6 +922,16 @@ pub(in crate::card::sets) static ELVISH_ARCHDRUID: CardRecord = CardRecord::new(
     ]),
 );
 
+// M10 190 — Lurking Predators
+pub(in crate::card::sets) static LURKING_PREDATORS_190: CardRecord = CardRecord::new(
+    "Lurking Predators",
+    "e864c824-89a1-41f6-9481-83b2284471e0",
+    "Mike Bierek",
+    CardRules::new_enchantment(mana_cost!("{4}{G}{G}")).with_abilities(&[
+AbilityDef::triggered("Whenever an opponent casts a spell, reveal the top card of your library. If it's a creature card, put it onto the battlefield. Otherwise, you may put that card on the bottom of your library.", TriggerEventDef::spell_cast(ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent)), EffectDef::BindObjects(BindObjectsDef { source: ObjectCollectionSourceDef::TopCards { player: PlayerRefDef::EffectController, count: ValueDef::Constant(1) }, binding: Binding!("predators_top"), then: &EffectDef::Sequence(&[EffectDef::RevealObjects(RevealObjectsDef { input: ObjectSetDef::Binding(Binding!("predators_top")), then: &EffectDef::None }), EffectDef::ForEachInBinding { objects: Binding!("predators_top"), binding: Binding!("predators_card"), effect: &EffectDef::IfElseCondition { condition: &TriggerConditionDef::BoundObjectMatches { binding: Binding!("predators_card"), object: ObjectPredicateDef::HasType(CardType::Creature) }, then: &EffectDef::move_to_zone(EffectRecipientDef::object(ObjectRefDef::Binding(Binding!("predators_card"))), ZoneKind::Battlefield, ZonePlacement::Top), otherwise: &EffectDef::May { player: EffectRecipientDef::Controller, effect: &EffectDef::move_to_zone(EffectRecipientDef::object(ObjectRefDef::Binding(Binding!("predators_card"))), ZoneKind::Library, ZonePlacement::Bottom) } } }]) }))
+]),
+);
+
 // M10 194 — Mold Adder
 pub(in crate::card::sets) static MOLD_ADDER: CardRecord = CardRecord::new(
     "Mold Adder",
@@ -1133,6 +1149,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CUDGEL_TROLL,
     &DEADLY_RECLUSE,
     &ELVISH_ARCHDRUID,
+    &LURKING_PREDATORS_190,
     &MOLD_ADDER,
     &RUNECLAW_BEAR,
     &STAMPEDING_RHINO,

@@ -13,12 +13,18 @@ use crate::ResolvedEffectDurationDef;
 use crate::TargetChooserDef;
 use crate::TargetIndex;
 use crate::card::AbilityDef;
+use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
 use crate::card::BasicLandType;
+use crate::card::BattlefieldArrivalDef;
+use crate::card::BattlefieldEntryModificationDef;
 use crate::card::CardRules;
+use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CastTimingPermissionDef;
+use crate::card::ChoiceVisibilityDef;
+use crate::card::ChooseDef;
 use crate::card::ConditionalStaticEffectDef;
 use crate::card::CostDef;
 use crate::card::CounterKind;
@@ -28,6 +34,7 @@ use crate::card::DividedTotal;
 use crate::card::DrawEventMatcherDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::ObjectChoiceBindingDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectSetCountConditionDef;
 use crate::card::ObjectSetPredicateDef;
@@ -38,6 +45,7 @@ use crate::card::StaticApplyDef;
 use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
+use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
@@ -142,6 +150,34 @@ pub(in crate::card::sets) static ROC_EGG: CardRecord = CardRecord::new(
                 TokenCharacteristics::creature(&["Bird"], &[ManaColor::White], 3, 3)
                     .with_abilities(&[abilities::flying()]),
             ))),
+        ),
+    ]),
+);
+
+// M11 28 — Serra Ascendant
+pub(in crate::card::sets) static SERRA_ASCENDANT_28: CardRecord = CardRecord::new(
+    "Serra Ascendant",
+    "1ee65b44-eeb6-418b-b022-a0aef587c738",
+    "Anthony Palumbo",
+    CardRules::new_creature(mana_cost!("{W}"), &["Human", "Monk"], 1, 1).with_abilities(&[
+        abilities::lifelink(),
+        AbilityDef::static_ability(
+            "As long as you have 30 or more life, this creature gets +5/+5 and has flying.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::Not(&TriggerConditionDef::ControllerLifeAtMost(
+                    29,
+                )),
+                then: &EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(5),
+                            ValueDef::Constant(5),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::flying()),
+                    ]),
+                },
+            },
         ),
     ]),
 );
@@ -653,6 +689,16 @@ pub(in crate::card::sets) static QUAG_SICKNESS: CardRecord = CardRecord::new(
         ]),
 );
 
+// M11 120 — Viscera Seer
+pub(in crate::card::sets) static VISCERA_SEER_120: CardRecord = CardRecord::new(
+    "Viscera Seer",
+    "6179f847-e334-4f7f-9a4e-0013942a394f",
+    "John Stanko",
+    CardRules::new_creature(mana_cost!("{B}"), &["Vampire", "Wizard"], 1, 1).with_abilities(&[
+AbilityDef::activated("Sacrifice a creature: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)", &[CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(CardType::Creature))], abilities::scry(ValueDef::Constant(1)))
+]),
+);
+
 // M11 130 — Combust
 // Audit: unsupported — Needs only this spell's damage to be unpreventable, without making other damage unpreventable for the turn.
 pub(in crate::card::sets) static COMBUST: CardRecord = CardRecord::new(
@@ -805,6 +851,17 @@ pub(in crate::card::sets) static MANIC_VANDAL: CardRecord = CardRecord::new(
     ),
 );
 
+// M11 153 — Pyretic Ritual
+pub(in crate::card::sets) static PYRETIC_RITUAL_153: CardRecord = CardRecord::new(
+    "Pyretic Ritual",
+    "1e577638-a7ed-4bcc-90fb-0cffe87d5a28",
+    "James Paick",
+    CardRules::new_instant(mana_cost!("{1}{R}")).with_abilities(&[AbilityDef::spell(
+        "Add {R}{R}{R}.",
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Red).with_amount(3)),
+    )]),
+);
+
 // M11 155 — Reverberate
 pub(in crate::card::sets) static REVERBERATE: CardRecord = CardRecord::new(
     "Reverberate",
@@ -918,6 +975,26 @@ pub(in crate::card::sets) static BRINDLE_BOAR: CardRecord = CardRecord::new(
             },
         ),
     ),
+);
+
+// M11 168 — Cultivate
+pub(in crate::card::sets) static CULTIVATE_168: CardRecord = CardRecord::new(
+    "Cultivate",
+    "2ef3dbe4-5c03-4be4-ab48-45b6689b6712",
+    "Anthony Palumbo",
+    CardRules::new_sorcery(mana_cost!("{2}{G}")).with_abilities(&[
+AbilityDef::spell("Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle.", EffectDef::Sequence(&[EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Land), ObjectPredicateDef::Supertype(CardSupertype::Basic)]), minimum: 0, maximum: ValueDef::Constant(2), reveal: true, destination: ZoneKind::Library, placement: ZonePlacement::Top, shuffle: false, enters_tapped: false, attachment: None, binding: Some(Binding!("cultivate_found")), then: Some(&EffectDef::Choose(ChooseDef { chooser: PlayerRefDef::EffectController, candidates: ObjectSetDef::Binding(Binding!("cultivate_found")), exclude: None, minimum: 1, maximum: 1, binding: ObjectChoiceBindingDef::Objects(Binding!("cultivate_field")), unchosen: Some(Binding!("cultivate_hand")), visibility: ChoiceVisibilityDef::Private, then: &EffectDef::Sequence(&[EffectDef::WithBattlefieldArrival { effect: &EffectDef::move_to_zone(EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("cultivate_field"))), ZoneKind::Battlefield, ZonePlacement::Top), arrival: BattlefieldArrivalDef { controller: None, modifications: &[BattlefieldEntryModificationDef::Tapped], attachment: None, counters: None } }, EffectDef::move_to_zone(EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("cultivate_hand"))), ZoneKind::Hand, ZonePlacement::Top)]) })) }, EffectDef::ShuffleLibrary { player: EffectRecipientDef::Controller }]))
+]),
+);
+
+// M11 172 — Fauna Shaman
+pub(in crate::card::sets) static FAUNA_SHAMAN_172: CardRecord = CardRecord::new(
+    "Fauna Shaman",
+    "c685e4c3-eb7b-4b9e-9676-395d69d80974",
+    "Steve Prescott",
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Shaman"], 2, 2).with_abilities(&[
+AbilityDef::activated("{G}, {T}, Discard a creature card: Search your library for a creature card, reveal it, put it into your hand, then shuffle.", &[CostDef::Mana(mana_cost!("{G}")), CostDef::TapSource, CostDef::discard(ObjectPredicateDef::HasType(CardType::Creature))], EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::HasType(CardType::Creature), minimum: 0, maximum: ValueDef::Constant(1), reveal: true, destination: ZoneKind::Hand, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None })
+]),
 );
 
 // M11 176 — Garruk's Companion
@@ -1079,6 +1156,31 @@ CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated(
     )),
 );
 
+// M11 214 — Steel Overseer
+pub(in crate::card::sets) static STEEL_OVERSEER_214: CardRecord = CardRecord::new(
+    "Steel Overseer",
+    "b9da673d-7cc0-4435-b5a5-5098630f7712",
+    "Chris Rahn",
+    CardRules::new_artifact_creature(mana_cost!("{2}"), &["Construct"], 1, 1).with_abilities(&[
+        AbilityDef::activated(
+            "{T}: Put a +1/+1 counter on each artifact creature you control.",
+            &[CostDef::TapSource],
+            EffectDef::AddCounters {
+                object: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Artifact),
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                kind: CounterKind::PlusOnePlusOne,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
+);
+
 // M11 216 — Sword of Vengeance
 pub(in crate::card::sets) static SWORD_OF_VENGEANCE: CardRecord = CardRecord::new(
     "Sword of Vengeance",
@@ -1108,12 +1210,28 @@ pub(in crate::card::sets) static SWORD_OF_VENGEANCE: CardRecord = CardRecord::ne
         ]),
 );
 
+// M11 217 — Temple Bell
+pub(in crate::card::sets) static TEMPLE_BELL_217: CardRecord = CardRecord::new(
+    "Temple Bell",
+    "8c99cde3-8ba5-44bf-bbaa-1a12c6cac925",
+    "Mark Tedin",
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[AbilityDef::activated(
+        "{T}: Each player draws a card.",
+        &[CostDef::TapSource],
+        EffectDef::DrawCards {
+            recipient: EffectRecipientDef::EachPlayer,
+            amount: ValueDef::Constant(1),
+        },
+    )]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &AJANI_S_PRIDEMATE,
     &ASSAULT_GRIFFIN,
     &LEYLINE_OF_SANCTITY,
     &MIGHTY_LEAP,
     &ROC_EGG,
+    &SERRA_ASCENDANT_28,
     &SUN_TITAN,
     &WAR_PRIEST_OF_THUNE,
     &AETHER_ADEPT,
@@ -1135,16 +1253,20 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &NIGHTWING_SHADE,
     &PHYLACTERY_LICH,
     &QUAG_SICKNESS,
+    &VISCERA_SEER_120,
     &COMBUST,
     &HOARDING_DRAGON,
     &INFERNO_TITAN,
     &LEYLINE_OF_PUNISHMENT,
     &MANIC_VANDAL,
+    &PYRETIC_RITUAL_153,
     &REVERBERATE,
     &THUNDER_STRIKE,
     &VOLCANIC_STRENGTH,
     &AUTUMN_S_VEIL,
     &BRINDLE_BOAR,
+    &CULTIVATE_168,
+    &FAUNA_SHAMAN_172,
     &GARRUK_S_COMPANION,
     &GARRUK_S_PACKLEADER,
     &GREATER_BASILISK,
@@ -1152,7 +1274,9 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &PRIMEVAL_TITAN,
     &SACRED_WOLF,
     &ELIXIR_OF_IMMORTALITY,
+    &STEEL_OVERSEER_214,
     &SWORD_OF_VENGEANCE,
+    &TEMPLE_BELL_217,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[SILENCE_REPRINT];

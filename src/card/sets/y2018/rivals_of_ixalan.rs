@@ -6,24 +6,36 @@ use crate::TargetIndex;
 use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
+use crate::card::AlternativeCastKindDef;
 use crate::card::AppliedEffectDef;
+use crate::card::BindObjectsDef;
 use crate::card::CardArt;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
+use crate::card::ChoiceVisibilityDef;
+use crate::card::ChooseDef;
 use crate::card::CostDef;
 use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::MoveObjectsDef;
+use crate::card::ObjectChoiceBindingDef;
+use crate::card::ObjectCollectionSourceDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
+use crate::card::ObjectRefDef;
+use crate::card::ObjectSetDef;
+use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
+use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
+use crate::card::ZonePlacement;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -106,6 +118,24 @@ pub(in crate::card::sets) static KITESAIL_CORSAIR: CardRecord = CardRecord::new(
     ]),
 );
 
+// RIX 45 — Nezahal, Primal Tide
+// Audit: unsupported — Ordinary activated-ability payment cannot discard three selected cards; the discard activation path supports one. Its delayed return also needs a tapped battlefield arrival.
+pub(in crate::card::sets) static NEZAHAL_PRIMAL_TIDE_45: CardRecord = CardRecord::new(
+    "Nezahal, Primal Tide",
+    "48eba418-94ab-46a3-958c-4d5058fc2bcd",
+    "Sam Burley",
+    crate::card::CardRules::unsupported(),
+);
+
+// RIX 59 — Timestream Navigator
+// Audit: unsupported — Ascend and the city's blessing condition exist, but activation costs cannot put the source on the bottom of its owner's library; MoveToZone costs also carry no library placement.
+pub(in crate::card::sets) static TIMESTREAM_NAVIGATOR_59: CardRecord = CardRecord::new(
+    "Timestream Navigator",
+    "14770537-209a-4260-88a4-30f4e2b5ede0",
+    "Zezhou Chen",
+    crate::card::CardRules::unsupported(),
+);
+
 // RIX 79 — Moment of Craving
 pub(in crate::card::sets) static MOMENT_OF_CRAVING: CardRecord = CardRecord::new(
     "Moment of Craving",
@@ -172,12 +202,13 @@ pub(in crate::card::sets) static BRASS_S_BOUNTY: CardRecord = CardRecord::new(
 );
 
 // RIX 100 — Etali, Primal Storm
-// Audit: unsupported — Needs a single resolving permission to cast any number of cards from a shared exiled group in a player-chosen order, with normal timing ignored only during that resolution.
 pub(in crate::card::sets) static ETALI_PRIMAL_STORM: CardRecord = CardRecord::new(
-    "Etali, Primal Storm",
-    "1d3d8bb4-0430-45bb-930d-5d6db6521945",
-    "Raymond Swanland",
-    CardRules::unsupported(),
+"Etali, Primal Storm",
+"1d3d8bb4-0430-45bb-930d-5d6db6521945",
+"Raymond Swanland",
+CardRules::new_creature(mana_cost!("{4}{R}{R}"), &["Elder", "Dinosaur"], 6, 6).with_supertype(CardSupertype::Legendary).with_abilities(&[
+AbilityDef::triggered("Whenever Etali attacks, exile the top card of each player's library, then you may cast any number of spells from among those cards without paying their mana costs.", TriggerEventDef::attacks(ObjectPredicateDef::Source), EffectDef::BindObjects(BindObjectsDef { source: ObjectCollectionSourceDef::TopCards { player: PlayerRefDef::EffectController, count: ValueDef::Constant(1) }, binding: Binding!("etali_yours"), then: &EffectDef::BindObjects(BindObjectsDef { source: ObjectCollectionSourceDef::TopCards { player: PlayerRefDef::Opponent, count: ValueDef::Constant(1) }, binding: Binding!("etali_theirs"), then: &EffectDef::MoveObjects(MoveObjectsDef { input: ObjectSetDef::Union(&[ObjectSetDef::Binding(Binding!("etali_yours")), ObjectSetDef::Binding(Binding!("etali_theirs"))]), from: Some(ZoneKind::Library), zone: ZoneKind::Exile, placement: ZonePlacement::Top, moved: Some(Binding!("etali_exiled")), then: &EffectDef::Choose(ChooseDef { chooser: PlayerRefDef::EffectController, candidates: ObjectSetDef::Binding(Binding!("etali_exiled")), exclude: None, minimum: 0, maximum: 2, binding: ObjectChoiceBindingDef::OrderedObjects(Binding!("etali_order")), unchosen: None, visibility: ChoiceVisibilityDef::Public, then: &EffectDef::ForEachInBinding { objects: Binding!("etali_order"), binding: Binding!("etali_card"), effect: &EffectDef::MayCastTargetWithoutPaying { object: EffectRecipientDef::object(ObjectRefDef::Binding(Binding!("etali_card"))), ability: &AbilityDef::alternative_cast(crate::NO_COSTS, AlternativeCastKindDef::Granted, Some("Cast without paying its mana cost."), EffectDef::None) } } }) }) }) }))
+]),
 );
 
 // RIX 101 — Fanatical Firebrand
@@ -233,6 +264,78 @@ pub(in crate::card::sets) static THRASHING_BRONTODON: CardRecord = CardRecord::n
     ]),
 );
 
+// RIX 149 — Thunderherd Migration
+// Audit: unsupported — RevealCardFromHand is only executed by the activated-ability payment path. The casting planner cannot choose and reveal a Dinosaur card as an alternative to the extra mana additional cost.
+pub(in crate::card::sets) static THUNDERHERD_MIGRATION_149: CardRecord = CardRecord::new(
+    "Thunderherd Migration",
+    "c56de4a3-f5ab-469e-ab66-b8187c8c04a0",
+    "Lars Grant-West",
+    crate::card::CardRules::unsupported(),
+);
+
+// RIX 174 — Zacama, Primal Calamity
+pub(in crate::card::sets) static ZACAMA_PRIMAL_CALAMITY_174: CardRecord = CardRecord::new(
+    "Zacama, Primal Calamity",
+    "5aa75f2b-53c5-47c5-96d2-ab796358a96f",
+    "Jaime Jones",
+    CardRules::new_creature(mana_cost!("{6}{R}{G}{W}"), &["Elder", "Dinosaur"], 9, 9)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::reach(),
+            abilities::vigilance(),
+            abilities::trample(),
+            AbilityDef::triggered_if(
+                "When Zacama enters, if you cast it, untap all lands you control.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                &TriggerConditionDef::SourceWasCast,
+                EffectDef::Untap {
+                    object: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                },
+            ),
+            AbilityDef::activated_with_targets(
+                "{2}{R}: Zacama deals 3 damage to target creature.",
+                &[CostDef::Mana(mana_cost!("{2}{R}"))],
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                )],
+                EffectDef::damage(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    ValueDef::Constant(3),
+                ),
+            ),
+            AbilityDef::activated_with_targets(
+                "{2}{G}: Destroy target artifact or enchantment.",
+                &[CostDef::Mana(mana_cost!("{2}{G}"))],
+                &[AbilityTargetDef::exactly_one_permanent(
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Artifact),
+                        ObjectPredicateDef::HasType(CardType::Enchantment),
+                    ]),
+                )],
+                EffectDef::Destroy {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    then: None,
+                },
+            ),
+            AbilityDef::activated(
+                "{2}{W}: You gain 3 life.",
+                &[CostDef::Mana(mana_cost!("{2}{W}"))],
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(3),
+                },
+            ),
+        ]),
+);
+
 // RIX 178 — Gleaming Barrier
 pub(in crate::card::sets) static GLEAMING_BARRIER: CardRecord = CardRecord::new(
     "Gleaming Barrier",
@@ -264,6 +367,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MOMENT_OF_TRIUMPH,
     &ZETALPA_PRIMAL_DAWN,
     &KITESAIL_CORSAIR,
+    &NEZAHAL_PRIMAL_TIDE_45,
+    &TIMESTREAM_NAVIGATOR_59,
     &MOMENT_OF_CRAVING,
     &BOMBARD,
     &BRASS_S_BOUNTY,
@@ -271,6 +376,8 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FANATICAL_FIREBRAND,
     &GHALTA_PRIMAL_HUNGER,
     &THRASHING_BRONTODON,
+    &THUNDERHERD_MIGRATION_149,
+    &ZACAMA_PRIMAL_CALAMITY_174,
     &GLEAMING_BARRIER,
     &SWAB_GOBLIN,
 ];

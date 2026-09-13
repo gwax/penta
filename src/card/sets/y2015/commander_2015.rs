@@ -2,21 +2,34 @@
 
 use super::CardRecord;
 use super::PrintingRecord;
+use crate::ParentBinding;
 use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
+use crate::card::AppliedEffectDef;
 use crate::card::CardRules;
 use crate::card::CardType;
+use crate::card::ChoiceVisibilityDef;
+use crate::card::ChooseExactDef;
+use crate::card::CopyAbilityDef;
+use crate::card::CopyExceptionsDef;
+use crate::card::CostDef;
 use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectQueryDef;
 use crate::card::ObjectSetDef;
 use crate::card::ObjectSetFilterDef;
+use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::PlayerSetDef;
+use crate::card::ReplacementEffectDef;
+use crate::card::ResolvedEffectDurationDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
+use crate::card::TriggerEventDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
@@ -33,6 +46,16 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// C15 11 — Gigantoplasm
+pub(in crate::card::sets) static GIGANTOPLASM_11: CardRecord = CardRecord::new(
+    "Gigantoplasm",
+    "27163b43-61e2-495c-b544-55c349eba99c",
+    "Kev Walker",
+    CardRules::new_creature(mana_cost!("{3}{U}"), &["Shapeshifter"], 0, 0).with_abilities(&[
+AbilityDef::replacement("You may have this creature enter as a copy of any creature on the battlefield, except it has \"{X}: This creature has base power and toughness X/X.\"", ReplacementEffectDef::CopyEntering { object: ObjectPredicateDef::HasType(CardType::Creature), exceptions: CopyExceptionsDef::NONE.with_abilities(&[CopyAbilityDef::Ability(&AbilityDef::activated("{X}: This creature has base power and toughness X/X.", &[CostDef::Mana(mana_cost!("{X}"))], EffectDef::Apply { recipient: EffectRecipientDef::Source, effect: AppliedEffectDef::set_base_power_toughness(ValueDef::ChosenX, ValueDef::ChosenX), duration: ResolvedEffectDurationDef::Permanent }))]) })
+]),
+);
 
 // C15 14 — Mystic Confluence
 pub(in crate::card::sets) static MYSTIC_CONFLUENCE: CardRecord = CardRecord::new(
@@ -180,6 +203,70 @@ pub(in crate::card::sets) static CALLER_OF_THE_PACK: CardRecord = CardRecord::ne
         .with_abilities(&[abilities::trample(), abilities::myriad()]),
 );
 
+// C15 37 — Great Oak Guardian
+pub(in crate::card::sets) static GREAT_OAK_GUARDIAN_37: CardRecord = CardRecord::new(
+    "Great Oak Guardian",
+    "be0637cd-ccc4-4314-801d-9f780e5476c2",
+    "Steven Belledin",
+    CardRules::new_creature(mana_cost!("{5}{G}"), &["Treefolk"], 4, 5).with_abilities(&[
+abilities::flash(),
+abilities::reach(),
+AbilityDef::triggered_with_targets("When this creature enters, creatures target player controls get +2/+2 until end of turn. Untap them.", TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)), &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(PlayerRelation::Any))], EffectDef::Sequence(&[EffectDef::Apply { recipient: EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::controlled_by(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY))))), effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(2)), duration: ResolvedEffectDurationDef::UntilEndOfTurn }, EffectDef::Untap { object: EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::controlled_by(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY))))) }]))
+]),
+);
+
+// C15 55 — Thought Vessel
+pub(in crate::card::sets) static THOUGHT_VESSEL_55: CardRecord = CardRecord::new(
+    "Thought Vessel",
+    "e0cd769e-1aaf-458c-849f-3b6ebc7fd8c5",
+    "rk post",
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "You have no maximum hand size.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Controller,
+                effect: crate::card::AppliedEffectDef::Rule(
+                    crate::card::AppliedRuleDef::PlayerRule(
+                        crate::card::PlayerRuleDef::NoMaximumHandSize,
+                    ),
+                ),
+            },
+        ),
+        abilities::tap_for(crate::card::ManaColor::Colorless),
+    ]),
+);
+
+// C15 56 — Command Beacon
+pub(in crate::card::sets) static COMMAND_BEACON_56: CardRecord = CardRecord::new(
+    "Command Beacon",
+    "166fa02f-e456-48ca-8ac3-d217afceff4d",
+    "Jonas De Ro",
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated(
+            "{T}, Sacrifice this land: Put your commander into your hand from the command zone.",
+            &[CostDef::TapSource, CostDef::SacrificeSource],
+            EffectDef::ChooseExact(ChooseExactDef {
+                binding: ParentBinding,
+                chooser: PlayerRefDef::EffectController,
+                candidates: ObjectSetDef::Query(ObjectQueryDef::owned_by(
+                    ObjectPredicateDef::Commander,
+                    &[ZoneKind::Command],
+                    PlayerSetDef::Related(PlayerRelation::You),
+                )),
+                exclude: None,
+                amount: ValueDef::Constant(1),
+                visibility: ChoiceVisibilityDef::Public,
+                then: &EffectDef::move_to_zone(
+                    EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)),
+                    ZoneKind::Hand,
+                    ZonePlacement::Top,
+                ),
+            }),
+        ),
+    ]),
+);
+
 // C15 69 — Faith's Fetters (reprint)
 const FAITH_S_FETTERS_REPRINT: PrintingRecord = PrintingRecord::reprint(
     &crate::card::sets::y2005::ravnica_city_of_guilds::FAITH_S_FETTERS,
@@ -195,10 +282,14 @@ const NINJA_OF_THE_DEEP_HOURS_REPRINT: PrintingRecord = PrintingRecord::reprint(
 );
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &GIGANTOPLASM_11,
     &MYSTIC_CONFLUENCE,
     &DREAD_SUMMONS,
     &FIERY_CONFLUENCE,
     &CALLER_OF_THE_PACK,
+    &GREAT_OAK_GUARDIAN_37,
+    &THOUGHT_VESSEL_55,
+    &COMMAND_BEACON_56,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =

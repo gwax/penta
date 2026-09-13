@@ -2,14 +2,21 @@
 
 use super::CardRecord;
 use super::PrintingRecord;
+use crate::card::AbilityDef;
+use crate::card::AppliedEffectDef;
 use crate::card::CardRules;
+use crate::card::CardSupertype;
+use crate::card::CardType;
 use crate::card::CreateTokenDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::ManaColor;
+use crate::card::ObjectPredicateDef;
+use crate::card::PlayerRelation;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::ValueDef;
+use crate::card::ZoneKind;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -65,6 +72,31 @@ pub(in crate::card::sets) static BALEFUL_STRIX: CardRecord = CardRecord::new(
     ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[&BEETLEBACK_CHIEF, &BALEFUL_STRIX];
+// PC2 101 — Maelstrom Wanderer
+pub(in crate::card::sets) static MAELSTROM_WANDERER_101: CardRecord = CardRecord::new(
+    "Maelstrom Wanderer",
+    "9129baf5-ffa9-4ffb-bcab-19d6a42dbfcc",
+    "Thomas M. Baxa",
+    CardRules::new_creature(mana_cost!("{5}{G}{U}{R}"), &["Elemental"], 7, 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Creatures you control have haste.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                    effect: AppliedEffectDef::add_ability(&abilities::haste()),
+                },
+            ),
+            abilities::cascade(),
+            abilities::cascade(),
+        ]),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] =
+    &[&BEETLEBACK_CHIEF, &BALEFUL_STRIX, &MAELSTROM_WANDERER_101];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

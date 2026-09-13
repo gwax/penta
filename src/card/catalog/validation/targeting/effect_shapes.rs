@@ -458,9 +458,7 @@ fn validate_effect_target_shapes(
         | EffectDef::PutIntoLibraryBeneathTop { object, .. }
         | EffectDef::Counter { object, .. }
         | EffectDef::PutSpellIntoOwnersLibrary { object }
-        | EffectDef::Endure { object, .. }
-        | EffectDef::ChooseCounterKind { object, .. }
-        | EffectDef::ModifyCounters { object, .. } => {
+        | EffectDef::Endure { object, .. } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Object)
         }
         EffectDef::CopyStackObject(copy) => {
@@ -481,7 +479,11 @@ fn validate_effect_target_shapes(
             validate_recipient_shape(object, targets, RecipientExpectation::Object)?;
             validate_effect_target_shapes(*follow_up.effect, targets, triggering_object_zone)
         }
-        EffectDef::Attach { object } | EffectDef::MayCastTargetWithoutPaying { object, .. } => {
+        // Counter choice and modification accept permanent and player counters.
+        EffectDef::ChooseCounterKind { object, .. }
+        | EffectDef::ModifyCounters { object, .. }
+        | EffectDef::Attach { object }
+        | EffectDef::MayCastTargetWithoutPaying { object, .. } => {
             validate_recipient_shape(object, targets, RecipientExpectation::Any)
         }
         EffectDef::PutOntoBattlefieldThen {

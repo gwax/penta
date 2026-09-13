@@ -13,6 +13,7 @@ use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::KeywordAbility;
+use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::ObjectSetDef;
@@ -59,6 +60,15 @@ pub(in crate::card::sets) static ARTFUL_MANEUVER: CardRecord = CardRecord::new(
     ]),
 );
 
+// DTK 120 — Sidisi, Undead Vizier
+// Audit: unsupported — Exploit must emit a distinct sacrifice-mechanic event and trigger only while Sidisi is still present. A sacrifice follow-up would incorrectly resolve the tutor in the entry trigger and even after sacrificing Sidisi herself; there is no exploit event matcher.
+pub(in crate::card::sets) static SIDISI_UNDEAD_VIZIER_120: CardRecord = CardRecord::new(
+    "Sidisi, Undead Vizier",
+    "6ea5dbba-6114-4d97-9363-817ab9e896d3",
+    "Min Yum",
+    crate::card::CardRules::unsupported(),
+);
+
 // DTK 138 — Dragonlord's Servant
 pub(in crate::card::sets) static DRAGONLORD_S_SERVANT: CardRecord = CardRecord::new(
     "Dragonlord's Servant",
@@ -92,6 +102,32 @@ pub(in crate::card::sets) static IMPACT_TREMORS: CardRecord = CardRecord::new(
         ),
         EffectDef::damage(EffectRecipientDef::Opponent, ValueDef::Constant(1)),
     )]),
+);
+
+// DTK 150 — Rending Volley
+pub(in crate::card::sets) static RENDING_VOLLEY_150: CardRecord = CardRecord::new(
+    "Rending Volley",
+    "8234090e-9df1-4915-90ef-8a4bc6212655",
+    "Lucas Graciano",
+    CardRules::new_instant(mana_cost!("{R}")).with_abilities(&[
+        abilities::cannot_be_countered(),
+        AbilityDef::spell_with_targets(
+            "Rending Volley deals 4 damage to target white or blue creature.",
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::Color(ManaColor::White),
+                        ObjectPredicateDef::Color(ManaColor::Blue),
+                    ]),
+                ]),
+            )],
+            EffectDef::damage(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ValueDef::Constant(4),
+            ),
+        ),
+    ]),
 );
 
 // DTK 156 — Seismic Rupture
@@ -236,8 +272,10 @@ pub(in crate::card::sets) static SAVAGE_VENTMAW: CardRecord = CardRecord::new(
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARTFUL_MANEUVER,
+    &SIDISI_UNDEAD_VIZIER_120,
     &DRAGONLORD_S_SERVANT,
     &IMPACT_TREMORS,
+    &RENDING_VOLLEY_150,
     &SEISMIC_RUPTURE,
     &TWIN_BOLT,
     &INSPIRING_CALL,

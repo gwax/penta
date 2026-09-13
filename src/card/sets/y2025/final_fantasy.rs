@@ -696,12 +696,14 @@ pub(in crate::card::sets) static THE_CRYSTAL_S_CHOSEN: CardRecord = CardRecord::
 );
 
 // FIN 15 — Delivery Moogle
-// Audit: unsupported — Needs a single qualified card search spanning library and graveyard, with the library search optional and shuffling conditional on that search; current SearchZone procedures search one zone at a time.
 pub(in crate::card::sets) static DELIVERY_MOOGLE: CardRecord = CardRecord::new(
-    "Delivery Moogle",
-    "f58840dc-c641-4092-8b67-9c0d449af715",
-    "Joseph Weston",
-    CardRules::unsupported(),
+"Delivery Moogle",
+"f58840dc-c641-4092-8b67-9c0d449af715",
+"Joseph Weston",
+CardRules::new_creature(mana_cost!("{3}{W}"), &["Moogle"], 3, 2).with_abilities(&[
+abilities::flying(),
+abilities::enters_trigger("When this creature enters, search your library and/or graveyard for an artifact card with mana value 2 or less, reveal it, and put it into your hand. If you search your library this way, shuffle.", EffectDef::ChooseEffect { player: EffectRecipientDef::Controller, choices: &[EffectChoiceDef { label: "Search your library.", effect: EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::ManaValueAtMost(2)]), minimum: 0, maximum: ValueDef::Constant(1), reveal: true, destination: ZoneKind::Hand, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None } }, EffectChoiceDef { label: "Search your graveyard.", effect: EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Graveyard, object: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::ManaValueAtMost(2)]), minimum: 1, maximum: ValueDef::Constant(1), reveal: true, destination: ZoneKind::Hand, placement: ZonePlacement::Top, shuffle: false, enters_tapped: false, attachment: None, binding: None, then: None } }, EffectChoiceDef { label: "Search both zones.", effect: EffectDef::Sequence(&[EffectDef::Choose(ChooseDef { chooser: PlayerRefDef::EffectController, candidates: ObjectSetDef::Union(&[ObjectSetDef::Query(ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::ManaValueAtMost(2)]), &[ZoneKind::Library], PlayerRelation::You)), ObjectSetDef::Query(ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::ManaValueAtMost(2)]), &[ZoneKind::Graveyard], PlayerRelation::You))]), exclude: None, minimum: 0, maximum: 1, binding: ObjectChoiceBindingDef::Objects(Binding!("moogle_found")), unchosen: None, visibility: ChoiceVisibilityDef::Private, then: &EffectDef::Sequence(&[EffectDef::RevealObjects(RevealObjectsDef { input: ObjectSetDef::Binding(Binding!("moogle_found")), then: &EffectDef::None }), EffectDef::move_to_zone(EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("moogle_found"))), ZoneKind::Hand, ZonePlacement::Top)]) }), EffectDef::ShuffleLibrary { player: EffectRecipientDef::Controller }]) }] })
+]),
 );
 
 // FIN 16 — Dion, Bahamut's Dominant // Bahamut, Warden of Light

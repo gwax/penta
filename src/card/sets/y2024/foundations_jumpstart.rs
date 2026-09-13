@@ -21,6 +21,7 @@ use crate::card::DamageRecipientMatcherDef;
 use crate::card::DamageSourceMatcherDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::ObjectCounterValueDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
@@ -32,6 +33,7 @@ use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
+use crate::card::ValueComparisonDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::abilities;
@@ -310,6 +312,89 @@ pub(in crate::card::sets) static SHARDLESS_OUTLANDER: CardRecord = CardRecord::n
         ]),
 );
 
+// J25 34 — Urdnan, Dromoka Warrior
+pub(in crate::card::sets) static URDNAN_DROMOKA_WARRIOR_34: CardRecord = CardRecord::new(
+    "Urdnan, Dromoka Warrior",
+    "f239682a-2b81-4f62-a474-60e8db343200",
+    "Yakotakos",
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Warrior"], 1, 1)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::triggered_with_targets(
+                "When Urdnan enters, put a +1/+1 counter on target creature.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::Source,
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::HasType(CardType::Creature),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: None,
+                        owner: None,
+                    },
+                )],
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            AbilityDef::triggered_with_targets(
+                "Whenever you attack, target attacking creature with a +1/+1 counter on it \
+                 gains first strike until end of turn. If that creature has two or more +1/+1 \
+                 counters on it, it gains double strike until end of turn instead.",
+                TriggerEventDef::attack_declared(
+                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                    1,
+                    None,
+                ),
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Creature),
+                            ObjectPredicateDef::Attacking,
+                            ObjectPredicateDef::HasCounter(CounterKind::PlusOnePlusOne),
+                        ]),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: None,
+                        owner: None,
+                    },
+                )],
+                EffectDef::IfElseCondition {
+                    condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
+                        left: ValueDef::CountersOnObject(&ObjectCounterValueDef::new(
+                            ObjectRefDef::Target(TargetIndex::PRIMARY),
+                            CounterKind::PlusOnePlusOne,
+                        )),
+                        comparison: ComparisonDef::GreaterOrEqual,
+                        right: ValueDef::Constant(2),
+                    }),
+                    then: &EffectDef::Apply {
+                        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        effect: AppliedEffectDef::add_ability(&abilities::double_strike()),
+                        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                    },
+                    otherwise: &EffectDef::Apply {
+                        recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                        effect: AppliedEffectDef::add_ability(&abilities::first_strike()),
+                        duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+                    },
+                },
+            ),
+        ]),
+);
+
+// J25 36 — Neerdiv, Devious Diver
+// Audit: unsupported — TriggerEventDef has no activated-ability event carrying its activation source zone. A graveyard spell-cast trigger cannot cover activating a card there.
+pub(in crate::card::sets) static NEERDIV_DEVIOUS_DIVER_36: CardRecord = CardRecord::new(
+    "Neerdiv, Devious Diver",
+    "070e0081-b0fe-4417-b943-d0496e3b8cd7",
+    "Yuchi Yuki",
+    crate::card::CardRules::unsupported(),
+);
+
 // J25 37 — Plagon, Lord of the Beach
 pub(in crate::card::sets) static PLAGON_LORD_OF_THE_BEACH: CardRecord = CardRecord::new(
     "Plagon, Lord of the Beach",
@@ -360,6 +445,52 @@ pub(in crate::card::sets) static PLAGON_LORD_OF_THE_BEACH: CardRecord = CardReco
                 },
             ),
         ]),
+);
+
+// J25 48 — General Kreat, the Boltbringer
+pub(in crate::card::sets) static GENERAL_KREAT_THE_BOLTBRINGER_48: CardRecord = CardRecord::new(
+    "General Kreat, the Boltbringer",
+    "226fc101-abcc-4ed4-8c0b-3677dc8d8f0a",
+    "Takeuchi Moto",
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Goblin", "Soldier"], 2, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::triggered(
+                "Whenever one or more Goblins you control attack, create a 1/1 red Goblin creature token that's tapped and attacking.",
+                TriggerEventDef::attack_declared(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Goblin")),
+                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                    ]),
+                    1,
+                    None,
+                ),
+                EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::TokenCharacteristics::creature(&["Goblin"], &[crate::card::ManaColor::Red], 1, 1))).entering_tapped().entering_attacking()),
+            ),
+            AbilityDef::triggered(
+                "Whenever another creature you control enters, General Kreat deals 1 damage to each opponent.",
+                TriggerEventDef::zone_changed(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                    ]),
+                    None,
+                    Some(ZoneKind::Battlefield),
+                ),
+                EffectDef::damage(EffectRecipientDef::Opponent, ValueDef::Constant(1)),
+            ),
+        ]),
+);
+
+// J25 49 — Gornog, the Red Reaper
+// Audit: unsupported — AttackDeclared has no defender-kind filter to exclude Warriors attacking planeswalkers from its grouped event. Per-attacker triggers would turn too many creatures into Cowards when several Warriors attack the player together.
+pub(in crate::card::sets) static GORNOG_THE_RED_REAPER_49: CardRecord = CardRecord::new(
+    "Gornog, the Red Reaper",
+    "c80a88ae-f2f2-426a-88f3-76b5d598c25f",
+    "Ishikawa Kenta",
+    crate::card::CardRules::unsupported(),
 );
 
 // J25 50 — Ivora, Insatiable Heir
@@ -460,7 +591,11 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &SCHOLAR_OF_COMBUSTION,
     &SCYTHECAT_CUB,
     &SHARDLESS_OUTLANDER,
+    &URDNAN_DROMOKA_WARRIOR_34,
+    &NEERDIV_DEVIOUS_DIVER_36,
     &PLAGON_LORD_OF_THE_BEACH,
+    &GENERAL_KREAT_THE_BOLTBRINGER_48,
+    &GORNOG_THE_RED_REAPER_49,
     &IVORA_INSATIABLE_HEIR,
 ];
 

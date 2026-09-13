@@ -5,6 +5,7 @@ use super::PrintingRecord;
 use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
+use crate::card::ActivationTimingDef;
 use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
@@ -19,8 +20,10 @@ use crate::card::CardTypeSet;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
 use crate::card::ColorSet;
+use crate::card::ComparisonDef;
 use crate::card::CopyAbilityDef;
 use crate::card::CopyExceptionsDef;
+use crate::card::CopyStackObjectDef;
 use crate::card::CostAdjustmentDef;
 use crate::card::CostAmountDef;
 use crate::card::CostDef;
@@ -31,6 +34,7 @@ use crate::card::CreatureTypeSetDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::ExilePlayDurationDef;
 use crate::card::InstalledTriggerDef;
 use crate::card::ManaColor;
 use crate::card::ManaTypeDef;
@@ -39,6 +43,8 @@ use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
+use crate::card::PlayActionMatcherDef;
+use crate::card::PlayRestrictionDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
@@ -47,8 +53,10 @@ use crate::card::ReplacementEffectDef;
 use crate::card::ReplacementEventDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SpellCostConditionDef;
+use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
+use crate::card::TopOfLibraryCostDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -170,6 +178,16 @@ pub(in crate::card::sets) static LION_SASH: CardRecord = CardRecord::new(
                  creature. Reconfigure only as a sorcery. While attached, this isn't a creature.)",
             ),
         ]),
+);
+
+// NEO 28 — March of Otherworldly Light
+// Audit: unsupported — Casting cost reductions cannot read the variable set of white hand cards
+// selected for this additional exile cost before payment is committed.
+pub(in crate::card::sets) static MARCH_OF_OTHERWORLDLY_LIGHT_28: CardRecord = CardRecord::new(
+    "March of Otherworldly Light",
+    "553fb946-2706-475b-89f9-e4355ec9ea2b",
+    "Nils Hamm",
+    CardRules::unsupported(),
 );
 
 // NEO 40 — Touch the Spirit Realm
@@ -329,6 +347,45 @@ pub(in crate::card::sets) static THE_WANDERING_EMPEROR: CardRecord = CardRecord:
         ]),
 );
 
+// NEO 51 — Disruption Protocol
+pub(in crate::card::sets) static DISRUPTION_PROTOCOL_51: CardRecord = CardRecord::new(
+    "Disruption Protocol",
+    "053ab598-06a4-43ae-b9fd-c291bd05642c",
+    "Pauline Voss",
+    CardRules::new_instant(mana_cost!("{U}{U}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Counter target spell.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Spell,
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            },
+        )],
+        EffectDef::counter_target(TargetIndex::PRIMARY),
+    )
+    .with_spell_additional_cost(&CostDef::Choice(&[
+        CostDef::TapPermanents {
+            object: ObjectPredicateDef::HasType(CardType::Artifact),
+            controller: PlayerRelation::You,
+            count: 1,
+        },
+        CostDef::Mana(mana_cost!("{1}")),
+    ]))]),
+);
+
+// NEO 61 — March of Swirling Mist
+// Audit: unsupported — EffectDef::PhaseOut and X-bounded targets are available, but casting has
+// no cost adjustment that can read the variable number of blue hand cards exiled as an additional
+// cost. Cost reductions are calculated before the payment is committed, and CostAmountDef only
+// accepts fixed mana or existing ValueDef values, none of which represents that selected payment.
+pub(in crate::card::sets) static MARCH_OF_SWIRLING_MIST_61: CardRecord = CardRecord::new(
+    "March of Swirling Mist",
+    "100171d8-7436-44c8-b4cb-0101ffa05c25",
+    "Iris Compiet",
+    crate::card::CardRules::unsupported(),
+);
+
 // NEO 63 — Mirrorshell Crab
 pub(in crate::card::sets) static MIRRORSHELL_CRAB: CardRecord = CardRecord::new(
     "Mirrorshell Crab",
@@ -407,6 +464,24 @@ pub(in crate::card::sets) static MOON_CIRCUIT_HACKER: CardRecord = CardRecord::n
                 },
             ),
         ]),
+);
+
+// NEO 69 — Moonsnare Prototype
+// Audit: unsupported — Its mana activation requires a selected artifact-or-creature tap in addition to tapping the source, which the mana-ability planner rejects.
+pub(in crate::card::sets) static MOONSNARE_PROTOTYPE_69: CardRecord = CardRecord::new(
+    "Moonsnare Prototype",
+    "9d8bc0e9-a536-4bca-92a6-8dca85e1e984",
+    "Fariba Khamseh",
+    crate::card::CardRules::unsupported(),
+);
+
+// NEO 82 — Tameshi, Reality Architect
+// Audit: unsupported — The zone-change stream cannot aggregate simultaneous returns to hand into one event, and the activated-cost planner cannot return a selected land as this activation's cost.
+pub(in crate::card::sets) static TAMESHI_REALITY_ARCHITECT_82: CardRecord = CardRecord::new(
+    "Tameshi, Reality Architect",
+    "26594b52-3e9c-4cde-88df-1f4e9e16676e",
+    "Scott M. Fischer",
+    crate::card::CardRules::unsupported(),
 );
 
 // NEO 91 — Clawing Torment
@@ -548,6 +623,28 @@ pub(in crate::card::sets) static CRACKLING_EMERGENCE: CardRecord = CardRecord::n
         ]),
 );
 
+// NEO 138 — Experimental Synthesizer
+pub(in crate::card::sets) static EXPERIMENTAL_SYNTHESIZER_138: CardRecord = CardRecord::new(
+    "Experimental Synthesizer",
+    "c47931c9-685d-4b83-8299-bc347224b4e8",
+    "Yeong-Hao Han",
+    CardRules::new_artifact(mana_cost!("{R}")).with_abilities(&[
+AbilityDef::triggered("When this artifact enters or leaves the battlefield, exile the top card of your library. Until end of turn, you may play that card.", TriggerEventDef::AnyOf(&[TriggerEventDef::zone_changed(ObjectPredicateDef::Source, None, Some(ZoneKind::Battlefield)), TriggerEventDef::zone_changed(ObjectPredicateDef::Source, Some(ZoneKind::Battlefield), None)]), EffectDef::ExileTopOfLibraryToPlay { player: EffectRecipientDef::Controller, amount: ValueDef::Constant(1), free: false, face_down: false, duration: ExilePlayDurationDef::ThisTurn, spend_any_color: false, play_condition: None, cast_only: false }),
+AbilityDef::activated("{2}{R}, Sacrifice this artifact: Create a 2/2 white Samurai creature token with vigilance. Activate only as a sorcery.", &[CostDef::Mana(mana_cost!("{2}{R}")), CostDef::SacrificeSource], EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::TokenCharacteristics::creature(&["Samurai"], &[ManaColor::White], 2, 2).with_abilities(&[abilities::vigilance()]))))).with_activation_timing(ActivationTimingDef::SorcerySpeed)
+]),
+);
+
+// NEO 145 — Goro-Goro, Disciple of Ryusei
+pub(in crate::card::sets) static GORO_GORO_DISCIPLE_OF_RYUSEI_145: CardRecord = CardRecord::new(
+    "Goro-Goro, Disciple of Ryusei",
+    "1ca736c7-35a9-48c7-b5a9-69b2a6e33ad0",
+    "Mike Jordana",
+    CardRules::new_creature(mana_cost!("{1}{R}"), &["Goblin", "Samurai"], 2, 2).with_supertype(CardSupertype::Legendary).with_abilities(&[
+AbilityDef::activated("{R}: Creatures you control gain haste until end of turn.", &[CostDef::Mana(mana_cost!("{R}"))], EffectDef::Apply { recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You), effect: AppliedEffectDef::add_ability(&abilities::haste()), duration: ResolvedEffectDurationDef::UntilEndOfTurn }),
+AbilityDef::activated("{3}{R}{R}: Create a 5/5 red Dragon Spirit creature token with flying. Activate only if you control an attacking modified creature. (Equipment, Auras you control, and counters are modifications.)", &[CostDef::Mana(mana_cost!("{3}{R}{R}"))], EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::TokenCharacteristics::creature(&["Dragon", "Spirit"], &[ManaColor::Red], 5, 5).with_abilities(&[abilities::flying()]))))).with_activation_condition(&TriggerConditionDef::AnyOf(&[TriggerConditionDef::ObjectCount { query: ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Attacking, ObjectPredicateDef::ControlledBy(PlayerRelation::You)]), ObjectPredicateDef::HasAnyCounter]), &[ZoneKind::Battlefield], PlayerRelation::You), comparison: ComparisonDef::GreaterOrEqual, amount: 1 }, TriggerConditionDef::ObjectCount { query: ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::Subtype(SubtypeDef::Literal("Aura")), ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Attacking, ObjectPredicateDef::ControlledBy(PlayerRelation::You)]))]), &[ZoneKind::Battlefield], PlayerRelation::You), comparison: ComparisonDef::GreaterOrEqual, amount: 1 }, TriggerConditionDef::ObjectCount { query: ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")), ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Attacking, ObjectPredicateDef::ControlledBy(PlayerRelation::You)]))]), &[ZoneKind::Battlefield], PlayerRelation::Any), comparison: ComparisonDef::GreaterOrEqual, amount: 1 }]))
+]),
+);
+
 // NEO 148 — Ironhoof Boar
 pub(in crate::card::sets) static IRONHOOF_BOAR: CardRecord = CardRecord::new(
     "Ironhoof Boar",
@@ -583,6 +680,15 @@ pub(in crate::card::sets) static IRONHOOF_BOAR: CardRecord = CardRecord::new(
     ]),
 );
 
+// NEO 154 — March of Reckless Joy
+// Audit: unsupported — The casting planner cannot select an arbitrary red-card exile group and reduce this spell's generic cost by two per card. The exile-play permission also cannot limit the group to two plays.
+pub(in crate::card::sets) static MARCH_OF_RECKLESS_JOY_154: CardRecord = CardRecord::new(
+    "March of Reckless Joy",
+    "780e1bf1-e392-40f2-9e84-764dedc5fcd4",
+    "Fiona Hsieh",
+    crate::card::CardRules::unsupported(),
+);
+
 // NEO 157 — Rabbit Battery
 pub(in crate::card::sets) static RABBIT_BATTERY: CardRecord = CardRecord::new(
     "Rabbit Battery",
@@ -608,6 +714,39 @@ CardRules::new_artifact_creature(mana_cost!("{R}"), &["Equipment", "Rabbit"], 1,
                 &[CostDef::Mana(mana_cost!("{R}"))],
                 "Reconfigure {R} ({R}: Attach to target creature you control; or unattach from a creature. Reconfigure only as a sorcery. While attached, this isn't a creature.)",
             ),
+        ]),
+);
+
+// NEO 168 — Twinshot Sniper
+pub(in crate::card::sets) static TWINSHOT_SNIPER_168: CardRecord = CardRecord::new(
+    "Twinshot Sniper",
+    "08a86009-4637-4b6c-9d36-367151583668",
+    "Brent Hollowell",
+    CardRules::new_artifact_creature(mana_cost!("{3}{R}"), &["Goblin", "Archer"], 2, 3)
+        .with_abilities(&[
+            abilities::reach(),
+            abilities::enters_trigger_with_targets(
+                "When this creature enters, it deals 2 damage to any target.",
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::AnyTarget,
+                )],
+                EffectDef::damage(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    ValueDef::Constant(2),
+                ),
+            ),
+            AbilityDef::activated_with_targets(
+                "Channel — {1}{R}, Discard this card: It deals 2 damage to any target.",
+                &[CostDef::Mana(mana_cost!("{1}{R}")), CostDef::DiscardSource],
+                &[AbilityTargetDef::exactly_one(
+                    AbilityTargetPredicate::AnyTarget,
+                )],
+                EffectDef::damage(
+                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    ValueDef::Constant(2),
+                ),
+            )
+            .with_source_zones(&[ZoneKind::Hand]),
         ]),
 );
 
@@ -726,6 +865,37 @@ pub(in crate::card::sets) static TAMIYO_S_SAFEKEEPING: CardRecord = CardRecord::
     )),
 );
 
+// NEO 216 — Colossal Skyturtle
+pub(in crate::card::sets) static COLOSSAL_SKYTURTLE_216: CardRecord = CardRecord::new(
+    "Colossal Skyturtle",
+    "f40bd797-4d12-4098-a1a8-d7e5b7b82ac9",
+    "Nicholas Gregory",
+    CardRules::new_enchantment_creature(mana_cost!("{4}{G}{G}{U}"), &["Turtle"], 6, 5).with_abilities(&[
+abilities::flying(),
+abilities::ward(&[CostDef::Mana(mana_cost!("{2}"))], "Ward {2}"),
+AbilityDef::activated_with_targets("Channel — {2}{G}, Discard this card: Return target card from your graveyard to your hand.", &[CostDef::Mana(mana_cost!("{2}{G}")), CostDef::DiscardSource], &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::Any, zones: &[ZoneKind::Graveyard], controller: None, owner: Some(PlayerRelation::You) })], EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY), ZoneKind::Hand, ZonePlacement::Top)).with_source_zones(&[ZoneKind::Hand]),
+AbilityDef::activated_with_targets("Channel — {1}{U}, Discard this card: Return target creature to its owner's hand.", &[CostDef::Mana(mana_cost!("{1}{U}")), CostDef::DiscardSource], &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(CardType::Creature))], EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY), ZoneKind::Hand, ZonePlacement::Top)).with_source_zones(&[ZoneKind::Hand])
+]),
+);
+
+// NEO 218 — Enthusiastic Mechanaut
+pub(in crate::card::sets) static ENTHUSIASTIC_MECHANAUT_218: CardRecord = CardRecord::new(
+    "Enthusiastic Mechanaut",
+    "ac00521f-1b7d-478d-afe8-6761ea512d8d",
+    "Anna Steinbauer",
+    CardRules::new_artifact_creature(mana_cost!("{U}{R}"), &["Goblin", "Artificer"], 2, 2)
+        .with_abilities(&[
+            abilities::flying(),
+            abilities::spell_cost_adjustment(
+                "Artifact spells you cast cost {1} less to cast.",
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                PlayerRelation::You,
+                SpellCostConditionDef::Always,
+                CostAdjustmentDef::Subtract(CostAmountDef::Mana(mana_cost!("{1}"))),
+            ),
+        ]),
+);
+
 // NEO 222 — Hinata, Dawn-Crowned
 pub(in crate::card::sets) static HINATA_DAWN_CROWNED: CardRecord = CardRecord::new(
     "Hinata, Dawn-Crowned",
@@ -760,6 +930,34 @@ pub(in crate::card::sets) static TAMIYO_COMPLEATED_SAGE: CardRecord = CardRecord
     "222a736e-d819-452d-aeda-eb848c4b2302",
     "Chris Rahn",
     CardRules::unsupported(),
+);
+
+// NEO 243 — Containment Construct
+// Audit: unsupported — The discard event also covers replacement destinations. An arbitrary triggering-card reference cannot be restricted to its graveyard before ExileGrantingControllerPlayThisTurn, so a replaced discard would incorrectly grant play permission.
+pub(in crate::card::sets) static CONTAINMENT_CONSTRUCT_243: CardRecord = CardRecord::new(
+    "Containment Construct",
+    "520e5505-429b-4da0-b25e-14b8d4e81ce3",
+    "Julian Kok Joon Wen",
+    crate::card::CardRules::unsupported(),
+);
+
+// NEO 247 — High-Speed Hoverbike
+pub(in crate::card::sets) static HIGH_SPEED_HOVERBIKE_247: CardRecord = CardRecord::new(
+    "High-Speed Hoverbike",
+    "7c619116-1eae-439d-9b1f-639643458a23",
+    "Julian Kok Joon Wen",
+    CardRules::new_artifact(mana_cost!("{2}")).with_subtypes(&["Vehicle"]).with_abilities(&[
+        abilities::flash(),
+        abilities::flying(),
+        abilities::enters_trigger_with_targets(
+            "When this Vehicle enters, tap up to one target creature.",
+            &[AbilityTargetDef::up_to(AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature), zones: &[ZoneKind::Battlefield], controller: None, owner: None,
+            }, 1)],
+            EffectDef::Tap { object: EffectRecipientDef::Target(TargetIndex::PRIMARY) },
+        ),
+        abilities::crew("Crew 1 (Tap any number of creatures you control with total power 1 or more: This Vehicle becomes an artifact creature until end of turn.)", 1),
+    ]),
 );
 
 // NEO 248 — Iron Apprentice
@@ -1008,6 +1206,17 @@ pub(in crate::card::sets) static FABLE_OF_THE_MIRROR_BREAKER: CardRecord = CardR
     ],
 );
 
+// NEO 371 — Jin-Gitaxias, Progress Tyrant
+pub(in crate::card::sets) static JIN_GITAXIAS_PROGRESS_TYRANT_371: CardRecord = CardRecord::new(
+    "Jin-Gitaxias, Progress Tyrant",
+    "01985566-275b-4bf0-8667-c81eb95ad70c",
+    "Ai Nanahira",
+    CardRules::new_creature(mana_cost!("{5}{U}{U}"), &["Phyrexian", "Praetor"], 5, 5).with_supertype(CardSupertype::Legendary).with_abilities(&[
+AbilityDef::triggered("Whenever you cast an artifact, instant, or sorcery spell, copy that spell. You may choose new targets for the copy. This ability triggers only once each turn. (A copy of a permanent spell becomes a token.)", TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Instant), ObjectPredicateDef::HasType(CardType::Sorcery)])]), ObjectPredicateDef::ControlledBy(PlayerRelation::You)])), EffectDef::CopyStackObject(&CopyStackObjectDef { object: EffectRecipientDef::TriggeringObject, controller: PlayerRefDef::EffectController, count: ValueDef::Constant(1), retarget: true, colors: None })).triggering_at_most(1),
+AbilityDef::triggered("Whenever an opponent casts an artifact, instant, or sorcery spell, counter that spell. This ability triggers only once each turn.", TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Instant), ObjectPredicateDef::HasType(CardType::Sorcery)])]), ObjectPredicateDef::ControlledBy(PlayerRelation::Opponent)])), EffectDef::Counter { object: EffectRecipientDef::TriggeringObject, zone: ZoneKind::Graveyard, placement: ZonePlacement::Top }).triggering_at_most(1)
+]),
+);
+
 // NEO 412 — Boseiju, Who Endures
 pub(in crate::card::sets) static BOSEIJU_WHO_ENDURES: CardRecord = CardRecord::new(
     "Boseiju, Who Endures",
@@ -1090,6 +1299,28 @@ pub(in crate::card::sets) static BOSEIJU_WHO_ENDURES: CardRecord = CardRecord::n
         ]),
 );
 
+// NEO 413 — Eiganjo, Seat of the Empire
+pub(in crate::card::sets) static EIGANJO_SEAT_OF_THE_EMPIRE_413: CardRecord = CardRecord::new(
+    "Eiganjo, Seat of the Empire",
+    "7c31c48f-6275-4430-8dc9-05d70c332b7a",
+    "ZOUNOSE",
+    CardRules::new_land(&[]).with_supertype(CardSupertype::Legendary).with_abilities(&[
+abilities::tap_for(ManaColor::White),
+AbilityDef::activated_with_targets("Channel — {2}{W}, Discard this card: It deals 4 damage to target attacking or blocking creature. This ability costs {1} less to activate for each legendary creature you control.", &[CostDef::Mana(mana_cost!("{2}{W}")), CostDef::DiscardSource], &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::Attacking, ObjectPredicateDef::Blocking])]))], EffectDef::damage(EffectRecipientDef::Target(TargetIndex::PRIMARY), ValueDef::Constant(4))).with_source_zones(&[ZoneKind::Hand]).with_activation_cost_reduction(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Supertype(CardSupertype::Legendary)]), &[ZoneKind::Battlefield], PlayerRelation::You)), 0)
+]),
+);
+
+// NEO 415 — Sokenzan, Crucible of Defiance
+pub(in crate::card::sets) static SOKENZAN_CRUCIBLE_OF_DEFIANCE_415: CardRecord = CardRecord::new(
+    "Sokenzan, Crucible of Defiance",
+    "327333cc-2cc9-44ba-a0e6-d01329c416a3",
+    "Nao Miyoshi",
+    CardRules::new_land(&[]).with_supertype(CardSupertype::Legendary).with_abilities(&[
+abilities::tap_for(ManaColor::Red),
+AbilityDef::activated("Channel — {3}{R}, Discard this card: Create two 1/1 colorless Spirit creature tokens. They gain haste until end of turn. This ability costs {1} less to activate for each legendary creature you control.", &[CostDef::Mana(mana_cost!("{3}{R}")), CostDef::DiscardSource], EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::TokenCharacteristics::creature(&["Spirit"], &[], 1, 1))).with_count(ValueDef::Constant(2)).with_created_tokens(crate::card::CreatedTokensDef { binding: ParentBinding, then: &EffectDef::Apply { recipient: EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)), effect: AppliedEffectDef::add_ability(&abilities::haste()), duration: ResolvedEffectDurationDef::UntilEndOfTurn } }))).with_source_zones(&[ZoneKind::Hand]).with_activation_cost_reduction(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Supertype(CardSupertype::Legendary)]), &[ZoneKind::Battlefield], PlayerRelation::You)), 0)
+]),
+);
+
 // NEO 418 — The Wandering Emperor (alternate printing)
 const THE_WANDERING_EMPEROR_ALTERNATE_1: PrintingRecord = PrintingRecord::alternate(
     &THE_WANDERING_EMPEROR,
@@ -1098,31 +1329,134 @@ const THE_WANDERING_EMPEROR_ALTERNATE_1: PrintingRecord = PrintingRecord::altern
     "Hisashi Momose",
 );
 
+// NEO 436 — Farewell
+pub(in crate::card::sets) static FAREWELL_436: CardRecord = CardRecord::new(
+    "Farewell",
+    "0050b693-7bad-4c0c-baca-0186d153ce2e",
+    "Seb McKinnon",
+    CardRules::new_sorcery(mana_cost!("{4}{W}{W}")).with_abilities(&[AbilityDef::modal_spell(
+        "Choose one or more —",
+        &[
+            AbilityDef::spell(
+                "Exile all artifacts.",
+                EffectDef::move_to_zone(
+                    EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Artifact),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::Any,
+                    ),
+                    ZoneKind::Exile,
+                    ZonePlacement::Top,
+                ),
+            ),
+            AbilityDef::spell(
+                "Exile all creatures.",
+                EffectDef::move_to_zone(
+                    EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::Any,
+                    ),
+                    ZoneKind::Exile,
+                    ZonePlacement::Top,
+                ),
+            ),
+            AbilityDef::spell(
+                "Exile all enchantments.",
+                EffectDef::move_to_zone(
+                    EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::HasType(CardType::Enchantment),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::Any,
+                    ),
+                    ZoneKind::Exile,
+                    ZonePlacement::Top,
+                ),
+            ),
+            AbilityDef::spell(
+                "Exile all graveyards.",
+                EffectDef::move_to_zone(
+                    EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::Any,
+                        &[ZoneKind::Graveyard],
+                        PlayerRelation::Any,
+                    ),
+                    ZoneKind::Exile,
+                    ZonePlacement::Top,
+                ),
+            ),
+        ],
+    )
+    .with_mode_selection(1, 4, false)]),
+);
+
+// NEO 449 — The Reality Chip
+pub(in crate::card::sets) static THE_REALITY_CHIP_449: CardRecord = CardRecord::new(
+    "The Reality Chip",
+    "9797bb82-24f6-4dd5-8f5d-b3ea45bb65b8",
+    "Campbell White",
+    CardRules::new_artifact_creature(mana_cost!("{1}{U}"), &["Equipment", "Jellyfish"], 0, 4).with_supertype(CardSupertype::Legendary).with_abilities(&[
+AbilityDef::static_ability("You may look at the top card of your library any time.", EffectDef::StaticApply { recipient: EffectRecipientDef::Controller, effect: AppliedEffectDef::Rule(AppliedRuleDef::MayLookAtTopOfLibrary) }),
+AbilityDef::static_ability("As long as The Reality Chip is attached to a creature, you may play lands and cast spells from the top of your library.", EffectDef::IfCondition { condition: &TriggerConditionDef::AttachedPermanentMatches { object: ObjectPredicateDef::HasType(CardType::Creature) }, then: &EffectDef::StaticApply { recipient: EffectRecipientDef::Controller, effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromTopOfLibrary { restriction: PlayRestrictionDef::new(PlayActionMatcherDef::Any, ObjectPredicateDef::Any), cost: TopOfLibraryCostDef::Printed }) } }),
+abilities::reconfigure(&[CostDef::Mana(mana_cost!("{2}{U}"))], "Reconfigure {2}{U} ({2}{U}: Attach to target creature you control; or unattach from a creature. Reconfigure only as a sorcery. While attached, this isn't a creature.)")
+]),
+);
+
+// NEO 505 — Takenuma, Abandoned Mire
+pub(in crate::card::sets) static TAKENUMA_ABANDONED_MIRE_505: CardRecord = CardRecord::new(
+    "Takenuma, Abandoned Mire",
+    "13410bd5-acee-4cc9-90e3-dbcf8415bcaf",
+    "Sam Burley",
+    CardRules::new_land(&[]).with_supertype(CardSupertype::Legendary).with_abilities(&[
+abilities::tap_for(ManaColor::Black),
+AbilityDef::activated("Channel — {3}{B}, Discard this card: Mill three cards, then return a creature or planeswalker card from your graveyard to your hand. This ability costs {1} less to activate for each legendary creature you control.", &[CostDef::Mana(mana_cost!("{3}{B}")), CostDef::DiscardSource], EffectDef::Sequence(&[EffectDef::Mill { player: EffectRecipientDef::Controller, amount: ValueDef::Constant(3) }, EffectDef::Choose(ChooseDef { chooser: PlayerRefDef::EffectController, candidates: ObjectSetDef::Query(ObjectQueryDef::matching(ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::HasType(CardType::Planeswalker)]), &[ZoneKind::Graveyard], PlayerRelation::You)), exclude: None, minimum: 1, maximum: 1, binding: ObjectChoiceBindingDef::Objects(Binding!("takenuma_return")), unchosen: None, visibility: ChoiceVisibilityDef::Public, then: &EffectDef::move_to_zone(EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("takenuma_return"))), ZoneKind::Hand, ZonePlacement::Top) })])).with_source_zones(&[ZoneKind::Hand]).with_activation_cost_reduction(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Supertype(CardSupertype::Legendary)]), &[ZoneKind::Battlefield], PlayerRelation::You)), 0)
+]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &IMPERIAL_OATH,
     &LION_SASH,
+    &MARCH_OF_OTHERWORLDLY_LIGHT_28,
     &TOUCH_THE_SPIRIT_REALM,
     &THE_WANDERING_EMPEROR,
+    &DISRUPTION_PROTOCOL_51,
+    &MARCH_OF_SWIRLING_MIST_61,
     &MIRRORSHELL_CRAB,
     &MOON_CIRCUIT_HACKER,
+    &MOONSNARE_PROTOTYPE_69,
+    &TAMESHI_REALITY_ARCHITECT_82,
     &CLAWING_TORMENT,
     &OKIBA_RECKONER_RAID,
     &VIRUS_BEETLE,
     &CRACKLING_EMERGENCE,
+    &EXPERIMENTAL_SYNTHESIZER_138,
+    &GORO_GORO_DISCIPLE_OF_RYUSEI_145,
     &IRONHOOF_BOAR,
+    &MARCH_OF_RECKLESS_JOY_154,
     &RABBIT_BATTERY,
+    &TWINSHOT_SNIPER_168,
     &GREATER_TANUKI,
     &HARMONIOUS_EMERGENCE,
     &TAMIYO_S_SAFEKEEPING,
+    &COLOSSAL_SKYTURTLE_216,
+    &ENTHUSIASTIC_MECHANAUT_218,
     &HINATA_DAWN_CROWNED,
     &TAMIYO_COMPLEATED_SAGE,
+    &CONTAINMENT_CONSTRUCT_243,
+    &HIGH_SPEED_HOVERBIKE_247,
     &IRON_APPRENTICE,
     &MIRROR_BOX,
     &OTAWARA_SOARING_CITY,
     &SECLUDED_COURTYARD,
     &UNCHARTED_HAVEN,
     &FABLE_OF_THE_MIRROR_BREAKER,
+    &JIN_GITAXIAS_PROGRESS_TYRANT_371,
     &BOSEIJU_WHO_ENDURES,
+    &EIGANJO_SEAT_OF_THE_EMPIRE_413,
+    &SOKENZAN_CRUCIBLE_OF_DEFIANCE_415,
+    &FAREWELL_436,
+    &THE_REALITY_CHIP_449,
+    &TAKENUMA_ABANDONED_MIRE_505,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] =

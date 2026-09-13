@@ -22,6 +22,7 @@ use crate::card::EffectRecipientDef;
 use crate::card::GraveyardPlayPermissionDef;
 use crate::card::ManaColor;
 use crate::card::ObjectPredicateDef;
+use crate::card::ObjectQueryDef;
 use crate::card::PlayActionMatcherDef;
 use crate::card::PlayRestrictionDef;
 use crate::card::PlayerRelation;
@@ -41,6 +42,49 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// 5DN 4 — Auriok Salvagers
+pub(in crate::card::sets) static AURIOK_SALVAGERS_4: CardRecord = CardRecord::new(
+    "Auriok Salvagers",
+    "09c9cd1b-9260-4f98-ac7a-25bb5ae3e06d",
+    "Randy Gallegos",
+    CardRules::new_creature(mana_cost!("{3}{W}"), &["Human", "Soldier"], 2, 4).with_abilities(&[
+AbilityDef::activated_with_targets("{1}{W}: Return target artifact card with mana value 1 or less from your graveyard to your hand.", &[CostDef::Mana(mana_cost!("{1}{W}"))], &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::ManaValueAtMost(1)]), zones: &[ZoneKind::Graveyard], controller: None, owner: Some(PlayerRelation::You) })], EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY), ZoneKind::Hand, ZonePlacement::Top))
+]),
+);
+
+// 5DN 23 — Artificer's Intuition
+pub(in crate::card::sets) static ARTIFICER_S_INTUITION_23: CardRecord = CardRecord::new(
+    "Artificer's Intuition",
+    "abe37c88-afd7-45ac-9f84-f4bd881a1462",
+    "Wayne England",
+    CardRules::new_enchantment(mana_cost!("{1}{U}")).with_abilities(&[AbilityDef::activated(
+        "{U}, Discard an artifact card: Search your library for an artifact card with \
+         mana value 1 or less, reveal it, put it into your hand, then shuffle.",
+        &[
+            CostDef::Mana(mana_cost!("{U}")),
+            CostDef::discard(ObjectPredicateDef::HasType(CardType::Artifact)),
+        ],
+        EffectDef::SearchZone {
+            player: EffectRecipientDef::Controller,
+            source: ZoneKind::Library,
+            object: ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                ObjectPredicateDef::ManaValueAtMost(1),
+            ]),
+            minimum: 0,
+            maximum: ValueDef::Constant(1),
+            reveal: true,
+            destination: ZoneKind::Hand,
+            placement: ZonePlacement::Top,
+            shuffle: true,
+            enters_tapped: false,
+            attachment: None,
+            binding: None,
+            then: None,
+        },
+    )]),
+);
 
 // 5DN 27 — Condescend
 pub(in crate::card::sets) static CONDESCEND: CardRecord = CardRecord::new(
@@ -169,6 +213,27 @@ pub(in crate::card::sets) static FURNACE_WHELP: CardRecord = CardRecord::new(
     ]),
 );
 
+// 5DN 75 — Mana Geyser
+pub(in crate::card::sets) static MANA_GEYSER_75: CardRecord = CardRecord::new(
+    "Mana Geyser",
+    "3929662e-99d7-48e9-afac-1852af8be722",
+    "Martina Pilcerova",
+    CardRules::new_sorcery(mana_cost!("{3}{R}{R}")).with_abilities(&[AbilityDef::spell(
+        "Add {R} for each tapped land your opponents control.",
+        EffectDef::AddManaEqualTo {
+            color: ManaColor::Red,
+            amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    ObjectPredicateDef::Tapped,
+                ]),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Opponent,
+            )),
+        },
+    )]),
+);
+
 // 5DN 85 — Dawn's Reflection
 pub(in crate::card::sets) static DAWNS_REFLECTION: CardRecord = CardRecord::new(
     "Dawn's Reflection",
@@ -225,6 +290,94 @@ pub(in crate::card::sets) static ETERNAL_WITNESS: CardRecord = CardRecord::new(
     ),
 );
 
+// 5DN 104 — Avarice Totem
+pub(in crate::card::sets) static AVARICE_TOTEM_104: CardRecord = CardRecord::new(
+    "Avarice Totem",
+    "53a5cfa8-4091-445c-8641-64402cca7d2d",
+    "Ben Thompson",
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{5}: Exchange control of this artifact and target nonland permanent.",
+            &[CostDef::Mana(mana_cost!("{5}"))],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            )],
+            EffectDef::ExchangeControl {
+                first: EffectRecipientDef::Source,
+                second: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                otherwise: None,
+            },
+        ),
+    ]),
+);
+
+// 5DN 106 — Battered Golem
+pub(in crate::card::sets) static BATTERED_GOLEM_106: CardRecord = CardRecord::new(
+    "Battered Golem",
+    "f69add35-c529-4b30-8e64-f09b8308432f",
+    "Carl Critchlow",
+    CardRules::new_artifact_creature(mana_cost!("{3}"), &["Golem"], 3, 2).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature doesn't untap during your untap step.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+            },
+        ),
+        AbilityDef::triggered(
+            "Whenever an artifact enters, you may untap this creature.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::Untap {
+                    object: EffectRecipientDef::Source,
+                },
+            },
+        ),
+    ]),
+);
+
+// 5DN 107 — Blasting Station
+pub(in crate::card::sets) static BLASTING_STATION_107: CardRecord = CardRecord::new(
+    "Blasting Station",
+    "71e2f832-6601-4232-b250-fd1c88538fbd",
+    "Stephen Tappin",
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice a creature: This artifact deals 1 damage to any target.",
+            &[
+                CostDef::TapSource,
+                CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(CardType::Creature)),
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::AnyTarget,
+            )],
+            EffectDef::damage(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ValueDef::Constant(1),
+            ),
+        ),
+        AbilityDef::triggered(
+            "Whenever a creature enters, you may untap this artifact.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::Untap {
+                    object: EffectRecipientDef::Source,
+                },
+            },
+        ),
+    ]),
+);
+
 // 5DN 110 — Clock of Omens
 pub(in crate::card::sets) static CLOCK_OF_OMENS: CardRecord = CardRecord::new(
     "Clock of Omens",
@@ -246,6 +399,16 @@ pub(in crate::card::sets) static CLOCK_OF_OMENS: CardRecord = CardRecord::new(
             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
         },
     )),
+);
+
+// 5DN 112 — Conjurer's Bauble
+pub(in crate::card::sets) static CONJURER_S_BAUBLE_112: CardRecord = CardRecord::new(
+    "Conjurer's Bauble",
+    "2d32960e-d182-455f-8e74-eb11b10050da",
+    "Darrell Riche",
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
+AbilityDef::activated_with_targets("{T}, Sacrifice this artifact: Put up to one target card from your graveyard on the bottom of your library. Draw a card.", &[CostDef::TapSource, CostDef::SacrificeSource], &[AbilityTargetDef::up_to(AbilityTargetPredicate::Object { object: ObjectPredicateDef::Any, zones: &[ZoneKind::Graveyard], controller: None, owner: Some(PlayerRelation::You) }, 1)], EffectDef::Sequence(&[EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY), ZoneKind::Library, ZonePlacement::Bottom), abilities::draw_cards(ValueDef::Constant(1))]))
+]),
 );
 
 // 5DN 114 — Crucible of Worlds
@@ -333,6 +496,43 @@ CardRules::new_artifact(mana_cost!("{X}")).with_abilities(&[
         ]),
 );
 
+// 5DN 127 — Grinding Station
+pub(in crate::card::sets) static GRINDING_STATION_127: CardRecord = CardRecord::new(
+    "Grinding Station",
+    "df1df511-b52c-45cd-9503-ffce4271a802",
+    "Greg Staples",
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice an artifact: Target player mills three cards.",
+            &[
+                CostDef::TapSource,
+                CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(CardType::Artifact)),
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            EffectDef::Mill {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                amount: ValueDef::Constant(3),
+            },
+        ),
+        AbilityDef::triggered(
+            "Whenever an artifact enters, you may untap this artifact.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::HasType(CardType::Artifact),
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::Untap {
+                    object: EffectRecipientDef::Source,
+                },
+            },
+        ),
+    ]),
+);
+
 // 5DN 128 — Guardian Idol
 pub(in crate::card::sets) static GUARDIAN_IDOL: CardRecord = CardRecord::new(
     "Guardian Idol",
@@ -373,6 +573,70 @@ pub(in crate::card::sets) static GUARDIAN_IDOL: CardRecord = CardRecord::new(
     ]),
 );
 
+// 5DN 134 — Krark-Clan Ironworks
+pub(in crate::card::sets) static KRARK_CLAN_IRONWORKS_134: CardRecord = CardRecord::new(
+    "Krark-Clan Ironworks",
+    "c60174d6-1f9d-4870-b3db-34d6fcb3f6ab",
+    "Greg Hildebrandt",
+    CardRules::new_artifact(mana_cost!("{4}")).with_abilities(&[AbilityDef::activated_mana(
+        "Sacrifice an artifact: Add {C}{C}.",
+        &[CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(
+            CardType::Artifact,
+        ))],
+        EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_amount(2)),
+    )]),
+);
+
+// 5DN 135 — Lantern of Insight
+pub(in crate::card::sets) static LANTERN_OF_INSIGHT_135: CardRecord = CardRecord::new(
+    "Lantern of Insight",
+    "cb0e4c78-75fe-4692-b177-974b148f0614",
+    "Greg Hildebrandt",
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "Players play with the top card of their libraries revealed.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::EachPlayer,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::PlaysWithTopOfLibraryRevealed),
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{T}, Sacrifice this artifact: Target player shuffles.",
+            &[CostDef::TapSource, CostDef::SacrificeSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            EffectDef::ShuffleLibrary {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+    ]),
+);
+
+// 5DN 142 — Paradise Mantle
+pub(in crate::card::sets) static PARADISE_MANTLE_142: CardRecord = CardRecord::new(
+    "Paradise Mantle",
+    "1252e9e2-2dd5-4bd6-aa56-f0a0ba056a77",
+    "Greg Hildebrandt",
+    CardRules::new_artifact(mana_cost!("{0}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature has \"{T}: Add one mana of any color.\".",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::object(
+                        crate::card::ObjectRefDef::AttachedToSource,
+                    ),
+                    effect: AppliedEffectDef::add_ability(&abilities::tap_for_mana(
+                        "{T}: Add one mana of any color.",
+                        AddManaEffectDef::any_color(),
+                    )),
+                },
+            ),
+            abilities::equip(&[CostDef::Mana(mana_cost!("{1}"))], "Equip {1}"),
+        ]),
+);
+
 // 5DN 143 — Pentad Prism
 pub(in crate::card::sets) static PENTAD_PRISM: CardRecord = CardRecord::new(
     "Pentad Prism",
@@ -403,20 +667,81 @@ pub(in crate::card::sets) static PENTAD_PRISM: CardRecord = CardRecord::new(
         ]),
 );
 
+// 5DN 156 — Staff of Domination
+pub(in crate::card::sets) static STAFF_OF_DOMINATION_156: CardRecord = CardRecord::new(
+    "Staff of Domination",
+    "7980fc3b-71d5-427d-bd42-087256fd2059",
+    "Ben Thompson",
+    CardRules::new_artifact(mana_cost!("{3}")).with_abilities(&[
+        AbilityDef::activated(
+            "{1}: Untap this artifact.",
+            &[CostDef::Mana(mana_cost!("{1}"))],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Source,
+            },
+        ),
+        AbilityDef::activated(
+            "{2}, {T}: You gain 1 life.",
+            &[CostDef::Mana(mana_cost!("{2}")), CostDef::TapSource],
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{3}, {T}: Untap target creature.",
+            &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Untap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+        AbilityDef::activated_with_targets(
+            "{4}, {T}: Tap target creature.",
+            &[CostDef::Mana(mana_cost!("{4}")), CostDef::TapSource],
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Creature),
+            )],
+            EffectDef::Tap {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            },
+        ),
+        AbilityDef::activated(
+            "{5}, {T}: Draw a card.",
+            &[CostDef::Mana(mana_cost!("{5}")), CostDef::TapSource],
+            abilities::draw_cards(ValueDef::Constant(1)),
+        ),
+    ]),
+);
+
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &AURIOK_SALVAGERS_4,
+    &ARTIFICER_S_INTUITION_23,
     &CONDESCEND,
     &SERUM_VISIONS,
     &TRINKET_MAGE,
     &NIGHTS_WHISPER,
     &FURNACE_WHELP,
+    &MANA_GEYSER_75,
     &DAWNS_REFLECTION,
     &ETERNAL_WITNESS,
+    &AVARICE_TOTEM_104,
+    &BATTERED_GOLEM_106,
+    &BLASTING_STATION_107,
     &CLOCK_OF_OMENS,
+    &CONJURER_S_BAUBLE_112,
     &CRUCIBLE_OF_WORLDS,
     &DOOR_TO_NOTHINGNESS,
     &ENGINEERED_EXPLOSIVES,
+    &GRINDING_STATION_127,
     &GUARDIAN_IDOL,
+    &KRARK_CLAN_IRONWORKS_134,
+    &LANTERN_OF_INSIGHT_135,
+    &PARADISE_MANTLE_142,
     &PENTAD_PRISM,
+    &STAFF_OF_DOMINATION_156,
 ];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];

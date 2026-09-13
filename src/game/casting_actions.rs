@@ -129,6 +129,13 @@ impl Game {
             .iter()
             .map(|card| (card, CastSourceZone::Hand))
             .chain(
+                state
+                    .command
+                    .iter()
+                    .filter(|card| self.can_cast_commander_from_command_zone(card.id))
+                    .map(|card| (card, CastSourceZone::Command)),
+            )
+            .chain(
                 self.players
                     .iter()
                     .enumerate()

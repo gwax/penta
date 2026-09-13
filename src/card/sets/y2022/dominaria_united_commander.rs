@@ -10,6 +10,7 @@ use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::CopyExceptionsDef;
+use crate::card::CostDef;
 use crate::card::CreateTokenDef;
 use crate::card::CreatedTokensDef;
 use crate::card::EffectDef;
@@ -40,6 +41,17 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
+
+// DMC 8 — The Reaver Cleaver
+pub(in crate::card::sets) static THE_REAVER_CLEAVER_8: CardRecord = CardRecord::new(
+    "The Reaver Cleaver",
+    "5bcd1591-b5b9-49fc-9f2a-45f31ed1871e",
+    "Yigit Koroglu",
+    CardRules::new_artifact(mana_cost!("{2}{R}")).with_subtypes(&["Equipment"]).with_supertype(CardSupertype::Legendary).with_abilities(&[
+AbilityDef::static_ability("Equipped creature gets +1/+1 and has trample and \"Whenever this creature deals combat damage to a player or planeswalker, create that many Treasure tokens.\"", EffectDef::StaticApply { recipient: EffectRecipientDef::AttachedPermanent, effect: AppliedEffectDef::Composite(&[AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)), AppliedEffectDef::add_ability(&abilities::trample()), AppliedEffectDef::add_ability(&AbilityDef::triggered("Whenever this creature deals combat damage to a player or planeswalker, create that many Treasure tokens.", TriggerEventDef::combat_damage_to_player_or_planeswalker(ObjectPredicateDef::Source), EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::tokens::treasure())).with_count(ValueDef::DamageEventAmount))))]) }),
+abilities::equip(&[CostDef::Mana(mana_cost!("{3}"))], "Equip {3}")
+]),
+);
 
 // DMC 10 — Cadric, Soul Kindler
 pub(in crate::card::sets) static CADRIC_SOUL_KINDLER: CardRecord = CardRecord::new(
@@ -148,7 +160,30 @@ pub(in crate::card::sets) static TORSTEN_FOUNDER_OF_BENALIA: CardRecord = CardRe
         ]),
 );
 
-pub(in crate::card::sets) static CARDS: &[&CardRecord] =
-    &[&CADRIC_SOUL_KINDLER, &TORSTEN_FOUNDER_OF_BENALIA];
+// DMC 49 — Dihada, Binder of Wills
+// Audit: unsupported — The ultimate must freeze all affected permanents across the control change before granting haste. Ability-grant validation cannot retain battlefield provenance through an ordinary object binding, and re-querying nonlands after the control change can miss permanents whose types changed.
+pub(in crate::card::sets) static DIHADA_BINDER_OF_WILLS_49: CardRecord = CardRecord::new(
+    "Dihada, Binder of Wills",
+    "cea0ea07-6963-4de1-953d-b1ac41d8c6b5",
+    "Néstor Ossandón Leal",
+    crate::card::CardRules::unsupported(),
+);
+
+// DMC 93 — Gerrard's Hourglass Pendant
+// Audit: unsupported — The graveyard-return activation needs identities of cards put there from the battlefield during this turn. That turn-scoped zone-change history is not retained.
+pub(in crate::card::sets) static GERRARD_S_HOURGLASS_PENDANT_93: CardRecord = CardRecord::new(
+    "Gerrard's Hourglass Pendant",
+    "091135ec-4f4c-432c-bd6c-e7e2fb7561a3",
+    "Sam Burley",
+    crate::card::CardRules::unsupported(),
+);
+
+pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
+    &THE_REAVER_CLEAVER_8,
+    &CADRIC_SOUL_KINDLER,
+    &TORSTEN_FOUNDER_OF_BENALIA,
+    &DIHADA_BINDER_OF_WILLS_49,
+    &GERRARD_S_HOURGLASS_PENDANT_93,
+];
 
 pub(in crate::card::sets) static ADDITIONAL_PRINTINGS: &[PrintingRecord] = &[];
