@@ -73,6 +73,8 @@ fn static_object_predicate_supported(predicate: ObjectPredicateDef) -> bool {
         | ObjectPredicateDef::DeclaredTargetCount { .. }
         | ObjectPredicateDef::HasDeclaredTarget(_)
         | ObjectPredicateDef::HasDeclaredPlayerTarget(_)
+        // Exile facing is currently evaluated only for live card selections.
+        | ObjectPredicateDef::FaceUpInExile
         // A printed cost shape is only readable where the card's own
         // definition is in hand, which a static continuous effect does not
         // have; the zone-search path answers it instead.

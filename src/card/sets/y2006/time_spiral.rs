@@ -1024,12 +1024,26 @@ pub(in crate::card::sets) static PLATED_PEGASUS: CardRecord = CardRecord::new(
 );
 
 // TSP 35 — Pull from Eternity
-// Audit: unsupported — Needs a target predicate distinguishing face-up from face-down cards in exile.
 pub(in crate::card::sets) static PULL_FROM_ETERNITY: CardRecord = CardRecord::new(
     "Pull from Eternity",
     "3d218091-d218-41ad-b666-c8ab3de7160a",
     "Ron Spears",
-    CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{W}")).with_ability(AbilityDef::spell_with_targets(
+        "Put target face-up exiled card into its owner's graveyard.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::FaceUpInExile,
+                zones: &[ZoneKind::Exile],
+                controller: None,
+                owner: None,
+            },
+        )],
+        EffectDef::move_to_zone(
+            EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            ZoneKind::Graveyard,
+            ZonePlacement::Top,
+        ),
+    )),
 );
 
 // TSP 36 — Pulmonic Sliver

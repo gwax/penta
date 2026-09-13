@@ -600,8 +600,9 @@ impl Game {
         });
     }
 
-    /// Whether this exiled card is lying face down, which today means it was
-    /// foretold. Its owner knows what it is; nobody else does.
+    /// Whether this exiled card is kept face down (CR 406.3), independently
+    /// of who may look at it. This is distinct from a permanent's status
+    /// (CR 110.5d).
     pub(super) fn exiled_card_is_face_down(&self, card: GameObjectId) -> bool {
         self.exile_play_permissions
             .iter()

@@ -30,6 +30,7 @@ pub(in crate::card::sets::tests) fn shared_object_predicate(predicate: ObjectPre
         | ObjectPredicateDef::ColorCount(_)
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
+        | ObjectPredicateDef::FaceUpInExile
         | ObjectPredicateDef::GenericManaCostAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)

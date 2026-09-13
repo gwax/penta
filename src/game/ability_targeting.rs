@@ -763,6 +763,9 @@ impl Game {
         // object ID in a zone. Recurse here as well so a named predicate
         // remains correct when composed with another card characteristic.
         match predicate {
+            ObjectPredicateDef::FaceUpInExile => {
+                return zone == ZoneKind::Exile && !face_down;
+            }
             ObjectPredicateDef::HasAnyCounter => {
                 return !card.counters.is_empty();
             }

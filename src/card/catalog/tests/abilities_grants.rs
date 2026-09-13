@@ -891,3 +891,42 @@ include!("abilities_grants/reflexive_triggers.rs");
 include!("abilities_grants/output_bindings.rs");
 
 include!("abilities_grants/effect_continuations.rs");
+
+#[test]
+fn face_up_in_exile_rejects_trigger_and_static_contexts() {
+    for predicate in [ObjectPredicateDef::Any, ObjectPredicateDef::FaceUpInExile] {
+        let abilities = [
+            AbilityDef::triggered(
+                "Whenever a matching card enters a graveyard from exile, draw a card.",
+                TriggerEventDef::zone_changed(
+                    predicate,
+                    Some(ZoneKind::Exile),
+                    Some(ZoneKind::Graveyard),
+                ),
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            ),
+            AbilityDef::static_ability(
+                "Matching permanents get +1/+1.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
+                        ObjectQueryDef::new(predicate, &[ZoneKind::Battlefield]),
+                    )),
+                    effect: AppliedEffectDef::modify_power_toughness(
+                        ValueDef::Constant(1),
+                        ValueDef::Constant(1),
+                    ),
+                },
+            ),
+        ];
+        for ability in abilities {
+            assert_eq!(
+                CardCatalog::new([definition_with_ability(ability)]).is_ok(),
+                predicate == ObjectPredicateDef::Any,
+                "live exile facing cannot be authored into {ability:?}",
+            );
+        }
+    }
+}

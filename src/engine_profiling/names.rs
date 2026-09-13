@@ -161,6 +161,7 @@ pub(crate) const fn predicate_kind(value: crate::ObjectPredicateDef) -> &'static
         crate::ObjectPredicateDef::Commander => "Commander",
         crate::ObjectPredicateDef::Source => "Source",
         crate::ObjectPredicateDef::Token => "Token",
+        crate::ObjectPredicateDef::FaceUpInExile => "FaceUpInExile",
         crate::ObjectPredicateDef::Tapped => "Tapped",
         crate::ObjectPredicateDef::WasDealtDamageThisTurn => "WasDealtDamageThisTurn",
         crate::ObjectPredicateDef::DealtDamageThisTurn => "DealtDamageThisTurn",
