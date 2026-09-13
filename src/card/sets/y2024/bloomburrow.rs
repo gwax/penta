@@ -27,6 +27,7 @@ use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
 use crate::card::ChooseOneOfEachDef;
 use crate::card::ComparisonDef;
+use crate::card::ConditionDef;
 use crate::card::ControlDurationDef;
 use crate::card::CopyExceptionsDef;
 use crate::card::CopyStackObjectDef;
@@ -1267,12 +1268,52 @@ pub(in crate::card::sets) static DOUR_PORT_MAGE: CardRecord = CardRecord::new(
 );
 
 // BLB 48 — Eddymurk Crab
-// Audit: unsupported — Needs a prospective-entry replacement condition for whether it is its controller's turn; the battlefield-entry condition vocabulary does not expose the active player.
 pub(in crate::card::sets) static EDDYMURK_CRAB: CardRecord = CardRecord::new(
     "Eddymurk Crab",
     "e6d45abe-4962-47d9-a54e-7e623ea8647c",
     "PINDURSKI",
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{5}{U}{U}"), &["Elemental", "Crab"], 5, 5)
+        .with_abilities(&[
+            abilities::flash(),
+            abilities::this_spell_cost_reduction(
+                "This spell costs {1} less to cast for each instant and sorcery card in your graveyard.",
+                ValueDef::CountMatchingObjects(
+                    &ObjectQueryDef::matching(
+                        ObjectPredicateDef::AnyOf(&[
+                            ObjectPredicateDef::HasType(CardType::Instant),
+                            ObjectPredicateDef::HasType(CardType::Sorcery),
+                        ]),
+                        &[ZoneKind::Graveyard],
+                        PlayerRelation::You,
+                    ),
+                ),
+            ),
+            AbilityDef::as_enters(
+                "This creature enters tapped if it's not your turn.",
+                ReplacementEffectDef::Conditional {
+                    condition: ConditionDef::ActivePlayer(PlayerRelation::You),
+                    if_true: &[],
+                    if_false: &[ReplacementEffectDef::ModifyBattlefieldEntry(
+                        BattlefieldEntryModificationDef::Tapped,
+                    )],
+                },
+            ),
+            abilities::enters_trigger_with_targets(
+                "When this creature enters, tap up to two target creatures.",
+                &[AbilityTargetDef::up_to(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::HasType(CardType::Creature),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: None,
+                        owner: None,
+                    },
+                    2,
+                )],
+                EffectDef::Tap {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                },
+            ),
+        ]),
 );
 
 // BLB 49 — Eluge, the Shoreless Sea
@@ -1699,9 +1740,9 @@ pub(in crate::card::sets) static PEARL_OF_WISDOM: CardRecord = CardRecord::new(
     "13cb9575-1138-4f99-8e90-0eaf00bdf4a1",
     "Julie Dillon",
     CardRules::new_sorcery(mana_cost!("{2}{U}")).with_abilities(&[
-        AbilityDef::static_ability(
+        abilities::this_spell_cost_reduction(
             "This spell costs {1} less to cast if you control an Otter.",
-            EffectDef::ReduceGenericCostBy(ValueDef::IfMatchingObjectCount(&CountConditionDef {
+            ValueDef::IfMatchingObjectCount(&CountConditionDef {
                 query: ObjectQueryDef::matching(
                     ObjectPredicateDef::Subtype(SubtypeDef::Literal("Otter")),
                     &[ZoneKind::Battlefield],
@@ -1711,9 +1752,8 @@ pub(in crate::card::sets) static PEARL_OF_WISDOM: CardRecord = CardRecord::new(
                 amount: 1,
                 then: ValueDef::Constant(1),
                 otherwise: ValueDef::Constant(0),
-            })),
-        )
-        .with_source_zones(&[ZoneKind::Hand]),
+            }),
+        ),
         AbilityDef::spell(
             "Draw two cards.",
             abilities::draw_cards(ValueDef::Constant(2)),
@@ -2777,18 +2817,15 @@ pub(in crate::card::sets) static HUSKBURSTER_SWARM: CardRecord = CardRecord::new
     "John Tedrick",
     CardRules::new_creature(mana_cost!("{7}{B}"), &["Elemental", "Insect"], 6, 6).with_abilities(
         &[
-            AbilityDef::static_ability(
+            abilities::this_spell_cost_reduction(
                 "This spell costs {1} less to cast for each creature card you \
                  own in exile and in your graveyard.",
-                EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(
-                    &ObjectQueryDef::matching(
-                        ObjectPredicateDef::HasType(CardType::Creature),
-                        &[ZoneKind::Graveyard, ZoneKind::Exile],
-                        PlayerRelation::You,
-                    ),
+                ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Graveyard, ZoneKind::Exile],
+                    PlayerRelation::You,
                 )),
-            )
-            .with_source_zones(&[ZoneKind::Hand]),
+            ),
             abilities::menace(),
             abilities::deathtouch(),
         ],
@@ -3042,18 +3079,15 @@ pub(in crate::card::sets) static SCALES_OF_SHALE: CardRecord = CardRecord::new(
     "9ae14276-dbbd-4257-80e9-accd6c19f5b2",
     "Yohann Schepacz",
     CardRules::new_instant(mana_cost!("{2}{B}")).with_abilities(&[
-        AbilityDef::static_ability(
+        abilities::this_spell_cost_reduction(
             "Affinity for Lizards (This spell costs {1} less to cast for \
              each Lizard you control.)",
-            EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(
-                &ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lizard")),
-                    &[ZoneKind::Battlefield],
-                    PlayerRelation::You,
-                ),
+            ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lizard")),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
             )),
-        )
-        .with_source_zones(&[ZoneKind::Hand]),
+        ),
         AbilityDef::spell_with_targets(
             "Target creature gets +2/+0 and gains lifelink and \
              indestructible until end of turn.",
@@ -5485,18 +5519,15 @@ pub(in crate::card::sets) static POLLIWALLOP: CardRecord = CardRecord::new(
     "6bc4963c-d90b-4588-bdb7-85956e42a623",
     "Martin Wittfooth",
     CardRules::new_instant(mana_cost!("{3}{G}")).with_abilities(&[
-        AbilityDef::static_ability(
+        abilities::this_spell_cost_reduction(
             "Affinity for Frogs (This spell costs {1} less to cast for \
              each Frog you control.)",
-            EffectDef::ReduceGenericCostBy(ValueDef::CountMatchingObjects(
-                &ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Frog")),
-                    &[ZoneKind::Battlefield],
-                    PlayerRelation::You,
-                ),
+            ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Frog")),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::You,
             )),
-        )
-        .with_source_zones(&[ZoneKind::Hand]),
+        ),
         AbilityDef::spell_with_targets(
             "Target creature you control deals damage equal to twice its \
              power to target creature you don't control.",

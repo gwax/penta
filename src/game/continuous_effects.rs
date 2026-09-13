@@ -647,7 +647,6 @@ impl Game {
                 | EffectDef::CannotBeForcedToSacrifice
                 | EffectDef::CannotBeForcedToDiscard
                 | EffectDef::SubstituteBasicLandTypeUntilEndOfTurn { .. }
-                | EffectDef::ReduceGenericCostBy(_)
                 | EffectDef::ModifyCost(_)
                 | EffectDef::LandwalkCanBeBlocked(_)
                 | EffectDef::CannotAttackUnless(_)
