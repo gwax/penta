@@ -417,10 +417,26 @@ pub(in crate::card::sets) static BOSEIJU_WHO_SHELTERS_ALL_273: CardRecord = Card
     "Boseiju, Who Shelters All",
     "0180d9a8-992c-4d55-8ac4-33a587786993",
     "Ralph Horsley",
-    CardRules::new_land(&[]).with_supertype(CardSupertype::Legendary).with_abilities(&[
-abilities::enters_tapped(CardType::Land),
-AbilityDef::activated_mana("{T}, Pay 2 life: Add {C}. If that mana is spent on an instant or sorcery spell, that spell can't be countered.", &[CostDef::TapSource, CostDef::PayLife(2)], EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_spend_effects(&[ManaSpendEffectDef::ApplyToPaidSpellMatching { object: ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Instant), ObjectPredicateDef::HasType(CardType::Sorcery)]), effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) }])))
-]),
+    CardRules::new_land(&[])
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::enters_tapped(CardType::Land),
+            AbilityDef::activated_mana(
+                "{T}, Pay 2 life: Add {C}. If that mana is spent on an instant or sorcery spell, that spell can't be countered.",
+                &[CostDef::TapSource, CostDef::PayLife(2)],
+                EffectDef::AddMana(
+                    AddManaEffectDef::one(ManaColor::Colorless).with_spend_effects(&[
+                        ManaSpendEffectDef::ApplyToPaidSpellMatching {
+                            object: ObjectPredicateDef::AnyOf(&[
+                                ObjectPredicateDef::HasType(CardType::Instant),
+                                ObjectPredicateDef::HasType(CardType::Sorcery),
+                            ]),
+                            effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
+                        },
+                    ]),
+                ),
+            ),
+        ]),
 );
 
 // CHK 275 — Eiganjo Castle
