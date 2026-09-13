@@ -166,6 +166,15 @@ fn validate_target_index(
     }
 }
 
+pub(super) fn validate_activation_cost_value(
+    value: ValueDef,
+    targets: &[AbilityTargetDef],
+) -> Result<(), GrantedAbilityValidationError> {
+    let bindings = BindingRegistry::default();
+    validate_value_target_references(value, targets.len(), BindingScope::empty(&bindings))?;
+    validate_value_shape(value, targets)
+}
+
 pub(super) fn validate_ability_cost_target_references(
     costs: &[CostDef],
     targets: &[AbilityTargetDef],
@@ -583,7 +592,9 @@ fn validate_value_target_references(
         | ValueDef::TargetManaValue(target) => validate_target_index(target, target_count),
         // Whatever the amount reads has to be nameable where it is read, the
         // same as any other object reference in the program.
-        ValueDef::ObjectPower(reference) | ValueDef::ObjectManaValue(reference) => {
+        ValueDef::ColorCount(reference)
+        | ValueDef::ObjectPower(reference)
+        | ValueDef::ObjectManaValue(reference) => {
             validate_object_reference(reference, target_count, scope)
         }
         ValueDef::CountersOnObject(counted) => {
@@ -599,7 +610,6 @@ fn validate_value_target_references(
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
-        | ValueDef::AffectedColorCount
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness
         | ValueDef::LifeTotal(_)

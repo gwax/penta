@@ -25,6 +25,7 @@ fn every_runtime_keyword_has_a_stable_checkpoint_round_trip() {
         KeywordAbility::Reach,
         KeywordAbility::Flash,
         KeywordAbility::Hexproof,
+        KeywordAbility::HexproofFrom(&ObjectPredicateDef::ColorCount(1)),
         KeywordAbility::Shroud,
         KeywordAbility::Intimidate,
         KeywordAbility::Undying,

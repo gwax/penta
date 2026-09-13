@@ -60,6 +60,16 @@ the bot-wire epoch.
   tag and existing catalog ability locators; protocol and checkpoint epochs
   are unchanged.
 
+- Implement Ramos, Dragon Engine using `ColorCount(TriggeringObject)` and its
+  once-per-turn counter-removal mana ability. Shared last-known color reads
+  now preserve color overrides on spells that have left the stack.
+
+- Implement Dragonfire Blade with target-dependent equip pricing and hexproof
+  from monocolored. Composable `ColorCount(ObjectRefDef)` values also replace
+  Civic Saber's affected-color count. Runtime keyword checkpoints accept the
+  additive `hexproofFromMonocolored` tag; reconstruction still requires the
+  same simulation fingerprint. Existing protocol and checkpoint epochs are unchanged.
+
 - Declarative trigger modifiers now suppress or add occurrences caused by
   battlefield entries, deaths, and other departures. Ancient Greenwarden,
   Doorkeeper Thrull, Elesh Norn, Mother of Machines, Gandalf the White,

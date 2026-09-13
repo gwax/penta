@@ -59,6 +59,9 @@ fn validate_ability_definition(
     if let DeclarativeAbilityDef::Activated(activated) = ability.definition {
         validate_activated_target_choosers(activated.targets)?;
         validate_ability_cost_target_references(activated.costs, targets)?;
+        if let Some(reduction) = activated.cost_reduction {
+            super::targeting::validate_activation_cost_value(reduction.amount, targets)?;
+        }
     }
     validate_triggered_ability_shape(ability, targets.len())?;
     if let Err(problem) = validate_ability_effect_context(ability) {

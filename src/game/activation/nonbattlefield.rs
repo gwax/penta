@@ -17,6 +17,7 @@ impl Game {
         player: PlayerId,
         source: GameObjectId,
         definition: &crate::card::ActivatedAbilityDef,
+        targets: &[super::TargetSelection],
         announced: AnnouncedActivationCost<'_>,
     ) {
         let AnnouncedActivationCost {
@@ -25,7 +26,7 @@ impl Game {
             payment_purpose,
             mana_payment,
         } = announced;
-        let mana_cost = self.priced_ability_mana_cost(source, definition);
+        let mana_cost = self.priced_ability_mana_cost(source, definition, targets);
         if definition
             .costs
             .iter()

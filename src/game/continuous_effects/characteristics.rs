@@ -577,6 +577,37 @@ impl Game {
         }
     }
 
+    pub(super) fn object_color_count(&self, object: GameObjectId) -> u16 {
+        self.object_colors(object).into_iter().map(u16::from).sum()
+    }
+
+    fn has_hexproof_from_object(
+        &self,
+        permanent: &Permanent,
+        source: GameObjectId,
+        source_is_spell: bool,
+    ) -> bool {
+        self.find_effective_ability(permanent, |effective| {
+            let DeclarativeAbilityDef::Keyword(KeywordAbility::HexproofFrom(predicate)) =
+                effective.ability.definition
+            else {
+                return false;
+            };
+            self.protection_source_characteristics(source)
+                .is_some_and(|object| {
+                    self.trigger_object_matches_with_text_source(
+                        *predicate,
+                        &object,
+                        permanent.card.id,
+                        source_is_spell,
+                        Some(permanent.controller),
+                        Self::text_source_for_ability_origin(permanent.card.id, effective.origin),
+                    )
+                })
+        })
+        .is_some()
+    }
+
     pub(super) fn permanent_can_be_targeted_by(
         &self,
         permanent: &Permanent,
@@ -587,7 +618,8 @@ impl Game {
         !(self.is_protected_from_object(permanent, source, source_is_spell)
             || self.permanent_has_executable_keyword(permanent, KeywordAbility::Shroud)
             || permanent.controller != controller
-                && self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof)
+                && (self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof)
+                    || self.has_hexproof_from_object(permanent, source, source_is_spell))
             || self.cannot_become_enchanted(permanent) && self.source_attaches_itself(source))
     }
 
@@ -685,9 +717,11 @@ impl Game {
         if let Some(retired) = self.retired_objects.get(&object) {
             return match retired {
                 RetiredObject::Permanent { permanent, .. } => self.permanent_colors(permanent),
-                RetiredObject::Stack(stack) => self
-                    .stack_trigger_event_object(stack)
-                    .map_or([false; 5], |event| event.colors),
+                RetiredObject::Stack(stack) => stack.colors.map_or_else(
+                    || self.stack_trigger_event_object(stack)
+                        .map_or([false; 5], |event| event.colors),
+                    ColorSet::to_flags,
+                ),
                 RetiredObject::Card(card) => self
                     .catalog
                     .get(card.definition)

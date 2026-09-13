@@ -123,6 +123,8 @@ pub enum KeywordAbility {
     Reach,
     Flash,
     Hexproof,
+    /// Opponents cannot target this permanent with spells or abilities whose source matches.
+    HexproofFrom(&'static ObjectPredicateDef),
     Shroud,
     /// Unleash. The engine implements both halves: an optional +1/+1 counter
     /// as the permanent enters, and no blocking while it carries one.
@@ -252,7 +254,8 @@ impl KeywordAbility {
             Self::Persist => 35,
             Self::Flanking => 37,
             Self::Changeling => 38,
-            Self::ProtectionFrom(_)
+            Self::HexproofFrom(_)
+            | Self::ProtectionFrom(_)
             // Never granted, never removed, and never asked about as part of
             // a set: split second is read off the one spell that has it.
             | Self::SplitSecond

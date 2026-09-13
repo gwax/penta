@@ -168,6 +168,7 @@ impl Game {
             player,
             source,
             &definition,
+            &targets,
             AnnouncedActivationCost {
                 cost_objects,
                 x,
@@ -343,7 +344,7 @@ impl Game {
                 taps_source: false,
                 leaves_source: false,
             };
-            let mana_cost = self.priced_ability_mana_cost(source, &definition);
+            let mana_cost = self.priced_ability_mana_cost(source, &definition, &targets);
             self.pay_nonbattlefield_activation_mana_and_life(
                 player,
                 mana_cost,
@@ -565,6 +566,11 @@ impl Game {
                 .any(|cost| matches!(cost, CostDef::SacrificePermanent { .. }));
             let sacrifice_choice_is_source =
                 has_generic_sacrifice && cost_objects.contains(&source);
+            // Lock the complete mana amount before any payment changes the
+            // target's characteristics or removes a cost-modifying permanent.
+            let payable_mana_cost = self
+                .activated_ability_mana_cost_for(&definition, &frozen_targets, cost_objects)
+                .map(|cost| self.activation_mana_cost(&definition, source, cost, &frozen_targets));
             let tap_cost_payer = if definition
                 .costs
                 .iter()
@@ -588,21 +594,14 @@ impl Game {
                     .expect("a legal activation chose the one to tap");
                 let _ = self.tap_permanent(chosen);
             }
-            let has_dynamic_mana = definition.costs.iter().any(|cost| {
-                matches!(
-                    cost,
-                    CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. }
-                )
-            });
-            let mut dynamic_mana_paid = false;
+            let mut mana_paid = false;
             for cost in definition.costs {
                 match cost {
-                    CostDef::Mana(_) if has_dynamic_mana => {}
-                    CostDef::Mana(cost) => {
-                        // Read through any increase on the battlefield and
-                        // any discount, printed or granted, so what is paid
-                        // is what the offer was priced at.
-                        let cost = self.activation_mana_cost(&definition, source, *cost);
+                    CostDef::Mana(_) | CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. } => {
+                        if mana_paid {
+                            continue;
+                        }
+                        let cost = payable_mana_cost.expect("a legal activation has its complete mana cost");
                         let cost = self.announced_activation_cost(player, cost, mana_payment);
                         let payment_purpose = ManaPaymentPurpose::Ability {
                             source,
@@ -614,45 +613,13 @@ impl Game {
                             cost,
                             x,
                             ManaPlanOptions {
-                                // Tapping the source to pay would hand back a
-                                // tapped creature, so auto-payment leaves it
-                                // alone even though the tap itself is legal.
-                                avoid: (taps_source || animates_source).then_some(source),
-                                tap_cost_payer,
-                            },
-                            &payment_purpose,
-                        );
-                        // The same purpose the mana was raised under. Paying
-                        // under a different one would price the cost
-                        // differently from the offer it came from.
-                        let _ = self.pay_player_cost_for(player, cost, x, &payment_purpose);
-                    }
-                    CostDef::ManaCostOf(_)
-                    | CostDef::ManaValueOfTarget { .. } => {
-                        if dynamic_mana_paid {
-                            continue;
-                        }
-                        let cost = self
-                            .activated_ability_mana_cost_for(&definition, &frozen_targets, cost_objects)
-                            .map(|cost| self.activation_mana_cost(&definition, source, cost))
-                            .expect("a legal dynamic-mana activation has its priced object");
-                        let payment_purpose = ManaPaymentPurpose::Ability {
-                            source,
-                            taps_source,
-                            leaves_source,
-                        };
-                        self.activate_mana_for_cost_with_options_for(
-                            player,
-                            cost,
-                            x,
-                            ManaPlanOptions {
                                 avoid: (taps_source || animates_source).then_some(source),
                                 tap_cost_payer,
                             },
                             &payment_purpose,
                         );
                         let _ = self.pay_player_cost_for(player, cost, x, &payment_purpose);
-                        dynamic_mana_paid = true;
+                        mana_paid = true;
                     }
                     CostDef::TapSource => {
                         let _ = self.tap_permanent(source);

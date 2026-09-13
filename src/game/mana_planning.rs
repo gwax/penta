@@ -288,7 +288,7 @@ impl Game {
             return Self::activated_ability_mana_cost(&definition).map(|cost| {
                 (
                     Self::announced_mana_cost(
-                        self.activation_mana_cost(&definition, source, cost),
+                        self.activation_mana_cost(&definition, source, cost, targets),
                         mana_payment,
                     ),
                     x,
@@ -338,7 +338,7 @@ impl Game {
                 .map(|cost| {
                     (
                         Self::announced_mana_cost(
-                            self.activation_mana_cost(&definition, source, cost),
+                            self.activation_mana_cost(&definition, source, cost, targets),
                             mana_payment,
                         ),
                         x,
