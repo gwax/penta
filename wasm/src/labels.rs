@@ -285,6 +285,14 @@ impl WebGame {
                 self.instance_name(observation, *card)
             )),
             GameEvent::CardDrawn { .. } => Some("Opponent drew a card".into()),
+            GameEvent::DieRolled {
+                player,
+                sides,
+                result,
+            } => Some(format!(
+                "{} rolled a d{sides}: {result}",
+                self.player_name(*player)
+            )),
             GameEvent::CardRevealed {
                 player, definition, ..
             } => Some(format!(
