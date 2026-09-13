@@ -667,6 +667,9 @@ pub enum ManaSelectionDef {
 /// A restriction carried by produced mana until that mana is spent.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ManaRestrictionDef {
+    /// At least one alternative must permit the payment. The outer
+    /// `AddManaEffectDef::restrictions` slice remains a conjunction.
+    AnyOf(&'static [ManaRestrictionDef]),
     CastSpell(ObjectPredicateDef),
     /// "This mana can't be spent to cast nonartifact spells." A prohibition
     /// rather than a permission: unlike [`Self::CastSpell`] every other use
@@ -842,6 +845,34 @@ impl AddManaEffectDef {
             amount_override: None,
             sacrifice_source_when_out_of: None,
         }
+    }
+
+    /// "Add two mana of different colors." Enumerate each unordered pair
+    /// once, using the ordinary complete-bundle choice representation.
+    #[must_use]
+    pub const fn two_different_colors() -> Self {
+        Self::choice_of_bundles(
+            &const {
+                let colors = ManaColor::COLORS;
+                let mut bundles = [super::ManaSplit::empty();
+                    ManaColor::COLORS.len() * (ManaColor::COLORS.len() - 1) / 2];
+                let mut index = 0;
+                let mut first = 0;
+                while first < colors.len() {
+                    let mut second = first + 1;
+                    while second < colors.len() {
+                        bundles[index] = super::ManaSplit::from_amounts([
+                            (colors[first], 1),
+                            (colors[second], 1),
+                        ]);
+                        index += 1;
+                        second += 1;
+                    }
+                    first += 1;
+                }
+                bundles
+            },
+        )
     }
 
     #[must_use]
