@@ -80,3 +80,13 @@ fn validate_resolving_applied_effect(
         }
     }
 }
+
+fn cast_spell_effect_supported(effect: AppliedEffectDef) -> bool {
+    match effect {
+        AppliedEffectDef::Composite(effects) => {
+            !effects.is_empty() && effects.iter().copied().all(cast_spell_effect_supported)
+        }
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) => true,
+        AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
+    }
+}

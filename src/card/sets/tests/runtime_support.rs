@@ -206,7 +206,7 @@ pub(super) fn shared_resolving_apply(
     let long_lived = resolving_effect_supports_long_duration(effect);
     let next_matching_cast = matches!(
         effect,
-        AppliedEffectDef::Rule(AppliedRuleDef::MayCastAsThoughItHadFlash(_))
+        AppliedEffectDef::Rule(rule) if rule.matching_cast_object().is_some()
     );
     // While-source-remains is stored like an indefinite effect; only its live
     // reader asks whether the recorded source is still on the battlefield.
@@ -261,6 +261,12 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
     match effect {
         AppliedEffectDef::Composite(effects) => {
             !effects.is_empty() && effects.iter().copied().all(shared_resolving_applied_effect)
+        }
+        AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
+            crate::card::PlayerRuleDef::ApplyToMatchingSpell { object, effect },
+        )) => {
+            shared_object_predicate(object)
+                && static_effects::shared_stack_uncounterability_effect(*effect)
         }
         AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) => false,
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(

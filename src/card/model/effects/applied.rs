@@ -177,6 +177,14 @@ pub enum AppliedEffectDef {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum PlayerRuleDef {
+    /// Apply a stack effect as the affected player finishes casting each
+    /// matching spell, before cast triggers or priority. The enclosing Apply
+    /// supplies expiration, including `UntilNextMatchingCast` for a one-shot grant.
+    /// The initial payload boundary supports counterability rules only.
+    ApplyToMatchingSpell {
+        object: ObjectPredicateDef,
+        effect: &'static AppliedEffectDef,
+    },
     /// The legend rule ignores matching permanents the affected player
     /// controls. The predicate is part of the rule because exemptions range
     /// from every permanent (Mirror Gallery) to only tokens, creatures, or a
@@ -487,6 +495,18 @@ pub enum AppliedRuleDef {
 }
 
 impl AppliedRuleDef {
+    /// The spell predicate used by resolving cast rules and their shared
+    /// `UntilNextMatchingCast` expiration. Rules without a cast predicate cannot
+    /// use that duration.
+    #[must_use]
+    pub const fn matching_cast_object(self) -> Option<ObjectPredicateDef> {
+        match self {
+            Self::MayCastAsThoughItHadFlash(permission) => Some(permission.object),
+            Self::PlayerRule(PlayerRuleDef::ApplyToMatchingSpell { object, .. }) => Some(object),
+            _ => None,
+        }
+    }
+
     /// The common object-facing rule used by Pacifism and similar effects.
     pub const CANNOT_ATTACK: Self = Self::AttackRestriction(AttackRestrictionDef::CANNOT_ATTACK);
 
