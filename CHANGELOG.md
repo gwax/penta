@@ -29,6 +29,13 @@ the bot-wire epoch.
   the effect and its original ability source; wire and checkpoint epochs are
   unchanged.
 
+- Fix Warp to install its delayed exile as the permanent spell resolves and
+  grant its owner cast permission only on later turns. Implement Quantum
+  Riddler and 26 other Warp cards; remaining cards retain whole-card unsupported
+  rules with specific capability audits. Existing installed-trigger locators
+  and exile-permission checkpoint fields carry the mechanic without a wire
+  or checkpoint version change.
+
 - Implement Firemind Vessel, Guild Globe, and Component Pouch. A shared
   `RollDieDef` executes fair seeded dice and inclusive result tables. The public
   event stream adds the open-vocabulary `DieRolled` event with `seat`, `sides`,
