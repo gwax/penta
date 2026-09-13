@@ -1,37 +1,28 @@
 //! Plot (CR 702.170a).
 //!
-//! Two halves that meet in exile, the same shape foretell has and the mirror
-//! of its economics: the plot cost is paid up front to a special action, and
-//! what it buys is a free cast on a later turn. The card lies face up in
-//! exile, so both players can see what is coming.
-//!
-//! Only the first half lives here. The second is an ordinary free permission
-//! to cast from exile, which is why nothing in the casting path knows the
-//! word "plot" at all. The permission does not carry a sorcery-speed
-//! restriction of its own: every card that prints the keyword so far is a
-//! sorcery, and its type already says so.
+//! The hand action and effects both mark an ordinary exile object as plotted.
+//! That designation, independent of its printed abilities, supplies CR 702.170d's
+//! cast permission. Suspend instead derives its status from exile, time counters,
+//! and the suspend ability; rebound retains an object-linked delayed trigger.
 
 use crate::ids::GameObjectId;
 
-use super::{Action, AlternativeCastKindDef, DeclarativeAbilityDef, Game, PlayerId};
+use super::{
+    Action, AlternativeCastKindDef, CardInstance, CharacteristicContext, DeclarativeAbilityDef,
+    EffectResolutionContext, EffectiveAbility, Game, ObjectCharacteristics, PlayerId, ScopedEffect,
+    StackAbilityPayload, StackAbilityResolver, StackObject, StackObjectKind, TriggerContext,
+};
 
 impl Game {
-    /// The plot cost this card prints, which is what makes the special
-    /// action available for it at all.
-    pub(in crate::game) fn card_plot_cost(
+    /// The hand clause supplies both the special-action cost and its program.
+    pub(in crate::game) fn card_plot_ability(
         &self,
-        definition: crate::ids::CardDefinitionId,
-    ) -> Option<&'static [crate::CostDef]> {
-        self.catalog.get(definition).and_then(|card| {
-            card.parts.iter().find_map(|part| {
-                part.rules.ability_clauses().iter().find_map(|ability| {
-                    let DeclarativeAbilityDef::AlternativeCast(alternative) = ability.definition
-                    else {
-                        return None;
-                    };
-                    (alternative.kind == AlternativeCastKindDef::Plot).then_some(alternative.costs)
-                })
-            })
+        card: &CardInstance,
+    ) -> Option<EffectiveAbility> {
+        self.find_printed_card_ability(card, &CharacteristicContext::Hand, |effective| {
+            matches!(effective.ability.definition,
+                DeclarativeAbilityDef::AlternativeCast(alternative)
+                    if alternative.kind == AlternativeCastKindDef::Plot)
         })
     }
 
@@ -65,21 +56,114 @@ impl Game {
     }
 
     pub(in crate::game) fn finish_plot(&mut self, player: PlayerId, card: GameObjectId) {
-        let Some(index) = self.players[player.index()]
+        let Some(source_card) = self.players[player.index()]
             .hand
             .iter()
-            .position(|candidate| candidate.id == card)
+            .find(|candidate| candidate.id == card)
+            .cloned()
         else {
             return;
         };
-        let moved = self.players[player.index()].hand.remove(index);
-        let owner = moved.owner;
-        // A zone change mints a new object, and the permission has to name
-        // the card that ended up in exile rather than the one that left the
-        // hand.
-        let (moved, _zone_change) = self.zone_change_card(moved);
-        let exiled = moved.id;
-        self.players[owner.index()].exile.push(moved);
-        self.permit_plotted_cast(exiled, player);
+        let Some(effective) = self.card_plot_ability(&source_card) else {
+            return;
+        };
+        let Some(effect) = effective.ability.declarative_effect() else {
+            return;
+        };
+        let scoped = ScopedEffect::primary(effect);
+        let context = EffectResolutionContext::new(TriggerContext::empty());
+        let presentation = Self::ability_presentation(
+            effective.origin,
+            ObjectCharacteristics::card(source_card.definition, crate::CardPartId::PRIMARY),
+        );
+        let resolution = self.unbacked_ability_object(presentation, player);
+        // This is an interpreter frame, never an object placed on the stack.
+        // Retain the authored clause and origin for any suspended continuation.
+        let object = StackObject {
+            id: resolution.id,
+            kind: StackObjectKind::TriggeredAbility,
+            card: resolution,
+            source: Some(card),
+            ability: Some(StackAbilityPayload {
+                origin: effective.origin,
+                definition: Some(Box::new(effective.ability)),
+                presentation,
+                text: Some(effective.ability.text),
+                target_defs: Vec::new(),
+                targets: Vec::new(),
+                context: context.clone(),
+                resolver: StackAbilityResolver::Declarative(scoped),
+                condition: None,
+                mode_effects: Vec::new(),
+                resolution_destination: None,
+                x: 0,
+                sacrificed_mana_value: 0,
+            }),
+            controller: player,
+            signature: None,
+            chosen_permanents: Vec::new(),
+            applied_effects: Vec::new(),
+            text_changes: Vec::new(),
+            colors: None,
+            cast: None,
+            face_down: None,
+            is_copy: false,
+        };
+        self.resolve_effect_def(scoped, &object, context);
+    }
+}
+
+impl Game {
+    /// Becoming plotted is not performing the plot special action (CR 702.170e).
+    pub(super) fn make_plotted(&mut self, card: GameObjectId) {
+        if self
+            .players
+            .iter()
+            .any(|state| state.exile.iter().any(|exiled| exiled.id == card))
+        {
+            self.plotted_cards.insert(
+                card,
+                (
+                    self.active_player,
+                    self.turns_started[self.active_player.index()],
+                ),
+            );
+        }
+    }
+
+    pub(super) fn plotted_cast_permission(
+        &self,
+        card: GameObjectId,
+        player: PlayerId,
+    ) -> Option<super::ExilePlayPermission> {
+        let &(active, turn) = self.plotted_cards.get(&card)?;
+        if !self.sorcery_speed_window(player)
+            || (self.active_player == active && self.turns_started[active.index()] == turn)
+            || !self.players[player.index()]
+                .exile
+                .iter()
+                .any(|exiled| exiled.id == card && exiled.owner == player)
+        {
+            return None;
+        }
+        Some(super::ExilePlayPermission {
+            card,
+            player,
+            cost: super::ExilePlayCost::Free,
+            until_end_of_turn: None,
+            adventure_return_only: false,
+            surcharge: crate::card::ManaCost::default(),
+            not_before_turn: None,
+            face_down: false,
+            lands_may_be_played: false,
+            hidden_from_owner: false,
+            spend_any_color: false,
+            condition: None,
+            hidden_only: false,
+            until_holder_end_step: None,
+            zone: crate::card::ZoneKind::Exile,
+            group: None,
+            grants_haste: false,
+        })
     }
 }

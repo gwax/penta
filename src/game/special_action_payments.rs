@@ -43,7 +43,13 @@ impl Game {
                 let printed = self.catalog.get(card.definition)?.rules.mana_cost();
                 match action {
                     PaidSpecialAction::Plot => {
-                        (self.card_plot_cost(card.definition)?.to_vec(), 0, printed)
+                        let effective = self.card_plot_ability(card)?;
+                        let super::DeclarativeAbilityDef::AlternativeCast(definition) =
+                            effective.ability.definition
+                        else {
+                            unreachable!("plot lookup returns a plot clause")
+                        };
+                        (definition.costs.to_vec(), 0, printed)
                     }
                     PaidSpecialAction::Suspend { ability, x } => {
                         let (_, SuspendAbilityDef::Hand { time, costs }) =
@@ -62,7 +68,16 @@ impl Game {
                 }
             }
         };
-        resolve_list(&costs, x, printed_mana)
+        let mut payment = resolve_list(&costs, x, printed_mana)?;
+        if action == PaidSpecialAction::Plot {
+            let mut reduction = self.special_action_cost_reduction(
+                player,
+                crate::card::SpecialActionKindDef::Plot,
+                crate::card::ZoneKind::Hand,
+            );
+            reduce_payment_generic(&mut payment, &mut reduction);
+        }
+        Some(payment)
     }
 
     pub(in crate::game) fn special_action_payment_options(
@@ -189,4 +204,60 @@ fn resolve_list(
         .map(|cost| resolve(*cost, x, printed))
         .collect::<Option<Vec<_>>>()?;
     Some(ResolvedEffectPayment::all(payments))
+}
+
+impl Game {
+    fn special_action_cost_reduction(
+        &self,
+        payer: PlayerId,
+        kind: crate::card::SpecialActionKindDef,
+        zone: crate::card::ZoneKind,
+    ) -> u16 {
+        let mut reduction = 0_u16;
+        for permanent in &self.battlefield {
+            let Some(rules) = self.effective_rules(permanent) else {
+                continue;
+            };
+            for ability in rules.ability_clauses() {
+                if let Some(crate::card::EffectDef::ModifyCost(
+                    crate::card::CostModificationDef::SpecialActionReduction {
+                        action,
+                        player,
+                        zones,
+                        amount,
+                    },
+                )) = ability.declarative_effect()
+                    && action == kind
+                    && zones.contains(&zone)
+                    && self.player_relation_matches(
+                        payer,
+                        player,
+                        permanent.controller,
+                        super::TriggerContext::empty(),
+                    )
+                {
+                    reduction = reduction.saturating_add(amount);
+                }
+            }
+        }
+        reduction
+    }
+}
+
+/// The payment list has already combined mana components. Preserve all nonmana
+/// costs, and never apply a single reduction more than once across a bundle.
+fn reduce_payment_generic(payment: &mut ResolvedEffectPayment, reduction: &mut u16) {
+    match payment {
+        ResolvedEffectPayment::Mana(mana) => {
+            let removed = mana.generic.min(*reduction);
+            mana.generic -= removed;
+            *reduction -= removed;
+        }
+        ResolvedEffectPayment::All(payments) => {
+            for payment in payments {
+                reduce_payment_generic(payment, reduction);
+            }
+        }
+        _ => {}
+    }
 }

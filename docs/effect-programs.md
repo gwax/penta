@@ -105,3 +105,34 @@ The [prepared engine](prepared-engine.md) may recognize and fuse any supported
 composition independently of its owner. Reference semantics must work without
 preparation. Choose a complete lowering or reference fallback before mutation;
 preserve choices, events, identities, and continuation boundaries.
+
+## Exile objects, designations, and casting
+
+Moving an object to exile creates an ordinary card object there. Printed
+abilities, object-local state, and permission to cast that object are separate:
+
+- `abilities::plot` declares the special-action cost and an ordinary
+  `WithZoneMoveResult` program: move the source to exile, then apply
+  `EffectDef::BecomePlotted` to the successor. Payment completion runs that
+  declared program immediately, without putting an ability on the stack.
+  Aven Interrupter uses the same movement/designation composition on its target
+  spell. Only `BecomePlotted` records the designation against the current exile
+  identity, including the actual turn on which it became plotted.
+- CR 702.170d derives a cast-only, free permission from the designation. Only
+  the owner may use it, on a later turn, during their main phase with an empty
+  stack. Flash does not expand that permission. No plot ability is needed in
+  exile. A new zone incarnation loses the designation; a checkpoint retains it.
+- Suspended status is derived from being in exile with time counters and having
+  suspend. The exile ability listeners handle the countdown and cast trigger.
+  Time counters alone do not grant suspend or a casting permission.
+- Rebound applies when a qualifying spell resolves from hand. It exiles the card
+  and installs an object-linked delayed trigger for the next upkeep's cast
+  offer. Merely exiling a card with rebound installs nothing. Adventure and
+  impulse effects grant their own permissions over the resulting exile object.
+
+Cost adjustments read the proposed cast's origin separately from the spell's
+characteristics. `SpellCostConditionDef::CastFrom` filters zones and ownership
+relative to the caster; `AnyOf` combines alternatives, such as Doc Aurlock's own
+graveyard or any exile. Special-action reductions operate on the complete
+special-action payment, preserving colored mana and nonmana costs. They do not
+reduce a spell's cost, and spell discounts do not reduce the plot action.
