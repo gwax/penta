@@ -70,8 +70,8 @@ mod bannerhide_krushok;
 mod becomes_blocked_pump;
 mod blaze_of_glory;
 mod blessing_and_flame;
-mod harmonize;
 mod explicit_payment;
+mod harmonize;
 mod temporary_self_effects;
 pub(super) use fixtures::*;
 
