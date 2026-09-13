@@ -361,6 +361,7 @@ fn validate_value_shape(
         }
         ValueDef::TargetPower(target)
         | ValueDef::TargetToughness(target)
+        | ValueDef::TargetColorCount(target)
         | ValueDef::TargetManaValue(target) => {
             validate_target_shape(target, targets, RecipientExpectation::Object, true)
         }

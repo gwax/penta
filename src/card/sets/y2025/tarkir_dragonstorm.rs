@@ -7927,12 +7927,36 @@ pub(in crate::card::sets) static BOULDERBORN_DRAGON: CardRecord = CardRecord::ne
 );
 
 // TDM 240 — Dragonfire Blade
-// Audit: unsupported — Needs an equip cost reduction based on the number of colors of its chosen target; the activation cost-value evaluator cannot inspect the target's color count.
 pub(in crate::card::sets) static DRAGONFIRE_BLADE: CardRecord = CardRecord::new(
     "Dragonfire Blade",
     "031afea3-fbfb-4663-a8cc-9b7eb7b16020",
     "Clint Lockwood",
-    CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{1}"))
+        .with_subtypes(&["Equipment"])
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Equipped creature gets +2/+2 and has hexproof from monocolored.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(2),
+                            ValueDef::Constant(2),
+                        ),
+                        AppliedEffectDef::add_ability(&AbilityDef::keyword(
+                            "Hexproof from monocolored",
+                            KeywordAbility::HexproofFrom(&ObjectPredicateDef::ColorCount(1)),
+                        )),
+                    ]),
+                },
+            ),
+            abilities::equip(
+                &[CostDef::Mana(mana_cost!("{4}"))],
+                "Equip {4}. This ability costs {1} less to activate for each \
+                 color of the creature it targets.",
+            )
+            .with_activation_cost_reduction(ValueDef::TargetColorCount(TargetIndex::PRIMARY), 0),
+        ]),
 );
 
 // TDM 241 — Dragonstorm Globe

@@ -37,6 +37,12 @@ pub(in crate::game::state_checkpoint) fn keyword_snapshot(
         KeywordAbility::Reach => KeywordSnapshot::Reach,
         KeywordAbility::Flash => KeywordSnapshot::Flash,
         KeywordAbility::Hexproof => KeywordSnapshot::Hexproof,
+        KeywordAbility::HexproofFrom(&ObjectPredicateDef::ColorCount(1)) => {
+            KeywordSnapshot::HexproofFromMonocolored
+        }
+        KeywordAbility::HexproofFrom(_) => {
+            panic!("checkpoint cannot encode an unauthored hexproof quality")
+        }
         KeywordAbility::Shroud => KeywordSnapshot::Shroud,
         KeywordAbility::Unleash => KeywordSnapshot::Unleash,
         KeywordAbility::Intimidate => KeywordSnapshot::Intimidate,
@@ -169,6 +175,9 @@ pub(in crate::game::state_checkpoint) const fn parse_keyword(
         KeywordSnapshot::Reach => KeywordAbility::Reach,
         KeywordSnapshot::Flash => KeywordAbility::Flash,
         KeywordSnapshot::Hexproof => KeywordAbility::Hexproof,
+        KeywordSnapshot::HexproofFromMonocolored => {
+            KeywordAbility::HexproofFrom(&ObjectPredicateDef::ColorCount(1))
+        }
         KeywordSnapshot::Shroud => KeywordAbility::Shroud,
         KeywordSnapshot::Unleash => KeywordAbility::Unleash,
         KeywordSnapshot::Intimidate => KeywordAbility::Intimidate,

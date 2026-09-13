@@ -116,6 +116,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::TargetLibrarySize(_)
         | ValueDef::LifeTotal(_)
         | ValueDef::StartingLifeTotal
+        | ValueDef::TargetColorCount(_)
         | ValueDef::TargetManaValue(_)
         | ValueDef::ObjectPower(_)
         | ValueDef::ObjectManaValue(_)
@@ -210,6 +211,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::TargetLibrarySize(_)
         | ValueDef::LifeTotal(_)
         | ValueDef::StartingLifeTotal
+        | ValueDef::TargetColorCount(_)
         | ValueDef::TargetManaValue(_)
         | ValueDef::ObjectPower(_)
         | ValueDef::ObjectManaValue(_)

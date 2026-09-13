@@ -117,6 +117,7 @@ pub(super) fn shared_keyword(keyword: KeywordAbility) -> bool {
             | KeywordAbility::Reach
             | KeywordAbility::Flash
             | KeywordAbility::Hexproof
+            | KeywordAbility::HexproofFrom(_)
             | KeywordAbility::Shroud
             | KeywordAbility::Intimidate
             | KeywordAbility::Shadow

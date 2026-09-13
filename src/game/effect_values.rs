@@ -373,6 +373,11 @@ impl Game {
                     })
                     .unwrap_or(0)
             }
+            ValueDef::TargetColorCount(target) => {
+                Self::chosen_targets(object, scoped.target_slot(target))
+                    .next()
+                    .map_or(0, |target| i32::from(self.target_color_count(target)))
+            }
             ValueDef::TargetManaValue(target) => {
                 Self::chosen_targets(object, scoped.target_slot(target))
                     .find_map(|target| match target {

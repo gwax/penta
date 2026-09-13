@@ -1884,6 +1884,10 @@ treated as level 1. Checkpoint permanent state preserves the additive
 `classLevel` field, including retired and phased-out objects; the level is not
 a copiable characteristic. Existing protocol and checkpoint epochs are unchanged.
 
+Runtime keyword checkpoints may contain `hexproofFromMonocolored` for a
+selective hexproof grant. Like other checkpoint keyword tags, it is read only
+under the matching simulation fingerprint; older checkpoints remain readable.
+
 Entry-time creature-type choices retain their authored label in the optional
 `chosenCreatureTypeBinding` member of each checkpoint permanent's state. This
 also applies to pending and retired permanents, so floating restricted mana

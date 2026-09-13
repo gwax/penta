@@ -975,6 +975,7 @@ mod final_fantasy;
 
 mod spider_man;
 
+mod dragonfire_blade;
 mod lorwyn_eclipsed;
 mod tarkir_dragonstorm;
 

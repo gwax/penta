@@ -571,6 +571,8 @@ pub enum ValueDef {
     /// The mana value of what a target slot points at, read from last-known
     /// information after a permanent or spell has left its zone.
     TargetManaValue(TargetIndex),
+    /// The number of colors of the chosen object, using its current or last-known characteristics.
+    TargetColorCount(TargetIndex),
     /// The power of one named object, wherever it is, using last-known
     /// information after it leaves its zone.
     ObjectPower(ObjectRefDef),

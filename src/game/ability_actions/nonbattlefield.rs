@@ -136,7 +136,8 @@ impl Game {
                 let Some(mana_cost) = Self::hand_activation_mana_cost(&definition) else {
                     return;
                 };
-                let mana_cost = self.activation_mana_cost(&definition, card.id, mana_cost);
+                let minimum_mana_cost =
+                    self.minimum_activation_mana_cost(&definition, card.id, mana_cost);
                 let payment_purpose = ManaPaymentPurpose::Ability {
                     source: card.id,
                     taps_source: false,
@@ -149,7 +150,7 @@ impl Game {
                     return;
                 };
                 let max_x = if mana_cost.variable_x {
-                    self.maximum_x_for(player, mana_cost, &payment_purpose)
+                    self.maximum_x_for(player, minimum_mana_cost, &payment_purpose)
                 } else {
                     0
                 };
@@ -179,6 +180,8 @@ impl Game {
                         x,
                         &[],
                     ) {
+                        let mana_cost =
+                            self.activation_mana_cost(&definition, card.id, mana_cost, &targets);
                         for cost_objects in &returned {
                             if !self.can_pay_cost_for_reserving_with_life(
                                 player,
@@ -264,7 +267,6 @@ impl Game {
                     if self.players[player.index()].library.len() < mill_count {
                         return;
                     }
-                    let mut mana_cost = mana_cost;
                     let payment_purpose = ManaPaymentPurpose::Ability {
                         source: card.id,
                         taps_source: false,
@@ -272,7 +274,6 @@ impl Game {
                     };
                     // Nothing offers a graveyard activation more than once, so
                     // a variable X would silently be chosen as zero.
-                    mana_cost = self.activation_mana_cost(&definition, card.id, mana_cost);
                     if mana_cost.variable_x {
                         return;
                     }
@@ -291,6 +292,8 @@ impl Game {
                         0,
                         &[],
                     ) {
+                        let mana_cost =
+                            self.activation_mana_cost(&definition, card.id, mana_cost, &targets);
                         for cost_objects in &payers {
                             if !self.can_pay_cost_for_reserving_with_life(
                                 player,

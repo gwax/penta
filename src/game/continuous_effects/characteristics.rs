@@ -577,6 +577,41 @@ impl Game {
         }
     }
 
+    pub(super) fn target_color_count(&self, target: Target) -> u16 {
+        let (Target::Permanent(id) | Target::Card(id) | Target::Spell(id)) = target else {
+            return 0;
+        };
+        self.protection_source_characteristics(id)
+            .map_or(0, |object| object.colors.into_iter().map(u16::from).sum())
+    }
+
+    fn has_hexproof_from_object(
+        &self,
+        permanent: &Permanent,
+        source: GameObjectId,
+        source_is_spell: bool,
+    ) -> bool {
+        self.find_effective_ability(permanent, |effective| {
+            let DeclarativeAbilityDef::Keyword(KeywordAbility::HexproofFrom(predicate)) =
+                effective.ability.definition
+            else {
+                return false;
+            };
+            self.protection_source_characteristics(source)
+                .is_some_and(|object| {
+                    self.trigger_object_matches_with_text_source(
+                        *predicate,
+                        &object,
+                        permanent.card.id,
+                        source_is_spell,
+                        Some(permanent.controller),
+                        Self::text_source_for_ability_origin(permanent.card.id, effective.origin),
+                    )
+                })
+        })
+        .is_some()
+    }
+
     pub(super) fn permanent_can_be_targeted_by(
         &self,
         permanent: &Permanent,
@@ -587,7 +622,8 @@ impl Game {
         !(self.is_protected_from_object(permanent, source, source_is_spell)
             || self.permanent_has_executable_keyword(permanent, KeywordAbility::Shroud)
             || permanent.controller != controller
-                && self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof)
+                && (self.permanent_has_executable_keyword(permanent, KeywordAbility::Hexproof)
+                    || self.has_hexproof_from_object(permanent, source, source_is_spell))
             || self.cannot_become_enchanted(permanent) && self.source_attaches_itself(source))
     }
 

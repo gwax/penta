@@ -630,10 +630,11 @@ impl Game {
         &self,
         source: GameObjectId,
         definition: &ActivatedAbilityDef,
+        targets: &[TargetSelection],
     ) -> ManaCost {
         let cost = crate::card::costs::mana_cost(definition.costs, None)
             .expect("offered nonbattlefield activations have fixed mana expressions");
-        self.activation_mana_cost(definition, source, cost)
+        self.activation_mana_cost(definition, source, cost, targets)
     }
 
     /// What activating this ability costs in mana: the increases and
@@ -648,6 +649,28 @@ impl Game {
         definition: &ActivatedAbilityDef,
         source: GameObjectId,
         cost: ManaCost,
+        targets: &[TargetSelection],
+    ) -> ManaCost {
+        self.activation_mana_cost_with_targets(definition, source, cost, Some(targets))
+    }
+
+    /// An affordability lower bound before target selection. Exact pricing
+    /// follows for each target choice; a color-count discount is at most five.
+    pub(super) fn minimum_activation_mana_cost(
+        &self,
+        definition: &ActivatedAbilityDef,
+        source: GameObjectId,
+        cost: ManaCost,
+    ) -> ManaCost {
+        self.activation_mana_cost_with_targets(definition, source, cost, None)
+    }
+
+    fn activation_mana_cost_with_targets(
+        &self,
+        definition: &ActivatedAbilityDef,
+        source: GameObjectId,
+        cost: ManaCost,
+        targets: Option<&[TargetSelection]>,
     ) -> ManaCost {
         let cost = self.ability_mana_cost_for_source(source, cost);
         let Some(reduction) = definition.cost_reduction else {
@@ -656,7 +679,7 @@ impl Game {
         let Some(player) = self.ability_cost_payer(source) else {
             return cost;
         };
-        let amount = self.cost_reduction_value(reduction.amount, player, source);
+        let amount = self.cost_reduction_value_for(reduction.amount, player, source, targets);
         Self::reduce_ability_cost(cost, amount, reduction.minimum)
     }
 
@@ -730,7 +753,24 @@ impl Game {
         player: PlayerId,
         source: GameObjectId,
     ) -> u16 {
+        self.cost_reduction_value_for(value, player, source, Some(&[]))
+    }
+
+    fn cost_reduction_value_for(
+        &self,
+        value: ValueDef,
+        player: PlayerId,
+        source: GameObjectId,
+        targets: Option<&[TargetSelection]>,
+    ) -> u16 {
         match value {
+            ValueDef::TargetColorCount(index) => targets.map_or(5, |targets| {
+                targets
+                    .iter()
+                    .find(|selection| selection.slot().index() == index.index())
+                    .and_then(|selection| selection.targets().first())
+                    .map_or(0, |target| self.target_color_count(*target))
+            }),
             ValueDef::ManaInPool {
                 player: relation,
                 color,
@@ -764,7 +804,7 @@ impl Game {
                 } else {
                     condition.otherwise
                 };
-                self.cost_reduction_value(chosen, player, source)
+                self.cost_reduction_value_for(chosen, player, source, targets)
             }
             // Morbid, read while the spell is being paid for. The turn-scoped
             // flag is already maintained for resolution-time clauses, so
@@ -775,11 +815,11 @@ impl Game {
                 } else {
                     branches.otherwise
                 };
-                self.cost_reduction_value(chosen, player, source)
+                self.cost_reduction_value_for(chosen, player, source, targets)
             }
             ValueDef::Sum(sum) => self
-                .cost_reduction_value(sum.left, player, source)
-                .saturating_add(self.cost_reduction_value(sum.right, player, source)),
+                .cost_reduction_value_for(sum.left, player, source, targets)
+                .saturating_add(self.cost_reduction_value_for(sum.right, player, source, targets)),
             // Domain: how many basic land types are among the lands you
             // control, which is a count of types rather than of permanents
             // and so cannot be said as a query.
