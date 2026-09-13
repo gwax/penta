@@ -47,6 +47,7 @@ use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
+use crate::card::{AddManaEffectDef, CardSupertype, CounterKind, ManaColor};
 use crate::mana_cost;
 
 /// Printed set identity and stable catalog slug.
@@ -188,12 +189,41 @@ AbilityDef::activated_with_targets("{1}: Until end of turn, this artifact become
 );
 
 // C17 55 — Ramos, Dragon Engine
-// Audit: unsupported — Needs a value expression for the number of colors in the triggering cast spell's captured characteristics; ColorCount reads an object's current or last-known colors rather than the cast event snapshot.
 pub(in crate::card::sets) static RAMOS_DRAGON_ENGINE: CardRecord = CardRecord::new(
     "Ramos, Dragon Engine",
     "2e747ef1-a1ad-4859-a70c-3f935f017310",
     "Joseph Meehan",
-    CardRules::unsupported(),
+    CardRules::new_artifact_creature(mana_cost!("{6}"), &["Dragon"], 4, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::flying(),
+            AbilityDef::triggered(
+                "Whenever you cast a spell, put a +1/+1 counter on Ramos \
+                 for each of that spell's colors.",
+                TriggerEventDef::spell_cast(ObjectPredicateDef::ControlledBy(PlayerRelation::You)),
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::ColorCount(ObjectRefDef::TriggeringObject),
+                },
+            ),
+            AbilityDef::activated_mana(
+                "Remove five +1/+1 counters from Ramos: Add {W}{W}{U}{U}{B}{B}{R}{R}{G}{G}. \
+                 Activate only once each turn.",
+                &[CostDef::RemoveCountersFromSource {
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: 5,
+                }],
+                EffectDef::AddMana(AddManaEffectDef::amounts(&[
+                    (ManaColor::White, ValueDef::Constant(2)),
+                    (ManaColor::Blue, ValueDef::Constant(2)),
+                    (ManaColor::Black, ValueDef::Constant(2)),
+                    (ManaColor::Red, ValueDef::Constant(2)),
+                    (ManaColor::Green, ValueDef::Constant(2)),
+                ])),
+            )
+            .once_each_turn(),
+        ]),
 );
 
 // C17 56 — Path of Ancestry

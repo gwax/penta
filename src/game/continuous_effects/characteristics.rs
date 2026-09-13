@@ -717,9 +717,11 @@ impl Game {
         if let Some(retired) = self.retired_objects.get(&object) {
             return match retired {
                 RetiredObject::Permanent { permanent, .. } => self.permanent_colors(permanent),
-                RetiredObject::Stack(stack) => self
-                    .stack_trigger_event_object(stack)
-                    .map_or([false; 5], |event| event.colors),
+                RetiredObject::Stack(stack) => stack.colors.map_or_else(
+                    || self.stack_trigger_event_object(stack)
+                        .map_or([false; 5], |event| event.colors),
+                    ColorSet::to_flags,
+                ),
                 RetiredObject::Card(card) => self
                     .catalog
                     .get(card.definition)

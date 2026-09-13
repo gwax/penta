@@ -60,6 +60,10 @@ the bot-wire epoch.
   tag and existing catalog ability locators; protocol and checkpoint epochs
   are unchanged.
 
+- Implement Ramos, Dragon Engine using `ColorCount(TriggeringObject)` and its
+  once-per-turn counter-removal mana ability. Shared last-known color reads
+  now preserve color overrides on spells that have left the stack.
+
 - Implement Dragonfire Blade with target-dependent equip pricing and hexproof
   from monocolored. Composable `ColorCount(ObjectRefDef)` values also replace
   Civic Saber's affected-color count. Runtime keyword checkpoints accept the
