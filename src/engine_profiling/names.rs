@@ -117,7 +117,6 @@ pub(crate) const fn effect_kind(value: crate::EffectDef) -> &'static str {
         crate::EffectDef::PreventDamage { .. } => "PreventDamage",
         crate::EffectDef::Randomized { .. } => "Randomized",
         crate::EffectDef::FlipCoin { .. } => "FlipCoin",
-        crate::EffectDef::ReduceGenericCostBy(..) => "ReduceGenericCostBy",
         crate::EffectDef::ModifyCost(..) => "ModifyCost",
         crate::EffectDef::Regenerate { .. } => "Regenerate",
         crate::EffectDef::DoubleCounters { .. } => "DoubleCounters",
