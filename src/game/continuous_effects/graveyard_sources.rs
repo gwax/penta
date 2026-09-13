@@ -86,6 +86,12 @@ impl Game {
     ) -> ControlFlow<()> {
         let source = input.permanent;
         let source_presentation = Self::effective_rules_source(source);
+        if input.zone == ZoneKind::Battlefield
+            && kind.reads_granted_static_abilities()
+            && self.visit_granted_static_power_toughness(input, affected, kind, visitor).is_break()
+        {
+            return ControlFlow::Break(());
+        }
         if let Some(program) = prepared {
             if input.zone == ZoneKind::Battlefield
                 && self.rules_text_abilities_removed_from_sources(source, land_type_sources)
