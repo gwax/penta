@@ -289,6 +289,16 @@ color pairs as ordinary bundle choices. Interplanar Beacon adds its spell
 restriction to that shared constructor; each produced unit retains the same
 restriction and can be spent separately.
 
+### Exiled card facing
+
+Use `ObjectPredicateDef::FaceUpInExile` for a live card selection requiring a
+face-up exiled card, alongside the target or query's exile zone. The predicate
+requires both facts directly; permission to look at a face-down exile does not
+make it face up (CR 406.3). Exile facing is distinct from permanent status
+(CR 110.5d) and from the characteristics of face-down spells and permanents
+(CR 708.2). It does not follow a permanent through a zone change. This live
+selection predicate is not supported in trigger snapshots or static effects.
+
 ### Changeling
 
 Use `abilities::changeling()` on the card or token's ordinary ability list.

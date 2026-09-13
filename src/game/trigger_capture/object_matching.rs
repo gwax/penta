@@ -728,7 +728,10 @@ impl Game {
             // hold the card's own definition and answer it there, and the
             // catalog boundary keeps the predicate out of trigger and static
             // contexts.
-            ObjectPredicateDef::GenericManaCostAtMost(_) | ObjectPredicateDef::Special(_) => false,
+            ObjectPredicateDef::GenericManaCostAtMost(_)
+            | ObjectPredicateDef::Special(_)
+            // Exile facing also belongs to live card-zone state, not this snapshot.
+            | ObjectPredicateDef::FaceUpInExile => false,
         }
     }
 

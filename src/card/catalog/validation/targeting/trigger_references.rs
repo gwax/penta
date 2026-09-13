@@ -86,6 +86,8 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::ControlledBy(
             PlayerRelation::ChosenPlayer | PlayerRelation::EventPlayer,
         )
+        // Exile facing requires live card-zone state, not a trigger snapshot.
+        | ObjectPredicateDef::FaceUpInExile
         // A trigger snapshot carries mana value, not the printed cost, so
         // the cost-shape reading has nothing to read here.
         | ObjectPredicateDef::GenericManaCostAtMost(_)
@@ -171,6 +173,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::NameEquals(_)
         | ObjectPredicateDef::NameIn(_)
         | ObjectPredicateDef::ManaValueAtMost(_)
+        | ObjectPredicateDef::FaceUpInExile
         | ObjectPredicateDef::GenericManaCostAtMost(_)
         | ObjectPredicateDef::ManaValueEqualTo(_)
         | ObjectPredicateDef::ManaValueAtMostValue(_)

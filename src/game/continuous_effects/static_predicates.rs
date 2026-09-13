@@ -204,6 +204,7 @@ impl Game {
                 self.static_name_predicate_matches_lazily(predicate, source, affected)
             }
             ObjectPredicateDef::ManaValueAtMost(_)
+            | ObjectPredicateDef::FaceUpInExile
             | ObjectPredicateDef::GenericManaCostAtMost(_)
             | ObjectPredicateDef::ManaValueEqualTo(_)
             | ObjectPredicateDef::ManaValueAtMostValue(_)

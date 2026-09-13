@@ -378,6 +378,7 @@ mod prohibition_cards;
 mod protection_from_subtype;
 mod protection_predicates;
 mod protection_scopes;
+mod pull_from_eternity;
 mod put_from_hand;
 mod quota_and_aura_upkeep;
 mod rabid_wombat;

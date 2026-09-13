@@ -87,6 +87,11 @@ pub enum ObjectPredicateDef {
     /// Whether the object is a token rather than a card represented by a
     /// physical printing. Negate this for the common "nontoken" qualifier.
     Token,
+    /// A card currently face up in exile (CR 406.3). This is not a
+    /// permanent's face-up/face-down status (CR 110.5d), and permission
+    /// to look at a face-down exiled card does not make it face up.
+    /// Evaluated from live card-zone state, not trigger snapshots or statics.
+    FaceUpInExile,
     /// The permanent is currently tapped. Only a battlefield object can be,
     /// so this never matches a card in another zone.
     Tapped,
