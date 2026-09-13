@@ -382,7 +382,7 @@ pub(in crate::card::sets) static SCUTTLETIDE: CardRecord = CardRecord::new(
                     recipient: EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Crab")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Crab")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
@@ -431,7 +431,7 @@ pub(in crate::card::sets) static STEP_THROUGH: CardRecord = CardRecord::new(
              library for a Wizard card, reveal it, put it into your \
              hand, then shuffle.)",
             &[CostDef::Mana(mana_cost!("{2}"))],
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wizard")),
+            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Wizard")),
         ),
     ]),
 );
@@ -1327,7 +1327,7 @@ pub(in crate::card::sets) static AEVE_PROGENITOR_OOZE: CardRecord = CardRecord::
                     BattlefieldEntryModificationDef::AddCountersValue {
                         kind: CounterKind::PlusOnePlusOne,
                         amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ooze")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Ooze")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -1573,23 +1573,25 @@ pub(in crate::card::sets) static GRIST_THE_HUNGER_TIDE: CardRecord = CardRecord:
                  Insect creature in addition to its other types.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
-                    effect: // "A 1/1 Insect creature in addition to its other types": a creature card
-                        // with an Insect subtype and a body, added to what the card already is
-                        // rather than replacing it.
-                        AppliedEffectDef::Composite(&[
-                            AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(SetOperationDef::Add(
-                                CardTypeSet::single(CardType::Creature),
-                            ))),
-                            AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(SetOperationDef::Add(
-                                &["Insect"],
-                            ))),
-                            AppliedEffectDef::Characteristic(CharacteristicOperationDef::PowerToughness(
+                    // "A 1/1 Insect creature in addition to its other types": a creature card
+                    // with an Insect subtype and a body, added to what the card already is
+                    // rather than replacing it.
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::Characteristic(CharacteristicOperationDef::CardTypes(
+                            SetOperationDef::Add(CardTypeSet::single(CardType::Creature)),
+                        )),
+                        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(
+                            SetOperationDef::Add(crate::card::SubtypeSet::from_names(&["Insect"])),
+                        )),
+                        AppliedEffectDef::Characteristic(
+                            CharacteristicOperationDef::PowerToughness(
                                 PowerToughnessOperationDef::SetBase {
                                     power: ValueDef::Constant(1),
                                     toughness: ValueDef::Constant(1),
                                 },
-                            )),
-                        ]),
+                            ),
+                        ),
+                    ]),
                 },
             )
             // "As long as Grist isn't on the battlefield": every zone but that one,
@@ -1614,11 +1616,16 @@ pub(in crate::card::sets) static GRIST_THE_HUNGER_TIDE: CardRecord = CardRecord:
                 EffectDef::MillWhileMatching(&MillLoopDef {
                     player: EffectRecipientDef::Controller,
                     body: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
-                        TokenCharacteristics::creature(&["Insect"], &[ManaColor::Black, ManaColor::Green], 1, 1),
+                        TokenCharacteristics::creature(
+                            &["Insect"],
+                            &[ManaColor::Black, ManaColor::Green],
+                            1,
+                            1,
+                        ),
                     ))),
                     // An Insect card in the library keeps the process going -- and a Grist on
                     // top is one, which is what his own first clause is for.
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Insect")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Insect")),
                     on_match: &EffectDef::AddCounters {
                         object: EffectRecipientDef::Source,
                         kind: CounterKind::Loyalty,
@@ -1640,7 +1647,9 @@ pub(in crate::card::sets) static GRIST_THE_HUNGER_TIDE: CardRecord = CardRecord:
             AbilityDef::triggered_with_targets(
                 "When you do, destroy target creature or planeswalker.",
                 TriggerEventDef::OptionalEffectTaken(ObjectPredicateDef::Source),
-                &[AbilityTargetDef::exactly_one_permanent(A_CREATURE_OR_PLANESWALKER)],
+                &[AbilityTargetDef::exactly_one_permanent(
+                    A_CREATURE_OR_PLANESWALKER,
+                )],
                 EffectDef::Destroy {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     then: None,

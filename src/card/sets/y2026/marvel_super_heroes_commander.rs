@@ -133,7 +133,9 @@ pub(in crate::card::sets) static LOKI_S_SCEPTER: CardRecord = CardRecord::new(
                         recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                         effect: AppliedEffectDef::Composite(&[
                             AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(
-                                SetOperationDef::Add(&["Villain"]),
+                                SetOperationDef::Add(crate::card::SubtypeSet::from_names(&[
+                                    "Villain",
+                                ])),
                             )),
                             AppliedEffectDef::add_ability(&abilities::haste()),
                         ]),
@@ -384,7 +386,7 @@ pub(in crate::card::sets) static DEVIL_DINOSAUR: CardRecord = CardRecord::new(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dinosaur")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Dinosaur")),
                             ]),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),

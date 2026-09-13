@@ -738,7 +738,7 @@ pub(in crate::card::sets) static PENTAVUS: CardRecord = CardRecord::new(
             &[
                 CostDef::Mana(mana_cost!("{1}")),
                 CostDef::SacrificePermanent {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Pentavite")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Pentavite")),
                     controller: PlayerRelation::You,
                 },
             ],

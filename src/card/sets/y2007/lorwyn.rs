@@ -310,7 +310,9 @@ pub(in crate::card::sets) static WINGS_OF_VELIS_VEL: CardRecord = CardRecord::ne
                     recipient: EffectRecipientDef::Source,
                     effect: AppliedEffectDef::Characteristic(
                         crate::card::CharacteristicOperationDef::Subtypes(
-                            crate::card::SetOperationDef::Add(crate::card::CREATURE_TYPES),
+                            crate::card::SetOperationDef::Add(crate::card::SubtypeSet::from_names(
+                                crate::card::CREATURE_TYPES,
+                            )),
                         ),
                     ),
                 },
@@ -398,7 +400,9 @@ pub(in crate::card::sets) static BLADES_OF_VELIS_VEL: CardRecord = CardRecord::n
                     recipient: EffectRecipientDef::Source,
                     effect: AppliedEffectDef::Characteristic(
                         crate::card::CharacteristicOperationDef::Subtypes(
-                            crate::card::SetOperationDef::Add(crate::card::CREATURE_TYPES),
+                            crate::card::SetOperationDef::Add(crate::card::SubtypeSet::from_names(
+                                crate::card::CREATURE_TYPES,
+                            )),
                         ),
                     ),
                 },
@@ -597,7 +601,7 @@ pub(in crate::card::sets) static ELVISH_HARBINGER: CardRecord = CardRecord::new(
             EffectDef::SearchZone {
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
-                object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Elf")),
                 minimum: 0,
                 maximum: ValueDef::Constant(1),
                 reveal: true,
@@ -630,7 +634,7 @@ pub(in crate::card::sets) static IMPERIOUS_PERFECT: CardRecord = CardRecord::new
                     ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Elf")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,

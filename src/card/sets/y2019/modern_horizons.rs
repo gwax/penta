@@ -723,9 +723,9 @@ pub(in crate::card::sets) static YAWGMOTH_THRAN_PHYSICIAN: CardRecord = CardReco
         .with_abilities(&[
             AbilityDef::keyword(
                 "Protection from Humans",
-                KeywordAbility::ProtectionFrom(&ObjectPredicateDef::Subtype(SubtypeDef::Literal(
-                    "Human",
-                ))),
+                KeywordAbility::ProtectionFrom(&ObjectPredicateDef::Subtype(
+                    SubtypeDef::from_name("Human"),
+                )),
             ),
             AbilityDef::activated_with_targets(
                 "Pay 1 life, Sacrifice another creature: Put a -1/-1 counter \
@@ -842,7 +842,7 @@ pub(in crate::card::sets) static GOATNAP: CardRecord = CardRecord::new(
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::TargetMatches {
                     slot: TargetIndex::PRIMARY,
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goat")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Goat")),
                 },
                 then: &EffectDef::Apply {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -954,7 +954,7 @@ pub(in crate::card::sets) static PASHALIK_MONS: CardRecord = CardRecord::new(
                 ObjectPredicateDef::AnyOf(&[
                     ObjectPredicateDef::Source,
                     ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Goblin")),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ]),
                 ]),
@@ -971,7 +971,7 @@ pub(in crate::card::sets) static PASHALIK_MONS: CardRecord = CardRecord::new(
                 &[
                     CostDef::Mana(mana_cost!("{3}{R}")),
                     CostDef::SacrificePermanent {
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Goblin")),
                         controller: PlayerRelation::You,
                     },
                 ],

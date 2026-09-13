@@ -123,7 +123,7 @@ const fn forage() -> crate::card::GameActionDef {
     const ACTION: crate::card::GameActionDef = crate::card::actions::choice(&[
         crate::card::actions::choose_exile_from_graveyard(3),
         crate::card::actions::choose_sacrifice(1).matching(ObjectPredicateDef::Subtype(
-            crate::card::SubtypeDef::Literal("Food"),
+            crate::card::SubtypeDef::from_name("Food"),
         )),
     ]);
     ACTION.named(FORAGE)
@@ -793,7 +793,7 @@ pub(in crate::card::sets) static RABBIT_RESPONSE: CardRecord = CardRecord::new(
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rabbit")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rabbit")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -848,7 +848,7 @@ pub(in crate::card::sets) static SALVATION_SWAN: CardRecord = CardRecord::new(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bird")),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ]),
@@ -982,7 +982,7 @@ pub(in crate::card::sets) static SONAR_STRIKE: CardRecord = CardRecord::new(
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bat")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bat")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -1337,7 +1337,7 @@ pub(in crate::card::sets) static DAZZLING_DENIAL: CardRecord = CardRecord::new(
         EffectDef::IfElseCondition {
             condition: &TriggerConditionDef::ObjectCount {
                 query: ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bird")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
@@ -1662,7 +1662,7 @@ pub(in crate::card::sets) static KNIGHTFISHER: CardRecord = CardRecord::new(
                 ObjectPredicateDef::All(&[
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bird")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
                     ]),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -1862,7 +1862,7 @@ pub(in crate::card::sets) static PEARL_OF_WISDOM: CardRecord = CardRecord::new(
             "This spell costs {1} less to cast if you control an Otter.",
             ValueDef::IfMatchingObjectCount(&CountConditionDef {
                 query: ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Otter")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Otter")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
@@ -2225,10 +2225,10 @@ pub(in crate::card::sets) static SPLASH_PORTAL: CardRecord = CardRecord::new(
                             "returned"
                         )),
                         predicate: ObjectSetPredicateDef::contains(&ObjectPredicateDef::AnyOf(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Frog")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Otter")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bird")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Frog")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Otter")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rat")),
                         ])),
                     }),
                     then: &abilities::draw_cards(ValueDef::Constant(1)),
@@ -2402,10 +2402,10 @@ pub(in crate::card::sets) static VALLEY_FLOODCALLER: CardRecord = CardRecord::ne
                     recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::AnyOf(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Frog")),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Otter")),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bird")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Frog")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Otter")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rat")),
                             ]),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
@@ -2421,10 +2421,10 @@ pub(in crate::card::sets) static VALLEY_FLOODCALLER: CardRecord = CardRecord::ne
                     object: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::AnyOf(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Frog")),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Otter")),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bird")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Frog")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Otter")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rat")),
                             ]),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
@@ -3097,7 +3097,7 @@ pub(in crate::card::sets) static PSYCHIC_WHORL: CardRecord = CardRecord::new(
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rat")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -3226,7 +3226,7 @@ pub(in crate::card::sets) static SCALES_OF_SHALE: CardRecord = CardRecord::new(
             "Affinity for Lizards (This spell costs {1} less to cast for \
              each Lizard you control.)",
             ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lizard")),
+                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Lizard")),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             )),
@@ -3565,10 +3565,10 @@ pub(in crate::card::sets) static VALLEY_ROTCALLER: CardRecord = CardRecord::new(
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                                 ObjectPredicateDef::AnyOf(&[
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bat")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lizard")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Squirrel")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bat")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Lizard")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rat")),
                                 ]),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -3581,10 +3581,10 @@ pub(in crate::card::sets) static VALLEY_ROTCALLER: CardRecord = CardRecord::new(
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                                 ObjectPredicateDef::AnyOf(&[
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bat")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lizard")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Squirrel")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bat")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Lizard")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rat")),
                                 ]),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -3615,7 +3615,7 @@ pub(in crate::card::sets) static WICK_THE_WHORLED_MIND: CardRecord = CardRecord:
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rat")),
                             ]),
                             ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                         ]),
@@ -3626,7 +3626,7 @@ pub(in crate::card::sets) static WICK_THE_WHORLED_MIND: CardRecord = CardRecord:
                 EffectDef::IfElseCondition {
                     condition: &TriggerConditionDef::ObjectCount {
                         query: ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Snail")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Snail")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),
@@ -3638,7 +3638,7 @@ pub(in crate::card::sets) static WICK_THE_WHORLED_MIND: CardRecord = CardRecord:
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
                         candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Snail")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Snail")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -3665,9 +3665,9 @@ pub(in crate::card::sets) static WICK_THE_WHORLED_MIND: CardRecord = CardRecord:
                  equal to the sacrificed creature's power.",
                 &[
                     CostDef::Mana(mana_cost!("{U}{B}{R}")),
-                    CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal(
-                        "Snail",
-                    ))),
+                    CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(
+                        SubtypeDef::from_name("Snail"),
+                    )),
                 ],
                 EffectDef::Sequence(&[
                     EffectDef::damage(
@@ -3987,7 +3987,7 @@ pub(in crate::card::sets) static HARNESSER_OF_STORMS: CardRecord = CardRecord::n
             TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::AnyOf(&[
                     ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Creature)),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Otter")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Otter")),
                 ]),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
@@ -4066,7 +4066,7 @@ pub(in crate::card::sets) static HIRED_CLAW: CardRecord = CardRecord::new(
              deals 1 damage to target opponent.",
             TriggerEventDef::attack_declared(
                 ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lizard")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Lizard")),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ]),
                 1,
@@ -4161,7 +4161,7 @@ pub(in crate::card::sets) static MANIFOLD_MOUSE: CardRecord = CardRecord::new(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mouse")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Mouse")),
                     ]),
                     zones: &[ZoneKind::Battlefield],
                     controller: Some(PlayerRelation::You),
@@ -4213,7 +4213,7 @@ pub(in crate::card::sets) static MIGHT_OF_THE_MEEK: CardRecord = CardRecord::new
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mouse")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Mouse")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -4358,7 +4358,7 @@ pub(in crate::card::sets) static REPTILIAN_RECRUITER: CardRecord = CardRecord::n
                             query: ObjectQueryDef::matching(
                                 ObjectPredicateDef::All(&[
                                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lizard")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Lizard")),
                                 ]),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
@@ -4576,7 +4576,7 @@ pub(in crate::card::sets) static TAKE_OUT_THE_TRASH: CardRecord = CardRecord::ne
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Raccoon")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Raccoon")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -4805,7 +4805,7 @@ pub(in crate::card::sets) static CACHE_GRAB: CardRecord = CardRecord::new(
                         condition: &TriggerConditionDef::AnyOf(&[
                             TriggerConditionDef::ObjectCount {
                                 query: ObjectQueryDef::matching(
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Squirrel")),
                                     &[ZoneKind::Battlefield],
                                     PlayerRelation::You,
                                 ),
@@ -4817,7 +4817,7 @@ pub(in crate::card::sets) static CACHE_GRAB: CardRecord = CardRecord::new(
                                     crate::Binding!("returned"),
                                 ),
                                 predicate: ObjectSetPredicateDef::contains(
-                                    &ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
+                                    &ObjectPredicateDef::Subtype(SubtypeDef::from_name("Squirrel")),
                                 ),
                             }),
                         ]),
@@ -5320,8 +5320,8 @@ pub(in crate::card::sets) static HONORED_DREYLEADER: CardRecord = CardRecord::ne
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ObjectPredicateDef::AnyOf(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Food")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Squirrel")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Food")),
                             ]),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -5337,8 +5337,8 @@ pub(in crate::card::sets) static HONORED_DREYLEADER: CardRecord = CardRecord::ne
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ObjectPredicateDef::AnyOf(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Food")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Squirrel")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Food")),
                             ]),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -5727,7 +5727,7 @@ pub(in crate::card::sets) static POLLIWALLOP: CardRecord = CardRecord::new(
             "Affinity for Frogs (This spell costs {1} less to cast for \
              each Frog you control.)",
             ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Frog")),
+                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Frog")),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             )),
@@ -6056,10 +6056,10 @@ pub(in crate::card::sets) static VALLEY_MIGHTCALLER: CardRecord = CardRecord::ne
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ObjectPredicateDef::AnyOf(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Frog")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rabbit")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Raccoon")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Frog")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rabbit")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Raccoon")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Squirrel")),
                         ]),
                     ]),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -6271,7 +6271,9 @@ pub(in crate::card::sets) static FINNEAS_ACE_ARCHER: CardRecord = CardRecord::ne
                                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                                     ObjectPredicateDef::AnyOf(&[
                                         ObjectPredicateDef::Token,
-                                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rabbit")),
+                                        ObjectPredicateDef::Subtype(SubtypeDef::from_name(
+                                            "Rabbit",
+                                        )),
                                     ]),
                                 ]),
                                 &[ZoneKind::Battlefield],
@@ -6477,7 +6479,7 @@ pub(in crate::card::sets) static KASTRAL_THE_WINDCRESTED: CardRecord = CardRecor
                  a player, choose one —",
                 TriggerEventDef::CombatDamageDealtToPlayers {
                     sources: ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bird")),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ]),
                     players: PlayerRelation::Any,
@@ -6493,7 +6495,7 @@ pub(in crate::card::sets) static KASTRAL_THE_WINDCRESTED: CardRecord = CardRecor
                             candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
                                 ObjectPredicateDef::All(&[
                                     ObjectPredicateDef::HasType(CardType::Creature),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bird")),
                                 ]),
                                 &[ZoneKind::Hand, ZoneKind::Graveyard],
                                 PlayerRelation::You,
@@ -6527,7 +6529,7 @@ pub(in crate::card::sets) static KASTRAL_THE_WINDCRESTED: CardRecord = CardRecor
                         EffectDef::AddCounters {
                             object: EffectRecipientDef::objects(ObjectSetDef::Query(
                                 ObjectQueryDef::matching(
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bird")),
                                     &[ZoneKind::Battlefield],
                                     PlayerRelation::You,
                                 ),
@@ -6619,7 +6621,7 @@ pub(in crate::card::sets) static MABEL_HEIR_TO_CRAGFLAME: CardRecord = CardRecor
                     recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mouse")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Mouse")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -7361,10 +7363,10 @@ pub(in crate::card::sets) static LUPINFLOWER_VILLAGE: CardRecord = CardRecord::n
             abilities::look_at_top_cards_reveal_choice_to_hand_rest_random_bottom(
                 ValueDef::Constant(6),
                 ObjectPredicateDef::AnyOf(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bat")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mouse")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rabbit")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bat")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bird")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Mouse")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rabbit")),
                 ]),
                 0,
                 1,
@@ -7398,10 +7400,10 @@ pub(in crate::card::sets) static MUDFLAT_VILLAGE: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::AnyOf(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bat")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lizard")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Bat")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Lizard")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rat")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Squirrel")),
                     ]),
                     zones: &[ZoneKind::Graveyard],
                     controller: None,
@@ -7440,10 +7442,10 @@ pub(in crate::card::sets) static OAKHOLLOW_VILLAGE: CardRecord = CardRecord::new
                 object: EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::matching(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::AnyOf(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Frog")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rabbit")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Raccoon")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Frog")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Rabbit")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Raccoon")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Squirrel")),
                         ]),
                         ObjectPredicateDef::EnteredThisTurn,
                     ]),
@@ -7479,10 +7481,10 @@ pub(in crate::card::sets) static ROCKFACE_VILLAGE: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::AnyOf(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lizard")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mouse")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Otter")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Raccoon")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Lizard")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Mouse")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Otter")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::from_name("Raccoon")),
                     ]),
                     zones: &[ZoneKind::Battlefield],
                     controller: Some(PlayerRelation::You),

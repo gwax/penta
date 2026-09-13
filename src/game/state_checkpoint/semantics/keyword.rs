@@ -82,22 +82,28 @@ fn protection_snapshot(predicate: &'static ObjectPredicateDef) -> KeywordSnapsho
         KeywordSnapshot::ProtectionFromGreen
     } else if predicate == &ObjectPredicateDef::ColorCount(0) {
         KeywordSnapshot::ProtectionFromColorless
-    } else if predicate == &ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Zombie"))
+    } else if predicate
+        == &ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Zombie"))
     {
         KeywordSnapshot::ProtectionFromZombies
-    } else if predicate == &ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Vampire"))
+    } else if predicate
+        == &ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Vampire"))
     {
         KeywordSnapshot::ProtectionFromVampires
     } else if predicate
-        == &ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Werewolf"))
+        == &ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Werewolf"))
     {
         KeywordSnapshot::ProtectionFromWerewolves
     } else if predicate
-        == &ObjectPredicateDef::AnyOf(&[
-            ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Vampire")),
-            ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Werewolf")),
-            ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Zombie")),
-        ])
+        == &ObjectPredicateDef::AnyOf(
+            &const {
+                [
+                    ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Vampire")),
+                    ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Werewolf")),
+                    ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Zombie")),
+                ]
+            },
+        )
     {
         KeywordSnapshot::ProtectionFromVampiresWerewolvesAndZombies
     } else if predicate == &ObjectPredicateDef::HasType(CardType::Creature) {
@@ -110,12 +116,16 @@ fn protection_snapshot(predicate: &'static ObjectPredicateDef) -> KeywordSnapsho
     {
         KeywordSnapshot::ProtectionFromMulticolored
     } else if predicate
-        == &ObjectPredicateDef::All(&[
-            ObjectPredicateDef::HasType(CardType::Creature),
-            ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(
-                crate::card::SubtypeDef::Literal("Human"),
-            )),
-        ])
+        == &ObjectPredicateDef::All(
+            &const {
+                [
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(
+                        crate::card::SubtypeDef::from_name("Human"),
+                    )),
+                ]
+            },
+        )
     {
         KeywordSnapshot::ProtectionFromNonHumanCreatures
     } else if predicate == &ObjectPredicateDef::HasType(CardType::Enchantment) {
@@ -230,20 +240,24 @@ const fn parse_protection_keyword(value: KeywordSnapshot) -> KeywordAbility {
         KeywordSnapshot::ProtectionFromGreen => protection_color(ManaColor::Green),
         KeywordSnapshot::ProtectionFromColorless => protection_color(ManaColor::Colorless),
         KeywordSnapshot::ProtectionFromZombies => KeywordAbility::ProtectionFrom(
-            &ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Zombie")),
+            &const { ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Zombie")) },
         ),
         KeywordSnapshot::ProtectionFromVampires => KeywordAbility::ProtectionFrom(
-            &ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Vampire")),
+            &const { ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Vampire")) },
         ),
         KeywordSnapshot::ProtectionFromWerewolves => KeywordAbility::ProtectionFrom(
-            &ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Werewolf")),
+            &const { ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Werewolf")) },
         ),
         KeywordSnapshot::ProtectionFromVampiresWerewolvesAndZombies => {
-            KeywordAbility::ProtectionFrom(&ObjectPredicateDef::AnyOf(&[
-                ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Vampire")),
-                ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Werewolf")),
-                ObjectPredicateDef::Subtype(crate::card::SubtypeDef::Literal("Zombie")),
-            ]))
+            KeywordAbility::ProtectionFrom(
+                &const {
+                    ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Vampire")),
+                        ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Werewolf")),
+                        ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Zombie")),
+                    ])
+                },
+            )
         }
         KeywordSnapshot::ProtectionFromCreatures => {
             KeywordAbility::ProtectionFrom(&ObjectPredicateDef::HasType(CardType::Creature))
@@ -254,14 +268,16 @@ const fn parse_protection_keyword(value: KeywordSnapshot) -> KeywordAbility {
                 ObjectPredicateDef::ColorCount(1),
             ])))
         }
-        KeywordSnapshot::ProtectionFromNonHumanCreatures => {
-            KeywordAbility::ProtectionFrom(&ObjectPredicateDef::All(&[
-                ObjectPredicateDef::HasType(CardType::Creature),
-                ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(
-                    crate::card::SubtypeDef::Literal("Human"),
-                )),
-            ]))
-        }
+        KeywordSnapshot::ProtectionFromNonHumanCreatures => KeywordAbility::ProtectionFrom(
+            &const {
+                ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(
+                        crate::card::SubtypeDef::from_name("Human"),
+                    )),
+                ])
+            },
+        ),
         KeywordSnapshot::ProtectionFromEnchantments => {
             KeywordAbility::ProtectionFrom(&ObjectPredicateDef::HasType(CardType::Enchantment))
         }
