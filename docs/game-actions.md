@@ -135,6 +135,20 @@ This follows CR 118.11 and 118.12: payment is not a postcondition such as
 when the player commits; a replacement can send those cards elsewhere. A
 sequence finishes each action's replacement work before its next action.
 
+`EffectDef::May` checks a leading object choice's authored minimum before
+offering acceptance. Unlike a mandatory instruction, an optional two-card
+discard cannot be chosen with only one card (CR 608.2d). This applies to
+`Choose`, computed `ChooseExact`, shared action selections and alternatives,
+and ordinary discard instructions. Private selections keep their eligibility
+offers private. An empty library still permits an optional draw, as specified
+by the same rule. Later instructions execute in order rather than being tested
+against the state before earlier instructions have resolved.
+
+For "you may discard ... When you do," use `EffectDef::Discard` under `May`,
+with `EffectDef::ReflexiveTrigger` in its `DiscardFollowUpDef`. The discard
+effect owns the choice, and the follow-up can bind the discarded cards for the
+separate trigger. See [reflexive triggers](implementing-cards.md#reflexive-triggers).
+
 ## Initial payment boundary
 
 `GameActionDef::Named` attaches a numeric `MechanicId` to a program before
