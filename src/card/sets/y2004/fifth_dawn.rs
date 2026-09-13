@@ -458,6 +458,61 @@ CardRules::new_artifact(mana_cost!("{5}")).with_abilities(&[
     ]),
 );
 
+// 5DN 116 — Doubling Cube
+pub(in crate::card::sets) static DOUBLING_CUBE: CardRecord = CardRecord::new(
+    "Doubling Cube",
+    "220d3a38-10f8-4d4a-84b8-f17b10a2cd6c",
+    "Mark Tedin",
+    CardRules::new_artifact(mana_cost!("{2}")).with_ability(AbilityDef::activated_mana(
+        "{3}, {T}: Double the amount of each type of unspent mana you have.",
+        &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
+        EffectDef::AddMana(AddManaEffectDef::amounts(&[
+            (
+                ManaColor::White,
+                ValueDef::ManaInPool {
+                    player: PlayerRelation::You,
+                    color: Some(ManaColor::White),
+                },
+            ),
+            (
+                ManaColor::Blue,
+                ValueDef::ManaInPool {
+                    player: PlayerRelation::You,
+                    color: Some(ManaColor::Blue),
+                },
+            ),
+            (
+                ManaColor::Black,
+                ValueDef::ManaInPool {
+                    player: PlayerRelation::You,
+                    color: Some(ManaColor::Black),
+                },
+            ),
+            (
+                ManaColor::Red,
+                ValueDef::ManaInPool {
+                    player: PlayerRelation::You,
+                    color: Some(ManaColor::Red),
+                },
+            ),
+            (
+                ManaColor::Green,
+                ValueDef::ManaInPool {
+                    player: PlayerRelation::You,
+                    color: Some(ManaColor::Green),
+                },
+            ),
+            (
+                ManaColor::Colorless,
+                ValueDef::ManaInPool {
+                    player: PlayerRelation::You,
+                    color: Some(ManaColor::Colorless),
+                },
+            ),
+        ])),
+    )),
+);
+
 // 5DN 118 — Engineered Explosives
 pub(in crate::card::sets) static ENGINEERED_EXPLOSIVES: CardRecord = CardRecord::new(
     "Engineered Explosives",
@@ -734,6 +789,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &CONJURER_S_BAUBLE_112,
     &CRUCIBLE_OF_WORLDS,
     &DOOR_TO_NOTHINGNESS,
+    &DOUBLING_CUBE,
     &ENGINEERED_EXPLOSIVES,
     &GRINDING_STATION_127,
     &GUARDIAN_IDOL,

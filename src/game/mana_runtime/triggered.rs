@@ -26,6 +26,7 @@ impl Game {
                     }
                     ManaSelectionDef::One(_)
                     | ManaSelectionDef::ColorsOfLinkedExiles
+                    | ManaSelectionDef::Amounts(_)
                     | ManaSelectionDef::ChoiceOfBundles(_) => return,
                 };
                 let domain = match types.source {

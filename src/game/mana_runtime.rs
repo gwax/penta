@@ -15,6 +15,7 @@ mod color_spending;
 mod eligibility;
 mod pricing;
 include!("mana_runtime/nonpermanent.rs");
+include!("mana_runtime/unspent_pool.rs");
 
 impl Game {
     pub(super) fn mana_type_for_source(
@@ -240,7 +241,11 @@ impl Game {
             // Resolved here rather than at payment time so that the amount
             // the planner counts on is the amount the pool receives.
             if let Some(value) = effect.variable_amount {
-                effect.amount = self.mana_ability_value(value, permanent);
+                effect.amount = self.mana_value_with_pool(
+                    value,
+                    permanent,
+                    self.unspent_pool_after_mana_costs(permanent.controller, definition.costs),
+                );
             }
             effect.amount = self.mana_amount_for(effect, permanent.controller, permanent.card.id);
             // "Remove any number of storage counters" is a choice of size, so
@@ -293,6 +298,20 @@ impl Game {
             for (costs, amount, counters_removed) in sizes {
                 for cost_object in &sacrifices {
                     match effect.mana {
+                        ManaSelectionDef::Amounts(amounts) => {
+                            let pool =
+                                self.unspent_pool_after_mana_costs(permanent.controller, &costs);
+                            let split = self.mana_amounts_for(amounts, permanent, pool);
+                            add_activation(
+                                ManaColor::Colorless,
+                                &costs,
+                                0,
+                                counters_removed,
+                                *cost_object,
+                                Some(split),
+                                None,
+                            );
+                        }
                         ManaSelectionDef::One(kind) => {
                             let Some(color) = self.mana_type_for_source(kind, permanent.card.id)
                             else {
@@ -467,6 +486,14 @@ impl Game {
             // properties of the resulting mana, not of its type.
             if let Some(effect) = Self::shared_add_mana_effect(&definition, &effective.ability) {
                 match effect.mana {
+                    ManaSelectionDef::Amounts(amounts) => {
+                        let pool = self.players[permanent.controller.index()].mana_pool;
+                        colors.extend(
+                            self.mana_amounts_for(amounts, permanent, pool)
+                                .iter()
+                                .map(|(color, _)| color),
+                        );
+                    }
                     ManaSelectionDef::One(kind) => {
                         colors.extend(self.mana_type_for_source(kind, permanent.card.id));
                     }
@@ -691,48 +718,7 @@ impl Game {
         self.reconcile_mana(player);
         self.activate_repeatable_life_mana_for_shortfall(player, cost, x, purpose);
         let before = self.eligible_mana_pool(player, purpose);
-        let mut after = before;
-        let has_eligible_spend_effect = |color| {
-            self.players[player.index()].mana.iter().any(|mana| {
-                mana.color == color
-                    && self.mana_can_pay_for(*mana, purpose)
-                    && Self::mana_has_spend_effect_for(*mana, purpose)
-            })
-        };
-        // A hybrid symbol prefers whichever of its colours carries a rider
-        // this payment can use.
-        let hybrid_preference = |color: ManaColor| u16::from(!has_eligible_spend_effect(color));
-        let mut generic_order = [
-            ManaColor::Colorless,
-            ManaColor::Green,
-            ManaColor::Black,
-            ManaColor::Red,
-            ManaColor::White,
-            ManaColor::Blue,
-        ];
-        generic_order.sort_by_key(|color| !has_eligible_spend_effect(*color));
-        let spread_generic_colors = self.payment_counts_colors_spent(purpose);
-        if spread_generic_colors {
-            // Converge counts colours, so the generic portion reaches first
-            // for a colour the coloured symbols have not already spent, and
-            // reaches for colourless last of all: it is a mana type rather
-            // than a colour and adds nothing to the count.
-            generic_order.sort_by_key(|color| {
-                (
-                    *color == ManaColor::Colorless,
-                    super::mana_planning::mana_cost_amount(cost, *color) > 0,
-                    !has_eligible_spend_effect(*color),
-                )
-            });
-        }
-        pay_cost_with_generic_strategy(
-            &mut after,
-            cost,
-            x,
-            &hybrid_preference,
-            &generic_order,
-            spread_generic_colors,
-        );
+        let after = self.mana_payment_remainder(player, before, cost, x, purpose);
         let mut spent = Vec::new();
         for color in [
             ManaColor::White,

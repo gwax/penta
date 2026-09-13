@@ -124,6 +124,12 @@ combat damage, simultaneous trigger ordering, and frozen source, target, and
 event information for stack abilities. Explicit mana abilities remain
 immediate rather than using the stack.
 
+Jeweled Lotus mana can pay for casting a designated commander owned by the
+caster, including commander tax and casts from zones other than the command
+zone. It cannot pay for that commander's activated abilities. Doubling Cube
+adds separate mana without the original mana's restrictions, spend effects,
+or source properties.
+
 ## Built-in decks
 
 Deck files and display metadata live in [`decks/`](../decks/README.md). Every

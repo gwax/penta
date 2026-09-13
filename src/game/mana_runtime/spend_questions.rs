@@ -90,6 +90,11 @@ impl Game {
                 ManaRestrictionDef::Payment(expected) => {
                     matches!(purpose, ManaPaymentPurpose::Payment { label: Some(actual), .. } if actual == expected)
                 }
+                ManaRestrictionDef::CastYourCommander => match purpose {
+                    ManaPaymentPurpose::Spell { commander_owner, controller, .. } =>
+                        *commander_owner == Some(*controller),
+                    _ => false,
+                },
                 ManaRestrictionDef::Special(_) => false,
             })
             && match purpose {
