@@ -615,7 +615,7 @@ fn replacement_program_grants_count_toward_the_structural_address_space() {
 }
 
 #[test]
-fn executable_granted_static_abilities_are_rejected_until_fixed_point_evaluation_exists() {
+fn granted_static_abilities_outside_the_supported_lane_are_rejected() {
     static GRANTED: AbilityDef =
         AbilityDef::static_ability("This object gets +1/+1.", EffectDef::None);
 
@@ -891,3 +891,5 @@ include!("abilities_grants/reflexive_triggers.rs");
 include!("abilities_grants/output_bindings.rs");
 
 include!("abilities_grants/effect_continuations.rs");
+
+include!("abilities_grants/static_power_toughness.rs");
