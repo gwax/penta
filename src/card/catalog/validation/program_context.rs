@@ -406,7 +406,7 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
                 && static_attack_restriction_supported(restriction)
         }
         AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
-            crate::card::PlayerRuleDef::ApplyToNextSpell { .. },
+            crate::card::PlayerRuleDef::ApplyToMatchingSpell { .. },
         )) => false,
         AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
             crate::card::PlayerRuleDef::LegendRuleDoesNotApplyTo(predicate),
