@@ -34,7 +34,6 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         ValueDef::Constant(_)
         | ValueDef::CardsInHandAbove { .. }
         | ValueDef::AffectedManaValue
-        | ValueDef::AffectedColorCount
         // Read live from every graveyard, which the static layer can see the
         // same way it sees a battlefield count.
         | ValueDef::CardTypesAmongGraveyards(_)
@@ -50,6 +49,10 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::DevotionTo(_)
         | ValueDef::BasicLandTypesControlled(_)
         | ValueDef::LibrarySize(_) => true,
+        ValueDef::ColorCount(reference) => matches!(
+            reference,
+            ObjectRefDef::Source | ObjectRefDef::CreatingSource | ObjectRefDef::AttachedToSource
+        ),
         ValueDef::CountersOnObject(counted) => {
             matches!(counted.object, ObjectRefDef::Source | ObjectRefDef::CreatingSource)
         }
@@ -116,7 +119,6 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::TargetLibrarySize(_)
         | ValueDef::LifeTotal(_)
         | ValueDef::StartingLifeTotal
-        | ValueDef::TargetColorCount(_)
         | ValueDef::TargetManaValue(_)
         | ValueDef::ObjectPower(_)
         | ValueDef::ObjectManaValue(_)
@@ -132,6 +134,10 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
 fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
     match value {
         ValueDef::Constant(_) => true,
+        ValueDef::ColorCount(reference) => matches!(
+            reference,
+            ObjectRefDef::Source | ObjectRefDef::CreatingSource | ObjectRefDef::AttachedToSource
+        ),
         ValueDef::CountMatchingObjects(query) => {
             !query.zones.contains(&ZoneKind::Stack) && static_query_supported(*query)
         }
@@ -168,7 +174,6 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
-        | ValueDef::AffectedColorCount
         | ValueDef::CardTypesAmongObjects(_)
         | ValueDef::SourceToughness
         | ValueDef::TriggeringObjectPower
@@ -211,7 +216,6 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::TargetLibrarySize(_)
         | ValueDef::LifeTotal(_)
         | ValueDef::StartingLifeTotal
-        | ValueDef::TargetColorCount(_)
         | ValueDef::TargetManaValue(_)
         | ValueDef::ObjectPower(_)
         | ValueDef::ObjectManaValue(_)

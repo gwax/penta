@@ -330,11 +330,6 @@ pub enum ValueDef {
     /// other enchantment a body its own cost decides, so the number is the
     /// affected object's and changes from one to the next.
     AffectedManaValue,
-    /// The number of colors the permanent a static effect is being applied
-    /// to currently has. Civic Saber measures the equipped creature rather
-    /// than the Equipment applying the bonus, and the value follows later
-    /// color-changing effects.
-    AffectedColorCount,
     SourcePower,
     SourceToughness,
     TriggerEventAmount,
@@ -571,8 +566,10 @@ pub enum ValueDef {
     /// The mana value of what a target slot points at, read from last-known
     /// information after a permanent or spell has left its zone.
     TargetManaValue(TargetIndex),
-    /// The number of colors of the chosen object, using its current or last-known characteristics.
-    TargetColorCount(TargetIndex),
+    /// The number of colors of one named object, using its current or
+    /// last-known characteristics. Object selection is independent of the
+    /// count: targets, sources, attachments, and bound objects share it.
+    ColorCount(ObjectRefDef),
     /// The power of one named object, wherever it is, using last-known
     /// information after it leaves its zone.
     ObjectPower(ObjectRefDef),

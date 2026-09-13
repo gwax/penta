@@ -5722,7 +5722,7 @@ pub(in crate::card::sets) static CIVIC_SABER: CardRecord = CardRecord::new(
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::modify_power_toughness(
-                        ValueDef::AffectedColorCount,
+                        ValueDef::ColorCount(ObjectRefDef::AttachedToSource),
                         ValueDef::Constant(0),
                     ),
                 },

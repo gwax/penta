@@ -577,12 +577,8 @@ impl Game {
         }
     }
 
-    pub(super) fn target_color_count(&self, target: Target) -> u16 {
-        let (Target::Permanent(id) | Target::Card(id) | Target::Spell(id)) = target else {
-            return 0;
-        };
-        self.protection_source_characteristics(id)
-            .map_or(0, |object| object.colors.into_iter().map(u16::from).sum())
+    pub(super) fn object_color_count(&self, object: GameObjectId) -> u16 {
+        self.object_colors(object).into_iter().map(u16::from).sum()
     }
 
     fn has_hexproof_from_object(

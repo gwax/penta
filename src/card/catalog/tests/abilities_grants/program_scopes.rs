@@ -901,3 +901,38 @@ fn variable_mana_amounts_validate_their_bound_object_references() {
         Err(GrantedAbilityValidationError::ObjectSetBindingReferenceOutOfScope { binding }),
     );
 }
+
+#[test]
+fn color_count_values_validate_their_object_references() {
+    let binding = Binding!("counted_object");
+    assert!(
+        super::validate_ability_targets(
+            &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+                PlayerRelation::Any,
+            ))],
+            abilities::draw_cards(ValueDef::ColorCount(ObjectRefDef::Target(
+                TargetIndex::PRIMARY,
+            ))),
+        ).is_err(),
+        "color counts require an object, not a player",
+    );
+    assert_eq!(
+        super::validate_ability_targets(
+            &[],
+            abilities::draw_cards(ValueDef::ColorCount(ObjectRefDef::Binding(binding))),
+        ),
+        Err(GrantedAbilityValidationError::ObjectBindingReferenceOutOfScope { binding }),
+    );
+    assert_eq!(
+        super::validate_ability_targets(
+            &[],
+            abilities::draw_cards(ValueDef::ColorCount(ObjectRefDef::Target(
+                TargetIndex::PRIMARY,
+            ))),
+        ),
+        Err(GrantedAbilityValidationError::TargetReferenceOutOfBounds {
+            target: TargetIndex::PRIMARY,
+            target_count: 0,
+        }),
+    );
+}

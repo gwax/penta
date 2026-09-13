@@ -589,11 +589,12 @@ fn validate_value_target_references(
         ValueDef::TargetPower(target)
         | ValueDef::TargetToughness(target)
         | ValueDef::TargetLibrarySize(target)
-        | ValueDef::TargetColorCount(target)
         | ValueDef::TargetManaValue(target) => validate_target_index(target, target_count),
         // Whatever the amount reads has to be nameable where it is read, the
         // same as any other object reference in the program.
-        ValueDef::ObjectPower(reference) | ValueDef::ObjectManaValue(reference) => {
+        ValueDef::ColorCount(reference)
+        | ValueDef::ObjectPower(reference)
+        | ValueDef::ObjectManaValue(reference) => {
             validate_object_reference(reference, target_count, scope)
         }
         ValueDef::CountersOnObject(counted) => {
@@ -609,7 +610,6 @@ fn validate_value_target_references(
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
-        | ValueDef::AffectedColorCount
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness
         | ValueDef::LifeTotal(_)

@@ -764,13 +764,17 @@ impl Game {
         targets: Option<&[TargetSelection]>,
     ) -> u16 {
         match value {
-            ValueDef::TargetColorCount(index) => targets.map_or(5, |targets| {
+            ValueDef::ColorCount(ObjectRefDef::Target(index)) => targets.map_or(5, |targets| {
                 targets
                     .iter()
                     .find(|selection| selection.slot().index() == index.index())
                     .and_then(|selection| selection.targets().first())
-                    .map_or(0, |target| self.target_color_count(*target))
+                    .and_then(|target| Self::target_object_id(*target))
+                    .map_or(0, |object| self.object_color_count(object))
             }),
+            ValueDef::ColorCount(reference) => self
+                .static_object_reference(reference, source)
+                .map_or(0, |object| self.object_color_count(object)),
             ValueDef::ManaInPool {
                 player: relation,
                 color,

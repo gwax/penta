@@ -353,6 +353,9 @@ impl Game {
         }
         match value {
             ValueDef::Constant(amount) => amount,
+            ValueDef::ColorCount(reference) => self
+                .static_object_reference(reference, source)
+                .map_or(0, |object| i32::from(self.object_color_count(object))),
             ValueDef::AnyMatchingObject(query) => {
                 i32::from(self.any_battlefield_object_matches(query, source, controller))
             }
@@ -547,14 +550,6 @@ impl Game {
         // own cost decides.
         if value == ValueDef::AffectedManaValue {
             return i16::try_from(self.permanent_mana_value(permanent)).unwrap_or(i16::MAX);
-        }
-        if value == ValueDef::AffectedColorCount {
-            let color_count = self
-                .permanent_colors(permanent)
-                .into_iter()
-                .filter(|present| *present)
-                .count();
-            return i16::try_from(color_count).unwrap_or(i16::MAX);
         }
         // Every other static amount is measured from its own source's
         // controller, not from whoever it is being applied to.

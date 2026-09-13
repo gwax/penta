@@ -15,7 +15,6 @@ fn trigger_stat_value_is_supported(value: ValueDef) -> bool {
                     | ValueDef::SourceCastX
                     | ValueDef::SourcePower
                     | ValueDef::AffectedManaValue
-                    | ValueDef::AffectedColorCount
                     | ValueDef::LifeTotal(_)
                     | ValueDef::SourceToughness
                     | ValueDef::CountersOnSource(_)

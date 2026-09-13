@@ -293,7 +293,10 @@ fn target_color_discount_locks_combined_mana_before_tapping_changes_colors() {
             )],
             abilities::draw_cards(ValueDef::Constant(1)),
         )
-        .with_activation_cost_reduction(ValueDef::TargetColorCount(TargetIndex::PRIMARY), 0),
+        .with_activation_cost_reduction(
+            ValueDef::ColorCount(ObjectRefDef::Target(TargetIndex::PRIMARY)),
+            0,
+        ),
         AbilityDef::static_ability(
             "This creature is colorless while tapped.",
             EffectDef::IfCondition {
@@ -328,9 +331,92 @@ fn target_color_discount_locks_combined_mana_before_tapping_changes_colors() {
         .unwrap();
     game.apply(PlayerId::One, action).unwrap();
     assert!(permanent(&game, source).tapped);
-    assert_eq!(game.target_color_count(Target::Permanent(source)), 0);
+    assert_eq!(game.object_color_count(source), 0);
     assert_eq!(
         game.players[0].mana_pool.colorless, 1,
         "the full three mana gets one discount, locked while the target was blue"
     );
+}
+
+#[test]
+fn color_count_composes_with_target_source_attachment_and_bound_references() {
+    for prepared in [false, true] {
+        let mut game = board(&[], prepared);
+        game.battlefield[1] = creature(HOST.0, cards::LOXODON_SMITER, PlayerId::One);
+        game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 2);
+        game.apply(PlayerId::One, equip(&game, HOST).unwrap())
+            .unwrap();
+        let resolving = game.stack.last().unwrap().clone();
+        let binding = Binding!("counted_object");
+        let mut context = EffectResolutionContext::empty();
+        context.bind_single_object(binding, Some(Target::Permanent(HOST)));
+        let count = |game: &Game, reference| {
+            game.effect_value(
+                ValueDef::ColorCount(reference),
+                &resolving,
+                &context,
+                ScopedEffect::primary(EffectDef::None),
+            )
+        };
+        assert_eq!(count(&game, ObjectRefDef::Target(TargetIndex::PRIMARY)), 2);
+        assert_eq!(count(&game, ObjectRefDef::Binding(binding)), 2);
+        assert_eq!(count(&game, ObjectRefDef::Source), 0);
+        assert_eq!(count(&game, ObjectRefDef::AttachedToSource), 0);
+        assert_eq!(count(&game, ObjectRefDef::Binding(Binding!("missing"))), 0);
+
+        drain_pending(&mut game);
+        assert_eq!(count(&game, ObjectRefDef::AttachedToSource), 2);
+        let source_count = ValueDef::ColorCount(ObjectRefDef::Source);
+        let attached_count = ValueDef::ColorCount(ObjectRefDef::AttachedToSource);
+        assert_eq!(game.static_stat_value(source_count, HOST, PlayerId::One), 2);
+        assert_eq!(
+            game.static_stat_value(attached_count, BLADE, PlayerId::One),
+            2
+        );
+        assert_eq!(
+            game.cost_reduction_value(source_count, PlayerId::One, HOST),
+            2
+        );
+        assert_eq!(
+            game.cost_reduction_value(attached_count, PlayerId::One, BLADE),
+            2
+        );
+
+        attach_constant_resolved_characteristics(
+            &mut game,
+            HOST,
+            &[AppliedEffectDef::set_colors(ColorSet::from_colors(&[
+                ManaColor::Red,
+            ]))],
+            ContinuousEffectExpiration::EndOfTurn,
+        );
+        assert_eq!(count(&game, ObjectRefDef::Binding(binding)), 1);
+        assert_eq!(count(&game, ObjectRefDef::AttachedToSource), 1);
+        assert_eq!(game.static_stat_value(source_count, HOST, PlayerId::One), 1);
+        assert_eq!(
+            game.cost_reduction_value(attached_count, PlayerId::One, BLADE),
+            1
+        );
+
+        game.move_target_to_zone(
+            Target::Permanent(HOST),
+            ZoneKind::Graveyard,
+            ZoneMoveCause::Effect {
+                controller: PlayerId::One,
+            },
+            None,
+            ZonePlacement::Top,
+        );
+        assert_eq!(
+            count(&game, ObjectRefDef::Binding(binding)),
+            1,
+            "a bound reference retains the old object's last-known colors"
+        );
+        let card = game.players[0].graveyard.last().unwrap();
+        assert_eq!(
+            game.object_color_count(card.id),
+            2,
+            "the new graveyard object has its printed colors"
+        );
+    }
 }

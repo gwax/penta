@@ -361,11 +361,12 @@ fn validate_value_shape(
         }
         ValueDef::TargetPower(target)
         | ValueDef::TargetToughness(target)
-        | ValueDef::TargetColorCount(target)
         | ValueDef::TargetManaValue(target) => {
             validate_target_shape(target, targets, RecipientExpectation::Object, true)
         }
-        ValueDef::ObjectPower(reference) | ValueDef::ObjectManaValue(reference) => {
+        ValueDef::ColorCount(reference)
+        | ValueDef::ObjectPower(reference)
+        | ValueDef::ObjectManaValue(reference) => {
             validate_object_reference_shape(reference, targets)
         }
         ValueDef::CountersOnObject(counted) => {
@@ -384,7 +385,6 @@ fn validate_value_shape(
         | ValueDef::SourceCastX
         | ValueDef::SourcePower
         | ValueDef::AffectedManaValue
-        | ValueDef::AffectedColorCount
         | ValueDef::SourceToughness
         | ValueDef::TriggeringObjectPower
         | ValueDef::TriggeringObjectToughness

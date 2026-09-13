@@ -7,6 +7,29 @@
 // parent module's.
 
 impl Game {
+    pub(super) fn static_object_reference(
+        &self,
+        reference: ObjectRefDef,
+        effect_source: GameObjectId,
+    ) -> Option<GameObjectId> {
+        match reference {
+            ObjectRefDef::Source | ObjectRefDef::ResolvingObject => Some(effect_source),
+            ObjectRefDef::AttachedToSource => {
+                self.current_or_last_known_attached_host(effect_source)
+            }
+            ObjectRefDef::CreatingSource => self.creating_source_of(effect_source),
+            ObjectRefDef::AbilityGrantSource
+            | ObjectRefDef::ZoneChangeSuccessor(_)
+            | ObjectRefDef::ZoneChangeResultOfTriggeringObject
+            | ObjectRefDef::Binding(_)
+            | ObjectRefDef::AdditionalCostObject(_)
+            | ObjectRefDef::Target(_)
+            | ObjectRefDef::SourceOfTargetedStackObject(_)
+            | ObjectRefDef::TriggeringObject
+            | ObjectRefDef::DamagedObject => None,
+        }
+    }
+
     fn raw_target_reference(
         slot: TargetIndex,
         object: &StackObject,

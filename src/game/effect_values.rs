@@ -310,8 +310,7 @@ impl Game {
             | ValueDef::DistinctTargets
             | ValueDef::DividedAmongTargets
             | ValueDef::ResolvedRecipientCount
-            | ValueDef::AffectedManaValue
-            | ValueDef::AffectedColorCount => 0,
+            | ValueDef::AffectedManaValue => 0,
             ValueDef::SourceCastX => self
                 .battlefield
                 .iter()
@@ -373,11 +372,11 @@ impl Game {
                     })
                     .unwrap_or(0)
             }
-            ValueDef::TargetColorCount(target) => {
-                Self::chosen_targets(object, scoped.target_slot(target))
-                    .next()
-                    .map_or(0, |target| i32::from(self.target_color_count(target)))
-            }
+            ValueDef::ColorCount(reference) => self
+                .effect_object_reference_id(reference, object, context, scoped)
+                .map_or(0, |referenced| {
+                    i32::from(self.object_color_count(referenced))
+                }),
             ValueDef::TargetManaValue(target) => {
                 Self::chosen_targets(object, scoped.target_slot(target))
                     .find_map(|target| match target {

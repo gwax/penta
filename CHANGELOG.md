@@ -61,9 +61,10 @@ the bot-wire epoch.
   are unchanged.
 
 - Implement Dragonfire Blade with target-dependent equip pricing and hexproof
-  from monocolored. Runtime keyword checkpoints accept the additive
-  `hexproofFromMonocolored` tag; reconstruction still requires the same
-  simulation fingerprint. Existing protocol and checkpoint epochs are unchanged.
+  from monocolored. Composable `ColorCount(ObjectRefDef)` values also replace
+  Civic Saber's affected-color count. Runtime keyword checkpoints accept the
+  additive `hexproofFromMonocolored` tag; reconstruction still requires the
+  same simulation fingerprint. Existing protocol and checkpoint epochs are unchanged.
 
 - Declarative trigger modifiers now suppress or add occurrences caused by
   battlefield entries, deaths, and other departures. Ancient Greenwarden,

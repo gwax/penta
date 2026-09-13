@@ -188,7 +188,7 @@ AbilityDef::activated_with_targets("{1}: Until end of turn, this artifact become
 );
 
 // C17 55 — Ramos, Dragon Engine
-// Audit: unsupported — Needs a value expression for the number of colors in the triggering cast spell's captured characteristics; AffectedColorCount reads a static effect recipient rather than the cast event.
+// Audit: unsupported — Needs a value expression for the number of colors in the triggering cast spell's captured characteristics; ColorCount reads an object's current or last-known colors rather than the cast event snapshot.
 pub(in crate::card::sets) static RAMOS_DRAGON_ENGINE: CardRecord = CardRecord::new(
     "Ramos, Dragon Engine",
     "2e747ef1-a1ad-4859-a70c-3f935f017310",

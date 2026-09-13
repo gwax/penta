@@ -652,7 +652,6 @@ impl HandcraftedPolicy {
             ValueDef::SourceCastX
             | ValueDef::SourcePower
             | ValueDef::AffectedManaValue
-            | ValueDef::AffectedColorCount
             | ValueDef::CardTypesAmongObjects(_)
             | ValueDef::CountObjects(_)
             | ValueDef::ObjectPower(_)
@@ -698,7 +697,7 @@ impl HandcraftedPolicy {
             | ValueDef::TargetLibrarySize(_)
             | ValueDef::LifeTotal(_)
             | ValueDef::StartingLifeTotal
-            | ValueDef::TargetColorCount(_)
+            | ValueDef::ColorCount(_)
             | ValueDef::TargetManaValue(_)
             | ValueDef::IfCreatureDiedThisTurn(_)
             | ValueDef::IfControllerLifeAtMost(_)

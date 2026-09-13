@@ -101,6 +101,10 @@ fn shared_cost_modification(source_zones: &[ZoneKind], modification: CostModific
 fn shared_spell_cost_value(value: ValueDef) -> bool {
     match value {
         ValueDef::Constant(_) | ValueDef::DistinctTargets => true,
+        ValueDef::ColorCount(reference) => matches!(
+            reference,
+            ObjectRefDef::Source | ObjectRefDef::CreatingSource | ObjectRefDef::AttachedToSource
+        ),
         ValueDef::CountMatchingObjects(query) => {
             !query.zones.contains(&ZoneKind::Stack)
                 && shared_static_query(*query)
@@ -777,7 +781,6 @@ fn static_stat_value(value: crate::card::ValueDef) -> bool {
         // Read from the affected object rather than from the effect's own
         // source, which the static power-and-toughness layer has in hand.
         | crate::card::ValueDef::AffectedManaValue
-        | crate::card::ValueDef::AffectedColorCount
         // Read live from every graveyard, which the layer walk can reach
         // without a resolving spell in hand.
         | crate::card::ValueDef::CardTypesAmongGraveyards(_)
@@ -789,6 +792,10 @@ fn static_stat_value(value: crate::card::ValueDef) -> bool {
         // Domain, read live off the lands on the battlefield the same way a
         // battlefield count is.
         | crate::card::ValueDef::BasicLandTypesControlled(_) => true,
+        crate::card::ValueDef::ColorCount(reference) => matches!(
+            reference,
+            ObjectRefDef::Source | ObjectRefDef::CreatingSource | ObjectRefDef::AttachedToSource
+        ),
         crate::card::ValueDef::CountObjects(objects)
         | crate::card::ValueDef::CardTypesAmongObjects(objects) => {
             shared_source_object_set(*objects)

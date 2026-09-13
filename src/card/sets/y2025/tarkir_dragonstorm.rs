@@ -7955,7 +7955,10 @@ pub(in crate::card::sets) static DRAGONFIRE_BLADE: CardRecord = CardRecord::new(
                 "Equip {4}. This ability costs {1} less to activate for each \
                  color of the creature it targets.",
             )
-            .with_activation_cost_reduction(ValueDef::TargetColorCount(TargetIndex::PRIMARY), 0),
+            .with_activation_cost_reduction(
+                ValueDef::ColorCount(ObjectRefDef::Target(TargetIndex::PRIMARY)),
+                0,
+            ),
         ]),
 );
 
