@@ -250,7 +250,7 @@ pub(in crate::card::sets) static ARMORY_GUARD: CardRecord = CardRecord::new(
             EffectDef::ConditionalStatic(ConditionalStaticEffectDef {
                 condition: ObjectSetCountConditionDef {
                     objects: &ObjectSetDef::Query(ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Gate")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Gate")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -1743,7 +1743,7 @@ pub(in crate::card::sets) static OGRE_JAILBREAKER: CardRecord = CardRecord::new(
             EffectDef::ConditionalStatic(ConditionalStaticEffectDef {
                 condition: ObjectSetCountConditionDef {
                     objects: &ObjectSetDef::Query(ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Gate")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Gate")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -1766,7 +1766,7 @@ pub(in crate::card::sets) static OGRE_JAILBREAKER: CardRecord = CardRecord::new(
 
 // RTR 73 — Pack Rat
 static RATS_YOU_CONTROL: ValueDef = ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+    ObjectPredicateDef::Subtype(SubtypeDef::literal("Rat")),
     &[ZoneKind::Battlefield],
     PlayerRelation::You,
 ));
@@ -2675,7 +2675,7 @@ CardRules::new_creature(mana_cost!("{6}{R}{R}"), &["Dragon"], 6, 6).with_abiliti
         AbilityDef::triggered(
             "Whenever a Dragon you control attacks, create a 6/6 red Dragon creature token with flying.",
             TriggerEventDef::attacks(ObjectPredicateDef::All(&[
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dragon")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Dragon")),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
@@ -2976,7 +2976,7 @@ CardRules::new_creature(mana_cost!("{1}{G}"), &["Plant"], 0, 2).with_abilities(&
                             ObjectPredicateDef::HasType(CardType::Land),
                             ObjectPredicateDef::Supertype(CardSupertype::Basic),
                         ]),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Gate")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Gate")),
                     ]),
                     minimum: 0,
                     maximum: ValueDef::Constant(1),

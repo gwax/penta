@@ -82,7 +82,7 @@ pub(in crate::card::sets) static ESSENCE_FLUX_61: CardRecord = CardRecord::new(
     "639bdbb5-8c2d-439d-bcea-dc54da9686ea",
     "Seb McKinnon",
     CardRules::new_instant(mana_cost!("{U}")).with_abilities(&[
-AbilityDef::spell_with_targets("Exile target creature you control, then return that card to the battlefield under its owner's control. If it's a Spirit, put a +1/+1 counter on it.", &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::HasType(CardType::Creature), zones: &[ZoneKind::Battlefield], controller: Some(PlayerRelation::You), owner: None })], EffectDef::ExileLinkedToSource { until_source_leaves: false, object: EffectRecipientDef::Target(TargetIndex::PRIMARY), face_down: false, then: Some(&EffectDef::MoveObjects(MoveObjectsDef { input: ObjectSetDef::LinkedExiles, from: Some(ZoneKind::Exile), zone: ZoneKind::Battlefield, placement: ZonePlacement::Top, moved: Some(Binding!("flux_returned")), then: &EffectDef::ForEachInBinding { objects: Binding!("flux_returned"), binding: Binding!("flux_spirit"), effect: &EffectDef::IfCondition { condition: &TriggerConditionDef::BoundObjectMatches { binding: Binding!("flux_spirit"), object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spirit")) }, then: &EffectDef::AddCounters { object: EffectRecipientDef::objects(ObjectSetDef::One(ObjectRefDef::Binding(Binding!("flux_spirit")))), kind: CounterKind::PlusOnePlusOne, amount: ValueDef::Constant(1) } } } })) })
+AbilityDef::spell_with_targets("Exile target creature you control, then return that card to the battlefield under its owner's control. If it's a Spirit, put a +1/+1 counter on it.", &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::HasType(CardType::Creature), zones: &[ZoneKind::Battlefield], controller: Some(PlayerRelation::You), owner: None })], EffectDef::ExileLinkedToSource { until_source_leaves: false, object: EffectRecipientDef::Target(TargetIndex::PRIMARY), face_down: false, then: Some(&EffectDef::MoveObjects(MoveObjectsDef { input: ObjectSetDef::LinkedExiles, from: Some(ZoneKind::Exile), zone: ZoneKind::Battlefield, placement: ZonePlacement::Top, moved: Some(Binding!("flux_returned")), then: &EffectDef::ForEachInBinding { objects: Binding!("flux_returned"), binding: Binding!("flux_spirit"), effect: &EffectDef::IfCondition { condition: &TriggerConditionDef::BoundObjectMatches { binding: Binding!("flux_spirit"), object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Spirit")) }, then: &EffectDef::AddCounters { object: EffectRecipientDef::objects(ObjectSetDef::One(ObjectRefDef::Binding(Binding!("flux_spirit")))), kind: CounterKind::PlusOnePlusOne, amount: ValueDef::Constant(1) } } } })) })
 ]),
 );
 
@@ -288,7 +288,7 @@ pub(in crate::card::sets) static TIRELESS_TRACKER: CardRecord = CardRecord::new(
         AbilityDef::triggered(
             "Whenever you sacrifice a Clue, put a +1/+1 counter on this creature.",
             TriggerEventDef::Sacrificed {
-                object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Clue")),
+                object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Clue")),
                 player: PlayerRelation::You,
             },
             EffectDef::AddCounters {

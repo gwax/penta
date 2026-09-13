@@ -332,7 +332,7 @@ pub(in crate::card::sets) static DWYNEN_GILT_LEAF_DAEN: CardRecord = CardRecord:
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                             ]),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
@@ -352,7 +352,7 @@ pub(in crate::card::sets) static DWYNEN_GILT_LEAF_DAEN: CardRecord = CardRecord:
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                             ObjectPredicateDef::Attacking,
                         ]),
                         &[ZoneKind::Battlefield],
@@ -381,7 +381,7 @@ pub(in crate::card::sets) static DWYNEN_S_ELITE: CardRecord = CardRecord::new(
                 query: ObjectQueryDef::matching(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                     ]),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,

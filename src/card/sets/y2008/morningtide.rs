@@ -58,8 +58,8 @@ pub(in crate::card::sets) static BALLYRUSH_BANNERET: CardRecord = CardRecord::ne
         abilities::spell_cost_reduction(
             "Kithkin spells and Soldier spells you cast cost {1} less to cast.",
             ObjectPredicateDef::AnyOf(&[
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Kithkin")),
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Soldier")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Kithkin")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Soldier")),
             ]),
             PlayerRelation::You,
             ValueDef::Constant(1),
@@ -189,7 +189,7 @@ pub(in crate::card::sets) static BRAMBLEWOOD_PARAGON_115: CardRecord = CardRecor
     "3910f5b2-17da-41e4-bf40-1c40b513fa12",
     "Jim Murray",
     CardRules::new_creature(mana_cost!("{1}{G}"), &["Elf", "Warrior"], 2, 2).with_abilities(&[
-AbilityDef::replacement_for("Each other Warrior creature you control enters with an additional +1/+1 counter on it.", ReplacementEventDef::ObjectEntersBattlefield { object: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Subtype(SubtypeDef::Literal("Warrior")), ObjectPredicateDef::Not(&ObjectPredicateDef::Source)]), controller: PlayerRelation::You, cast: None }, ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::AddCounters { kind: CounterKind::PlusOnePlusOne, amount: 1 })),
+AbilityDef::replacement_for("Each other Warrior creature you control enters with an additional +1/+1 counter on it.", ReplacementEventDef::ObjectEntersBattlefield { object: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Subtype(SubtypeDef::literal("Warrior")), ObjectPredicateDef::Not(&ObjectPredicateDef::Source)]), controller: PlayerRelation::You, cast: None }, ReplacementEffectDef::ModifyBattlefieldEntry(BattlefieldEntryModificationDef::AddCounters { kind: CounterKind::PlusOnePlusOne, amount: 1 })),
 AbilityDef::static_ability("Each creature you control with a +1/+1 counter on it has trample.", EffectDef::StaticApply { recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::HasCounter(CounterKind::PlusOnePlusOne)]), &[ZoneKind::Battlefield], PlayerRelation::You), effect: AppliedEffectDef::add_ability(&abilities::trample()) })
 ]),
 );
@@ -220,7 +220,7 @@ pub(in crate::card::sets) static THORNBITE_STAFF_145: CardRecord = CardRecord::n
     "Jesper Ejsing",
     CardRules::new_artifact(mana_cost!("{2}")).with_subtypes(&["Shaman", "Equipment"]).with_abilities(&[
 AbilityDef::static_ability("Equipped creature has \"{2}, {T}: This creature deals 1 damage to any target\" and \"Whenever a creature dies, untap this creature.\"", EffectDef::StaticApply { recipient: EffectRecipientDef::AttachedPermanent, effect: AppliedEffectDef::Composite(&[AppliedEffectDef::add_ability(&AbilityDef::activated_with_targets("{2}, {T}: This creature deals 1 damage to any target.", &[CostDef::Mana(mana_cost!("{2}")), CostDef::TapSource], &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)], EffectDef::damage(EffectRecipientDef::Target(TargetIndex::PRIMARY), ValueDef::Constant(1)))), AppliedEffectDef::add_ability(&AbilityDef::triggered("Whenever a creature dies, untap this creature.", TriggerEventDef::zone_changed(ObjectPredicateDef::HasType(CardType::Creature), Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)), EffectDef::Untap { object: EffectRecipientDef::Source }))]) }),
-AbilityDef::triggered("Whenever a Shaman creature enters, you may attach this Equipment to it.", TriggerEventDef::zone_changed(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature),ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shaman"))]), None, Some(ZoneKind::Battlefield)), EffectDef::May { player: EffectRecipientDef::Controller, effect: &EffectDef::Attach { object: EffectRecipientDef::TriggeringObject } }),
+AbilityDef::triggered("Whenever a Shaman creature enters, you may attach this Equipment to it.", TriggerEventDef::zone_changed(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature),ObjectPredicateDef::Subtype(SubtypeDef::literal("Shaman"))]), None, Some(ZoneKind::Battlefield)), EffectDef::May { player: EffectRecipientDef::Controller, effect: &EffectDef::Attach { object: EffectRecipientDef::TriggeringObject } }),
 abilities::equip(&[CostDef::Mana(mana_cost!("{4}"))], "Equip {4}")
 ])
 .with_type(crate::card::CardType::Kindred),

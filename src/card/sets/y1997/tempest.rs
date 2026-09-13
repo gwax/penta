@@ -86,7 +86,7 @@ use crate::mana_cost;
 const fn all_slivers_get(effect: AppliedEffectDef) -> EffectDef {
     EffectDef::StaticApply {
         recipient: EffectRecipientDef::matching_objects(
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Sliver")),
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Sliver")),
             &[ZoneKind::Battlefield],
             PlayerRelation::Any,
         ),
@@ -964,7 +964,7 @@ CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_abilities(&[
                 query: ObjectQueryDef::matching(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Token,
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Reflection")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Reflection")),
                     ]),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
@@ -980,7 +980,7 @@ CardRules::new_enchantment(mana_cost!("{2}{W}{W}")).with_abilities(&[
             "{0}: Destroy target Reflection.",
             &[],
             &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Reflection")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Reflection")),
             )],
             EffectDef::Destroy {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -2860,7 +2860,7 @@ CardRules::new_enchantment(mana_cost!("{B}")).with_abilities(&[
             },
             &TriggerConditionDef::ObjectCount {
                 query: ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Zombie")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
@@ -3607,7 +3607,7 @@ pub(in crate::card::sets) static MOGG_RAIDER: CardRecord = CardRecord::new(
             // "A Goblin", so it can eat itself, which is what makes it a
             // free sacrifice outlet as well as a combat trick.
             &[CostDef::SacrificePermanent {
-                object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")),
                 controller: PlayerRelation::You,
             }],
             &[AbilityTargetDef::exactly_one_permanent(
@@ -4242,7 +4242,7 @@ pub(in crate::card::sets) static ELADAMRI_LORD_OF_LEAVES: CardRecord = CardRecor
                     recipient: EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -4257,7 +4257,7 @@ pub(in crate::card::sets) static ELADAMRI_LORD_OF_LEAVES: CardRecord = CardRecor
                     recipient: EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -4379,7 +4379,7 @@ pub(in crate::card::sets) static FUGITIVE_DRUID: CardRecord = CardRecord::new(
             "Whenever this creature becomes the target of an Aura spell, you draw a card.",
             TriggerEventDef::becomes_targeted(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::Spell,
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Aura")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Aura")),
             ])),
             EffectDef::DrawCards {
                 recipient: EffectRecipientDef::Controller,

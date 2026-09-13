@@ -100,7 +100,7 @@ pub(in crate::card::sets) static ELDRITCH_IMMUNITY_33: CardRecord = CardRecord::
     "Eldritch Immunity",
     "64a63b90-dbd6-4b66-8031-a3e230ada5b9",
     "Carlos Palma Cruchaga",
-    CardRules::new_instant(mana_cost!("{C}")).with_subtypes(&["Eldrazi"]).with_abilities(&[
+    CardRules::new_instant(mana_cost!("{C}")).with_type(CardType::Kindred).with_subtypes(&["Eldrazi"]).with_abilities(&[
 AbilityDef::spell_with_targets("Target creature you control gains protection from each color until end of turn.", &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::HasType(CardType::Creature), zones: &[ZoneKind::Battlefield], controller: Some(PlayerRelation::You), owner: None })], EffectDef::Apply { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), effect: AppliedEffectDef::Composite(&[AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::White)), AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::Blue)), AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::Black)), AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::Red)), AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::Green))]), duration: ResolvedEffectDurationDef::UntilEndOfTurn }),
 abilities::overload(&[CostDef::Mana(mana_cost!("{4}{C}"))], "Overload {4}{C} (You may cast this spell for its overload cost. If you do, change \"target\" in its text to \"each.\")", EffectDef::Apply { recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Creature), &[ZoneKind::Battlefield], PlayerRelation::You), effect: AppliedEffectDef::Composite(&[AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::White)), AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::Blue)), AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::Black)), AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::Red)), AppliedEffectDef::add_ability(&abilities::protection_from_color(ManaColor::Green))]), duration: ResolvedEffectDurationDef::UntilEndOfTurn })
 ]),
@@ -199,7 +199,7 @@ pub(in crate::card::sets) static PYROGOYF: CardRecord = CardRecord::new(
                 // or another" comes to.
                 TriggerEventDef::zone_changed(ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lhurgoyf")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Lhurgoyf")),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ]), None, Some(ZoneKind::Battlefield)),
                 &[AbilityTargetDef::exactly_one(
@@ -225,7 +225,7 @@ pub(in crate::card::sets) static SIEGE_GANG_LIEUTENANT_61: CardRecord = CardReco
     "Warren Mahy",
     CardRules::new_creature(mana_cost!("{3}{R}"), &["Goblin"], 2, 2).with_abilities(&[
 AbilityDef::triggered_if("Lieutenant — At the beginning of combat on your turn, if you control your commander, create two 1/1 red Goblin creature tokens. Those tokens gain haste until end of turn.", TriggerEventDef::StepBegins { step: TurnStepDef::BeginningOfCombat, player: PlayerRelation::You }, &TriggerConditionDef::ObjectCount { query: ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::Commander, ObjectPredicateDef::OwnedBy(PlayerRelation::You)]), &[ZoneKind::Battlefield], PlayerRelation::You), comparison: ComparisonDef::GreaterOrEqual, amount: 1 }, EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::TokenCharacteristics::creature(&["Goblin"], &[ManaColor::Red], 1, 1))).with_count(ValueDef::Constant(2)).with_created_tokens(CreatedTokensDef { binding: Binding!("lieutenant_goblins"), then: &EffectDef::Apply { recipient: EffectRecipientDef::objects(ObjectSetDef::Binding(Binding!("lieutenant_goblins"))), effect: AppliedEffectDef::add_ability(&abilities::haste()), duration: ResolvedEffectDurationDef::UntilEndOfTurn } }))),
-AbilityDef::activated_with_targets("{2}, Sacrifice a Goblin: This creature deals 1 damage to any target.", &[CostDef::Mana(mana_cost!("{2}")), CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")))], &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)], EffectDef::damage(EffectRecipientDef::Target(TargetIndex::PRIMARY), ValueDef::Constant(1)))
+AbilityDef::activated_with_targets("{2}, Sacrifice a Goblin: This creature deals 1 damage to any target.", &[CostDef::Mana(mana_cost!("{2}")), CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")))], &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::AnyTarget)], EffectDef::damage(EffectRecipientDef::Target(TargetIndex::PRIMARY), ValueDef::Constant(1)))
 ]),
 );
 

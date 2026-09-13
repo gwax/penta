@@ -147,7 +147,7 @@ pub(in crate::card::sets) static GOLDSPAN_DRAGON: CardRecord = CardRecord::new(
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                     ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -182,7 +182,7 @@ pub(in crate::card::sets) static MAGDA_BRAZEN_OUTLAW: CardRecord = CardRecord::n
                         // "Other Dwarves you control": Magda pumps the rest of the Dwarves and not
                         // herself, which is the whole reason she is a 2/1 rather than a 3/1.
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dwarf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Dwarf")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -199,7 +199,7 @@ pub(in crate::card::sets) static MAGDA_BRAZEN_OUTLAW: CardRecord = CardRecord::n
                 // Any Dwarf you control becoming tapped, not just an attack: tapping one
                 // for mana or to pay a cost makes a Treasure just the same.
                 TriggerEventDef::tapped(ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dwarf")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Dwarf")),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ])),
                 EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
@@ -210,7 +210,7 @@ pub(in crate::card::sets) static MAGDA_BRAZEN_OUTLAW: CardRecord = CardRecord::n
                 "Sacrifice five Treasures: Search your library for an artifact or Dragon card, put that \
                  card onto the battlefield, then shuffle.",
                 &[CostDef::SacrificePermanents {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")),
                     controller: PlayerRelation::You,
                     count: 5,
                 }],
@@ -219,7 +219,7 @@ pub(in crate::card::sets) static MAGDA_BRAZEN_OUTLAW: CardRecord = CardRecord::n
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::AnyOf(&[
                         ObjectPredicateDef::HasType(CardType::Artifact),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dragon")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Dragon")),
                     ]),
                     minimum: 0,
                     maximum: ValueDef::Constant(1),
@@ -693,7 +693,7 @@ pub(in crate::card::sets) static THE_WORLD_TREE_373: CardRecord = CardRecord::ne
 abilities::enters_tapped(CardType::Land),
 abilities::tap_for(ManaColor::Green),
 AbilityDef::static_ability("As long as you control six or more lands, lands you control have \"{T}: Add one mana of any color.\"", EffectDef::IfCondition { condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef { left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::HasType(CardType::Land), &[ZoneKind::Battlefield], PlayerRelation::You)), comparison: ComparisonDef::GreaterOrEqual, right: ValueDef::Constant(6) }), then: &EffectDef::StaticApply { recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::HasType(CardType::Land), &[ZoneKind::Battlefield], PlayerRelation::You), effect: AppliedEffectDef::add_ability(&AbilityDef::activated_mana("{T}: Add one mana of any color.", &[CostDef::TapSource], EffectDef::AddMana(AddManaEffectDef::choice(&[ManaColor::White, ManaColor::Blue, ManaColor::Black, ManaColor::Red, ManaColor::Green])))) } }),
-AbilityDef::activated("{W}{W}{U}{U}{B}{B}{R}{R}{G}{G}, {T}, Sacrifice this land: Search your library for any number of God cards, put them onto the battlefield, then shuffle.", &[CostDef::Mana(mana_cost!("{W}{W}{U}{U}{B}{B}{R}{R}{G}{G}")), CostDef::TapSource, CostDef::SacrificeSource], EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("God")), minimum: 0, maximum: ValueDef::Constant(255), reveal: false, destination: ZoneKind::Battlefield, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None })
+AbilityDef::activated("{W}{W}{U}{U}{B}{B}{R}{R}{G}{G}, {T}, Sacrifice this land: Search your library for any number of God cards, put them onto the battlefield, then shuffle.", &[CostDef::Mana(mana_cost!("{W}{W}{U}{U}{B}{B}{R}{R}{G}{G}")), CostDef::TapSource, CostDef::SacrificeSource], EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::Subtype(SubtypeDef::literal("God")), minimum: 0, maximum: ValueDef::Constant(255), reveal: false, destination: ZoneKind::Battlefield, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None })
 ]),
 );
 
@@ -711,7 +711,7 @@ pub(in crate::card::sets) static YOUTHFUL_VALKYRIE: CardRecord = CardRecord::new
                 ObjectPredicateDef::All(&[
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Angel")),
                     ]),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ]),

@@ -119,7 +119,7 @@ pub(in crate::card::sets) static EAGLES_OF_THE_NORTH: CardRecord = CardRecord::n
                 "Plainscycling {1} ({1}, Discard this card: Search your library for a Plains card, \
                 reveal it, put it into your hand, then shuffle.)",
                 &[CostDef::Mana(mana_cost!("{1}"))],
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Plains")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Plains")),
             ),
         ]),
 );
@@ -278,7 +278,7 @@ pub(in crate::card::sets) static LORIEN_REVEALED: CardRecord = CardRecord::new(
         abilities::typecycling!(
             "Islandcycling {1} ({1}, Discard this card: Search your library for an Island card, reveal it, put it into your hand, then shuffle.)",
             &[CostDef::Mana(mana_cost!("{1}"))],
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Island")),
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Island")),
         ),
     ]),
 );
@@ -313,7 +313,7 @@ pub(in crate::card::sets) static STERN_SCOLDING: CardRecord = CardRecord::new(
 
 // LTR 103 — Orcish Bowmasters
 static AN_ARMY_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::controlled_by(
-    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+    ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
     &[ZoneKind::Battlefield],
     PlayerSetDef::Related(PlayerRelation::You),
 );
@@ -420,7 +420,7 @@ pub(in crate::card::sets) static TROLL_OF_KHAZAD_DUM: CardRecord = CardRecord::n
                 "Swampcycling {1} ({1}, Discard this card: Search your library for a Swamp card, reveal \
                 it, put it into your hand, then shuffle.)",
                 &[CostDef::Mana(mana_cost!("{1}"))],
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Swamp")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Swamp")),
             ),
         ]),
 );
@@ -504,7 +504,7 @@ pub(in crate::card::sets) static OLIPHAUNT: CardRecord = CardRecord::new(
         abilities::typecycling!(
             "Mountaincycling {1} ({1}, Discard this card: Search your library for a Mountain card, reveal it, put it into your hand, then shuffle.)",
             &[CostDef::Mana(mana_cost!("{1}"))],
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mountain")),
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Mountain")),
         ),
     ]),
 );
@@ -533,7 +533,7 @@ pub(in crate::card::sets) static RALLY_AT_THE_HORNBURG: CardRecord = CardRecord:
             // the turn this resolves.
             EffectDef::Apply {
                 recipient: EffectRecipientDef::matching_objects(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
@@ -584,7 +584,7 @@ CardRules::new_creature(mana_cost!("{5}{G}"), &["Treefolk"], 5, 7).with_abilitie
         abilities::typecycling!(
             "Forestcycling {1} ({1}, Discard this card: Search your library for a Forest card, reveal it, put it into your hand, then shuffle.)",
             &[CostDef::Mana(mana_cost!("{1}"))],
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Forest")),
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Forest")),
         ),
     ]),
 );
@@ -699,7 +699,7 @@ CardRules::new_instant(mana_cost!("{1}{U}{R}")).with_ability(
         // The condition is read as the spell is cast, not as it resolves, so a
         // Wizard that dies in response has already done its work.
         .with_conditional_mode_maximum(ConditionDef::Exists(ObjectQueryDef::controlled_by(
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wizard")),
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Wizard")),
             &[ZoneKind::Battlefield],
             PlayerSetDef::Related(PlayerRelation::You),
         )), 2),
@@ -1018,8 +1018,8 @@ pub(in crate::card::sets) static GLOIN_DWARF_EMISSARY_360: CardRecord = CardReco
     "6d74d1af-5cc6-422e-949c-de9e39b76154",
     "Tomas Duchek",
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Dwarf", "Advisor"], 3, 3).with_supertype(CardSupertype::Legendary).with_abilities(&[
-AbilityDef::triggered("Whenever you cast a historic spell, create a Treasure token. This ability triggers only once each turn. (Artifacts, legendaries, and Sagas are historic.)", TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::Supertype(CardSupertype::Legendary), ObjectPredicateDef::Subtype(SubtypeDef::Literal("Saga"))]), ObjectPredicateDef::ControlledBy(PlayerRelation::You)])), EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::tokens::treasure())))).triggering_at_most(1),
-AbilityDef::activated_with_targets("{T}, Sacrifice a Treasure: Goad target creature. (Until your next turn, that creature attacks each combat if able and attacks a player other than you if able.)", &[CostDef::TapSource, CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")))], &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(CardType::Creature))], EffectDef::Apply { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), effect: AppliedEffectDef::add_ability(&abilities::attacks_each_combat_if_able()), duration: ResolvedEffectDurationDef::UntilYourNextTurn })
+AbilityDef::triggered("Whenever you cast a historic spell, create a Treasure token. This ability triggers only once each turn. (Artifacts, legendaries, and Sagas are historic.)", TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::Supertype(CardSupertype::Legendary), ObjectPredicateDef::Subtype(SubtypeDef::literal("Saga"))]), ObjectPredicateDef::ControlledBy(PlayerRelation::You)])), EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::tokens::treasure())))).triggering_at_most(1),
+AbilityDef::activated_with_targets("{T}, Sacrifice a Treasure: Goad target creature. (Until your next turn, that creature attacks each combat if able and attacks a player other than you if able.)", &[CostDef::TapSource, CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")))], &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(CardType::Creature))], EffectDef::Apply { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), effect: AppliedEffectDef::add_ability(&abilities::attacks_each_combat_if_able()), duration: ResolvedEffectDurationDef::UntilYourNextTurn })
 ]),
 );
 
@@ -1030,7 +1030,7 @@ pub(in crate::card::sets) static MORIA_MARAUDER_362: CardRecord = CardRecord::ne
     "Andrea Piparo",
     CardRules::new_creature(mana_cost!("{R}{R}"), &["Goblin", "Warrior"], 1, 1).with_abilities(&[
 abilities::double_strike(),
-AbilityDef::triggered("Whenever a Goblin or Orc you control deals combat damage to a player, exile the top card of your library. You may play that card this turn.", TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::All(&[ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")), ObjectPredicateDef::Subtype(SubtypeDef::Literal("Orc"))]), ObjectPredicateDef::ControlledBy(PlayerRelation::You)])), EffectDef::ExileTopOfLibraryToPlay { player: EffectRecipientDef::Controller, amount: ValueDef::Constant(1), free: false, face_down: false, duration: ExilePlayDurationDef::ThisTurn, spend_any_color: false, play_condition: None, cast_only: false })
+AbilityDef::triggered("Whenever a Goblin or Orc you control deals combat damage to a player, exile the top card of your library. You may play that card this turn.", TriggerEventDef::combat_damage_to_player(ObjectPredicateDef::All(&[ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")), ObjectPredicateDef::Subtype(SubtypeDef::literal("Orc"))]), ObjectPredicateDef::ControlledBy(PlayerRelation::You)])), EffectDef::ExileTopOfLibraryToPlay { player: EffectRecipientDef::Controller, amount: ValueDef::Constant(1), free: false, face_down: false, duration: ExilePlayDurationDef::ThisTurn, spend_any_color: false, play_condition: None, cast_only: false })
 ]),
 );
 
@@ -1079,7 +1079,7 @@ pub(in crate::card::sets) static MERRY_ESQUIRE_OF_ROHAN_437: CardRecord = CardRe
                     condition: &TriggerConditionDef::ObjectCount {
                         query: ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                                 ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],

@@ -673,7 +673,7 @@ target Treasure you control. You draw a card.",
             &[CostDef::Mana(mana_cost!("{2}{W}"))],
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")),
                     zones: &const { [ZoneKind::Battlefield] },
                     controller: Some(PlayerRelation::You),
                     owner: None,
@@ -1903,7 +1903,7 @@ pub(in crate::card::sets) static CHANCELLOR_OF_TALES: CardRecord = CardRecord::n
             "Whenever you cast an Adventure spell, you may copy it. You \
 may choose new targets for the copy.",
             TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Adventure")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Adventure")),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
             EffectDef::May {
@@ -2459,7 +2459,7 @@ ObjectPredicateDef::HasType(CardType::Sorcery)]
                                                                     },
                                                                 ),
                                                                 ObjectPredicateDef::Subtype(
-                                                                    SubtypeDef::Literal("Faerie"),
+                                                                    SubtypeDef::literal("Faerie"),
                                                                 ),
                                                             ]
                                                         },
@@ -2569,7 +2569,7 @@ additional {1} for each Faerie you control.",
             &SumValueDef::new(
                 ValueDef::Constant(2),
                 ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Faerie")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Faerie")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 )),
@@ -3006,7 +3006,7 @@ pub(in crate::card::sets) static BARROW_NAUGHTY: CardRecord = CardRecord::new(
                     query: ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Faerie")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Faerie")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
@@ -3196,7 +3196,7 @@ a Faerie, exile a card from your hand.",
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::Not(&TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Faerie")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Faerie")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -3605,7 +3605,7 @@ target card from an opponent's graveyard.",
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Rat")),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ]),
@@ -4139,7 +4139,7 @@ life.\")",
             "{2}, Sacrifice a Food: Target player loses 2 life.",
             &[
                 CostDef::Mana(mana_cost!("{2}")),
-                CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::literal(
                     "Food",
                 ))),
             ],
@@ -4218,7 +4218,7 @@ put into a graveyard, each opponent loses 1 life.)",
                     token: WICKED_ROLE,
                     host: Some(EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Rat")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),
@@ -5370,7 +5370,7 @@ until end of turn.",
             TriggerEventDef::BecomesBlocked(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Rat")),
                 ]),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
@@ -6131,7 +6131,7 @@ turn. Activate only once each turn.",
                     [
                         CostDef::Mana(mana_cost!("{1}")),
                         CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(
-                            SubtypeDef::Literal("Food"),
+                            SubtypeDef::literal("Food"),
                         )),
                     ]
                 },
@@ -6302,7 +6302,7 @@ life.\")",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                     ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Food")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Food")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -6328,12 +6328,12 @@ you control. Activate only as a sorcery.",
                 )),
                 effect: AppliedEffectDef::modify_power_toughness(
                     ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Food")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Food")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
                     ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Food")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Food")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -6638,7 +6638,7 @@ pub(in crate::card::sets) static TANGLESPAN_LOOKOUT: CardRecord = CardRecord::ne
             "Whenever an Aura you control enters, draw a card.",
             TriggerEventDef::zone_changed(
                 ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Aura")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Aura")),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ]),
                 None,
@@ -6969,7 +6969,7 @@ where X is one plus the number of Foods you control.",
                     amount: ValueDef::Sum(&SumValueDef::new(
                         ValueDef::Constant(1),
                         ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Food")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Food")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -7060,7 +7060,7 @@ Reflection in addition to its other types, and has haste.",
                 "III — Sacrifice all Reflections you control.",
                 EffectDef::sacrifice(EffectRecipientDef::objects(ObjectSetDef::Query(
                     ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Reflection")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Reflection")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -7110,7 +7110,7 @@ as a sorcery.",
             &[
                 CostDef::Mana(mana_cost!("{1}")),
                 CostDef::sacrifice_permanent(ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Aura")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Aura")),
                     ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source),
                 ])),
             ],
@@ -7169,7 +7169,7 @@ with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
 creature. Activate only as a sorcery.",
                 &[
                     CostDef::Mana(mana_cost!("{G}")),
-                    CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                    CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::literal(
                         "Food",
                     ))),
                 ],
@@ -7187,7 +7187,7 @@ creature. Activate only as a sorcery.",
                 "{1}{B}, Sacrifice a Food: You draw a card and you lose 1 life.",
                 &[
                     CostDef::Mana(mana_cost!("{1}{B}")),
-                    CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                    CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::literal(
                         "Food",
                     ))),
                 ],
@@ -7341,7 +7341,7 @@ loses 1 life.",
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Faerie")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Faerie")),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ]),
@@ -7514,7 +7514,7 @@ until end of turn.",
                     AbilityTargetPredicate::Object {
                         object: ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Rat")),
                             ObjectPredicateDef::Attacking,
                         ]),
                         zones: &const { [ZoneKind::Battlefield] },
@@ -7598,7 +7598,7 @@ a sorcery.",
                             &ObjectSetCountConditionDef {
                                 objects: &ObjectSetDef::MatchingBinding {
                                     binding: crate::Binding!("copy"),
-                                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal(
                                         "Aura",
                                     )),
                                 },
@@ -8074,10 +8074,10 @@ Equipment attached to Kellan.",
                                                             &const {
                                                                 [
                                                                     ObjectPredicateDef::Subtype(
-                                                                        SubtypeDef::Literal("Aura"),
+                                                                        SubtypeDef::literal("Aura"),
                                                                     ),
                                                                     ObjectPredicateDef::Subtype(
-                                                                        SubtypeDef::Literal(
+                                                                        SubtypeDef::literal(
                                                                             "Equipment",
                                                                         ),
                                                                     ),
@@ -8119,8 +8119,8 @@ put it into your hand, then shuffle.",
                         object: ObjectPredicateDef::AnyOf(
                             &const {
                                 [
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Aura")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Aura")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                                 ]
                             },
                         ),
@@ -9785,7 +9785,7 @@ pub(in crate::card::sets) static STORYTELLER_PIXIE: CardRecord = CardRecord::new
         AbilityDef::triggered(
             "Whenever you cast an Adventure spell, draw a card.",
             TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Adventure")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Adventure")),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
             abilities::draw_cards(ValueDef::Constant(1)),
@@ -9812,7 +9812,7 @@ life.\")",
             "Whenever you sacrifice a Food, create a 1/1 black Rat \
 creature token with \"This token can't block.\"",
             TriggerEventDef::Sacrificed {
-                object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Food")),
+                object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Food")),
                 player: PlayerRelation::You,
             },
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
@@ -9974,7 +9974,7 @@ creature gains trample until end of turn.",
                     condition: &TriggerConditionDef::ObjectCount {
                         query: ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Rat")),
                                 ObjectPredicateDef::Attacking,
                             ]),
                             &[ZoneKind::Battlefield],
@@ -10022,7 +10022,7 @@ gets +2/+0 until end of turn.",
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ObjectCount {
                         query: ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Rat")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),
@@ -10032,7 +10032,7 @@ gets +2/+0 until end of turn.",
                     then: &EffectDef::Apply {
                         recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                             ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Rat")),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
                             ),
@@ -10121,7 +10121,7 @@ end of turn.",
                 TriggerEventDef::attacks(ObjectPredicateDef::Source),
                 EffectDef::PayOr(PayOrDef::optional(
                     &[CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(
-                        SubtypeDef::Literal("Food"),
+                        SubtypeDef::literal("Food"),
                     ))],
                     &EffectDef::Apply {
                         recipient: EffectRecipientDef::objects(ObjectSetDef::Query(

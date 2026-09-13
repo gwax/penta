@@ -193,7 +193,7 @@ pub(in crate::card::sets) static AGENT_PHIL_COULSON: CardRecord = CardRecord::ne
                     object: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Hero")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Hero")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -312,7 +312,7 @@ pub(in crate::card::sets) static CAPTAIN_AMERICA_WINGS_OF_FREEDOM: CardRecord = 
                     recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Hero")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Hero")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -432,7 +432,7 @@ pub(in crate::card::sets) static HERO_IN_TRAINING: CardRecord = CardRecord::new(
                     condition: &TriggerConditionDef::ObjectCount {
                         query: ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Hero")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Hero")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -636,7 +636,7 @@ pub(in crate::card::sets) static ORIGIN_OF_THE_AVENGERS: CardRecord = CardRecord
                     chooser: PlayerRefDef::EffectController,
                     candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Hero")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Hero")),
                             ObjectPredicateDef::HasType(CardType::Creature),
                             ObjectPredicateDef::ManaValueAtMost(3),
                         ]),
@@ -2044,7 +2044,7 @@ pub(in crate::card::sets) static CROSSBONES_MALICIOUS_MERCENARY: CardRecord = Ca
             TriggerEventDef::zone_changed(
                 ObjectPredicateDef::All(&[
                     ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -2107,7 +2107,7 @@ pub(in crate::card::sets) static DECOY_PLOY: CardRecord = CardRecord::new(
                 "Return target Villain card from your graveyard to your hand.",
                 &[AbilityTargetDef::exactly_one(
                     AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                         zones: &[ZoneKind::Graveyard],
                         controller: None,
                         owner: Some(PlayerRelation::You),
@@ -2123,7 +2123,7 @@ pub(in crate::card::sets) static DECOY_PLOY: CardRecord = CardRecord::new(
                 "Return target Hero card from your graveyard to your hand.",
                 &[AbilityTargetDef::exactly_one(
                     AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Hero")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Hero")),
                         zones: &[ZoneKind::Graveyard],
                         controller: None,
                         owner: Some(PlayerRelation::You),
@@ -2172,7 +2172,7 @@ pub(in crate::card::sets) static DOCTOR_DOOM: CardRecord = CardRecord::new(
                                 ObjectPredicateDef::HasType(CardType::Artifact),
                                 ObjectPredicateDef::HasType(CardType::Creature),
                             ]),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Plan")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Plan")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
@@ -2424,7 +2424,7 @@ pub(in crate::card::sets) static THE_MASTERS_OF_EVIL: CardRecord = CardRecord::n
                     recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -2441,7 +2441,7 @@ pub(in crate::card::sets) static THE_MASTERS_OF_EVIL: CardRecord = CardRecord::n
                 "{1}{B}, Discard this card: Search your library for a Plan \
                  card, reveal it, put it into your hand, then shuffle.",
                 &[CostDef::Mana(mana_cost!("{1}{B}"))],
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Plan"))
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Plan"))
             ),
         ]),
 );
@@ -2790,7 +2790,7 @@ pub(in crate::card::sets) static VISIONS_OF_VILLAINY: CardRecord = CardRecord::n
             "This spell costs {1} less to cast if you control a Villain.",
             ValueDef::IfMatchingObjectCount(&CountConditionDef {
                 query: ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
@@ -2830,7 +2830,7 @@ pub(in crate::card::sets) static WHIPLASH_VENGEFUL_ENGINEER: CardRecord = CardRe
                 &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                     left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                             ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -2844,7 +2844,7 @@ pub(in crate::card::sets) static WHIPLASH_VENGEFUL_ENGINEER: CardRecord = CardRe
                         recipient: EffectRecipientDef::Opponent,
                         amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                                 ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -2855,7 +2855,7 @@ pub(in crate::card::sets) static WHIPLASH_VENGEFUL_ENGINEER: CardRecord = CardRe
                         recipient: EffectRecipientDef::Controller,
                         amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                                 ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -2891,7 +2891,7 @@ pub(in crate::card::sets) static YELLOWJACKET_HEARTLESS_MARAUDER: CardRecord = C
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -3179,7 +3179,7 @@ pub(in crate::card::sets) static HYDRA_ASSAULT_ROBOT: CardRecord = CardRecord::n
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ObjectPredicateDef::AnyOf(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                             ObjectPredicateDef::HasType(CardType::Artifact),
                         ]),
                     ]),
@@ -3499,7 +3499,7 @@ pub(in crate::card::sets) static TRUCK_TOSS: CardRecord = CardRecord::new(
             "This spell costs {2} less to cast if you control a Vehicle.",
             ValueDef::IfMatchingObjectCount(&CountConditionDef {
                 query: ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Vehicle")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Vehicle")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
@@ -4267,7 +4267,7 @@ pub(in crate::card::sets) static RICK_JONES_DESTINED_SIDEKICK: CardRecord = Card
                     candidates: ObjectSetDef::Matching {
                         objects: &ObjectSetDef::Binding(crate::Binding!("milled")),
                         object: ObjectSetFilterDef::Predicate(&ObjectPredicateDef::AnyOf(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Hero")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Hero")),
                             ObjectPredicateDef::HasType(CardType::Enchantment),
                         ])),
                     },
@@ -4478,7 +4478,7 @@ pub(in crate::card::sets) static THE_UNBEATABLE_SQUIRREL_GIRL: CardRecord = Card
             EffectDef::CreateToken(
                 CreateTokenDef::new(TokenDef::Literal(SQUIRREL_TOKEN)).with_count(
                     ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Squirrel")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -4553,7 +4553,7 @@ pub(in crate::card::sets) static WAKANDAN_ROYAL_GUARD: CardRecord = CardRecord::
                     condition: &TriggerConditionDef::TargetMatches {
                         slot: TargetIndex::PRIMARY,
                         object: ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Hero")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Hero")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                     },
@@ -4625,7 +4625,7 @@ pub(in crate::card::sets) static ABSORBING_MAN: CardRecord = CardRecord::new(
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Enchantment),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(
-                                    SubtypeDef::Literal("Aura"),
+                                    SubtypeDef::literal("Aura"),
                                 )),
                             ]),
                             ObjectPredicateDef::HasType(CardType::Land),
@@ -4791,7 +4791,7 @@ pub(in crate::card::sets) static AVENGERS_UNDER_SIEGE: CardRecord = CardRecord::
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(
-                                    SubtypeDef::Literal("Villain"),
+                                    SubtypeDef::literal("Villain"),
                                 )),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -4811,7 +4811,7 @@ pub(in crate::card::sets) static AVENGERS_UNDER_SIEGE: CardRecord = CardRecord::
                 EffectDef::CreateToken(
                     CreateTokenDef::new(TokenDef::Literal(TREASURE_TOKEN)).with_count(
                         ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -4842,7 +4842,7 @@ pub(in crate::card::sets) static BLACK_PANTHER_VANGUARD: CardRecord = CardRecord
             TriggerEventDef::zone_changed(
                 ObjectPredicateDef::All(&[
                     ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Hero")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Hero")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
                     ]),
@@ -5065,7 +5065,7 @@ pub(in crate::card::sets) static DAREDEVIL_MAN_WITHOUT_FEAR: CardRecord = CardRe
                                             crate::Binding!("top"),
                                         ),
                                         predicate: ObjectSetPredicateDef::contains(
-                                            &ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                                            &ObjectPredicateDef::Subtype(SubtypeDef::literal(
                                                 "Hero",
                                             )),
                                         ),
@@ -5258,7 +5258,7 @@ pub(in crate::card::sets) static MADAME_HYDRA: CardRecord = CardRecord::new(
              creature token with menace. (It can't be blocked except by \
              two or more creatures.)",
             TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(VILLAIN_TOKEN))),
@@ -5322,7 +5322,7 @@ pub(in crate::card::sets) static THE_MIGHTY_THOR_JANE_FOSTER: CardRecord = CardR
                 "Whenever an Equipment you control enters, draw a card.",
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ]),
                     None,

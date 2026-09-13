@@ -203,7 +203,7 @@ pub(in crate::card::sets) static AUNT_MAY: CardRecord = CardRecord::new(
                     condition: &TriggerConditionDef::ObjectSetCount(&ObjectSetCountConditionDef {
                         objects: &ObjectSetDef::One(ObjectRefDef::TriggeringObject),
                         predicate: ObjectSetPredicateDef::contains(&ObjectPredicateDef::Subtype(
-                            SubtypeDef::Literal("Spider"),
+                            SubtypeDef::literal("Spider"),
                         )),
                     }),
                     then: &EffectDef::AddCounters {
@@ -463,7 +463,7 @@ pub(in crate::card::sets) static RENT_IS_DUE: CardRecord = CardRecord::new(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::AnyOf(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")),
                         ]),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Tapped),
                     ]),
@@ -486,7 +486,7 @@ pub(in crate::card::sets) static RENT_IS_DUE: CardRecord = CardRecord::new(
                                 ObjectPredicateDef::All(&[
                                     ObjectPredicateDef::AnyOf(&[
                                         ObjectPredicateDef::HasType(CardType::Creature),
-                                        ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                                        ObjectPredicateDef::Subtype(SubtypeDef::literal(
                                             "Treasure",
                                         )),
                                     ]),
@@ -771,7 +771,7 @@ pub(in crate::card::sets) static THWIP: CardRecord = CardRecord::new(
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::TargetMatches {
                     slot: TargetIndex::PRIMARY,
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
                 },
                 then: &EffectDef::GainLife {
                     recipient: EffectRecipientDef::Controller,
@@ -1015,7 +1015,7 @@ pub(in crate::card::sets) static DOC_OCK_SINISTER_SCIENTIST: CardRecord = CardRe
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -1085,7 +1085,7 @@ pub(in crate::card::sets) static FLYING_OCTOBOT: CardRecord = CardRecord::new(
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -1265,7 +1265,7 @@ pub(in crate::card::sets) static MADAME_WEB_CLAIRVOYANT: CardRecord = CardRecord
                         restriction: PlayRestrictionDef::new(
                             PlayActionMatcherDef::CastSpell,
                             ObjectPredicateDef::AnyOf(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(
                                     CardType::Creature,
                                 )),
@@ -1317,7 +1317,7 @@ pub(in crate::card::sets) static MYSTERIO_MASTER_OF_ILLUSION: CardRecord = CardR
                 )))
                 .with_count(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
                     ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
                     ]),
                     &[ZoneKind::Battlefield],
@@ -2265,7 +2265,7 @@ pub(in crate::card::sets) static THE_SPOT_S_PORTAL: CardRecord = CardRecord::new
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::Not(&TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -2303,7 +2303,7 @@ pub(in crate::card::sets) static TOMBSTONE_CAREER_CRIMINAL: CardRecord = CardRec
                  graveyard to your hand.",
                 &[AbilityTargetDef::exactly_one(
                     AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                         zones: &[ZoneKind::Graveyard],
                         controller: None,
                         owner: Some(PlayerRelation::You),
@@ -2318,7 +2318,7 @@ pub(in crate::card::sets) static TOMBSTONE_CAREER_CRIMINAL: CardRecord = CardRec
             AbilityDef::static_ability(
                 "Villain spells you cast cost {1} less to cast.",
                 EffectDef::ModifyCost(CostModificationDef::reduce_spell(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                     PlayerRelation::You,
                     ValueDef::Constant(1),
                 )),
@@ -2390,7 +2390,7 @@ pub(in crate::card::sets) static VENOM_S_HUNGER: CardRecord = CardRecord::new(
             "This spell costs {2} less to cast if you control a Villain.",
             ValueDef::IfMatchingObjectCount(&CountConditionDef {
                 query: ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
@@ -2599,7 +2599,7 @@ pub(in crate::card::sets) static MOLTEN_MAN_INFERNO_INCARNATE: CardRecord = Card
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mountain")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Mountain")),
                         ObjectPredicateDef::Supertype(CardSupertype::Basic),
                     ]),
                     minimum: 0,
@@ -2620,12 +2620,12 @@ pub(in crate::card::sets) static MOLTEN_MAN_INFERNO_INCARNATE: CardRecord = Card
                     recipient: EffectRecipientDef::Source,
                     effect: AppliedEffectDef::modify_power_toughness(
                         ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mountain")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Mountain")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
                         ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mountain")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Mountain")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -2976,7 +2976,7 @@ pub(in crate::card::sets) static EZEKIEL_SIMS_SPIDER_TOTEM: CardRecord = CardRec
                 },
                 &[AbilityTargetDef::exactly_one(
                     AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
                         zones: &[ZoneKind::Battlefield],
                         controller: Some(PlayerRelation::You),
                         owner: None,
@@ -3019,7 +3019,7 @@ pub(in crate::card::sets) static GUY_IN_THE_CHAIR: CardRecord = CardRecord::new(
              Spider. Activate only as a sorcery.",
             &[CostDef::Mana(mana_cost!("{2}{G}")), CostDef::TapSource],
             &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
             )],
             EffectDef::AddCounters {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -3294,8 +3294,8 @@ pub(in crate::card::sets) static RADIOACTIVE_SPIDER: CardRecord = CardRecord::ne
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Hero")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Hero")),
                 ]),
                 minimum: 0,
                 maximum: ValueDef::Constant(1),
@@ -3487,24 +3487,24 @@ pub(in crate::card::sets) static SPIDER_HAM_PETER_PORKER: CardRecord = CardRecor
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                                 ObjectPredicateDef::AnyOf(&[
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Boar")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bat")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bear")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Cat")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dog")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Frog")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Jackal")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lizard")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mouse")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Otter")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rabbit")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Raccoon")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Squirrel")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Turtle")),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wolf")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Boar")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Bat")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Bear")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Bird")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Cat")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Dog")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Frog")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Jackal")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Lizard")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Mouse")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Otter")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Rabbit")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Raccoon")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Rat")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Squirrel")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Turtle")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Wolf")),
                                 ]),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -3782,7 +3782,7 @@ pub(in crate::card::sets) static WALL_CRAWL: CardRecord = CardRecord::new(
                 EffectDef::GainLife {
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -3795,7 +3795,7 @@ pub(in crate::card::sets) static WALL_CRAWL: CardRecord = CardRecord::new(
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                     ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -3933,7 +3933,7 @@ pub(in crate::card::sets) static COSMIC_SPIDER_MAN: CardRecord = CardRecord::new
                 recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                     ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -4055,7 +4055,7 @@ pub(in crate::card::sets) static MARY_JANE_WATSON: CardRecord = CardRecord::new(
              ability triggers only once each turn.",
             TriggerEventDef::zone_changed(
                 ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ]),
                 None,
@@ -4200,7 +4200,7 @@ pub(in crate::card::sets) static PROWLER_CLAWED_THIEF: CardRecord = CardRecord::
             TriggerEventDef::zone_changed(
                 ObjectPredicateDef::All(&[
                     ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -4661,8 +4661,8 @@ pub(in crate::card::sets) static SUN_SPIDER_NIMBLE_WEBBER: CardRecord = CardReco
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::AnyOf(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Aura")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Aura")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                     ]),
                     minimum: 0,
                     maximum: ValueDef::Constant(1),
@@ -4728,7 +4728,7 @@ pub(in crate::card::sets) static VULTURE_SCHEMING_SCAVENGER: CardRecord = CardRe
                 recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                     ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Villain")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Villain")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -5005,7 +5005,7 @@ pub(in crate::card::sets) static LIVING_BRAIN_MECHANICAL_MARVEL: CardRecord = Ca
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Artifact),
-                        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::literal(
                             "Equipment",
                         ))),
                     ]),
@@ -5237,7 +5237,7 @@ pub(in crate::card::sets) static SPIDER_SLAYER_HATRED_HONED: CardRecord = CardRe
                     kind: DamageKindDef::Any,
                     source: DamageSourceMatcherDef::Matching(ObjectPredicateDef::Source),
                     recipient: DamageRecipientMatcherDef::MatchingObject(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
                     ),
                 }),
                 EffectDef::Destroy {

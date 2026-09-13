@@ -243,7 +243,7 @@ pub(in crate::card::sets) static IPNU_RIVULET_180: CardRecord = CardRecord::new(
     CardRules::new_land(&["Desert"]).with_abilities(&[
 abilities::tap_for(ManaColor::Colorless),
 AbilityDef::activated_mana("{T}, Pay 1 life: Add {U}.", &[CostDef::TapSource, CostDef::PayLife(1)], EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Blue))),
-AbilityDef::activated_with_targets("{1}{U}, {T}, Sacrifice a Desert: Target player mills four cards. (They put the top four cards of their library into their graveyard.)", &[CostDef::Mana(mana_cost!("{1}{U}")), CostDef::TapSource, CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal("Desert")))], &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(PlayerRelation::Any))], EffectDef::Mill { player: EffectRecipientDef::Target(TargetIndex::PRIMARY), amount: ValueDef::Constant(4) })
+AbilityDef::activated_with_targets("{1}{U}, {T}, Sacrifice a Desert: Target player mills four cards. (They put the top four cards of their library into their graveyard.)", &[CostDef::Mana(mana_cost!("{1}{U}")), CostDef::TapSource, CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::literal("Desert")))], &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(PlayerRelation::Any))], EffectDef::Mill { player: EffectRecipientDef::Target(TargetIndex::PRIMARY), amount: ValueDef::Constant(4) })
 ]),
 );
 
@@ -264,7 +264,7 @@ pub(in crate::card::sets) static RAMUNAP_RUINS_181: CardRecord = CardRecord::new
             &[
                 CostDef::Mana(mana_cost!("{2}{R}{R}")),
                 CostDef::TapSource,
-                CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::literal(
                     "Desert",
                 ))),
             ],
@@ -285,7 +285,7 @@ pub(in crate::card::sets) static SCAVENGER_GROUNDS_182: CardRecord = CardRecord:
             &[
                 CostDef::Mana(mana_cost!("{2}")),
                 CostDef::TapSource,
-                CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::literal(
                     "Desert",
                 ))),
             ],

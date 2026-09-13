@@ -1564,7 +1564,7 @@ pub(in crate::card::sets) static ELDRAZI_LINEBREAKER: CardRecord = CardRecord::n
                     AppliedEffectDef::add_ability(&abilities::haste()),
                     AppliedEffectDef::modify_power_toughness(
                         ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Eldrazi")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Eldrazi")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -1998,7 +1998,7 @@ pub(in crate::card::sets) static HORRIFIC_ASSAULT: CardRecord = CardRecord::new(
                 // damage may itself be the Eldrazi being counted.
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Eldrazi")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Eldrazi")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -2422,7 +2422,7 @@ pub(in crate::card::sets) static OBSTINATE_GARGOYLE_195: CardRecord = CardRecord
     "40cf39f2-7382-405d-a14b-7eb8726cd38a",
     "Craig J Spearing",
     CardRules::new_artifact_creature(mana_cost!("{1}{W}{B}"), &["Gargoyle"], 2, 2).with_abilities(&[
-AbilityDef::static_ability("This creature has flying as long as it's modified. (Equipment, Auras you control, and counters are modifications.)", EffectDef::IfCondition { condition: &TriggerConditionDef::AnyOf(&[TriggerConditionDef::SourceMatches { object: ObjectPredicateDef::HasAnyCounter }, TriggerConditionDef::ValueComparison(&ValueComparisonDef { left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")), ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source)]), &[ZoneKind::Battlefield], PlayerRelation::Any)), comparison: ComparisonDef::Greater, right: ValueDef::Constant(0) }), TriggerConditionDef::ValueComparison(&ValueComparisonDef { left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::Subtype(SubtypeDef::Literal("Aura")), ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source)]), &[ZoneKind::Battlefield], PlayerRelation::You)), comparison: ComparisonDef::Greater, right: ValueDef::Constant(0) })]), then: &EffectDef::StaticApply { recipient: EffectRecipientDef::Source, effect: AppliedEffectDef::add_ability(&abilities::flying()) } }),
+AbilityDef::static_ability("This creature has flying as long as it's modified. (Equipment, Auras you control, and counters are modifications.)", EffectDef::IfCondition { condition: &TriggerConditionDef::AnyOf(&[TriggerConditionDef::SourceMatches { object: ObjectPredicateDef::HasAnyCounter }, TriggerConditionDef::ValueComparison(&ValueComparisonDef { left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")), ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source)]), &[ZoneKind::Battlefield], PlayerRelation::Any)), comparison: ComparisonDef::Greater, right: ValueDef::Constant(0) }), TriggerConditionDef::ValueComparison(&ValueComparisonDef { left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::Subtype(SubtypeDef::literal("Aura")), ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::Source)]), &[ZoneKind::Battlefield], PlayerRelation::You)), comparison: ComparisonDef::Greater, right: ValueDef::Constant(0) })]), then: &EffectDef::StaticApply { recipient: EffectRecipientDef::Source, effect: AppliedEffectDef::add_ability(&abilities::flying()) } }),
 abilities::persist()
 ]),
 );
@@ -2583,7 +2583,7 @@ pub(in crate::card::sets) static WRITHING_CHRYSALIS: CardRecord = CardRecord::ne
                 "Whenever you sacrifice another Eldrazi, put a +1/+1 counter on this creature.",
                 TriggerEventDef::Sacrificed {
                     object: ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Eldrazi")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Eldrazi")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
                     player: PlayerRelation::You,
@@ -3107,11 +3107,11 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
                             TriggerEventDef::zone_changed(
                                 // The Cats that matter are the other ones: Ajani dying alongside them does
                                 // not turn him over, and neither does his own death.
-                                ObjectPredicateDef::All(&[
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Cat")),
+                                ObjectPredicateDef::All(&const { [
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Cat")),
                                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                                ]),
+                                ] }),
                                 Some(ZoneKind::Battlefield),
                                 Some(ZoneKind::Graveyard),
                             ),
@@ -3153,7 +3153,7 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
                             &[CostDef::Loyalty(2)],
                             EffectDef::AddCounters {
                                 object: EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::matching(
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Cat")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Cat")),
                                     &[ZoneKind::Battlefield],
                                     PlayerRelation::You,
                                 ))),

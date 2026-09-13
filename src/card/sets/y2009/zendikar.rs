@@ -840,7 +840,7 @@ pub(in crate::card::sets) static WARREN_INSTIGATOR_154: CardRecord = CardRecord:
     "Andrew Robinson",
     CardRules::new_creature(mana_cost!("{R}{R}"), &["Goblin", "Berserker"], 1, 1).with_abilities(&[
 abilities::double_strike(),
-AbilityDef::triggered("Whenever this creature deals damage to an opponent, you may put a Goblin creature card from your hand onto the battlefield.", TriggerEventDef::damage_to_player(ObjectPredicateDef::Source, PlayerRelation::Opponent), EffectDef::Choose(ChooseDef { binding: ObjectChoiceBindingDef::Objects(ParentBinding), unchosen: None, chooser: PlayerRefDef::EffectController, candidates: ObjectSetDef::Query(ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature),ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin"))]), &[ZoneKind::Hand], PlayerRelation::You)), exclude: None, minimum: 0, maximum: 1, visibility: ChoiceVisibilityDef::Private, then: &EffectDef::move_to_zone(EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)), ZoneKind::Battlefield, ZonePlacement::Top) }))
+AbilityDef::triggered("Whenever this creature deals damage to an opponent, you may put a Goblin creature card from your hand onto the battlefield.", TriggerEventDef::damage_to_player(ObjectPredicateDef::Source, PlayerRelation::Opponent), EffectDef::Choose(ChooseDef { binding: ObjectChoiceBindingDef::Objects(ParentBinding), unchosen: None, chooser: PlayerRefDef::EffectController, candidates: ObjectSetDef::Query(ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature),ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin"))]), &[ZoneKind::Hand], PlayerRelation::You)), exclude: None, minimum: 0, maximum: 1, visibility: ChoiceVisibilityDef::Private, then: &EffectDef::move_to_zone(EffectRecipientDef::objects(ObjectSetDef::Binding(ParentBinding)), ZoneKind::Battlefield, ZonePlacement::Top) }))
 ]),
 );
 
@@ -1001,8 +1001,8 @@ CardRules::new_artifact(mana_cost!("{1}"))
                     recipient: EffectRecipientDef::AttachedPermanent,
                     effect: AppliedEffectDef::Rule(AppliedRuleDef::cannot_be_blocked_by(
                         ObjectPredicateDef::AnyOf(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Vampire")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Vampire")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Zombie")),
                         ]),
                     )),
                 },

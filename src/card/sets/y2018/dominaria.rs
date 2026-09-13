@@ -236,7 +236,7 @@ pub(in crate::card::sets) static LYRA_DAWNBRINGER: CardRecord = CardRecord::new(
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Angel")),
                             ]),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
@@ -261,7 +261,7 @@ pub(in crate::card::sets) static TESHAR_ANCESTOR_S_APOSTLE_36: CardRecord = Card
     "Even Amundsen",
     CardRules::new_creature(mana_cost!("{3}{W}"), &["Bird", "Cleric"], 2, 2).with_supertype(CardSupertype::Legendary).with_abilities(&[
 abilities::flying(),
-AbilityDef::triggered_with_targets("Whenever you cast a historic spell, return target creature card with mana value 3 or less from your graveyard to the battlefield. (Artifacts, legendaries, and Sagas are historic.)", TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::Supertype(CardSupertype::Legendary), ObjectPredicateDef::Subtype(SubtypeDef::Literal("Saga"))]), ObjectPredicateDef::ControlledBy(PlayerRelation::You)])), &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::ManaValueAtMost(3)]), zones: &[ZoneKind::Graveyard], controller: None, owner: Some(PlayerRelation::You) })], EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY), ZoneKind::Battlefield, ZonePlacement::Top))
+AbilityDef::triggered_with_targets("Whenever you cast a historic spell, return target creature card with mana value 3 or less from your graveyard to the battlefield. (Artifacts, legendaries, and Sagas are historic.)", TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Artifact), ObjectPredicateDef::Supertype(CardSupertype::Legendary), ObjectPredicateDef::Subtype(SubtypeDef::literal("Saga"))]), ObjectPredicateDef::ControlledBy(PlayerRelation::You)])), &[AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object { object: ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::ManaValueAtMost(3)]), zones: &[ZoneKind::Graveyard], controller: None, owner: Some(PlayerRelation::You) })], EffectDef::move_to_zone(EffectRecipientDef::Target(TargetIndex::PRIMARY), ZoneKind::Battlefield, ZonePlacement::Top))
 ]),
 );
 
@@ -281,7 +281,7 @@ pub(in crate::card::sets) static TEMPEST_DJINN: CardRecord = CardRecord::new(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Land),
                             ObjectPredicateDef::Supertype(CardSupertype::Basic),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Island")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Island")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
@@ -660,7 +660,7 @@ pub(in crate::card::sets) static TRAXOS_SCOURGE_OF_KROOG_234: CardRecord = CardR
                     ObjectPredicateDef::AnyOf(&[
                         ObjectPredicateDef::HasType(CardType::Artifact),
                         ObjectPredicateDef::Supertype(CardSupertype::Legendary),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Saga")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Saga")),
                     ]),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ])),
@@ -709,7 +709,7 @@ pub(in crate::card::sets) static CABAL_STRONGHOLD_238: CardRecord = CardRecord::
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Land),
                             ObjectPredicateDef::Supertype(CardSupertype::Basic),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Swamp")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Swamp")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,

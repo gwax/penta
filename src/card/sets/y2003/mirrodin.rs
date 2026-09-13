@@ -700,7 +700,7 @@ CardRules::new_artifact_creature(mana_cost!("{7}"), &["Construct"], 0, 0).with_a
             &[
                 CostDef::Mana(mana_cost!("{1}")),
                 CostDef::SacrificePermanent {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Pentavite")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Pentavite")),
                     controller: PlayerRelation::You,
                 },
             ],

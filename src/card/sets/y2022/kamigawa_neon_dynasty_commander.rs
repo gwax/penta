@@ -107,8 +107,8 @@ pub(in crate::card::sets) static SWIFT_RECONFIGURATION_45: CardRecord = CardReco
     "Nicholas Gregory",
     CardRules::new_enchantment(mana_cost!("{W}")).with_subtypes(&["Aura"]).with_abilities(&[
 abilities::flash(),
-abilities::aura_spell("Enchant creature or Vehicle", &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Subtype(SubtypeDef::Literal("Vehicle"))]))]),
-AbilityDef::static_ability("Enchanted permanent is a Vehicle artifact with crew 5 and it loses all other card types. (It's not a creature unless it's crewed.)", EffectDef::StaticApply { recipient: EffectRecipientDef::AttachedPermanent, effect: AppliedEffectDef::Composite(&[AppliedEffectDef::set_card_types(CardTypeSet::single(CardType::Artifact)), AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(SetOperationDef::Add(&["Vehicle"]))), AppliedEffectDef::add_ability(&abilities::crew("Crew 5", 5))]) })
+abilities::aura_spell("Enchant creature or Vehicle", &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::AnyOf(&[ObjectPredicateDef::HasType(CardType::Creature), ObjectPredicateDef::Subtype(SubtypeDef::literal("Vehicle"))]))]),
+AbilityDef::static_ability("Enchanted permanent is a Vehicle artifact with crew 5 and it loses all other card types. (It's not a creature unless it's crewed.)", EffectDef::StaticApply { recipient: EffectRecipientDef::AttachedPermanent, effect: AppliedEffectDef::Composite(&[AppliedEffectDef::set_card_types(CardTypeSet::single(CardType::Artifact)), AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(SetOperationDef::Add(crate::card::SubtypeSet::from_names(&["Vehicle"])))), AppliedEffectDef::add_ability(&abilities::crew("Crew 5", 5))]) })
 ]),
 );
 

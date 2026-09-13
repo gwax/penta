@@ -44,7 +44,7 @@ pub(in crate::card::sets) static URZA_S_WORKSHOP_51: CardRecord = CardRecord::ne
     "Alexander Forssberg",
     CardRules::new_land(&["Urza's"]).with_abilities(&[
 abilities::tap_for(ManaColor::Colorless),
-AbilityDef::activated_mana_if("Metalcraft — {T}: Add {C} for each Urza's land you control. Activate only if you control three or more artifacts.", &[CostDef::TapSource], &TriggerConditionDef::ObjectCount { query: ObjectQueryDef::matching(ObjectPredicateDef::HasType(CardType::Artifact), &[ZoneKind::Battlefield], PlayerRelation::You), comparison: ComparisonDef::GreaterOrEqual, amount: 3 }, EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_variable_amount(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Land), ObjectPredicateDef::Subtype(SubtypeDef::Literal("Urza's"))]), &[ZoneKind::Battlefield], PlayerRelation::You)))))
+AbilityDef::activated_mana_if("Metalcraft — {T}: Add {C} for each Urza's land you control. Activate only if you control three or more artifacts.", &[CostDef::TapSource], &TriggerConditionDef::ObjectCount { query: ObjectQueryDef::matching(ObjectPredicateDef::HasType(CardType::Artifact), &[ZoneKind::Battlefield], PlayerRelation::You), comparison: ComparisonDef::GreaterOrEqual, amount: 3 }, EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Colorless).with_variable_amount(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(ObjectPredicateDef::All(&[ObjectPredicateDef::HasType(CardType::Land), ObjectPredicateDef::Subtype(SubtypeDef::literal("Urza's"))]), &[ZoneKind::Battlefield], PlayerRelation::You)))))
 ]),
 );
 

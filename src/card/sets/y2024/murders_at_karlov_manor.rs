@@ -457,7 +457,7 @@ pub(in crate::card::sets) static INSIDE_SOURCE: CardRecord = CardRecord::new(
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Detective")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Detective")),
                     zones: &[ZoneKind::Battlefield],
                     controller: Some(PlayerRelation::You),
                     owner: None,
@@ -1065,7 +1065,7 @@ pub(in crate::card::sets) static BURDEN_OF_PROOF: CardRecord = CardRecord::new(
                 EffectDef::IfElseCondition {
                     condition: &TriggerConditionDef::AttachedPermanentMatches {
                         object: ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Detective")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Detective")),
                             ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                         ]),
                     },
@@ -1087,7 +1087,7 @@ pub(in crate::card::sets) static BURDEN_OF_PROOF: CardRecord = CardRecord::new(
                                 BlockRestrictionDef::prohibit(
                                     BlockRestrictionSubjectDef::Blocker,
                                     BlockRestrictionMatchDef::Matching(
-                                        ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                                        ObjectPredicateDef::Subtype(SubtypeDef::literal(
                                             "Detective",
                                         )),
                                     ),
@@ -2304,7 +2304,7 @@ pub(in crate::card::sets) static PERSUASIVE_INTERROGATORS: CardRecord = CardReco
                  poison counters. (A player with ten or more poison counters \
                  loses the game.)",
                 TriggerEventDef::Sacrificed {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Clue")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Clue")),
                     player: PlayerRelation::You,
                 },
                 &[AbilityTargetDef::exactly_one(
@@ -3017,7 +3017,7 @@ pub(in crate::card::sets) static KRENKO_BARON_OF_TIN_STREET: CardRecord = CardRe
                 EffectDef::AddCounters {
                     object: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),
@@ -4047,7 +4047,7 @@ pub(in crate::card::sets) static ALQUIST_PROFT_MASTER_SLEUTH: CardRecord = CardR
                 &[
                     CostDef::Mana(mana_cost!("{X}{W}{U}{U}")),
                     CostDef::TapSource,
-                    CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                    CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::literal(
                         "Clue",
                     ))),
                 ],
@@ -4298,7 +4298,7 @@ pub(in crate::card::sets) static CURIOUS_CADAVER: CardRecord = CardRecord::new(
                 "When you sacrifice a Clue, return this card from your \
                  graveyard to your hand.",
                 TriggerEventDef::Sacrificed {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Clue")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Clue")),
                     player: PlayerRelation::You,
                 },
                 EffectDef::move_to_zone(
@@ -4768,7 +4768,7 @@ pub(in crate::card::sets) static LAZAV_WEARER_OF_FACES: CardRecord = CardRecord:
                 "Whenever you sacrifice a Clue, you may have Lazav become a \
                  copy of a creature card exiled with it until end of turn.",
                 TriggerEventDef::Sacrificed {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Clue")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Clue")),
                     player: PlayerRelation::You,
                 },
                 EffectDef::Choose(ChooseDef {
@@ -4934,7 +4934,7 @@ pub(in crate::card::sets) static PRIVATE_EYE: CardRecord = CardRecord::new(
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Detective")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Detective")),
                             ]),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
@@ -4954,7 +4954,7 @@ pub(in crate::card::sets) static PRIVATE_EYE: CardRecord = CardRecord::new(
                     2,
                 )),
                 &[AbilityTargetDef::exactly_one_permanent(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Detective")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Detective")),
                 )],
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -5258,7 +5258,7 @@ pub(in crate::card::sets) static TEYSA_OPULENT_OLIGARCH: CardRecord = CardRecord
                  token with flying. This ability triggers only once each turn.",
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Clue")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Clue")),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ]),
                     Some(ZoneKind::Battlefield),
@@ -5738,7 +5738,7 @@ pub(in crate::card::sets) static MAGNETIC_SNUFFLER: CardRecord = CardRecord::new
              your graveyard to the battlefield attached to this creature.",
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                     zones: &[ZoneKind::Graveyard],
                     controller: None,
                     owner: Some(PlayerRelation::You),
@@ -5818,7 +5818,7 @@ pub(in crate::card::sets) static THINKING_CAP: CardRecord = CardRecord::new(
                     AbilityTargetPredicate::Object {
                         object: ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Detective")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Detective")),
                         ]),
                         zones: &[ZoneKind::Battlefield],
                         controller: Some(PlayerRelation::You),
@@ -7491,14 +7491,14 @@ pub(in crate::card::sets) static VOJA_JAWS_OF_THE_CONCLAVE: CardRecord = CardRec
                         )),
                         kind: CounterKind::PlusOnePlusOne,
                         amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
                     },
                     abilities::draw_cards(ValueDef::CountMatchingObjects(
                         &ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wolf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Wolf")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),

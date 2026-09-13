@@ -209,7 +209,7 @@ pub(in crate::card::sets) static RETROFITTER_FOUNDRY: CardRecord = CardRecord::n
                 CostDef::Mana(mana_cost!("{1}")),
                 CostDef::TapSource,
                 CostDef::SacrificePermanent {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Servo")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Servo")),
                     controller: PlayerRelation::You,
                 },
             ],
@@ -223,7 +223,7 @@ pub(in crate::card::sets) static RETROFITTER_FOUNDRY: CardRecord = CardRecord::n
             &[
                 CostDef::TapSource,
                 CostDef::SacrificePermanent {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Thopter")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Thopter")),
                     controller: PlayerRelation::You,
                 },
             ],

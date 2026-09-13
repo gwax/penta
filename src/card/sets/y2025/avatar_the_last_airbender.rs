@@ -216,7 +216,7 @@ pub(in crate::card::sets) static AANG_S_JOURNEY: CardRecord = CardRecord::new(
                         then: &EffectDef::SearchZone {
                             player: EffectRecipientDef::Controller,
                             source: ZoneKind::Library,
-                            object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                            object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                             minimum: 0,
                             maximum: ValueDef::Constant(1),
                             reveal: true,
@@ -386,7 +386,7 @@ pub(in crate::card::sets) static AVATAR_ENTHUSIASTS: CardRecord = CardRecord::ne
             TriggerEventDef::zone_changed(
                 ObjectPredicateDef::All(&[
                     ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -509,7 +509,7 @@ pub(in crate::card::sets) static EARTH_KINGDOM_PROTECTORS: CardRecord = CardReco
                 &[AbilityTargetDef::exactly_one(
                     AbilityTargetPredicate::Object {
                         object: ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         zones: &[ZoneKind::Battlefield],
@@ -552,7 +552,7 @@ pub(in crate::card::sets) static ENTER_THE_AVATAR_STATE: CardRecord = CardRecord
                 recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: AppliedEffectDef::Composite(&[
                     AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(
-                        SetOperationDef::Add(&["Avatar"]),
+                        SetOperationDef::Add(crate::card::SubtypeSet::from_names(&["Avatar"])),
                     )),
                     AppliedEffectDef::add_ability(&abilities::flying()),
                     AppliedEffectDef::add_ability(&abilities::first_strike()),
@@ -616,7 +616,7 @@ pub(in crate::card::sets) static GATHER_THE_WHITE_LOTUS: CardRecord = CardRecord
             EffectDef::CreateToken(
                 CreateTokenDef::new(TokenDef::Literal(ALLY_TOKEN)).with_count(
                     ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Plains")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Plains")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -675,7 +675,7 @@ pub(in crate::card::sets) static HAKODA_SELFLESS_COMMANDER: CardRecord = CardRec
                     effect: AppliedEffectDef::Rule(AppliedRuleDef::MayPlayFromTopOfLibrary {
                         restriction: PlayRestrictionDef {
                             action: PlayActionMatcherDef::CastSpell,
-                            object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                            object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                             only_at_sorcery_speed: false,
                             minimum_spells_cast_this_turn: 0,
                         },
@@ -789,9 +789,9 @@ pub(in crate::card::sets) static MASTER_PIANDAO: CardRecord = CardRecord::new(
                     actor: PlayerRefDef::EffectController,
                     inspection: CollectionInspectionDef::Look,
                     object: ObjectPredicateDef::AnyOf(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                     ]),
                     minimum: 0,
                     maximum: 1,
@@ -953,7 +953,7 @@ pub(in crate::card::sets) static RABAROO_TROOP: CardRecord = CardRecord::new(
             abilities::typecycling!(
                 "Plainscycling {2}",
                 &[CostDef::Mana(mana_cost!("{2}"))],
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Plains"))
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Plains"))
             ),
         ],
     ),
@@ -1009,7 +1009,7 @@ pub(in crate::card::sets) static SOUTHERN_AIR_TEMPLE: CardRecord = CardRecord::n
                     )),
                     kind: CounterKind::PlusOnePlusOne,
                     amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -1021,7 +1021,7 @@ pub(in crate::card::sets) static SOUTHERN_AIR_TEMPLE: CardRecord = CardRecord::n
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -1279,7 +1279,7 @@ pub(in crate::card::sets) static YIP_YIP: CardRecord = CardRecord::new(
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::TargetMatches {
                         slot: TargetIndex::PRIMARY,
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                     },
                     then: &EffectDef::Apply {
                         recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -1307,7 +1307,7 @@ pub(in crate::card::sets) static ACCUMULATE_WISDOM: CardRecord = CardRecord::new
             EffectDef::IfElseCondition {
                 condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                     left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                         &[ZoneKind::Graveyard],
                         PlayerRelation::You,
                     )),
@@ -1515,7 +1515,7 @@ pub(in crate::card::sets) static FIRST_TIME_FLYER: CardRecord = CardRecord::new(
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                         left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                             &[ZoneKind::Graveyard],
                             PlayerRelation::You,
                         )),
@@ -1611,7 +1611,7 @@ pub(in crate::card::sets) static GRAN_GRAN: CardRecord = CardRecord::new(
                     adjustment: CostAdjustmentDef::Subtract(CostAmountDef::Generic(
                         ValueDef::IfMatchingObjectCount(&CountConditionDef {
                             query: ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                                 &[ZoneKind::Graveyard],
                                 PlayerRelation::You,
                             ),
@@ -1787,7 +1787,7 @@ pub(in crate::card::sets) static MASTER_PAKKU: CardRecord = CardRecord::new(
                 EffectDef::Mill {
                     player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                         &[ZoneKind::Graveyard],
                         PlayerRelation::You,
                     )),
@@ -2028,7 +2028,7 @@ pub(in crate::card::sets) static THE_SPIRIT_OASIS: CardRecord = CardRecord::new(
                 "When The Spirit Oasis enters, draw a card for each Shrine you \
                  control.",
                 abilities::draw_cards(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ))),
@@ -2038,7 +2038,7 @@ pub(in crate::card::sets) static THE_SPIRIT_OASIS: CardRecord = CardRecord::new(
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -2155,7 +2155,7 @@ pub(in crate::card::sets) static WATERBENDING_SCROLL: CardRecord = CardRecord::n
     )
     .with_activation_cost_reduction(
         ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Island")),
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Island")),
             &[ZoneKind::Battlefield],
             PlayerRelation::You,
         )),
@@ -2326,7 +2326,7 @@ pub(in crate::card::sets) static CANYON_CRAWLER: CardRecord = CardRecord::new(
         abilities::typecycling!(
             "Swampcycling {2}",
             &[CostDef::Mana(mana_cost!("{2}"))],
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Swamp"))
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Swamp"))
         ),
     ]),
 );
@@ -2347,7 +2347,7 @@ pub(in crate::card::sets) static CAT_GATOR: CardRecord = CardRecord::new(
             EffectDef::damage(
                 EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Swamp")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Swamp")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 )),
@@ -2767,7 +2767,7 @@ pub(in crate::card::sets) static NORTHERN_AIR_TEMPLE: CardRecord = CardRecord::n
                     EffectDef::LoseLife {
                         recipient: EffectRecipientDef::Opponent,
                         amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -2775,7 +2775,7 @@ pub(in crate::card::sets) static NORTHERN_AIR_TEMPLE: CardRecord = CardRecord::n
                     EffectDef::GainLife {
                         recipient: EffectRecipientDef::Controller,
                         amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -2788,7 +2788,7 @@ pub(in crate::card::sets) static NORTHERN_AIR_TEMPLE: CardRecord = CardRecord::n
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -3248,7 +3248,7 @@ pub(in crate::card::sets) static COMBUSTION_TECHNIQUE: CardRecord = CardRecord::
                     ValueDef::Sum(&SumValueDef::new(
                         ValueDef::Constant(2),
                         ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                             &[ZoneKind::Graveyard],
                             PlayerRelation::You,
                         )),
@@ -3280,7 +3280,7 @@ pub(in crate::card::sets) static CRESCENT_ISLAND_TEMPLE: CardRecord = CardRecord
                 EffectDef::CreateToken(
                     CreateTokenDef::new(TokenDef::Literal(MONK_TOKEN)).with_count(
                         ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -3293,7 +3293,7 @@ pub(in crate::card::sets) static CRESCENT_ISLAND_TEMPLE: CardRecord = CardRecord
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -3679,7 +3679,7 @@ pub(in crate::card::sets) static MONGOOSE_LIZARD: CardRecord = CardRecord::new(
             abilities::typecycling!(
                 "Mountaincycling {2}",
                 &[CostDef::Mana(mana_cost!("{2}"))],
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Mountain"))
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Mountain"))
             ),
         ],
     ),
@@ -3945,7 +3945,7 @@ pub(in crate::card::sets) static WARTIME_PROTESTORS: CardRecord = CardRecord::ne
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -4074,7 +4074,7 @@ pub(in crate::card::sets) static ALLIES_AT_LAST: CardRecord = CardRecord::new(
             "Affinity for Allies (This spell costs {1} less to cast for \
              each Ally you control.)",
             ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             )),
@@ -4454,7 +4454,7 @@ pub(in crate::card::sets) static GREAT_DIVIDE_GUIDE: CardRecord = CardRecord::ne
                     ObjectQueryDef::matching(
                         ObjectPredicateDef::AnyOf(&[
                             ObjectPredicateDef::HasType(CardType::Land),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
@@ -4509,7 +4509,7 @@ pub(in crate::card::sets) static KYOSHI_ISLAND_PLAZA: CardRecord = CardRecord::n
                     ]),
                     minimum: 0,
                     maximum: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -4530,7 +4530,7 @@ pub(in crate::card::sets) static KYOSHI_ISLAND_PLAZA: CardRecord = CardRecord::n
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -4612,7 +4612,7 @@ pub(in crate::card::sets) static LEAVES_FROM_THE_VINE: CardRecord = CardRecord::
                         left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
                             ObjectPredicateDef::AnyOf(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                             ]),
                             &[ZoneKind::Graveyard],
                             PlayerRelation::You,
@@ -4888,7 +4888,7 @@ pub(in crate::card::sets) static SABER_TOOTH_MOOSE_LION: CardRecord = CardRecord
         abilities::typecycling!(
             "Forestcycling {2}",
             &[CostDef::Mana(mana_cost!("{2}"))],
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Forest"))
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Forest"))
         ),
     ]),
 );
@@ -5031,7 +5031,7 @@ pub(in crate::card::sets) static SPARRING_DUMMY: CardRecord = CardRecord::new(
                         left: ValueDef::CountObjects(&ObjectSetDef::Matching {
                             objects: &ObjectSetDef::Binding(crate::Binding!("milled")),
                             object: ObjectSetFilterDef::Predicate(&ObjectPredicateDef::Subtype(
-                                SubtypeDef::Literal("Lesson"),
+                                SubtypeDef::literal("Lesson"),
                             )),
                         }),
                         comparison: ComparisonDef::Greater,
@@ -5141,7 +5141,7 @@ pub(in crate::card::sets) static UNLUCKY_CABBAGE_MERCHANT: CardRecord = CardReco
              If you search your library this way, put this creature on the \
              bottom of its owner's library, then shuffle.",
             TriggerEventDef::Sacrificed {
-                object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Food")),
+                object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Food")),
                 player: PlayerRelation::You,
             },
             EffectDef::May {
@@ -5198,7 +5198,7 @@ pub(in crate::card::sets) static WALLTOP_SENTRIES: CardRecord = CardRecord::new(
                 ),
                 &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                     left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                         &[ZoneKind::Graveyard],
                         PlayerRelation::You,
                     )),
@@ -5410,7 +5410,7 @@ pub(in crate::card::sets) static DRAGONFLY_SWARM: CardRecord = CardRecord::new(
                 ),
                 &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                     left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                         &[ZoneKind::Graveyard],
                         PlayerRelation::You,
                     )),
@@ -5467,7 +5467,7 @@ pub(in crate::card::sets) static EARTH_KING_S_LIEUTENANT: CardRecord = CardRecor
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -5484,7 +5484,7 @@ pub(in crate::card::sets) static EARTH_KING_S_LIEUTENANT: CardRecord = CardRecor
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -5561,11 +5561,11 @@ pub(in crate::card::sets) static FOGGY_SWAMP_SPIRIT_KEEPER: CardRecord = CardRec
                                 recipient: EffectRecipientDef::Source,
                                 effect: AppliedEffectDef::Composite(&[
                                     AppliedEffectDef::Rule(AppliedRuleDef::can_block_only(
-                                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spirit")),
+                                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Spirit")),
                                     )),
                                     AppliedEffectDef::Rule(AppliedRuleDef::cannot_be_blocked_by(
                                         ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(
-                                            SubtypeDef::Literal("Spirit"),
+                                            SubtypeDef::literal("Spirit"),
                                         )),
                                     )),
                                 ]),
@@ -5603,9 +5603,9 @@ pub(in crate::card::sets) static GURU_PATHIK: CardRecord = CardRecord::new(
                 actor: PlayerRefDef::EffectController,
                 inspection: CollectionInspectionDef::Look,
                 object: ObjectPredicateDef::AnyOf(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Saga")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Saga")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                 ]),
                 minimum: 0,
                 maximum: 1,
@@ -5642,9 +5642,9 @@ pub(in crate::card::sets) static GURU_PATHIK: CardRecord = CardRecord::new(
              +1/+1 counter on another target creature you control.",
             TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
                 ObjectPredicateDef::AnyOf(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Saga")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Saga")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                 ]),
                 ObjectPredicateDef::ControlledBy(PlayerRelation::You),
             ])),
@@ -5706,7 +5706,7 @@ pub(in crate::card::sets) static HERMITIC_HERBALIST: CardRecord = CardRecord::ne
                     2,
                 )
                 .with_restrictions(&[ManaRestrictionDef::CastSpell(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                 )]),
             ),
         ]),
@@ -5832,7 +5832,7 @@ pub(in crate::card::sets) static THE_LION_TURTLE: CardRecord = CardRecord::new(
                     condition: &TriggerConditionDef::Not(&TriggerConditionDef::ValueComparison(
                         &ValueComparisonDef {
                             left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                                 &[ZoneKind::Graveyard],
                                 PlayerRelation::You,
                             )),
@@ -5963,7 +5963,7 @@ pub(in crate::card::sets) static PLATYPUS_BEAR: CardRecord = CardRecord::new(
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                     left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                         &[ZoneKind::Graveyard],
                         PlayerRelation::You,
                     )),
@@ -6096,7 +6096,7 @@ pub(in crate::card::sets) static SOKKA_BOLD_BOOMERANGER: CardRecord = CardRecord
                 TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
                     ObjectPredicateDef::AnyOf(&[
                         ObjectPredicateDef::HasType(CardType::Artifact),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
                     ]),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ])),
@@ -6167,7 +6167,7 @@ pub(in crate::card::sets) static SOKKA_TENACIOUS_TACTICIAN: CardRecord = CardRec
                 recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                     ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -6364,7 +6364,7 @@ pub(in crate::card::sets) static WHITE_LOTUS_REINFORCEMENTS: CardRecord = CardRe
                     recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Ally")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Ally")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -6847,11 +6847,11 @@ pub(in crate::card::sets) static REALM_OF_KOH: CardRecord = CardRecord::new(
                             recipient: EffectRecipientDef::Source,
                             effect: AppliedEffectDef::Composite(&[
                                 AppliedEffectDef::Rule(AppliedRuleDef::can_block_only(
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spirit")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Spirit")),
                                 )),
                                 AppliedEffectDef::Rule(AppliedRuleDef::cannot_be_blocked_by(
                                     ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(
-                                        SubtypeDef::Literal("Spirit"),
+                                        SubtypeDef::literal("Spirit"),
                                     )),
                                 )),
                             ]),
@@ -6921,8 +6921,8 @@ pub(in crate::card::sets) static WHITE_LOTUS_HIDEOUT: CardRecord = CardRecord::n
              a Lesson or Shrine spell.",
             AddManaEffectDef::any_color().with_restrictions(&[ManaRestrictionDef::CastSpell(
                 ObjectPredicateDef::AnyOf(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Lesson")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Shrine")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Lesson")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Shrine")),
                 ]),
             )]),
         ),

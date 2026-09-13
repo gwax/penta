@@ -289,7 +289,7 @@ pub(in crate::card::sets) static WINGS_OF_VELIS_VEL_97: CardRecord = CardRecord:
     "Wings of Velis Vel",
     "fb3c1f39-b6ac-4663-9623-bd573a1117b0",
     "Jim Pavelec",
-    CardRules::new_instant(mana_cost!("{1}{U}")).with_subtypes(&["Shapeshifter"]).with_type(CardType::Kindred).with_abilities(&[AbilityDef::static_ability("Changeling (This card is every creature type.)", EffectDef::StaticApply { recipient: EffectRecipientDef::Source, effect: AppliedEffectDef::Characteristic(crate::card::CharacteristicOperationDef::Subtypes(crate::card::SetOperationDef::Add(crate::card::CREATURE_TYPES))) }).with_source_zones(&[ZoneKind::Library, ZoneKind::Hand, ZoneKind::Graveyard, ZoneKind::Stack, ZoneKind::Exile, ZoneKind::Command]),
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_subtypes(&["Shapeshifter"]).with_type(CardType::Kindred).with_abilities(&[AbilityDef::static_ability("Changeling (This card is every creature type.)", EffectDef::StaticApply { recipient: EffectRecipientDef::Source, effect: AppliedEffectDef::Characteristic(crate::card::CharacteristicOperationDef::Subtypes(crate::card::SetOperationDef::Add(crate::card::SubtypeSet::from_names(crate::card::CREATURE_TYPES)))) }).with_source_zones(&[ZoneKind::Library, ZoneKind::Hand, ZoneKind::Graveyard, ZoneKind::Stack, ZoneKind::Exile, ZoneKind::Command]),
 
 AbilityDef::spell_with_targets("Until end of turn, target creature has base power and toughness 4/4, gains all creature types, and gains flying.", &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::HasType(CardType::Creature))], EffectDef::Apply { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), effect: AppliedEffectDef::Composite(&[AppliedEffectDef::set_base_power_toughness(ValueDef::Constant(4), ValueDef::Constant(4)), AppliedEffectDef::set_creature_types(CreatureTypeSetDef::ALL), AppliedEffectDef::add_ability(&abilities::flying())]), duration: ResolvedEffectDurationDef::UntilEndOfTurn })
 
@@ -340,7 +340,7 @@ pub(in crate::card::sets) static BLADES_OF_VELIS_VEL_152: CardRecord = CardRecor
     "5a3ac629-a8c9-4b84-a8ea-b775d7913238",
     "Ron Spencer",
     CardRules::new_instant(mana_cost!("{1}{R}")).with_subtypes(&["Shapeshifter"]).with_abilities(&[
-AbilityDef::static_ability("Changeling (This card is every creature type.)", EffectDef::StaticApply { recipient: EffectRecipientDef::Source, effect: AppliedEffectDef::Characteristic(crate::card::CharacteristicOperationDef::Subtypes(crate::card::SetOperationDef::Add(crate::card::CREATURE_TYPES))) }).with_source_zones(&[ZoneKind::Library, ZoneKind::Hand, ZoneKind::Graveyard, ZoneKind::Stack, ZoneKind::Exile, ZoneKind::Command]),
+AbilityDef::static_ability("Changeling (This card is every creature type.)", EffectDef::StaticApply { recipient: EffectRecipientDef::Source, effect: AppliedEffectDef::Characteristic(crate::card::CharacteristicOperationDef::Subtypes(crate::card::SetOperationDef::Add(crate::card::SubtypeSet::from_names(crate::card::CREATURE_TYPES)))) }).with_source_zones(&[ZoneKind::Library, ZoneKind::Hand, ZoneKind::Graveyard, ZoneKind::Stack, ZoneKind::Exile, ZoneKind::Command]),
 AbilityDef::spell_with_targets("Up to two target creatures each get +2/+0 and gain all creature types until end of turn.", &[AbilityTargetDef::up_to(AbilityTargetPredicate::Object { object: ObjectPredicateDef::HasType(CardType::Creature), zones: &[ZoneKind::Battlefield], controller: None, owner: None }, 2)], EffectDef::Apply { recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY), effect: AppliedEffectDef::Composite(&[AppliedEffectDef::modify_power_toughness(ValueDef::Constant(2), ValueDef::Constant(0)), AppliedEffectDef::set_creature_types(CreatureTypeSetDef::ALL)]), duration: ResolvedEffectDurationDef::UntilEndOfTurn })
 ]).with_type(CardType::Kindred),
 );
@@ -470,7 +470,7 @@ pub(in crate::card::sets) static ELVISH_HARBINGER_207: CardRecord = CardRecord::
     "de789231-8358-4cbd-b8eb-1da4ce5b34c0",
     "Larry MacDougall",
     CardRules::new_creature(mana_cost!("{2}{G}"), &["Elf", "Druid"], 1, 2).with_abilities(&[
-abilities::enters_trigger("When this creature enters, you may search your library for an Elf card, reveal it, then shuffle and put that card on top.", EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")), minimum: 0, maximum: ValueDef::Constant(1), reveal: true, destination: ZoneKind::Library, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None }),
+abilities::enters_trigger("When this creature enters, you may search your library for an Elf card, reveal it, then shuffle and put that card on top.", EffectDef::SearchZone { player: EffectRecipientDef::Controller, source: ZoneKind::Library, object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")), minimum: 0, maximum: ValueDef::Constant(1), reveal: true, destination: ZoneKind::Library, placement: ZonePlacement::Top, shuffle: true, enters_tapped: false, attachment: None, binding: None, then: None }),
 abilities::tap_for_mana("{T}: Add one mana of any color.", AddManaEffectDef::any_color())
 ]),
 );
@@ -488,7 +488,7 @@ pub(in crate::card::sets) static IMPERIOUS_PERFECT: CardRecord = CardRecord::new
                     ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,

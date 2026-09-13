@@ -127,7 +127,7 @@ static MILL_TO_THE_FIRST_LAND: EffectDef = EffectDef::MillUntil(&MILL_UNTIL_1);
 
 /// "Tap an untapped Gate you control."
 static TAP_A_GATE: CostDef = CostDef::TapPermanents {
-    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Gate")),
+    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Gate")),
     controller: PlayerRelation::You,
     count: 1,
 };
@@ -565,7 +565,7 @@ pub(in crate::card::sets) static HOLD_THE_GATES: CardRecord = CardRecord::new(
                 AppliedEffectDef::modify_power_toughness(
                     ValueDef::Constant(0),
                     ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Gate")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Gate")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -1429,7 +1429,7 @@ pub(in crate::card::sets) static WAY_OF_THE_THIEF: CardRecord = CardRecord::new(
                     // leaves the evasion behind with the Gate that pays for it.
                     condition: &TriggerConditionDef::ObjectCount {
                         query: ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Gate")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Gate")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),
@@ -1831,7 +1831,7 @@ pub(in crate::card::sets) static OGRE_SLUMLORD: CardRecord = CardRecord::new(
             "Rats you control have deathtouch.",
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Rat")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Rat")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 ),
@@ -2872,7 +2872,7 @@ pub(in crate::card::sets) static GREENSIDE_WATCHER: CardRecord = CardRecord::new
             "{T}: Untap target Gate.",
             &[CostDef::TapSource],
             &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Gate")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Gate")),
             )],
             EffectDef::Untap {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -5299,7 +5299,7 @@ pub(in crate::card::sets) static DEATHCULT_ROGUE: CardRecord = CardRecord::new(
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::Rule(AppliedRuleDef::cannot_be_blocked_by(
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::literal(
                         "Rogue",
                     ))),
                 )),

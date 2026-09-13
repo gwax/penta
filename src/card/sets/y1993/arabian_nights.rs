@@ -185,8 +185,8 @@ pub(in crate::card::sets) static KING_SULEIMAN: CardRecord = CardRecord::new(
             &[CostDef::TapSource],
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::AnyOf(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Djinn")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Efreet")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Djinn")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Efreet")),
                 ]),
             )],
             EffectDef::Destroy {
@@ -799,7 +799,7 @@ pub(in crate::card::sets) static ALI_BABA: CardRecord = CardRecord::new(
             "{R}: Tap target Wall.",
             &[CostDef::Mana(mana_cost!("{R}"))],
             &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wall")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Wall")),
             )],
             EffectDef::Tap {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -1070,7 +1070,7 @@ CardRules::new_creature(mana_cost!("{3}{G}"), &["Djinn"], 4, 5)
             AbilityTargetPredicate::Object {
                 object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wall"))),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::literal("Wall"))),
                 ]),
                 zones: &[ZoneKind::Battlefield],
                 controller: Some(PlayerRelation::Opponent),
@@ -1477,7 +1477,7 @@ CardRules::new_artifact(mana_cost!("{6}")).with_ability(AbilityDef::modal_activa
             AbilityDef::spell_with_targets(
                 "Destroy target Aura attached to a land",
                 &[AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Aura")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Aura")),
                     ObjectPredicateDef::AttachedTo(&ObjectPredicateDef::HasType(CardType::Land)),
                 ]))],
                 EffectDef::Destroy {
@@ -1676,7 +1676,7 @@ pub(in crate::card::sets) static ELEPHANT_GRAVEYARD: CardRecord = CardRecord::ne
             "{T}: Regenerate target Elephant.",
             &[CostDef::TapSource],
             &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elephant")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Elephant")),
             )],
             EffectDef::Regenerate {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),

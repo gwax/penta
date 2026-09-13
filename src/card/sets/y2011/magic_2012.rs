@@ -377,7 +377,7 @@ pub(in crate::card::sets) static GRIFFIN_RIDER: CardRecord = CardRecord::new(
                     objects: &ObjectSetDef::Query(ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Griffin")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Griffin")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
@@ -880,7 +880,7 @@ pub(in crate::card::sets) static LORD_OF_THE_UNREAL: CardRecord = CardRecord::ne
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Illusion")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Illusion")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
                     &[ZoneKind::Battlefield],
@@ -1254,7 +1254,7 @@ pub(in crate::card::sets) static BLOODLORD_OF_VAASGOTH: CardRecord = CardRecord:
                 "Whenever you cast a Vampire creature spell, it gains bloodthirst 3.",
                 TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Vampire")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Vampire")),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ])),
                 EffectDef::Apply {

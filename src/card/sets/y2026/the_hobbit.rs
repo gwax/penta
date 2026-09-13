@@ -2184,7 +2184,7 @@ pub(in crate::card::sets) static DOWN_DOWN_TO_GOBLIN_TOWN: CardRecord = CardReco
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                             left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
                             )),
@@ -2200,7 +2200,7 @@ pub(in crate::card::sets) static DOWN_DOWN_TO_GOBLIN_TOWN: CardRecord = CardReco
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
                         candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -2347,7 +2347,7 @@ pub(in crate::card::sets) static GATHERING_OF_DARKNESS: CardRecord = CardRecord:
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                         left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -2363,7 +2363,7 @@ pub(in crate::card::sets) static GATHERING_OF_DARKNESS: CardRecord = CardRecord:
                     unchosen: None,
                     chooser: PlayerRefDef::EffectController,
                     candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -2570,7 +2570,7 @@ pub(in crate::card::sets) static GREAT_UGLY_LOOKING_GOBLIN: CardRecord = CardRec
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                             left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
                             )),
@@ -2586,7 +2586,7 @@ pub(in crate::card::sets) static GREAT_UGLY_LOOKING_GOBLIN: CardRecord = CardRec
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
                         candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -2705,7 +2705,7 @@ pub(in crate::card::sets) static RAGE_INTO_THE_VALLEY: CardRecord = CardRecord::
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                         left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -2721,7 +2721,7 @@ pub(in crate::card::sets) static RAGE_INTO_THE_VALLEY: CardRecord = CardRecord::
                     unchosen: None,
                     chooser: PlayerRefDef::EffectController,
                     candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -2899,7 +2899,7 @@ pub(in crate::card::sets) static RHOVANION_RAMPAGER: CardRecord = CardRecord::ne
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                         left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -2915,7 +2915,7 @@ pub(in crate::card::sets) static RHOVANION_RAMPAGER: CardRecord = CardRecord::ne
                     unchosen: None,
                     chooser: PlayerRefDef::EffectController,
                     candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -3086,7 +3086,7 @@ pub(in crate::card::sets) static BOTHERSOME_NOISEMAKER: CardRecord = CardRecord:
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                         left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -3102,7 +3102,7 @@ pub(in crate::card::sets) static BOTHERSOME_NOISEMAKER: CardRecord = CardRecord:
                     unchosen: None,
                     chooser: PlayerRefDef::EffectController,
                     candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -3220,7 +3220,7 @@ pub(in crate::card::sets) static DESOLATION_OF_SMAUG: CardRecord = CardRecord::n
                 EffectRecipientDef::objects(ObjectSetDef::Query(ObjectQueryDef::matching(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::literal(
                             "Dragon",
                         ))),
                     ]),
@@ -3232,7 +3232,7 @@ pub(in crate::card::sets) static DESOLATION_OF_SMAUG: CardRecord = CardRecord::n
             EffectDef::AddMana(
                 AddManaEffectDef::combination(&ManaColor::COLORS, 4).with_restrictions(&[
                     ManaRestrictionDef::CastSpell(ObjectPredicateDef::Subtype(
-                        SubtypeDef::Literal("Dragon"),
+                        SubtypeDef::literal("Dragon"),
                     )),
                 ]),
             ),
@@ -3368,7 +3368,7 @@ pub(in crate::card::sets) static GOBLIN_TOWN_FLUNKIES: CardRecord = CardRecord::
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                         left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -3384,7 +3384,7 @@ pub(in crate::card::sets) static GOBLIN_TOWN_FLUNKIES: CardRecord = CardRecord::
                     unchosen: None,
                     chooser: PlayerRefDef::EffectController,
                     candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -3466,7 +3466,7 @@ pub(in crate::card::sets) static THE_MISTY_MOUNTAINS_COLD: CardRecord = CardReco
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                             left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
                             )),
@@ -3519,7 +3519,7 @@ pub(in crate::card::sets) static THE_MISTY_MOUNTAINS_COLD: CardRecord = CardReco
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                             left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
                             )),
@@ -3572,7 +3572,7 @@ pub(in crate::card::sets) static THE_MISTY_MOUNTAINS_COLD: CardRecord = CardReco
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                             left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
                             )),
@@ -3625,7 +3625,7 @@ pub(in crate::card::sets) static THE_MISTY_MOUNTAINS_COLD: CardRecord = CardReco
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                             left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
                             )),
@@ -3689,7 +3689,7 @@ pub(in crate::card::sets) static MISTY_MOUNTAINS_RAIDER: CardRecord = CardRecord
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                         left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -3705,7 +3705,7 @@ pub(in crate::card::sets) static MISTY_MOUNTAINS_RAIDER: CardRecord = CardRecord
                     unchosen: None,
                     chooser: PlayerRefDef::EffectController,
                     candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -3869,7 +3869,7 @@ pub(in crate::card::sets) static SMAUG_THE_MAGNIFICENT: CardRecord = CardRecord:
                 EffectDef::damage(
                     EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -3993,7 +3993,7 @@ pub(in crate::card::sets) static TIDINGS_OF_WAR: CardRecord = CardRecord::new(
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                             left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
                             )),
@@ -4009,7 +4009,7 @@ pub(in crate::card::sets) static TIDINGS_OF_WAR: CardRecord = CardRecord::new(
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
                         candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -4041,7 +4041,7 @@ pub(in crate::card::sets) static TIDINGS_OF_WAR: CardRecord = CardRecord::new(
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                             left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
                             )),
@@ -4057,7 +4057,7 @@ pub(in crate::card::sets) static TIDINGS_OF_WAR: CardRecord = CardRecord::new(
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
                         candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -4138,7 +4138,7 @@ pub(in crate::card::sets) static BEJEWELED_WARG: CardRecord = CardRecord::new(
                     "Put a +1/+1 counter on target Wolf you control.",
                     &[AbilityTargetDef::exactly_one(
                         AbilityTargetPredicate::Object {
-                            object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wolf")),
+                            object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Wolf")),
                             zones: &[ZoneKind::Battlefield],
                             controller: Some(PlayerRelation::You),
                             owner: None,
@@ -4192,7 +4192,7 @@ pub(in crate::card::sets) static BEORN_THE_FIERCE: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                     ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bear")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Bear")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -4239,7 +4239,7 @@ pub(in crate::card::sets) static BEORN_THE_FIERCE: CardRecord = CardRecord::new(
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                         left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bear")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Bear")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -4350,7 +4350,7 @@ pub(in crate::card::sets) static CANTANKEROUS_KEEPERS: CardRecord = CardRecord::
             "Affinity for Elves (This spell costs {1} less to cast for \
              each Elf you control.)",
             ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             )),
@@ -4370,7 +4370,7 @@ pub(in crate::card::sets) static CANTANKEROUS_KEEPERS: CardRecord = CardRecord::
                     EffectRecipientDef::objects(ObjectSetDef::Matching {
                         objects: &ObjectSetDef::Binding(crate::Binding!("milled")),
                         object: ObjectSetFilterDef::Predicate(&ObjectPredicateDef::Subtype(
-                            SubtypeDef::Literal("Elf"),
+                            SubtypeDef::literal("Elf"),
                         )),
                     }),
                     ZoneKind::Hand,
@@ -4487,7 +4487,7 @@ pub(in crate::card::sets) static DOWN_IN_THE_VALLEY: CardRecord = CardRecord::ne
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),
@@ -4509,7 +4509,7 @@ pub(in crate::card::sets) static DOWN_IN_THE_VALLEY: CardRecord = CardRecord::ne
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),
@@ -4622,7 +4622,7 @@ pub(in crate::card::sets) static LITTLE_BEAR: CardRecord = CardRecord::new(
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::TargetMatches {
                         slot: TargetIndex::PRIMARY,
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bear")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Bear")),
                     },
                     then: &EffectDef::AddCounters {
                         object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -4735,7 +4735,7 @@ pub(in crate::card::sets) static THE_NOTARY_HOBBITS: CardRecord = CardRecord::ne
                 EffectDef::AddMana(
                     AddManaEffectDef::one(ManaColor::Colorless).with_variable_amount(
                         ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Halfling")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Halfling")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -5257,7 +5257,7 @@ pub(in crate::card::sets) static BARD_S_COMPANY: CardRecord = CardRecord::new(
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ObjectCount {
                         query: ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),
@@ -5356,7 +5356,7 @@ pub(in crate::card::sets) static BOLG_S_COMPANY: CardRecord = CardRecord::new(
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -5376,7 +5376,7 @@ pub(in crate::card::sets) static BOLG_S_COMPANY: CardRecord = CardRecord::new(
             &[
                 CostDef::TapSource,
                 CostDef::sacrifice_permanent(ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                 ])),
             ],
@@ -5447,7 +5447,7 @@ pub(in crate::card::sets) static CHIEF_WARG_S_COMPANY: CardRecord = CardRecord::
                 condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                     left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wolf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Wolf")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -5488,7 +5488,7 @@ pub(in crate::card::sets) static DAIN_S_COMPANY: CardRecord = CardRecord::new(
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dwarf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Dwarf")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -5516,8 +5516,8 @@ pub(in crate::card::sets) static DAIN_S_COMPANY: CardRecord = CardRecord::new(
                 actor: PlayerRefDef::EffectController,
                 inspection: CollectionInspectionDef::Look,
                 object: ObjectPredicateDef::AnyOf(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dwarf")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Dwarf")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                 ]),
                 minimum: 0,
                 maximum: 1,
@@ -5668,7 +5668,7 @@ pub(in crate::card::sets) static FEARSOME_GOBLIN_PAIR: CardRecord = CardRecord::
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                         left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -5684,7 +5684,7 @@ pub(in crate::card::sets) static FEARSOME_GOBLIN_PAIR: CardRecord = CardRecord::
                     unchosen: None,
                     chooser: PlayerRefDef::EffectController,
                     candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     )),
@@ -5734,7 +5734,7 @@ pub(in crate::card::sets) static GOBLIN_PLATE_MAIL: CardRecord = CardRecord::new
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
                             left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                                 &[ZoneKind::Battlefield],
                                 PlayerRelation::You,
                             )),
@@ -5750,7 +5750,7 @@ pub(in crate::card::sets) static GOBLIN_PLATE_MAIL: CardRecord = CardRecord::new
                         unchosen: None,
                         chooser: PlayerRefDef::EffectController,
                         candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Army")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Army")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -6028,7 +6028,7 @@ pub(in crate::card::sets) static THRANDUIL_SINDARIN_LIEGE: CardRecord = CardReco
                     recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
                             ObjectPredicateDef::All(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -6123,7 +6123,7 @@ pub(in crate::card::sets) static THRANDUIL_S_COMPANY: CardRecord = CardRecord::n
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -6271,7 +6271,7 @@ pub(in crate::card::sets) static DWARVEN_MATTOCK: CardRecord = CardRecord::new(
                  control.",
                 &[AbilityTargetDef::exactly_one(
                     AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dwarf")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Dwarf")),
                         zones: &[ZoneKind::Battlefield],
                         controller: Some(PlayerRelation::You),
                         owner: None,
@@ -6530,7 +6530,7 @@ pub(in crate::card::sets) static ELVENKING_S_HALLS: CardRecord = CardRecord::new
             ],
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Elf")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Elf")),
                     zones: &[ZoneKind::Battlefield],
                     controller: Some(PlayerRelation::You),
                     owner: None,
@@ -6573,8 +6573,8 @@ pub(in crate::card::sets) static GOBLIN_TOWN: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::AnyOf(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Orc")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Orc")),
                     ]),
                     zones: &[ZoneKind::Battlefield],
                     controller: Some(PlayerRelation::You),
@@ -6625,7 +6625,7 @@ pub(in crate::card::sets) static HOBBIT_HOLE: CardRecord = CardRecord::new(
              library for a Halfling card, reveal it, put it into your \
              hand, then shuffle.)",
             &[CostDef::Mana(mana_cost!("{4}"))],
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Halfling"))
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Halfling"))
         ),
     ]),
 );
@@ -6655,7 +6655,7 @@ pub(in crate::card::sets) static IRON_HILLS: CardRecord = CardRecord::new(
             ],
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dwarf")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Dwarf")),
                     zones: &[ZoneKind::Battlefield],
                     controller: Some(PlayerRelation::You),
                     owner: None,
@@ -6696,7 +6696,7 @@ pub(in crate::card::sets) static LAKE_TOWN: CardRecord = CardRecord::new(
             ],
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     zones: &[ZoneKind::Battlefield],
                     controller: Some(PlayerRelation::You),
                     owner: None,
@@ -6723,7 +6723,7 @@ pub(in crate::card::sets) static THE_LONELY_MOUNTAIN: CardRecord = CardRecord::n
             ReplacementEffectDef::Conditional {
                 condition: ConditionDef::ObjectCount(&ObjectCountConditionDef {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -6750,7 +6750,7 @@ pub(in crate::card::sets) static THE_LONELY_MOUNTAIN: CardRecord = CardRecord::n
             EffectDef::ModifyCost(CostModificationDef::AbilityReduction {
                 permanent: ObjectPredicateDef::Source,
                 amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Equipment")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Equipment")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 )),
@@ -6787,9 +6787,9 @@ pub(in crate::card::sets) static MIRKWOOD: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
                     object: ObjectPredicateDef::AnyOf(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bear")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spider")),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wolf")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Bear")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Spider")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Wolf")),
                     ]),
                     zones: &[ZoneKind::Battlefield],
                     controller: Some(PlayerRelation::You),

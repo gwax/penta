@@ -93,7 +93,7 @@ pub(in crate::card::sets) static GIADA_FONT_OF_HOPE: CardRecord = CardRecord::ne
                 ReplacementEventDef::ObjectEntersBattlefield {
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Angel")),
                     ]),
                     controller: PlayerRelation::You,
                     cast: None,
@@ -102,7 +102,7 @@ pub(in crate::card::sets) static GIADA_FONT_OF_HOPE: CardRecord = CardRecord::ne
                     BattlefieldEntryModificationDef::AddCountersValue {
                         kind: CounterKind::PlusOnePlusOne,
                         amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Angel")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         )),
@@ -114,7 +114,7 @@ pub(in crate::card::sets) static GIADA_FONT_OF_HOPE: CardRecord = CardRecord::ne
                 &[CostDef::TapSource],
                 EffectDef::AddMana(AddManaEffectDef::one(ManaColor::White).with_restrictions(&[
                     ManaRestrictionDef::CastSpell(ObjectPredicateDef::Subtype(
-                        SubtypeDef::Literal("Angel"),
+                        SubtypeDef::literal("Angel"),
                     )),
                 ])),
             ),
@@ -612,7 +612,7 @@ pub(in crate::card::sets) static PROFESSIONAL_FACE_BREAKER_426: CardRecord = Car
     CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Warrior"], 2, 3).with_abilities(&[
 abilities::menace(),
 AbilityDef::triggered("Whenever one or more creatures you control deal combat damage to a player, create a Treasure token.", TriggerEventDef::CombatDamageDealtToPlayers { sources: ObjectPredicateDef::ControlledBy(PlayerRelation::You), players: PlayerRelation::Any }, EffectDef::CreateToken(crate::card::CreateTokenDef::new(crate::card::TokenDef::Literal(crate::card::tokens::treasure())))),
-AbilityDef::activated("Sacrifice a Treasure: Exile the top card of your library. You may play that card this turn.", &[CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::Literal("Treasure")))], EffectDef::ExileTopOfLibraryToPlay { player: EffectRecipientDef::Controller, amount: ValueDef::Constant(1), free: false, face_down: false, duration: ExilePlayDurationDef::ThisTurn, spend_any_color: false, play_condition: None, cast_only: false })
+AbilityDef::activated("Sacrifice a Treasure: Exile the top card of your library. You may play that card this turn.", &[CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::literal("Treasure")))], EffectDef::ExileTopOfLibraryToPlay { player: EffectRecipientDef::Controller, amount: ValueDef::Constant(1), free: false, face_down: false, duration: ExilePlayDurationDef::ThisTurn, spend_any_color: false, play_condition: None, cast_only: false })
 ]),
 );
 

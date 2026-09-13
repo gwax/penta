@@ -516,7 +516,7 @@ CardRules::new_creature(mana_cost!("{5}{W}"), &["Angel"], 5, 5).with_abilities(&
             TriggerEventDef::zone_changed(ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spirit"))),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::literal("Spirit"))),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                 ]), Some(ZoneKind::Battlefield), Some(ZoneKind::Graveyard)),
             EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
@@ -930,7 +930,7 @@ CardRules::new_creature(mana_cost!("{2}{U}{U}"), &["Human", "Wizard"], 2, 2).wit
                 EffectDef::AddCounters {
                     object: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Zombie")),
                         ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                     kind: CounterKind::PlusOnePlusOne,
                     amount: ValueDef::Constant(1),
@@ -1263,7 +1263,7 @@ pub(in crate::card::sets) static CHOSEN_OF_MARKOV: CardRecord = CardRecord::new_
                     &[
                         CostDef::TapSource,
                         CostDef::TapPermanents {
-                            object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Vampire")),
+                            object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Vampire")),
                             controller: PlayerRelation::You,
                             count: 1,
                         },
@@ -1306,7 +1306,7 @@ CardRules::new_enchantment(mana_cost!("{4}{B}"))
                     EffectRecipientDef::EnchantedPlayer,
                     ValueDef::CountMatchingPlayerAttachments(&PlayerAttachmentQueryDef::new(
                         PlayerRelation::EnchantedPlayer,
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Curse")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Curse")),
                     )),
                 ),
             ),
@@ -1364,7 +1364,7 @@ CardRules::new_sorcery(mana_cost!("{3}{B}{B}")).with_ability(AbilityDef::spell_w
                 // target slot still remembers.
                 amount: ValueDef::IfTargetMatches(&TargetConditionDef {
                     slot: TargetIndex::PRIMARY,
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     then: ValueDef::TargetToughness(TargetIndex::PRIMARY),
                     otherwise: ValueDef::Constant(0),
                 }),
@@ -1558,7 +1558,7 @@ pub(in crate::card::sets) static MIKAEUS_THE_UNHALLOWED: CardRecord = CardRecord
                 TriggerEventDef::DamageDealt(DamageEventMatcherDef {
                     kind: DamageKindDef::Any,
                     source: DamageSourceMatcherDef::Matching(ObjectPredicateDef::Subtype(
-                        SubtypeDef::Literal("Human"),
+                        SubtypeDef::literal("Human"),
                     )),
                     recipient: DamageRecipientMatcherDef::Recipients(
                         EffectRecipientDef::Controller,
@@ -1576,7 +1576,7 @@ pub(in crate::card::sets) static MIKAEUS_THE_UNHALLOWED: CardRecord = CardRecord
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(
-                                SubtypeDef::Literal("Human"),
+                                SubtypeDef::literal("Human"),
                             )),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
@@ -1649,7 +1649,7 @@ pub(in crate::card::sets) static SKIRSDAG_FLAYER: CardRecord = CardRecord::new(
                 CostDef::SacrificePermanent {
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     ]),
                     controller: PlayerRelation::You,
                 },
@@ -1784,7 +1784,7 @@ CardRules::new_sorcery(mana_cost!("{3}{B}{B}{B}")).with_ability(AbilityDef::spel
                     EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Zombie")),
                         ]),
                         &[ZoneKind::Graveyard],
                         PlayerRelation::You,
@@ -1799,7 +1799,7 @@ CardRules::new_sorcery(mana_cost!("{3}{B}{B}{B}")).with_ability(AbilityDef::spel
             },
             EffectDef::Destroy {
                 object: EffectRecipientDef::matching_objects(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
                 ),
@@ -2342,7 +2342,7 @@ pub(in crate::card::sets) static SCORCH_THE_FIELDS: CardRecord = CardRecord::new
                 EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     ]),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
@@ -2585,7 +2585,7 @@ pub(in crate::card::sets) static DERANGED_OUTCAST: CardRecord = CardRecord::new(
                 CostDef::SacrificePermanent {
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     ]),
                     controller: PlayerRelation::You,
                 },
@@ -3036,7 +3036,7 @@ pub(in crate::card::sets) static DIREGRAF_CAPTAIN: CardRecord = CardRecord::new(
                     recipient: EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Zombie")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -3053,7 +3053,7 @@ pub(in crate::card::sets) static DIREGRAF_CAPTAIN: CardRecord = CardRecord::new(
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Zombie")),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
@@ -3086,7 +3086,7 @@ CardRules::new_creature(mana_cost!("{1}{W}{U}"), &["Spirit", "Soldier"], 2, 2)
                     EffectDef::StaticApply {
                         recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spirit")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Spirit")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                         effect: AppliedEffectDef::modify_power_toughness(ValueDef::Constant(1), ValueDef::Constant(1)),
@@ -3094,7 +3094,7 @@ CardRules::new_creature(mana_cost!("{1}{W}{U}"), &["Spirit", "Soldier"], 2, 2)
                     EffectDef::StaticApply {
                         recipient: EffectRecipientDef::matching_objects(ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Spirit")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Spirit")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]), &[ZoneKind::Battlefield], PlayerRelation::You),
                         effect: AppliedEffectDef::add_ability(&abilities::hexproof()),
@@ -3284,7 +3284,7 @@ pub(in crate::card::sets) static STROMKIRK_CAPTAIN: CardRecord = CardRecord::new
                         recipient: EffectRecipientDef::matching_objects(
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Vampire")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Vampire")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -3299,7 +3299,7 @@ pub(in crate::card::sets) static STROMKIRK_CAPTAIN: CardRecord = CardRecord::new
                         recipient: EffectRecipientDef::matching_objects(
                             ObjectPredicateDef::All(&[
                                 ObjectPredicateDef::HasType(CardType::Creature),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Vampire")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Vampire")),
                                 ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                             ]),
                             &[ZoneKind::Battlefield],
@@ -3345,7 +3345,7 @@ CardRules::new_artifact(mana_cost!("{1}"))
                 TriggerEventDef::zone_changed(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::AttachedToSource,
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     ]),
                     Some(ZoneKind::Battlefield),
                     Some(ZoneKind::Graveyard),
@@ -3436,7 +3436,7 @@ pub(in crate::card::sets) static HEAVY_MATTOCK: CardRecord = CardRecord::new(
                 "As long as equipped creature is a Human, it gets an additional +1/+1.",
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::AttachedPermanentMatches {
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     },
                     // "An additional +1/+1", so this is a second modifier on top of the printed
                     // one rather than a replacement for it.
@@ -3565,7 +3565,7 @@ pub(in crate::card::sets) static WOLFHUNTERS_QUIVER: CardRecord = CardRecord::ne
                             &[AbilityTargetDef::exactly_one_permanent(
                                 ObjectPredicateDef::All(&[
                                     ObjectPredicateDef::HasType(CardType::Creature),
-                                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Werewolf")),
+                                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Werewolf")),
                                 ]),
                             )],
                             EffectDef::damage(

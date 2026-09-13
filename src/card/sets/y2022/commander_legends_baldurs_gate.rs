@@ -516,7 +516,7 @@ pub(in crate::card::sets) static CARNELIAN_ORB_OF_DRAGONKIND: CardRecord = CardR
             ManaSpendEffectDef::ApplyToPaidSpellMatching {
                 object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dragon")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Dragon")),
                 ]),
                 effect: AppliedEffectDef::add_ability(&abilities::haste()),
             },
@@ -716,7 +716,7 @@ CardRules::new_planeswalker(mana_cost!("{2}{R}{G}"), &["Minsc"], 3)
                     // still on the battlefield.
                     EffectDef::IfCondition {
                         condition: &TriggerConditionDef::SacrificedObjectMatches(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Hamster")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Hamster")),
                         ),
                         then: &EffectDef::DrawCards {
                             recipient: EffectRecipientDef::Controller,
@@ -841,7 +841,7 @@ pub(in crate::card::sets) static BASILISK_GATE: CardRecord = CardRecord::new(
 /// "The number of Gates you control", read twice by the pump above: once for
 /// power and once for toughness.
 static GATES_YOU_CONTROL: ObjectQueryDef = ObjectQueryDef::matching(
-    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Gate")),
+    ObjectPredicateDef::Subtype(SubtypeDef::literal("Gate")),
     &[ZoneKind::Battlefield],
     PlayerRelation::You,
 );

@@ -210,7 +210,7 @@ pub(in crate::card::sets) static VEDALKEN_AETHERMAGE_61: CardRecord = CardRecord
         abilities::enters_trigger_with_targets(
             "When this creature enters, return target Sliver to its owner’s hand.",
             &[AbilityTargetDef::exactly_one_permanent(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Sliver")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Sliver")),
             )],
             EffectDef::move_to_zone(
                 EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -221,7 +221,7 @@ pub(in crate::card::sets) static VEDALKEN_AETHERMAGE_61: CardRecord = CardRecord
         abilities::typecycling_with_costs(
             "Wizardcycling {3}",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::DiscardSource],
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wizard")),
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Wizard")),
         ),
     ]),
 );

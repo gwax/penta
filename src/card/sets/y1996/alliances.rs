@@ -1939,7 +1939,7 @@ CardRules::new_creature(mana_cost!("{3}{R}"), &["Human", "Knight"], 3, 2).with_a
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
                     effect: AppliedEffectDef::Rule(AppliedRuleDef::cannot_be_blocked_by(
-                        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::Literal("Wall"))),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::literal("Wall"))),
                     )),
                     duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },

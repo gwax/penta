@@ -154,8 +154,8 @@ CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Human", "Knight"], 2, 2)
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
                             ObjectPredicateDef::AnyOf(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Soldier")),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Warrior")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Soldier")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Warrior")),
                             ]),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -165,8 +165,8 @@ CardRules::new_creature(mana_cost!("{2}{W}{W}"), &["Human", "Knight"], 2, 2)
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
                             ObjectPredicateDef::AnyOf(&[
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Soldier")),
-                                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Warrior")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Soldier")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::literal("Warrior")),
                             ]),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -481,7 +481,7 @@ pub(in crate::card::sets) static SORAYA_THE_FALCONER: CardRecord = CardRecord::n
                     recipient: EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Bird")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::Any,
@@ -498,7 +498,7 @@ pub(in crate::card::sets) static SORAYA_THE_FALCONER: CardRecord = CardRecord::n
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Bird")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Bird")),
                     ]),
                 )],
                 EffectDef::Apply {
@@ -1066,7 +1066,7 @@ CardRules::new_creature(mana_cost!("{5}{B}{B}{B}"), &["Vampire", "Noble"], 5, 5)
                 &[CostDef::TapSource],
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Vampire")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Vampire")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
                 )],
@@ -1174,7 +1174,7 @@ CardRules::new_enchantment(mana_cost!("{B}{B}")).with_abilities(&[
                 effect: &EffectDef::Destroy {
                     object: EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Skeleton")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Skeleton")),
                             ObjectPredicateDef::Token,
                         ]),
                         &[ZoneKind::Battlefield],
@@ -1459,7 +1459,7 @@ pub(in crate::card::sets) static SENGIR_AUTOCRAT: CardRecord = CardRecord::new(
                 EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::Token,
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Serf")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Serf")),
                     ]),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
@@ -1662,7 +1662,7 @@ pub(in crate::card::sets) static ANABA_ANCESTOR: CardRecord = CardRecord::new(
             &[CostDef::TapSource],
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Minotaur")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Minotaur")),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                 ]),
             )],
@@ -1735,7 +1735,7 @@ pub(in crate::card::sets) static ANABA_SPIRIT_CRAFTER: CardRecord = CardRecord::
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Minotaur")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Minotaur")),
                     ]),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::Any,
@@ -1784,7 +1784,7 @@ pub(in crate::card::sets) static DWARVEN_PONY: CardRecord = CardRecord::new(
             &[AbilityTargetDef::exactly_one_permanent(
                 ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dwarf")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Dwarf")),
                 ]),
             )],
             EffectDef::Apply {
@@ -2115,7 +2115,7 @@ pub(in crate::card::sets) static FAERIE_NOBLE: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Faerie")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Faerie")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
                     &[ZoneKind::Battlefield],
@@ -2134,7 +2134,7 @@ pub(in crate::card::sets) static FAERIE_NOBLE: CardRecord = CardRecord::new(
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Faerie")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Faerie")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
                     &[ZoneKind::Battlefield],
@@ -2527,7 +2527,7 @@ pub(in crate::card::sets) static WILLOW_PRIESTESS: CardRecord = CardRecord::new(
                 player: EffectRecipientDef::Controller,
                 sources: &[CardChoiceSourceDef::Zone(ZoneKind::Hand)],
                 object: ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Faerie")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Faerie")),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::AnyOf(&[
                         ObjectPredicateDef::HasType(CardType::Instant),
                         ObjectPredicateDef::HasType(CardType::Sorcery),
@@ -2641,7 +2641,7 @@ pub(in crate::card::sets) static DIDGERIDOO: CardRecord = CardRecord::new(
             player: EffectRecipientDef::Controller,
             sources: &[CardChoiceSourceDef::Zone(ZoneKind::Hand)],
             object: ObjectPredicateDef::All(&[
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Minotaur")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Minotaur")),
                 ObjectPredicateDef::Not(&ObjectPredicateDef::AnyOf(&[
                     ObjectPredicateDef::HasType(CardType::Instant),
                     ObjectPredicateDef::HasType(CardType::Sorcery),
@@ -2695,7 +2695,7 @@ pub(in crate::card::sets) static JOVEN_S_TOOLS: CardRecord = CardRecord::new(
                 BlockRestrictionDef::prohibit(
                     BlockRestrictionSubjectDef::Attacker,
                     BlockRestrictionMatchDef::Except(ObjectPredicateDef::Subtype(
-                        SubtypeDef::Literal("Wall"),
+                        SubtypeDef::literal("Wall"),
                     )),
                 ),
             )),

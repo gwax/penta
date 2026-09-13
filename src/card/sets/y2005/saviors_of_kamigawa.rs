@@ -217,7 +217,7 @@ CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Human", "Samurai"], 3, 3)
                 &[
                     CostDef::Mana(mana_cost!("{2}{R}")),
                     CostDef::SacrificePermanent {
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Samurai")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Samurai")),
                         controller: PlayerRelation::You,
                     },
                 ],
@@ -225,7 +225,7 @@ CardRules::new_creature(mana_cost!("{3}{R}{R}"), &["Human", "Samurai"], 3, 3)
                     recipient: EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Samurai")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Samurai")),
                         ]),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,

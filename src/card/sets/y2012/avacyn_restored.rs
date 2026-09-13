@@ -168,7 +168,7 @@ CardRules::new_creature(mana_cost!("{5}{W}{W}"), &["Angel"], 4, 6).with_abilitie
             EffectDef::Sequence(&[
                 EffectDef::move_to_zone(
                     EffectRecipientDef::matching_objects(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Zombie")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::Any,
                     ),
@@ -179,7 +179,7 @@ CardRules::new_creature(mana_cost!("{5}{W}{W}"), &["Angel"], 4, 6).with_abilitie
                     EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::HasType(CardType::Creature),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                         ]),
                         &[ZoneKind::Graveyard],
                         PlayerRelation::You,
@@ -514,7 +514,7 @@ CardRules::new_sorcery(mana_cost!("{3}{W}{W}")).with_ability(
                         objects: &ObjectSetDef::ZoneChangeSuccessorsOfBinding(
                             ParentBinding,
                         ),
-                        object: ObjectSetFilterDef::Predicate(&ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel"))),
+                        object: ObjectSetFilterDef::Predicate(&ObjectPredicateDef::Subtype(SubtypeDef::literal("Angel"))),
                     }),
                     kind: CounterKind::PlusOnePlusOne,
                     amount: ValueDef::Constant(2),
@@ -535,7 +535,7 @@ pub(in crate::card::sets) static DEVOUT_CHAPLAIN: CardRecord = CardRecord::new(
             &[
                 CostDef::TapSource,
                 CostDef::TapPermanents {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     controller: PlayerRelation::You,
                     count: 2,
                 },
@@ -694,8 +694,8 @@ CardRules::new_creature(mana_cost!("{3}{W}{W}"), &["Angel"], 3, 3).with_abilitie
             "Angel spells and Human spells you cast cost {1} less to cast for each +1/+1 counter on this creature.",
             EffectDef::ModifyCost(CostModificationDef::reduce_spell(
                 ObjectPredicateDef::AnyOf(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel")),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Angel")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                 ]),
                 PlayerRelation::You,
                 ValueDef::CountersOnSource(CounterKind::PlusOnePlusOne),
@@ -723,7 +723,7 @@ pub(in crate::card::sets) static HOLY_JUSTICIAR: CardRecord = CardRecord::new(
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::TargetMatches {
                         slot: TargetIndex::PRIMARY,
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Zombie")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Zombie")),
                     },
                     then: &EffectDef::move_to_zone(
                         EffectRecipientDef::Target(TargetIndex::PRIMARY),
@@ -770,7 +770,7 @@ pub(in crate::card::sets) static MIDNIGHT_DUELIST: CardRecord = CardRecord::new(
     CardRules::new_creature(mana_cost!("{W}"), &["Human", "Soldier"], 1, 2).with_ability(
         AbilityDef::keyword(
             "Protection from Vampires",
-            KeywordAbility::ProtectionFrom(&ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+            KeywordAbility::ProtectionFrom(&ObjectPredicateDef::Subtype(SubtypeDef::literal(
                 "Vampire",
             ))),
         ),
@@ -880,7 +880,7 @@ CardRules::new_creature(
             AbilityTargetPredicate::Object {
                 object: ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel"))),
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::literal("Angel"))),
                 ]),
                 zones: &[ZoneKind::Battlefield],
                 controller: Some(PlayerRelation::You),
@@ -1147,7 +1147,7 @@ pub(in crate::card::sets) static CAPTAIN_OF_THE_MISTS: CardRecord = CardRecord::
             "Whenever another Human you control enters, untap this creature.",
             TriggerEventDef::ZoneChanged(ZoneChangeEventMatcherDef::new(
                 ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                     ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                 ]),
@@ -1731,7 +1731,7 @@ pub(in crate::card::sets) static MASS_APPEAL: CardRecord = CardRecord::new(
         EffectDef::DrawCards {
             recipient: EffectRecipientDef::Controller,
             amount: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             )),
@@ -2687,7 +2687,7 @@ pub(in crate::card::sets) static HUMAN_FRAILTY: CardRecord = CardRecord::new(
         "Destroy target Human creature.",
         &AbilityTargetDef::exactly_one_permanent(ObjectPredicateDef::All(&[
             ObjectPredicateDef::HasType(CardType::Creature),
-            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+            ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
         ])),
     )),
 );
@@ -2703,7 +2703,7 @@ pub(in crate::card::sets) static HUNTED_GHOUL: CardRecord = CardRecord::new(
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::Rule(AppliedRuleDef::can_block_only(
-                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::Literal(
+                    ObjectPredicateDef::Not(&ObjectPredicateDef::Subtype(SubtypeDef::literal(
                         "Human",
                     ))),
                 )),
@@ -3421,7 +3421,7 @@ CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Warrior"], 3, 1).with_
             )], EffectDef::damage(
                 EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 )),
@@ -3644,7 +3644,7 @@ CardRules::new_creature(mana_cost!("{2}{R}"), &["Human", "Warrior"], 2, 2)
             recipient: EffectRecipientDef::matching_objects(
                 ObjectPredicateDef::All(&[
                     ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                 ]),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
@@ -3873,7 +3873,7 @@ pub(in crate::card::sets) static VIGILANTE_JUSTICE: CardRecord = CardRecord::new
             "Whenever a Human you control enters, this enchantment deals 1 damage to any target.",
             TriggerEventDef::zone_changed(
                 ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ]),
                 None,
@@ -4092,7 +4092,7 @@ pub(in crate::card::sets) static DIREGRAF_ESCORT: CardRecord = CardRecord::new(
                     effect: AppliedEffectDef::add_ability(&AbilityDef::keyword(
                         "Protection from Zombies",
                         KeywordAbility::ProtectionFrom(&ObjectPredicateDef::Subtype(
-                            SubtypeDef::Literal("Zombie"),
+                            SubtypeDef::literal("Zombie"),
                         )),
                     )),
                 },
@@ -4952,8 +4952,8 @@ pub(in crate::card::sets) static BLADED_BRACERS: CardRecord = CardRecord::new(
                 EffectDef::IfCondition {
                     condition: &TriggerConditionDef::AttachedPermanentMatches {
                         object: ObjectPredicateDef::AnyOf(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Human")),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Human")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Angel")),
                         ]),
                     },
                     then: &EffectDef::StaticApply {
@@ -5107,7 +5107,7 @@ pub(in crate::card::sets) static SCROLL_OF_AVACYN: CardRecord = CardRecord::new(
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Angel")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
@@ -5147,7 +5147,7 @@ CardRules::new_artifact(mana_cost!("{1}")).with_ability(AbilityDef::activated_wi
             EffectDef::IfCondition {
                     condition: &TriggerConditionDef::ObjectCount {
                         query: ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Demon")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Demon")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),
@@ -5349,7 +5349,7 @@ pub(in crate::card::sets) static SERAPH_SANCTUARY: CardRecord = CardRecord::new(
             "Whenever an Angel you control enters, you gain 1 life.",
             TriggerEventDef::zone_changed(
                 ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Angel")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Angel")),
                     ObjectPredicateDef::ControlledBy(PlayerRelation::You),
                 ]),
                 None,

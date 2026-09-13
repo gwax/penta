@@ -458,7 +458,7 @@ pub(in crate::card::sets) static JADE_GUARDIAN: CardRecord = CardRecord::new(
             // a legal target.
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {
-                    object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Merfolk")),
+                    object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Merfolk")),
                     zones: &[ZoneKind::Battlefield],
                     controller: Some(PlayerRelation::You),
                     owner: None,
@@ -549,7 +549,7 @@ pub(in crate::card::sets) static GISHATH_SUN_S_AVATAR: CardRecord = CardRecord::
                     inspection: crate::card::CollectionInspectionDef::Reveal,
                     object: ObjectPredicateDef::All(&[
                         ObjectPredicateDef::HasType(CardType::Creature),
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dinosaur")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Dinosaur")),
                     ]),
                     minimum: 0,
                     maximum: 65535,
@@ -594,7 +594,7 @@ pub(in crate::card::sets) static REGISAUR_ALPHA_227: CardRecord = CardRecord::ne
             EffectDef::StaticApply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dinosaur")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Dinosaur")),
                         ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                     ]),
                     &[ZoneKind::Battlefield],
@@ -633,7 +633,7 @@ pub(in crate::card::sets) static PIRATE_S_CUTLASS: CardRecord = CardRecord::new(
                  control.",
                 &[AbilityTargetDef::exactly_one(
                     AbilityTargetPredicate::Object {
-                        object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Pirate")),
+                        object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Pirate")),
                         zones: &[ZoneKind::Battlefield],
                         controller: Some(PlayerRelation::You),
                         owner: None,
@@ -751,7 +751,7 @@ pub(in crate::card::sets) static TREASURE_MAP: CardRecord = CardRecord::new_dfc(
                     &[
                         crate::card::CostDef::TapSource,
                         crate::card::CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(
-                            SubtypeDef::Literal("Treasure"),
+                            SubtypeDef::literal("Treasure"),
                         )),
                     ],
                     abilities::draw_cards(ValueDef::Constant(1)),

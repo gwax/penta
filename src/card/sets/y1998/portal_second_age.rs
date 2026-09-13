@@ -195,7 +195,7 @@ pub(in crate::card::sets) static GOBLIN_MATRON: CardRecord = CardRecord::new(
         abilities::enters_trigger("When this creature enters, you may search your library for a Goblin card, reveal that card, put it into your hand, then shuffle.", EffectDef::SearchZone {
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
-                object: ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                object: ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")),
                 minimum: 0,
                 maximum: ValueDef::Constant(1),
                 reveal: true,
@@ -247,7 +247,7 @@ CardRules::new_sorcery(mana_cost!("{R}")).with_ability(AbilityDef::spell_with_ta
         EffectDef::damage(
             EffectRecipientDef::Target(TargetIndex::PRIMARY),
             ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")),
                 &[ZoneKind::Battlefield],
                 PlayerRelation::You,
             )),

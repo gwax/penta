@@ -412,7 +412,7 @@ CardRules::new_enchantment(mana_cost!("{R}")).with_abilities(&[
                 ),
                 effect: AppliedEffectDef::Composite(&[
                     AppliedEffectDef::Characteristic(CharacteristicOperationDef::Subtypes(
-                        SetOperationDef::Remove(LAND_SUBTYPES),
+                        SetOperationDef::Remove(crate::card::SubtypeSet::from_names(LAND_SUBTYPES)),
                     )),
                     AppliedEffectDef::remove_abilities(AbilityPredicateDef::Any),
                     AppliedEffectDef::add_ability(&AbilityDef::activated_mana(
@@ -504,7 +504,7 @@ pub(in crate::card::sets) static GOBLIN_TRASHMASTER_144: CardRecord = CardRecord
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::matching_objects(
                         ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
                         ]),
                         &[ZoneKind::Battlefield],
@@ -519,7 +519,7 @@ pub(in crate::card::sets) static GOBLIN_TRASHMASTER_144: CardRecord = CardRecord
             AbilityDef::activated_with_targets(
                 "Sacrifice a Goblin: Destroy target artifact.",
                 &[CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(
-                    SubtypeDef::Literal("Goblin"),
+                    SubtypeDef::literal("Goblin"),
                 ))],
                 &[AbilityTargetDef::exactly_one_permanent(
                     ObjectPredicateDef::HasType(CardType::Artifact),
@@ -549,7 +549,7 @@ pub(in crate::card::sets) static LATHLISS_DRAGON_QUEEN: CardRecord = CardRecord:
                     ObjectPredicateDef::All(&[
                         ObjectPredicateDef::All(&[
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dragon")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Dragon")),
                             ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
                         ]),
                         ObjectPredicateDef::ControlledBy(PlayerRelation::You),
@@ -568,7 +568,7 @@ pub(in crate::card::sets) static LATHLISS_DRAGON_QUEEN: CardRecord = CardRecord:
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::objects(ObjectSetDef::Query(
                         ObjectQueryDef::matching(
-                            ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dragon")),
+                            ObjectPredicateDef::Subtype(SubtypeDef::literal("Dragon")),
                             &[ZoneKind::Battlefield],
                             PlayerRelation::You,
                         ),
@@ -624,7 +624,7 @@ pub(in crate::card::sets) static VOLLEY_VETERAN: CardRecord = CardRecord::new(
             EffectDef::damage(
                 EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
-                    ObjectPredicateDef::Subtype(SubtypeDef::Literal("Goblin")),
+                    ObjectPredicateDef::Subtype(SubtypeDef::literal("Goblin")),
                     &[ZoneKind::Battlefield],
                     PlayerRelation::You,
                 )),
@@ -865,7 +865,7 @@ pub(in crate::card::sets) static KARGAN_DRAGONRIDER: CardRecord = CardRecord::ne
             EffectDef::IfCondition {
                 condition: &TriggerConditionDef::ObjectCount {
                     query: ObjectQueryDef::matching(
-                        ObjectPredicateDef::Subtype(SubtypeDef::Literal("Dragon")),
+                        ObjectPredicateDef::Subtype(SubtypeDef::literal("Dragon")),
                         &[ZoneKind::Battlefield],
                         PlayerRelation::You,
                     ),
