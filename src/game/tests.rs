@@ -953,6 +953,7 @@ mod playtest_regressions;
 mod bloomburrow;
 mod class_levels;
 mod lost_caverns_of_ixalan;
+mod ral_crackling_wit;
 mod wilds_of_eldraine;
 
 mod duskmourn;

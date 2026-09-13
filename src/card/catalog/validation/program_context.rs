@@ -253,7 +253,7 @@ fn validate_static_apply(
 ) -> Result<(), &'static str> {
     if source_zones == [ZoneKind::Stack] {
         return if recipient == EffectRecipientDef::Source
-            && stack_static_applied_effect_supported(effect)
+            && stack_static_applied_effect_supported(effect, false)
         {
             Ok(())
         } else {
@@ -286,7 +286,7 @@ fn validate_static_apply(
         && recipient
             .object_query()
             .is_some_and(|query| query.zones == [ZoneKind::Stack] && static_query_supported(query))
-        && stack_static_applied_effect_supported(effect)
+        && stack_static_applied_effect_supported(effect, true)
     {
         return Ok(());
     }
@@ -343,16 +343,31 @@ fn static_creature_type_effect(effect: AppliedEffectDef) -> bool {
     }
 }
 
-fn stack_static_applied_effect_supported(effect: AppliedEffectDef) -> bool {
+fn stack_static_applied_effect_supported(effect: AppliedEffectDef, external_grants: bool) -> bool {
     match effect {
         AppliedEffectDef::Composite(effects) => {
             !effects.is_empty()
                 && effects
                     .iter()
                     .copied()
-                    .all(stack_static_applied_effect_supported)
+                    .all(|effect| stack_static_applied_effect_supported(effect, external_grants))
         }
         AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) => true,
+        // The stack listener currently executes source-cast triggers. Other
+        // ability categories need their own zone-aware execution boundary.
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Abilities(
+            AbilityOperationDef::Add(ability),
+        )) if external_grants => matches!(
+            ability.definition,
+            DeclarativeAbilityDef::Triggered(definition)
+                if definition.procedure == AbilityProcedureDef::Shared
+                    && definition.trigger_limit.is_none()
+                    && matches!(definition.event,
+                        crate::card::TriggerEventDef::StackObject(matcher)
+                            if matcher.object == ObjectPredicateDef::Source
+                                && matches!(matcher.event, crate::card::StackObjectEventDef::Cast { .. })
+                    )
+        ),
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => false,
     }
 }

@@ -297,6 +297,19 @@ all zones before other layer-4 effects. It is part of copiable abilities, not a
 printed expansion of the creature-type list. Losing abilities in layer 6 does
 not undo those types; a later subtype-setting effect can replace them.
 
+### Static abilities granted to spells
+
+Use `EffectDef::StaticApply` with an `ObjectQueryDef` over `ZoneKind::Stack`
+and `AppliedEffectDef::add_ability` to grant a source-cast triggered ability
+to matching spells. Battlefield and emblem sources use the same
+timestamp-ordered ability operations. Other stack ability grants and stack-source grants remain outside
+the supported execution boundary. The spell reads these abilities when casting
+finishes, so a granted source-cast trigger such as `abilities::storm()` works
+from any casting zone. Multiple grants remain separate instances, and a
+captured trigger retains its resolver after the granting source leaves.
+This does not grant the ability to cards in hand or carry it onto a resolving
+permanent.
+
 ### Damage instructions and follow-ups
 
 Use `EffectDef::DealDamage(DamageDef)` for ordinary damage instructions. Use
