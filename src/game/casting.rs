@@ -471,7 +471,10 @@ impl Game {
             cost,
             x,
             &payment_purpose,
-            sacrifices,
+            super::mana_planning::ManaPaymentReservations::with_object_costs(
+                sacrifices,
+                &object_payments,
+            ),
             includes_mana_payment,
         );
         self.continue_spell_mana_payment(
@@ -595,7 +598,7 @@ impl Game {
         cost: ManaCost,
         x: u16,
         payment_purpose: &ManaPaymentPurpose,
-        sacrifices: &[GameObjectId],
+        sacrifices: super::mana_planning::ManaPaymentReservations<'_>,
         includes_mana_payment: bool,
     ) -> Vec<super::PlannedManaActivation> {
         // CR 601.2g: omitting a mana payment never opens a mana-ability
