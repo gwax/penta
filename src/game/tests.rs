@@ -987,3 +987,5 @@ mod cedh_card_audit;
 mod duel_cards;
 
 mod eternal_deck_cards;
+
+mod enduring_cycle;
