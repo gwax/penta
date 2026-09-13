@@ -184,10 +184,8 @@ impl Game {
             .map_or(effect.amount, |override_| override_.amount)
     }
 
-    /// The concrete activations one mana ability offers, which is one per
-    /// colour it can produce.
-    /// Which permanents a mana ability's "Sacrifice a <thing>" cost could
-    /// take, one per activation. An ability with no such cost yields a single
+    /// Which objects can pay a mana ability's chosen cost, one per
+    /// activation. An ability with no such cost yields a single
     /// `None`, so the enumeration below runs once for it rather than not at
     /// all.
     fn mana_ability_cost_candidates(
@@ -198,12 +196,30 @@ impl Game {
         let Some(cost) = definition.costs.iter().find(|cost| {
             matches!(
                 cost,
-                CostDef::SacrificePermanent { .. } | CostDef::ExileCardFromHand(_)
+                CostDef::SacrificePermanent { .. }
+                    | CostDef::ExileCardFromHand(_)
+                    | CostDef::TapPermanents { count: 1, .. }
             )
         }) else {
             return vec![None];
         };
         match cost {
+            CostDef::TapPermanents {
+                object,
+                controller,
+                count: 1,
+            } => self
+                .activation_tap_candidates(
+                    permanent.controller,
+                    *object,
+                    *controller,
+                    permanent.card.id,
+                    &[],
+                    definition.costs.contains(&CostDef::TapSource),
+                )
+                .into_iter()
+                .map(Some)
+                .collect(),
             CostDef::SacrificePermanent { object, controller } => self
                 .battlefield
                 .iter()
@@ -244,13 +260,34 @@ impl Game {
     ) -> Vec<ManaAbilityActivation> {
         let mut activations = Vec::new();
         if let Some(mut effect) = Self::shared_add_mana_effect(definition, ability) {
+            // Freeze the same increased/reduced bill used by stack abilities.
+            let mut priced_costs = definition
+                .costs
+                .iter()
+                .copied()
+                .filter(|cost| !matches!(cost, CostDef::Mana(_)))
+                .collect::<Vec<_>>();
+            if definition
+                .costs
+                .iter()
+                .any(|cost| matches!(cost, CostDef::Mana(_)))
+            {
+                priced_costs.insert(
+                    0,
+                    CostDef::Mana(self.priced_mana_ability_cost(permanent.card.id, definition)),
+                );
+            }
             // Resolved here rather than at payment time so that the amount
             // the planner counts on is the amount the pool receives.
             if let Some(value) = effect.variable_amount {
                 effect.amount = self.mana_value_with_pool(
                     value,
                     permanent,
-                    self.unspent_pool_after_mana_costs(permanent.controller, definition.costs),
+                    self.unspent_pool_after_mana_costs(
+                        permanent.controller,
+                        permanent.card.id,
+                        &priced_costs,
+                    ),
                 );
             }
             effect.amount = self.mana_amount_for(effect, permanent.controller, permanent.card.id);
@@ -271,12 +308,11 @@ impl Game {
                         (costs, removed, Some(removed))
                     })
                     .collect::<Vec<_>>(),
-                None => vec![(definition.costs.to_vec(), effect.amount, None)],
+                None => vec![(priced_costs, effect.amount, None)],
             };
-            // "Sacrifice a Goblin" is a choice of which one, and a mana
-            // ability has no window in which to ask: like the counter sizes
-            // above, each candidate becomes its own activation.
-            let sacrifices = self.mana_ability_cost_candidates(permanent, definition);
+            // Bind each object choice to a concrete activation, like the
+            // counter sizes above. Both payment routes execute this binding.
+            let candidates = self.mana_ability_cost_candidates(permanent, definition);
             let mut add_activation = |color,
                                       costs: &[CostDef],
                                       amount,
@@ -302,11 +338,14 @@ impl Game {
                 });
             };
             for (costs, amount, counters_removed) in sizes {
-                for cost_object in &sacrifices {
+                for cost_object in &candidates {
                     match effect.mana {
                         ManaSelectionDef::Amounts(amounts) => {
-                            let pool =
-                                self.unspent_pool_after_mana_costs(permanent.controller, &costs);
+                            let pool = self.unspent_pool_after_mana_costs(
+                                permanent.controller,
+                                permanent.card.id,
+                                &costs,
+                            );
                             let split = self.mana_amounts_for(amounts, permanent, pool);
                             add_activation(
                                 ManaColor::Colorless,
@@ -720,28 +759,31 @@ impl Game {
         x: u16,
         purpose: &ManaPaymentPurpose,
     ) -> Vec<Mana> {
-        let (cost, x) = self.restrict_x(cost, x, purpose);
+        let obligation = self.mana_payment_obligation(player, cost, x, purpose);
+        if let Some(payment) = self.explicit_mana_payment.take() {
+            let spent = self
+                .commit_mana_payment(&obligation, &payment)
+                .expect("the selected payment satisfies the frozen cost");
+            self.explicit_mana_payment = self.explicit_mana_payment_tail.pop_front();
+            return spent;
+        }
+        let (cost, x) = (obligation.cost, obligation.x);
         self.reconcile_mana(player);
         self.activate_repeatable_life_mana_for_shortfall(player, cost, x, purpose);
         let before = self.eligible_mana_pool(player, purpose);
         let after = self.mana_payment_remainder(player, before, cost, x, purpose);
-        let mut spent = Vec::new();
-        for color in [
-            ManaColor::White,
-            ManaColor::Blue,
-            ManaColor::Black,
-            ManaColor::Red,
-            ManaColor::Green,
-            ManaColor::Colorless,
-        ] {
+        let available = self.payment_mana_units(player);
+        let mut units = Vec::new();
+        for color in ManaColor::ALL {
             let count = before.amount(color).saturating_sub(after.amount(color));
             for _ in 0..count {
-                let index = self.players[player.index()]
-                    .mana
+                let index = available
                     .iter()
                     .enumerate()
-                    .filter(|(_, mana)| {
-                        mana.color == color && self.mana_can_pay_for(**mana, purpose)
+                    .filter(|(index, mana)| {
+                        !units.contains(index)
+                            && mana.color == color
+                            && self.mana_can_pay_for(**mana, purpose)
                     })
                     .max_by_key(|(_, mana)| {
                         (
@@ -749,16 +791,13 @@ impl Game {
                             !mana.restrictions.is_empty(),
                         )
                     })
-                    .map(|(index, _)| index);
-                if let Some(index) = index {
-                    spent.push(self.players[player.index()].mana.remove(index));
-                }
-                self.players[player.index()]
-                    .mana_pool
-                    .remove_color(color, 1);
+                    .map(|(index, _)| index)
+                    .expect("a proposed payment has every required mana unit");
+                units.push(index);
             }
         }
-        spent
+        self.commit_mana_payment(&obligation, &super::payment::BoundManaPayment { units })
+            .expect("automatic payment satisfies shared validation")
     }
 
     pub(super) fn pay_player_cost(
@@ -841,8 +880,10 @@ impl Game {
         x: u16,
         purpose: &ManaPaymentPurpose,
     ) -> bool {
-        self.plan_mana_activations_for(player, cost, x, None, purpose)
-            .is_some()
+        self.payment_query.unfunded()
+            || self
+                .plan_mana_activations_for(player, cost, x, None, purpose)
+                .is_some()
     }
 
     /// Every way this player may announce paying the flexible symbols in an
@@ -880,15 +921,17 @@ impl Game {
         reserved: super::mana_planning::ManaPaymentReservations<'_>,
         life_available: u16,
     ) -> bool {
-        self.assigned_mana_activations_for_reserving_with_life(
-            player,
-            cost,
-            x,
-            purpose,
-            reserved,
-            life_available,
-        )
-        .is_some()
+        self.payment_query.unfunded()
+            || self
+                .assigned_mana_activations_for_reserving_with_life(
+                    player,
+                    cost,
+                    x,
+                    purpose,
+                    reserved,
+                    life_available,
+                )
+                .is_some()
     }
 
     pub(super) fn add_mana_actions(&self, player: PlayerId, actions: &mut Vec<Action>) {
