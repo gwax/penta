@@ -589,13 +589,17 @@ impl Game {
             })
             .expect("ability stack objects freeze their complete payload");
         match resolver {
-            StackAbilityResolver::Prepared {
-                reference: _,
-                effect,
-            } if self.prepared_engine.enabled() && mode_effects.is_empty() => {
+            StackAbilityResolver::Prepared { reference, effect }
+                if self.prepared_engine.enabled() && mode_effects.is_empty() =>
+            {
                 crate::prepared_engine::execute_effect(
                     effect,
-                    self,
+                    &mut super::prepared_host::PreparedResolution {
+                        game: self,
+                        object,
+                        context: &context,
+                        reference,
+                    },
                     object.controller,
                     object.source,
                     object
@@ -604,6 +608,17 @@ impl Game {
                 );
             }
             StackAbilityResolver::Prepared { reference, .. } => {
+                #[cfg(feature = "engine-profiling")]
+                crate::engine_profiling::record(
+                    "effect_fallback",
+                    crate::engine_profiling::effect_kind(reference.effect),
+                    "reference",
+                    if self.prepared_engine.enabled() {
+                        "mode_effects"
+                    } else {
+                        "engine_disabled"
+                    },
+                );
                 let mut effects = Vec::with_capacity(mode_effects.len() + 1);
                 effects.push(reference);
                 effects.extend_from_slice(mode_effects);
