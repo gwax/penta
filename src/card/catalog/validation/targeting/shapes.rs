@@ -395,6 +395,7 @@ fn validate_value_shape(
         | ValueDef::DamageTakenThisTurn { .. }
         | ValueDef::CountersOnSource(_)
         | ValueDef::CardsDrawnThisTurn(_)
+        | ValueDef::CardsDiscardedThisTurn(_)
         | ValueDef::LandsPlayedThisTurn(_)
         | ValueDef::LifeGainedThisTurn(_)
         | ValueDef::DevotionTo(_)
