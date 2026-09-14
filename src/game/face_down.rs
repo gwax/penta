@@ -9,35 +9,6 @@
 use super::{Action, Game, GameObjectId, PlayerId};
 
 impl Game {
-    /// The spell's own abilities after its face-down characteristics replace
-    /// the printed face. External effects are evaluated by their own lanes.
-    pub(super) fn for_each_stack_spell_ability(
-        &self,
-        object: &super::StackObject,
-        mut visitor: impl FnMut(super::EffectiveAbility),
-    ) {
-        if let Some(face_down) = object.face_down {
-            for attached in face_down.rules().indexed_abilities() {
-                visitor(super::EffectiveAbility {
-                    origin: crate::AbilityOrigin::FaceDown {
-                        ability: attached.id,
-                    },
-                    ability: attached.definition,
-                });
-            }
-        } else if let Some(signature) = &object.signature
-            && let Some(card) = object.card.clone().into_card()
-        {
-            self.for_each_printed_card_ability(
-                &card,
-                &super::CharacteristicContext::Stack {
-                    form: signature.form().clone(),
-                },
-                visitor,
-            );
-        }
-    }
-
     /// A face-down card in exile has no characteristics (unlike a face-down
     /// spell or permanent, whose creating mechanism supplies a body).
     pub(super) fn face_down_exiled_event_object(
