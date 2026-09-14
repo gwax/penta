@@ -45,9 +45,10 @@ pub(super) fn validate_ability_program_targets(
     trigger_event: Option<TriggerEventDef>,
     replacement_event: Option<ReplacementEventDef>,
     chosen_cost_card_binding: Option<Binding>,
-    cost_bindings: &[Binding],
+    cost_namespaces: (&[Binding], &[Binding]),
     condition: Option<&TriggerConditionDef>,
 ) -> Result<(), GrantedAbilityValidationError> {
+    let (cost_bindings, cast_player_bindings) = cost_namespaces;
     validate_target_definitions(targets)?;
     let bindings = BindingRegistry::default();
     let scope = chosen_cost_card_binding.map_or_else(
@@ -56,6 +57,7 @@ pub(super) fn validate_ability_program_targets(
     )?;
     let scope = BindingScope {
         cost_bindings,
+        cast_player_bindings,
         ..scope
     };
     if let Some(condition) = condition {
@@ -217,6 +219,7 @@ fn validate_player_reference(
 ) -> Result<(), GrantedAbilityValidationError> {
     match reference {
         PlayerRefDef::Target(target) => validate_target_index(target, target_count),
+        PlayerRefDef::CastBinding(binding) => scope.validate_cast_player_binding(binding),
         PlayerRefDef::ControllerOf(reference)
         | PlayerRefDef::OpponentOf(reference)
         | PlayerRefDef::OwnerOf(reference) => {
@@ -367,6 +370,9 @@ fn validate_trigger_condition(
         // a condition reading one that was never saved names nothing.
         TriggerConditionDef::BoundObjectMatches { binding, .. } => {
             validate_object_reference(ObjectRefDef::Binding(binding), target_count, scope)
+        }
+        TriggerConditionDef::SourceHasCastPlayerBinding(binding) => {
+            scope.validate_cast_player_binding(binding)
         }
         TriggerConditionDef::SourcePaidAlternativeCost(binding) => {
             if binding.label().is_some() && scope.cost_bindings.contains(&binding) {

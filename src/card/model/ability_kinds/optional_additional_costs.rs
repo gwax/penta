@@ -11,6 +11,9 @@ use super::SpellResolutionDestinationDef;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum OptionalAdditionalCostKindDef {
+    /// Optionally choose an opponent while casting and save that player under
+    /// a durable name. Choosing is the payment; it does not target.
+    ChooseOpponent(crate::Binding),
     /// Kicker (CR 702.33a): a cost that may be paid once in addition to
     /// whichever ordinary or alternative cost is paying for the spell.
     Kicker,
@@ -51,6 +54,7 @@ impl OptionalAdditionalCostKindDef {
     #[must_use]
     pub const fn label(self) -> &'static str {
         match self {
+            Self::ChooseOpponent(_) => "Choose opponent",
             Self::Kicker => "Kicker",
             Self::Offspring => "Offspring",
             Self::Buyback => "Buyback",
@@ -89,6 +93,9 @@ pub struct OptionalAdditionalCostAbilityDef {
 impl OptionalAdditionalCostAbilityDef {
     #[must_use]
     pub fn rules_text(self) -> String {
+        if matches!(self.kind, OptionalAdditionalCostKindDef::ChooseOpponent(_)) {
+            return self.label.into();
+        }
         if self.costs.is_empty()
             || !self
                 .costs
@@ -137,6 +144,7 @@ impl OptionalAdditionalCostAbilityDef {
                  copies of it.)"
             ),
             (OptionalAdditionalCostKindDef::Squad, None) => "Squad".into(),
+            (OptionalAdditionalCostKindDef::ChooseOpponent(_), _) => self.label.into(),
             (OptionalAdditionalCostKindDef::Conspire, _) => "Conspire".into(),
             (OptionalAdditionalCostKindDef::Bargain, _) => "Bargain".into(),
         }

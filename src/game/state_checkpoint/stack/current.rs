@@ -67,6 +67,11 @@ pub(in crate::game::state_checkpoint) fn current_stack_snapshot(
             .as_ref()
             .and_then(|cast| cast.alternative)
             .map(|kind| kind.label().to_owned()),
+        cast_player_bindings: object
+            .cast
+            .as_ref()
+            .map(super::super::cast_bindings::snapshot_player_bindings)
+            .unwrap_or_default(),
         cast_alternative_cost_binding: object
             .cast
             .as_ref()

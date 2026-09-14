@@ -1924,6 +1924,23 @@ Runtime keyword checkpoints may contain `hexproofFromMonocolored` for a
 selective hexproof grant. Like other checkpoint keyword tags, it is read only
 under the matching simulation fingerprint; older checkpoints remain readable.
 
+Named casting-time opponent choices use the existing optional
+`additionalCostIds` selection in a cast's cost configuration. Choosing that
+cost saves the other seat in this two-player engine without targeting or
+performing a resolution effect. The optional checkpoint `castPlayerBindings`
+map on stack, detached-stack, and permanent states stores authored names and
+seat indices (0 or 1). An absent map means no player choices. Names must match
+declarations on the card. Spell copies preserve these choices even if another
+player controls the copy; copying a battlefield permanent does not copy them.
+Gift uses this representation and ordinary ordered spell clauses or enters
+triggers. Suspended composed instructions add optional `clauseAbility` and
+`clauseOrigin` locators; detached spell continuations retain the optional
+`resolvingClauseOrigin`. These preserve each instruction's authored source
+while the original spell still owns resolution completion. Ordinary single
+clause checkpoints omit these fields.
+Protocol, checkpoint, and replay versions are unchanged; fingerprint matching
+continues to guard exact reconstruction.
+
 Entry-time creature-type choices retain their authored label in the optional
 `chosenCreatureTypeBinding` member of each checkpoint permanent's state. This
 also applies to pending and retired permanents, so floating restricted mana

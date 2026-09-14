@@ -848,12 +848,10 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             // No card prints it, so no card may claim it.
         }
         }
-        // Neither clause resolves anything: a cost clause has already been
-        // paid where the spell was announced, and a deck-construction
-        // permission is read while a deck is assembled and never while a
-        // game runs. Both are shared exactly when they do nothing.
+        // Optional costs carry no resolution effect.
+        // Deck construction remains silent during gameplay.
         DeclarativeAbilityDef::OptionalAdditionalCost(cost) => {
-            effect == EffectDef::None
+            (effect == EffectDef::None)
                 && cost.costs.iter().all(|cost| {
                     matches!(cost, CostDef::ManaCostOf(crate::ObjectRefDef::Source))
                         || shared_spell_additional_cost(Some(*cost))

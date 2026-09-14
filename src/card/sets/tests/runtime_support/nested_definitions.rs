@@ -196,6 +196,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                 ))
                 | DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(
                     PlayerRefDef::EffectController
+                    | PlayerRefDef::CastBinding(_)
                     | PlayerRefDef::EnchantedPlayer
                     | PlayerRefDef::EventPlayer
                     | PlayerRefDef::Opponent,

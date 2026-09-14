@@ -59,6 +59,7 @@ mod attachments;
 mod banding;
 mod battlefield;
 mod board_read_memo;
+mod cast_bindings;
 mod cast_context;
 mod casting;
 mod casting_actions;

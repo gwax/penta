@@ -285,6 +285,9 @@ impl Game {
     }
 
     pub(super) fn finish_stack_resolution(&mut self, object: &StackObject, resolved: bool) {
+        if resolved {
+            self.capture_resolution_completion(object);
+        }
         let presentation = object.presentation();
         match object.kind {
             StackObjectKind::ActivatedAbility => {
