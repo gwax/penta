@@ -366,6 +366,53 @@ impl Game {
         true
     }
 
+    /// Keep a graveyard instruction whole for both permanent exits and card arrivals.
+    fn move_simultaneous_graveyard_batch(
+        &mut self,
+        recipients: &[Target],
+        zone: ZoneKind,
+        cause: ZoneMoveCause,
+        placement: ZonePlacement,
+    ) -> bool {
+        if zone != ZoneKind::Graveyard {
+            return false;
+        }
+        if let Some(permanents) = recipients
+            .iter()
+            .map(|target| match target {
+                Target::Permanent(id) => Some(*id),
+                _ => None,
+            })
+            .collect::<Option<Vec<_>>>()
+        {
+            self.move_permanents_to_graveyard(&permanents);
+            return true;
+        }
+        let Some(cards) = recipients
+            .iter()
+            .map(|target| match target {
+                Target::Card(id) => Some(*id),
+                _ => None,
+            })
+            .collect::<Option<Vec<_>>>()
+        else {
+            return false;
+        };
+        let mut events = Vec::new();
+        for card in cards {
+            let _ = self.move_card_target_to_zone_collecting(
+                card,
+                zone,
+                cause,
+                None,
+                placement,
+                &mut events,
+            );
+        }
+        self.capture_graveyard_arrivals(&events);
+        true
+    }
+
     pub(super) fn resolve_move_to_zone(
         &mut self,
         clause: MoveToZoneClause,
@@ -406,6 +453,12 @@ impl Game {
         // the same number for everything the clause moves.
         let arriving_counters = self.resolved_arrival_counters(counters, object, context, scoped);
         let recipients = self.effect_recipients(recipient, object, context, scoped);
+        let movement_cause = ZoneMoveCause::Effect {
+            controller: object.controller,
+        };
+        if self.move_simultaneous_graveyard_batch(&recipients, zone, movement_cause, placement) {
+            return;
+        }
         let batch_exile = self.batch_exile_permanents(&recipients, zone);
         // A library sweep is one simultaneous event, not a run of unrelated
         // one-object moves. Keep the whole prospective batch together so

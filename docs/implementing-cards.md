@@ -808,3 +808,18 @@ Installed zone-change triggers can use `ZoneChangeEventMatcherDef::among` to
 watch exact objects saved in an object-set binding. Matching happens before a
 once-only listener is consumed, and the installing resolution's bindings remain
 available after its source leaves the battlefield.
+
+## Grouped graveyard arrivals
+
+`ZoneChangeEventMatcherDef::one_or_more()` produces one trigger for matching
+cards in a simultaneous graveyard move. The default remains one trigger per
+object. Mill, discard, collection moves, and simultaneous battlefield exits
+retain their group; separate instructions remain separate events even within
+one resolution. The grouped trigger has no single `TriggeringObject` and its
+`TriggerEventAmount` is the matching group size. Other destination zones do
+not yet support this aggregation in the catalog validator.
+
+Use the default after-move observation for "from anywhere" and match the
+arriving card's owner and permanent types. Tokens are not permanent cards.
+Wrap an event in `TriggerEventDef::While` for a printed "while" condition;
+`triggered_if` would incorrectly recheck that condition during resolution.

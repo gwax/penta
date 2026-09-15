@@ -14,6 +14,8 @@ fn shared_zone_change_events_cover_every_committed_transition() {
         (ZoneKind::Graveyard, ZoneKind::Battlefield),
         (ZoneKind::Exile, ZoneKind::Battlefield),
         (ZoneKind::Stack, ZoneKind::Battlefield),
+        (ZoneKind::Stack, ZoneKind::Graveyard),
+        (ZoneKind::Command, ZoneKind::Graveyard),
         (ZoneKind::Library, ZoneKind::Graveyard),
         (ZoneKind::Hand, ZoneKind::Graveyard),
         (ZoneKind::Exile, ZoneKind::Graveyard),
@@ -774,4 +776,16 @@ fn static_stack_grants_support_source_cast_triggers_only() {
             effect: AppliedEffectDef::add_ability(&STORM),
         },
     ));
+}
+
+#[test]
+fn grouped_zone_changes_are_limited_to_complete_graveyard_arrival_batches() {
+    assert!(shared_trigger_event(TriggerEventDef::ZoneChanged(
+        ZoneChangeEventMatcherDef::new(ObjectPredicateDef::Any, None, Some(ZoneKind::Graveyard))
+            .one_or_more(),
+    )));
+    assert!(!shared_trigger_event(TriggerEventDef::ZoneChanged(
+        ZoneChangeEventMatcherDef::new(ObjectPredicateDef::Any, None, Some(ZoneKind::Battlefield))
+            .one_or_more(),
+    )));
 }

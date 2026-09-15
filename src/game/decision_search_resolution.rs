@@ -86,8 +86,9 @@ impl Game {
 
         if source != destination {
             let mut moved = Vec::new();
+            let mut events = Vec::new();
             for (card, _) in selected {
-                let landed = self.move_card_from_nonbattlefield_zone(
+                let landed = self.move_card_from_nonbattlefield_zone_collecting(
                     card,
                     source,
                     destination,
@@ -101,6 +102,7 @@ impl Game {
                         attached_player
                             .map_or(arrival, |attached| arrival.attached_to_player(attached))
                     }),
+                    &mut events,
                 );
                 // The permanent that entered is a different object from the
                 // card that left the library, so a battlefield arrival is
@@ -117,6 +119,7 @@ impl Game {
                     moved.push(landed);
                 }
             }
+            self.capture_graveyard_arrivals(&events);
             // "Exile them, then ... you may cast those cards": the cards the
             // follow-up names are the ones now sitting in the destination,
             // which are new objects.

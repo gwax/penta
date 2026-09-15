@@ -75,6 +75,28 @@ impl Game {
         arriving_controller: Option<BattlefieldArrival>,
         placement: ZonePlacement,
     ) -> Option<(GameObjectId, ZoneKind)> {
+        let mut events = Vec::new();
+        let result = self.move_card_target_to_zone_collecting(
+            id,
+            zone,
+            cause,
+            arriving_controller,
+            placement,
+            &mut events,
+        );
+        self.capture_graveyard_arrivals(&events);
+        result
+    }
+
+    pub(super) fn move_card_target_to_zone_collecting(
+        &mut self,
+        id: GameObjectId,
+        zone: ZoneKind,
+        cause: ZoneMoveCause,
+        arriving_controller: Option<BattlefieldArrival>,
+        placement: ZonePlacement,
+        events: &mut Vec<CommittedTriggerEvent>,
+    ) -> Option<(GameObjectId, ZoneKind)> {
         let from = self
             .card_in_nonbattlefield_zone(id)
             .map(|(from, _card)| from)?;
@@ -89,8 +111,14 @@ impl Game {
             return Some((id, ZoneKind::Library));
         }
         let pending_before = self.pending_decisions.len();
-        let result =
-            self.move_card_from_nonbattlefield_zone(id, from, zone, cause, arriving_controller);
+        let result = self.move_card_from_nonbattlefield_zone_collecting(
+            id,
+            from,
+            zone,
+            cause,
+            arriving_controller,
+            events,
+        );
         for pending in &mut self.pending_decisions[pending_before..] {
             if let DecisionContinuation::CommanderMove { movement, .. } = &mut pending.continuation
                 && let super::commander::CommanderMove::Card {
@@ -444,68 +472,6 @@ impl Game {
         replacement
     }
 
-    /// Moves a card into its owner's graveyard from `from`, honouring a
-    /// replacement the card itself carries about that move. The caller has
-    /// already taken the card out of `from`, so this path owns the remaining
-    /// identity change, replacement, destination, and arrival publication.
-    /// A countered spell and a milled card both reach the graveyard through
-    /// this path instead of rebuilding those pieces independently.
-    ///
-    /// Audit: unsupported -- the move is read as a rules move, so a clause that
-    /// asks *whose* effect moved the card ([`ZoneMoveCauseDef::EffectControlledBy`])
-    /// is not answered here. Nothing in the catalog writes one of those about
-    /// a graveyard move it makes from the stack or the library.
-    pub(super) fn put_card_into_graveyard_replacing(
-        &mut self,
-        owner: PlayerId,
-        card: CardInstance,
-        from: ZoneKind,
-    ) -> Option<CardInstance> {
-        let before_move = card.clone();
-        let program = self.zone_move_replacement_program(
-            &card,
-            from,
-            ZoneKind::Graveyard,
-            ZoneMoveCause::Rules,
-        );
-        let (card, _zone_change) = self.zone_change_card(card);
-        let destination = program
-            .and_then(Self::replacement_move_destination)
-            .unwrap_or(ZoneKind::Graveyard);
-        match destination {
-            ZoneKind::Library => {
-                self.players[owner.index()].library.push(card);
-                if program.is_some_and(Self::replacement_shuffles_library) {
-                    self.rng.shuffle(&mut self.players[owner.index()].library);
-                }
-                None
-            }
-            ZoneKind::Hand => {
-                self.players[owner.index()].hand.push(card);
-                None
-            }
-            ZoneKind::Exile => {
-                self.players[owner.index()].exile.push(card);
-                None
-            }
-            // A replacement that names the graveyard, the battlefield, or a
-            // zone this arrival cannot build is left to the ordinary path.
-            ZoneKind::Graveyard | ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {
-                self.put_card_into_graveyard(owner, card.clone());
-                if self.players[owner.index()]
-                    .graveyard
-                    .iter()
-                    .any(|candidate| candidate.id == card.id)
-                {
-                    self.capture_nonbattlefield_graveyard_arrival(&before_move, &card, from);
-                    Some(card)
-                } else {
-                    None
-                }
-            }
-        }
-    }
-
     /// The one way a card reaches a graveyard, so a replacement that sends it
     /// somewhere else has a single place to apply.
     pub(super) fn put_card_into_graveyard(&mut self, owner: PlayerId, mut card: CardInstance) {
@@ -775,133 +741,6 @@ impl Game {
         Some(entered_card)
     }
 
-    /// Moves a card between non-stack zones after applying replacement
-    /// abilities printed on that card. The replacement is selected before the
-    /// old object leaves its source zone, so its source-zone characteristics
-    /// remain available while matching the proposed move.
-    pub(super) fn move_card_from_nonbattlefield_zone(
-        &mut self,
-        id: GameObjectId,
-        expected_from: ZoneKind,
-        requested_to: ZoneKind,
-        cause: ZoneMoveCause,
-        // How the permanent arrives, when the destination is the battlefield.
-        // Reanimation that steals names a controller; a fetch land names
-        // tapped. Everything else leaves this empty.
-        arrival: Option<BattlefieldArrival>,
-    ) -> Option<(CardInstance, ZoneKind)> {
-        let (from, card) = self
-            .card_in_nonbattlefield_zone(id)
-            .map(|(zone, card)| (zone, card.clone()))?;
-        if from != expected_from {
-            return None;
-        }
-        let destination = self
-            .zone_move_replacement_destination(&card, from, requested_to, cause)
-            .unwrap_or(requested_to);
-        let destination = self.commander_hidden_move_destination(
-            Target::Card(id),
-            destination,
-            cause,
-            ZonePlacement::Top,
-        )?;
-        let shuffles = self.zone_move_replacement_shuffles(&card, from, requested_to, cause);
-        if destination == ZoneKind::Stack {
-            return None;
-        }
-
-        let owner = card.owner;
-        let before_move = card.clone();
-        self.remember_card_characteristics(&card, Some(from));
-        let cards = match from {
-            ZoneKind::Library => &mut self.players[owner.index()].library,
-            ZoneKind::Hand => &mut self.players[owner.index()].hand,
-            ZoneKind::Graveyard => &mut self.players[owner.index()].graveyard,
-            ZoneKind::Exile => &mut self.players[owner.index()].exile,
-            ZoneKind::Command => &mut self.players[owner.index()].command,
-            ZoneKind::Battlefield | ZoneKind::Stack => return None,
-        };
-        let card = remove_card(cards, id)?;
-        let card = if destination == ZoneKind::Battlefield {
-            self.put_card_onto_battlefield_from(
-                card,
-                from,
-                arrival.unwrap_or_else(|| BattlefieldArrival::under(owner)),
-                None,
-            )?
-        } else {
-            let (card, _zone_change) = self.zone_change_card(card);
-            match destination {
-                ZoneKind::Library => self.players[owner.index()].library.push(card.clone()),
-                ZoneKind::Hand => self.players[owner.index()].hand.push(card.clone()),
-                ZoneKind::Graveyard => self.put_card_into_graveyard(owner, card.clone()),
-                ZoneKind::Exile => self.players[owner.index()].exile.push(card.clone()),
-                ZoneKind::Command => self.players[owner.index()].command.push(card.clone()),
-                ZoneKind::Battlefield | ZoneKind::Stack => {
-                    unreachable!("unsupported destinations returned before removing the card")
-                }
-            }
-            card
-        };
-        if shuffles && destination == ZoneKind::Library {
-            self.rng.shuffle(&mut self.players[owner.index()].library);
-        }
-        if destination == ZoneKind::Graveyard {
-            self.capture_nonbattlefield_graveyard_arrival(&before_move, &card, from);
-        }
-        if destination == ZoneKind::Exile {
-            self.capture_cards_exiled(std::slice::from_ref(&card), from);
-        }
-        if from == ZoneKind::Graveyard {
-            self.note_card_left_graveyard(owner);
-        }
-        Some((card, destination))
-    }
-
-    /// "When this is put into a graveyard from anywhere" for the halves that
-    /// are not a permanent dying: discarded from a hand, milled from a
-    /// library, exiled and then returned.
-    ///
-    /// Raised after the card has landed, which is what lets the graveyard
-    /// walk find the listener at all -- it reads the cards lying there. A
-    /// battlefield departure uses the batched exit path instead, which keeps
-    /// its pre-move LKI and installs the destination object before publishing.
-    fn capture_nonbattlefield_graveyard_arrival(
-        &mut self,
-        before: &CardInstance,
-        after: &CardInstance,
-        from: ZoneKind,
-    ) {
-        let source_context = match from {
-            ZoneKind::Library => CharacteristicContext::Library,
-            ZoneKind::Hand => CharacteristicContext::Hand,
-            ZoneKind::Graveyard => CharacteristicContext::Graveyard,
-            ZoneKind::Exile => CharacteristicContext::Exile,
-            ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => return,
-        };
-        let before = self.printed_trigger_event_object(
-            before.id,
-            before.definition,
-            before.owner,
-            &source_context,
-        );
-        let Some(after) = self.printed_trigger_event_object(
-            after.id,
-            after.definition,
-            after.owner,
-            &CharacteristicContext::Graveyard,
-        ) else {
-            return;
-        };
-        self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
-            before,
-            after: Some(after),
-            from,
-            to: ZoneKind::Graveyard,
-            damage_sources: Vec::new(),
-        });
-    }
-
     /// "If a card left your graveyard this turn." Recorded rather than
     /// reconstructed: by the time an end step asks, the card it is about is
     /// somewhere else entirely and nothing left behind says where it came
@@ -916,6 +755,7 @@ impl Game {
         cards: &[GameObjectId],
         cause: ZoneMoveCause,
     ) {
+        let mut events = Vec::new();
         let mut discarded = Vec::new();
         for id in cards {
             if !self.players[player.index()]
@@ -925,12 +765,13 @@ impl Game {
             {
                 continue;
             }
-            let Some((card, _destination)) = self.move_card_from_nonbattlefield_zone(
+            let Some((card, _destination)) = self.move_card_from_nonbattlefield_zone_collecting(
                 *id,
                 ZoneKind::Hand,
                 ZoneKind::Graveyard,
                 cause,
                 None,
+                &mut events,
             ) else {
                 continue;
             };
@@ -946,6 +787,7 @@ impl Game {
             );
             discarded.push((card.id, definition, object));
         }
+        self.capture_graveyard_arrivals(&events);
         if !discarded.is_empty() {
             self.events.push(GameEvent::CardsDiscarded {
                 player,
@@ -994,3 +836,5 @@ pub(super) fn public_cards(cards: &[CardInstance]) -> Vec<PublicCard> {
         .map(|card| (card.id, card.definition))
         .collect()
 }
+
+include!("zones/graveyard_arrivals.rs");

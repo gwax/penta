@@ -793,9 +793,17 @@ impl Game {
             // destination zone.
             return;
         };
+        let before = card.clone();
         let (card, _zone_change) = self.zone_change_card(card);
         match zone {
-            ZoneKind::Graveyard => self.put_card_into_graveyard(owner, card),
+            ZoneKind::Graveyard => {
+                self.put_card_into_graveyard(owner, card.clone());
+                if let Some(event) =
+                    self.nonbattlefield_graveyard_arrival(&before, &card, entry.from)
+                {
+                    self.capture_entry_event(event);
+                }
+            }
             ZoneKind::Exile => self.players[owner.index()].exile.push(card),
             ZoneKind::Hand => self.players[owner.index()].hand.push(card),
             ZoneKind::Library => self.players[owner.index()].library.push(card),

@@ -427,3 +427,5 @@ fn declining_blight_does_not_grant_the_reward() {
         "no creature can be blighted for tokens"
     );
 }
+
+mod moonshadow;

@@ -344,12 +344,14 @@ const fn declaration_range_is_empty(range: crate::card::AttackDeclarationRangeDe
         }
 }
 
-const COMMITTED_ZONE_TRANSITIONS: [(ZoneKind, ZoneKind); 12] = [
+const COMMITTED_ZONE_TRANSITIONS: [(ZoneKind, ZoneKind); 14] = [
     (ZoneKind::Library, ZoneKind::Battlefield),
     (ZoneKind::Hand, ZoneKind::Battlefield),
     (ZoneKind::Graveyard, ZoneKind::Battlefield),
     (ZoneKind::Exile, ZoneKind::Battlefield),
     (ZoneKind::Stack, ZoneKind::Battlefield),
+    (ZoneKind::Stack, ZoneKind::Graveyard),
+    (ZoneKind::Command, ZoneKind::Graveyard),
     (ZoneKind::Library, ZoneKind::Graveyard),
     (ZoneKind::Hand, ZoneKind::Graveyard),
     (ZoneKind::Exile, ZoneKind::Graveyard),
@@ -369,6 +371,9 @@ fn validate_zone_change_references(
     target_count: usize,
     scope: BindingScope<'_>,
 ) -> Result<(), GrantedAbilityValidationError> {
+    if matcher.one_or_more && matcher.to != Some(ZoneKind::Graveyard) {
+        return Err(unsupported_trigger_event(event));
+    }
     if !COMMITTED_ZONE_TRANSITIONS.iter().any(|(from, to)| {
         matcher.from.is_none_or(|expected| expected == *from)
             && matcher.to.is_none_or(|expected| expected == *to)

@@ -44,6 +44,7 @@ impl Game {
         &self,
         listener: &BattlefieldTriggerListener,
         event: &CommittedTriggerEvent,
+        events: &[CommittedTriggerEvent],
     ) -> usize {
         if !matches!(
             event,
@@ -82,7 +83,13 @@ impl Game {
         {
             return 0;
         }
-        let causes = if let CommittedTriggerEvent::ObjectsDied { objects } = event {
+        let causes = if self.groups_zone_changes(listener, event) {
+            events
+                .iter()
+                .filter(|candidate| self.groups_zone_changes(listener, candidate))
+                .cloned()
+                .collect::<Vec<_>>()
+        } else if let CommittedTriggerEvent::ObjectsDied { objects } = event {
             objects
                 .iter()
                 .filter(|object| {

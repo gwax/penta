@@ -315,6 +315,7 @@ impl Game {
                     controller: object.controller,
                 };
                 let mut inputs = Vec::new();
+                let mut events = Vec::new();
                 for target in processing {
                     let Target::Card(card) = target else {
                         continue;
@@ -329,14 +330,16 @@ impl Game {
                         card,
                         self.current_or_last_known_mana_value(card).unwrap_or(0),
                     ));
-                    self.move_card_target_to_zone(
+                    self.move_card_target_to_zone_collecting(
                         card,
                         definition.zone,
                         cause,
                         None,
                         definition.placement,
+                        &mut events,
                     );
                 }
+                self.capture_graveyard_arrivals(&events);
                 if definition.zone == ZoneKind::Library {
                     inputs.reverse();
                 }

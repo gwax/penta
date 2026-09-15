@@ -22,6 +22,7 @@ use super::{
 mod exile;
 mod graveyard;
 include!("trigger_capture/drawing.rs");
+include!("trigger_capture/zone_groups.rs");
 
 impl Game {
     pub(super) fn capture_payment_paid(
@@ -675,6 +676,7 @@ impl Game {
         // A grouped targeting clause triggers once for the spell or ability
         // whose targets were chosen, not once for every matching recipient.
         let mut matched_targeting_batches = Vec::new();
+        let mut matched_zone_groups = Vec::new();
         // "Triggers only once each turn" counts the triggering rather than
         // the resolution, and one batch can offer a capped ability several
         // matching events, so the count has to rise inside this loop as
@@ -691,11 +693,19 @@ impl Game {
                 ) {
                     continue;
                 }
-                let mut occurrences = self.modified_trigger_occurrences(listener, event);
+                let grouped_zone_change = self.groups_zone_changes(listener, event);
+                if grouped_zone_change {
+                    let key = (listener.capture.source, listener.installed);
+                    if matched_zone_groups.contains(&key) {
+                        continue;
+                    }
+                    matched_zone_groups.push(key);
+                }
+                let mut occurrences = self.modified_trigger_occurrences(listener, event, events);
                 if occurrences == 0 {
                     continue;
                 }
-                let Some(trigger_context) = self.batch_trigger_context(
+                let Some(mut trigger_context) = self.batch_trigger_context(
                     listener,
                     event,
                     events,
@@ -704,6 +714,9 @@ impl Game {
                 ) else {
                     continue;
                 };
+                if grouped_zone_change {
+                    trigger_context = self.zone_group_context(listener, events);
+                }
                 if let Some(id) = listener.installed
                     && self
                         .installed_triggers
@@ -724,7 +737,9 @@ impl Game {
                 // Keep installer bindings and targets; only the committed
                 // event-local context changes for this match.
                 capture.context.trigger = trigger_context;
-                if let Some(object) = Self::zone_change_event_object(listener.event, event) {
+                if !grouped_zone_change
+                    && let Some(object) = Self::zone_change_event_object(listener.event, event)
+                {
                     capture.context.trigger.object = Some(object.id);
                     capture.context.trigger.object_controller = Some(object.controller);
                 }

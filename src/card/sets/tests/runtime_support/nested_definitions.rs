@@ -39,12 +39,14 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
             shared_trigger_event(*event) && shared_trigger_condition(*condition)
         }
         TriggerEventDef::ZoneChanged(matcher) => {
-            const COMMITTED_TRANSITIONS: [(ZoneKind, ZoneKind); 12] = [
+            const COMMITTED_TRANSITIONS: [(ZoneKind, ZoneKind); 14] = [
                 (ZoneKind::Library, ZoneKind::Battlefield),
                 (ZoneKind::Hand, ZoneKind::Battlefield),
                 (ZoneKind::Graveyard, ZoneKind::Battlefield),
                 (ZoneKind::Exile, ZoneKind::Battlefield),
                 (ZoneKind::Stack, ZoneKind::Battlefield),
+                (ZoneKind::Stack, ZoneKind::Graveyard),
+                (ZoneKind::Command, ZoneKind::Graveyard),
                 (ZoneKind::Library, ZoneKind::Graveyard),
                 (ZoneKind::Hand, ZoneKind::Graveyard),
                 (ZoneKind::Exile, ZoneKind::Graveyard),
@@ -62,7 +64,8 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                             && matcher.from.is_none_or(|expected| expected == *actual_from)
                             && matcher.to.is_none_or(|expected| expected == *actual_to)
                     });
-            shared_object_predicate(matcher.object)
+            (!matcher.one_or_more || matcher.to == Some(ZoneKind::Graveyard))
+                && shared_object_predicate(matcher.object)
                 && (!can_match_departure
                     || !trigger_predicate_requires_live_battlefield(matcher.object))
                 && COMMITTED_TRANSITIONS

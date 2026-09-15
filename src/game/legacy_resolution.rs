@@ -160,14 +160,19 @@ impl Game {
     }
 
     fn bury_cards_with_ids(&mut self, player: PlayerId, cards: Vec<CardInstance>) -> Vec<Target> {
+        let mut events = Vec::new();
         let mut buried = Vec::with_capacity(cards.len());
         for card in cards {
-            if let Some(card) =
-                self.put_card_into_graveyard_replacing(player, card, ZoneKind::Library)
-            {
+            if let Some(card) = self.put_card_into_graveyard_replacing_collecting(
+                player,
+                card,
+                ZoneKind::Library,
+                &mut events,
+            ) {
                 buried.push(Target::Card(card.id));
             }
         }
+        self.capture_graveyard_arrivals(&events);
         buried
     }
 

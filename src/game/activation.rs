@@ -405,10 +405,18 @@ impl Game {
                     CostDef::DiscardSource => {
                         let discarded = remove_card(&mut self.players[player.index()].hand, source)
                             .expect("a legal hand activation still has its source");
+                        let before = discarded.clone();
                         let definition = discarded.definition;
                         let (discarded, _zone_change) = self.zone_change_card(discarded);
                         let discarded_id = discarded.id;
-                        self.put_card_into_graveyard(player, discarded);
+                        self.put_card_into_graveyard(player, discarded.clone());
+                        if let Some(event) = self.nonbattlefield_graveyard_arrival(
+                            &before,
+                            &discarded,
+                            ZoneKind::Hand,
+                        ) {
+                            self.capture_graveyard_arrivals(&[event]);
+                        }
                         self.events.push(GameEvent::CardsDiscarded {
                             player,
                             cards: vec![(discarded_id, definition)],
