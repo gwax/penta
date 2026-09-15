@@ -13,7 +13,10 @@ use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
+use crate::card::ChooseCardsFromCollectionDef;
 use crate::card::ChooseDef;
+use crate::card::ChooseObjectOrderDef;
+use crate::card::CollectionInspectionDef;
 use crate::card::ComparisonDef;
 use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
@@ -27,6 +30,7 @@ use crate::card::InstalledTriggerDef;
 use crate::card::ManaColor;
 use crate::card::MoveObjectsDef;
 use crate::card::ObjectChoiceBindingDef;
+use crate::card::ObjectCollectionSourceDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
@@ -344,6 +348,48 @@ pub(in crate::card::sets) static CAST_DOWN: CardRecord = CardRecord::new(
     )),
 );
 
+// DOM 83 — Dark Bargain
+pub(in crate::card::sets) static DARK_BARGAIN: CardRecord = CardRecord::new(
+    "Dark Bargain",
+    "71cbedc6-482e-42de-b310-22d3a955ad7e",
+    "Tyler Jacobson",
+    CardRules::new_instant(mana_cost!("{3}{B}")).with_abilities(&[AbilityDef::spell(
+        "Look at the top three cards of your library. Put two of them \
+         into your hand and the other into your graveyard. Dark \
+         Bargain deals 2 damage to you.",
+        EffectDef::Sequence(&[
+            EffectDef::ChooseCardsFromCollection(ChooseCardsFromCollectionDef {
+                source: ObjectCollectionSourceDef::TopCards {
+                    player: PlayerRefDef::EffectController,
+                    count: ValueDef::Constant(3),
+                },
+                actor: PlayerRefDef::EffectController,
+                inspection: CollectionInspectionDef::Look,
+                object: ObjectPredicateDef::Any,
+                minimum: 2,
+                maximum: 2,
+                chosen: crate::Binding!("chosen"),
+                remainder: crate::Binding!("rest"),
+                then: &EffectDef::Sequence(&[
+                    EffectDef::move_to_zone(
+                        EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!(
+                            "chosen"
+                        ))),
+                        ZoneKind::Hand,
+                        ZonePlacement::Top,
+                    ),
+                    EffectDef::move_to_zone(
+                        EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!("rest"))),
+                        ZoneKind::Graveyard,
+                        ZonePlacement::Top,
+                    ),
+                ]),
+            }),
+            EffectDef::damage(EffectRecipientDef::Controller, ValueDef::Constant(2)),
+        ]),
+    )]),
+);
+
 // DOM 93 — Final Parting
 pub(in crate::card::sets) static FINAL_PARTING: CardRecord = CardRecord::new(
     "Final Parting",
@@ -513,6 +559,64 @@ pub(in crate::card::sets) static WARLORD_S_FURY: CardRecord = CardRecord::new(
             },
             abilities::draw_cards(ValueDef::Constant(1)),
         ]),
+    )]),
+);
+
+// DOM 153 — Adventurous Impulse
+pub(in crate::card::sets) static ADVENTUROUS_IMPULSE: CardRecord = CardRecord::new(
+    "Adventurous Impulse",
+    "f426c92c-6e71-49f0-9a91-0d529bf8c17d",
+    "Titus Lunter",
+    CardRules::new_sorcery(mana_cost!("{G}")).with_abilities(&[AbilityDef::spell(
+        "Look at the top three cards of your library. You may reveal \
+         a creature or land card from among them and put it into your \
+         hand. Put the rest on the bottom of your library in any \
+         order.",
+        EffectDef::ChooseCardsFromCollection(ChooseCardsFromCollectionDef {
+            source: ObjectCollectionSourceDef::TopCards {
+                player: PlayerRefDef::EffectController,
+                count: ValueDef::Constant(3),
+            },
+            actor: PlayerRefDef::EffectController,
+            inspection: CollectionInspectionDef::Look,
+            object: ObjectPredicateDef::AnyOf(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::HasType(CardType::Land),
+            ]),
+            minimum: 0,
+            maximum: 1,
+            chosen: crate::Binding!("chosen"),
+            remainder: crate::Binding!("rest"),
+            then: &EffectDef::Sequence(&[
+                EffectDef::Sequence(&[
+                    EffectDef::RevealObjects(RevealObjectsDef {
+                        input: ObjectSetDef::Binding(crate::Binding!("chosen")),
+                        then: &EffectDef::None,
+                    }),
+                    EffectDef::move_to_zone(
+                        EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!(
+                            "chosen"
+                        ))),
+                        ZoneKind::Hand,
+                        ZonePlacement::Top,
+                    ),
+                ]),
+                EffectDef::ChooseObjectOrder(ChooseObjectOrderDef {
+                    placement: ZonePlacement::Bottom,
+                    visibility: ChoiceVisibilityDef::Private,
+                    actor: PlayerRefDef::EffectController,
+                    input: ObjectSetDef::Binding(crate::Binding!("rest")),
+                    ordered: crate::Binding!("ordered"),
+                    then: &EffectDef::move_to_zone(
+                        EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!(
+                            "ordered"
+                        ))),
+                        ZoneKind::Library,
+                        ZonePlacement::Bottom,
+                    ),
+                }),
+            ]),
+        }),
     )]),
 );
 
@@ -860,11 +964,13 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TESHAR_ANCESTOR_S_APOSTLE,
     &TEMPEST_DJINN,
     &CAST_DOWN,
+    &DARK_BARGAIN,
     &FINAL_PARTING,
     &KNIGHT_OF_MALICE,
     &GHITU_LAVARUNNER,
     &SQUEE_THE_IMMORTAL,
     &WARLORD_S_FURY,
+    &ADVENTUROUS_IMPULSE,
     &GROW_FROM_THE_ASHES,
     &MULDROTHA_THE_GRAVETIDE,
     &TATYOVA_BENTHIC_DRUID,

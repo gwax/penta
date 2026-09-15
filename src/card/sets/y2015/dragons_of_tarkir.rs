@@ -10,6 +10,10 @@ use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
 use crate::card::CardRules;
 use crate::card::CardType;
+use crate::card::ChoiceVisibilityDef;
+use crate::card::ChooseCardsFromCollectionDef;
+use crate::card::ChooseObjectOrderDef;
+use crate::card::CollectionInspectionDef;
 use crate::card::CostDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::EffectDef;
@@ -17,9 +21,11 @@ use crate::card::EffectRecipientDef;
 use crate::card::KeywordAbility;
 use crate::card::ManaColor;
 use crate::card::ManaRestrictionDef;
+use crate::card::ObjectCollectionSourceDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::ObjectSetDef;
+use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
@@ -61,6 +67,52 @@ pub(in crate::card::sets) static ARTFUL_MANEUVER: CardRecord = CardRecord::new(
         ),
         abilities::rebound(),
     ]),
+);
+
+// DTK 45 — Anticipate
+pub(in crate::card::sets) static ANTICIPATE: CardRecord = CardRecord::new(
+    "Anticipate",
+    "7028d9e8-002f-43a1-bdce-0db0b6a642b0",
+    "Lake Hurwitz",
+    CardRules::new_instant(mana_cost!("{1}{U}")).with_abilities(&[AbilityDef::spell(
+        "Look at the top three cards of your library. Put one of them \
+         into your hand and the rest on the bottom of your library in \
+         any order.",
+        EffectDef::ChooseCardsFromCollection(ChooseCardsFromCollectionDef {
+            source: ObjectCollectionSourceDef::TopCards {
+                player: PlayerRefDef::EffectController,
+                count: ValueDef::Constant(3),
+            },
+            actor: PlayerRefDef::EffectController,
+            inspection: CollectionInspectionDef::Look,
+            object: ObjectPredicateDef::Any,
+            minimum: 1,
+            maximum: 1,
+            chosen: crate::Binding!("chosen"),
+            remainder: crate::Binding!("rest"),
+            then: &EffectDef::Sequence(&[
+                EffectDef::move_to_zone(
+                    EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!("chosen"))),
+                    ZoneKind::Hand,
+                    ZonePlacement::Top,
+                ),
+                EffectDef::ChooseObjectOrder(ChooseObjectOrderDef {
+                    placement: ZonePlacement::Bottom,
+                    visibility: ChoiceVisibilityDef::Private,
+                    actor: PlayerRefDef::EffectController,
+                    input: ObjectSetDef::Binding(crate::Binding!("rest")),
+                    ordered: crate::Binding!("ordered"),
+                    then: &EffectDef::move_to_zone(
+                        EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!(
+                            "ordered"
+                        ))),
+                        ZoneKind::Library,
+                        ZonePlacement::Bottom,
+                    ),
+                }),
+            ]),
+        }),
+    )]),
 );
 
 // DTK 120 — Sidisi, Undead Vizier
@@ -336,6 +388,7 @@ pub(in crate::card::sets) static HAVEN_OF_THE_SPIRIT_DRAGON: CardRecord = CardRe
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &ARTFUL_MANEUVER,
+    &ANTICIPATE,
     &SIDISI_UNDEAD_VIZIER,
     &DRAGONLORD_S_SERVANT,
     &IMPACT_TREMORS,

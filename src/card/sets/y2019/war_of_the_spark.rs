@@ -1,8 +1,5 @@
 //! War of the Spark cards cataloged for the Vintage Cube pool.
 
-use crate::card::PlayPermissionDef;
-use crate::card::ZonePositionDef;
-
 use super::CardRecord;
 use super::PrintingRecord;
 use crate::TargetIndex;
@@ -51,6 +48,7 @@ use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayActionMatcherDef;
 use crate::card::PlayCostDef;
+use crate::card::PlayPermissionDef;
 use crate::card::PlayRestrictionDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
@@ -70,6 +68,7 @@ use crate::card::ValueComparisonDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
+use crate::card::ZonePositionDef;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -162,6 +161,32 @@ pub(in crate::card::sets) static UGIN_THE_INEFFABLE: CardRecord = CardRecord::ne
     "7b003521-3da3-41bf-9765-36630653f902",
     "Daarken",
     crate::card::CardRules::unsupported(),
+);
+
+// WAR 10 — Divine Arrow
+pub(in crate::card::sets) static DIVINE_ARROW: CardRecord = CardRecord::new(
+    "Divine Arrow",
+    "73cbb58a-1b00-4883-9b45-da7ded7317e3",
+    "Kieran Yanner",
+    CardRules::new_instant(mana_cost!("{1}{W}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Divine Arrow deals 4 damage to target attacking or blocking \
+         creature.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    ObjectPredicateDef::AttackingOrBlocking,
+                ]),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )],
+        EffectDef::damage(
+            EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            ValueDef::Constant(4),
+        ),
+    )]),
 );
 
 // WAR 51 — Finale of Revelation
@@ -476,6 +501,41 @@ pub(in crate::card::sets) static MASSACRE_GIRL: CardRecord = CardRecord::new(
                 ]),
             ),
         ]),
+);
+
+// WAR 109 — Unlikely Aid
+pub(in crate::card::sets) static UNLIKELY_AID: CardRecord = CardRecord::new(
+    "Unlikely Aid",
+    "9c260c5c-e796-4f81-9e15-0c5be75106b9",
+    "Viktor Titov",
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Target creature gets +2/+0 and gains indestructible until \
+         end of turn. (Damage and effects that say \"destroy\" don't \
+         destroy it.)",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                zones: &[ZoneKind::Battlefield],
+                controller: None,
+                owner: None,
+            },
+        )],
+        EffectDef::Sequence(&[
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(0),
+                ),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                effect: AppliedEffectDef::add_ability(&abilities::indestructible()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ]),
+    )]),
 );
 
 // WAR 115 — Bolt Bend
@@ -1477,6 +1537,7 @@ pub(in crate::card::sets) static TEZZERET_MASTER_OF_THE_BRIDGE: CardRecord = Car
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KARN_THE_GREAT_CREATOR,
     &UGIN_THE_INEFFABLE,
+    &DIVINE_ARROW,
     &FINALE_OF_REVELATION,
     &JACE_WIELDER_OF_MYSTERIES,
     &NARSET_PARTER_OF_VEILS,
@@ -1484,6 +1545,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &BOLASS_CITADEL,
     &LILIANA_DREADHORDE_GENERAL,
     &MASSACRE_GIRL,
+    &UNLIKELY_AID,
     &BOLT_BEND,
     &DREADHORDE_ARCANIST,
     &FINALE_OF_PROMISE,

@@ -595,6 +595,7 @@ fn mana_tap_cost_boundary_requires_one_fully_carried_object_choice() {
 
 #[test]
 fn fully_declarative_clauses_stay_within_the_shared_runtime_boundary() {
+    let mut failures = Vec::new();
     for (set, record) in SET_MODULES
         .iter()
         .flat_map(|module| module.cards.iter().map(move |record| (module.set, *record)))
@@ -604,30 +605,26 @@ fn fully_declarative_clauses_stay_within_the_shared_runtime_boundary() {
             for attached in part.rules.indexed_abilities() {
                 let ability_id = attached.id;
                 let ability = attached.definition;
-                if ability.declarative_effect().is_some()
-                    || ability.declarative_replacement().is_some()
+                if (ability.declarative_effect().is_some()
+                    || ability.declarative_replacement().is_some())
+                    && !shared_definition_ability(&ability)
                 {
-                    assert!(
-                        shared_definition_ability(&ability),
-                        "{} {:?} ability {:?} claims shared declarative execution outside the shared runtime boundary: {ability:?}",
-                        definition.name,
-                        part.id,
-                        ability_id,
-                    );
+                    failures.push(format!(
+                        "{} {:?} ability {:?} is outside the shared runtime boundary: {ability:?}",
+                        definition.name, part.id, ability_id,
+                    ));
                 }
                 assert_nested_program_abilities(&definition.name, ability.effect.definition);
                 if let Some(modal) = ability.modal() {
                     for mode in modal.modes {
-                        if mode.declarative_effect().is_some()
-                            || mode.declarative_replacement().is_some()
+                        if (mode.declarative_effect().is_some()
+                            || mode.declarative_replacement().is_some())
+                            && !shared_definition_ability(mode)
                         {
-                            assert!(
-                                shared_definition_ability(mode),
-                                "{} {:?} ability {:?} contains a shared declarative modal branch outside the shared runtime boundary: {mode:?}",
-                                definition.name,
-                                part.id,
-                                ability_id,
-                            );
+                            failures.push(format!(
+                                "{} {:?} ability {:?} has an unsupported modal branch: {mode:?}",
+                                definition.name, part.id, ability_id,
+                            ));
                         }
                         assert_nested_program_abilities(&definition.name, mode.effect.definition);
                     }
@@ -635,6 +632,7 @@ fn fully_declarative_clauses_stay_within_the_shared_runtime_boundary() {
             }
         }
     }
+    assert!(failures.is_empty(), "{}", failures.join("\n\n"));
 }
 
 #[test]

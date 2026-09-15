@@ -373,6 +373,19 @@ pub(in crate::card::sets) static BRAZEN_SCOURGE: CardRecord = CardRecord::new(
         .with_abilities(&[abilities::haste()]),
 );
 
+// KLD 109 — Cathartic Reunion
+pub(in crate::card::sets) static CATHARTIC_REUNION: CardRecord = CardRecord::new(
+    "Cathartic Reunion",
+    "c68a6226-6dd7-4e1a-9e8a-124eef2caa13",
+    "Howard Lyon",
+    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_abilities(&[AbilityDef::spell(
+        "As an additional cost to cast this spell, discard two \
+         cards.\nDraw three cards.",
+        abilities::draw_cards(ValueDef::Constant(3)),
+    )
+    .with_spell_additional_cost(&CostDef::DiscardCards(2))]),
+);
+
 // KLD 110 — Chandra, Torch of Defiance
 pub(in crate::card::sets) static CHANDRA_TORCH_OF_DEFIANCE: CardRecord = CardRecord::new(
     "Chandra, Torch of Defiance",
@@ -980,6 +993,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TORRENTIAL_GEARHULK,
     &NOXIOUS_GEARHULK,
     &BRAZEN_SCOURGE,
+    &CATHARTIC_REUNION,
     &CHANDRA_TORCH_OF_DEFIANCE,
     &RECKLESS_FIREWEAVER,
     &RENEGADE_TACTICS,
