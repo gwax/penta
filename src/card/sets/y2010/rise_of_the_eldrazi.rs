@@ -31,6 +31,7 @@ use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::KeywordAbility;
 use crate::card::ManaColor;
+use crate::card::ManaRestrictionDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
@@ -38,6 +39,7 @@ use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
+use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerEventDef;
@@ -308,6 +310,7 @@ pub(in crate::card::sets) static TRAINING_GROUNDS: CardRecord = CardRecord::new(
          to activate. This effect can't reduce the mana in that cost \
          to less than one mana.",
         EffectDef::ModifyCost(CostModificationDef::AbilityReduction {
+            target: None,
             abilities: crate::card::AbilityKindDef::Activated,
             permanent: ObjectPredicateDef::All(&[
                 ObjectPredicateDef::HasType(CardType::Creature),
@@ -774,13 +777,33 @@ pub(in crate::card::sets) static PROPHETIC_PRISM: CardRecord = CardRecord::new(
 );
 
 // ROE 227 — Eldrazi Temple
-// Audit: unsupported — Mana restrictions are conjunctive; they cannot allow either casting a
-// colorless Eldrazi or activating a colorless Eldrazi ability.
 pub(in crate::card::sets) static ELDRAZI_TEMPLE: CardRecord = CardRecord::new(
     "Eldrazi Temple",
     "315924c9-77e3-405b-9bbf-852ed563c6e3",
     "James Paick",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_land(&[]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated_mana(
+            "{T}: Add {C}{C}. Spend this mana only to cast colorless Eldrazi spells or activate \
+             abilities of colorless Eldrazi.",
+            &[CostDef::TapSource],
+            EffectDef::AddMana(
+                AddManaEffectDef::one(ManaColor::Colorless)
+                    .with_amount(2)
+                    .with_restrictions(&[ManaRestrictionDef::AnyOf(&[
+                        ManaRestrictionDef::CastSpell(ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::ColorCount(0),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Eldrazi")),
+                        ])),
+                        ManaRestrictionDef::ActivateAbility(ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::InZone(ZoneKind::Battlefield),
+                            ObjectPredicateDef::ColorCount(0),
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Eldrazi")),
+                        ])),
+                    ])]),
+            ),
+        ),
+    ]),
 );
 
 // ROE 228 — Evolving Wilds

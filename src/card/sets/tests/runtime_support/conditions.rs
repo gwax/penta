@@ -49,6 +49,15 @@ fn shared_condition_value(value: ValueDef, static_context: bool) -> bool {
         | ValueDef::CardsDrawnThisTurn(_)
         | ValueDef::CardsDiscardedThisTurn(_)
         | ValueDef::LifeGainedThisTurn(_) => true,
+        ValueDef::ColorIntersectionCount(sets) => sets.iter().all(|set| match set {
+            crate::card::ColorSetDef::Fixed(_) => true,
+            crate::card::ColorSetDef::Binding(binding) => *binding != crate::ParentBinding,
+            crate::card::ColorSetDef::OfObject(reference)
+ => {
+                matches!(reference, ObjectRefDef::Source | ObjectRefDef::AttachedToSource | ObjectRefDef::CreatingSource)
+                    || (!static_context && *reference == ObjectRefDef::TriggeringObject)
+            }
+        }),
         ValueDef::Sum(sum) => {
             shared_condition_value(sum.left, static_context)
                 && shared_condition_value(sum.right, static_context)

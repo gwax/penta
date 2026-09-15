@@ -519,6 +519,7 @@ impl Game {
     ) -> bool {
         match predicate {
             ObjectPredicateDef::Any => true,
+            ObjectPredicateDef::InZone(zone) => zone == ZoneKind::Battlefield,
             ObjectPredicateDef::Source => source.card.id == affected.card.id,
             ObjectPredicateDef::Commander => self.is_commander(affected.card.id),
             ObjectPredicateDef::Token => affected.card.definition.is_token(),
@@ -562,6 +563,7 @@ impl Game {
             | ObjectPredicateDef::HasDeclaredPlayerTarget(_)
             | ObjectPredicateDef::NoncreatureSpell
             | ObjectPredicateDef::Color(_)
+            | ObjectPredicateDef::SharesColorWith(_)
             | ObjectPredicateDef::ColorCount(_)
             | ObjectPredicateDef::Subtype(_)
             | ObjectPredicateDef::ManaValueAtMost(_)

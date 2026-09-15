@@ -154,6 +154,8 @@ pub(in super::super) fn shared_activated_costs(zones: &[ZoneKind], costs: &[Cost
                         .is_none_or(|_| movement.fixed_count() == Some(1))
                     && shared_object_predicate(movement.object)
             }
+            CostDef::Loyalty(value) => battlefield
+                && crate::card::costs::loyalty_change(*value, 0).is_some(),
             // What pays the tap is out on the battlefield wherever the
             // ability is activated from, so a card in a graveyard can name
             // one too.
@@ -186,7 +188,6 @@ pub(in super::super) fn shared_activated_costs(zones: &[ZoneKind], costs: &[Cost
             // built by the mana path, which is why the caller also requires
             // the effect to be an AddMana.
             | CostDef::RemoveAnyNumberOfCountersFromSource(_)
-            | CostDef::Loyalty(_)
             // Nobody chooses which cards go, so a random discard needs no
             // decision procedure -- only a permanent to activate from. A
             // mill cost similarly names the top cards without a choice.
@@ -220,7 +221,8 @@ fn shared_spell_additional_cost_def(cost: CostDef) -> bool {
                 && super::stack_effects::shared_stack_effect(EffectDef::Perform(*program))
         }
         CostDef::Mana(_) | CostDef::PayLife(_) | CostDef::DiscardCards(_) => true,
-        CostDef::SacrificePermanent {
+        CostDef::RevealCardFromHand(object)
+        | CostDef::SacrificePermanent {
             object,
             controller: PlayerRelation::You,
         }

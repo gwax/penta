@@ -225,8 +225,13 @@ impl Game {
                 .reduce(super::add_mana_cost)
                 .unwrap_or_default();
             let chosen = activation.cost_object.into_iter().collect::<Vec<_>>();
-            let reserved =
-                Self::activation_payment_reservations(source, ability, &activation.costs, &chosen);
+            let reserved = Self::activation_payment_reservations(
+                source,
+                ability,
+                &activation.costs,
+                &chosen,
+                0,
+            );
             if self.capture_payment_probe(
                 player,
                 cost,
@@ -485,6 +490,8 @@ impl Game {
                 .expect("a spell has a cast signature")
                 .form()
                 .clone(),
+            alternative: alternative_kind,
+            x,
             reserved_life_payment: life,
         };
         self.pay_cast_life_and_energy(player, life, opponent_life_gain, energy);
@@ -538,6 +545,12 @@ impl Game {
         card_id: GameObjectId,
         source_zone: CastSourceZone,
     ) -> CardInstance {
+        if let Some((zone, card)) = self
+            .card_in_nonbattlefield_zone(card_id)
+            .map(|(zone, card)| (zone, card.clone()))
+        {
+            self.remember_card_characteristics(&card, Some(zone));
+        }
         match source_zone {
             CastSourceZone::Command => {
                 remove_card(&mut self.players[player.index()].command, card_id)
@@ -628,6 +641,8 @@ impl Game {
             chosen_permanents: Vec::new(),
             applied_effects: Vec::new(),
             text_changes: Vec::new(),
+            resolved_continuous_effects: Vec::new(),
+            last_known_colors: None,
             colors: None,
             cast: Some(cast),
             face_down,
@@ -785,6 +800,8 @@ impl Game {
                 controller,
                 commander_owner,
                 form,
+                alternative,
+                x: chosen_x,
                 ..
             } => ManaPaymentPurpose::Spell {
                 object: *object,
@@ -792,6 +809,8 @@ impl Game {
                 definition: *definition,
                 controller: *controller,
                 form: form.clone(),
+                alternative: *alternative,
+                x: *chosen_x,
                 reserved_life_payment: 0,
             },
             ManaPaymentPurpose::Ability { .. }

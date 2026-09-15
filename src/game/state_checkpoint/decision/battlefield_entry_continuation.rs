@@ -182,6 +182,45 @@ fn parse_battlefield_entry_continuation(
                 choices: choices.clone(),
             }
         }
+        DecisionContinuationSnapshot::BattlefieldEntryColorsChoice {
+            context,
+            effect,
+            count,
+        } => {
+            let context = parse_replacement_context(*context)?;
+            validate_entry_decision_context(game, context, effect)?;
+            let authored_effect = catalog_replacement_effect(&game.catalog, effect)
+                .ok_or("entry color choice locator is absent from this catalog")?;
+            if !matches!(authored_effect,
+                ReplacementEffectDef::BindOutput {
+                    effect: &ReplacementEffectDef::Choose(ReplacementChoiceDef::Colors(authored_count)),
+                    binding,
+                } if authored_count == *count && binding != crate::ParentBinding)
+                || !(1..=5).contains(count)
+            {
+                return Err("entry color choice does not match its authored effect".into());
+            }
+            let pending = game
+                .pending_events
+                .front()
+                .ok_or("entry color choice lacks its event")?;
+            validate_authored_decision(
+                observation,
+                Game::pending_event_controller(pending),
+                &format!("Choose {count} different colors"),
+                DecisionVisibility::Public,
+                DecisionPreference::Neutral,
+                usize::from(*count),
+                usize::from(*count),
+                &Game::entry_color_options(),
+                "entry color choice",
+            )?;
+            DecisionContinuation::BattlefieldEntryColorsChoice {
+                context,
+                authored_effect,
+                count: *count,
+            }
+        }
         DecisionContinuationSnapshot::BattlefieldEntryBasicLandTypePairChoice {
             context,
             effect,
@@ -191,9 +230,7 @@ fn parse_battlefield_entry_continuation(
             let Some(ReplacementEffectDef::Choose(ReplacementChoiceDef::BasicLandTypePair)) =
                 catalog_replacement_effect(&game.catalog, effect)
             else {
-                return Err(
-                    "entry basic-land-type pair locator is not a pair choice".into(),
-                );
+                return Err("entry basic-land-type pair locator is not a pair choice".into());
             };
             let pending = game
                 .pending_events

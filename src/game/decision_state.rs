@@ -751,8 +751,12 @@ pub(super) enum DecisionContinuation {
         choice: BattlefieldEntryScalarChoiceDef,
         choices: Vec<String>,
     },
-    /// The ordered pair of different basic land types an entering permanent
-    /// remembers for a persistent substitution effect.
+    /// A named set of distinct colors chosen as a permanent enters.
+    BattlefieldEntryColorsChoice {
+        context: ReplacementEffectContext,
+        authored_effect: ReplacementEffectDef,
+        count: u8,
+    },
     BattlefieldEntryBasicLandTypePairChoice {
         context: ReplacementEffectContext,
     },

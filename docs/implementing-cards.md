@@ -769,3 +769,42 @@ A self-directed static characteristic clause that also applies outside the game
 uses `.with_outside_game()`, in addition to any `.with_source_zones(...)` list.
 Listing every game zone does not imply outside-game scope. Deck requirements
 and runtime characteristic queries share discovery of these clauses.
+
+## Colors, zones, and restricted mana
+
+Use `ObjectPredicateDef::InZone` for zone membership. A permanent is an object
+on the battlefield, so combine `InZone(Battlefield)` with characteristic
+predicates when a restriction also needs a color or subtype. Mana restrictions
+compose `CastSpell`, `ActivateAbility`, and `AnyOf`; `PayCostContaining` tests
+the fixed mana symbols in the total cost being paid.
+
+Devoid and `AbilityDef::define_colors` define intrinsic colors in every zone.
+`printed_color_set` retains the colors supplied by the mana cost or indicator;
+`color_set` includes intrinsic definitions. External color changes apply in
+layer 5. Removing abilities in layer 6 does not reverse those changes. Resolved
+spell color effects carry onto the resulting permanent, but spell copies keep
+only copiable color exceptions. Retired objects retain last-known colors;
+retired cards also retain power and toughness for reveal costs.
+
+Wrap `ReplacementChoiceDef::Colors(n)` in `ReplacementEffectDef::BindOutput`
+to store a named set of distinct colors as a permanent enters. Later clauses
+read it through `ColorSetDef::Binding(binding)` in the source's scope; `OfObject`
+and `Fixed` supply other sets for `SharesColorWith` and `ColorIntersectionCount`.
+Each binding survives with its source's last-known state, is not copiable, and
+is absent on a new object until that object chooses. A missing binding yields
+the empty set. Colorless is the empty set and is never a selectable color.
+
+Equipment abilities carry `AbilityKindDef::Equip`; target-dependent ability
+cost reductions use `AbilityReduction.target` and the announced targets.
+Loyalty costs carry signed values: `CostDef::Loyalty(ValueDef::Constant(2))`
+adds two counters, while `CostDef::Loyalty(ValueDef::Negate(&ValueDef::ChosenX))`
+pays −X. Announcement, resource reservations, payment, and policy scoring use
+the same chosen X. X is bounded by available loyalty (and any mana X cost);
+even −0 consumes the loyalty activation. Fixed signed constants and −X are
+supported; other value expressions remain outside this cost support boundary.
+Loyalty abilities that produce mana still use the ordinary activated-ability stack.
+
+Installed zone-change triggers can use `ZoneChangeEventMatcherDef::among` to
+watch exact objects saved in an object-set binding. Matching happens before a
+once-only listener is consumed, and the installing resolution's bindings remain
+available after its source leaves the battlefield.

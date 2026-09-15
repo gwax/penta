@@ -52,11 +52,12 @@ impl Game {
                             |effective| {
                                 let ability = effective.ability;
                                 supplies_graveyard_static |= matches!(
-                                        ability.definition,
-                                        DeclarativeAbilityDef::Static(definition)
-                                            if definition.source_zones.contains(&ZoneKind::Graveyard)
-                                    )
-                                    && ability.declarative_effect().is_some();
+                                    ability.definition,
+                                    DeclarativeAbilityDef::Static(definition)
+                                        if definition.source_zones.contains(&ZoneKind::Graveyard)
+                                ) && ability
+                                    .declarative_effect()
+                                    .is_some();
                             },
                         );
                         supplies_graveyard_static
@@ -88,7 +89,9 @@ impl Game {
         let source_presentation = Self::effective_rules_source(source);
         if input.zone == ZoneKind::Battlefield
             && kind.reads_granted_static_abilities()
-            && self.visit_granted_static_power_toughness(input, affected, kind, visitor).is_break()
+            && self
+                .visit_granted_static_power_toughness(input, affected, kind, visitor)
+                .is_break()
         {
             return ControlFlow::Break(());
         }
@@ -122,7 +125,7 @@ impl Game {
                 ability.definition,
                 DeclarativeAbilityDef::Static(definition)
                     if definition.source_zones.contains(&input.zone)
-            ) && ability.declarative_effect().is_some()
+            ) && ability.declarative_effect().is_some_and(|effect| kind.may_be_supplied_by(effect))
         });
         if !supplies_static_effect {
             return ControlFlow::Continue(());
@@ -141,15 +144,23 @@ impl Game {
             if !definition.source_zones.contains(&input.zone) {
                 continue;
             }
-            let origin = Self::authored_ability_origin(source_presentation, attached.id);
-            if input.check_layer_survival
-                && !self.ability_survives_resolved_operations(source, origin)
-            {
-                continue;
-            }
             let Some(effect) = ability.declarative_effect() else {
                 continue;
             };
+            if !kind.may_be_supplied_by(effect) {
+                continue;
+            }
+            let origin = Self::authored_ability_origin(source_presentation, attached.id);
+            if input.check_layer_survival
+                && !self.static_ability_survives_at_start(
+                    source,
+                    origin,
+                    effect,
+                    input.timestamp,
+                )
+            {
+                continue;
+            }
             let mut traversal = StaticEffectTraversal {
                 source,
                 source_timestamp: input.timestamp,
@@ -170,7 +181,8 @@ impl Game {
         ControlFlow::Continue(())
     }
 
-    #[allow(clippy::too_many_arguments)]
+    // Keep source filtering, fallback, and ordered component visitation together.
+    #[allow(clippy::too_many_arguments, clippy::too_many_lines)]
     fn visit_prepared_static_source_effects(
         &self,
         input: StaticEffectSource<'_>,
@@ -187,9 +199,20 @@ impl Game {
             if !ability.source_zones.contains(&input.zone) {
                 continue;
             }
+            if !ability.applications.as_ref().map_or_else(
+                || kind.may_be_supplied_by(ability.reference_effect),
+                |applications| applications.iter().any(|application| application.supplies(lane)),
+            ) {
+                continue;
+            }
             let origin = Self::authored_ability_origin(source_presentation, ability.id);
             if input.check_layer_survival
-                && !self.ability_survives_resolved_operations(source, origin)
+                && !self.static_ability_survives_at_start(
+                    source,
+                    origin,
+                    ability.reference_effect,
+                    input.timestamp,
+                )
             {
                 continue;
             }
@@ -212,12 +235,7 @@ impl Game {
                     next_component_order: 0,
                 };
                 if self
-                    .visit_static_effect(
-                        ability.reference_effect,
-                        &mut traversal,
-                        kind,
-                        visitor,
-                    )
+                    .visit_static_effect(ability.reference_effect, &mut traversal, kind, visitor)
                     .is_break()
                 {
                     return ControlFlow::Break(());
@@ -244,16 +262,20 @@ impl Game {
                     source,
                     affected,
                     text_words,
-                ) || !application.trigger_conditions.iter().all(|(condition, expected)| {
-                    self.trigger_condition_holds(
-                        condition,
-                        source.card.id,
-                        source.controller,
-                        TriggerContext::empty(),
-                        None,
-                        None,
-                    ) == *expected
-                }) {
+                ) || !application
+                    .trigger_conditions
+                    .iter()
+                    .all(|(condition, expected)| {
+                        self.trigger_condition_holds(
+                            condition,
+                            source.card.id,
+                            source.controller,
+                            TriggerContext::empty(),
+                            None,
+                            None,
+                        ) == *expected
+                    })
+                {
                     continue;
                 }
                 for component in &application.components {

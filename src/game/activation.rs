@@ -25,7 +25,7 @@ impl Game {
     /// planeswalker has used its one ability for the turn (CR 606.3). Shared
     /// by the two activation paths, because a loyalty ability that makes
     /// mana is paid for exactly like one that does not.
-    pub(super) fn pay_loyalty_cost(&mut self, source: GameObjectId, change: i8) {
+    pub(super) fn pay_loyalty_cost(&mut self, source: GameObjectId, change: i32) {
         let Some(permanent) = self
             .battlefield
             .iter_mut()
@@ -34,9 +34,17 @@ impl Game {
             return;
         };
         if change >= 0 {
-            permanent.add_counters(CounterKind::Loyalty, u16::from(change.unsigned_abs()));
+            permanent.add_counters(
+                CounterKind::Loyalty,
+                u16::try_from(change.unsigned_abs())
+                    .expect("validated loyalty change fits counters"),
+            );
         } else {
-            permanent.remove_counters(CounterKind::Loyalty, u16::from(change.unsigned_abs()));
+            permanent.remove_counters(
+                CounterKind::Loyalty,
+                u16::try_from(change.unsigned_abs())
+                    .expect("validated loyalty change fits counters"),
+            );
         }
         permanent.activated_loyalty_this_turn = true;
     }
@@ -627,6 +635,7 @@ impl Game {
                         frozen_ability.origin,
                         definition.costs,
                         cost_objects,
+                        x,
                     );
                     if self.capture_payment_probe(player, cost, x, &payment_purpose, reserved, true)
                     {
@@ -686,7 +695,6 @@ impl Game {
                     // The open-ended removal never reaches payment: mana
                     // enumeration replaced it with a sized one.
                     CostDef::Mana(_) | CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. }
-                    | CostDef::RemoveAnyNumberOfCountersFromSource(_)
                     | CostDef::ReturnUnblockedAttackerToHand
                     | CostDef::TapPermanents { .. }
                     // Paid by decision after everything else, the way a
@@ -704,6 +712,10 @@ impl Game {
                         // permanent may itself produce mana first, and the
                         // source may still owe a tap or counter-removal cost
                         // before it leaves.
+                    }
+                    CostDef::RemoveAnyNumberOfCountersFromSource(kind) => {
+                        self.battlefield.iter_mut().find(|permanent| permanent.card.id == source)
+                            .expect("a legal activation has its source").remove_counters(*kind, x);
                     }
                     CostDef::RemoveCountersFromSource { kind, amount } => {
                         self.battlefield
@@ -754,7 +766,8 @@ impl Game {
                         self.pay_nonbattlefield_move_cost(player, *movement, cost_objects);
                     }
                     CostDef::Loyalty(change) => {
-                        self.pay_loyalty_cost(source, *change);
+                        self.pay_loyalty_cost(source, crate::card::costs::loyalty_change(*change, x)
+                            .expect("a legal activation has a supported loyalty value"));
                     }
                     CostDef::DiscardCardsAtRandom(amount) => {
                         self.discard_at_random(player, usize::from(*amount));

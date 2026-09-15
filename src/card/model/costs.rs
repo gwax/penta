@@ -214,10 +214,11 @@ pub enum CostDef {
     },
     /// Sacrifice creatures until their combined power reaches this minimum.
     SacrificeCreaturesWithTotalPower(u16),
-    /// Add or remove that many loyalty counters. A planeswalker's abilities
-    /// are the only costs paid this way, and paying one is what makes them
-    /// once per turn at sorcery speed.
-    Loyalty(i8),
+    /// Add or remove the evaluated number of loyalty counters. Fixed costs
+    /// use `ValueDef::Constant`; −X uses `ValueDef::Negate(&ValueDef::ChosenX)`.
+    /// A loyalty cost makes this a loyalty ability, with its own timing and
+    /// once-per-turn rules, even when the evaluated change is zero.
+    Loyalty(ValueDef),
     /// Add mana to the payer's pool as a cost action.
     AddMana(&'static AddManaEffectDef),
     /// Have a player related to the payer gain life.
@@ -434,6 +435,7 @@ impl CostDef {
 pub const NO_COSTS: &[CostDef] = &[];
 
 include!("costs/list.rs");
+include!("costs/loyalty.rs");
 include!("costs/text.rs");
 
 /// A basic land subtype used by type-changing effects and mana provenance.
@@ -660,6 +662,9 @@ pub enum ManaRestrictionDef {
     /// Spend only to cast a commander designated for the player spending it.
     CastYourCommander,
     ActivateAbility(ObjectPredicateDef),
+    /// Any mana portion of a payment whose total cost contains a fixed
+    /// requirement of this mana type, including its generic portion.
+    PayCostContaining(ManaColor),
     /// This mana can be spent only on a payment with the named semantic purpose.
     Payment(super::AbilityLabel),
     Special(&'static str),

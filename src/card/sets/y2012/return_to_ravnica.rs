@@ -5328,7 +5328,7 @@ pub(in crate::card::sets) static VRASKA_THE_UNSEEN: CardRecord = CardRecord::new
             AbilityDef::activated(
                 "+1: Until your next turn, whenever a creature deals combat \
                  damage to Vraska, destroy that creature.",
-                &[CostDef::Loyalty(1)],
+                &[CostDef::Loyalty(ValueDef::Constant(1))],
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
                     // The delayed trigger Vraska's +1 hangs on herself. It reads damage arriving
@@ -5349,7 +5349,7 @@ pub(in crate::card::sets) static VRASKA_THE_UNSEEN: CardRecord = CardRecord::new
             ),
             AbilityDef::activated_with_targets(
                 "−3: Destroy target nonland permanent.",
-                &[CostDef::Loyalty(-3)],
+                &[CostDef::Loyalty(ValueDef::Constant(-3))],
                 &[AbilityTargetDef::exactly_one(
                     AbilityTargetPredicate::Object {
                         object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(
@@ -5369,7 +5369,7 @@ pub(in crate::card::sets) static VRASKA_THE_UNSEEN: CardRecord = CardRecord::new
                 "−7: Create three 1/1 black Assassin creature tokens with \
                  \"Whenever this token deals combat damage to a player, that \
                  player loses the game.\"",
-                &[CostDef::Loyalty(-7)],
+                &[CostDef::Loyalty(ValueDef::Constant(-7))],
                 EffectDef::CreateToken(
                     CreateTokenDef::new(TokenDef::Literal(
                         TokenCharacteristics::creature(&["Assassin"], &[ManaColor::Black], 1, 1)
@@ -6070,13 +6070,44 @@ pub(in crate::card::sets) static STREET_SWEEPER: CardRecord = CardRecord::new(
 );
 
 // RTR 235 — Tablet of the Guilds
-// Audit: unsupported — Needs choosing and storing two colors, matching cast spells against
-// both, and counting how many chosen colors match.
 pub(in crate::card::sets) static TABLET_OF_THE_GUILDS: CardRecord = CardRecord::new(
     "Tablet of the Guilds",
     "6b006384-6fb6-4129-b1d2-7674d1141f8f",
     "Nic Klein",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::as_enters(
+            "As this artifact enters, choose two colors.",
+            ReplacementEffectDef::BindOutput {
+                binding: crate::Binding!("guild_colors"),
+                effect: &ReplacementEffectDef::Choose(crate::card::ReplacementChoiceDef::Colors(2)),
+            },
+        ),
+        AbilityDef::triggered_if(
+            "Whenever you cast a spell, if it's at least one of the chosen colors, you gain 1 \
+             life for each of the chosen colors it is.",
+            TriggerEventDef::spell_cast(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                ObjectPredicateDef::SharesColorWith(crate::card::ColorSetDef::Binding(
+                    crate::Binding!("guild_colors"),
+                )),
+            ])),
+            &TriggerConditionDef::ValueComparison(&crate::card::ValueComparisonDef {
+                left: ValueDef::ColorIntersectionCount(&[
+                    crate::card::ColorSetDef::OfObject(ObjectRefDef::TriggeringObject),
+                    crate::card::ColorSetDef::Binding(crate::Binding!("guild_colors")),
+                ]),
+                comparison: ComparisonDef::GreaterOrEqual,
+                right: ValueDef::Constant(1),
+            }),
+            EffectDef::GainLife {
+                recipient: EffectRecipientDef::Controller,
+                amount: ValueDef::ColorIntersectionCount(&[
+                    crate::card::ColorSetDef::OfObject(ObjectRefDef::TriggeringObject),
+                    crate::card::ColorSetDef::Binding(crate::Binding!("guild_colors")),
+                ]),
+            },
+        ),
+    ]),
 );
 
 // RTR 236 — Volatile Rig

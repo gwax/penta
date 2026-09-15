@@ -2440,55 +2440,53 @@ pub(in crate::card::sets) static SOWING_MYCOSPAWN: CardRecord = CardRecord::new(
     // Four mana finds a land and six exiles one, and both happen on the cast
     // rather than on arrival -- so countering the creature does not stop
     // either of them.
-    CardRules::new_creature(mana_cost!("{3}{G}"), &["Eldrazi", "Fungus"], 3, 3)
-        .printed_colors(&[])
-        .with_abilities(&[
-            // Devoid is the empty printed colour set below; the keyword is here so
-            // the card says what it is.
-            abilities::devoid(),
-            AbilityDef::alternative_cast(
-                &[CostDef::Mana(mana_cost!("{4}{G}{C}"))],
-                AlternativeCastKindDef::Kicked,
-                Some("Kicker {1}{C} (You may pay an additional {1}{C} as you cast this spell.)"),
-                EffectDef::None,
-            ),
-            AbilityDef::triggered(
-                "When you cast this spell, search your library for a land \
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Eldrazi", "Fungus"], 3, 3).with_abilities(&[
+        // Devoid is the empty printed colour set below; the keyword is here so
+        // the card says what it is.
+        abilities::devoid(),
+        AbilityDef::alternative_cast(
+            &[CostDef::Mana(mana_cost!("{4}{G}{C}"))],
+            AlternativeCastKindDef::Kicked,
+            Some("Kicker {1}{C} (You may pay an additional {1}{C} as you cast this spell.)"),
+            EffectDef::None,
+        ),
+        AbilityDef::triggered(
+            "When you cast this spell, search your library for a land \
                  card, put it onto the battlefield, then shuffle.",
-                TriggerEventDef::spell_cast(ObjectPredicateDef::Source),
-                EffectDef::SearchZone {
-                    player: EffectRecipientDef::Controller,
-                    source: ZoneKind::Library,
-                    object: ObjectPredicateDef::HasType(CardType::Land),
-                    minimum: 0,
-                    maximum: ValueDef::Constant(1),
-                    reveal: false,
-                    destination: ZoneKind::Battlefield,
-                    placement: ZonePlacement::Top,
-                    shuffle: true,
-                    enters_tapped: false,
-                    attachment: None,
-                    binding: None,
-                    then: None,
-                },
+            TriggerEventDef::spell_cast(ObjectPredicateDef::Source),
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::HasType(CardType::Land),
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: false,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: false,
+                attachment: None,
+                binding: None,
+                then: None,
+            },
+        ),
+        AbilityDef::triggered_if_with_targets(
+            "When you cast this spell, if it was kicked, exile target land.",
+            TriggerEventDef::spell_cast(ObjectPredicateDef::Source),
+            // The kicked half changes nothing about how the spell resolves: it costs
+            // more, and the second cast trigger reads that fact. That is why the
+            // alternative carries no instructions of its own.
+            &TriggerConditionDef::SourceCastWith(AlternativeCastKindDef::Kicked),
+            &[AbilityTargetDef::exactly_one_permanent(
+                ObjectPredicateDef::HasType(CardType::Land),
+            )],
+            EffectDef::move_to_zone(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ZoneKind::Exile,
+                ZonePlacement::Top,
             ),
-            AbilityDef::triggered_if_with_targets(
-                "When you cast this spell, if it was kicked, exile target land.",
-                TriggerEventDef::spell_cast(ObjectPredicateDef::Source),
-                // The kicked half changes nothing about how the spell resolves: it costs
-                // more, and the second cast trigger reads that fact. That is why the
-                // alternative carries no instructions of its own.
-                &TriggerConditionDef::SourceCastWith(AlternativeCastKindDef::Kicked),
-                &[AbilityTargetDef::exactly_one_permanent(
-                    ObjectPredicateDef::HasType(CardType::Land),
-                )],
-                EffectDef::move_to_zone(
-                    EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    ZoneKind::Exile,
-                    ZonePlacement::Top,
-                ),
-            ),
-        ]),
+        ),
+    ]),
 );
 
 // MH3 171 — Springheart Nantuko
@@ -3489,7 +3487,7 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
                             [
                                 AbilityDef::activated(
                                     "+2: Put a +1/+1 counter on each Cat you control.",
-                                    &[CostDef::Loyalty(2)],
+                                    &[CostDef::Loyalty(ValueDef::Constant(2))],
                                     EffectDef::AddCounters {
                                         object: EffectRecipientDef::objects(ObjectSetDef::Query(
                                             ObjectQueryDef::matching(
@@ -3509,7 +3507,7 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
                                      do, if you control a red permanent other than Ajani, he \
                                      deals damage equal to the number of creatures you control \
                                      to any target.",
-                                    &[CostDef::Loyalty(0)],
+                                    &[CostDef::Loyalty(ValueDef::Constant(0))],
                                     &const {
                                         [AbilityTargetDef::exactly_one(
                                             AbilityTargetPredicate::AnyTarget,
@@ -3573,7 +3571,7 @@ pub(in crate::card::sets) static AJANI_NACATL_PARIAH: CardRecord = CardRecord::n
                                     "−4: Each opponent chooses an artifact, a creature, an \
                                      enchantment, and a planeswalker from among the nonland \
                                      permanents they control, then sacrifices the rest.",
-                                    &[CostDef::Loyalty(-4)],
+                                    &[CostDef::Loyalty(ValueDef::Constant(-4))],
                                     EffectDef::ChooseForEachPlayer(ChooseForEachPlayerDef {
                                         player: EffectRecipientDef::Opponent,
                                         candidates: ObjectPredicateDef::Not(
@@ -4837,7 +4835,7 @@ pub(in crate::card::sets) static TAMIYO_INQUISITIVE_STUDENT: CardRecord = CardRe
                                     "+2: Until your next turn, whenever a creature attacks you \
                                      or a planeswalker you control, it gets -1/-0 until end of \
                                      turn.",
-                                    &[CostDef::Loyalty(2)],
+                                    &[CostDef::Loyalty(ValueDef::Constant(2))],
                                     EffectDef::InstallTrigger(InstalledTriggerDef {
                                         // The attackers her plus ability shrinks. It is installed on resolution and
                                         // watches until her controller's next turn, so it catches the attack it was
@@ -4869,7 +4867,7 @@ pub(in crate::card::sets) static TAMIYO_INQUISITIVE_STUDENT: CardRecord = CardRe
                                     "−3: Return target instant or sorcery card from your \
                                      graveyard to your hand. If it's a green card, add one mana \
                                      of any color.",
-                                    &[CostDef::Loyalty(-3)],
+                                    &[CostDef::Loyalty(ValueDef::Constant(-3))],
                                     &const {
                                         [AbilityTargetDef::exactly_one(AbilityTargetPredicate::Object {
                                             object: ObjectPredicateDef::AnyOf(&[
@@ -4914,7 +4912,7 @@ pub(in crate::card::sets) static TAMIYO_INQUISITIVE_STUDENT: CardRecord = CardRe
                                     "−7: Draw cards equal to half the number of cards in your \
                                      library, rounded up. You get an emblem with \"You have no \
                                      maximum hand size.\"",
-                                    &[CostDef::Loyalty(-7)],
+                                    &[CostDef::Loyalty(ValueDef::Constant(-7))],
                                     EffectDef::Sequence(
                                         &const {
                                             [
@@ -5028,7 +5026,7 @@ pub(in crate::card::sets) static SORIN_OF_HOUSE_MARKOV: CardRecord = CardRecord:
                                 abilities::extort(),
                                 AbilityDef::activated(
                                     "+2: Create a Food token.",
-                                    &[CostDef::Loyalty(2)],
+                                    &[CostDef::Loyalty(ValueDef::Constant(2))],
                                     EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
                                         FOOD_TOKEN,
                                     ))),
@@ -5038,7 +5036,7 @@ pub(in crate::card::sets) static SORIN_OF_HOUSE_MARKOV: CardRecord = CardRecord:
                                 AbilityDef::activated_with_targets(
                                     "\u{2212}1: Sorin deals damage equal to the amount of life \
                                      you gained this turn to any target.",
-                                    &[CostDef::Loyalty(-1)],
+                                    &[CostDef::Loyalty(ValueDef::Constant(-1))],
                                     &const {
                                         [AbilityTargetDef::exactly_one(
                                             AbilityTargetPredicate::AnyTarget,
@@ -5054,7 +5052,7 @@ pub(in crate::card::sets) static SORIN_OF_HOUSE_MARKOV: CardRecord = CardRecord:
                                      Vampire in addition to its other types. Put a lifelink \
                                      counter on it if you control a white permanent other than \
                                      that creature or Sorin.",
-                                    &[CostDef::Loyalty(-6)],
+                                    &[CostDef::Loyalty(ValueDef::Constant(-6))],
                                     &const {
                                         [AbilityTargetDef::exactly_one_permanent(
                                             ObjectPredicateDef::HasType(CardType::Creature),
