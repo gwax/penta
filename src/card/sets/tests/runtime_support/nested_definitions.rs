@@ -29,7 +29,16 @@ fn shared_stack_target_filter(filter: StackTargetFilterDef) -> bool {
 
 #[allow(clippy::too_many_lines)]
 pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
+    if !matches!(event, TriggerEventDef::Simultaneous(_)) && event.contains_simultaneous() {
+        return false;
+    }
     match event {
+        TriggerEventDef::Simultaneous(definition) => {
+            definition.minimum > 0
+                && definition.maximum.is_none_or(|maximum| maximum >= definition.minimum)
+                && definition.event.supports_simultaneous_matching()
+                && shared_trigger_event(*definition.event)
+        }
         // One ability, so it is only runnable if every way into it is.
         TriggerEventDef::AbilityTriggeredBy(event) => shared_trigger_event(*event),
         TriggerEventDef::AnyOf(events) => events.iter().copied().all(shared_trigger_event),
@@ -39,7 +48,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
             shared_trigger_event(*event) && shared_trigger_condition(*condition)
         }
         TriggerEventDef::ZoneChanged(matcher) => {
-            const COMMITTED_TRANSITIONS: [(ZoneKind, ZoneKind); 14] = [
+            const COMMITTED_TRANSITIONS: [(ZoneKind, ZoneKind); 17] = [
                 (ZoneKind::Library, ZoneKind::Battlefield),
                 (ZoneKind::Hand, ZoneKind::Battlefield),
                 (ZoneKind::Graveyard, ZoneKind::Battlefield),
@@ -50,6 +59,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                 (ZoneKind::Library, ZoneKind::Graveyard),
                 (ZoneKind::Hand, ZoneKind::Graveyard),
                 (ZoneKind::Exile, ZoneKind::Graveyard),
+                (ZoneKind::Library, ZoneKind::Exile),
+                (ZoneKind::Hand, ZoneKind::Exile),
+                (ZoneKind::Graveyard, ZoneKind::Exile),
                 (ZoneKind::Battlefield, ZoneKind::Graveyard),
                 (ZoneKind::Battlefield, ZoneKind::Exile),
                 (ZoneKind::Battlefield, ZoneKind::Hand),
@@ -64,8 +76,7 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                             && matcher.from.is_none_or(|expected| expected == *actual_from)
                             && matcher.to.is_none_or(|expected| expected == *actual_to)
                     });
-            (!matcher.one_or_more || matcher.to == Some(ZoneKind::Graveyard))
-                && shared_object_predicate(matcher.object)
+            shared_object_predicate(matcher.object)
                 && (!can_match_departure
                     || !trigger_predicate_requires_live_battlefield(matcher.object))
                 && COMMITTED_TRANSITIONS

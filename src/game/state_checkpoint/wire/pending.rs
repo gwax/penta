@@ -75,7 +75,7 @@ pub(super) fn parse_pending_events(
                     permanent: parse_detached_permanent(&snapshot.entry.permanent, catalog)?,
                     from: parse_zone_kind(snapshot.entry.from),
                     completion: parse_completion(snapshot.entry.completion)?,
-                    redirected_to: None,
+                    redirected_to: snapshot.entry.redirected_to.map(parse_zone_kind),
                 }),
                 applied: snapshot
                     .applied

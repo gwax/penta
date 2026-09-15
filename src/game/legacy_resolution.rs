@@ -172,7 +172,7 @@ impl Game {
                 buried.push(Target::Card(card.id));
             }
         }
-        self.capture_graveyard_arrivals(&events);
+        self.capture_zone_move_events(&events);
         buried
     }
 

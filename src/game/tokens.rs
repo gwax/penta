@@ -65,6 +65,21 @@ impl Game {
     /// created as it enters (CR 111.11), so an entry that was replaced or is
     /// still waiting on a decision is not in the batch.
     pub(super) fn capture_tokens_created(&mut self, controller: PlayerId, tokens: &[GameObjectId]) {
+        if self.ready_entry_batch.is_some() {
+            self.deferred_token_creations
+                .push((controller, tokens.to_vec()));
+            return;
+        }
+        if let Some(event) = self.tokens_created_event(controller, tokens) {
+            self.capture_battlefield_triggers(&event);
+        }
+    }
+
+    pub(super) fn tokens_created_event(
+        &self,
+        controller: PlayerId,
+        tokens: &[GameObjectId],
+    ) -> Option<super::CommittedTriggerEvent> {
         let created = tokens
             .iter()
             .filter_map(|id| {
@@ -74,13 +89,10 @@ impl Game {
             })
             .map(|permanent| self.trigger_event_object(permanent))
             .collect::<Vec<_>>();
-        if created.is_empty() {
-            return;
-        }
-        self.capture_battlefield_triggers(&super::CommittedTriggerEvent::TokensCreated {
+        (!created.is_empty()).then_some(super::CommittedTriggerEvent::TokensCreated {
             tokens: created,
             controller,
-        });
+        })
     }
 
     /// Test/setup shorthand for creating an ordinary unlinked token.

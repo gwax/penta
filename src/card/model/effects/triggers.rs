@@ -54,9 +54,64 @@ pub struct StackObjectEventMatcherDef {
     pub event: StackObjectEventDef,
 }
 
+/// How matching members of one simultaneous event become trigger occurrences.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum TriggerAggregationDef {
+    /// Preserve one occurrence and its object context for each matching member.
+    Each,
+    /// One occurrence for the entire matching group, with its count as the amount.
+    Once,
+}
+
+/// Count only members that satisfy `event`, within one simultaneous event.
+/// Separate instructions never contribute to the same count.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct SimultaneousTriggerDef {
+    pub event: &'static TriggerEventDef,
+    pub aggregation: TriggerAggregationDef,
+    pub minimum: u16,
+    pub maximum: Option<u16>,
+}
+
+impl SimultaneousTriggerDef {
+    #[must_use]
+    pub const fn new(event: &'static TriggerEventDef, aggregation: TriggerAggregationDef) -> Self {
+        Self {
+            event,
+            aggregation,
+            minimum: 1,
+            maximum: None,
+        }
+    }
+
+    #[must_use]
+    pub const fn at_least(mut self, minimum: u16) -> Self {
+        self.minimum = minimum;
+        self
+    }
+
+    #[must_use]
+    pub const fn at_most(mut self, maximum: u16) -> Self {
+        self.maximum = Some(maximum);
+        self
+    }
+
+    #[must_use]
+    pub const fn accepts(self, count: usize) -> bool {
+        count >= self.minimum as usize
+            && match self.maximum {
+                Some(maximum) => count <= maximum as usize,
+                None => true,
+            }
+    }
+}
+
 /// The committed event observed by a triggered ability.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TriggerEventDef {
+    /// Apply a count requirement and occurrence policy to simultaneous members.
+    /// This is the outer event shape; `While` and `AnyOf` filters belong inside it.
+    Simultaneous(SimultaneousTriggerDef),
     /// Another ability triggered because of the specified event (CR 603.3b).
     /// The triggering object is that ability, and `EventPlayer` is its controller.
     AbilityTriggeredBy(&'static TriggerEventDef),
@@ -328,6 +383,35 @@ pub enum TriggerEventDef {
 }
 
 impl TriggerEventDef {
+    #[must_use]
+    pub fn contains_simultaneous(self) -> bool {
+        match self {
+            Self::Simultaneous(_) => true,
+            Self::While { event, .. } | Self::AbilityTriggeredBy(event) => {
+                event.contains_simultaneous()
+            }
+            Self::AnyOf(events) => events.iter().any(|event| event.contains_simultaneous()),
+            _ => false,
+        }
+    }
+
+    /// True when each matching committed record represents one member, rather
+    /// than an already aggregated count or a state condition.
+    #[must_use]
+    pub fn supports_simultaneous_matching(self) -> bool {
+        match self {
+            Self::ZoneChanged(_) | Self::Attacks(_) => true,
+            Self::While { event, .. } => event.supports_simultaneous_matching(),
+            Self::AnyOf(events) => {
+                !events.is_empty()
+                    && events
+                        .iter()
+                        .all(|event| event.supports_simultaneous_matching())
+            }
+            _ => false,
+        }
+    }
+
     const fn damage_source(source: ObjectPredicateDef) -> DamageSourceMatcherDef {
         match source {
             ObjectPredicateDef::Source => DamageSourceMatcherDef::Object(ObjectRefDef::Source),

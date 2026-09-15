@@ -355,9 +355,12 @@ impl Game {
             pending_decisions: Vec::new(),
             next_decision_id: checkpoint.next_decision_id,
             pending_events: VecDeque::new(),
-            // A batch is a thing in flight, and a checkpoint is taken
-            // between them rather than inside one.
+            // Committed event publication is synchronous. Prepared entry
+            // groups can survive choices and are restored below.
             entry_event_batch: None,
+            ready_entry_batch: None,
+            deferred_token_creations: Vec::new(),
+            building_entry_batch: false,
             pending_procedures: VecDeque::new(),
             pending_triggers: Vec::new(),
             next_trigger_id: checkpoint.next_trigger_id,
@@ -420,6 +423,28 @@ impl Game {
             .map(|ongoing| parse_ongoing_effect(ongoing, &game))
             .collect::<Result<Vec<_>, _>>()?;
         game.pending_events = parse_pending_events(&checkpoint.pending_events, &game.catalog)?;
+        game.ready_entry_batch = checkpoint
+            .ready_entry_batch
+            .as_ref()
+            .map(|entries| {
+                parse_pending_events(entries, &game.catalog)
+                    .map(|ready| ready.into_iter().collect())
+            })
+            .transpose()?;
+        game.deferred_token_creations = checkpoint
+            .deferred_token_creations
+            .iter()
+            .map(|(player, tokens)| {
+                Ok((
+                    player_from_index(*player)?,
+                    tokens.iter().copied().map(GameObjectId).collect(),
+                ))
+            })
+            .collect::<Result<_, String>>()?;
+        if game.ready_entry_batch.is_none() && !game.deferred_token_creations.is_empty() {
+            return Err("deferred token creation requires a pending entry batch".into());
+        }
+
         game.installed_triggers = checkpoint
             .installed_triggers
             .iter()

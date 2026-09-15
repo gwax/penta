@@ -10,7 +10,11 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         // The condition narrows when the event counts, not what it names,
         // so the object comes from the event it wraps.
         TriggerEventDef::While { event, .. } => trigger_event_object_zone(*event),
-        TriggerEventDef::ZoneChanged(matcher) => (!matcher.one_or_more).then_some(matcher.to).flatten(),
+        TriggerEventDef::Simultaneous(definition) => match definition.aggregation {
+            crate::card::TriggerAggregationDef::Each => trigger_event_object_zone(*definition.event),
+            crate::card::TriggerAggregationDef::Once => None,
+        },
+        TriggerEventDef::ZoneChanged(matcher) => matcher.to,
         TriggerEventDef::Tapped(_)
         | TriggerEventDef::PaymentPaid { .. }
         | TriggerEventDef::PaymentNotPaid(_)

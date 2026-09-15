@@ -12,18 +12,22 @@ impl Game {
             return None;
         };
         let matcher = match definition {
-            TriggerEventDef::ZoneChanged(matcher) => Some(matcher),
+            TriggerEventDef::Simultaneous(definition) => {
+                return Self::zone_change_event_observation(*definition.event, event);
+            }
+            TriggerEventDef::ZoneChanged(matcher) => {
+                (matcher.from.is_none_or(|expected| expected == *from)
+                    && matcher.to.is_none_or(|expected| expected == *to))
+                .then_some(matcher)
+            }
             TriggerEventDef::While { event: wrapped, .. } => {
                 return Self::zone_change_event_observation(*wrapped, event);
             }
-            TriggerEventDef::AnyOf(events) => events.iter().find_map(|candidate| {
-                let TriggerEventDef::ZoneChanged(matcher) = candidate else {
-                    return None;
-                };
-                (matcher.from.is_none_or(|expected| expected == *from)
-                    && matcher.to.is_none_or(|expected| expected == *to))
-                .then_some(*matcher)
-            }),
+            TriggerEventDef::AnyOf(events) => {
+                return events
+                    .iter()
+                    .find_map(|candidate| Self::zone_change_event_observation(*candidate, event));
+            }
             _ => None,
         }?;
         Some(matcher.observation)
@@ -138,8 +142,12 @@ impl Game {
         bindings: Option<&super::EffectResolutionContext>,
     ) -> bool {
         match (definition, event) {
-            (TriggerEventDef::AbilityTriggeredBy(expected), CommittedTriggerEvent::AbilityTriggered { cause, .. }) => {
-                self.trigger_event_matches_for_controller(*expected, cause, source, controller)
+            (TriggerEventDef::Simultaneous(definition), _) => {
+                // Count requirements are applied by the batch capture boundary.
+                self.trigger_event_matches_for_controller(*definition.event, event, source, controller)
+            }
+            (TriggerEventDef::AbilityTriggeredBy(expected), CommittedTriggerEvent::AbilityTriggered { causes, .. }) => {
+                causes.iter().any(|cause| self.trigger_event_matches_for_controller(*expected, cause, source, controller))
             }
             (
                 TriggerEventDef::MechanicPerformed { mechanic, player: relation },

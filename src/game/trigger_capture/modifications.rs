@@ -83,10 +83,10 @@ impl Game {
         {
             return 0;
         }
-        let causes = if self.groups_zone_changes(listener, event) {
+        let causes = if Self::groups_simultaneous_matches(listener) {
             events
                 .iter()
-                .filter(|candidate| self.groups_zone_changes(listener, candidate))
+                .filter(|candidate| self.simultaneous_member_matches(listener, candidate))
                 .cloned()
                 .collect::<Vec<_>>()
         } else if let CommittedTriggerEvent::ObjectsDied { objects } = event {

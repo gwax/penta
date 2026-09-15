@@ -119,7 +119,7 @@ impl Game {
                     moved.push(landed);
                 }
             }
-            self.capture_graveyard_arrivals(&events);
+            self.capture_zone_move_events(&events);
             // "Exile them, then ... you may cast those cards": the cards the
             // follow-up names are the ones now sitting in the destination,
             // which are new objects.

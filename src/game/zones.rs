@@ -84,7 +84,7 @@ impl Game {
             placement,
             &mut events,
         );
-        self.capture_graveyard_arrivals(&events);
+        self.capture_zone_move_events(&events);
         result
     }
 
@@ -787,7 +787,7 @@ impl Game {
             );
             discarded.push((card.id, definition, object));
         }
-        self.capture_graveyard_arrivals(&events);
+        self.capture_zone_move_events(&events);
         if !discarded.is_empty() {
             self.events.push(GameEvent::CardsDiscarded {
                 player,
@@ -837,4 +837,4 @@ pub(super) fn public_cards(cards: &[CardInstance]) -> Vec<PublicCard> {
         .collect()
 }
 
-include!("zones/graveyard_arrivals.rs");
+include!("zones/zone_moves.rs");

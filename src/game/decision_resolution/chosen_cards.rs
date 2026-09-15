@@ -136,7 +136,7 @@ impl Game {
                     .insert(0, card);
             }
         }
-        self.capture_graveyard_arrivals(&events);
+        self.capture_zone_move_events(&events);
         if let Some((follow_up, binding, then)) = move_result {
             self.finish_chosen_card_move_result(follow_up, binding, then, moved);
         }

@@ -19,6 +19,15 @@ impl Game {
         &mut self,
         cards: impl Iterator<Item = (&'a CardInstance, ZoneKind)>,
     ) {
+        let events = self.cards_exiled_events(cards);
+        self.capture_zone_move_events(&events);
+    }
+
+    pub(super) fn cards_exiled_events<'a>(
+        &self,
+        cards: impl Iterator<Item = (&'a CardInstance, ZoneKind)>,
+    ) -> Vec<CommittedTriggerEvent> {
+        let mut events = Vec::new();
         let mut groups = Vec::new();
         for (card, from) in cards {
             let source_context = match from {
@@ -50,7 +59,7 @@ impl Game {
                 card.owner,
                 &source_context,
             );
-            self.capture_battlefield_triggers(&CommittedTriggerEvent::ZoneChanged {
+            events.push(CommittedTriggerEvent::ZoneChanged {
                 before,
                 after: Some(after),
                 from,
@@ -70,13 +79,14 @@ impl Game {
                 }
             }
             if !objects.is_empty() {
-                self.capture_battlefield_triggers(&CommittedTriggerEvent::CardsExiled {
+                events.push(CommittedTriggerEvent::CardsExiled {
                     cards: objects,
                     from: origins,
                     owner,
                 });
             }
         }
+        events
     }
 
     /// Raises the exile event for cards already sitting in exile, for the

@@ -215,6 +215,7 @@ impl Game {
             .chain(
                 self.pending_events
                     .iter()
+                    .chain(self.ready_entry_batch.iter().flatten())
                     .flat_map(pending_event_referenced_object_ids),
             )
             .chain(
@@ -365,7 +366,15 @@ impl Game {
             .iter()
             .filter_map(|pending| pending_event_snapshot(&self.catalog, pending))
             .collect::<Vec<_>>();
-        let has_unsupported_event = pending_events.len() != self.pending_events.len();
+        let ready_entry_batch = self.ready_entry_batch.as_ref().map(|entries| {
+            entries
+                .iter()
+                .filter_map(|entry| pending_event_snapshot(&self.catalog, entry))
+                .collect::<Vec<_>>()
+        });
+        let has_unsupported_event = pending_events.len() != self.pending_events.len()
+            || ready_entry_batch.as_ref().map(Vec::len)
+                != self.ready_entry_batch.as_ref().map(Vec::len);
         let nonbattlefield_ability_grants = self
             .nonbattlefield_ability_grants
             .iter()
@@ -492,6 +501,7 @@ impl Game {
             .any(|permanent| permanent.has_dynamic_characteristics);
         let has_unlocated_pending_characteristics = pending_events
             .iter()
+            .chain(ready_entry_batch.iter().flatten())
             .any(|pending| pending.entry.permanent.state.has_dynamic_characteristics);
         let has_unlocated_retired_characteristics = retired_objects.iter().any(|retired| {
             matches!(
@@ -665,6 +675,14 @@ impl Game {
             retired_objects,
             successors,
             pending_events,
+            ready_entry_batch,
+            deferred_token_creations: self
+                .deferred_token_creations
+                .iter()
+                .map(|(player, tokens)| {
+                    (player.index(), tokens.iter().map(|id| id.0).collect())
+                })
+                .collect(),
             nonbattlefield_ability_grants,
             ongoing_effects,
             next_installed_trigger_id: self.next_installed_trigger_id,

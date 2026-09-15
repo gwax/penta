@@ -168,6 +168,10 @@ pub(in crate::game::state_checkpoint) struct GameSnapshot {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(in crate::game::state_checkpoint) successors: Vec<SuccessorSnapshot>,
     pub(in crate::game::state_checkpoint) pending_events: Vec<PendingEventSnapshot>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(in crate::game::state_checkpoint) ready_entry_batch: Option<Vec<PendingEventSnapshot>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(in crate::game::state_checkpoint) deferred_token_creations: Vec<(usize, Vec<u32>)>,
     #[serde(rename = "temporaryAbilityGrants")]
     pub(in crate::game::state_checkpoint) nonbattlefield_ability_grants:
         Vec<NonbattlefieldAbilityGrantSnapshot>,

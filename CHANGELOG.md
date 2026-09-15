@@ -45,6 +45,15 @@ the bot-wire epoch.
   last-known-color fields. Existing protocol and artifact
   epochs remain unchanged; simulation fingerprints identify the new rules.
 
+- Implement Moonshadow using shared simultaneous trigger conditions. Filters,
+  independent versus grouped occurrences, and minimum/maximum matching counts
+  are separate. Armasaur Guide and Caretaker's Talent use the same model for
+  attacker thresholds and grouped token entries.
+  Multi-card entries retain their group across replacement choices. Additive
+  checkpoint fields `readyEntryBatch`, entry `redirectedTo`, and
+  `deferredTokenCreations` preserve pending groups; protocol and checkpoint
+  epochs are unchanged.
+
 - Add Lord_Beerus's September 13 Vintage Challenge Dredge deck and implement
   all nine missing identities: Creeping Chill, Golgari Grave-Troll, Golgari
   Thug, Hollow One, Prized Amalgam, Shambling Shell, Sickening Shoal,

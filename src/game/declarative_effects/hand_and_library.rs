@@ -787,7 +787,7 @@ impl Game {
                 }
             }
         }
-        self.capture_graveyard_arrivals(&events);
+        self.capture_zone_move_events(&events);
         (context, buried)
     }
 }

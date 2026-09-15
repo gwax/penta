@@ -808,6 +808,13 @@ pub struct Game {
     /// the rest have not joined yet. `None` outside a batch, which is every
     /// permanent that arrives on its own.
     entry_event_batch: Option<Vec<CommittedTriggerEvent>>,
+    /// Replacements are finished for these entrants; their group may still
+    /// be waiting for another entrant's choice. Some(empty) is an active group.
+    ready_entry_batch: Option<Vec<PendingEvent>>,
+    /// Creation notifications withheld while the entry group is unfinished.
+    deferred_token_creations: Vec<(PlayerId, Vec<GameObjectId>)>,
+    /// The synchronous authoring closure has not enqueued all entrants yet.
+    building_entry_batch: bool,
     pending_procedures: VecDeque<PendingProcedure>,
     pending_triggers: Vec<PendingTrigger>,
     next_trigger_id: u32,

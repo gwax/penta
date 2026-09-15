@@ -779,13 +779,59 @@ fn static_stack_grants_support_source_cast_triggers_only() {
 }
 
 #[test]
-fn grouped_zone_changes_are_limited_to_complete_graveyard_arrival_batches() {
-    assert!(shared_trigger_event(TriggerEventDef::ZoneChanged(
-        ZoneChangeEventMatcherDef::new(ObjectPredicateDef::Any, None, Some(ZoneKind::Graveyard))
-            .one_or_more(),
-    )));
-    assert!(!shared_trigger_event(TriggerEventDef::ZoneChanged(
-        ZoneChangeEventMatcherDef::new(ObjectPredicateDef::Any, None, Some(ZoneKind::Battlefield))
-            .one_or_more(),
-    )));
+fn simultaneous_trigger_counts_are_independent_of_the_zone() {
+    use crate::card::{SimultaneousTriggerDef, TriggerAggregationDef};
+    static EVENTS: &[TriggerEventDef] = &[
+        TriggerEventDef::ZoneChanged(ZoneChangeEventMatcherDef::new(
+            ObjectPredicateDef::Any,
+            None,
+            Some(ZoneKind::Graveyard),
+        )),
+        TriggerEventDef::ZoneChanged(ZoneChangeEventMatcherDef::new(
+            ObjectPredicateDef::Any,
+            None,
+            Some(ZoneKind::Battlefield),
+        )),
+        TriggerEventDef::attacks(ObjectPredicateDef::Any),
+    ];
+    for event in EVENTS {
+        for aggregation in [TriggerAggregationDef::Each, TriggerAggregationDef::Once] {
+            assert!(shared_trigger_event(TriggerEventDef::Simultaneous(
+                SimultaneousTriggerDef::new(event, aggregation).at_least(2),
+            )));
+        }
+    }
+}
+
+#[test]
+fn simultaneous_trigger_boundary_rejects_ambiguous_or_empty_counts() {
+    use crate::card::{SimultaneousTriggerDef, TriggerAggregationDef};
+    const ATTACK: TriggerEventDef = TriggerEventDef::attacks(ObjectPredicateDef::Any);
+    const NESTED: TriggerEventDef = TriggerEventDef::Simultaneous(SimultaneousTriggerDef::new(
+        &ATTACK,
+        TriggerAggregationDef::Once,
+    ));
+    for definition in [
+        SimultaneousTriggerDef::new(&ATTACK, TriggerAggregationDef::Once).at_least(0),
+        SimultaneousTriggerDef::new(&ATTACK, TriggerAggregationDef::Each)
+            .at_least(3)
+            .at_most(2),
+        SimultaneousTriggerDef::new(
+            &TriggerEventDef::StateCondition,
+            TriggerAggregationDef::Once,
+        ),
+        SimultaneousTriggerDef::new(
+            &TriggerEventDef::ObjectsDied {
+                object: ObjectPredicateDef::Any,
+            },
+            TriggerAggregationDef::Once,
+        ),
+    ] {
+        assert!(!shared_trigger_event(TriggerEventDef::Simultaneous(
+            definition
+        )));
+    }
+    assert!(!shared_trigger_event(TriggerEventDef::AnyOf(&[
+        NESTED, ATTACK
+    ])));
 }

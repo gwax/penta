@@ -483,7 +483,7 @@ impl Game {
                     && let Some(event) =
                         self.nonbattlefield_graveyard_arrival(&before, &card, ZoneKind::Stack)
                 {
-                    self.capture_graveyard_arrivals(&[event]);
+                    self.capture_zone_move_events(&[event]);
                 }
             }
             SpellResolutionDestinationDef::Hand if !exile_replaces_move => {

@@ -25,7 +25,7 @@ pub(super) enum CommittedTriggerEvent {
     AbilityTriggered {
         object: GameObjectId,
         controller: PlayerId,
-        cause: Box<CommittedTriggerEvent>,
+        causes: Vec<CommittedTriggerEvent>,
     },
     MechanicPerformed {
         mechanic: crate::card::MechanicId,

@@ -415,7 +415,7 @@ impl Game {
                             &discarded,
                             ZoneKind::Hand,
                         ) {
-                            self.capture_graveyard_arrivals(&[event]);
+                            self.capture_zone_move_events(&[event]);
                         }
                         self.events.push(GameEvent::CardsDiscarded {
                             player,

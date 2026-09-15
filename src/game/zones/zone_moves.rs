@@ -1,4 +1,4 @@
-// Graveyard arrivals retain the simultaneous move that caused them.
+// Zone move publication retains the simultaneous instruction that caused it.
 
 impl Game {
     /// Moves a card into its owner's graveyard from `from`, honouring a
@@ -21,7 +21,7 @@ impl Game {
         let mut events = Vec::new();
         let result =
             self.put_card_into_graveyard_replacing_collecting(owner, card, from, &mut events);
-        self.capture_graveyard_arrivals(&events);
+        self.capture_zone_move_events(&events);
         result
     }
 
@@ -56,7 +56,8 @@ impl Game {
                 None
             }
             ZoneKind::Exile => {
-                self.players[owner.index()].exile.push(card);
+                self.players[owner.index()].exile.push(card.clone());
+                events.extend(self.cards_exiled_events(std::iter::once((&card, from))));
                 None
             }
             // A replacement that names the graveyard, the battlefield, or a
@@ -75,6 +76,13 @@ impl Game {
                     }
                     Some(card)
                 } else {
+                    if self.players[owner.index()]
+                        .exile
+                        .iter()
+                        .any(|exiled| exiled.id == card.id)
+                    {
+                        events.extend(self.cards_exiled_events(std::iter::once((&card, from))));
+                    }
                     None
                 }
             }
@@ -102,7 +110,7 @@ impl Game {
             arrival,
             &mut events,
         );
-        self.capture_graveyard_arrivals(&events);
+        self.capture_zone_move_events(&events);
         result
     }
 
@@ -179,8 +187,12 @@ impl Game {
         {
             events.push(event);
         }
-        if destination == ZoneKind::Exile {
-            self.capture_cards_exiled(std::slice::from_ref(&card), from);
+        if self.players[owner.index()]
+            .exile
+            .iter()
+            .any(|exiled| exiled.id == card.id)
+        {
+            events.extend(self.cards_exiled_events(std::iter::once((&card, from))));
         }
         if from == ZoneKind::Graveyard {
             self.note_card_left_graveyard(owner);
@@ -248,11 +260,32 @@ impl Game {
     }
 
     /// Publish only after every card in a simultaneous move has arrived.
-    pub(super) fn capture_graveyard_arrivals(&mut self, events: &[CommittedTriggerEvent]) {
+    pub(super) fn capture_zone_move_events(&mut self, events: &[CommittedTriggerEvent]) {
         if events.is_empty() {
             return;
         }
+        let mut combined = Vec::new();
+        for event in events {
+            if let CommittedTriggerEvent::CardsExiled { cards, from, owner } = event
+                && let Some(CommittedTriggerEvent::CardsExiled {
+                    cards: previous_cards,
+                    from: previous_from,
+                    ..
+                }) = combined.iter_mut().find(|candidate| {
+                    matches!(candidate, CommittedTriggerEvent::CardsExiled { owner: previous, .. } if previous == owner)
+                })
+            {
+                previous_cards.extend(cards.iter().cloned());
+                for zone in from {
+                    if !previous_from.contains(zone) {
+                        previous_from.push(*zone);
+                    }
+                }
+            } else {
+                combined.push(event.clone());
+            }
+        }
         let listeners = self.battlefield_trigger_listeners();
-        self.capture_battlefield_trigger_batch_from_snapshot(&listeners, events);
+        self.capture_battlefield_trigger_batch_from_snapshot(&listeners, &combined);
     }
 }

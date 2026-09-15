@@ -3113,32 +3113,35 @@ pub(in crate::card::sets) static MOONSHADOW: CardRecord = CardRecord::new(
         ),
         AbilityDef::triggered(
             "Whenever one or more permanent cards are put into your graveyard from anywhere \
-             while this creature has a -1/-1 counter on it, remove a -1/-1 counter from this creature.",
-            TriggerEventDef::While {
-                event: &TriggerEventDef::ZoneChanged(
-                    crate::card::ZoneChangeEventMatcherDef::new(
-                        ObjectPredicateDef::All(&[
-                            ObjectPredicateDef::OwnedBy(PlayerRelation::You),
-                            ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
-                            ObjectPredicateDef::AnyOf(&[
-                                ObjectPredicateDef::HasType(CardType::Artifact),
-                                ObjectPredicateDef::HasType(CardType::Creature),
-                                ObjectPredicateDef::HasType(CardType::Enchantment),
-                                ObjectPredicateDef::HasType(CardType::Land),
-                                ObjectPredicateDef::HasType(CardType::Planeswalker),
+             while this creature has a -1/-1 counter on it, \
+             remove a -1/-1 counter from this creature.",
+            TriggerEventDef::Simultaneous(crate::card::SimultaneousTriggerDef::new(
+                &TriggerEventDef::While {
+                    event: &TriggerEventDef::ZoneChanged(
+                        crate::card::ZoneChangeEventMatcherDef::new(
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::OwnedBy(PlayerRelation::You),
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+                                ObjectPredicateDef::AnyOf(&[
+                                    ObjectPredicateDef::HasType(CardType::Artifact),
+                                    ObjectPredicateDef::HasType(CardType::Creature),
+                                    ObjectPredicateDef::HasType(CardType::Enchantment),
+                                    ObjectPredicateDef::HasType(CardType::Land),
+                                    ObjectPredicateDef::HasType(CardType::Planeswalker),
+                                ]),
                             ]),
-                        ]),
-                        None,
-                        Some(ZoneKind::Graveyard),
-                    )
-                    .one_or_more(),
-                ),
-                condition: &TriggerConditionDef::SourceCounters {
-                    kind: CounterKind::MinusOneMinusOne,
-                    comparison: ComparisonDef::Greater,
-                    amount: 0,
+                            None,
+                            Some(ZoneKind::Graveyard),
+                        ),
+                    ),
+                    condition: &TriggerConditionDef::SourceCounters {
+                        kind: CounterKind::MinusOneMinusOne,
+                        comparison: ComparisonDef::Greater,
+                        amount: 0,
+                    },
                 },
-            },
+                crate::card::TriggerAggregationDef::Once,
+            )),
             EffectDef::RemoveCounters {
                 object: EffectRecipientDef::Source,
                 kind: CounterKind::MinusOneMinusOne,

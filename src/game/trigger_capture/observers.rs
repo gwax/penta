@@ -8,6 +8,7 @@ impl Game {
         listeners: &[BattlefieldTriggerListener],
         event: &CommittedTriggerEvent,
         capture: &TriggerCapture,
+        causes: Vec<CommittedTriggerEvent>,
     ) {
         let index = self.pending_triggers.len();
         self.capture_trigger_prechecked(capture);
@@ -16,7 +17,7 @@ impl Game {
         let mut observed = CommittedTriggerEvent::AbilityTriggered {
             object: GameObjectId(0),
             controller: capture.controller,
-            cause: Box::new(event.clone()),
+            causes,
         };
         if !listeners.iter().any(|listener| {
             self.trigger_event_matches_for_controller(

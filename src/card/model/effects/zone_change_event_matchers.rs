@@ -20,8 +20,6 @@ pub struct ZoneChangeEventMatcherDef {
     pub from: Option<ZoneKind>,
     pub to: Option<ZoneKind>,
     pub observation: ZoneChangeObservationDef,
-    /// Collapse matching transitions in one simultaneous move into one trigger.
-    pub one_or_more: bool,
     /// Restrict an arriving object to one actually cast from this zone.
     pub cast_from: Option<ZoneKind>,
     /// Restrict the original caster, independently of the object's current controller.
@@ -49,19 +47,11 @@ impl ZoneChangeEventMatcherDef {
             } else {
                 ZoneChangeObservationDef::After
             },
-            one_or_more: false,
             cast_from: None,
             cast_by: None,
             previously_damaged_by: None,
             bound_objects: None,
         }
-    }
-
-    /// Trigger once for a simultaneous group, even if several objects match.
-    #[must_use]
-    pub const fn one_or_more(mut self) -> Self {
-        self.one_or_more = true;
-        self
     }
 
     #[must_use]
