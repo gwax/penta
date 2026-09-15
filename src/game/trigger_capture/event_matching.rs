@@ -144,10 +144,10 @@ impl Game {
         match (definition, event) {
             (TriggerEventDef::Simultaneous(definition), _) => {
                 // Count requirements are applied by the batch capture boundary.
-                self.trigger_event_matches_for_controller(*definition.event, event, source, controller)
+                self.trigger_event_matches_with_bindings(*definition.event, event, source, controller, bindings)
             }
             (TriggerEventDef::AbilityTriggeredBy(expected), CommittedTriggerEvent::AbilityTriggered { causes, .. }) => {
-                causes.iter().any(|cause| self.trigger_event_matches_for_controller(*expected, cause, source, controller))
+                causes.iter().any(|cause| self.trigger_event_matches_with_bindings(*expected, cause, source, controller, bindings))
             }
             (
                 TriggerEventDef::MechanicPerformed { mechanic, player: relation },

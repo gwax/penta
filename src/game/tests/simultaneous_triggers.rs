@@ -580,3 +580,81 @@ fn battalion_triggers_once_with_source_last_and_ignores_entering_attackers() {
     assert_eq!(counts(&game, entered), 0);
     assert_eq!(counts(&game, elite), 1);
 }
+
+#[test]
+fn simultaneous_trigger_filters_preserve_saved_object_bindings() {
+    const BOUND_ENTERS: TriggerEventDef = TriggerEventDef::ZoneChanged(
+        crate::card::ZoneChangeEventMatcherDef::new(
+            ObjectPredicateDef::Any,
+            None,
+            Some(ZoneKind::Battlefield),
+        )
+        .among(crate::Binding!("saved_entrants")),
+    );
+    for bind_count in [false, true] {
+        for matching_saved in [0, 1, 2] {
+            let mut game = ready_game();
+            let members = (0..3)
+                .map(|_| {
+                    game.put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+                        .unwrap()
+                })
+                .collect::<Vec<_>>();
+            let event = if bind_count {
+                &BOUND_ENTERS
+            } else {
+                &CREATURE_ENTERS
+            };
+            let source = watcher(
+                &mut game,
+                TriggerEventDef::Simultaneous(
+                    SimultaneousTriggerDef::new(event, TriggerAggregationDef::Once)
+                        .at_least(2)
+                        .including(&BOUND_ENTERS),
+                ),
+            );
+            game.pending_triggers.clear();
+            let mut listeners = game.battlefield_trigger_listeners();
+            listeners.retain(|listener| listener.capture.source.object == source);
+            for listener in &mut listeners {
+                listener.capture.context.bind_object_group(
+                    crate::Binding!("saved_entrants"),
+                    members
+                        .iter()
+                        .take(matching_saved)
+                        .copied()
+                        .map(Target::Permanent)
+                        .collect(),
+                );
+            }
+            let events = members
+                .iter()
+                .map(|id| {
+                    let permanent = game.battlefield.iter().find(|p| p.card.id == *id).unwrap();
+                    CommittedTriggerEvent::ZoneChanged {
+                        before: None,
+                        after: Some(game.trigger_event_object(permanent)),
+                        from: ZoneKind::Hand,
+                        to: ZoneKind::Battlefield,
+                        damage_sources: Vec::new(),
+                    }
+                })
+                .collect::<Vec<_>>();
+            game.capture_battlefield_trigger_batch_from_snapshot(&listeners, &events);
+            assert_eq!(
+                counts(&game, source),
+                usize::from(matching_saved >= if bind_count { 2 } else { 1 })
+            );
+            if let Some(trigger) = game
+                .pending_triggers
+                .iter()
+                .find(|t| t.source.object == source)
+            {
+                assert_eq!(
+                    trigger.context.trigger.amount,
+                    Some(if bind_count { 2 } else { 3 })
+                );
+            }
+        }
+    }
+}

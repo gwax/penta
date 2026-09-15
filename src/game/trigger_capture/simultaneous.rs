@@ -23,11 +23,12 @@ impl Game {
             }
             count += 1;
             if let Some(required) = definition.required_member {
-                includes_required |= self.trigger_event_matches_for_controller(
+                includes_required |= self.trigger_event_matches_with_bindings(
                     *required,
                     event,
                     listener.capture.source.object,
                     Some(listener.capture.controller),
+                    Some(&listener.capture.context),
                 );
             }
         }
@@ -55,11 +56,12 @@ impl Game {
         };
         let mut member = listener.clone();
         member.event = *definition.event;
-        self.trigger_event_matches_for_controller(
+        self.trigger_event_matches_with_bindings(
             member.event,
             event,
             member.capture.source.object,
             Some(member.capture.controller),
+            Some(&member.capture.context),
         ) && self.modified_trigger_occurrences(&member, event, std::slice::from_ref(event)) > 0
     }
 
