@@ -390,6 +390,8 @@ pub(super) struct ApplicableReplacementSnapshot {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct PendingBattlefieldEntrySnapshot {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) redirected_to: Option<ZoneKindSnapshot>,
     pub(super) permanent: DetachedPermanentSnapshot,
     pub(super) from: ZoneKindSnapshot,
     pub(super) completion: EntryCompletionSnapshot,

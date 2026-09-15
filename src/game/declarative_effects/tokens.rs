@@ -138,7 +138,7 @@ impl Game {
         if let Some(created) = created {
             let mut context = context.clone();
             context.bind_object_group(created.binding, minted);
-            self.resolve_effect_def(scoped.with_effect(*created.then), object, context);
+            self.resolve_effects_in_order(vec![scoped.with_effect(*created.then)], object, context);
         }
     }
 
@@ -325,7 +325,11 @@ impl Game {
                 if let Some(created) = created {
                     let mut context = context.clone();
                     context.bind_object_group(created.binding, minted);
-                    self.resolve_effect_def(scoped.with_effect(*created.then), object, context);
+                    self.resolve_effects_in_order(
+                        vec![scoped.with_effect(*created.then)],
+                        object,
+                        context,
+                    );
                 }
             }
             EffectDef::CreateAttachedToken { token, host } => {

@@ -163,8 +163,8 @@ pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::Ca
 pub(in crate::card::sets) const DEFINITION: crate::card::sets::SetDefinition =
     crate::card::sets::SetDefinition::new(SET, CARDS, ADDITIONAL_PRINTINGS, file!());
 
-/// Battalion. Like exalted it is a keyword defined as a triggered ability, so
-/// it takes the effect its card prints rather than being one fixed clause.
+/// Battalion is an ability word for a shared trigger condition; the card
+/// supplies the effect.
 #[must_use]
 pub(in crate::card::sets) const fn battalion(text: &'static str, effect: EffectDef) -> AbilityDef {
     AbilityDef::triggered(text, BATTALION_EVENT, effect)
@@ -172,8 +172,17 @@ pub(in crate::card::sets) const fn battalion(text: &'static str, effect: EffectD
 
 /// "This creature and at least two other creatures attack" -- three in all,
 /// with this one among them.
-const BATTALION_EVENT: TriggerEventDef =
-    TriggerEventDef::attacks_in_declaration(ObjectPredicateDef::Source, 3, None);
+pub(in crate::card::sets) const BATTALION_EVENT: TriggerEventDef = TriggerEventDef::Simultaneous(
+    crate::card::SimultaneousTriggerDef::new(
+        &TriggerEventDef::attacks(ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        ])),
+        crate::card::TriggerAggregationDef::Once,
+    )
+    .at_least(3)
+    .including(&TriggerEventDef::attacks(ObjectPredicateDef::Source)),
+);
 
 const SOLDIER_TOKEN: TokenCharacteristics =
     TokenCharacteristics::creature(&["Soldier"], &[ManaColor::Red, ManaColor::White], 1, 1)
@@ -2397,7 +2406,7 @@ pub(in crate::card::sets) static LEGION_LOYALIST: CardRecord = CardRecord::new(
              creatures attack, creatures you control gain first strike \
              and trample until end of turn and can't be blocked by \
              creature tokens this turn.",
-            TriggerEventDef::attacks_in_declaration(ObjectPredicateDef::Source, 3, None),
+            BATTALION_EVENT,
             EffectDef::Apply {
                 recipient: EffectRecipientDef::matching_objects(
                     ObjectPredicateDef::HasType(CardType::Creature),

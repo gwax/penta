@@ -808,3 +808,54 @@ Installed zone-change triggers can use `ZoneChangeEventMatcherDef::among` to
 watch exact objects saved in an object-set binding. Matching happens before a
 once-only listener is consumed, and the installing resolution's bindings remain
 available after its source leaves the battlefield.
+
+## Simultaneous trigger conditions
+
+The operation publishes one simultaneous batch of committed member events.
+The trigger filters those members, then decides how many occurrences to create.
+Separate instructions remain separate batches, even within one resolution.
+
+Use `TriggerEventDef::Simultaneous(SimultaneousTriggerDef::new(event, aggregation))`
+for an explicit counting rule. `TriggerAggregationDef::Each` preserves one
+occurrence and its object context per matching member; `Once` produces one
+occurrence for the matching group. `at_least(n)` and `at_most(n)` constrain the
+number of matching members, independently of aggregation. The default minimum
+is one and there is no maximum. Zero minima and inverted ranges are rejected.
+An ordinary event without this wrapper keeps its existing occurrence semantics.
+
+Use `.including(member_event)` when the counted group must contain a particular
+member. This additional filter is checked against the qualifying members of
+that same batch; it does not narrow the count or match earlier events. Battalion
+counts three or more declared attackers with `Once`, including the source's own
+attack event. A creature that enters attacking does not satisfy that requirement.
+The originating set's `BATTALION_EVENT` composes these shared rules for every
+supported Battalion card.
+
+| Printed condition | Member filter | Aggregation | Minimum |
+| --- | --- | --- | --- |
+| Whenever a creature enters | Creature entering | Each | 1 |
+| Whenever one or more permanent cards enter your graveyard | Owner, nontoken permanent card, graveyard arrival | Once | 1 |
+| Whenever you attack with three or more creatures | Creature you control declared attacking | Once | 3 |
+| Whenever two or more permanents enter together | Battlefield arrival | Once | 2 |
+
+`Once` has no single `TriggeringObject`; `TriggerEventAmount` is the number of
+qualifying members. Extra trigger occurrences copy that context rather than
+increasing the member count. Suppressed members cannot satisfy a threshold;
+trigger modifiers and trigger observers inspect all contributing members.
+
+The wrapper is the outer event shape. Put `While` and `AnyOf` member filters
+inside it. Overlapping `AnyOf` alternatives count a member once. Use `While`
+for a printed event-time condition; `triggered_if` also rechecks its condition
+at resolution. Moonshadow uses `While` inside the counted graveyard-arrival
+filter, with after-move characteristics and the arriving card's owner. Tokens
+are not permanent cards.
+
+The integrated member families are zone changes and declared attackers. Entry
+batches prepare all replacements against the pre-entry battlefield and retain ready entrants across player choices, then
+publish after all arrivals. Graveyard moves and nonbattlefield exile moves
+likewise preserve the instruction's batch. There is no graveyard-only
+aggregation restriction. Existing summary events such as `AttackDeclared`,
+`ObjectsDied`, `CardsExiled`, and damage groups retain their existing authoring
+forms; do not wrap those summaries in `Simultaneous` and mistake records for
+member counts. Add another family only with its actual simultaneous publication
+boundary and regression coverage.

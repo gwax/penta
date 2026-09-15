@@ -478,7 +478,13 @@ impl Game {
         );
         match destination {
             SpellResolutionDestinationDef::Graveyard if !graveyard_move_is_replaced => {
-                self.put_card_into_graveyard(owner, card);
+                self.put_card_into_graveyard(owner, card.clone());
+                if let Some(before) = object.card.clone().into_card()
+                    && let Some(event) =
+                        self.nonbattlefield_graveyard_arrival(&before, &card, ZoneKind::Stack)
+                {
+                    self.capture_zone_move_events(&[event]);
+                }
             }
             SpellResolutionDestinationDef::Hand if !exile_replaces_move => {
                 self.players[owner.index()].hand.push(card);

@@ -14,10 +14,14 @@ impl Game {
                 .stack
                 .iter()
                 .any(|object| object.face_down.is_some() && object.controller != viewer)
-            || self.pending_events.iter().any(|event| {
-                let ReplaceableEvent::BattlefieldEntry(entry) = &event.event;
-                entry.permanent.face_down.is_some() && entry.permanent.controller != viewer
-            })
+            || self
+                .pending_events
+                .iter()
+                .chain(self.ready_entry_batch.iter().flatten())
+                .any(|event| {
+                    let ReplaceableEvent::BattlefieldEntry(entry) = &event.event;
+                    entry.permanent.face_down.is_some() && entry.permanent.controller != viewer
+                })
     }
 
     /// Nested continuations can retain an object after it has left the live

@@ -12,7 +12,6 @@ use super::{
 use crate::card::{
     BattlefieldArrivalDef, CounterKind, EffectRecipientDef, PlayerRelation, TokenCountersDef,
 };
-use crate::game::{CardInstance, remove_card};
 
 /// How a permanent this effect moves arrives, when it arrives at all.
 /// "Under your control" and "attach this to it" both belong to the arrival:
@@ -241,128 +240,50 @@ impl Game {
         })
     }
 
-    fn batch_exile_permanents(&mut self, recipients: &[Target], zone: ZoneKind) -> bool {
-        let batch = zone == ZoneKind::Exile;
-        if !batch {
-            return false;
-        }
-        let permanents = recipients
-            .iter()
-            .filter_map(|target| match target {
-                Target::Permanent(id) => Some(*id),
-                Target::Card(_) | Target::Player(_) | Target::Spell(_) => None,
-            })
-            .collect::<Vec<_>>();
-        self.exile_permanents(&permanents);
-        true
-    }
-
-    /// "Whenever one or more cards are put into exile" is one event for the
-    /// whole move, however many cards it took: a clause that sweeps a
-    /// graveyard publishes a single exile event rather than one per card,
-    /// which is the difference between Laelia growing once and growing three
-    /// times. Anything a replacement would divert falls back to the ordinary
-    /// one-at-a-time path below, where each is asked about separately.
-    fn move_simultaneous_card_exile(
+    /// Keep one zone-move instruction whole for permanent exits and card moves.
+    fn move_simultaneous_zone_batch(
         &mut self,
         recipients: &[Target],
-        clause: MoveToZoneClause,
-        moved_by: ZoneMoveCause,
+        zone: ZoneKind,
+        cause: ZoneMoveCause,
+        placement: ZonePlacement,
     ) -> bool {
-        if clause.zone != ZoneKind::Exile
-            || clause.controller.is_some()
-            || clause.counters.is_some()
-            || !clause.modifications.is_empty()
-        {
+        if matches!(zone, ZoneKind::Battlefield | ZoneKind::Stack) {
             return false;
         }
-        let mut moving = Vec::new();
-        for target in recipients {
-            let Target::Card(id) = target else {
-                return false;
-            };
-            let Some((from, card)) = self
-                .card_in_nonbattlefield_zone(*id)
-                .map(|(zone, card)| (zone, card.clone()))
-            else {
-                return false;
-            };
-            if !matches!(
-                from,
-                ZoneKind::Graveyard | ZoneKind::Library | ZoneKind::Hand
-            ) {
-                return false;
-            }
-            if self
-                .zone_move_replacement_destination(&card, from, ZoneKind::Exile, moved_by)
-                .is_some_and(|destination| destination != ZoneKind::Exile)
-            {
-                return false;
-            }
-            moving.push((from, card));
-        }
-        if moving.len() < 2 {
-            return false;
-        }
-        let mut exiled: Vec<(ZoneKind, Vec<CardInstance>)> = Vec::new();
-        for (from, card) in moving {
-            let owner = card.owner;
-            let zone = match from {
-                ZoneKind::Library => &mut self.players[owner.index()].library,
-                ZoneKind::Hand => &mut self.players[owner.index()].hand,
-                ZoneKind::Graveyard => &mut self.players[owner.index()].graveyard,
-                _ => continue,
-            };
-            let Some(card) = remove_card(zone, card.id) else {
-                continue;
-            };
-            let (card, _zone_change) = self.zone_change_card(card);
-            self.players[owner.index()].exile.push(card.clone());
-            if let Some((_, group)) = exiled.iter_mut().find(|(zone, group)| {
-                *zone == from && group.first().is_some_and(|first| first.owner == owner)
-            }) {
-                group.push(card);
-            } else {
-                exiled.push((from, vec![card]));
-            }
-        }
-        for (from, group) in exiled {
-            let owner = group.first().map(|card| card.owner);
-            self.capture_cards_exiled(&group, from);
-            if from == ZoneKind::Graveyard
-                && let Some(owner) = owner
-            {
-                self.note_card_left_graveyard(owner);
-            }
-        }
-        true
-    }
-
-    fn move_simultaneous_library_batch(
-        &mut self,
-        recipients: &[Target],
-        clause: MoveToZoneClause,
-        attachment: Option<ArrivalAttachment>,
-    ) -> bool {
-        if clause.zone != ZoneKind::Library
-            || clause.controller.is_some()
-            || !clause.modifications.is_empty()
-            || attachment.is_some()
-            || clause.counters.is_some()
-        {
-            return false;
-        }
-        let Some(permanents) = recipients
+        if let Some(permanents) = recipients
             .iter()
             .map(|target| match target {
                 Target::Permanent(id) => Some(*id),
-                Target::Player(_) | Target::Card(_) | Target::Spell(_) => None,
+                _ => None,
+            })
+            .collect::<Option<Vec<_>>>()
+        {
+            self.move_permanents_to_zone(&permanents, zone, placement);
+            return true;
+        }
+        let Some(cards) = recipients
+            .iter()
+            .map(|target| match target {
+                Target::Card(id) => Some(*id),
+                _ => None,
             })
             .collect::<Option<Vec<_>>>()
         else {
             return false;
         };
-        self.move_permanents_to_zone(&permanents, clause.zone, clause.placement);
+        let mut events = Vec::new();
+        for card in cards {
+            let _ = self.move_card_target_to_zone_collecting(
+                card,
+                zone,
+                cause,
+                None,
+                placement,
+                &mut events,
+            );
+        }
+        self.capture_zone_move_events(&events);
         true
     }
 
@@ -406,79 +327,67 @@ impl Game {
         // the same number for everything the clause moves.
         let arriving_counters = self.resolved_arrival_counters(counters, object, context, scoped);
         let recipients = self.effect_recipients(recipient, object, context, scoped);
-        let batch_exile = self.batch_exile_permanents(&recipients, zone);
-        // A library sweep is one simultaneous event, not a run of unrelated
-        // one-object moves. Keep the whole prospective batch together so
-        // replacement effects see the same battlefield and CR 401.4 can ask
-        // each owner for the relative order at the instructed position.
-        if self.move_simultaneous_library_batch(&recipients, clause, attachment) {
+        let movement_cause = ZoneMoveCause::Effect {
+            controller: object.controller,
+        };
+        if self.move_simultaneous_zone_batch(&recipients, zone, movement_cause, placement) {
             return;
         }
-        if self.move_simultaneous_card_exile(
-            &recipients,
-            clause,
-            ZoneMoveCause::Effect {
-                controller: object.controller,
-            },
-        ) {
-            return;
-        }
-        for target in recipients {
-            if batch_exile && matches!(target, Target::Permanent(_)) {
-                continue;
+        self.entering_together(|game| {
+            for target in recipients {
+                let owner = match target {
+                    Target::Permanent(id) => game
+                        .battlefield
+                        .iter()
+                        .find(|permanent| permanent.card.id == id)
+                        .map(|permanent| permanent.card.owner),
+                    Target::Spell(id) => game
+                        .stack
+                        .iter()
+                        .find(|candidate| candidate.id == id)
+                        .map(|candidate| candidate.card.owner),
+                    Target::Card(id) => game
+                        .card_in_nonbattlefield_zone(id)
+                        .map(|(_, card)| card.owner),
+                    Target::Player(_) => None,
+                };
+                // An Aura whose host is gone stays where it is; anything else
+                // that attaches arrives bare.
+                if lost_its_host && game.moving_card_is_an_aura(target) {
+                    continue;
+                }
+                game.move_target_to_zone(
+                    target,
+                    zone,
+                    ZoneMoveCause::Effect {
+                        controller: object.controller,
+                    },
+                    // "Under your control" and "attach this to it" both belong to
+                    // the arrival: a permanent that enters is a new object, so
+                    // neither can wait for a later step.
+                    battlefield_arrival(
+                        owner.unwrap_or(object.controller),
+                        arriving_controller,
+                        attachment,
+                        arriving_counters,
+                        modifications,
+                    )
+                    .map(|mut arrival| {
+                        arrival.modification_source = Some(crate::game::AbilitySourceRef {
+                            object: object.source.unwrap_or(object.id),
+                            ability: object.ability_origin().unwrap_or_else(|| {
+                                Self::authored_ability_origin(
+                                    object.presentation(),
+                                    crate::AbilityId::PRIMARY,
+                                )
+                            }),
+                        });
+                        arrival
+                    }),
+                    placement,
+                );
             }
-            let owner = match target {
-                Target::Permanent(id) => self
-                    .battlefield
-                    .iter()
-                    .find(|permanent| permanent.card.id == id)
-                    .map(|permanent| permanent.card.owner),
-                Target::Spell(id) => self
-                    .stack
-                    .iter()
-                    .find(|candidate| candidate.id == id)
-                    .map(|candidate| candidate.card.owner),
-                Target::Card(id) => self
-                    .card_in_nonbattlefield_zone(id)
-                    .map(|(_, card)| card.owner),
-                Target::Player(_) => None,
-            };
-            // An Aura whose host is gone stays where it is; anything else
-            // that attaches arrives bare.
-            if lost_its_host && self.moving_card_is_an_aura(target) {
-                continue;
-            }
-            self.move_target_to_zone(
-                target,
-                zone,
-                ZoneMoveCause::Effect {
-                    controller: object.controller,
-                },
-                // "Under your control" and "attach this to it" both belong to
-                // the arrival: a permanent that enters is a new object, so
-                // neither can wait for a later step.
-                battlefield_arrival(
-                    owner.unwrap_or(object.controller),
-                    arriving_controller,
-                    attachment,
-                    arriving_counters,
-                    modifications,
-                )
-                .map(|mut arrival| {
-                    arrival.modification_source = Some(crate::game::AbilitySourceRef {
-                        object: object.source.unwrap_or(object.id),
-                        ability: object.ability_origin().unwrap_or_else(|| {
-                            Self::authored_ability_origin(
-                                object.presentation(),
-                                crate::AbilityId::PRIMARY,
-                            )
-                        }),
-                    });
-                    arrival
-                }),
-                placement,
-            );
-        }
+        });
     }
 
     /// The attachment an arrival carries, or `None` when what it named is no

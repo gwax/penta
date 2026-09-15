@@ -276,13 +276,15 @@ pub(in crate::card::sets) static ARMASAUR_GUIDE: CardRecord = CardRecord::new(
         AbilityDef::triggered_with_targets(
             "Whenever you attack with three or more creatures, put a +1/+1 \
              counter on target creature you control.",
-            TriggerEventDef::attack_declared(
-                ObjectPredicateDef::All(&[
-                    ObjectPredicateDef::HasType(CardType::Creature),
-                    ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                ]),
-                3,
-                None,
+            TriggerEventDef::Simultaneous(
+                crate::card::SimultaneousTriggerDef::new(
+                    &TriggerEventDef::attacks(ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                    ])),
+                    crate::card::TriggerAggregationDef::Once,
+                )
+                .at_least(3),
             ),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Object {

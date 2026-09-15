@@ -412,15 +412,17 @@ pub(in crate::card::sets) static CARETAKER_S_TALENT: CardRecord = CardRecord::ne
             [AbilityDef::triggered(
                 "Whenever one or more tokens you control enter, draw a card. \
                  This ability triggers only once each turn.",
-                // The per-turn limit also coalesces simultaneous token entries.
-                TriggerEventDef::zone_changed(
-                    ObjectPredicateDef::All(&[
-                        ObjectPredicateDef::Token,
-                        ObjectPredicateDef::ControlledBy(PlayerRelation::You),
-                    ]),
-                    None,
-                    Some(ZoneKind::Battlefield),
-                ),
+                TriggerEventDef::Simultaneous(crate::card::SimultaneousTriggerDef::new(
+                    &TriggerEventDef::zone_changed(
+                        ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::Token,
+                            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+                        ]),
+                        None,
+                        Some(ZoneKind::Battlefield),
+                    ),
+                    crate::card::TriggerAggregationDef::Once,
+                )),
                 EffectDef::DrawCards {
                     recipient: EffectRecipientDef::Controller,
                     amount: ValueDef::Constant(1),

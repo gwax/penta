@@ -344,15 +344,20 @@ const fn declaration_range_is_empty(range: crate::card::AttackDeclarationRangeDe
         }
 }
 
-const COMMITTED_ZONE_TRANSITIONS: [(ZoneKind, ZoneKind); 12] = [
+const COMMITTED_ZONE_TRANSITIONS: [(ZoneKind, ZoneKind); 17] = [
     (ZoneKind::Library, ZoneKind::Battlefield),
     (ZoneKind::Hand, ZoneKind::Battlefield),
     (ZoneKind::Graveyard, ZoneKind::Battlefield),
     (ZoneKind::Exile, ZoneKind::Battlefield),
     (ZoneKind::Stack, ZoneKind::Battlefield),
+    (ZoneKind::Stack, ZoneKind::Graveyard),
+    (ZoneKind::Command, ZoneKind::Graveyard),
     (ZoneKind::Library, ZoneKind::Graveyard),
     (ZoneKind::Hand, ZoneKind::Graveyard),
     (ZoneKind::Exile, ZoneKind::Graveyard),
+    (ZoneKind::Library, ZoneKind::Exile),
+    (ZoneKind::Hand, ZoneKind::Exile),
+    (ZoneKind::Graveyard, ZoneKind::Exile),
     (ZoneKind::Battlefield, ZoneKind::Graveyard),
     (ZoneKind::Battlefield, ZoneKind::Exile),
     (ZoneKind::Battlefield, ZoneKind::Hand),
@@ -407,7 +412,27 @@ fn validate_trigger_event_references(
     target_count: usize,
     scope: BindingScope<'_>,
 ) -> Result<(), GrantedAbilityValidationError> {
+    if !matches!(event, TriggerEventDef::Simultaneous(_)) && event.contains_simultaneous() {
+        return Err(unsupported_trigger_event(event));
+    }
     match event {
+        TriggerEventDef::Simultaneous(definition) => {
+            if definition.minimum == 0
+                || definition
+                    .maximum
+                    .is_some_and(|maximum| maximum < definition.minimum)
+                || !definition.event.supports_simultaneous_matching()
+            {
+                return Err(unsupported_trigger_event(event));
+            }
+            if let Some(required) = definition.required_member {
+                if !required.supports_simultaneous_matching() {
+                    return Err(unsupported_trigger_event(event));
+                }
+                validate_trigger_event_references(*required, target_count, scope)?;
+            }
+            validate_trigger_event_references(*definition.event, target_count, scope)
+        }
         // The ability is one ability, so every way into it has to be
         // independently valid.
         TriggerEventDef::AnyOf(events) => events
@@ -550,4 +575,19 @@ fn validate_stack_target_filter(
             validate_stack_target_filter(*filter, event, target_count, scope)
         }),
     }
+}
+
+/// Trigger modifiers filter contributing member events, not counted groups.
+fn validate_trigger_modification_cause(
+    event: TriggerEventDef,
+    target_count: usize,
+) -> Result<(), GrantedAbilityValidationError> {
+    if event.contains_simultaneous() {
+        return Err(unsupported_trigger_event(event));
+    }
+    validate_trigger_event_references(
+        event,
+        target_count,
+        BindingScope::empty(&BindingRegistry::default()),
+    )
 }

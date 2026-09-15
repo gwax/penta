@@ -22,6 +22,7 @@ use super::{
 mod exile;
 mod graveyard;
 include!("trigger_capture/drawing.rs");
+include!("trigger_capture/simultaneous.rs");
 
 impl Game {
     pub(super) fn capture_payment_paid(
@@ -675,6 +676,7 @@ impl Game {
         // A grouped targeting clause triggers once for the spell or ability
         // whose targets were chosen, not once for every matching recipient.
         let mut matched_targeting_batches = Vec::new();
+        let mut matched_simultaneous_groups = Vec::new();
         // "Triggers only once each turn" counts the triggering rather than
         // the resolution, and one batch can offer a capped ability several
         // matching events, so the count has to rise inside this loop as
@@ -691,11 +693,19 @@ impl Game {
                 ) {
                     continue;
                 }
-                let mut occurrences = self.modified_trigger_occurrences(listener, event);
+                let Some(group) = self.simultaneous_occurrence(
+                    listener,
+                    events,
+                    &mut matched_simultaneous_groups,
+                ) else {
+                    continue;
+                };
+                let grouped_matches = matches!(group, SimultaneousOccurrence::Group(_));
+                let mut occurrences = self.modified_trigger_occurrences(listener, event, events);
                 if occurrences == 0 {
                     continue;
                 }
-                let Some(trigger_context) = self.batch_trigger_context(
+                let Some(mut trigger_context) = self.batch_trigger_context(
                     listener,
                     event,
                     events,
@@ -704,6 +714,9 @@ impl Game {
                 ) else {
                     continue;
                 };
+                if let SimultaneousOccurrence::Group(count) = group {
+                    trigger_context = Self::simultaneous_group_context(count);
+                }
                 if let Some(id) = listener.installed
                     && self
                         .installed_triggers
@@ -724,7 +737,9 @@ impl Game {
                 // Keep installer bindings and targets; only the committed
                 // event-local context changes for this match.
                 capture.context.trigger = trigger_context;
-                if let Some(object) = Self::zone_change_event_object(listener.event, event) {
+                if !grouped_matches
+                    && let Some(object) = Self::zone_change_event_object(listener.event, event)
+                {
                     capture.context.trigger.object = Some(object.id);
                     capture.context.trigger.object_controller = Some(object.controller);
                 }
@@ -748,9 +763,9 @@ impl Game {
                 // ability but the same one again, so the extra instances are
                 // exact copies of this match and are ordered beside it.
                 for _ in 1..occurrences {
-                    matched.push((listener.uses_stack, capture.clone(), condition_holds, event));
+                    matched.push((listener, capture.clone(), condition_holds, event));
                 }
-                matched.push((listener.uses_stack, capture, condition_holds, event));
+                matched.push((listener, capture, condition_holds, event));
             }
         }
 
@@ -763,13 +778,14 @@ impl Game {
         // Record ordinary triggers first, using the precomputed condition.
         // Any triggers caused while a triggered-mana ability resolves are
         // therefore later in the pending stream than the event that caused it.
-        for (uses_stack, capture, condition_holds, event) in &matched {
-            if *uses_stack && *condition_holds {
-                self.capture_trigger_and_observers(listeners, event, capture);
+        for (listener, capture, condition_holds, event) in &matched {
+            if listener.uses_stack && *condition_holds {
+                let causes = self.contributing_trigger_events(listener, event, events);
+                self.capture_trigger_and_observers(listeners, event, capture, causes);
             }
         }
-        for (uses_stack, capture, condition_holds, _) in matched {
-            if !uses_stack && condition_holds {
+        for (listener, capture, condition_holds, _) in matched {
+            if !listener.uses_stack && condition_holds {
                 resolve_mana(self, capture);
             }
         }

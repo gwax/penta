@@ -76,6 +76,7 @@ impl Game {
             }));
         }
         let mut moved = Vec::new();
+        let mut events = Vec::new();
         for option in selected {
             let Some((id, _)) = option.card else {
                 continue;
@@ -109,13 +110,17 @@ impl Game {
                 | crate::game::DecisionZone::DrawnThisStep
                 | crate::game::DecisionZone::None => continue,
             };
-            let Some((moved_card, actual_destination)) = self.move_card_from_nonbattlefield_zone(
-                id,
-                source,
-                destination,
-                ZoneMoveCause::Effect { controller },
-                (destination == ZoneKind::Battlefield).then(|| BattlefieldArrival::under(player)),
-            ) else {
+            let Some((moved_card, actual_destination)) = self
+                .move_card_from_nonbattlefield_zone_collecting(
+                    id,
+                    source,
+                    destination,
+                    ZoneMoveCause::Effect { controller },
+                    (destination == ZoneKind::Battlefield)
+                        .then(|| BattlefieldArrival::under(player)),
+                    &mut events,
+                )
+            else {
                 continue;
             };
             moved.push(Target::Card(id));
@@ -131,6 +136,7 @@ impl Game {
                     .insert(0, card);
             }
         }
+        self.capture_zone_move_events(&events);
         if let Some((follow_up, binding, then)) = move_result {
             self.finish_chosen_card_move_result(follow_up, binding, then, moved);
         }

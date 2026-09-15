@@ -315,28 +315,33 @@ impl Game {
                     controller: object.controller,
                 };
                 let mut inputs = Vec::new();
-                for target in processing {
-                    let Target::Card(card) = target else {
-                        continue;
-                    };
-                    let Some((from, _)) = self.card_in_nonbattlefield_zone(card) else {
-                        continue;
-                    };
-                    if definition.from.is_some_and(|expected| from != expected) {
-                        continue;
+                let mut events = Vec::new();
+                self.entering_together(|game| {
+                    for target in processing {
+                        let Target::Card(card) = target else {
+                            continue;
+                        };
+                        let Some((from, _)) = game.card_in_nonbattlefield_zone(card) else {
+                            continue;
+                        };
+                        if definition.from.is_some_and(|expected| from != expected) {
+                            continue;
+                        }
+                        inputs.push((
+                            card,
+                            game.current_or_last_known_mana_value(card).unwrap_or(0),
+                        ));
+                        game.move_card_target_to_zone_collecting(
+                            card,
+                            definition.zone,
+                            cause,
+                            None,
+                            definition.placement,
+                            &mut events,
+                        );
                     }
-                    inputs.push((
-                        card,
-                        self.current_or_last_known_mana_value(card).unwrap_or(0),
-                    ));
-                    self.move_card_target_to_zone(
-                        card,
-                        definition.zone,
-                        cause,
-                        None,
-                        definition.placement,
-                    );
-                }
+                });
+                self.capture_zone_move_events(&events);
                 if definition.zone == ZoneKind::Library {
                     inputs.reverse();
                 }

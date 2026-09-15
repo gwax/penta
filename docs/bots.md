@@ -1937,6 +1937,16 @@ random stream when its effect resolves; choosing a mana payment never rolls it.
 
 ## Determinism and versioning
 
+The optional checkpoint `readyEntryBatch` array retains entrants whose
+replacement choices have finished while another simultaneous entrant still
+needs a choice. Absent means no pending group; an empty array still denotes
+an active group. Entries use the existing pending-event representation, with
+optional `redirectedTo` for a replacement destination. The optional
+`deferredTokenCreations` array retains `(creator seat, token object IDs)` groups
+until those entries finish. Absent means none. These additive fields preserve
+simultaneous trigger counts across reconstruction; protocol and checkpoint
+epochs are unchanged.
+
 The additive checkpoint `cardsDiscardedThisTurn` pair records each seat's discard
 count, including cycling once per discarded card; absence defaults to zero.
 It resets each turn. Cast state on stack objects, detached continuations, and

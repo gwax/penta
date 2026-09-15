@@ -767,6 +767,7 @@ impl Game {
         let Ok(count) = usize::try_from(count) else {
             return (context, Vec::new());
         };
+        let mut events = Vec::new();
         let mut buried = Vec::new();
         for target in self.effect_recipients(recipient, object, &context, scoped) {
             if let Target::Player(player) = target {
@@ -775,14 +776,18 @@ impl Game {
                 // burying them mints new objects, and "from among them"
                 // means the ones lying there now.
                 for card in milled {
-                    if let Some(card) =
-                        self.put_card_into_graveyard_replacing(player, card, ZoneKind::Library)
-                    {
+                    if let Some(card) = self.put_card_into_graveyard_replacing_collecting(
+                        player,
+                        card,
+                        ZoneKind::Library,
+                        &mut events,
+                    ) {
                         buried.push(Target::Card(card.id));
                     }
                 }
             }
         }
+        self.capture_zone_move_events(&events);
         (context, buried)
     }
 }

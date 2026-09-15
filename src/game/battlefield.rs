@@ -356,13 +356,6 @@ impl Game {
         self.move_permanents_to_graveyard_then(ids, None);
     }
 
-    /// Exiles every named permanent as one simultaneous battlefield-exit
-    /// event. A global exile must freeze all listeners before any source
-    /// leaves, just as a global destroy or sacrifice does.
-    pub(super) fn exile_permanents(&mut self, ids: &[GameObjectId]) {
-        self.move_permanents_to_zone_then(ids, ZoneKind::Exile, ZonePlacement::Top, None);
-    }
-
     pub(super) fn move_permanents_to_graveyard_then(
         &mut self,
         ids: &[GameObjectId],

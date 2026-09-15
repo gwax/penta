@@ -39,11 +39,7 @@ fn validate_applied_effect_shapes(
         }
         AppliedEffectDef::Rule(AppliedRuleDef::ModifyTriggers(modification)) => {
             validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
-            validate_trigger_event_references(
-                modification.cause,
-                targets.len(),
-                BindingScope::empty(&BindingRegistry::default()),
-            )?;
+            validate_trigger_modification_cause(modification.cause, targets.len())?;
             modification.permanent.map_or(Ok(()), |predicate| {
                 validate_object_predicate_shape(predicate, targets)
             })

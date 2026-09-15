@@ -17,6 +17,7 @@ mod discovery;
 mod entry_copy;
 mod entry_exile;
 mod entry_values;
+include!("entry_replacements/batches.rs");
 
 use entry_values::entry_value;
 
@@ -36,6 +37,7 @@ impl Game {
     pub(super) fn continue_pending_events(&mut self) {
         while self.pending_decisions.is_empty() {
             let Some(mut pending) = self.pending_events.pop_front() else {
+                self.finish_ready_entry_batch();
                 return;
             };
 
@@ -765,6 +767,10 @@ impl Game {
     }
 
     pub(super) fn commit_pending_event(&mut self, pending: PendingEvent) {
+        if let Some(ready) = self.ready_entry_batch.as_mut() {
+            ready.push(pending);
+            return;
+        }
         let ReplaceableEvent::BattlefieldEntry(entry) = &pending.event;
         if entry.redirected_to.is_none()
             && let Some(startup) = self
@@ -793,58 +799,23 @@ impl Game {
             // destination zone.
             return;
         };
+        let before = card.clone();
         let (card, _zone_change) = self.zone_change_card(card);
         match zone {
-            ZoneKind::Graveyard => self.put_card_into_graveyard(owner, card),
+            ZoneKind::Graveyard => {
+                self.put_card_into_graveyard(owner, card.clone());
+                if let Some(event) =
+                    self.nonbattlefield_graveyard_arrival(&before, &card, entry.from)
+                {
+                    self.capture_entry_event(event);
+                }
+            }
             ZoneKind::Exile => self.players[owner.index()].exile.push(card),
             ZoneKind::Hand => self.players[owner.index()].hand.push(card),
             ZoneKind::Library => self.players[owner.index()].library.push(card),
             // Every other destination would be the entry this replaced.
             ZoneKind::Battlefield | ZoneKind::Stack | ZoneKind::Command => {}
         }
-    }
-
-    /// Raises one permanent's arrival, or holds it back until the rest of
-    /// its batch has arrived. Everything a batch does before this point is
-    /// per permanent -- replacements are applied to each one on its own (CR
-    /// 614.12) -- and only what watches the arrivals waits.
-    fn capture_entry_event(&mut self, event: CommittedTriggerEvent) {
-        if let Some(batch) = self.entry_event_batch.as_mut() {
-            batch.push(event);
-            return;
-        }
-        self.capture_battlefield_triggers(&event);
-    }
-
-    /// Runs `enter`, holding back the arrivals it causes until it is done,
-    /// so everything it puts onto the battlefield is seen by the others.
-    ///
-    /// Nested batches join the one already open: a replacement that puts a
-    /// second permanent onto the battlefield during a batch is part of the
-    /// same arrival as far as anything watching is concerned.
-    pub(in crate::game) fn entering_together(&mut self, enter: impl FnOnce(&mut Self)) {
-        if self.entry_event_batch.is_some() {
-            enter(self);
-            return;
-        }
-        self.entry_event_batch = Some(Vec::new());
-        enter(self);
-        let mut batch = self.entry_event_batch.take().unwrap_or_default();
-        // All entrants and their continuous effects exist when this atomic
-        // arrival is observed, including effects from the last entrant.
-        for event in &mut batch {
-            if let CommittedTriggerEvent::ZoneChanged {
-                after: Some(after),
-                to: ZoneKind::Battlefield,
-                ..
-            } = event
-                && let Some(permanent) = self.battlefield.iter().find(|p| p.card.id == after.id)
-            {
-                *after = self.targeting_event_object(permanent);
-            }
-        }
-        let listeners = self.battlefield_trigger_listeners();
-        self.capture_battlefield_trigger_batch_from_snapshot(&listeners, &batch);
     }
 
     #[allow(clippy::too_many_lines)]

@@ -36,6 +36,7 @@ pub(super) fn pending_event_snapshot(
     let ReplaceableEvent::BattlefieldEntry(entry) = &pending.event;
     Some(PendingEventSnapshot {
         entry: PendingBattlefieldEntrySnapshot {
+            redirected_to: entry.redirected_to.map(zone_kind_snapshot),
             permanent: detached_permanent_snapshot(catalog, &entry.permanent),
             from: zone_kind_snapshot(entry.from),
             completion: completion_snapshot(entry.completion),

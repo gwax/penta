@@ -431,6 +431,7 @@ mod sentinel;
 mod shroud_grants;
 mod silence_and_sturmgeist;
 mod silenced_sources;
+mod simultaneous_triggers;
 mod sized_payments;
 mod sized_searches;
 mod skaab_casting;

@@ -113,7 +113,7 @@ impl Game {
             return;
         };
         let card = library.remove(index);
-        let (card, _zone_change) = self.zone_change_card(card);
-        self.players[player.index()].graveyard.push(card);
+        let _ =
+            self.put_card_into_graveyard_replacing(player, card, crate::card::ZoneKind::Library);
     }
 }

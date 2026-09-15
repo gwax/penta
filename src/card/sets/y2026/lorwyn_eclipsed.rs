@@ -3096,14 +3096,59 @@ pub(in crate::card::sets) static MOONGLOVE_EXTRACTOR: CardRecord = CardRecord::n
 );
 
 // ECL 110 — Moonshadow
-// Audit: unsupported — Needs an atomic one-or-more group event for permanent cards entering
-// your graveyard from any zone; per-card zone-change triggers remove too many counters for one
-// batch.
 pub(in crate::card::sets) static MOONSHADOW: CardRecord = CardRecord::new(
     "Moonshadow",
     "2573e694-eaa0-42ca-b470-2ab507cbcec1",
     "Olivier Bernard",
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{B}"), &["Elemental"], 7, 7).with_abilities(&[
+        abilities::menace(),
+        AbilityDef::as_enters(
+            "This creature enters with six -1/-1 counters on it.",
+            ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::AddCounters {
+                    kind: CounterKind::MinusOneMinusOne,
+                    amount: 6,
+                },
+            ),
+        ),
+        AbilityDef::triggered(
+            "Whenever one or more permanent cards are put into your graveyard from anywhere \
+             while this creature has a -1/-1 counter on it, \
+             remove a -1/-1 counter from this creature.",
+            TriggerEventDef::Simultaneous(crate::card::SimultaneousTriggerDef::new(
+                &TriggerEventDef::While {
+                    event: &TriggerEventDef::ZoneChanged(
+                        crate::card::ZoneChangeEventMatcherDef::new(
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::OwnedBy(PlayerRelation::You),
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+                                ObjectPredicateDef::AnyOf(&[
+                                    ObjectPredicateDef::HasType(CardType::Artifact),
+                                    ObjectPredicateDef::HasType(CardType::Creature),
+                                    ObjectPredicateDef::HasType(CardType::Enchantment),
+                                    ObjectPredicateDef::HasType(CardType::Land),
+                                    ObjectPredicateDef::HasType(CardType::Planeswalker),
+                                ]),
+                            ]),
+                            None,
+                            Some(ZoneKind::Graveyard),
+                        ),
+                    ),
+                    condition: &TriggerConditionDef::SourceCounters {
+                        kind: CounterKind::MinusOneMinusOne,
+                        comparison: ComparisonDef::Greater,
+                        amount: 0,
+                    },
+                },
+                crate::card::TriggerAggregationDef::Once,
+            )),
+            EffectDef::RemoveCounters {
+                object: EffectRecipientDef::Source,
+                kind: CounterKind::MinusOneMinusOne,
+                amount: ValueDef::Constant(1),
+            },
+        ),
+    ]),
 );
 
 // ECL 111 — Mornsong Aria
