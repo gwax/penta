@@ -130,7 +130,7 @@ fn parse_continuation(
                 context: restored.context,
             }
         }
-        pregame @ (DecisionContinuationSnapshot::PregameActions { .. }
+        pregame @ (DecisionContinuationSnapshot::ChooseCompanion { .. } | DecisionContinuationSnapshot::PregameActions { .. }
         | DecisionContinuationSnapshot::ScryBottom { .. }
         | DecisionContinuationSnapshot::ScryTop { .. }) => {
             parse_pregame_continuation(pregame, game)?

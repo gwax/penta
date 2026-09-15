@@ -129,10 +129,11 @@ pub const PROTOCOL_CAPABILITIES: &[&str] = &[
     "action.concede.v1",
     "actions.forced.v1",
     "match.first-to-two-wins.v1",
+    "observation.chosen-companions.v1",
     "observation.known-cards.v1",
     "observation.public-reveals.v1",
     "payments.explicit.v1",
-    "reconstruction.checkpoint.v19",
+    "reconstruction.checkpoint.v20",
     "rules.commander.v1",
     "rules.duel-commander.v1",
     "rules.restart-game.v1",
@@ -143,7 +144,7 @@ pub const PROTOCOL_CAPABILITIES: &[&str] = &[
 pub const REQUIRED_BOT_CAPABILITIES: &[&str] = &[];
 
 /// Version of the hidden-safe reconstruction payload nested at `checkpoint`.
-pub const CHECKPOINT_VERSION: u32 = 19;
+pub const CHECKPOINT_VERSION: u32 = 20;
 
 /// Undeclared hosted bots predate negotiation and therefore belong to the last
 /// wire epoch that could not make an explicit declaration. They do not

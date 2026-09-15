@@ -20,6 +20,16 @@ the bot-wire epoch.
 
 ## Unreleased
 
+- Companion now uses composable starting-deck requirements and a pregame reveal
+  decision before opening hands. Only the chosen card can be taken, once per
+  game. Both players observe its designation and usage through the additive
+  `chosenCompanions` field. Checkpoint format 20 stores the choice and pending
+  pregame decision; format 19 checkpoints must be regenerated. The bot protocol
+  version is unchanged. Implement Kaheera, Keruga, and Yorion using existing
+  gameplay effects, and correct starting-deck checks for commanders, split
+  cards, intrinsic land mana abilities, changeling, Grist's outside-game types,
+  and companion-only format bans.
+
 - Add Lord_Beerus's September 13 Vintage Challenge Dredge deck and implement
   all nine missing identities: Creeping Chill, Golgari Grave-Troll, Golgari
   Thug, Hollow One, Prized Amalgam, Shambling Shell, Sickening Shoal,

@@ -13,6 +13,9 @@ test("session API controls either seat and advances only forced continuations in
   try {
     const first = JSON.parse(game.sessionObserveJson("bot"));
     assert.equal(first.seat, "p1");
+    assert.deepEqual(first.chosenCompanions, [null, null]);
+    assert.ok(first.protocolCapabilities.includes("observation.chosen-companions.v1"));
+    assert.ok(first.protocolCapabilities.includes(`reconstruction.checkpoint.v${first.checkpoint.version}`));
     assert.equal(JSON.parse(game.sessionObserveJson("human")).seat, "p2");
     assert.throws(() => game.sessionAct("human", 0), /does not hold/);
     game.sessionAct("bot", first.legalActions.find(action => action.type === "KeepHand").index);

@@ -13,7 +13,8 @@ impl Game {
     /// # Errors
     /// Rejects reconfiguration after play has started.
     pub fn set_match_mode(&mut self, mode: MatchMode) -> Result<(), String> {
-        if !matches!(self.pregame, Some(super::Pregame::Mulligan(player)) if player == self.starting_player)
+        if !(matches!(self.pregame, Some(super::Pregame::Companion(_)))
+            || matches!(self.pregame, Some(super::Pregame::Mulligan(player)) if player == self.starting_player))
             || self.events.len() != 1
             || self.mulligans != [0, 0]
             || self.result.is_some()
@@ -66,6 +67,11 @@ impl Game {
             for player in &mut self.players {
                 player.library.append(&mut player.hand);
             }
+            // The play/draw answer constructs the game and its companion
+            // choices afresh, after establishing the starting player.
+            self.pending_decisions.clear();
+            self.pregame = Some(super::Pregame::Mulligan(self.starting_player));
+            self.priority = self.starting_player;
         }
         Ok(())
     }
@@ -324,6 +330,10 @@ impl Game {
         )
         .expect("validated registered decks");
         replacement.next_decision_id = self.next_decision_id + 1;
+        for pending in &mut replacement.pending_decisions {
+            pending.observation.id = replacement.next_decision_id;
+            replacement.next_decision_id += 1;
+        }
         replacement.set_prepared_engine_enabled(self.prepared_engine_enabled());
         replacement.match_context = Some(context);
         // Preserve a monotonic journal cursor across game boundaries.

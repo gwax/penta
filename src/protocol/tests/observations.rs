@@ -44,6 +44,7 @@ fn observation_with_printed_and_token_permanents() -> PlayerObservation {
         revealed_library_top: None,
         opponent_revealed_library_top: None,
         companions: Vec::new(),
+        chosen_companions: [None; 2],
         graveyards: [Vec::new(), Vec::new()],
         exiles: [Vec::new(), Vec::new()],
         face_down_exile_sizes: [0, 0],

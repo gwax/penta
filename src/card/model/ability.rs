@@ -735,7 +735,8 @@ impl AbilityDef {
             | DeclarativeAbilityDef::SpecialAction(_)
             | DeclarativeAbilityDef::Pregame(_)
             | DeclarativeAbilityDef::Keyword(_)
-            | DeclarativeAbilityDef::DeckConstruction(_) => {
+            | DeclarativeAbilityDef::DeckConstruction(_)
+            | DeclarativeAbilityDef::Companion(_) => {
                 panic!("only activated and triggered abilities have a selectable procedure")
             }
         }
@@ -795,6 +796,18 @@ impl AbilityDef {
         self.effect.declarative_replacement()
     }
 
+    /// Also applies this static clause to its card outside the game.
+    /// # Panics
+    /// Panics if the clause is not a static ability.
+    #[must_use]
+    pub const fn with_outside_game(mut self) -> Self {
+        match &mut self.definition {
+            DeclarativeAbilityDef::Static(definition) => definition.outside_game = true,
+            _ => panic!("outside-game scope requires a static clause"),
+        }
+        self
+    }
+
     #[must_use]
     pub const fn with_source_zones(mut self, source_zones: &'static [ZoneKind]) -> Self {
         match &mut self.definition {
@@ -820,7 +833,8 @@ impl AbilityDef {
             | DeclarativeAbilityDef::OptionalAdditionalCost(_)
             | DeclarativeAbilityDef::Pregame(_)
             | DeclarativeAbilityDef::Keyword(_)
-            | DeclarativeAbilityDef::DeckConstruction(_) => {}
+            | DeclarativeAbilityDef::DeckConstruction(_)
+            | DeclarativeAbilityDef::Companion(_) => {}
         }
         self
     }

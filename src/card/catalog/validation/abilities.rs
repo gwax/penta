@@ -463,7 +463,8 @@ fn validate_ability_coverage(ability: &AbilityDef) -> Result<(), GrantedAbilityV
         | DeclarativeAbilityDef::SpecialAction(_)
         | DeclarativeAbilityDef::Pregame(_)
         | DeclarativeAbilityDef::Keyword(_)
-        | DeclarativeAbilityDef::DeckConstruction(_) => false,
+        | DeclarativeAbilityDef::DeckConstruction(_)
+        | DeclarativeAbilityDef::Companion(_) => false,
     };
     if uses_legacy_procedure {
         return Err(GrantedAbilityValidationError::UnsupportedLegacyProcedure);

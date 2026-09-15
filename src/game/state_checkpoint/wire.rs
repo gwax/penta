@@ -435,6 +435,7 @@ pub(super) fn parse_step(value: &str) -> Result<Step, String> {
 pub(super) fn parse_pregame(value: Option<PregameSnapshot>) -> Result<Option<Pregame>, String> {
     value
         .map(|value| match value {
+            PregameSnapshot::Companion { seat } => player_from_index(seat).map(Pregame::Companion),
             PregameSnapshot::Mulligan { seat } => player_from_index(seat).map(Pregame::Mulligan),
             PregameSnapshot::Bottom { seat } => player_from_index(seat).map(Pregame::Bottom),
             PregameSnapshot::OpeningHand { seat } => {

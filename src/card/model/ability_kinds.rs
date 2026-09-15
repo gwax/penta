@@ -7,6 +7,9 @@ use super::{
     ReplacementEventDef, TriggerEventDef, ValueDef, ZoneKind,
 };
 
+mod companion;
+pub use companion::*;
+
 mod alternative_casts;
 mod optional_additional_costs;
 mod pregame;
@@ -664,6 +667,8 @@ pub struct TriggeredAbilityDef {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct StaticAbilityDef {
+    /// Explicit outside-game scope; outside the game is not a zone.
+    pub outside_game: bool,
     pub source_zones: &'static [ZoneKind],
 }
 
@@ -756,6 +761,7 @@ impl StaticAbilityDef {
     #[must_use]
     pub const fn new() -> Self {
         Self {
+            outside_game: false,
             source_zones: &[ZoneKind::Battlefield],
         }
     }
@@ -793,6 +799,7 @@ pub enum DeclarativeAbilityDef {
     /// A permission the card grants the deck it is built into. It is read
     /// while a deck is assembled and is silent during play.
     DeckConstruction(DeckConstructionDef),
+    Companion(CompanionDef),
 }
 
 /// The structured program of an ability.

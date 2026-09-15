@@ -49,6 +49,7 @@ impl Game {
             }).collect(),
             library_sizes: [self.players[0].library.len(), self.players[1].library.len()],
             companions: self.observed_companions(viewer),
+            chosen_companions: self.players.each_ref().map(|player| player.companion),
             revealed_library_top: self.observed_library_top(viewer, viewer),
             opponent_revealed_library_top: self.observed_library_top(viewer, viewer.opponent()),
             command_zones: [public_cards(&self.players[0].command), public_cards(&self.players[1].command)],

@@ -24,7 +24,6 @@ use crate::card::ChooseCardsFromCollectionDef;
 use crate::card::ChooseDef;
 use crate::card::CollectionInspectionDef;
 use crate::card::ColorSet;
-use crate::card::CompanionConditionDef;
 use crate::card::ComparisonDef;
 use crate::card::ControlDurationDef;
 use crate::card::CopyExceptionsDef;
@@ -40,7 +39,6 @@ use crate::card::DamageKindDef;
 use crate::card::DamagePreventionDef;
 use crate::card::DamageRecipientMatcherDef;
 use crate::card::DamageSourceMatcherDef;
-use crate::card::DeckConstructionDef;
 use crate::card::DiscardFollowUpDef;
 use crate::card::DiscardSelectionDef;
 use crate::card::DrawEventMatcherDef;
@@ -81,8 +79,22 @@ use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
+use crate::card::{
+    CardProperty, CardRequirement, CompanionDef, DeckCards, DeckRequirementDef,
+    DeclarativeAbilityDef,
+};
 use crate::ids::TargetIndex;
 use crate::mana_cost;
+
+/// Companion keeps its requirement in the printed ability clause. Selection,
+/// revelation, and the once-per-game special action belong to the mechanic.
+pub(crate) const fn companion(text: &'static str, requirement: DeckRequirementDef) -> AbilityDef {
+    AbilityDef::defined(
+        text,
+        DeclarativeAbilityDef::Companion(CompanionDef { requirement }),
+        EffectDef::None,
+    )
+}
 
 /// A triome is a tapped land with three basic land types and cycling, and
 /// nothing else. Its printed mana ability is reminder text for what the
@@ -5121,8 +5133,8 @@ pub(in crate::card::sets) static FIEND_ARTISAN: CardRecord = CardRecord::new(
 );
 
 // IKO 221 — Gyruda, Doom of Depths
-// Audit: unsupported — Needs companion validation for even mana values and a parity predicate over the frozen
-// cards each player milled.
+// Audit: unsupported — Needs a mana-value parity requirement for the starting deck and a parity predicate
+// over the frozen cards each player milled; the shared Companion selection and access are implemented.
 pub(in crate::card::sets) static GYRUDA_DOOM_OF_DEPTHS: CardRecord = CardRecord::new(
     "Gyruda, Doom of Depths",
     "97eb1804-6fd8-4917-af36-87fdfce39d3a",
@@ -5131,8 +5143,8 @@ pub(in crate::card::sets) static GYRUDA_DOOM_OF_DEPTHS: CardRecord = CardRecord:
 );
 
 // IKO 222 — Jegantha, the Wellspring
-// Audit: unsupported — Needs companion deck validation over repeated mana symbols and a mana
-// restriction forbidding generic-cost payment.
+// Audit: unsupported — Needs a per-card mana-symbol multiplicity requirement and a payment restriction
+// forbidding generic-cost payment; the shared Companion selection and access are implemented.
 pub(in crate::card::sets) static JEGANTHA_THE_WELLSPRING: CardRecord = CardRecord::new(
     "Jegantha, the Wellspring",
     "1d52e527-3835-4350-8c01-0f2d5d623b9c",
@@ -5151,21 +5163,84 @@ pub(in crate::card::sets) static JUBILANT_SKYBONDER: CardRecord = CardRecord::ne
 );
 
 // IKO 224 — Kaheera, the Orphanguard
-// Audit: unsupported — Needs companion validation of the permitted creature-type union across the starting deck.
 pub(in crate::card::sets) static KAHEERA_THE_ORPHANGUARD: CardRecord = CardRecord::new(
     "Kaheera, the Orphanguard",
     "d4ebed0b-8060-4a7b-a060-5cfcd2172b16",
     "Ryan Pancoast",
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{G/W}{G/W}"), &["Cat", "Beast"], 3, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            companion(
+                "Companion — Each creature card in your starting deck is a Cat, Elemental, \
+                 Nightmare, Dinosaur, or Beast card. (If this card is your chosen companion, \
+                 you may put it into your hand from outside the game for {3} as a sorcery.)",
+                DeckCards::creatures().all(CardRequirement::HasAnySubtype(&[
+                    "Cat",
+                    "Elemental",
+                    "Nightmare",
+                    "Dinosaur",
+                    "Beast",
+                ])),
+            ),
+            abilities::vigilance(),
+            AbilityDef::static_ability(
+                "Each other creature you control that's a Cat, Elemental, Nightmare, Dinosaur, \
+                 or Beast gets +1/+1 and has vigilance.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::matching_objects(
+                        ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::HasType(CardType::Creature),
+                            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                            ObjectPredicateDef::AnyOf(&[
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Cat")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Elemental")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Nightmare")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Dinosaur")),
+                                ObjectPredicateDef::Subtype(SubtypeDef::from_name("Beast")),
+                            ]),
+                        ]),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    ),
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(1),
+                            ValueDef::Constant(1),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::vigilance()),
+                    ]),
+                },
+            ),
+        ]),
 );
 
 // IKO 225 — Keruga, the Macrosage
-// Audit: unsupported — Needs companion validation allowing only lands and cards with mana value at least three.
 pub(in crate::card::sets) static KERUGA_THE_MACROSAGE: CardRecord = CardRecord::new(
     "Keruga, the Macrosage",
     "a90ee952-de7a-420f-993c-a38db89bc8ac",
     "Dan Murayama Scott",
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{3}{G/U}{G/U}"), &["Dinosaur", "Hippo"], 5, 4)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            companion(
+                "Companion — Your starting deck contains only cards with mana value 3 or greater \
+                 and land cards. (If this card is your chosen companion, you may put it into \
+                 your hand from outside the game for {3} as a sorcery.)",
+                DeckCards::nonlands().all(CardRequirement::ManaValueAtLeast(3)),
+            ),
+            abilities::enters_trigger(
+                "When Keruga enters, draw a card for each other permanent you control with mana \
+                 value 3 or greater.",
+                abilities::draw_cards(ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::ManaValueAtMost(2)),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ))),
+            ),
+        ]),
 );
 
 // IKO 226 — Lurrus of the Dream-Den
@@ -5179,14 +5254,11 @@ pub(in crate::card::sets) static LURRUS_OF_THE_DREAM_DEN: CardRecord = CardRecor
     CardRules::new_creature(mana_cost!("{1}{W/B}{W/B}"), &["Cat", "Nightmare"], 3, 2)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
-            AbilityDef::deck_construction(
+            companion(
                 "Companion — Each permanent card in your starting deck has mana value 2 or less. \
                  (If this card is your chosen companion, you may put it into your hand from \
                  outside the game for {3} as a sorcery.)",
-                DeckConstructionDef::Companion(CompanionConditionDef::PermanentManaValueAtMost(2)),
-                "Both halves are here: the deck-construction condition the \
-                 deck layer checks, and the special action that takes it \
-                 from outside the game for {3}.",
+                DeckCards::permanents().all(CardRequirement::ManaValueAtMost(2)),
             ),
             abilities::lifelink(),
             AbilityDef::static_ability(
@@ -5232,8 +5304,8 @@ const LUTRI_THE_SPELLCHASER_ALTERNATE_1: PrintingRecord = PrintingRecord::altern
 );
 
 // IKO 228 — Obosh, the Preypiercer
-// Audit: unsupported — Needs companion validation of odd mana values and damage replacement filtered by the
-// source's mana-value parity.
+// Audit: unsupported — Needs a mana-value parity requirement for nonlands and damage replacement filtered by
+// the source's mana-value parity; the shared Companion selection and access are implemented.
 pub(in crate::card::sets) static OBOSH_THE_PREYPIERCER: CardRecord = CardRecord::new(
     "Obosh, the Preypiercer",
     "451507de-9c42-43ee-b9ba-1f69e9aa29d2",
@@ -5280,8 +5352,8 @@ pub(in crate::card::sets) static SONOROUS_HOWLBONDER: CardRecord = CardRecord::n
 );
 
 // IKO 231 — Umori, the Collector
-// Audit: unsupported — Needs companion validation of a shared nonland card type and an entry-time card-type
-// designation read by spell pricing.
+// Audit: unsupported — Needs a shared-card-type requirement for nonlands and an entry-time card-type
+// designation read by spell pricing; the shared Companion selection and access are implemented.
 pub(in crate::card::sets) static UMORI_THE_COLLECTOR: CardRecord = CardRecord::new(
     "Umori, the Collector",
     "75ac31e0-ac70-4ee6-b2b1-cc445ffa1da9",
@@ -5290,13 +5362,74 @@ pub(in crate::card::sets) static UMORI_THE_COLLECTOR: CardRecord = CardRecord::n
 );
 
 // IKO 232 — Yorion, Sky Nomad
-// Audit: unsupported — Needs the companion condition comparing starting deck size with the
-// format minimum.
 pub(in crate::card::sets) static YORION_SKY_NOMAD: CardRecord = CardRecord::new(
     "Yorion, Sky Nomad",
     "275426c4-c14e-47d0-a9d4-24da7f6f6911",
     "Steven Belledin",
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{3}{W/U}{W/U}"), &["Bird", "Serpent"], 4, 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            companion(
+                "Companion — Your starting deck contains at least twenty cards more than the \
+                 minimum deck size. (If this card is your chosen companion, you may put it into \
+                 your hand from outside the game for {3} as a sorcery.)",
+                DeckRequirementDef::MinimumSizeAboveFormat(20),
+            ),
+            abilities::flying(),
+            abilities::enters_trigger(
+                "When Yorion enters, exile any number of other nonland permanents you own and \
+                 control. Return those cards to the battlefield at the beginning of the \
+                 next end step.",
+                EffectDef::Choose(ChooseDef {
+                    binding: ObjectChoiceBindingDef::Objects(crate::Binding!("blink")),
+                    unchosen: None,
+                    chooser: PlayerRefDef::EffectController,
+                    candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
+                        ObjectPredicateDef::All(&[
+                            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                            ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                            ObjectPredicateDef::OwnedBy(PlayerRelation::You),
+                        ]),
+                        &[ZoneKind::Battlefield],
+                        PlayerRelation::You,
+                    )),
+                    exclude: None,
+                    minimum: 0,
+                    maximum: usize::MAX,
+                    visibility: ChoiceVisibilityDef::Public,
+                    then: &EffectDef::WithZoneMoveResult {
+                        effect: &EffectDef::move_to_zone(
+                            EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!(
+                                "blink"
+                            ))),
+                            ZoneKind::Exile,
+                            ZonePlacement::Top,
+                        ),
+                        binding: crate::Binding!("exiled"),
+                        then: &EffectDef::InstallTrigger(crate::card::InstalledTriggerDef::once(
+                            &AbilityDef::triggered(
+                                "At the beginning of the next end step, return those cards \
+                                 to the battlefield.",
+                                TriggerEventDef::StepBegins {
+                                    step: TurnStepDef::End,
+                                    player: PlayerRelation::Any,
+                                },
+                                EffectDef::move_to_zone(
+                                    EffectRecipientDef::objects(ObjectSetDef::InZone {
+                                        objects: &ObjectSetDef::ZoneChangeSuccessorsOfBinding(
+                                            crate::Binding!("exiled"),
+                                        ),
+                                        zone: ZoneKind::Exile,
+                                    }),
+                                    ZoneKind::Battlefield,
+                                    ZonePlacement::Top,
+                                ),
+                            ),
+                        )),
+                    },
+                }),
+            ),
+        ]),
 );
 
 // IKO 233 — Zirda, the Dawnwaker
@@ -5310,16 +5443,11 @@ pub(in crate::card::sets) static ZIRDA_THE_DAWNWAKER: CardRecord = CardRecord::n
     CardRules::new_creature(mana_cost!("{1}{R/W}{R/W}"), &["Elemental", "Fox"], 3, 3)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
-            AbilityDef::deck_construction(
+            companion(
                 "Companion — Each permanent card in your starting deck has an activated ability. \
                  (If this card is your chosen companion, you may put it into your hand from \
                  outside the game for {3} as a sorcery.)",
-                DeckConstructionDef::Companion(
-                    CompanionConditionDef::EveryPermanentHasAnActivatedAbility,
-                ),
-                "Both halves are here: the deck-construction condition the \
-                 deck layer checks, and the special action that takes it \
-                 from outside the game for {3}.",
+                DeckCards::permanents().all(CardRequirement::HasActivatedAbility),
             ),
             AbilityDef::static_ability(
                 "Abilities you activate that aren't mana abilities cost {2} less to activate. \
@@ -6423,15 +6551,12 @@ pub(in crate::card::sets) static LUTRI_THE_SPELLCHASER: CardRecord = CardRecord:
     CardRules::new_creature(mana_cost!("{1}{U/R}{U/R}"), &["Elemental", "Otter"], 3, 2)
         .with_supertype(CardSupertype::Legendary)
         .with_abilities(&[
-            AbilityDef::deck_construction(
+            companion(
                 "Companion — Each nonland card in your starting deck has a \
                  different name. (If this card is your chosen companion, you \
                  may put it into your hand from outside the game for {3} as \
                  a sorcery.)",
-                DeckConstructionDef::Companion(CompanionConditionDef::NonlandNamesAreDistinct),
-                "Both halves are here: the deck-construction condition the \
-                 deck layer checks, and the special action that takes it \
-                 from outside the game for {3}.",
+                DeckCards::nonlands().distinct_by(CardProperty::Name),
             ),
             abilities::flash(),
             AbilityDef::triggered_if_with_targets(

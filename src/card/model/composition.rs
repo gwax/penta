@@ -4,7 +4,7 @@ use crate::ids::{
 
 use super::{
     CardEffectStatus, CardPart, CardPrinting, CardRules, CardSet, CardStructure, CardSupertype,
-    CardType, CompanionConditionDef, DeckConstructionDef, DeclarativeAbilityDef, DoubleFacedKind,
+    CardType, CompanionDef, DeckConstructionDef, DeclarativeAbilityDef, DoubleFacedKind,
     ImplementationStatus, ManaCost, ModeSetDef, PlayActionKind, PlayRestriction, PrintedManaCost,
     SpellForm, TargetSlotDef,
 };
@@ -541,32 +541,20 @@ impl CardDefinition {
     /// What this card asks of a deck it would be the companion of, or
     /// nothing when it is not a companion at all (CR 702.139a).
     #[must_use]
-    pub fn companion_condition(&self) -> Option<CompanionConditionDef> {
-        self.parts.iter().find_map(|part| {
-            part.rules
-                .ability_clauses()
-                .iter()
-                .find_map(|ability| match ability.definition {
-                    DeclarativeAbilityDef::DeckConstruction(DeckConstructionDef::Companion(
-                        condition,
-                    )) => Some(condition),
-                    _ => None,
-                })
-        })
-    }
-
-    /// Whether any face of this card prints an activated ability, which is
-    /// what one companion asks of every permanent beside it.
-    #[must_use]
-    pub fn has_an_activated_ability(&self) -> bool {
-        self.parts.iter().any(|part| {
-            part.rules.ability_clauses().iter().any(|ability| {
-                matches!(
-                    ability.definition,
-                    DeclarativeAbilityDef::Activated(_) | DeclarativeAbilityDef::ActivatedMana(_)
-                )
+    pub fn companion(&self) -> Option<CompanionDef> {
+        crate::card::applicable_part_ids(self, &crate::card::CharacteristicContext::OutsideGame)
+            .ok()?
+            .into_iter()
+            .filter_map(|id| self.part(id))
+            .find_map(|part| {
+                part.rules
+                    .ability_clauses()
+                    .iter()
+                    .find_map(|ability| match ability.definition {
+                        DeclarativeAbilityDef::Companion(companion) => Some(companion),
+                        _ => None,
+                    })
             })
-        })
     }
 
     /// Whether this card is a permanent card: one that would enter the

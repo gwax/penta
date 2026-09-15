@@ -26,25 +26,4 @@ pub enum DeckConstructionDef {
     /// that also prints Partner (CR 702.124a). The pairing is symmetric;
     /// neither physical card is the primary commander.
     Partner,
-    /// "Companion — <condition>." The card may be designated a companion
-    /// before the game if the starting deck meets the condition, and is then
-    /// outside the game rather than in the deck (CR 702.139a). Taking it
-    /// from there is a special action the card also prints.
-    Companion(CompanionConditionDef),
-}
-
-/// What a companion asks of the deck it sits beside.
-///
-/// A dedicated vocabulary rather than a reused object predicate, because
-/// these are read over a list of card definitions before a game exists: no
-/// zone, no controller, nothing to match against. Each variant names one
-/// printed sentence, and a fourth companion earns a fourth variant.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum CompanionConditionDef {
-    /// "Each permanent card in your starting deck has mana value N or less."
-    PermanentManaValueAtMost(u16),
-    /// "Each permanent card in your starting deck has an activated ability."
-    EveryPermanentHasAnActivatedAbility,
-    /// "Each nonland card in your starting deck has a different name."
-    NonlandNamesAreDistinct,
 }

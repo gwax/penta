@@ -295,7 +295,8 @@ pub(super) fn shared_resolving_applied_effect(effect: AppliedEffectDef) -> bool 
             | DeclarativeAbilityDef::Static(_)
             | DeclarativeAbilityDef::OptionalAdditionalCost(_)
             | DeclarativeAbilityDef::SpecialAction(_)
-            | DeclarativeAbilityDef::DeckConstruction(_) => false,
+            | DeclarativeAbilityDef::DeckConstruction(_)
+            | DeclarativeAbilityDef::Companion(_) => false,
         },
         AppliedEffectDef::Characteristic(_) | AppliedEffectDef::Rule(_) => true,
     }
@@ -868,7 +869,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                         || shared_spell_additional_cost(Some(*cost))
                 })
         }
-        DeclarativeAbilityDef::DeckConstruction(_) => effect == EffectDef::None,
+        DeclarativeAbilityDef::DeckConstruction(_) | DeclarativeAbilityDef::Companion(_) => {
+            effect == EffectDef::None
+        }
         DeclarativeAbilityDef::Keyword(keyword) => shared_keyword(keyword),
         DeclarativeAbilityDef::SpecialAction(_) => false,
     }

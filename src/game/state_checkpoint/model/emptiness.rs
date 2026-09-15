@@ -26,12 +26,6 @@ pub(super) fn is_unset_for_both(value: &[bool; 2]) -> bool {
     !value[0] && !value[1]
 }
 
-// And for a per-seat list nobody has anything in: two empty vectors are what
-// a checkpoint written without the member meant.
-pub(super) fn is_empty_pair_of_vectors<T>(value: &[Vec<T>; 2]) -> bool {
-    value[0].is_empty() && value[1].is_empty()
-}
-
 // And for a per-seat list of names nobody has attacked with yet.
 pub(super) fn is_empty_pair_of_names(value: &[Vec<String>; 2]) -> bool {
     value[0].is_empty() && value[1].is_empty()

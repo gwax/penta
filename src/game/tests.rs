@@ -560,3 +560,5 @@ mod vintage_dredge;
 mod vintage_dredge_recursion;
 
 mod zone_access;
+
+pub(crate) mod companions;

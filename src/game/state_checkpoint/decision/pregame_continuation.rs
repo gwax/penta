@@ -3,6 +3,13 @@ fn parse_pregame_continuation(
     game: &Game,
 ) -> Result<DecisionContinuation, String> {
     Ok(match value {
+        DecisionContinuationSnapshot::ChooseCompanion { player: seat } => {
+            let player = player(*seat)?;
+            if game.pregame != Some(crate::game::Pregame::Companion(player)) {
+                return Err("companion choice outside its pregame window".into());
+            }
+            DecisionContinuation::ChooseCompanion { player }
+        }
         DecisionContinuationSnapshot::PregameActions { player: seat, actions } => {
             let player = player(*seat)?;
             let parsed = actions

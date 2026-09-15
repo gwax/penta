@@ -39,12 +39,12 @@ pub(in crate::game::state_checkpoint) struct GameSnapshot {
     pub(in crate::game::state_checkpoint) cleanup_pending: bool,
     pub(in crate::game::state_checkpoint) mulligans: [u8; 2],
     pub(in crate::game::state_checkpoint) lands_played_this_turn: [u16; 2],
-    /// The companions each player may still take from outside the game,
-    /// named by definition. Additive: a checkpoint written before companions
-    /// existed restores a game in which nobody brought one, which is what
-    /// every game before them was.
-    #[serde(default, skip_serializing_if = "emptiness::is_empty_pair_of_vectors")]
-    pub(in crate::game::state_checkpoint) companions: [Vec<crate::CardDefinitionId>; 2],
+    /// Whether the originally revealed object is still outside the game.
+    /// Another effect can bring it into the game without using the special action.
+    pub(in crate::game::state_checkpoint) companion_outside_game: [bool; 2],
+    /// One revealed designation per player and its once-per-game usage.
+    pub(in crate::game::state_checkpoint) chosen_companions:
+        [Option<crate::game::CompanionState>; 2],
     /// The creature subtypes each seat attacked with this turn. Additive: a
     /// checkpoint written before it existed restores a turn nobody is
     /// recorded as having attacked in, which is what it meant.

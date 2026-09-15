@@ -20,8 +20,8 @@ pub mod sets;
 mod subtypes;
 
 pub use catalog::{CardCatalog, CatalogError, EffectSubjectKind, GrantedAbilityValidationError};
-pub(crate) use characteristics::applicable_part_ids_ref;
 pub use characteristics::{CharacteristicContext, CharacteristicError, applicable_part_ids};
+pub(crate) use characteristics::{applicable_part_ids_ref, self_characteristic_effects};
 pub(crate) use model::replacement_tokens;
 pub use model::{
     AbilityCostReductionDef, AbilityDef, AbilityEffectDef, AbilityKindDef, AbilityLabel,
@@ -37,22 +37,23 @@ pub use model::{
     BlockRestrictionDef, BlockRestrictionMatchDef, BlockRestrictionSubjectDef, CardAbilityList,
     CardArt, CardArtPreference, CardChoiceSourceDef, CardComposition, CardDefinition,
     CardEffectStatus, CardNameDef, CardNameSetDef, CardPart, CardPrinting, CardPrintingId,
-    CardRules, CardSet, CardSetMetadata, CardStructure, CardSupertype, CardSupertypeSet, CardType,
-    CardTypeSet, CastTimingPermissionDef, ChangeStackTargetsDef, CharacteristicOperationDef,
-    ChoiceVisibilityDef, ChooseCardsFromCollectionDef, ChooseDef, ChooseExactDef,
-    ChooseForEachPlayerDef, ChooseGroupDef, ChooseObjectOrderDef, ChooseOneOfEachDef,
-    ClassifyObjectsDef, CollectionInspectionDef, ColorChoiceOperationDef, ColorSet,
-    CombineObjectsDef, CompanionConditionDef, ComparisonDef, ConditionDef, ConditionValueDef,
-    ConditionalStaticEffectDef, ConditionalValueDef, ControlDurationDef, CopyAbilityDef,
-    CopyExceptionsDef, CopyStackObjectDef, CostAdjustmentDef, CostAmountDef, CostDef,
-    CostModificationDef, CostQuantityDef, CountConditionDef, CounterFamily, CounterKind,
-    CounterKindDef, CounterName, CounterOperationDef, CreateTokenDef, CreatedTokensDef,
-    CreatureStats, CreatureTypeSetDef, DamageEventMatcherDef, DamageKindDef, DamageLimitDef,
-    DamagePreventionCapacityDef, DamagePreventionDef, DamagePreventionFollowUpDef,
-    DamageRecipientMatcherDef, DamageSourceGroupDef, DamageSourceMatcherDef, DeckConstructionDef,
-    DeclarativeAbilityDef, DestroyFollowUpDef, DiscardFollowUpDef, DiscardSelectionDef,
-    DividedTotal, DoubleFacedKind, DrawEventMatcherDef, EffectChoiceDef, EffectDef,
-    EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef, EmblemCharacteristics,
+    CardProperty, CardRequirement, CardRules, CardSet, CardSetMetadata, CardStructure,
+    CardSupertype, CardSupertypeSet, CardType, CardTypeSet, CastTimingPermissionDef,
+    ChangeStackTargetsDef, CharacteristicOperationDef, ChoiceVisibilityDef,
+    ChooseCardsFromCollectionDef, ChooseDef, ChooseExactDef, ChooseForEachPlayerDef,
+    ChooseGroupDef, ChooseObjectOrderDef, ChooseOneOfEachDef, ClassifyObjectsDef,
+    CollectionInspectionDef, ColorChoiceOperationDef, ColorSet, CombineObjectsDef, CompanionDef,
+    ComparisonDef, ConditionDef, ConditionValueDef, ConditionalStaticEffectDef,
+    ConditionalValueDef, ControlDurationDef, CopyAbilityDef, CopyExceptionsDef, CopyStackObjectDef,
+    CostAdjustmentDef, CostAmountDef, CostDef, CostModificationDef, CostQuantityDef,
+    CountConditionDef, CounterFamily, CounterKind, CounterKindDef, CounterName,
+    CounterOperationDef, CreateTokenDef, CreatedTokensDef, CreatureStats, CreatureTypeSetDef,
+    DamageEventMatcherDef, DamageKindDef, DamageLimitDef, DamagePreventionCapacityDef,
+    DamagePreventionDef, DamagePreventionFollowUpDef, DamageRecipientMatcherDef,
+    DamageSourceGroupDef, DamageSourceMatcherDef, DeckCards, DeckConstructionDef,
+    DeckRequirementDef, DeclarativeAbilityDef, DestroyFollowUpDef, DiscardFollowUpDef,
+    DiscardSelectionDef, DividedTotal, DoubleFacedKind, DrawEventMatcherDef, EffectChoiceDef,
+    EffectDef, EffectPaymentDef, EffectRecipientDef, EffectRecipientSetDef, EmblemCharacteristics,
     ExilePlayConditionDef, ExilePlayDurationDef, ExiledCastPermissionDef, FaceDownCharacteristics,
     FlexibleManaSymbol, FreePlayDef, FreePlayDurationDef, GameActionChoiceDef, GameActionDef,
     GraveyardTypeConditionDef, HalvedValueDef, HybridPair, IfNoObjectsDef, ImplementationStatus,

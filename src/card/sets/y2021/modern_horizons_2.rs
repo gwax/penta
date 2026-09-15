@@ -1605,6 +1605,7 @@ pub(in crate::card::sets) static GRIST_THE_HUNGER_TIDE: CardRecord = CardRecord:
             // which is a list of source zones rather than a condition to recheck.
             // The stack is one of them, so the spell on its way in is a creature
             // spell -- Essence Scatter counters it and Negate does not.
+            .with_outside_game()
             .with_source_zones(&[
                 ZoneKind::Library,
                 ZoneKind::Hand,

@@ -156,6 +156,7 @@ pub(super) struct DiscardFollowUp {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum Pregame {
+    Companion(PlayerId),
     Mulligan(PlayerId),
     Bottom(PlayerId),
     OpeningHand(PlayerId),
@@ -249,6 +250,10 @@ pub(super) enum DecisionContinuation {
         definition: ScopedEffect,
         object: Box<StackObject>,
         context: EffectResolutionContext,
+    },
+    /// Reveal at most one eligible outside-game card before opening hands.
+    ChooseCompanion {
+        player: PlayerId,
     },
     /// The chooser may take any remaining opening-hand action, in any order,
     /// or answer this zero-option decision to finish their window.

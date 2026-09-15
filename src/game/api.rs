@@ -76,7 +76,8 @@ impl Game {
         }
         if let Some(pregame) = self.pregame {
             return Some(match pregame {
-                Pregame::Mulligan(player)
+                Pregame::Companion(player)
+                | Pregame::Mulligan(player)
                 | Pregame::Bottom(player)
                 | Pregame::OpeningHand(player) => player,
             });
@@ -250,7 +251,10 @@ impl Game {
                         .map(|cards| Action::BottomCards { cards }),
                     );
                 }
-                Pregame::Mulligan(_) | Pregame::Bottom(_) | Pregame::OpeningHand(_) => {}
+                Pregame::Companion(_)
+                | Pregame::Mulligan(_)
+                | Pregame::Bottom(_)
+                | Pregame::OpeningHand(_) => {}
             }
             return actions;
         }
@@ -463,7 +467,11 @@ impl Game {
         state
             .outside_game
             .iter()
-            .filter(|card| state.companions.contains(&card.definition))
+            .filter(|card| {
+                state
+                    .companion
+                    .is_some_and(|chosen| !chosen.used && chosen.card == card.id)
+            })
             .map(|card| (card.id, card.definition))
             .collect()
     }
