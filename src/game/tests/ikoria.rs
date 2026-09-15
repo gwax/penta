@@ -129,9 +129,10 @@ fn magistrate_restricts_only_opponents_and_only_nonhand_casts() {
     let mut game = ready();
     game.put_onto_battlefield(PlayerId::One, cards::DRANNITH_MAGISTRATE)
         .unwrap();
-    for (index, player) in [PlayerId::One, PlayerId::Two].into_iter().enumerate() {
-        let grave = card(980_010 + index as u32 * 2, cards::THINK_TWICE, player);
-        let hand = card(980_011 + index as u32 * 2, cards::THINK_TWICE, player);
+    for (offset, player) in [(0, PlayerId::One), (2, PlayerId::Two)] {
+        let index = player.index();
+        let grave = card(980_010 + offset, cards::THINK_TWICE, player);
+        let hand = card(980_011 + offset, cards::THINK_TWICE, player);
         let grave_id = grave.id;
         let hand_id = hand.id;
         game.players[index].graveyard.push(grave);
