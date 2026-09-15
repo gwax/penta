@@ -588,9 +588,22 @@ test("Legacy and Vintage expose and build every imported event deck", async () =
     for (const name of names) {
       const game = new WebGame(name, name, "Handcrafted", true, 1, format);
       try {
-        const state = JSON.parse(game.state_json());
+        let state = JSON.parse(game.state_json());
         assert.equal(state.format, format);
-        assert.equal(state.human.hand.length, 7);
+        if (state.decision) {
+          assert.equal(state.decision.prompt, "Reveal a companion, or continue without one", name);
+          assert.equal(state.decision.minimum, 0, name);
+          assert.equal(state.decision.maximum, 1, name);
+          assert.equal(state.human.hand.length, 0, "companion selection precedes both opening hands");
+          assert.equal(state.opponent.handSize, 0, name);
+          const companion = state.decision.options[0];
+          assert.equal(companion.zone, "Outside Game", name);
+          game.choose_decision(state.decision.id, JSON.stringify([companion.id]));
+          state = JSON.parse(game.state_json());
+          assert.equal(state.decision, null, name);
+        }
+        assert.equal(state.human.hand.length, 7, `${name} deals an opening hand after pregame choices`);
+        assert.equal(state.opponent.handSize, 7, name);
       } finally { game.free(); }
     }
   }
