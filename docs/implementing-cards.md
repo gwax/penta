@@ -823,6 +823,14 @@ number of matching members, independently of aggregation. The default minimum
 is one and there is no maximum. Zero minima and inverted ranges are rejected.
 An ordinary event without this wrapper keeps its existing occurrence semantics.
 
+Use `.including(member_event)` when the counted group must contain a particular
+member. This additional filter is checked against the qualifying members of
+that same batch; it does not narrow the count or match earlier events. Battalion
+counts three or more declared attackers with `Once`, including the source's own
+attack event. A creature that enters attacking does not satisfy that requirement.
+The originating set's `BATTALION_EVENT` composes these shared rules for every
+supported Battalion card.
+
 | Printed condition | Member filter | Aggregation | Minimum |
 | --- | --- | --- | --- |
 | Whenever a creature enters | Creature entering | Each | 1 |

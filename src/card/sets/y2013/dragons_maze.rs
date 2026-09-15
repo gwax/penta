@@ -165,7 +165,7 @@ pub(in crate::card::sets) static BOROS_MASTIFF: CardRecord = CardRecord::new(
             "Battalion — Whenever this creature and at least two other \
              creatures attack, this creature gains lifelink until end of \
              turn.",
-            TriggerEventDef::attacks_in_declaration(ObjectPredicateDef::Source, 3, None),
+            super::gatecrash::BATTALION_EVENT,
             EffectDef::Apply {
                 recipient: EffectRecipientDef::Source,
                 effect: AppliedEffectDef::add_ability(&abilities::lifelink()),
@@ -2684,7 +2684,7 @@ pub(in crate::card::sets) static TAJIC_BLADE_OF_THE_LEGION: CardRecord = CardRec
                 "Battalion — Whenever this creature and at least two other \
                  creatures attack, this creature gets +5/+5 until end of \
                  turn.",
-                TriggerEventDef::attacks_in_declaration(ObjectPredicateDef::Source, 3, None),
+                super::gatecrash::BATTALION_EVENT,
                 EffectDef::Apply {
                     recipient: EffectRecipientDef::Source,
                     effect: AppliedEffectDef::modify_power_toughness(

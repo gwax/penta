@@ -425,6 +425,12 @@ fn validate_trigger_event_references(
             {
                 return Err(unsupported_trigger_event(event));
             }
+            if let Some(required) = definition.required_member {
+                if !required.supports_simultaneous_matching() {
+                    return Err(unsupported_trigger_event(event));
+                }
+                validate_trigger_event_references(*required, target_count, scope)?;
+            }
             validate_trigger_event_references(*definition.event, target_count, scope)
         }
         // The ability is one ability, so every way into it has to be

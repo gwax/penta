@@ -15,11 +15,23 @@ impl Game {
         let TriggerEventDef::Simultaneous(definition) = listener.event else {
             return Some(SimultaneousOccurrence::Individual);
         };
-        let count = events
-            .iter()
-            .filter(|event| self.simultaneous_member_matches(listener, event))
-            .count();
-        if !definition.accepts(count) {
+        let mut count = 0;
+        let mut includes_required = definition.required_member.is_none();
+        for event in events {
+            if !self.simultaneous_member_matches(listener, event) {
+                continue;
+            }
+            count += 1;
+            if let Some(required) = definition.required_member {
+                includes_required |= self.trigger_event_matches_for_controller(
+                    *required,
+                    event,
+                    listener.capture.source.object,
+                    Some(listener.capture.controller),
+                );
+            }
+        }
+        if !definition.accepts(count) || !includes_required {
             return None;
         }
         if !Self::groups_simultaneous_matches(listener) {

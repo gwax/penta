@@ -48,7 +48,8 @@ the bot-wire epoch.
 - Implement Moonshadow using shared simultaneous trigger conditions. Filters,
   independent versus grouped occurrences, and minimum/maximum matching counts
   are separate. Armasaur Guide and Caretaker's Talent use the same model for
-  attacker thresholds and grouped token entries.
+  attacker thresholds and grouped token entries. Battalion uses the same model
+  with a required source member in the counted attack declaration.
   Multi-card entries retain their group across replacement choices. Additive
   checkpoint fields `readyEntryBatch`, entry `redirectedTo`, and
   `deferredTokenCreations` preserve pending groups; protocol and checkpoint

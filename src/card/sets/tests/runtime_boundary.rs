@@ -797,7 +797,9 @@ fn simultaneous_trigger_counts_are_independent_of_the_zone() {
     for event in EVENTS {
         for aggregation in [TriggerAggregationDef::Each, TriggerAggregationDef::Once] {
             assert!(shared_trigger_event(TriggerEventDef::Simultaneous(
-                SimultaneousTriggerDef::new(event, aggregation).at_least(2),
+                SimultaneousTriggerDef::new(event, aggregation)
+                    .at_least(2)
+                    .including(event),
             )));
         }
     }
@@ -813,6 +815,9 @@ fn simultaneous_trigger_boundary_rejects_ambiguous_or_empty_counts() {
     ));
     for definition in [
         SimultaneousTriggerDef::new(&ATTACK, TriggerAggregationDef::Once).at_least(0),
+        SimultaneousTriggerDef::new(&ATTACK, TriggerAggregationDef::Once).including(&NESTED),
+        SimultaneousTriggerDef::new(&ATTACK, TriggerAggregationDef::Once)
+            .including(&TriggerEventDef::StateCondition),
         SimultaneousTriggerDef::new(&ATTACK, TriggerAggregationDef::Each)
             .at_least(3)
             .at_most(2),

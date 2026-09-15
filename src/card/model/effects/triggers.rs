@@ -68,6 +68,8 @@ pub enum TriggerAggregationDef {
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SimultaneousTriggerDef {
     pub event: &'static TriggerEventDef,
+    /// At least one qualifying member must also match this event filter.
+    pub required_member: Option<&'static TriggerEventDef>,
     pub aggregation: TriggerAggregationDef,
     pub minimum: u16,
     pub maximum: Option<u16>,
@@ -78,10 +80,18 @@ impl SimultaneousTriggerDef {
     pub const fn new(event: &'static TriggerEventDef, aggregation: TriggerAggregationDef) -> Self {
         Self {
             event,
+            required_member: None,
             aggregation,
             minimum: 1,
             maximum: None,
         }
+    }
+
+    /// Require a member of the counted group, without narrowing the count.
+    #[must_use]
+    pub const fn including(mut self, member: &'static TriggerEventDef) -> Self {
+        self.required_member = Some(member);
+        self
     }
 
     #[must_use]

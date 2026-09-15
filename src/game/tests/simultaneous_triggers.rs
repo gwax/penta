@@ -367,6 +367,14 @@ fn simultaneous_trigger_thresholds_exclude_suppressed_causes() {
     game.put_onto_battlefield(PlayerId::One, cards::TORPOR_ORB)
         .unwrap();
     let grouped = watcher(&mut game, counted(&ENTERS, TriggerAggregationDef::Once, 2));
+    let requiring_creature = watcher(
+        &mut game,
+        TriggerEventDef::Simultaneous(
+            SimultaneousTriggerDef::new(&ENTERS, TriggerAggregationDef::Once)
+                .at_least(2)
+                .including(&CREATURE_ENTERS),
+        ),
+    );
     game.pending_triggers.clear();
     for forests in [1, 2] {
         game.entering_together(|game| {
@@ -378,6 +386,11 @@ fn simultaneous_trigger_thresholds_exclude_suppressed_causes() {
             }
         });
         assert_eq!(counts(&game, grouped), usize::from(forests == 2));
+        assert_eq!(
+            counts(&game, requiring_creature),
+            0,
+            "a suppressed member cannot satisfy the inclusion requirement"
+        );
         if forests == 2 {
             assert_eq!(
                 game.pending_triggers
@@ -481,4 +494,89 @@ fn simultaneous_token_creation_waits_for_an_entry_choice() {
             + counts(&game, source),
         1
     );
+}
+
+#[test]
+fn simultaneous_required_members_belong_to_the_counted_group() {
+    const OWN_ENTERS: TriggerEventDef = TriggerEventDef::zone_changed(
+        ObjectPredicateDef::All(&[
+            ObjectPredicateDef::HasType(CardType::Creature),
+            ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+        ]),
+        None,
+        Some(ZoneKind::Battlefield),
+    );
+    const ELF_ENTERS: TriggerEventDef = TriggerEventDef::zone_changed(
+        ObjectPredicateDef::Subtype(crate::card::SubtypeDef::from_name("Elf")),
+        None,
+        Some(ZoneKind::Battlefield),
+    );
+    for prepared in [false, true] {
+        for required_owner in [None, Some(PlayerId::One), Some(PlayerId::Two)] {
+            let mut game = ready_game();
+            game.set_prepared_engine_enabled(prepared);
+            let sources = [TriggerAggregationDef::Each, TriggerAggregationDef::Once].map(|mode| {
+                watcher(
+                    &mut game,
+                    TriggerEventDef::Simultaneous(
+                        SimultaneousTriggerDef::new(&OWN_ENTERS, mode)
+                            .at_least(2)
+                            .including(&ELF_ENTERS),
+                    ),
+                )
+            });
+            // A required member from an earlier instruction cannot qualify.
+            game.put_onto_battlefield(PlayerId::One, cards::LLANOWAR_ELVES)
+                .unwrap();
+            game.pending_triggers.clear();
+            game.entering_together(|game| {
+                for _ in 0..2 {
+                    game.put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+                        .unwrap();
+                }
+                if let Some(owner) = required_owner {
+                    game.put_onto_battlefield(owner, cards::LLANOWAR_ELVES)
+                        .unwrap();
+                }
+            });
+            assert_eq!(
+                sources.map(|source| counts(&game, source)),
+                if required_owner == Some(PlayerId::One) {
+                    [3, 1]
+                } else {
+                    [0, 0]
+                },
+                "membership is checked within this instruction's filtered members"
+            );
+        }
+    }
+}
+
+#[test]
+fn battalion_triggers_once_with_source_last_and_ignores_entering_attackers() {
+    let mut game = ready_game();
+    let elite = game
+        .put_onto_battlefield(PlayerId::One, cards::BOROS_ELITE)
+        .unwrap();
+    for _ in 0..3 {
+        let ally = game
+            .put_onto_battlefield(PlayerId::One, cards::GRIZZLY_BEARS)
+            .unwrap();
+        game.declare_attacker(ally, AttackDefender::Player(PlayerId::Two));
+    }
+    game.declare_attacker(elite, AttackDefender::Player(PlayerId::Two));
+    game.finish_declaring_attackers();
+    assert_eq!(counts(&game, elite), 1);
+
+    game.enqueue_battlefield_entry(PendingBattlefieldEntry {
+        permanent: creature(10_000, cards::BOROS_ELITE, PlayerId::One),
+        from: ZoneKind::Hand,
+        completion: EntryCompletion::Attacking {
+            defender: AttackDefender::Player(PlayerId::Two),
+        },
+        redirected_to: None,
+    });
+    let entered = game.battlefield.last().unwrap().card.id;
+    assert_eq!(counts(&game, entered), 0);
+    assert_eq!(counts(&game, elite), 1);
 }

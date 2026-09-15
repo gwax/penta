@@ -37,6 +37,9 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
             definition.minimum > 0
                 && definition.maximum.is_none_or(|maximum| maximum >= definition.minimum)
                 && definition.event.supports_simultaneous_matching()
+                && definition.required_member.is_none_or(|required| {
+                    required.supports_simultaneous_matching() && shared_trigger_event(*required)
+                })
                 && shared_trigger_event(*definition.event)
         }
         // One ability, so it is only runnable if every way into it is.
