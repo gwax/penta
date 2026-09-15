@@ -1,5 +1,7 @@
 use super::*;
 
+mod goryos_vengeance;
+
 /// Answers every waiting decision by taking what is offered and otherwise
 /// passing, until the stack and the trigger queue are empty.
 pub(in crate::game) fn drain_pending(game: &mut Game) {
@@ -343,7 +345,12 @@ fn installed_trigger_retains_lexical_bindings_targets_and_target_scope() {
         cast_from_zone: None,
     });
     context.bind_single_object(Binding!("object"), Some(Target::Permanent(bound_id)));
-    game.resolve_effect_def(ScopedEffect::at(INSTALL, 1), &object, context);
+    game.resolve_effect_def(
+        ScopedEffect::at(INSTALL, 1),
+        &object,
+        context.fork_resolution(),
+    );
+    context.bind_single_object(Binding!("object"), None);
 
     game.capture_battlefield_triggers(&CommittedTriggerEvent::StepBegins {
         step: TurnStepDef::End,
