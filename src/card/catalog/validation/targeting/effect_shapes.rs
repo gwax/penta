@@ -608,7 +608,7 @@ fn validate_effect_target_shapes(
                 | DeclarativeAbilityDef::SpecialAction(_)
                 | DeclarativeAbilityDef::Pregame(_)
                 | DeclarativeAbilityDef::Keyword(_)
-                | DeclarativeAbilityDef::DeckConstruction(_) => None,
+                | DeclarativeAbilityDef::DeckConstruction(_) | DeclarativeAbilityDef::Companion(_) => None,
             };
             validate_program_target_shapes(
                 trigger.ability.effect.definition,

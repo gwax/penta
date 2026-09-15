@@ -82,14 +82,18 @@ impl Game {
         let (deck_one_main, deck_one_sideboard, commander_one) = unpack(deck_one, PlayerId::One)?;
         let (deck_two_main, deck_two_sideboard, commander_two) = unpack(deck_two, PlayerId::Two)?;
         let designated = [commander_one, commander_two];
-        // "Your starting deck" is what a companion reads (CR 702.139a), and
-        // the library stops being it the moment a card is drawn, so the
-        // question is answered here and the answer kept.
-        let starting_decks = [
-            [deck_one_main.clone(), designated[0].clone()].concat(),
-            [deck_two_main.clone(), designated[1].clone()].concat(),
-        ];
-        let sideboards = [deck_one_sideboard.clone(), deck_two_sideboard.clone()];
+        // Defer opening hands whenever a sideboard contains a Companion
+        // clause. Eligibility is checked against the untouched libraries and
+        // command zones when the pregame decision is built below.
+        let choose_companions = deck_one_sideboard
+            .iter()
+            .chain(&deck_two_sideboard)
+            .any(|id| {
+                catalog
+                    .get(*id)
+                    .and_then(crate::card::CardDefinition::companion)
+                    .is_some()
+            });
 
         let format_rules = format.rules();
         let prepared_engine = crate::prepared_engine::PreparedEngine::compile(&catalog);
@@ -129,7 +133,11 @@ impl Game {
                 } else {
                     library.len().min(format_rules.opening_hand_size)
                 };
-                let initial_hand = draw_opening_hand(&mut library, count)?;
+                if validate && short_hand {
+                    return Err(GameError::NotEnoughCardsForOpeningHand);
+                }
+                let initial_hand =
+                    draw_opening_hand(&mut library, if choose_companions { 0 } else { count })?;
                 let mut hand = Vec::with_capacity(initial_hand.len());
                 for mut card in initial_hand {
                     card.id = GameObjectId(next_object_id);
@@ -147,8 +155,7 @@ impl Game {
                     exile: Vec::new(),
                     command: Vec::new(),
                     outside_game: Vec::new(),
-                    // Filled in below, once the sideboards exist to read.
-                    companions: Vec::new(),
+                    companion: None,
                     mana_pool: ManaPool::default(),
                     mana: Vec::new(),
                     lands_played_this_turn: 0,
@@ -203,26 +210,7 @@ impl Game {
             }
         }
 
-        for player in [PlayerId::One, PlayerId::Two] {
-            players[player.index()].companions = sideboards[player.index()]
-                .iter()
-                .copied()
-                .filter(|definition| {
-                    catalog
-                        .get(*definition)
-                        .and_then(crate::card::CardDefinition::companion_condition)
-                        .is_some_and(|condition| {
-                            crate::deck::companion_condition_is_met(
-                                condition,
-                                &catalog,
-                                &starting_decks[player.index()],
-                            )
-                        })
-                })
-                .collect();
-        }
-
-        Ok(Self {
+        let mut game = Self {
             match_context: None,
             pending_restart: None,
             restart_arrivals: None,
@@ -328,7 +316,11 @@ impl Game {
             extra_turns: Vec::new(),
             result: None,
             events: vec![GameEvent::GameStarted { seed }],
-        })
+        };
+        if choose_companions {
+            game.begin_companion_selection(starting_player);
+        }
+        Ok(game)
     }
 
     #[must_use]

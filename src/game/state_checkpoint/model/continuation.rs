@@ -51,6 +51,9 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         branch: Option<usize>,
         continuation: EffectContinuationSnapshot,
     },
+    ChooseCompanion {
+        player: usize,
+    },
     PregameActions {
         player: usize,
         actions: Vec<PregameAbilityActionSnapshot>,

@@ -921,3 +921,5 @@ fn mana_pool_doubling_checkpoint_preserves_restricted_and_new_mana() {
         3
     );
 }
+
+mod companions;

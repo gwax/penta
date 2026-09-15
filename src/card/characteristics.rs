@@ -20,13 +20,19 @@ use crate::{CardDefinitionId, CardPartId};
 /// use `Battlefield` because phasing does not move an object to another zone.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CharacteristicContext {
+    /// Pregame deck requirements and cards outside the game; not a zone.
+    OutsideGame,
     Library,
     Hand,
     Graveyard,
     Exile,
     Command,
-    Stack { form: SpellForm },
-    Battlefield { presented: CardPartId },
+    Stack {
+        form: SpellForm,
+    },
+    Battlefield {
+        presented: CardPartId,
+    },
 }
 
 impl CharacteristicContext {
@@ -41,7 +47,7 @@ impl CharacteristicContext {
             Self::Graveyard => Some(super::ZoneKind::Graveyard),
             Self::Exile => Some(super::ZoneKind::Exile),
             Self::Command => Some(super::ZoneKind::Command),
-            Self::Stack { .. } | Self::Battlefield { .. } => None,
+            Self::OutsideGame | Self::Stack { .. } | Self::Battlefield { .. } => None,
         }
     }
 
@@ -61,7 +67,12 @@ impl CharacteristicContext {
     const fn uses_canonical_outside_stack_parts(&self) -> bool {
         matches!(
             self,
-            Self::Library | Self::Hand | Self::Graveyard | Self::Exile | Self::Command
+            Self::OutsideGame
+                | Self::Library
+                | Self::Hand
+                | Self::Graveyard
+                | Self::Exile
+                | Self::Command
         )
     }
 }
@@ -131,7 +142,8 @@ pub(crate) fn applicable_part_ids_ref<'a>(
                 }
                 std::slice::from_ref(presented)
             }
-            CharacteristicContext::Library
+            CharacteristicContext::OutsideGame
+            | CharacteristicContext::Library
             | CharacteristicContext::Hand
             | CharacteristicContext::Graveyard
             | CharacteristicContext::Exile
@@ -266,6 +278,39 @@ impl fmt::Display for CharacteristicError {
 }
 
 impl Error for CharacteristicError {}
+
+/// Self-directed characteristic effects in a zone, or outside the game when
+/// `zone` is absent. Scope is explicit; enumerating every zone does not imply
+/// outside-game applicability.
+pub(crate) fn self_characteristic_effects(
+    rules: &super::CardRules,
+    zone: Option<super::ZoneKind>,
+) -> Vec<super::AppliedEffectDef> {
+    use super::{AppliedEffectDef, DeclarativeAbilityDef, EffectDef, EffectRecipientDef};
+    let mut applied = Vec::new();
+    for ability in rules.ability_clauses() {
+        let DeclarativeAbilityDef::Static(definition) = ability.definition else {
+            continue;
+        };
+        if !zone.map_or(definition.outside_game, |zone| {
+            definition.source_zones.contains(&zone)
+        }) {
+            continue;
+        }
+        let Some(EffectDef::StaticApply {
+            recipient: EffectRecipientDef::Source,
+            effect,
+        }) = ability.declarative_effect()
+        else {
+            continue;
+        };
+        match effect {
+            AppliedEffectDef::Composite(effects) => applied.extend(effects.iter().copied()),
+            effect => applied.push(effect),
+        }
+    }
+    applied
+}
 
 #[cfg(test)]
 mod tests {

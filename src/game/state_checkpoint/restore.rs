@@ -102,6 +102,23 @@ impl Game {
             &mut libraries,
             &mut outside_game,
         )?;
+        for player in [PlayerId::One, PlayerId::Two] {
+            if let Some(chosen) = checkpoint.chosen_companions[player.index()] {
+                if catalog.get(chosen.definition).and_then(crate::card::CardDefinition::companion).is_none() {
+                    return Err("chosen companion has no companion ability".into());
+                }
+                if checkpoint.companion_outside_game[player.index()] {
+                    if chosen.used { return Err("used companion cannot remain outside the game".into()); }
+                    let cards = &mut outside_game[player.index()];
+                    let index = cards.iter().position(|card| card.id == chosen.card && card.definition == chosen.definition)
+                        .or_else(|| cards.iter().position(|card| card.definition == chosen.definition))
+                        .ok_or("chosen companion is absent from outside-game hypothesis")?;
+                    cards[index].id = chosen.card;
+                }
+            } else if checkpoint.companion_outside_game[player.index()] {
+                return Err("outside-game companion has no designation".into());
+            }
+        }
         let lands_played = checkpoint.lands_played_this_turn;
         let tried_empty = checkpoint.tried_to_draw_from_empty_library;
         let mana_values = array(field(observation, "manaPools")?)?;
@@ -133,7 +150,7 @@ impl Game {
             graveyard: graveyards[player.index()].clone(),
             exile: exiles[player.index()].clone(),
             outside_game: outside_game[player.index()].clone(),
-            companions: checkpoint.companions[player.index()].clone(),
+            companion: checkpoint.chosen_companions[player.index()],
             mana_pool: mana_pools[player.index()],
             mana: mana[player.index()].clone(),
             lands_played_this_turn: lands_played[player.index()],
@@ -481,6 +498,7 @@ impl Game {
         {
             return Err("invalid plotted exile object or turn".into());
         }
+        game.validate_companion_checkpoint()?;
         game.restore_physical_cards();
         game.restore_commanders(&checkpoint.commanders, &checkpoint.commander_considered)?;
         Ok(game)

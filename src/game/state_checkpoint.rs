@@ -548,10 +548,10 @@ impl Game {
                 self.players[0].lands_played_this_turn,
                 self.players[1].lands_played_this_turn,
             ],
-            companions: [
-                companion_definitions(&self.players[0].companions),
-                companion_definitions(&self.players[1].companions),
-            ],
+            chosen_companions: self.players.each_ref().map(|player| player.companion),
+            companion_outside_game: self.players.each_ref().map(|player| {
+                player.companion.is_some_and(|chosen| player.outside_game.iter().any(|card| card.id == chosen.card))
+            }),
             tried_to_draw_from_empty_library: [
                 self.players[0].tried_to_draw_from_empty_library,
                 self.players[1].tried_to_draw_from_empty_library,
@@ -629,6 +629,7 @@ impl Game {
             damage_preventions,
             damage_redirects,
             pregame: self.pregame.map(|pregame| match pregame {
+                Pregame::Companion(player) => PregameSnapshot::Companion { seat: player.index() },
                 Pregame::Mulligan(player) => PregameSnapshot::Mulligan {
                     seat: player.index(),
                 },
@@ -690,9 +691,6 @@ impl Game {
     }
 }
 
-/// The definitions a seat may still take as a companion, as the wire names
-/// them. A definition id rather than an object id because the cards outside
-/// the game are re-minted on restore and would not keep their identities.
 /// The subtypes a seat attacked with this turn, matched back to the static
 /// names the engine uses. A name no printing carries is dropped rather than
 /// leaked into the game as a fresh static string.
@@ -706,10 +704,6 @@ fn restore_attacked_subtypes(recorded: &[String]) -> Vec<&'static str> {
                 .copied()
         })
         .collect()
-}
-
-fn companion_definitions(companions: &[CardDefinitionId]) -> Vec<CardDefinitionId> {
-    companions.to_vec()
 }
 
 include!("state_checkpoint/restore.rs");

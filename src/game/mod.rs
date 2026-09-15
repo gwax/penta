@@ -70,6 +70,7 @@ mod combat;
 mod combat_state;
 mod commander;
 mod companion;
+pub use companion::CompanionState;
 mod continuous_effects;
 mod continuous_state;
 mod control_changes;
@@ -537,16 +538,8 @@ struct PlayerState {
     /// a zone, so ordinary zone queries and observations never walk this
     /// collection.
     outside_game: Vec<CardInstance>,
-    /// The cards outside the game this player may still take as a companion:
-    /// the ones whose printed condition the deck they started with met (CR
-    /// 702.139a). Named by definition rather than by object because the
-    /// answer is fixed before the first turn and outlives any one printing
-    /// of the card, and because "your starting deck" stops existing the
-    /// moment a card is drawn.
-    ///
-    /// Emptied when one is taken: however many were legal, a game has one
-    /// companion.
-    companions: Vec<CardDefinitionId>,
+    /// The single public pregame designation and its special-action usage.
+    companion: Option<CompanionState>,
     mana_pool: ManaPool,
     mana: Vec<Mana>,
     /// How many lands this player has played this turn. A count rather

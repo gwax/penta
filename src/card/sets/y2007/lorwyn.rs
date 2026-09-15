@@ -317,6 +317,7 @@ pub(in crate::card::sets) static WINGS_OF_VELIS_VEL: CardRecord = CardRecord::ne
                     ),
                 },
             )
+            .with_outside_game()
             .with_source_zones(&[
                 ZoneKind::Library,
                 ZoneKind::Hand,
@@ -407,6 +408,7 @@ pub(in crate::card::sets) static BLADES_OF_VELIS_VEL: CardRecord = CardRecord::n
                     ),
                 },
             )
+            .with_outside_game()
             .with_source_zones(&[
                 ZoneKind::Library,
                 ZoneKind::Hand,

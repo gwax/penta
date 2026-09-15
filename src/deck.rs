@@ -1,12 +1,14 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 use std::error::Error;
 use std::fmt;
 
 use crate::CardDefinitionId;
 use crate::Format;
-use crate::card::{
-    CardCatalog, CardDefinition, CardType, CompanionConditionDef, ImplementationStatus, ManaCost,
-};
+use crate::card::{CardCatalog, CardDefinition, ImplementationStatus};
+
+mod requirements;
+pub(crate) use requirements::validate_companion_requirement;
+pub use requirements::{DeckRequirementViolation, validate_deck_requirement};
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Deck {
@@ -142,18 +144,25 @@ impl Deck {
         Ok(ValidatedDeck(self))
     }
 
-    /// Whether `companion` may be this deck's companion: it has to print a
-    /// companion condition, sit in the sideboard rather than the deck, and
-    /// find that condition met by the main deck (CR 702.139a).
-    #[must_use]
-    pub fn companion_is_legal(&self, catalog: &CardCatalog, companion: CardDefinitionId) -> bool {
-        if !self.sideboard.contains(&companion) || self.main.contains(&companion) {
-            return false;
+    /// Validate a candidate against the complete starting deck, including commanders.
+    /// Another copy in the main deck is allowed if the requirement permits it.
+    /// # Errors
+    /// Reports a missing sideboard card, unknown identity, or failed requirement.
+    pub fn validate_companion(
+        &self,
+        catalog: &CardCatalog,
+        companion: CardDefinitionId,
+        format: Format,
+    ) -> Result<(), DeckRequirementViolation> {
+        if !self.sideboard.contains(&companion) {
+            return Err(DeckRequirementViolation::NotInSideboard(companion));
         }
-        catalog
-            .get(companion)
-            .and_then(CardDefinition::companion_condition)
-            .is_some_and(|condition| companion_condition_is_met(condition, catalog, &self.main))
+        validate_companion_requirement(
+            companion,
+            catalog,
+            self.main.iter().chain(&self.commanders).copied(),
+            format,
+        )
     }
 
     /// Checks this deck as a Commander deck led by `commanders`.
@@ -270,37 +279,6 @@ impl Deck {
             }
         }
         Ok(())
-    }
-}
-
-/// What a companion asks of the deck it sits beside, answered over the cards
-/// that deck actually holds.
-///
-/// The starting deck is what a companion reads (CR 702.139a), so this takes
-/// a list rather than a game: the answer is fixed before the first turn and
-/// nothing that happens afterwards changes it.
-#[must_use]
-pub fn companion_condition_is_met(
-    condition: CompanionConditionDef,
-    catalog: &CardCatalog,
-    starting_deck: &[CardDefinitionId],
-) -> bool {
-    let cards = || starting_deck.iter().filter_map(|id| catalog.get(*id));
-    match condition {
-        // A card with no mana cost has mana value 0 (CR 202.3b), which is
-        // what makes the lands in a Lurrus deck legal rather than fatal.
-        CompanionConditionDef::PermanentManaValueAtMost(limit) => cards()
-            .filter(|card| card.is_permanent_card())
-            .all(|card| card.rules.mana_cost().map_or(0, ManaCost::mana_value) <= limit),
-        CompanionConditionDef::EveryPermanentHasAnActivatedAbility => cards()
-            .filter(|card| card.is_permanent_card())
-            .all(CardDefinition::has_an_activated_ability),
-        CompanionConditionDef::NonlandNamesAreDistinct => {
-            let mut seen = HashSet::new();
-            cards()
-                .filter(|card| !card.rules.has_type(CardType::Land))
-                .all(|card| seen.insert(card.name.as_str()))
-        }
     }
 }
 

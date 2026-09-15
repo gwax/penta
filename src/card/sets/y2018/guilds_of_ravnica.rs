@@ -1,9 +1,5 @@
 //! Guilds of Ravnica cards used as cross-format rules-engine test cases.
 
-use crate::card::AppliedRuleDef;
-use crate::card::PlayActionMatcherDef;
-use crate::card::PlayRestrictionDef;
-
 use super::CardRecord;
 use super::PrintingRecord;
 use crate::TargetIndex;
@@ -12,6 +8,7 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
@@ -31,6 +28,8 @@ use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
+use crate::card::PlayActionMatcherDef;
+use crate::card::PlayRestrictionDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
@@ -88,6 +87,33 @@ pub(in crate::card::sets) static HEALER_S_HAWK: CardRecord = CardRecord::new(
     "Milivoj Ćeran",
     CardRules::new_creature(mana_cost!("{W}"), &["Bird"], 1, 1)
         .with_abilities(&[abilities::flying(), abilities::lifelink()]),
+);
+
+// GRN 31 — Capture Sphere
+pub(in crate::card::sets) static CAPTURE_SPHERE: CardRecord = CardRecord::new(
+    "Capture Sphere",
+    "5a799ac8-5798-4a26-81c1-763d6dcfcbe8",
+    "Mark Behm",
+    CardRules::new_enchantment(mana_cost!("{3}{U}"))
+        .with_subtypes(&["Aura"])
+        .with_abilities(&[
+            abilities::flash(),
+            abilities::enchant_creature(),
+            abilities::enters_trigger(
+                "When this Aura enters, tap enchanted creature.",
+                EffectDef::Tap {
+                    object: EffectRecipientDef::AttachedPermanent,
+                },
+            ),
+            AbilityDef::static_ability(
+                "Enchanted creature doesn't untap during its controller's \
+                 untap step.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::AttachedPermanent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::DoesNotUntapDuringUntapStep),
+                },
+            ),
+        ]),
 );
 
 // GRN 45 — Murmuring Mystic
@@ -807,6 +833,7 @@ pub(in crate::card::sets) static WAND_OF_VERTEBRAE: CardRecord = CardRecord::new
 
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HEALER_S_HAWK,
+    &CAPTURE_SPHERE,
     &MURMURING_MYSTIC,
     &BURGLAR_RAT,
     &CREEPING_CHILL,

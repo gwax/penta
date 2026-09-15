@@ -753,3 +753,19 @@ Use an `ObjectCount` condition over a position query to test the current card
 without revealing it. `AddActivatedAbilitiesOf` likewise accepts a queried card
 collection or linked exiles. The recipient becomes the source of those activated
 abilities; changing the queried collection does not change a pending activation.
+
+## Companion requirements
+
+Use `sets::ikoria::companion(text, requirement)` in the printed ability list.
+`DeckCards::permanents().all(CardRequirement::ManaValueAtMost(2))` describes a
+per-card requirement; `DeckCards::nonlands().distinct_by(CardProperty::Name)`
+describes a collection constraint. `DeckRequirementDef::MinimumSizeAboveFormat`
+compares total starting-deck size with the format minimum. These declarations
+read outside-game card characteristics, including commanders in the starting
+deck, without depending on live object predicates. The shared Companion mechanic
+owns pregame revelation and the once-per-game {3} special action.
+
+A self-directed static characteristic clause that also applies outside the game
+uses `.with_outside_game()`, in addition to any `.with_source_zones(...)` list.
+Listing every game zone does not imply outside-game scope. Deck requirements
+and runtime characteristic queries share discovery of these clauses.

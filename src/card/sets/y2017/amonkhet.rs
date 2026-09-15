@@ -8,7 +8,11 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::ActivationTimingDef;
 use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::BattlefieldEntryModificationDef;
+use crate::card::BlockRestrictionDef;
+use crate::card::BlockRestrictionMatchDef;
+use crate::card::BlockRestrictionSubjectDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
@@ -165,6 +169,25 @@ pub(in crate::card::sets) static SHADOW_OF_THE_GRAVE: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
+// AKH 119 — Blazing Volley
+pub(in crate::card::sets) static BLAZING_VOLLEY: CardRecord = CardRecord::new(
+    "Blazing Volley",
+    "ba450179-4591-4e8a-b6ca-66cbef1817f2",
+    "Zezhou Chen",
+    CardRules::new_sorcery(mana_cost!("{R}")).with_abilities(&[AbilityDef::spell(
+        "Blazing Volley deals 1 damage to each creature your \
+         opponents control.",
+        EffectDef::damage(
+            EffectRecipientDef::matching_objects(
+                ObjectPredicateDef::HasType(CardType::Creature),
+                &[ZoneKind::Battlefield],
+                PlayerRelation::Opponent,
+            ),
+            ValueDef::Constant(1),
+        ),
+    )]),
+);
+
 // AKH 125 — Combat Celebrant
 // Audit: unsupported — Exert is implemented, but its untap debt is attached to the permanent
 // rather than the player who exerted it. Borrowed creatures therefore skip the wrong player's
@@ -212,6 +235,31 @@ pub(in crate::card::sets) static GLORYBRINGER: CardRecord = CardRecord::new(
                 ValueDef::Constant(4),
             ),
         ),
+    ]),
+);
+
+// AKH 168 — Greater Sandwurm
+pub(in crate::card::sets) static GREATER_SANDWURM: CardRecord = CardRecord::new(
+    "Greater Sandwurm",
+    "6411d177-45fd-4193-8414-0f7e7846d2b9",
+    "Steven Belledin",
+    CardRules::new_creature(mana_cost!("{5}{G}{G}"), &["Wurm"], 7, 7).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't be blocked by creatures with power 2 or \
+             less.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::BlockRestriction(
+                    BlockRestrictionDef::prohibit(
+                        BlockRestrictionSubjectDef::Attacker,
+                        BlockRestrictionMatchDef::Matching(ObjectPredicateDef::Not(
+                            &ObjectPredicateDef::PowerAtLeast(3),
+                        )),
+                    ),
+                )),
+            },
+        ),
+        abilities::cycling!("Cycling {2}", &[CostDef::Mana(mana_cost!("{2}"))]),
     ]),
 );
 
@@ -365,8 +413,10 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &VIZIER_OF_TUMBLING_SANDS,
     &BONE_PICKER,
     &SHADOW_OF_THE_GRAVE,
+    &BLAZING_VOLLEY,
     &COMBAT_CELEBRANT,
     &GLORYBRINGER,
+    &GREATER_SANDWURM,
     &MANGLEHORN,
     &VIZIER_OF_THE_MENAGERIE,
     &ENIGMA_DRAKE,

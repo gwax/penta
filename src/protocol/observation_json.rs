@@ -350,6 +350,7 @@ pub fn observation_json_for_format(
         }).collect::<Vec<_>>(),
         "checkpoint": observation.checkpoint,
     });
+    value["chosenCompanions"] = json!(observation.chosen_companions);
     value["knownCards"] = json!(observation.known_cards.iter().map(|known| json!({
         "objectId": known.card.0, "definition": known.definition, "owner": known.owner.index(),
         "zone": match known.zone { crate::card::ZoneKind::Library => "library", crate::card::ZoneKind::Hand => "hand", _ => unreachable!("only hidden zones need this projection") },

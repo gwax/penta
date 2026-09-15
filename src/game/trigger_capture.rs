@@ -436,7 +436,8 @@ impl Game {
                     | DeclarativeAbilityDef::SpecialAction(_)
                     | DeclarativeAbilityDef::Pregame(_)
                     | DeclarativeAbilityDef::Keyword(_)
-                    | DeclarativeAbilityDef::DeckConstruction(_) => return,
+                    | DeclarativeAbilityDef::DeckConstruction(_)
+                    | DeclarativeAbilityDef::Companion(_) => return,
                 };
                 // Compatibility procedures execute elsewhere, so admitting
                 // them here would manufacture a duplicate trigger.

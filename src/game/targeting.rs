@@ -1,10 +1,9 @@
 use super::{
     AppliedEffectDef, CardDefinition, CardDefinitionId, CardSupertype, CardTypeSet,
-    CharacteristicContext, CharacteristicOperationDef, DeclarativeAbilityDef, EffectDef,
-    EffectRecipientDef, Game, GameObjectId, ManaCost, ModeId, ObjectCharacteristics,
-    PlayRestriction, PlayerId, PowerToughnessOperationDef, RetiredObject, SetOperationDef,
-    StackObject, StackObjectKind, Step, Target, TargetPredicate, TargetSelection,
-    TriggerEventObject, ValueDef, ZoneKind, applicable_part_ids_ref,
+    CharacteristicContext, CharacteristicOperationDef, DeclarativeAbilityDef, Game, GameObjectId,
+    ManaCost, ModeId, ObjectCharacteristics, PlayRestriction, PlayerId, PowerToughnessOperationDef,
+    RetiredObject, SetOperationDef, StackObject, StackObjectKind, Step, Target, TargetPredicate,
+    TargetSelection, TriggerEventObject, ValueDef, ZoneKind, applicable_part_ids_ref,
 };
 
 impl Game {
@@ -159,27 +158,7 @@ impl Game {
         definition: &CardDefinition,
         zone: ZoneKind,
     ) -> Vec<AppliedEffectDef> {
-        let mut applied = Vec::new();
-        for ability in definition.rules.ability_clauses() {
-            let DeclarativeAbilityDef::Static(static_definition) = ability.definition else {
-                continue;
-            };
-            if !static_definition.source_zones.contains(&zone) {
-                continue;
-            }
-            let Some(EffectDef::StaticApply { recipient, effect }) = ability.declarative_effect()
-            else {
-                continue;
-            };
-            if recipient != EffectRecipientDef::Source {
-                continue;
-            }
-            match effect {
-                AppliedEffectDef::Composite(effects) => applied.extend(effects.iter().copied()),
-                effect => applied.push(effect),
-            }
-        }
-        applied
+        crate::card::self_characteristic_effects(&definition.rules, Some(zone))
     }
 
     /// The body a card's own zone-scoped clause gives it, for a card whose

@@ -13,6 +13,14 @@ fn duel() -> Game {
         1,
     )
     .unwrap();
+    if matches!(game.pregame, Some(crate::game::Pregame::Companion(_))) {
+        crate::game::tests::companions::choose(
+            &mut game,
+            PlayerId::One,
+            Some(cards::LURRUS_OF_THE_DREAM_DEN),
+        );
+        crate::game::tests::companions::choose(&mut game, PlayerId::Two, None);
+    }
     game.pregame = None;
     game.step = Step::PrecombatMain;
     game
@@ -140,6 +148,14 @@ fn duel_commander_companion_action_is_exempt_from_outside_game_policy() {
         1,
     )
     .unwrap();
+    if matches!(game.pregame, Some(crate::game::Pregame::Companion(_))) {
+        crate::game::tests::companions::choose(
+            &mut game,
+            PlayerId::One,
+            Some(cards::LURRUS_OF_THE_DREAM_DEN),
+        );
+        crate::game::tests::companions::choose(&mut game, PlayerId::Two, None);
+    }
     game.pregame = None;
     game.step = Step::PrecombatMain;
     game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 3);

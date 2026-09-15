@@ -48,7 +48,7 @@ fn validate_ability_definition(
         DeclarativeAbilityDef::AlternativeCast(alternative) => (None, alternative.targets, false),
         DeclarativeAbilityDef::OptionalAdditionalCost(_)
         | DeclarativeAbilityDef::Keyword(_)
-        | DeclarativeAbilityDef::DeckConstruction(_) => (None, &[][..], false),
+        | DeclarativeAbilityDef::DeckConstruction(_) | DeclarativeAbilityDef::Companion(_) => (None, &[][..], false),
     };
 
     if source_zones.is_some_and(<[ZoneKind]>::is_empty) {
@@ -95,7 +95,7 @@ fn validate_ability_definition_references(
         | DeclarativeAbilityDef::SpecialAction(_)
         | DeclarativeAbilityDef::Pregame(_)
         | DeclarativeAbilityDef::Keyword(_)
-        | DeclarativeAbilityDef::DeckConstruction(_) => None,
+        | DeclarativeAbilityDef::DeckConstruction(_) | DeclarativeAbilityDef::Companion(_) => None,
     };
     let chosen_cost_card_binding = match ability.definition {
         DeclarativeAbilityDef::Activated(definition) => {

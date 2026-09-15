@@ -319,6 +319,12 @@ mod companion {
             0,
         )
         .expect("a legal game");
+        if matches!(game.pregame, Some(Pregame::Companion(_))) {
+            let decision = game.observe(PlayerId::One).decision.unwrap();
+            game.apply(PlayerId::One, Action::ChooseDecision {
+                decision: decision.id, options: vec![decision.options[0].id],
+            }).unwrap();
+        }
         game.pregame = None;
         game.step = Step::PrecombatMain;
         game.active_player = PlayerId::One;
@@ -399,8 +405,7 @@ mod companion {
         );
     }
 
-    /// A companion is taken once. Two in the sideboard is still one taken, and
-    /// the second stops being offered the moment the first is.
+    /// Only the pregame choice can be taken, even if several cards were eligible.
     #[test]
     fn a_game_has_one_companion() {
         let mut game = staged(
@@ -413,10 +418,7 @@ mod companion {
         );
         game.add_unrestricted_mana(PlayerId::One, ManaColor::Colorless, 6);
         let offers = companion_offers(&game);
-        assert!(
-            offers.len() > 1,
-            "more than one of them found the deck legal",
-        );
+        assert_eq!(offers.len(), 1, "only the revealed companion is offered");
 
         game.apply(
             PlayerId::One,

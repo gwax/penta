@@ -167,6 +167,25 @@ pub(in crate::card::sets) static BELLTOWER_SPHINX: CardRecord = CardRecord::new(
     ]),
 );
 
+// RAV 41 — Convolute
+pub(in crate::card::sets) static CONVOLUTE: CardRecord = CardRecord::new(
+    "Convolute",
+    "fac88052-96a3-4a4d-95a2-c5a652fcb275",
+    "Dany Orizio",
+    CardRules::new_instant(mana_cost!("{2}{U}")).with_abilities(&[AbilityDef::spell_with_targets(
+        "Counter target spell unless its controller pays {4}.",
+        &[AbilityTargetDef::exactly_one(
+            AbilityTargetPredicate::Object {
+                object: ObjectPredicateDef::Spell,
+                zones: &[ZoneKind::Stack],
+                controller: None,
+                owner: None,
+            },
+        )],
+        abilities::counter_target_unless_paid(&[CostDef::Mana(mana_cost!("{4}"))]),
+    )]),
+);
+
 // RAV 42 — Copy Enchantment
 pub(in crate::card::sets) static COPY_ENCHANTMENT: CardRecord = CardRecord::new(
     "Copy Enchantment",
@@ -1315,6 +1334,7 @@ pub(in crate::card::sets) static WATERY_GRAVE: CardRecord = CardRecord::new(
 pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &FAITH_S_FETTERS,
     &BELLTOWER_SPHINX,
+    &CONVOLUTE,
     &COPY_ENCHANTMENT,
     &DIZZY_SPELL,
     &DRIFT_OF_PHANTASMS,

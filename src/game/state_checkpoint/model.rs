@@ -194,6 +194,7 @@ pub(super) enum BasicLandTypeSnapshot {
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub(super) enum PregameSnapshot {
+    Companion { seat: usize },
     Mulligan { seat: usize },
     Bottom { seat: usize },
     OpeningHand { seat: usize },

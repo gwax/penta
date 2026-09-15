@@ -46,6 +46,13 @@ impl Game {
             named @ DecisionContinuation::ActionChoice { .. } => {
                 self.resolve_action_choice(named, &pending.observation, options);
             }
+            DecisionContinuation::ChooseCompanion { player } => {
+                let card = options
+                    .first()
+                    .and_then(|id| pending_options.iter().find(|option| option.id == *id))
+                    .and_then(|option| option.card.map(|(card, _)| card));
+                self.finish_companion_selection(player, card);
+            }
             DecisionContinuation::PregameActions { player, .. } => {
                 self.finish_opening_hand_actions(player);
             }

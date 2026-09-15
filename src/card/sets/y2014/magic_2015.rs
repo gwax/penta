@@ -131,6 +131,37 @@ pub(in crate::card::sets) static TRIPLICATE_SPIRITS: CardRecord = CardRecord::ne
     ]),
 );
 
+// M15 55 — Frost Lynx
+pub(in crate::card::sets) static FROST_LYNX: CardRecord = CardRecord::new(
+    "Frost Lynx",
+    "619268d2-f7a8-48cd-b17b-197e82474b13",
+    "Izzy",
+    CardRules::new_creature(mana_cost!("{2}{U}"), &["Elemental", "Cat"], 2, 2).with_abilities(&[
+        abilities::enters_trigger_with_targets(
+            "When this creature enters, tap target creature an opponent \
+             controls. That creature doesn't untap during its \
+             controller's next untap step.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::Opponent),
+                    owner: None,
+                },
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::Tap {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                },
+                EffectDef::SkipNextUntapSteps {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    count: 1,
+                },
+            ]),
+        ),
+    ]),
+);
+
 // M15 119 — Ulcerate
 pub(in crate::card::sets) static ULCERATE: CardRecord = CardRecord::new(
     "Ulcerate",
@@ -395,6 +426,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &HELIOD_S_PILGRIM,
     &HUSHWING_GRYFF,
     &TRIPLICATE_SPIRITS,
+    &FROST_LYNX,
     &ULCERATE,
     &WASTE_NOT,
     &CROWD_S_FAVOR,

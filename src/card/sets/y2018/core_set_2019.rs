@@ -9,8 +9,10 @@ use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::BattlefieldEntryChoiceDestinationDef;
 use crate::card::BattlefieldEntryScalarChoiceDef;
+use crate::card::BlockRestrictionDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
@@ -714,6 +716,24 @@ pub(in crate::card::sets) static VOLLEY_VETERAN: CardRecord = CardRecord::new(
     ]),
 );
 
+// M19 170 — Bristling Boar
+pub(in crate::card::sets) static BRISTLING_BOAR: CardRecord = CardRecord::new(
+    "Bristling Boar",
+    "999030b2-2f91-4c45-981f-acdbbf9034af",
+    "Svetlin Velinov",
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Boar"], 4, 3).with_abilities(&[
+        AbilityDef::static_ability(
+            "This creature can't be blocked by more than one creature.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::BlockRestriction(
+                    BlockRestrictionDef::MaximumBlockers(1),
+                )),
+            },
+        ),
+    ]),
+);
+
 // M19 185 — Gigantosaurus
 pub(in crate::card::sets) static GIGANTOSAURUS: CardRecord = CardRecord::new(
     "Gigantosaurus",
@@ -1086,6 +1106,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &LATHLISS_DRAGON_QUEEN,
     &VIASHINO_PYROMANCER,
     &VOLLEY_VETERAN,
+    &BRISTLING_BOAR,
     &GIGANTOSAURUS,
     &GORECLAW_TERROR_OF_QAL_SISMA,
     &VIVIEN_REID,

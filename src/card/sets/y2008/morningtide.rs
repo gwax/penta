@@ -21,6 +21,7 @@ use crate::ZoneKind;
 use crate::ZonePlacement;
 use crate::card::BattlefieldEntryModificationDef;
 use crate::card::BindObjectsDef;
+use crate::card::CardSupertype;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
 use crate::card::ChooseObjectOrderDef;
@@ -307,6 +308,57 @@ pub(in crate::card::sets) static CREAM_OF_THE_CROP: CardRecord = CardRecord::new
     )]),
 );
 
+// MOR 122 — Fertilid
+pub(in crate::card::sets) static FERTILID: CardRecord = CardRecord::new(
+    "Fertilid",
+    "ad8055f1-cf3a-4db4-844e-b10bbbb25255",
+    "Wayne Reynolds",
+    CardRules::new_creature(mana_cost!("{2}{G}"), &["Elemental"], 0, 0).with_abilities(&[
+        AbilityDef::as_enters(
+            "This creature enters with two +1/+1 counters on it.",
+            ReplacementEffectDef::ModifyBattlefieldEntry(
+                BattlefieldEntryModificationDef::AddCounters {
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: 2,
+                },
+            ),
+        ),
+        AbilityDef::activated_with_targets(
+            "{1}{G}, Remove a +1/+1 counter from this creature: Target \
+             player searches their library for a basic land card, puts it \
+             onto the battlefield tapped, then shuffles.",
+            &[
+                CostDef::Mana(mana_cost!("{1}{G}")),
+                CostDef::RemoveCountersFromSource {
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: 1,
+                },
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::All(&[
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                ]),
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: true,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: true,
+                attachment: None,
+                binding: None,
+                then: None,
+            },
+        ),
+    ]),
+);
+
 // MOR 143 — Door of Destinies
 // Audit: unsupported — Predicates cannot consume a stored creature-type choice for both spell
 // triggers and a counter-scaled continuous bonus.
@@ -420,6 +472,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &TAUREAN_MAULER,
     &BRAMBLEWOOD_PARAGON,
     &CREAM_OF_THE_CROP,
+    &FERTILID,
     &DOOR_OF_DESTINIES,
     &THORNBITE_STAFF,
     &MUTAVAULT,

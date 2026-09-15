@@ -81,6 +81,7 @@ fn continuation_snapshot(
             remaining: remaining.iter().map(|(owner, cards)| (owner.index(), cards.iter().map(|id| id.0).collect())).collect(),
             selected: selected.iter().map(|id| id.0).collect(),
         },
+        DecisionContinuation::ChooseCompanion { player } => DecisionContinuationSnapshot::ChooseCompanion { player: player.index() },
         DecisionContinuation::PregameActions { player, actions } => {
             DecisionContinuationSnapshot::PregameActions {
                 player: player.index(),

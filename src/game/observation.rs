@@ -340,6 +340,8 @@ pub struct PlayerObservation {
     /// Their own player knows what they brought; nobody else sees this, and
     /// an empty list is what every game without a companion reports.
     pub companions: Vec<(GameObjectId, CardDefinitionId)>,
+    /// Both public pregame designations, including a designation already used.
+    pub chosen_companions: [Option<super::CompanionState>; 2],
     pub command_zones: [Vec<(GameObjectId, CardDefinitionId)>; 2],
     pub commanders: Vec<super::commander::CommanderObservation>,
     pub graveyards: [Vec<(GameObjectId, CardDefinitionId)>; 2],

@@ -399,6 +399,14 @@ pub(in crate::card::sets) static ANGRATH_S_MARAUDERS: CardRecord = CardRecord::n
     crate::card::CardRules::unsupported(),
 );
 
+// XLN 146 — Frenzied Raptor
+pub(in crate::card::sets) static FRENZIED_RAPTOR: CardRecord = CardRecord::new(
+    "Frenzied Raptor",
+    "a7c3a1c9-ffa2-4990-aa4b-db9d688f1ed4",
+    "Jesper Ejsing",
+    CardRules::new_creature(mana_cost!("{2}{R}"), &["Dinosaur"], 4, 2),
+);
+
 // XLN 154 — Rampaging Ferocidon
 pub(in crate::card::sets) static RAMPAGING_FEROCIDON: CardRecord = CardRecord::new(
     "Rampaging Ferocidon",
@@ -953,6 +961,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &KITESAIL_FREEBOOTER,
     &SKULDUGGERY,
     &ANGRATH_S_MARAUDERS,
+    &FRENZIED_RAPTOR,
     &RAMPAGING_FEROCIDON,
     &RILE,
     &GROWING_RITES_OF_ITLIMOC,

@@ -358,6 +358,43 @@ pub(in crate::card::sets) static SPHINX_OF_THE_FINAL_WORD: CardRecord = CardReco
     ]),
 );
 
+// OGW 83 — Corpse Churn
+pub(in crate::card::sets) static CORPSE_CHURN: CardRecord = CardRecord::new(
+    "Corpse Churn",
+    "6b7e6054-c6b8-4b29-83c5-a2e4e295bdf3",
+    "Magali Villeneuve",
+    CardRules::new_instant(mana_cost!("{1}{B}")).with_abilities(&[AbilityDef::spell(
+        "Mill three cards, then you may return a creature card from \
+         your graveyard to your hand. (To mill three cards, put the \
+         top three cards of your library into your graveyard.)",
+        EffectDef::Sequence(&[
+            EffectDef::Mill {
+                player: EffectRecipientDef::Controller,
+                amount: ValueDef::Constant(3),
+            },
+            EffectDef::Choose(ChooseDef {
+                binding: ObjectChoiceBindingDef::Objects(crate::Binding!("chosen")),
+                unchosen: None,
+                chooser: PlayerRefDef::EffectController,
+                candidates: ObjectSetDef::Query(ObjectQueryDef::matching(
+                    ObjectPredicateDef::HasType(CardType::Creature),
+                    &[ZoneKind::Graveyard],
+                    PlayerRelation::You,
+                )),
+                exclude: None,
+                minimum: 0,
+                maximum: 1,
+                visibility: ChoiceVisibilityDef::Public,
+                then: &EffectDef::move_to_zone(
+                    EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!("chosen"))),
+                    ZoneKind::Hand,
+                    ZonePlacement::Top,
+                ),
+            }),
+        ]),
+    )]),
+);
+
 // OGW 91 — Untamed Hunger
 pub(in crate::card::sets) static UNTAMED_HUNGER: CardRecord = CardRecord::new(
     "Untamed Hunger",
@@ -551,6 +588,7 @@ pub(in crate::card::sets) static CARDS: &[&CardRecord] = &[
     &MAKE_A_STAND,
     &DIMENSIONAL_INFILTRATOR,
     &SPHINX_OF_THE_FINAL_WORD,
+    &CORPSE_CHURN,
     &UNTAMED_HUNGER,
     &EXPEDITE,
     &PULSE_OF_MURASA,

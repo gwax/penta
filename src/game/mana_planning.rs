@@ -162,7 +162,8 @@ impl Game {
                 | DeclarativeAbilityDef::SpecialAction(_)
                 | DeclarativeAbilityDef::Pregame(_)
                 | DeclarativeAbilityDef::Keyword(_)
-                | DeclarativeAbilityDef::DeckConstruction(_) => None,
+                | DeclarativeAbilityDef::DeckConstruction(_)
+                | DeclarativeAbilityDef::Companion(_) => None,
             })
         {
             let (options, purpose) = Self::battlefield_ability_mana_context(

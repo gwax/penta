@@ -74,7 +74,7 @@ impl Game {
                     | DeclarativeAbilityDef::SpecialAction(_)
                     | DeclarativeAbilityDef::Pregame(_)
                     | DeclarativeAbilityDef::Keyword(_)
-                    | DeclarativeAbilityDef::DeckConstruction(_) => &[],
+                    | DeclarativeAbilityDef::DeckConstruction(_) | DeclarativeAbilityDef::Companion(_) => &[],
                 };
                 (
                     target_defs,

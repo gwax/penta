@@ -11,6 +11,7 @@ use crate::card::{
 use crate::mana_cost;
 pub(super) mod cost_lists;
 pub(super) mod game_action_programs;
+mod ikoria;
 mod intrinsic_costs;
 mod named_game_action_programs;
 use crate::poc::{self, cards};
@@ -559,3 +560,5 @@ mod vintage_dredge;
 mod vintage_dredge_recursion;
 
 mod zone_access;
+
+pub(crate) mod companions;
