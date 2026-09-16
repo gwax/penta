@@ -7,6 +7,7 @@ use crate::TargetIndex;
 use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
+use crate::card::ActivationTimingDef;
 use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
 use crate::card::BattlefieldArrivalDef;
@@ -16,7 +17,9 @@ use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseDef;
+use crate::card::ColorSet;
 use crate::card::ComparisonDef;
+use crate::card::CopyExceptionsDef;
 use crate::card::CostDef;
 use crate::card::CreatedTokensDef;
 use crate::card::EffectDef;
@@ -25,6 +28,7 @@ use crate::card::ManaColor;
 use crate::card::ManaTypeFilterDef;
 use crate::card::ManaTypeSetDef;
 use crate::card::ManaTypeSourceDef;
+use crate::card::MoveObjectsDef;
 use crate::card::NONBASIC_LAND_SUBTYPES;
 use crate::card::ObjectChoiceBindingDef;
 use crate::card::ObjectCollectionSourceDef;
@@ -38,6 +42,7 @@ use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SubtypeDef;
 use crate::card::SumValueDef;
+use crate::card::TokenCopyDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
@@ -46,6 +51,7 @@ use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
 use crate::card::sets::y2022::commander_legends_baldurs_gate as catalog_clb;
+use crate::card::{CreateTokenDef, TokenDef};
 use crate::ids::ParentBinding;
 use crate::mana_cost;
 
@@ -544,14 +550,60 @@ pub(in crate::card::sets) static PLANAR_NEXUS: CardRecord = CardRecord::new(
 );
 
 // M3C 131 — Lazotep Quarry
-// Audit: unsupported — CopyExceptionsDef can add creature types but cannot replace the copied
-// creature types with Zombie. Adding Zombie would incorrectly preserve the exiled card's
-// original creature types.
 pub(in crate::card::sets) static LAZOTEP_QUARRY: CardRecord = CardRecord::new(
     "Lazotep Quarry",
     "656ddd43-c70c-4927-9a02-fef5732708da",
     "Sam Burley",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_land(&["Desert"]).with_abilities(&[
+        abilities::tap_for(ManaColor::Colorless),
+        AbilityDef::activated_mana(
+            "{T}, Sacrifice a creature: Add one mana of any color.",
+            &[
+                CostDef::TapSource,
+                CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(CardType::Creature)),
+            ],
+            EffectDef::AddMana(AddManaEffectDef::any_color()),
+        ),
+        AbilityDef::activated_with_targets(
+            "{X}{2}, {T}, Sacrifice a Desert: Exile target creature card with mana value \
+             X from your graveyard. Create a token that's a copy of it, except it's a 4/4 \
+             black Zombie. Activate only as a sorcery.",
+            &[
+                CostDef::Mana(mana_cost!("{X}{2}")),
+                CostDef::TapSource,
+                CostDef::sacrifice_permanent(ObjectPredicateDef::Subtype(SubtypeDef::from_name(
+                    "Desert",
+                ))),
+            ],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        ObjectPredicateDef::ManaValueEqualTo(ValueDef::ChosenX),
+                    ]),
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: Some(PlayerRelation::You),
+                },
+            )],
+            EffectDef::MoveObjects(MoveObjectsDef {
+                input: ObjectSetDef::LegalTargets(TargetIndex::PRIMARY),
+                from: Some(ZoneKind::Graveyard),
+                zone: ZoneKind::Exile,
+                placement: ZonePlacement::Top,
+                moved: Some(crate::Binding!("quarry-exile")),
+                then: &EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Copy(&TokenCopyDef {
+                    object: &EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!(
+                        "quarry-exile"
+                    ))),
+                    exceptions: CopyExceptionsDef::power_toughness(4, 4)
+                        .with_colors(ColorSet::from_colors(&[ManaColor::Black]))
+                        .with_creature_types(&crate::card::CreatureTypeSetDef::named(&["Zombie"])),
+                }))),
+            }),
+        )
+        .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+    ]),
 );
 
 // M3C 134 — Talon Gates of Madara

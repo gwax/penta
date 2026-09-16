@@ -688,6 +688,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         | EffectDef::BecomeCopyOf { object, .. }
         | EffectDef::PutSpellIntoOwnersLibrary { object }
         | EffectDef::MayCastTargetWithoutPaying { object, .. }
+        | EffectDef::ExileUntilSourceLeaves { object }
         | EffectDef::Explore { object } => {
             deferred_decision_allowed && shared_effect_recipient(object)
         }
@@ -757,7 +758,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // Each of these asks a question and then runs an inner effect,
         // so the question has to be allowed here and the answer has to be
         // something the shared procedure can carry out.
-        EffectDef::May { player, effect } => {
+        EffectDef::Repeat { player, effect } | EffectDef::May { player, effect } => {
             deferred_decision_allowed
                 && shared_effect_recipient(player)
                 && shared_stack_effect_at_position(*effect, true)
@@ -773,7 +774,7 @@ fn shared_stack_effect_at_position(effect: EffectDef, deferred_decision_allowed:
         // therefore be the delayed effect's root even when scheduling it
         // is itself one component of a sequence.
         EffectDef::WithRule { effect, .. }
-        | EffectDef::BindOutput { effect, .. }
+        | EffectDef::BindValue { effect, .. } | EffectDef::BindOutput { effect, .. }
         | EffectDef::ForEachInBinding { effect, .. } => {
             shared_stack_effect_at_position(*effect, deferred_decision_allowed)
         }

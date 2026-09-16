@@ -862,6 +862,7 @@ pub(in crate::card::sets) static BORDERLAND_RANGER: CardRecord = CardRecord::new
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

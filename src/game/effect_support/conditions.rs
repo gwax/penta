@@ -202,6 +202,15 @@ impl Game {
         context: TriggerContext,
     ) -> i32 {
         match value {
+            crate::card::ValueDef::ManaSpentToCast(reference) => {
+                let object = match reference {
+                    crate::card::ObjectRefDef::TriggeringObject => context.object,
+                    _ => self.static_object_reference(reference, source),
+                };
+                object
+                    .and_then(|object| self.cast_context_for(object, None))
+                    .map_or(0, |cast| i32::from(cast.mana_spent))
+            }
             crate::card::ValueDef::ColorIntersectionCount(sets) => i32::from(
                 Self::color_intersection(sets, |set| {
                     self.color_set_value(set, |reference| match reference {
@@ -420,8 +429,12 @@ impl Game {
                     compare(&left, values.comparison, &right)
                 }
                 TriggerConditionDef::ControlsCreaturesWithDifferentPowers(minimum) => {
-                    let powers = self.battlefield.iter().filter(|p| p.controller == controller)
-                        .filter_map(|p| self.power(p)).collect::<std::collections::HashSet<_>>();
+                    let powers = self
+                        .battlefield
+                        .iter()
+                        .filter(|p| p.controller == controller)
+                        .filter_map(|p| self.power(p))
+                        .collect::<std::collections::HashSet<_>>();
                     powers.len() >= usize::from(*minimum)
                 }
                 TriggerConditionDef::SourceOnBattlefield => self
@@ -693,7 +706,10 @@ impl Game {
                     .cast_context_for(source, object.map(|(resolving, _, _)| resolving))
                     .is_some_and(|cast| cast.alternative_cost_binding.as_deref() == cost.label()),
                 TriggerConditionDef::SourcePaidAdditionalCost(cost) => {
-                    self.source_additional_cost_payments(source, *cost) > 0
+                    self.cast_context_for(source, object.map(|(resolving, _, _)| resolving))
+                        .and_then(|cast| cast.additional_costs.get(cost.index()).copied())
+                        .unwrap_or_else(|| self.source_additional_cost_payments(source, *cost))
+                        > 0
                 }
                 TriggerConditionDef::SourceLoyalty { comparison, amount } => self
                     .battlefield
@@ -716,6 +732,14 @@ impl Game {
                             amount,
                         )
                     }),
+                TriggerConditionDef::SourceProducedManaThisTurn => ability.is_some_and(|origin| {
+                    self.mana_producing_abilities_this_turn.contains(
+                        &crate::game::AbilitySourceRef {
+                            object: source,
+                            ability: origin,
+                        },
+                    )
+                }),
                 TriggerConditionDef::SourceResolutionsThisTurn { comparison, amount } => ability
                     .is_some_and(|origin| {
                         compare(

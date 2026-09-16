@@ -744,6 +744,7 @@ pub(in crate::card::sets) static ELDRITCH_EVOLUTION: CardRecord = CardRecord::ne
             &[],
             CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(CardType::Creature)),
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

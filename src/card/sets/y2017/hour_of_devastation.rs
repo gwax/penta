@@ -86,6 +86,7 @@ pub(in crate::card::sets) static RAZAKETH_THE_FOULBLOODED: CardRecord = CardReco
                     ])),
                 ],
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Any,
@@ -282,7 +283,7 @@ pub(in crate::card::sets) static MIRAGE_MIRROR: CardRecord = CardRecord::new(
             EffectDef::BecomeCopyOf {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 copier: None,
-                exceptions: CopyExceptionsDef::NONE,
+                exceptions: &CopyExceptionsDef::NONE,
                 duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
             },
         ),

@@ -56,6 +56,8 @@ impl Game {
         let mut activations = Vec::new();
         let mut add = |color, combination| {
             activations.push(ManaAbilityActivation {
+                controller,
+                source_types: crate::card::CardTypeSet::empty(),
                 source,
                 ability: origin,
                 color,
@@ -154,8 +156,11 @@ impl Game {
             .into_iter()
             .find(|activation| {
                 activation.costs.as_slice() == [CostDef::PayLife(1)]
-                    && Self::mana_production(activation).amount(ManaColor::Colorless) == 1
-                    && Self::mana_production(activation).total() == 1
+                    && self
+                        .mana_production(activation)
+                        .amount(ManaColor::Colorless)
+                        == 1
+                    && self.mana_production(activation).total() == 1
             })
     }
 

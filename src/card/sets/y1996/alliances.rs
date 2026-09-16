@@ -734,6 +734,7 @@ pub(in crate::card::sets) static FORESIGHT: CardRecord = CardRecord::new(
          upkeep.",
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,
@@ -3053,6 +3054,7 @@ pub(in crate::card::sets) static THAWING_GLACIERS: CardRecord = CardRecord::new(
             &[CostDef::Mana(mana_cost!("{1}")), CostDef::TapSource],
             EffectDef::Sequence(&[
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

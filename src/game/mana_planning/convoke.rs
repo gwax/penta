@@ -3,18 +3,31 @@ pub(in crate::game) struct ManaContributionKinds {
     pub(in crate::game) convoke: bool,
     pub(in crate::game) delve: bool,
     pub(in crate::game) improvise: bool,
+    pub(in crate::game) tap_for_generic: crate::card::CardTypeSet,
 }
 
 impl ManaContributionKinds {
     const fn any(self) -> bool {
-        self.convoke || self.delve || self.improvise
+        self.convoke || self.delve || self.improvise || !self.tap_for_generic.is_empty()
     }
 }
 
 impl Game {
     /// Which direct mana-cost contribution keywords are executable on the
     /// selected spell form.
-    pub(in crate::game) fn payment_contributions(&self, purpose: &ManaPaymentPurpose) -> ManaContributionKinds {
+    pub(in crate::game) fn payment_contributions(
+        &self,
+        purpose: &ManaPaymentPurpose,
+    ) -> ManaContributionKinds {
+        if let ManaPaymentPurpose::Ability {
+            tap_for_generic, ..
+        } = purpose
+        {
+            return ManaContributionKinds {
+                tap_for_generic: *tap_for_generic,
+                ..ManaContributionKinds::default()
+            };
+        }
         let ManaPaymentPurpose::Spell {
             definition, form, ..
         } = purpose
@@ -39,6 +52,7 @@ impl Game {
             convoke: has(KeywordAbility::Convoke),
             delve: has(KeywordAbility::Delve),
             improvise: has(KeywordAbility::Improvise),
+            tap_for_generic: crate::card::CardTypeSet::empty(),
         }
     }
 
@@ -69,7 +83,7 @@ impl Game {
                 production.add_color(color, 1);
                 outputs.push(ManaSourceOutput {
                     kind: PlannedPaymentKind::Contribution(ManaContributionKind::Convoke),
-                    production: ManaPool::default(),
+                    production: crate::game::payment::allocation::PaymentPool::default(),
                     colored_contribution: production,
                     generic_payment: 0,
                     life_payment: 0,
@@ -80,7 +94,7 @@ impl Game {
         if outputs.is_empty() {
             outputs.push(ManaSourceOutput {
                 kind: PlannedPaymentKind::Contribution(ManaContributionKind::Convoke),
-                production: ManaPool::default(),
+                production: crate::game::payment::allocation::PaymentPool::default(),
                 colored_contribution: ManaPool::default(),
                 generic_payment: 1,
                 life_payment: 0,
@@ -101,15 +115,19 @@ impl Game {
         if kinds.convoke {
             outputs.extend(self.convoke_outputs(permanent));
         }
-        if kinds.improvise
-            && !permanent.tapped
-            && self
-                .permanent_types(permanent)
-                .is_some_and(|types| types.contains(CardType::Artifact))
+        if !permanent.tapped
+            && self.permanent_types(permanent).is_some_and(|types| {
+                (kinds.improvise && types.contains(CardType::Artifact))
+                    || types.intersects(kinds.tap_for_generic)
+            })
         {
             outputs.push(ManaSourceOutput {
-                kind: PlannedPaymentKind::Contribution(ManaContributionKind::Improvise),
-                production: ManaPool::default(),
+                kind: PlannedPaymentKind::Contribution(if kinds.improvise {
+                    ManaContributionKind::Improvise
+                } else {
+                    ManaContributionKind::TapPermanent
+                }),
+                production: crate::game::payment::allocation::PaymentPool::default(),
                 colored_contribution: ManaPool::default(),
                 generic_payment: 1,
                 life_payment: 0,
@@ -127,11 +145,7 @@ impl Game {
         permanent: &Permanent,
         activation: &ManaAbilityActivation,
     ) -> bool {
-        Self::mana_activation_preserves_tap_payment(
-            permanent,
-            activation,
-            permanent.card.id,
-        )
+        Self::mana_activation_preserves_tap_payment(permanent, activation, permanent.card.id)
     }
 
     /// An unlimited ability whose concrete cost consumes a different object
@@ -151,8 +165,7 @@ impl Game {
                     .filter(|cost| {
                         matches!(
                             cost,
-                            CostDef::SacrificePermanent { .. }
-                                | CostDef::ExileCardFromHand(_)
+                            CostDef::SacrificePermanent { .. } | CostDef::ExileCardFromHand(_)
                         )
                     })
                     .count()
@@ -230,10 +243,15 @@ impl Game {
             .max()
             .unwrap_or(0);
         for activation in &activations {
-            let amount = Self::mana_production(activation).total();
+            let amount = self.mana_production(activation).total();
             if self.mana_activation_can_repeat_in_payment(permanent, activation) {
-                let object = activation.cost_object.expect("repeatable cost names an object");
-                match repeatable.iter_mut().find(|(candidate, _)| *candidate == object) {
+                let object = activation
+                    .cost_object
+                    .expect("repeatable cost names an object");
+                match repeatable
+                    .iter_mut()
+                    .find(|(candidate, _)| *candidate == object)
+                {
                     Some((_, maximum)) => *maximum = (*maximum).max(amount),
                     None => repeatable.push((object, amount)),
                 }

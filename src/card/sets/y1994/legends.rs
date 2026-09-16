@@ -4094,6 +4094,7 @@ pub(in crate::card::sets) static UNTAMED_WILDS: CardRecord = CardRecord::new(
         "Search your library for a basic land card, put that card \
          onto the battlefield, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

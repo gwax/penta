@@ -422,6 +422,9 @@ pub enum ExilePlayConditionDef {
 /// "You may play those cards without paying their mana costs."
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct FreePlayDef {
+    pub cast_only: bool,
+    /// Checked against the spell form chosen when casting, with its chosen X.
+    pub maximum_spell_mana_value: Option<u16>,
     /// Which cards the permission covers. A set rather than a zone, because
     /// what a clause hands over is a pile it already knows about: the cards
     /// a search bound, or the ones exiled with a source.
@@ -498,6 +501,8 @@ pub struct CopyExceptionsDef {
     /// "Except it's a Zombie <its own types>": creature types on top of the
     /// ones it copied.
     pub added_creature_types: CreatureTypeSetDef,
+    /// Replace the copied creature subtypes, retaining other subtype families.
+    pub replaced_creature_types: Option<&'static CreatureTypeSetDef>,
     /// "Except it's an artifact in addition to its other types": card types
     /// the copy has on top of the ones it copied, rather than instead of
     /// them. Like every other exception it is a copiable value, so a copy of
@@ -523,6 +528,7 @@ impl CopyExceptionsDef {
         base_power_toughness: None,
         colors: None,
         added_creature_types: CreatureTypeSetDef::named(&[]),
+        replaced_creature_types: None,
         added_types: CardTypeSet::empty(),
         added_supertypes: &[],
         removed_supertypes: &[],
@@ -573,6 +579,12 @@ impl CopyExceptionsDef {
         added_creature_types: &'static [&'static str],
     ) -> Self {
         self.added_creature_types = CreatureTypeSetDef::named(added_creature_types);
+        self
+    }
+
+    #[must_use]
+    pub const fn with_creature_types(mut self, types: &'static CreatureTypeSetDef) -> Self {
+        self.replaced_creature_types = Some(types);
         self
     }
 

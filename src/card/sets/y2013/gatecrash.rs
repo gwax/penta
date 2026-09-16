@@ -3322,6 +3322,7 @@ pub(in crate::card::sets) static SYLVAN_PRIMORDIAL: CardRecord = CardRecord::new
                         input: ObjectSetDef::Binding(ParentBinding),
                         if_empty: &EffectDef::None,
                         otherwise: &EffectDef::SearchZone {
+                            exile_face_down: false,
                             player: EffectRecipientDef::Controller,
                             source: ZoneKind::Library,
                             object: ObjectPredicateDef::HasAnyBasicLandType(&[
@@ -4522,7 +4523,7 @@ pub(in crate::card::sets) static LAZAV_DIMIR_MASTERMIND: CardRecord = CardRecord
                     effect: &EffectDef::BecomeCopyOf {
                         object: EffectRecipientDef::TriggeringZoneChangeResult,
                         copier: None,
-                        exceptions: CopyExceptionsDef::NONE
+                        exceptions: &CopyExceptionsDef::NONE
                             .with_name("Lazav, Dimir Mastermind")
                             .with_added_supertypes(&[CardSupertype::Legendary])
                             .with_abilities(&[
@@ -6153,7 +6154,7 @@ pub(in crate::card::sets) static THESPIANS_STAGE: CardRecord = CardRecord::new(
             EffectDef::BecomeCopyOf {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 copier: None,
-                exceptions: CopyExceptionsDef::NONE.with_abilities(&[CopyAbilityDef::This]),
+                exceptions: &CopyExceptionsDef::NONE.with_abilities(&[CopyAbilityDef::This]),
                 duration: None,
             },
         ),

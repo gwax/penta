@@ -3,6 +3,8 @@
 
 use super::{Game, Mana, ManaCost, ManaPaymentPurpose, ManaPool, PlayerId};
 
+pub(super) mod allocation;
+use allocation::PaymentPool;
 mod choices;
 pub(super) mod contributions;
 mod effects;
@@ -37,7 +39,7 @@ impl Game {
         x: u16,
         purpose: &ManaPaymentPurpose,
     ) -> ManaPaymentObligation {
-        let (mut cost, x) = self.restrict_x(cost, x, purpose);
+        let (mut cost, x) = self.restrict_x(player, cost, x, purpose);
         cost.generic = cost
             .generic
             .saturating_add(x.saturating_mul(cost.x_multiplier));
@@ -87,7 +89,7 @@ impl Game {
         } = obligation;
         let player = *player;
         let available = self.payment_mana_units(player);
-        let mut selected = ManaPool::default();
+        let mut selected = PaymentPool::default();
         for (position, index) in payment.units.iter().copied().enumerate() {
             let Some(mana) = available.get(index) else {
                 return false;
@@ -97,8 +99,9 @@ impl Game {
             {
                 return false;
             }
-            selected.add_color(mana.color, 1);
+            selected.add_unit(*mana, self.mana_requires_nongeneric(*mana, purpose, *cost));
         }
+        selected.any_color = self.may_spend_any_color(player, purpose);
         super::mana_planning::exact_mana_payment(selected, *cost, *x)
     }
 
@@ -108,7 +111,7 @@ impl Game {
         units: &[usize],
     ) -> bool {
         let available = self.payment_mana_units(obligation.player);
-        let mut selected = ManaPool::default();
+        let mut selected = PaymentPool::default();
         for (position, index) in units.iter().copied().enumerate() {
             let Some(mana) = available.get(index) else {
                 return false;
@@ -118,7 +121,10 @@ impl Game {
             {
                 return false;
             }
-            selected.add_color(mana.color, 1);
+            selected.add_unit(
+                *mana,
+                self.mana_requires_nongeneric(*mana, &obligation.purpose, obligation.cost),
+            );
         }
         super::mana_planning::payment_including_units(
             self.eligible_mana_pool_for_cost(
@@ -239,6 +245,7 @@ pub(in crate::game) fn mana_ability_payment_purpose(
     costs: &[super::CostDef],
 ) -> ManaPaymentPurpose {
     ManaPaymentPurpose::Ability {
+        tap_for_generic: crate::card::CardTypeSet::empty(),
         source,
         taps_source: costs.contains(&super::CostDef::TapSource),
         leaves_source: costs.iter().any(|cost| {

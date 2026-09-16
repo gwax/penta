@@ -35,6 +35,7 @@ pub const fn fetch_land_ability(text: &'static str, object: ObjectPredicateDef) 
         text,
         &FETCH_LAND_COST,
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object,
@@ -259,6 +260,7 @@ pub const fn landscape_fetch(text: &'static str, object: ObjectPredicateDef) -> 
         text,
         &LANDSCAPE_FETCH_COST,
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object,

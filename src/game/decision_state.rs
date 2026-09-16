@@ -308,6 +308,7 @@ pub(super) enum DecisionContinuation {
         follow_up: Option<Box<DiscardFollowUp>>,
     },
     SearchZone {
+        exile_face_down: bool,
         controller: PlayerId,
         source: ZoneKind,
         destination: ZoneKind,
@@ -461,6 +462,7 @@ pub(super) enum DecisionContinuation {
     /// names each mana separately, so the run is answered one colour at a
     /// time and re-queues itself until it is spent.
     ChosenColorMana {
+        same_color: bool,
         controller: PlayerId,
         /// The mana each answer produces, with only its colour still open.
         /// Carried whole so that a restriction or a spend rider the clause
@@ -772,6 +774,7 @@ pub(super) enum DecisionContinuation {
         base_power_toughness: Option<(i16, i16)>,
         colors: Option<crate::card::ColorSet>,
         added_creature_types: Vec<&'static str>,
+        replaced_creature_types: Option<Vec<&'static str>>,
         no_mana_cost: bool,
         added_abilities: Vec<super::CopiableAbility>,
     },

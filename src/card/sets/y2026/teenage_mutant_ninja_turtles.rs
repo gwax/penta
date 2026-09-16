@@ -71,6 +71,7 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::RandomizeObjectOrderDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::RevealAndClassifyCardsDef;
 use crate::card::RevealObjectsDef;
 use crate::card::ScaledValueDef;
 use crate::card::SpellCastQueryDef;
@@ -4624,14 +4625,66 @@ pub(in crate::card::sets) static RAPH_LEO_SIBLING_RIVALS: CardRecord = CardRecor
 );
 
 // TMT 167 — Raph & Mikey, Troublemakers
-// Audit: unsupported — Needs a selected revealed creature card to enter tapped and attacking,
-// including choosing its defender; current attacking-arrival support is limited to token
-// creation and the ability source.
 pub(in crate::card::sets) static RAPH_MIKEY_TROUBLEMAKERS: CardRecord = CardRecord::new(
     "Raph & Mikey, Troublemakers",
     "8795fba4-0ff3-4c04-a81c-60408608a00c",
     "Aaron J. Riley",
-    CardRules::unsupported(),
+    CardRules::new_creature(
+        mana_cost!("{5}{R/G}{R/G}"),
+        &["Mutant", "Ninja", "Turtle"],
+        7,
+        7,
+    )
+    .with_supertype(CardSupertype::Legendary)
+    .with_abilities(&[
+        abilities::trample(),
+        abilities::haste(),
+        AbilityDef::triggered(
+            "Whenever Raph & Mikey attack, reveal cards from the top of your library \
+             until you reveal a creature card. Put that card onto the battlefield tapped \
+             and attacking and the rest on the bottom of your library in a random order.",
+            TriggerEventDef::attacks(ObjectPredicateDef::Source),
+            EffectDef::RevealAndClassifyCards(RevealAndClassifyCardsDef {
+                source: ObjectCollectionSourceDef::TopCardsThroughFirstMatching {
+                    player: PlayerRefDef::EffectController,
+                    object: ObjectPredicateDef::HasType(CardType::Creature),
+                },
+                object: ObjectPredicateDef::HasType(CardType::Creature),
+                matching: crate::Binding!("creature"),
+                remainder: crate::Binding!("rest"),
+                then: &EffectDef::Sequence(&[
+                    EffectDef::WithBattlefieldArrival {
+                        effect: &EffectDef::move_to_zone(
+                            EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!(
+                                "creature"
+                            ))),
+                            ZoneKind::Battlefield,
+                            ZonePlacement::Top,
+                        ),
+                        arrival: BattlefieldArrivalDef {
+                            controller: Some(PlayerRelation::You),
+                            modifications: &[
+                                BattlefieldEntryModificationDef::Tapped,
+                                BattlefieldEntryModificationDef::Attacking,
+                            ],
+                            ..BattlefieldArrivalDef::DEFAULT
+                        },
+                    },
+                    EffectDef::RandomizeObjectOrder(RandomizeObjectOrderDef {
+                        input: ObjectSetDef::Binding(crate::Binding!("rest")),
+                        randomized: crate::Binding!("bottom"),
+                        then: &EffectDef::move_to_zone(
+                            EffectRecipientDef::objects(ObjectSetDef::Binding(crate::Binding!(
+                                "bottom"
+                            ))),
+                            ZoneKind::Library,
+                            ZonePlacement::Bottom,
+                        ),
+                    }),
+                ]),
+            }),
+        ),
+    ]),
 );
 
 // TMT 168 — Slithering Cryptid
@@ -4800,6 +4853,7 @@ pub(in crate::card::sets) static EVERYTHING_PIZZA: CardRecord = CardRecord::new(
                 "When this artifact enters, search your library for a basic \
                  land card, reveal it, put it into your hand, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

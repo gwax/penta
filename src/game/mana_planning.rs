@@ -1,3 +1,4 @@
+use super::payment::allocation::PaymentPool;
 use std::{collections::BTreeMap, ops::ControlFlow};
 
 use crate::ManaPaymentChoice;
@@ -81,6 +82,7 @@ impl Game {
                 tap_cost_payer,
             },
             ManaPaymentPurpose::Ability {
+                tap_for_generic: definition.tap_for_generic,
                 source,
                 taps_source,
                 leaves_source,
@@ -132,6 +134,7 @@ impl Game {
                     x,
                     ManaPlanOptions::default(),
                     ManaPaymentPurpose::Ability {
+                        tap_for_generic: definition.tap_for_generic,
                         source,
                         taps_source: false,
                         leaves_source: false,
@@ -220,9 +223,10 @@ impl Game {
         player: PlayerId,
         purpose: &ManaPaymentPurpose,
     ) -> u16 {
-        if self
-            .repeatable_colorless_life_mana_activation(player)
-            .is_none()
+        if !self.payment_allows_mana(purpose)
+            || self
+                .repeatable_colorless_life_mana_activation(player)
+                .is_none()
         {
             return 0;
         }
@@ -251,8 +255,30 @@ impl Game {
     /// pool. Coloured and hybrid symbols come off first, exactly as the
     /// payment does, because the generated {C} cannot pay a coloured symbol
     /// and must not be counted against one.
-    pub(super) fn generic_shortfall(pool: ManaPool, cost: ManaCost, x: u16) -> u16 {
-        let mut spare = pool;
+    pub(super) fn generic_shortfall(pool: impl Into<PaymentPool>, cost: ManaCost, x: u16) -> u16 {
+        let pool = pool.into();
+        if pool.needs_symbol_allocation() {
+            let mut lower = 0;
+            let mut upper = u16::MAX.saturating_sub(pool.amount(ManaColor::Colorless));
+            let covers = |extra| {
+                let mut candidate = pool;
+                candidate.add_color(ManaColor::Colorless, extra);
+                can_pay(candidate, cost, x)
+            };
+            if !covers(upper) {
+                return u16::MAX;
+            }
+            while lower < upper {
+                let middle = lower + (upper - lower) / 2;
+                if covers(middle) {
+                    upper = middle;
+                } else {
+                    lower = middle + 1;
+                }
+            }
+            return lower;
+        }
+        let mut spare = pool.mana;
         for color in colored_mana() {
             spare.remove_color(color, mana_cost_amount(cost, color));
         }
@@ -284,24 +310,27 @@ impl Game {
         cost: ManaCost,
         purpose: &ManaPaymentPurpose,
     ) -> bool {
-        let (cost, x) = self.restrict_x(cost, 0, purpose);
+        let (cost, x) = self.restrict_x(player, cost, 0, purpose);
         let mut spare = self.eligible_mana_pool_for_cost(player, purpose, cost);
         spare.add_color(
             ManaColor::Colorless,
-            self.repeatable_life_mana_available(player),
+            self.repeatable_life_mana_available_for(player, purpose),
         );
         payment_remainder(spare, cost, x, &|_| 0, &ManaColor::ALL, false).is_some()
     }
 
     /// One planning record per enumerated activation.
     fn planned_outputs(
+        &self,
         activations: &[ManaAbilityActivation],
         purpose: &ManaPaymentPurpose,
+        cost: ManaCost,
     ) -> ManaSourceOutputs {
         activations
             .iter()
             .map(|activation| {
-                let benefits_payment = Self::mana_for_activation(activation)
+                let benefits_payment = self
+                    .mana_for_activation(activation)
                     .first()
                     .is_some_and(|mana| Self::mana_has_spend_effect_for(*mana, purpose));
                 ManaSourceOutput {
@@ -317,7 +346,7 @@ impl Game {
                         triggered_mana: activation.triggered_mana.clone(),
                         contribution: None,
                     },
-                    production: Self::mana_production(activation),
+                    production: self.mana_production_for(activation, purpose, cost),
                     colored_contribution: ManaPool::default(),
                     generic_payment: 0,
                     life_payment: activation
@@ -607,6 +636,21 @@ impl Game {
     ) -> (ManaCost, u16) {
         if self.explicit_mana_payment.is_some() {
             self.run_explicit_funding(player);
+            if matches!(purpose, ManaPaymentPurpose::Ability { .. })
+                && let Some(bound) = self.explicit_cast_contributions.take()
+            {
+                for contribution in bound.plan {
+                    if contribution
+                        .kind
+                        .contribution()
+                        .is_some_and(ManaContributionKind::taps_source)
+                    {
+                        self.tap_permanent(contribution.source)
+                            .expect("a bound contributor remains available");
+                    }
+                }
+                return (bound.remaining.cost, 0);
+            }
             return (cost, x);
         }
         let life_available =
@@ -625,7 +669,8 @@ impl Game {
                 self.unplannable_payment(player, cost, x, options.avoid, purpose)
             );
         };
-        let residual = self.residual_cost_after_contributions(cost, x, purpose, &plan, false);
+        let residual =
+            self.residual_cost_after_contributions(player, cost, x, purpose, &plan, false);
         // CR 601.2g comes before paying the spell's costs in 601.2h: activate
         // actual mana abilities first, then spend direct contributors.
         for payment in &plan {
@@ -684,6 +729,7 @@ impl Game {
     /// generic portion has been folded into this remainder.
     pub(super) fn residual_cost_after_contributions(
         &self,
+        player: PlayerId,
         cost: ManaCost,
         x: u16,
         purpose: &ManaPaymentPurpose,
@@ -693,65 +739,23 @@ impl Game {
         if !self.payment_contributions(purpose).any() {
             return (cost, x);
         }
-        let (mut residual, restricted_x) = self.restrict_x(cost, x, purpose);
-        let mut actual = self.eligible_mana_pool_for_cost(
-            match purpose {
-                ManaPaymentPurpose::Spell { controller, .. } => *controller,
-                _ => unreachable!("only spell payments use direct contributions"),
-            },
-            purpose,
-            cost,
-        );
-        let mut convoke = ManaPool::default();
-        let mut generic_only = 0_u16;
+        let (cost, x) = self.restrict_x(player, cost, x, purpose);
+        let mut pool = self.eligible_mana_pool_for_cost(player, purpose, cost);
         for payment in plan {
             if !planned_production_is_in_pool {
-                actual.add(payment.production);
+                pool.add(payment.production);
             }
             if payment.kind.uses_contribution() {
-                convoke.add(payment.colored_contribution);
-                generic_only = generic_only.saturating_add(payment.generic_payment);
+                pool.direct.add(payment.colored_contribution);
+                pool.direct
+                    .add_color(ManaColor::Colorless, payment.generic_payment);
             }
         }
-        for color in colored_mana() {
-            let required = mana_cost_amount(residual, color);
-            let paid = convoke.amount(color).min(required);
-            convoke.remove_color(color, paid);
-            actual.remove_color(color, required.saturating_sub(paid));
-            match color {
-                ManaColor::White => residual.white -= paid,
-                ManaColor::Blue => residual.blue -= paid,
-                ManaColor::Black => residual.black -= paid,
-                ManaColor::Red => residual.red -= paid,
-                ManaColor::Green => residual.green -= paid,
-                ManaColor::Colorless => unreachable!("colored_mana excludes colorless"),
-            }
-        }
-        if residual.hybrid_total() > 0 {
-            let mut combined = actual;
-            combined.add(convoke);
-            let hybrid = maximum_hybrid_payment(combined, residual, &|_| false);
-            debug_assert_eq!(hybrid.total, hybrid_required_total(residual));
-            for (pair, allocation) in HybridPair::ALL.into_iter().zip(hybrid.allocations) {
-                let (first, second) = pair.colors();
-                let mut convoke_paid = 0_u16;
-                for (color, assigned) in [(first, allocation[0]), (second, allocation[1])] {
-                    let paid = convoke.amount(color).min(assigned);
-                    convoke.remove_color(color, paid);
-                    actual.remove_color(color, assigned.saturating_sub(paid));
-                    convoke_paid = convoke_paid.saturating_add(paid);
-                }
-                residual.hybrid[pair.index()] =
-                    residual.hybrid[pair.index()].saturating_sub(convoke_paid);
-            }
-        }
-        let generic_due = residual
-            .generic
-            .saturating_add(restricted_x.saturating_mul(residual.x_multiplier));
-        residual.generic = generic_due.saturating_sub(convoke.total().saturating_add(generic_only));
-        residual.variable_x = false;
-        residual.x_multiplier = 0;
-        (residual, 0)
+        (
+            super::payment::allocation::contribution_remainder(pool, cost, x)
+                .expect("the chosen contribution plan covers the payment"),
+            0,
+        )
     }
 
     /// Describes a payment that passed its affordability gate and then found
@@ -779,7 +783,7 @@ impl Game {
             self.can_pay_cost_for(player, cost, x, purpose),
             self.players[player.index()].mana_pool,
             self.eligible_mana_pool_for_cost(player, purpose, cost),
-            self.repeatable_life_mana_available(player),
+            self.repeatable_life_mana_available_for(player, purpose),
         );
         for permanent in self
             .battlefield
@@ -808,7 +812,7 @@ impl Game {
     }
 }
 
-pub(super) fn can_pay(pool: ManaPool, cost: ManaCost, x: u16) -> bool {
+pub(super) fn can_pay(pool: impl Into<PaymentPool>, cost: ManaCost, x: u16) -> bool {
     payment_remainder(pool, cost, x, &|_| 0, &ManaColor::ALL, false).is_some()
 }
 

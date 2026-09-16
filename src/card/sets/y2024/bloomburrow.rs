@@ -5779,6 +5779,7 @@ pub(in crate::card::sets) static HEAPED_HARVEST: CardRecord = CardRecord::new(
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[
@@ -7893,6 +7894,7 @@ pub(in crate::card::sets) static FOUNTAINPORT_BELL: CardRecord = CardRecord::new
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

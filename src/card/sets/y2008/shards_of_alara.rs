@@ -7,7 +7,9 @@ use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
+use crate::card::AggregateOperationDef;
 use crate::card::AppliedEffectDef;
+use crate::card::BindObjectsDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
@@ -21,13 +23,17 @@ use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
 use crate::card::KeywordAbility;
 use crate::card::ManaColor;
+use crate::card::ObjectCollectionSourceDef;
 use crate::card::ObjectPredicateDef;
 use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
+use crate::card::ObjectValueAggregateDef;
+use crate::card::ObjectValueDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::RevealObjectsDef;
 use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
@@ -179,6 +185,7 @@ pub(in crate::card::sets) static RANGER_OF_EOS: CardRecord = CardRecord::new(
              up to two creature cards with mana value 1 or less, reveal \
              them, put them into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -244,13 +251,65 @@ pub(in crate::card::sets) static TEZZERET_THE_SEEKER: CardRecord = CardRecord::n
 );
 
 // ALA 63 — Ad Nauseam
-// Audit: unsupported — The effect graph has no player-controlled repeat loop that reveals,
-// moves to hand, and loses the revealed card’s mana value before offering another iteration.
+// The mandatory reveal and each optional repetition execute the same procedure.
+macro_rules! ad_nauseam_reveal {
+    ($cards:expr, $value:expr) => {
+        EffectDef::BindObjects(BindObjectsDef {
+            source: ObjectCollectionSourceDef::TopCards {
+                player: PlayerRefDef::EffectController,
+                count: ValueDef::Constant(1),
+            },
+            binding: $cards,
+            then: &EffectDef::Sequence(&[
+                EffectDef::RevealObjects(RevealObjectsDef {
+                    input: ObjectSetDef::Binding($cards),
+                    then: &EffectDef::None,
+                }),
+                EffectDef::BindValue {
+                    binding: $value,
+                    value: ValueDef::AggregateObjectValues(&ObjectValueAggregateDef {
+                        objects: ObjectSetDef::Binding($cards),
+                        select: ObjectValueDef::ManaValue,
+                        operation: AggregateOperationDef::Sum,
+                    }),
+                    effect: &EffectDef::Sequence(&[
+                        EffectDef::move_to_zone(
+                            EffectRecipientDef::objects(ObjectSetDef::Binding($cards)),
+                            ZoneKind::Hand,
+                            ZonePlacement::Top,
+                        ),
+                        EffectDef::LoseLife {
+                            recipient: EffectRecipientDef::Controller,
+                            amount: ValueDef::BoundValue($value),
+                        },
+                    ]),
+                },
+            ]),
+        })
+    };
+}
+
 pub(in crate::card::sets) static AD_NAUSEAM: CardRecord = CardRecord::new(
     "Ad Nauseam",
     "0a4ce4a1-65e3-4b40-be35-8fc55a968ec8",
     "Jeremy Jarvis",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{3}{B}{B}")).with_ability(AbilityDef::spell(
+        "Reveal the top card of your library and put that card into your hand. You lose \
+         life equal to its mana value. You may repeat this process any number of times.",
+        EffectDef::Sequence(&[
+            ad_nauseam_reveal!(
+                crate::Binding!("first-card"),
+                crate::Binding!("first-value")
+            ),
+            EffectDef::Repeat {
+                player: EffectRecipientDef::Controller,
+                effect: &ad_nauseam_reveal!(
+                    crate::Binding!("next-card"),
+                    crate::Binding!("next-value")
+                ),
+            },
+        ]),
+    )),
 );
 
 // ALA 67 — Bone Splinters

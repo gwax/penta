@@ -134,6 +134,8 @@ pub(in super::super) fn shared_trigger_event(event: TriggerEventDef) -> bool {
                     .is_none_or(|maximum| matcher.declaration.minimum <= maximum)
                 && matcher.attack_number.is_none_or(|number| number > 0)
         }
+        TriggerEventDef::CountersCross { object, thresholds, .. } =>
+            shared_object_predicate(object) && thresholds.valid(),
         TriggerEventDef::BecomesBlocked(object)
         | TriggerEventDef::CountersPlaced { object, .. }
         | TriggerEventDef::CountersRemoved { object, .. }

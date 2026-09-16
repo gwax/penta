@@ -2671,6 +2671,7 @@ pub(in crate::card::sets) static MOLTEN_MAN_INFERNO_INCARNATE: CardRecord = Card
                  Mountain card, put it onto the battlefield tapped, then \
                  shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -3384,6 +3385,7 @@ pub(in crate::card::sets) static RADIOACTIVE_SPIDER: CardRecord = CardRecord::ne
              hand, then shuffle. Activate only as a sorcery.",
             &[CostDef::Mana(mana_cost!("{2}")), CostDef::SacrificeSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -3640,6 +3642,7 @@ pub(in crate::card::sets) static SPIDER_MAN_BROOKLYN_VISIONARY: CardRecord = Car
                 "When Spider-Man enters, search your library for a basic land \
                  card, put it onto the battlefield tapped, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -4785,6 +4788,7 @@ pub(in crate::card::sets) static SUN_SPIDER_NIMBLE_WEBBER: CardRecord = CardReco
                  Equipment card, reveal it, put it into your hand, then \
                  shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::AnyOf(&[
@@ -5332,6 +5336,7 @@ pub(in crate::card::sets) static SPIDER_BOT: CardRecord = CardRecord::new(
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[
@@ -5478,6 +5483,7 @@ pub(in crate::card::sets) static SUBWAY_TRAIN: CardRecord = CardRecord::new(
             EffectDef::PayOr(PayOrDef::optional(
                 &[CostDef::Mana(mana_cost!("{G}"))],
                 &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -5693,6 +5699,7 @@ pub(in crate::card::sets) static VIBRANT_CITYSCAPE: CardRecord = CardRecord::new
          land card, put it onto the battlefield tapped, then shuffle.",
         &[CostDef::TapSource, CostDef::SacrificeSource],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

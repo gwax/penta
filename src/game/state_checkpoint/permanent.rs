@@ -119,6 +119,7 @@ pub(super) fn permanent_snapshot(
             .cast
             .as_ref()
             .map_or(0, |cast| u16::from(cast.colors_spent_count())),
+        cast_mana_spent: permanent.cast.as_ref().map_or(0, |cast| cast.mana_spent),
         cast_colors_of_mana_spent: permanent
             .cast
             .as_ref()
@@ -311,6 +312,10 @@ fn copiable_characteristics_snapshot(
                 .base_power_toughness
                 .map(|(power, toughness)| [power, toughness]),
             colors: copy.colors.map(crate::card::ColorSet::to_flags),
+            replaced_creature_types: copy
+                .replaced_creature_types
+                .as_ref()
+                .map(|types| types.iter().map(ToString::to_string).collect()),
             added_creature_types: copy
                 .added_creature_types
                 .iter()

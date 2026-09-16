@@ -1649,6 +1649,7 @@ pub(in crate::card::sets) static URBORG_MINDSUCKER: CardRecord = CardRecord::new
 /// only difference between the cards is that one is an instant.
 pub(in crate::card::sets) static VAMPIRIC_TUTOR_EFFECT: [EffectDef; 2] = [
     EffectDef::SearchZone {
+        exile_face_down: false,
         player: EffectRecipientDef::Controller,
         source: ZoneKind::Library,
         object: ObjectPredicateDef::Any,
@@ -2689,6 +2690,7 @@ pub(in crate::card::sets) static KYSCU_DRAKE: CardRecord = CardRecord::new(
                 },
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::NameEquals(CardNameDef::Literal("Viashivan Dragon")),
@@ -2767,6 +2769,7 @@ pub(in crate::card::sets) static NATURAL_ORDER: CardRecord = CardRecord::new(
                 CostQuantityDef::Fixed(1),
             ),
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

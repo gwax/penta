@@ -177,6 +177,7 @@ pub(in crate::card::sets) static RANGER_CAPTAIN_OF_EOS: CardRecord = CardRecord:
              a creature card with mana value 1 or less, reveal it, put \
              it into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -349,6 +350,7 @@ pub(in crate::card::sets) static WINDS_OF_ABANDON: CardRecord = CardRecord::new(
                 // The searcher is the creature's controller, read from the announced
                 // target: by now the creature is in exile and cannot be asked.
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                         ObjectRefDef::Target(TargetIndex::PRIMARY),
                     )),
@@ -397,6 +399,7 @@ pub(in crate::card::sets) static WINDS_OF_ABANDON: CardRecord = CardRecord::new(
                         ZonePlacement::Top,
                     ),
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Opponent,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[
@@ -868,6 +871,7 @@ pub(in crate::card::sets) static GOBLIN_ENGINEER: CardRecord = CardRecord::new(
                 "When this creature enters, you may search your library for \
                  an artifact card, put it into your graveyard, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasType(CardType::Artifact),
@@ -1276,6 +1280,7 @@ pub(in crate::card::sets) static SPRINGBLOOM_DRUID: CardRecord = CardRecord::new
                     CardType::Land,
                 ))],
                 &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -1443,13 +1448,35 @@ pub(in crate::card::sets) static GOOD_FORTUNE_UNICORN: CardRecord = CardRecord::
 );
 
 // MH1 202 — Hogaak, Arisen Necropolis
-// Audit: unsupported — Casting cannot prohibit every mana payment while allowing convoke and
-// delve to pay the whole cost, including additional costs and commander tax.
 pub(in crate::card::sets) static HOGAAK_ARISEN_NECROPOLIS: CardRecord = CardRecord::new(
     "Hogaak, Arisen Necropolis",
     "0049e68d-0caf-474f-9523-dad343f1250a",
     "Vincent Proce",
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{5}{B/G}{B/G}"), &["Avatar"], 8, 8)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "You can't spend mana to cast this spell.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotSpendManaToCast),
+                },
+            )
+            .with_source_zones(&[ZoneKind::Stack]),
+            abilities::convoke(),
+            abilities::delve(),
+            abilities::play_from_zone(
+                ObjectQueryDef::matching(
+                    ObjectPredicateDef::Source,
+                    &[ZoneKind::Graveyard],
+                    PlayerRelation::You,
+                ),
+                "You may cast this card from your graveyard.",
+                PlayRestrictionDef::new(PlayActionMatcherDef::CastSpell, ObjectPredicateDef::Any),
+            )
+            .with_source_zones(&[ZoneKind::Graveyard]),
+            abilities::trample(),
+        ]),
 );
 
 // MH1 216 — Unsettled Mariner

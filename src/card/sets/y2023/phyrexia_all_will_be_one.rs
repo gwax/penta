@@ -907,7 +907,7 @@ pub(in crate::card::sets) static THE_MYCOSYNTH_GARDENS: CardRecord = CardRecord:
             EffectDef::BecomeCopyOf {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 copier: None,
-                exceptions: CopyExceptionsDef::NONE,
+                exceptions: &CopyExceptionsDef::NONE,
                 duration: None,
             },
         ),

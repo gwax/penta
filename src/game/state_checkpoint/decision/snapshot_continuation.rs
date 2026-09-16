@@ -86,6 +86,7 @@ fn continuation_snapshot(
                 .collect::<Option<Vec<_>>>()?,
         },
         DecisionContinuation::SearchZone {
+            exile_face_down,
             controller,
             source,
             destination,
@@ -97,6 +98,7 @@ fn continuation_snapshot(
             binding,
             follow_up,
         } => DecisionContinuationSnapshot::SearchZone {
+            exile_face_down: *exile_face_down,
             controller: controller.index(),
             source: zone_kind_snapshot(*source),
             destination: zone_kind_snapshot(*destination),
@@ -599,6 +601,7 @@ fn continuation_snapshot(
             base_power_toughness,
             colors,
             added_creature_types,
+            replaced_creature_types,
             no_mana_cost,
             added_abilities,
         } => DecisionContinuationSnapshot::BattlefieldEntryCopy {
@@ -610,6 +613,7 @@ fn continuation_snapshot(
             retain_printed_subtypes: *retain_printed_subtypes,
             base_power_toughness: base_power_toughness.map(|(power, toughness)| [power, toughness]),
             colors: colors.map(crate::card::ColorSet::to_flags),
+            replaced_creature_types: replaced_creature_types.as_ref().map(|types| types.iter().map(ToString::to_string).collect()),
             added_creature_types: added_creature_types
                 .iter()
                 .map(ToString::to_string)
@@ -790,11 +794,13 @@ fn continuation_snapshot(
             )?),
         },
         DecisionContinuation::ChosenColorMana {
+            same_color,
             controller,
             prototype,
             remaining,
             choosable,
         } => DecisionContinuationSnapshot::ChosenColorMana {
+            same_color: *same_color,
             controller: controller.index(),
             prototype: super::mana_snapshot(&game.catalog, *prototype),
             remaining: *remaining,

@@ -902,6 +902,7 @@ pub(in crate::card::sets) static GREATER_TANUKI: CardRecord = CardRecord::new(
              then shuffle.",
             &[CostDef::Mana(mana_cost!("{2}{G}")), CostDef::DiscardSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -1548,6 +1549,7 @@ pub(in crate::card::sets) static BOSEIJU_WHO_ENDURES: CardRecord = CardRecord::n
                             ObjectRefDef::Target(TargetIndex::PRIMARY),
                         )),
                         effect: &EffectDef::SearchZone {
+                            exile_face_down: false,
                             player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                                 ObjectRefDef::Target(TargetIndex::PRIMARY),
                             )),

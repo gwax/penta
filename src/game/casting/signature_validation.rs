@@ -378,6 +378,17 @@ impl Game {
         }
         let spell =
             self.proposed_spell_view(player, card_id, &option.form, alternative_kind, choices.x())?;
+        if source_zone == CastSourceZone::Exile
+            && self
+                .exile_play_permission(card_id, player)
+                .and_then(|permission| permission.maximum_spell_mana_value)
+                .is_some_and(|maximum| {
+                    self.spell_view_characteristics(spell)
+                        .is_none_or(|view| view.mana_value > maximum)
+                })
+        {
+            return None;
+        }
         cost = add_mana_cost(cost, self.spell_cost_increase(spell, choices.targets()));
         let (cost, phyrexian_life) = Self::locked_mana_payment(
             cost,
@@ -403,6 +414,7 @@ impl Game {
             form: option.form.clone(),
             alternative: alternative_kind,
             x: choices.x(),
+            spend_any_color: self.card_mana_is_any_color(card_id),
             reserved_life_payment: total_life,
         };
         if !self.can_pay_cost_for_reserving_with_life(

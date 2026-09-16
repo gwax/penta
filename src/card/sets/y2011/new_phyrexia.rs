@@ -1811,6 +1811,7 @@ pub(in crate::card::sets) static LIFE_S_FINALE: CardRecord = CardRecord::new(
                 then: None,
             },
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -2735,6 +2736,7 @@ pub(in crate::card::sets) static BIRTHING_POD: CardRecord = CardRecord::new(
                 },
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -2781,6 +2783,7 @@ pub(in crate::card::sets) static BRUTALIZER_EXARCH: CardRecord = CardRecord::new
                     "Search your library for a creature card, reveal it, then \
                      shuffle and put that card on top.",
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -3676,6 +3679,7 @@ pub(in crate::card::sets) static MYCOSYNTH_WELLSPRING: CardRecord = CardRecord::
             ),
         ]),
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

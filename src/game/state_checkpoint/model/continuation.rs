@@ -84,6 +84,8 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         deferred: Vec<DeferredBeginTurnEffectSnapshot>,
     },
     SearchZone {
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        exile_face_down: bool,
         controller: usize,
         source: ZoneKindSnapshot,
         destination: ZoneKindSnapshot,
@@ -308,6 +310,8 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         colors: Option<[bool; 5]>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         added_creature_types: Vec<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        replaced_creature_types: Option<Vec<String>>,
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         no_mana_cost: bool,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -402,6 +406,8 @@ pub(in crate::game::state_checkpoint) enum DecisionContinuationSnapshot {
         continuation: Box<EffectContinuationSnapshot>,
     },
     ChosenColorMana {
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        same_color: bool,
         controller: usize,
         /// The mana each answer produces, with its colour standing in for
         /// the one still to be chosen.

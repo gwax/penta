@@ -520,6 +520,7 @@ pub(in crate::card::sets) static ERODE: CardRecord = CardRecord::new(
                 then: None,
             },
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                     ObjectRefDef::Target(TargetIndex::PRIMARY),
                 )),
@@ -3428,6 +3429,7 @@ pub(in crate::card::sets) static ENVIRONMENTAL_SCIENTIST: CardRecord = CardRecor
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -3805,6 +3807,7 @@ pub(in crate::card::sets) static PLANAR_ENGINEERING: CardRecord = CardRecord::ne
                 ))),
             }),
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -4526,6 +4529,7 @@ pub(in crate::card::sets) static DINA_S_GUIDANCE: CardRecord = CardRecord::new(
         "Search your library for a creature card, reveal it, put it \
          into your hand or graveyard, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -5329,6 +5333,7 @@ pub(in crate::card::sets) static PROCTOR_S_GAZE: CardRecord = CardRecord::new(
                     ZonePlacement::Top,
                 ),
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -6571,6 +6576,7 @@ pub(in crate::card::sets) static STRIXHAVEN_SKYCOACH: CardRecord = CardRecord::n
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

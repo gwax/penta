@@ -36,6 +36,8 @@ pub(in crate::game::state_checkpoint) struct StackSnapshot {
     /// spell nothing was spent on.
     #[serde(default, skip_serializing_if = "no_colors_spent")]
     pub(in crate::game::state_checkpoint) colors_of_mana_spent: [bool; 5],
+    #[serde(default)]
+    pub(in crate::game::state_checkpoint) mana_spent: u16,
     /// Additive payment count used by Compleated. Older checkpoints restore
     /// an ordinary mana-paid spell.
     #[serde(default, skip_serializing_if = "super::is_zero_u16")]
@@ -168,6 +170,8 @@ pub(in crate::game::state_checkpoint) struct DetachedStackSnapshot {
     /// spell nothing was spent on.
     #[serde(default, skip_serializing_if = "no_colors_spent")]
     pub(in crate::game::state_checkpoint) colors_of_mana_spent: [bool; 5],
+    #[serde(default)]
+    pub(in crate::game::state_checkpoint) mana_spent: u16,
     /// Additive payment count used by Compleated. Older checkpoints restore
     /// an ordinary mana-paid spell.
     #[serde(default, skip_serializing_if = "super::is_zero_u16")]
@@ -265,6 +269,8 @@ pub(in crate::game::state_checkpoint) enum SpellFormSnapshot {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(in crate::game::state_checkpoint) struct ManaCostSnapshot {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(in crate::game::state_checkpoint) restricted_generic: Vec<u16>,
     pub(in crate::game::state_checkpoint) generic: u16,
     pub(in crate::game::state_checkpoint) white: u16,
     pub(in crate::game::state_checkpoint) blue: u16,

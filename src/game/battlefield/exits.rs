@@ -865,6 +865,15 @@ impl Game {
         moved: &[(GameObjectId, ZoneKind)],
     ) {
         match completion {
+            BattlefieldExitCompletion::ExileUntilSourceLeaves { source } => {
+                self.duration_exiles.extend(
+                    moved
+                        .iter()
+                        .filter(|(_, zone)| *zone == ZoneKind::Exile)
+                        .map(|(card, _)| (source, *card, ZoneKind::Battlefield)),
+                );
+                self.return_expired_duration_exiles();
+            }
             BattlefieldExitCompletion::MechanicPerformed { mechanic, player } => {
                 self.capture_mechanic(mechanic, player);
             }

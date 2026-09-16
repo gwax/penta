@@ -24,16 +24,25 @@ pub(super) fn effect_resolution_context_snapshot(
                     EffectBindingValue::Objects(objects) => Some(EffectBindingSnapshot::Objects {
                         objects: objects.iter().copied().map(target_snapshot).collect(),
                     }),
-                    EffectBindingValue::CardName(_) => None,
+                    EffectBindingValue::CardName(_) | EffectBindingValue::Number(_) => None,
                 };
                 Some((label.clone(), binding?))
+            })
+            .collect(),
+        number_bindings: binding_values
+            .iter()
+            .filter_map(|(label, binding)| match binding {
+                EffectBindingValue::Number(value) => Some((label.clone(), *value)),
+                _ => None,
             })
             .collect(),
         card_name_bindings: binding_values
             .into_iter()
             .filter_map(|(label, binding)| match binding {
                 EffectBindingValue::CardName(name) => Some((label, name)),
-                EffectBindingValue::Object(_) | EffectBindingValue::Objects(_) => None,
+                EffectBindingValue::Object(_)
+                | EffectBindingValue::Objects(_)
+                | EffectBindingValue::Number(_) => None,
             })
             .collect(),
     }
@@ -60,6 +69,16 @@ pub(super) fn parse_effect_resolution_context(
     for (label, name) in value.card_name_bindings {
         if bindings
             .insert(label.clone(), EffectBindingValue::CardName(name))
+            .is_some()
+        {
+            return Err(format!(
+                "effect binding {label:?} has more than one value kind"
+            ));
+        }
+    }
+    for (label, number) in value.number_bindings {
+        if bindings
+            .insert(label.clone(), EffectBindingValue::Number(number))
             .is_some()
         {
             return Err(format!(

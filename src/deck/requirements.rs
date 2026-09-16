@@ -231,6 +231,18 @@ impl<'a> DeckCard<'a> {
     }
     fn meets(&self, requirement: CardRequirement) -> bool {
         match requirement {
+            CardRequirement::DistinctManaSymbols => {
+                let mut symbols = std::collections::BTreeSet::new();
+                self.parts
+                    .iter()
+                    .filter_map(|part| part.rules.mana_cost())
+                    .all(|cost| {
+                        cost.to_string()
+                            .split('}')
+                            .filter(|symbol| !symbol.is_empty())
+                            .all(|symbol| symbols.insert(symbol.to_owned()))
+                    })
+            }
             CardRequirement::ManaValueAtMost(value) => self.definition.card_mana_value() <= value,
             CardRequirement::ManaValueAtLeast(value) => self.definition.card_mana_value() >= value,
             CardRequirement::HasActivatedAbility => self.parts.iter().any(|part| {

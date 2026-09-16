@@ -17,6 +17,7 @@ use crate::card::ColorSet;
 use crate::card::ComparisonDef;
 use crate::card::CopyStackObjectDef;
 use crate::card::CostDef;
+use crate::card::CreateTokenDef;
 use crate::card::CreatureTypeSetDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
@@ -32,12 +33,19 @@ use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::SimultaneousTriggerDef;
 use crate::card::SpellCastQueryDef;
+use crate::card::SubtypeDef;
+use crate::card::TokenCharacteristics;
+use crate::card::TokenDef;
+use crate::card::TriggerAggregationDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::ValueComparisonDef;
 use crate::card::ValueDef;
+use crate::card::ZoneChangeEventMatcherDef;
 use crate::card::ZoneKind;
+use crate::card::ZonePlacement;
 use crate::card::abilities;
 use crate::mana_cost;
 
@@ -125,13 +133,81 @@ pub(in crate::card::sets) static STELLA_LEE_WILD_CARD: CardRecord = CardRecord::
 );
 
 // OTC 11 — Sand Scout
-// Audit: unsupported — Needs a once-per-turn grouped trigger for land cards entering a
-// graveyard from any zone.
 pub(in crate::card::sets) static SAND_SCOUT: CardRecord = CardRecord::new(
     "Sand Scout",
     "e63ba7e6-87a9-49ef-bddc-60543edfd726",
     "Olena Richards",
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{W}"), &["Human", "Scout"], 2, 2).with_abilities(&[
+        AbilityDef::triggered_if(
+            "When this creature enters, if an opponent controls more lands than you, \
+             search your library for a Desert card, put it onto the battlefield tapped, \
+             then shuffle.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
+                left: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Opponent,
+                )),
+                comparison: ComparisonDef::Greater,
+                right: ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                    ObjectPredicateDef::HasType(CardType::Land),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                )),
+            }),
+            EffectDef::SearchZone {
+                exile_face_down: false,
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Desert")),
+                minimum: 0,
+                maximum: ValueDef::Constant(1),
+                reveal: true,
+                destination: ZoneKind::Battlefield,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: true,
+                attachment: None,
+                binding: None,
+                then: None,
+            },
+        ),
+        AbilityDef::triggered(
+            "Whenever one or more land cards are put into your graveyard from anywhere, \
+             create a 1/1 red, green, and white Sand Warrior creature token. This ability \
+             triggers only once each turn.",
+            TriggerEventDef::Simultaneous(SimultaneousTriggerDef::new(
+                &TriggerEventDef::ZoneChanged(ZoneChangeEventMatcherDef::new(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::OwnedBy(PlayerRelation::You),
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Token),
+                    ]),
+                    None,
+                    Some(ZoneKind::Graveyard),
+                )),
+                TriggerAggregationDef::Once,
+            )),
+            EffectDef::CreateToken(CreateTokenDef::new(TokenDef::Literal(
+                TokenCharacteristics::creature(
+                    &["Sand", "Warrior"],
+                    &[ManaColor::Red, ManaColor::Green, ManaColor::White],
+                    1,
+                    1,
+                )
+                .with_art(crate::card::CardArt::new(
+                    "f3e51b4d-3859-48c2-a409-0fc096a6d484",
+                    "Piotr Foksowicz",
+                )),
+            ))),
+        )
+        .triggering_at_most(1),
+    ]),
 );
 
 // OTC 40 — Cactus Preserve

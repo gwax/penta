@@ -43,6 +43,7 @@ pub(super) struct CastContext {
     /// Mana and life actually spent on this object. A spell copy resets these
     /// because it paid no costs of its own.
     pub(super) colors_of_mana_spent: ColorSet,
+    pub(super) mana_spent: u16,
     pub(super) phyrexian_symbols_paid_with_life: u16,
     /// New exile-zone identities of cards used to pay the spell's costs.
     /// A spell copy refers to the same payment objects as the original.
@@ -87,6 +88,7 @@ impl CastContext {
             additional_costs: Game::additional_cost_payment_counts_for(option, signature.costs()),
             player_bindings: std::collections::BTreeMap::new(),
             colors_of_mana_spent: ColorSet::empty(),
+            mana_spent: 0,
             phyrexian_symbols_paid_with_life: 0,
             exiled_payment_cards: Vec::new(),
             via_flashback,
@@ -107,6 +109,7 @@ impl CastContext {
         copied.caster = None;
         copied.at_instant_speed = false;
         copied.colors_of_mana_spent = ColorSet::empty();
+        copied.mana_spent = 0;
         copied.phyrexian_symbols_paid_with_life = 0;
         copied.via_flashback = false;
         copied.exile_if_put_into_graveyard = false;

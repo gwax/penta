@@ -102,6 +102,7 @@ pub(super) fn stack_cast_context(
             state.cast_additional_costs.clone()
         },
         colors_of_mana_spent: color_set_from_flags(state.colors_of_mana_spent),
+        mana_spent: state.mana_spent,
         phyrexian_symbols_paid_with_life: state.phyrexian_symbols_paid_with_life,
         exiled_payment_cards: state
             .cast_exiled_payment_cards
@@ -116,6 +117,7 @@ pub(super) fn stack_cast_context(
     }))
 }
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn detached_cast_context(
     state: &DetachedStackSnapshot,
     game: &Game,
@@ -210,6 +212,7 @@ pub(super) fn detached_cast_context(
                 state.cast_additional_costs.clone()
             },
             colors_of_mana_spent: color_set_from_flags(state.colors_of_mana_spent),
+            mana_spent: state.mana_spent,
             phyrexian_symbols_paid_with_life: state.phyrexian_symbols_paid_with_life,
             exiled_payment_cards: state
                 .cast_exiled_payment_cards

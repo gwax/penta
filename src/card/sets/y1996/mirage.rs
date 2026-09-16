@@ -86,6 +86,7 @@ const fn slow_fetch_land_ability(
         text,
         &[CostDef::TapSource, CostDef::SacrificeSource],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasAnyBasicLandType(land_types),
@@ -342,6 +343,7 @@ pub(in crate::card::sets) static ENLIGHTENED_TUTOR: CardRecord = CardRecord::new
         "Search your library for an artifact or enchantment card, \
          reveal it, then shuffle and put that card on top.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::AnyOf(&[
@@ -1277,6 +1279,7 @@ pub(in crate::card::sets) static MYSTICAL_TUTOR: CardRecord = CardRecord::new(
         "Search your library for an instant or sorcery card, reveal \
          it, then shuffle and put that card on top.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::AnyOf(&[
@@ -3532,6 +3535,7 @@ pub(in crate::card::sets) static RAMPANT_GROWTH: CardRecord = CardRecord::new(
         "Search your library for a basic land card, put that card \
          onto the battlefield tapped, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -3865,6 +3869,7 @@ pub(in crate::card::sets) static WORLDLY_TUTOR: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{G}")).with_ability(AbilityDef::spell(
         "Search your library for a creature card, reveal it, then shuffle and put the card on top.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Creature),

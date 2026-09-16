@@ -72,6 +72,7 @@ use crate::card::ResolvedEffectDurationDef;
 use crate::card::SacrificedAmountDef;
 use crate::card::ScaledValueDef;
 use crate::card::SubtypeDef;
+use crate::card::SumValueDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
 use crate::card::TriggerConditionDef;
@@ -1570,14 +1571,31 @@ pub(in crate::card::sets) static DEADBRIDGE_CHANT: CardRecord = CardRecord::new(
 );
 
 // DGM 64 — Debt to the Deathless
-// Audit: unsupported — Needs one life-gain event equal to the life actually lost by all
-// opponents; a separate scaled-X gain would be wrong when an opponent's life total cannot
-// change.
 pub(in crate::card::sets) static DEBT_TO_THE_DEATHLESS: CardRecord = CardRecord::new(
     "Debt to the Deathless",
     "610e5a91-857b-4121-8b75-dbbea27aa0aa",
     "Seb McKinnon",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{X}{W}{W}{B}{B}")).with_ability(AbilityDef::spell(
+        "Each opponent loses two times X life. You gain life equal to the life lost this \
+         way.",
+        EffectDef::BindValue {
+            binding: crate::Binding!("life-before"),
+            value: ValueDef::LifeTotal(PlayerRelation::Opponent),
+            effect: &EffectDef::Sequence(&[
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::Opponent,
+                    amount: ValueDef::Scaled(&ScaledValueDef::new(ValueDef::ChosenX, 2)),
+                },
+                EffectDef::GainLife {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Sum(&SumValueDef::new(
+                        ValueDef::BoundValue(crate::Binding!("life-before")),
+                        ValueDef::Negate(&ValueDef::LifeTotal(PlayerRelation::Opponent)),
+                    )),
+                },
+            ]),
+        },
+    )),
 );
 
 // DGM 65 — Deputy of Acquittals
@@ -3912,6 +3930,7 @@ pub(in crate::card::sets) static MAZE_S_END: CardRecord = CardRecord::new(
             ],
             EffectDef::Sequence(&[
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Gate")),

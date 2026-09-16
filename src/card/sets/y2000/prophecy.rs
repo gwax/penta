@@ -569,6 +569,7 @@ pub(in crate::card::sets) static DENYING_WIND: CardRecord = CardRecord::new(
             AbilityTargetPredicate::Player(PlayerRelation::Any),
         )],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,

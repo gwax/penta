@@ -14,6 +14,7 @@ fn a_spell_copy_keeps_choices_and_payment_objects_but_not_actual_payment_facts()
         x: 3,
         repeatable_additional_costs: 2,
         additional_costs: vec![1, 0, 2],
+        mana_spent: 2,
         colors_of_mana_spent: ColorSet::empty()
             .with(ManaColor::Blue)
             .with(ManaColor::Black),

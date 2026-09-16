@@ -1297,6 +1297,7 @@ pub(in crate::card::sets) static INTUITION: CardRecord = CardRecord::new(
             AbilityTargetPredicate::Player(PlayerRelation::Opponent),
         )],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,
@@ -1370,6 +1371,7 @@ pub(in crate::card::sets) static MANA_SEVERANCE: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{1}{U}")).with_ability(AbilityDef::spell(
         "Search your library for any number of land cards, exile them, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Land),
@@ -4438,6 +4440,7 @@ pub(in crate::card::sets) static HARROW: CardRecord = CardRecord::new(
                 CostQuantityDef::Fixed(1),
             ),
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

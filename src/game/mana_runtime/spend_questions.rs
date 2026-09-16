@@ -77,15 +77,78 @@ impl Game {
         self.mana_can_pay_for_cost(mana, purpose, ManaCost::default())
     }
 
+    pub(in crate::game) fn payment_allows_mana(&self, purpose: &ManaPaymentPurpose) -> bool {
+        let ManaPaymentPurpose::Spell {
+            definition,
+            form,
+            alternative,
+            ..
+        } = purpose
+        else {
+            return true;
+        };
+        if alternative
+            .and_then(crate::card::AlternativeCastKindDef::face_down)
+            .is_some()
+        {
+            return true;
+        }
+        let Some(definition) = self.catalog.get(*definition) else {
+            return false;
+        };
+        let parts: &[crate::CardPartId] = match form {
+            crate::card::SpellForm::Part(part) => core::slice::from_ref(part),
+            crate::card::SpellForm::Combined(parts) => parts,
+        };
+        !parts.iter().any(|part| definition.part(*part).is_some_and(|part| {
+            part.rules.indexed_abilities().any(|attached| {
+                let ability = attached.definition;
+                matches!(ability.definition, crate::card::DeclarativeAbilityDef::Static(definition)
+                    if definition.source_zones.contains(&ZoneKind::Stack))
+                    && ability.declarative_effect().is_some_and(|effect| Self::effect_applies_to_source(
+                        effect, crate::card::AppliedEffectDef::Rule(crate::card::AppliedRuleDef::CannotSpendManaToCast)))
+            })
+        }))
+    }
+
+    pub(super) fn mana_requires_nongeneric(
+        &self,
+        mana: Mana,
+        purpose: &ManaPaymentPurpose,
+        cost: ManaCost,
+    ) -> bool {
+        fn permits_generic(
+            game: &Game,
+            mana: Mana,
+            purpose: &ManaPaymentPurpose,
+            cost: ManaCost,
+            restriction: ManaRestrictionDef,
+        ) -> bool {
+            match restriction {
+                ManaRestrictionDef::CannotPayGeneric => false,
+                ManaRestrictionDef::AnyOf(alternatives) => alternatives
+                    .iter()
+                    .any(|restriction| permits_generic(game, mana, purpose, cost, *restriction)),
+                other => game.mana_restriction_allows(mana, purpose, cost, other),
+            }
+        }
+        !mana
+            .restrictions
+            .iter()
+            .all(|restriction| permits_generic(self, mana, purpose, cost, *restriction))
+    }
+
     pub(super) fn mana_can_pay_for_cost(
         &self,
         mana: Mana,
         purpose: &ManaPaymentPurpose,
         cost: ManaCost,
     ) -> bool {
-        mana.restrictions
-            .iter()
-            .all(|restriction| self.mana_restriction_allows(mana, purpose, cost, *restriction))
+        self.payment_allows_mana(purpose)
+            && mana
+                .restrictions
+                .iter()
+                .all(|restriction| self.mana_restriction_allows(mana, purpose, cost, *restriction))
             && match purpose {
                 ManaPaymentPurpose::Payment { snow: true, .. } => mana
                     .source
@@ -114,6 +177,7 @@ impl Game {
         restriction: ManaRestrictionDef,
     ) -> bool {
         match &restriction {
+            ManaRestrictionDef::CannotPayGeneric => true,
             ManaRestrictionDef::AnyOf(alternatives) => alternatives
                 .iter()
                 .any(|alternative| self.mana_restriction_allows(mana, purpose, cost, *alternative)),

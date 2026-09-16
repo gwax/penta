@@ -3094,6 +3094,7 @@ pub(in crate::card::sets) static DEMONIC_COUNSEL: CardRecord = CardRecord::new(
                 right: ValueDef::Constant(4),
             }),
             then: &EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,
@@ -3109,6 +3110,7 @@ pub(in crate::card::sets) static DEMONIC_COUNSEL: CardRecord = CardRecord::new(
                 then: None,
             },
             otherwise: &EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Demon")),
@@ -6213,6 +6215,7 @@ pub(in crate::card::sets) static MOLDERING_GYM: CardRecord = CardRecord::new(
              land card, put it onto the battlefield tapped, then shuffle.",
             TriggerEventDef::DoorUnlocked,
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -6240,6 +6243,7 @@ pub(in crate::card::sets) static MOLDERING_GYM: CardRecord = CardRecord::new(
              land card, put it onto the battlefield tapped, then shuffle.",
             TriggerEventDef::DoorUnlocked,
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -6315,6 +6319,7 @@ pub(in crate::card::sets) static MOLDERING_GYM: CardRecord = CardRecord::new(
                  land card, put it onto the battlefield tapped, then shuffle.",
                 TriggerEventDef::DoorUnlocked,
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -6621,6 +6626,7 @@ pub(in crate::card::sets) static SPINESEEKER_CENTIPEDE: CardRecord = CardRecord:
             "When this creature enters, search your library for a basic \
              land card, reveal it, put it into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -8194,15 +8200,71 @@ pub(in crate::card::sets) static FRIENDLY_TEDDY: CardRecord = CardRecord::new(
 );
 
 // DSK 248 — Ghost Vacuum
-// Audit: unsupported — Needs the returned creatures' 1/1 base size and additional Spirit type
-// established simultaneously with battlefield entry (CR 611.2e); applying those continuous
-// effects after returning them lets entry replacements and triggers observe the wrong
-// characteristics.
 pub(in crate::card::sets) static GHOST_VACUUM: CardRecord = CardRecord::new(
     "Ghost Vacuum",
     "8ac39c01-127f-4471-bc74-11a90c48e306",
     "David Szabo",
-    CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{1}")).with_abilities(&[
+        AbilityDef::activated_with_targets(
+            "{T}: Exile target card from a graveyard.",
+            &[CostDef::TapSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::Any,
+                    zones: &[ZoneKind::Graveyard],
+                    controller: None,
+                    owner: None,
+                },
+            )],
+            EffectDef::ExileLinkedToSource {
+                object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                face_down: false,
+                until_source_leaves: false,
+                then: None,
+            },
+        ),
+        AbilityDef::activated(
+            "{6}, {T}, Sacrifice this artifact: Put each creature card exiled with this \
+             artifact onto the battlefield under your control with a flying counter on \
+             it. Each of them is a 1/1 Spirit in addition to its other types. Activate \
+             only as a sorcery.",
+            &[
+                CostDef::Mana(mana_cost!("{6}")),
+                CostDef::TapSource,
+                CostDef::SacrificeSource,
+            ],
+            EffectDef::WithBattlefieldArrival {
+                arrival: BattlefieldArrivalDef {
+                    controller: Some(PlayerRelation::You),
+                    modifications: &[
+                        BattlefieldEntryModificationDef::AddCounters {
+                            kind: CounterKind::Flying,
+                            amount: 1,
+                        },
+                        BattlefieldEntryModificationDef::SetBasePowerToughness {
+                            power: 1,
+                            toughness: 1,
+                        },
+                        BattlefieldEntryModificationDef::AddCreatureTypes(
+                            &CreatureTypeSetDef::named(&["Spirit"]),
+                        ),
+                    ],
+                    ..BattlefieldArrivalDef::DEFAULT
+                },
+                effect: &EffectDef::move_to_zone(
+                    EffectRecipientDef::objects(ObjectSetDef::Matching {
+                        objects: &ObjectSetDef::LinkedExiles,
+                        object: ObjectSetFilterDef::Predicate(&ObjectPredicateDef::HasType(
+                            CardType::Creature,
+                        )),
+                    }),
+                    ZoneKind::Battlefield,
+                    ZonePlacement::Top,
+                ),
+            },
+        )
+        .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+    ]),
 );
 
 // DSK 249 — Glimmerlight

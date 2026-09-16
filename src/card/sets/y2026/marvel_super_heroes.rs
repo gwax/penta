@@ -61,6 +61,7 @@ use crate::card::PlayPermissionDef;
 use crate::card::PlayRestrictionDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::PlayerSetDef;
 use crate::card::QuantifierDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::RevealObjectsDef;
@@ -1799,7 +1800,7 @@ pub(in crate::card::sets) static SHURI_WAKANDAN_INVENTOR: CardRecord = CardRecor
                 EffectDef::BecomeCopyOf {
                     object: EffectRecipientDef::Target(TargetIndex(1)),
                     copier: Some(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
-                    exceptions: CopyExceptionsDef::NONE
+                    exceptions: &CopyExceptionsDef::NONE
                         .without_supertypes(&[CardSupertype::Legendary]),
                     duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
                 },
@@ -3056,6 +3057,7 @@ pub(in crate::card::sets) static AVENGERS_DISASSEMBLED: CardRecord = CardRecord:
                         then: None,
                     },
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                             ObjectRefDef::Target(TargetIndex::PRIMARY),
                         )),
@@ -4407,6 +4409,7 @@ pub(in crate::card::sets) static RESTORATIVE_TECHNIQUE: CardRecord = CardRecord:
                 amount: ValueDef::Constant(2),
             },
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -4845,7 +4848,7 @@ pub(in crate::card::sets) static ABSORBING_MAN: CardRecord = CardRecord::new(
                 EffectDef::BecomeCopyOf {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     copier: Some(EffectRecipientDef::Source),
-                    exceptions: CopyExceptionsDef {
+                    exceptions: &CopyExceptionsDef {
                         name: Some("Absorbing Man"),
                         added_supertypes: &[CardSupertype::Legendary],
                         added_types: CardTypeSet::single(CardType::Creature),
@@ -5146,14 +5149,65 @@ pub(in crate::card::sets) static CAPTAIN_AMERICA_LIVING_LEGEND: CardRecord = Car
 );
 
 // MSH 211 — Cloak and Dagger, Entwined
-// Audit: unsupported — Needs exile-until-source-leaves with immediate return at the end of that
-// duration (CR 610.3), preserving the choice between a hand card and the separately targeted
-// creature.
 pub(in crate::card::sets) static CLOAK_AND_DAGGER_ENTWINED: CardRecord = CardRecord::new(
     "Cloak and Dagger, Entwined",
     "fa01d35f-1064-4a7c-9475-4504566df850",
     "Rimas Valeikis",
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{W}{B}"), &["Human", "Hero"], 2, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            abilities::deathtouch(),
+            abilities::lifelink(),
+            abilities::enters_trigger_with_targets(
+                "When Cloak and Dagger enter, choose target opponent and up to one target \
+                 creature they control. They reveal their hand. You may exile a nonland \
+                 card from their hand or the chosen creature until Cloak and Dagger leave \
+                 the battlefield.",
+                &[
+                    AbilityTargetDef::exactly_one(AbilityTargetPredicate::Player(
+                        PlayerRelation::Opponent,
+                    )),
+                    AbilityTargetDef::up_to(
+                        AbilityTargetPredicate::Object {
+                            object: ObjectPredicateDef::HasType(CardType::Creature),
+                            zones: &[ZoneKind::Battlefield],
+                            controller: Some(PlayerRelation::Opponent),
+                            owner: None,
+                        },
+                        1,
+                    ),
+                ],
+                EffectDef::Sequence(&[
+                    EffectDef::RevealHand {
+                        player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    },
+                    EffectDef::Choose(ChooseDef {
+                        binding: ObjectChoiceBindingDef::Object(crate::Binding!("exiled")),
+                        unchosen: None,
+                        chooser: PlayerRefDef::EffectController,
+                        candidates: ObjectSetDef::Union(&[
+                            ObjectSetDef::Query(ObjectQueryDef::owned_by(
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(
+                                    CardType::Land,
+                                )),
+                                &[ZoneKind::Hand],
+                                PlayerSetDef::One(PlayerRefDef::Target(TargetIndex::PRIMARY)),
+                            )),
+                            ObjectSetDef::LegalTargets(TargetIndex(1)),
+                        ]),
+                        exclude: None,
+                        minimum: 0,
+                        maximum: 1,
+                        visibility: ChoiceVisibilityDef::Public,
+                        then: &EffectDef::ExileUntilSourceLeaves {
+                            object: EffectRecipientDef::object(ObjectRefDef::Binding(
+                                crate::Binding!("exiled"),
+                            )),
+                        },
+                    }),
+                ]),
+            ),
+        ]),
 );
 
 // MSH 212 — The Coming of Galactus

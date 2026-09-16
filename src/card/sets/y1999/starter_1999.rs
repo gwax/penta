@@ -84,6 +84,7 @@ pub(in crate::card::sets) static GRIM_TUTOR: CardRecord = CardRecord::new(
          hand, then shuffle. You lose 3 life.",
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,

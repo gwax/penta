@@ -75,6 +75,7 @@ pub(in crate::card::sets) static STONEFORGE_MYSTIC: CardRecord = CardRecord::new
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Equipment")),
@@ -769,6 +770,7 @@ pub(in crate::card::sets) static EYE_OF_UGIN: CardRecord = CardRecord::new(
                  it into your hand, then shuffle.",
                 &[CostDef::Mana(mana_cost!("{7}")), CostDef::TapSource],
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

@@ -3,7 +3,12 @@ impl EffectResolutionContext {
         self.bindings
             .with(|bindings| match bindings.values.get(label) {
                 Some(EffectBindingValue::CardName(name)) => Some(name.clone()),
-                Some(EffectBindingValue::Object(_) | EffectBindingValue::Objects(_)) | None => None,
+                Some(
+                    EffectBindingValue::Object(_)
+                    | EffectBindingValue::Objects(_)
+                    | EffectBindingValue::Number(_),
+                )
+                | None => None,
             })
     }
 
@@ -21,6 +26,28 @@ impl EffectResolutionContext {
             bindings
                 .values
                 .insert(label.clone(), EffectBindingValue::CardName(name));
+        });
+    }
+}
+
+impl EffectResolutionContext {
+    pub(super) fn bound_value(&self, binding: Binding) -> Option<i32> {
+        let label = binding.label()?;
+        self.bindings
+            .with(|bindings| match bindings.values.get(label) {
+                Some(EffectBindingValue::Number(value)) => Some(*value),
+                _ => None,
+            })
+    }
+
+    pub(super) fn bind_value(&mut self, binding: Binding, value: i32) {
+        let label = binding
+            .label()
+            .expect("validated number binding has a label");
+        self.bindings.with_mut(|bindings| {
+            bindings
+                .values
+                .insert(label.to_owned(), EffectBindingValue::Number(value));
         });
     }
 }

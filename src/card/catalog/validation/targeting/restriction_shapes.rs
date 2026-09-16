@@ -11,7 +11,8 @@ fn validate_player_rule_shape(
             }
             validate_predicated_player_rule_shape(recipient, object, targets)
         }
-        crate::card::PlayerRuleDef::LegendRuleDoesNotApplyTo(predicate) => {
+        crate::card::PlayerRuleDef::LegendRuleDoesNotApplyTo(predicate)
+        | crate::card::PlayerRuleDef::HexproofFrom(predicate) => {
             validate_predicated_player_rule_shape(recipient, *predicate, targets)
         }
         _ => validate_recipient_shape(recipient, targets, RecipientExpectation::Player),
@@ -55,8 +56,6 @@ fn validate_block_restriction_shape(
                 validate_object_predicate_shape(predicate, targets)
             }
         },
-        BlockRestrictionDef::MinimumBlockers(_) | BlockRestrictionDef::MaximumBlockers(_) => {
-            Ok(())
-        }
+        BlockRestrictionDef::MinimumBlockers(_) | BlockRestrictionDef::MaximumBlockers(_) => Ok(()),
     }
 }

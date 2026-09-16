@@ -10,7 +10,11 @@ use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
 use crate::card::AlternativeCastKindDef;
 use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::BasicLandType;
+use crate::card::BlockRestrictionDef;
+use crate::card::BlockRestrictionMatchDef;
+use crate::card::BlockRestrictionSubjectDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
@@ -34,6 +38,7 @@ use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
+use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SacrificedAmountDef;
 use crate::card::SubtypeDef;
@@ -1115,12 +1120,51 @@ pub(in crate::card::sets) static PSYCHOTIC_HAZE: CardRecord = CardRecord::new(
 );
 
 // TOR 77 — Putrid Imp
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static PUTRID_IMP: CardRecord = CardRecord::new(
     "Putrid Imp",
     "1b9e6c5c-4bc4-4f41-8c2c-f5b8c97c53c5",
     "Wayne England",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{B}"), &["Zombie", "Imp"], 1, 1).with_abilities(&[
+        AbilityDef::activated(
+            "Discard a card: This creature gains flying until end of turn.",
+            &[CostDef::discard(ObjectPredicateDef::Any)],
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::add_ability(&abilities::flying()),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ),
+        AbilityDef::static_ability(
+            "Threshold — As long as there are seven or more cards in your graveyard, this \
+             creature gets +1/+1 and can't block.",
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::ObjectCount {
+                    query: ObjectQueryDef::owned_by(
+                        ObjectPredicateDef::Any,
+                        &[ZoneKind::Graveyard],
+                        PlayerSetDef::Related(PlayerRelation::You),
+                    ),
+                    comparison: ComparisonDef::GreaterOrEqual,
+                    amount: 7,
+                },
+                then: &EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::modify_power_toughness(
+                            ValueDef::Constant(1),
+                            ValueDef::Constant(1),
+                        ),
+                        AppliedEffectDef::Rule(AppliedRuleDef::BlockRestriction(
+                            BlockRestrictionDef::prohibit(
+                                BlockRestrictionSubjectDef::Blocker,
+                                BlockRestrictionMatchDef::Any,
+                            ),
+                        )),
+                    ]),
+                },
+            },
+        ),
+    ]),
 );
 
 // TOR 78 — Rancid Earth

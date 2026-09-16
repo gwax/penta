@@ -56,6 +56,7 @@ use crate::card::SpellResolutionDestinationDef;
 use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
+use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueDef;
@@ -3648,12 +3649,52 @@ const BULL_HIPPO_REPRINT: PrintingRecord = PrintingRecord::reprint(
 );
 
 // USG 240 — Carpet of Flowers
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static CARPET_OF_FLOWERS: CardRecord = CardRecord::new(
     "Carpet of Flowers",
     "93abb48a-85f2-432d-8602-0a1d17fbb409",
     "Rebecca Guay",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_enchantment(mana_cost!("{G}")).with_ability(
+        AbilityDef::triggered_if_with_targets(
+            "At the beginning of each of your main phases, if you haven't added mana with \
+             this ability this turn, you may add X mana of any one color, where X is the \
+             number of Islands target opponent controls.",
+            TriggerEventDef::AnyOf(&[
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::PrecombatMain,
+                    player: PlayerRelation::You,
+                },
+                TriggerEventDef::StepBegins {
+                    step: TurnStepDef::PostcombatMain,
+                    player: PlayerRelation::You,
+                },
+            ]),
+            &TriggerConditionDef::Not(&TriggerConditionDef::SourceProducedManaThisTurn),
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Opponent),
+            )],
+            EffectDef::May {
+                player: EffectRecipientDef::Controller,
+                effect: &EffectDef::AddMana(AddManaEffectDef {
+                    variable_amount: Some(ValueDef::CountMatchingObjects(
+                        &ObjectQueryDef::controlled_by(
+                            ObjectPredicateDef::Subtype(SubtypeDef::from_name("Island")),
+                            &[ZoneKind::Battlefield],
+                            crate::card::PlayerSetDef::One(PlayerRefDef::Target(
+                                TargetIndex::PRIMARY,
+                            )),
+                        ),
+                    )),
+                    ..AddManaEffectDef::choice(&[
+                        ManaColor::White,
+                        ManaColor::Blue,
+                        ManaColor::Black,
+                        ManaColor::Red,
+                        ManaColor::Green,
+                    ])
+                }),
+            },
+        ),
+    ),
 );
 
 // USG 241 — Cave Tiger
@@ -3897,6 +3938,7 @@ pub(in crate::card::sets) static GAEA_S_BOUNTY: CardRecord = CardRecord::new(
         "Search your library for up to two Forest cards, reveal \
          those cards, put them into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),

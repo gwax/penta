@@ -594,6 +594,7 @@ pub(in crate::card::sets) static MOONSILVER_KEY: CardRecord = CardRecord::new(
             CostDef::SacrificeSource,
         ],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::AnyOf(&[

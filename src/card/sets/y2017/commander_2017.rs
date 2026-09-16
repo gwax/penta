@@ -326,7 +326,7 @@ pub(in crate::card::sets) static MIRROR_OF_THE_FOREBEARS: CardRecord = CardRecor
             EffectDef::BecomeCopyOf {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 copier: None,
-                exceptions: CopyExceptionsDef::NONE
+                exceptions: &CopyExceptionsDef::NONE
                     .with_added_types(CardTypeSet::single(CardType::Artifact)),
                 duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
             },

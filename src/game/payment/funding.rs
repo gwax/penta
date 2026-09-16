@@ -156,7 +156,9 @@ impl Game {
         }
         committed.explicit_mana_payment = Some(mana.clone());
         committed.explicit_funding = Some(draft.funding.clone());
-        if matches!(draft.action.as_ref(), Action::CastSpell { .. }) {
+        if matches!(draft.action.as_ref(), Action::CastSpell { .. })
+            || !draft.contributions.is_empty()
+        {
             committed.explicit_cast_contributions = Some(Self::bind_cast_contributions(
                 draft,
                 frame.obligation.clone(),

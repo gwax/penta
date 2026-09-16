@@ -18,6 +18,14 @@ pub(super) fn apply_copy_exceptions(
     if let Some(colors) = exceptions.colors {
         copy.colors = Some(game.text_changed_color_set(object.id, colors));
     }
+    if let Some(types) = exceptions.replaced_creature_types {
+        copy.replaced_creature_types = Some(if types.all {
+            crate::card::CREATURE_TYPES.to_vec()
+        } else {
+            types.named.iter().map(crate::card::Subtype::name).collect()
+        });
+        copy.added_creature_types.clear();
+    }
     copy.added_creature_types.extend(
         exceptions
             .added_creature_types

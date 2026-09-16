@@ -179,7 +179,7 @@ impl Game {
             .map(|(order, contribution)| PlannedManaActivation {
                 source: contribution.source,
                 kind: PlannedPaymentKind::Contribution(contribution.kind),
-                production: ManaPool::default(),
+                production: crate::game::payment::allocation::PaymentPool::default(),
                 // The bound residual bill owns symbol allocation. These compatibility
                 // fields are irrelevant to its execution; only the resource is paid.
                 colored_contribution: ManaPool::default(),

@@ -67,7 +67,9 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         EffectDef::WithCosts { costs, effect } => std::iter::once(*effect)
             .chain(cost_action_effects(costs))
             .collect(),
-        EffectDef::BindOutput { effect, .. }
+        EffectDef::Repeat { effect, .. }
+        | EffectDef::BindValue { effect, .. }
+        | EffectDef::BindOutput { effect, .. }
         | EffectDef::WithRule { effect, .. }
         | EffectDef::ForEachInBinding { effect, .. }
         | EffectDef::May { effect, .. }
@@ -197,6 +199,7 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::RemoveFromCombat { .. }
+        | EffectDef::ExileUntilSourceLeaves { .. }
         | EffectDef::None
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::PreventDamage { .. }

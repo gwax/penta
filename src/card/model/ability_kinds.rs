@@ -463,6 +463,8 @@ pub enum ActivationPermissionDef {
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct ActivatedAbilityDef {
+    /// Untapped permanents of these types may each pay one generic mana of this activation.
+    pub tap_for_generic: super::CardTypeSet,
     /// The keyword family of an expanded activated ability, such as Equip.
     /// The ordinary costs, targets, and effect remain its executable body.
     pub keyword_kind: Option<super::AbilityKindDef>,
@@ -528,6 +530,7 @@ impl ActivatedAbilityDef {
     pub const fn new(costs: &'static [CostDef]) -> Self {
         Self {
             keyword_kind: None,
+            tap_for_generic: super::CardTypeSet::empty(),
             source_zones: &[ZoneKind::Battlefield],
             costs,
             targets: &[],

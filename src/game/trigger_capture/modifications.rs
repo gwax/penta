@@ -40,12 +40,22 @@ impl Game {
         modifications
     }
 
+    #[allow(clippy::too_many_lines)]
     fn modified_trigger_occurrences(
         &self,
         listener: &BattlefieldTriggerListener,
         event: &CommittedTriggerEvent,
         events: &[CommittedTriggerEvent],
     ) -> usize {
+        if let (
+            TriggerEventDef::CountersCross {
+                kind, thresholds, ..
+            },
+            CommittedTriggerEvent::CountersPlaced { object, amount, .. },
+        ) = (listener.event, event)
+        {
+            return self.crossed_counter_thresholds(object.id, kind, thresholds, *amount);
+        }
         if !matches!(
             event,
             CommittedTriggerEvent::ZoneChanged { .. } | CommittedTriggerEvent::ObjectsDied { .. }

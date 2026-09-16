@@ -99,6 +99,7 @@ pub(in crate::card::sets) static PATH_TO_EXILE: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -235,6 +236,7 @@ pub(in crate::card::sets) static KNIGHT_OF_THE_RELIQUARY: CardRecord = CardRecor
                 },
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Land),

@@ -159,6 +159,7 @@ fn checkpoint_round_trips_authored_and_card_copy_tokens() {
             base_power_toughness: None,
             colors: None,
             added_creature_types: Vec::new(),
+            replaced_creature_types: None,
             no_mana_cost: false,
         },
         None,

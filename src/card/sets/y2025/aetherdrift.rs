@@ -565,6 +565,7 @@ pub(in crate::card::sets) static GLORYHEATH_LYNX: CardRecord = CardRecord::new(
                 },
             },
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -610,6 +611,7 @@ pub(in crate::card::sets) static GUARDIAN_SUNMARE: CardRecord = CardRecord::new(
                 },
             },
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -1489,6 +1491,7 @@ pub(in crate::card::sets) static REPURPOSING_BAY: CardRecord = CardRecord::new(
             ])),
         ],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -1829,6 +1832,7 @@ pub(in crate::card::sets) static TRANSIT_MAGE: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -4158,6 +4162,7 @@ pub(in crate::card::sets) static LUMBERING_WORLDWAGON: CardRecord = CardRecord::
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -4939,6 +4944,7 @@ pub(in crate::card::sets) static BRIGHTGLASS_GEARHULK: CardRecord = CardRecord::
                     // "Up to two" and revealed: a minimum of none, and everything taken is
                     // shown, which is what stops the search being private information.
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         // "Artifact, creature, and/or enchantment cards with mana value 1 or less."
@@ -5360,6 +5366,7 @@ pub(in crate::card::sets) static GUIDELIGHT_PATHMAKER: CardRecord = CardRecord::
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasType(CardType::Artifact),
@@ -6310,6 +6317,7 @@ pub(in crate::card::sets) static MARSHALS_PATHCRUISER: CardRecord = CardRecord::
             "When this Vehicle enters, search your library for a basic \
              land card, reveal it, put it into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

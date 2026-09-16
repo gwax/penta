@@ -1165,6 +1165,7 @@ pub(in crate::card::sets) static EXPEDITION_MAP: CardRecord = CardRecord::new(
             CostDef::SacrificeSource,
         ],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Land),

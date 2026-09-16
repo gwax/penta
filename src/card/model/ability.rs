@@ -709,10 +709,26 @@ impl AbilityDef {
         self.activations_each_turn(1)
     }
 
-    /// This ability may be activated once from this object, across all turns.
+    /// Untapped permanents of these types may each pay one generic mana of this activation.
     ///
     /// # Panics
     ///
+    /// Panics if the clause is not an activated ability.
+    #[must_use]
+    pub const fn with_tap_for_generic(mut self, types: super::CardTypeSet) -> Self {
+        match self.definition {
+            DeclarativeAbilityDef::Activated(mut definition) => {
+                definition.tap_for_generic = types;
+                self.definition = DeclarativeAbilityDef::Activated(definition);
+            }
+            _ => panic!("tap contributions require an activated ability"),
+        }
+        self
+    }
+
+    /// This ability may be activated once from this object, across all turns.
+    ///
+    /// # Panics
     /// Panics if the clause is not an activated ability.
     #[must_use]
     pub const fn once_per_object(mut self) -> Self {
@@ -787,6 +803,14 @@ impl AbilityDef {
         let DeclarativeAbilityDef::Triggered(triggered) = self.definition else {
             return None;
         };
+        if let TriggerEventDef::CountersCross {
+            kind: crate::card::CounterKind::Lore,
+            thresholds,
+            ..
+        } = triggered.event
+        {
+            return Some(thresholds.maximum());
+        }
         let TriggerEventDef::While { event, condition } = triggered.event else {
             return None;
         };

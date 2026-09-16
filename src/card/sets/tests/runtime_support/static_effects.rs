@@ -257,8 +257,14 @@ fn shared_static_effect_at(source_zones: &[ZoneKind], effect: EffectDef, root: b
                         && shared_object_predicate(query.object)
                         && shared_static_query(query))
                         || source_zones == [ZoneKind::Battlefield]
-                            && shared_static_creature_type_effect(effect)
-                            && shared_static_creature_type_query(recipient)
+                            && ((shared_static_creature_type_effect(effect)
+                                && shared_static_creature_type_query(recipient))
+                                || (matches!(
+                                    effect,
+                                    AppliedEffectDef::Characteristic(
+                                        CharacteristicOperationDef::Colors(_)
+                                    )
+                                ) && shared_static_color_query(recipient)))
                 }
                 // A static clause names one kind of thing or the other, and
                 // names it outright rather than by what it is attacking.
@@ -316,7 +322,8 @@ fn shared_static_effect_at(source_zones: &[ZoneKind], effect: EffectDef, root: b
                     && battlefield_effect_is_supported;
             let stack_source_effect = source_zones == [ZoneKind::Stack]
                 && recipient == EffectRecipientDef::Source
-                && shared_cannot_be_countered_effect(effect);
+                && (shared_cannot_be_countered_effect(effect)
+                    || effect == AppliedEffectDef::Rule(AppliedRuleDef::CannotSpendManaToCast));
             let battlefield_stack_effect = root
                 && battlefield_only(source_zones)
                 && recipient.object_query().is_some_and(|query| {
@@ -362,6 +369,7 @@ fn shared_static_effect_at(source_zones: &[ZoneKind], effect: EffectDef, root: b
         }
         // None of these is a static ability; all execute from the stack.
         EffectDef::WithRule { .. }
+        | EffectDef::BindValue { .. }
         | EffectDef::BindOutput { .. }
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::PutSourceOntoBattlefieldAttacking
@@ -379,7 +387,9 @@ fn shared_static_effect_at(source_zones: &[ZoneKind], effect: EffectDef, root: b
         | EffectDef::WithCosts { .. }
         | EffectDef::PreventDamage { .. }
         | EffectDef::Apply { .. }
+        | EffectDef::Repeat { .. }
         | EffectDef::May { .. }
+        | EffectDef::ExileUntilSourceLeaves { .. }
         | EffectDef::ExileLinkedToSource { .. }
         | EffectDef::MayPlayWithoutPaying { .. }
         | EffectDef::ExileGrantingOwnerPlay { .. }
@@ -576,6 +586,14 @@ fn shared_static_type_animation_query(recipient: EffectRecipientDef) -> bool {
         })
 }
 
+fn shared_static_color_query(recipient: EffectRecipientDef) -> bool {
+    shared_direct_characteristic_recipient(recipient)
+        || recipient.object_query().is_some_and(|query| {
+            shared_static_query(query)
+                && Game::static_animation_predicate_is_supported(query.object)
+        })
+}
+
 fn shared_static_creature_type_query(recipient: EffectRecipientDef) -> bool {
     shared_direct_characteristic_recipient(recipient)
         || recipient.object_query().is_some_and(|query| {
@@ -662,14 +680,16 @@ pub(in super::super) fn shared_static_applied_effect(
             types != crate::card::CardTypeSet::EMPTY
                 && (shared_direct_characteristic_recipient(recipient)
                     || (types == crate::card::CardTypeSet::single(CardType::Creature)
-                        || types == crate::card::CardTypeSet::single(CardType::Land))
+                        || types == crate::card::CardTypeSet::single(CardType::Land)
+                        || types == crate::card::CardTypeSet::single(CardType::Artifact))
                         && shared_static_type_animation_query(recipient))
         }
         AppliedEffectDef::Characteristic(
-            CharacteristicOperationDef::Color(_)
-            | CharacteristicOperationDef::Colors(_)
-            | CharacteristicOperationDef::Subtypes(_),
+            CharacteristicOperationDef::Color(_) | CharacteristicOperationDef::Subtypes(_),
         ) => shared_static_animation_query(recipient),
+        AppliedEffectDef::Characteristic(CharacteristicOperationDef::Colors(_)) => {
+            shared_static_color_query(recipient)
+        }
         AppliedEffectDef::Characteristic(CharacteristicOperationDef::Supertypes(operation)) => {
             let supertypes = match operation {
                 SetOperationDef::Add(supertypes)

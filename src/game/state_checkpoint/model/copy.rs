@@ -31,6 +31,8 @@ pub(in crate::game::state_checkpoint) struct CopiableCharacteristicsSnapshot {
     pub(in crate::game::state_checkpoint) colors: Option<[bool; 5]>,
     #[serde(default, skip_serializing_if = "<[String]>::is_empty")]
     pub(in crate::game::state_checkpoint) added_creature_types: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(in crate::game::state_checkpoint) replaced_creature_types: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub(in crate::game::state_checkpoint) no_mana_cost: bool,
 }

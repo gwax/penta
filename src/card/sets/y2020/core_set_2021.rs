@@ -27,6 +27,7 @@ use crate::card::CostQuantityDef;
 use crate::card::CounterKind;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::HalvedValueDef;
 use crate::card::InstalledTriggerDef;
 use crate::card::InstalledTriggerLifetimeDef;
 use crate::card::ManaColor;
@@ -38,6 +39,7 @@ use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::RoundingDef;
 use crate::card::SubtypeDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
@@ -594,14 +596,35 @@ pub(in crate::card::sets) static MAZEMIND_TOME: CardRecord = CardRecord::new(
 );
 
 // M21 360 — Peer into the Abyss
-// Audit: unsupported — Values can halve another value with rounding, but LifeTotal takes a
-// fixed PlayerRelation rather than a target-player reference. The loss cannot read the targeted
-// player's current life total.
 pub(in crate::card::sets) static PEER_INTO_THE_ABYSS: CardRecord = CardRecord::new(
     "Peer into the Abyss",
     "a46820e5-67a4-4b28-bd0c-7ed9443d7dfb",
     "Izzy",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{4}{B}{B}{B}")).with_ability(
+        AbilityDef::spell_with_targets(
+            "Target player draws cards equal to half the number of cards in their library \
+             and loses half their life. Round up each time.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            EffectDef::Sequence(&[
+                EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Halved(&HalvedValueDef {
+                        value: ValueDef::TargetLibrarySize(TargetIndex::PRIMARY),
+                        rounding: RoundingDef::Up,
+                    }),
+                },
+                EffectDef::LoseLife {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    amount: ValueDef::Halved(&HalvedValueDef {
+                        value: ValueDef::TargetLifeTotal(TargetIndex::PRIMARY),
+                        rounding: RoundingDef::Up,
+                    }),
+                },
+            ]),
+        ),
+    ),
 );
 
 // M21 373 — Elder Gargaroth

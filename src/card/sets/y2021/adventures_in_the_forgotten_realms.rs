@@ -793,6 +793,7 @@ pub(in crate::card::sets) static OSWALD_FIDDLEBENDER: CardRecord = CardRecord::n
                 CostDef::sacrifice_permanent(ObjectPredicateDef::HasType(CardType::Artifact)),
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -948,6 +949,7 @@ pub(in crate::card::sets) static LOYAL_WARHOUND: CardRecord = CardRecord::new(
                 )),
             }),
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

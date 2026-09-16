@@ -230,6 +230,7 @@ pub(in crate::card::sets) static DIZZY_SPELL: CardRecord = CardRecord::new(
                 CostDef::DiscardSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::ManaValueEqualTo(ValueDef::ObjectManaValue(
@@ -270,6 +271,7 @@ pub(in crate::card::sets) static DRIFT_OF_PHANTASMS: CardRecord = CardRecord::ne
                 CostDef::DiscardSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::ManaValueEqualTo(ValueDef::ObjectManaValue(
@@ -323,6 +325,7 @@ pub(in crate::card::sets) static MUDDLE_THE_MIXTURE: CardRecord = CardRecord::ne
                 CostDef::DiscardSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::ManaValueEqualTo(ValueDef::ObjectManaValue(
@@ -511,6 +514,7 @@ pub(in crate::card::sets) static DIMIR_HOUSE_GUARD: CardRecord = CardRecord::new
                 CostDef::DiscardSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::ManaValueEqualTo(ValueDef::ObjectManaValue(
@@ -609,6 +613,7 @@ pub(in crate::card::sets) static DIMIR_MACHINATIONS: CardRecord = CardRecord::ne
                 CostDef::DiscardSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::ManaValueEqualTo(ValueDef::ObjectManaValue(
@@ -806,6 +811,7 @@ pub(in crate::card::sets) static CHORD_OF_CALLING: CardRecord = CardRecord::new(
             "Search your library for a creature card with mana value X \
              or less, put it onto the battlefield, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -848,6 +854,7 @@ pub(in crate::card::sets) static FARSEEK: CardRecord = CardRecord::new(
          Mountain card, put it onto the battlefield tapped, then \
          shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasAnyBasicLandType(&[
@@ -1029,6 +1036,7 @@ pub(in crate::card::sets) static DIMIR_INFILTRATOR: CardRecord = CardRecord::new
                 CostDef::DiscardSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::ManaValueEqualTo(ValueDef::ObjectManaValue(

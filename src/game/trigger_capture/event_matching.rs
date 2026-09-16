@@ -259,6 +259,11 @@ impl Game {
                         controller,
                     )
             }
+            (TriggerEventDef::CountersCross { object: predicate, kind, thresholds },
+                CommittedTriggerEvent::CountersPlaced { object, kind: placed, amount }) => {
+                kind == *placed && self.trigger_object_matches_for_controller(predicate, object, source, false, controller)
+                    && self.crossed_counter_thresholds(object.id, kind, thresholds, *amount) > 0
+            }
             (
                 TriggerEventDef::CountersPlaced {
                     object: predicate,

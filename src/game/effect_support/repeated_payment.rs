@@ -90,6 +90,9 @@ fn repeat_mana_cost(mut cost: crate::ManaCost, count: u16) -> crate::ManaCost {
     cost.red = cost.red.saturating_mul(count);
     cost.green = cost.green.saturating_mul(count);
     cost.colorless = cost.colorless.saturating_mul(count);
+    for amount in &mut cost.restricted_generic {
+        *amount = amount.saturating_mul(count);
+    }
     for amount in &mut cost.hybrid {
         *amount = amount.saturating_mul(count);
     }

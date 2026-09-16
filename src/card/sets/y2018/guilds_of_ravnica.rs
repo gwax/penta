@@ -233,6 +233,7 @@ pub(in crate::card::sets) static MAUSOLEUM_SECRETS: CardRecord = CardRecord::new
          cards in your graveyard, reveal it, put it into your hand, \
          then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -569,6 +570,7 @@ pub(in crate::card::sets) static CIRCUITOUS_ROUTE: CardRecord = CardRecord::new(
          Gate cards, put them onto the battlefield tapped, then \
          shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::AnyOf(&[
@@ -619,6 +621,7 @@ pub(in crate::card::sets) static ASSASSIN_S_TROPHY: CardRecord = CardRecord::new
                     ObjectRefDef::Target(TargetIndex::PRIMARY),
                 )),
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                         ObjectRefDef::Target(TargetIndex::PRIMARY),
                     )),

@@ -87,6 +87,7 @@ pub(in crate::card::sets) static ARTIFICER_S_INTUITION: CardRecord = CardRecord:
             CostDef::discard(ObjectPredicateDef::HasType(CardType::Artifact)),
         ],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -168,6 +169,7 @@ pub(in crate::card::sets) static TRINKET_MAGE: CardRecord = CardRecord::new(
              an artifact card with mana value 1 or less, reveal that \
              card, put it into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

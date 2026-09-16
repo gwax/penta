@@ -308,6 +308,8 @@ impl HandcraftedPolicy {
         match effect {
             EffectDef::WithCosts { effect, .. }
             | EffectDef::WithRule { effect, .. }
+            | EffectDef::Repeat { effect, .. }
+            | EffectDef::BindValue { effect, .. }
             | EffectDef::BindOutput { effect, .. }
             | EffectDef::May { effect, .. } => Self::is_empty_without_x(*effect),
             EffectDef::Sequence(effects) => {
@@ -444,6 +446,8 @@ impl HandcraftedPolicy {
             // separate policy weight here.
             EffectDef::WithCosts { effect, .. }
             | EffectDef::WithRule { effect, .. }
+            | EffectDef::Repeat { effect, .. }
+            | EffectDef::BindValue { effect, .. }
             | EffectDef::BindOutput { effect, .. }
             | EffectDef::May { effect, .. }
             | EffectDef::ForEachInBinding { effect, .. }
@@ -614,6 +618,7 @@ impl HandcraftedPolicy {
             | EffectDef::BecomeMonarch { .. }
             | EffectDef::VoteForPermanentToExile { .. }
             | EffectDef::DamageCannotBePreventedThisTurn
+            | EffectDef::ExileUntilSourceLeaves { .. }
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::MayPlayWithoutPaying { .. }
             | EffectDef::ExileGrantingOwnerPlay { .. }
@@ -656,6 +661,7 @@ impl HandcraftedPolicy {
             | ValueDef::CardTypesAmongObjects(_)
             | ValueDef::CountObjects(_)
             | ValueDef::ObjectPower(_)
+            | ValueDef::ManaSpentToCast(_)
             | ValueDef::ObjectManaValue(_)
             | ValueDef::TriggeringObjectPower
             | ValueDef::TriggeringObjectToughness
@@ -686,6 +692,7 @@ impl HandcraftedPolicy {
             | ValueDef::MatchedCount
             | ValueDef::MatchedCardTypes
             | ValueDef::MatchedManaValue
+            | ValueDef::BoundValue(_)
             | ValueDef::BoundObjectCount(_)
             | ValueDef::SpellsCastBeforeThisTurn
             | ValueDef::PlayerCounters { .. }
@@ -696,6 +703,7 @@ impl HandcraftedPolicy {
             | ValueDef::ResolvedRecipientCount
             | ValueDef::TargetPower(_)
             | ValueDef::TargetToughness(_)
+            | ValueDef::TargetLifeTotal(_)
             | ValueDef::TargetLibrarySize(_)
             | ValueDef::LifeTotal(_)
             | ValueDef::StartingLifeTotal

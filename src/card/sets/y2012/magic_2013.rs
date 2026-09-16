@@ -1361,6 +1361,7 @@ pub(in crate::card::sets) static DIABOLIC_REVELATION: CardRecord = CardRecord::n
     CardRules::new_sorcery(mana_cost!("{X}{3}{B}{B}")).with_ability(AbilityDef::spell(
         "Search your library for up to X put those cards into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,
@@ -1532,6 +1533,7 @@ pub(in crate::card::sets) static LILIANA_OF_THE_DARK_REALMS: CardRecord = CardRe
                  into your hand, then shuffle.",
                 &[CostDef::Loyalty(ValueDef::Constant(1))],
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
@@ -1622,6 +1624,7 @@ pub(in crate::card::sets) static LILIANAS_SHADE: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
@@ -2282,6 +2285,8 @@ pub(in crate::card::sets) static MINDCLAW_SHAMAN: CardRecord = CardRecord::new(
                     ObjectPredicateDef::HasType(CardType::Sorcery),
                 ]),
                 &EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                    cast_only: false,
+                    maximum_spell_mana_value: None,
                     objects: ObjectSetDef::One(ObjectRefDef::Binding(ParentBinding)),
                     duration: FreePlayDurationDef::WhileResolving,
                     mandatory: false,
@@ -2584,6 +2589,7 @@ pub(in crate::card::sets) static BOUNDLESS_REALMS: CardRecord = CardRecord::new(
          number of lands you control, put them onto the battlefield \
          tapped, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -2792,6 +2798,7 @@ pub(in crate::card::sets) static MWONVULI_BEAST_TRACKER: CardRecord = CardRecord
              reveal it, then shuffle your library and put that card on \
              top of it.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -2914,6 +2921,7 @@ pub(in crate::card::sets) static RANGERS_PATH: CardRecord = CardRecord::new(
         "Search your library for up to two Forest cards, put them \
          onto the battlefield tapped, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
@@ -3204,6 +3212,7 @@ pub(in crate::card::sets) static GEM_OF_BECOMING: CardRecord = CardRecord::new(
         ],
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Island]),
@@ -3219,6 +3228,7 @@ pub(in crate::card::sets) static GEM_OF_BECOMING: CardRecord = CardRecord::new(
                 then: None,
             },
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
@@ -3234,6 +3244,7 @@ pub(in crate::card::sets) static GEM_OF_BECOMING: CardRecord = CardRecord::new(
                 then: None,
             },
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Mountain]),

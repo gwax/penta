@@ -315,10 +315,10 @@ fn validate_query(
     if let Some(related_player) = query.related_player {
         validate_player_set(related_player, target_count, scope)?;
     }
-    if let Some(relative @ (ZonePositionDef::Above(_) | ZonePositionDef::Below(_))) = query.position {
+    if let Some(relative @ (ZonePositionDef::Above(_) | ZonePositionDef::Below(_))) = query.position
+    {
         let reference = match relative {
-            ZonePositionDef::Above(reference)
-            | ZonePositionDef::Below(reference) => reference,
+            ZonePositionDef::Above(reference) | ZonePositionDef::Below(reference) => reference,
             ZonePositionDef::FromTop(_) => unreachable!("relative positions only"),
         };
         validate_object_reference(reference, target_count, scope)?;
@@ -415,6 +415,7 @@ fn validate_trigger_condition(
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
+        | TriggerConditionDef::SourceProducedManaThisTurn
         | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::OpponentWasDealtDamageThisTurn
@@ -599,6 +600,7 @@ fn validate_value_target_references(
         }
         ValueDef::TargetPower(target)
         | ValueDef::TargetToughness(target)
+        | ValueDef::TargetLifeTotal(target)
         | ValueDef::TargetLibrarySize(target)
         | ValueDef::TargetManaValue(target) => validate_target_index(target, target_count),
         // Whatever the amount reads has to be nameable where it is read, the
@@ -610,12 +612,14 @@ fn validate_value_target_references(
         }),
         ValueDef::ColorCount(reference)
         | ValueDef::ObjectPower(reference)
+        | ValueDef::ManaSpentToCast(reference)
         | ValueDef::ObjectManaValue(reference) => {
             validate_object_reference(reference, target_count, scope)
         }
         ValueDef::CountersOnObject(counted) => {
             validate_object_reference(counted.object, target_count, scope)
         }
+        ValueDef::BoundValue(binding) => scope.validate_number_reference(binding),
         ValueDef::BoundObjectCount(binding) => scope.validate_object_set_reference(binding),
         ValueDef::CountSpellsCastThisTurn(_)
         | ValueDef::ManaInPool { .. }
@@ -706,9 +710,12 @@ fn validate_applied_effect_target_references(
             validate_object_predicate_references(object, target_count, scope)?;
             validate_applied_effect_target_references(*effect, target_count, scope)
         }
-        AppliedEffectDef::Rule(AppliedRuleDef::KnownCards(query) | AppliedRuleDef::MayPlot { cards: query, .. }) => {
-            validate_query(query, target_count, scope)
-        }
+        AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
+            crate::card::PlayerRuleDef::HexproofFrom(predicate),
+        )) => validate_object_predicate_references(*predicate, target_count, scope),
+        AppliedEffectDef::Rule(
+            AppliedRuleDef::KnownCards(query) | AppliedRuleDef::MayPlot { cards: query, .. },
+        ) => validate_query(query, target_count, scope),
         AppliedEffectDef::Rule(AppliedRuleDef::MayPlay(permission)) => {
             validate_query(permission.cards, target_count, scope)?;
             validate_object_predicate_references(permission.restriction.object, target_count, scope)

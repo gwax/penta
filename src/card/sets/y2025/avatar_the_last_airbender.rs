@@ -90,6 +90,7 @@ use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
 use crate::card::ValueComparisonDef;
 use crate::card::ValueDef;
+use crate::card::ZoneChangeEventMatcherDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
@@ -178,6 +179,72 @@ const MONK_TOKEN: TokenCharacteristics =
             "Dom Lay",
         ));
 
+// Earthbend's delayed trigger is independent of the animation and its creator.
+// Capturing the exact land keeps a later return from inheriting either effect.
+macro_rules! earthbend {
+    ($amount:expr) => {
+        EffectDef::BindObjects(BindObjectsDef {
+            source: ObjectCollectionSourceDef::ObjectSet(ObjectSetDef::LegalTargets(
+                TargetIndex::PRIMARY,
+            )),
+            binding: crate::Binding!("earthbent"),
+            then: &EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    effect: AppliedEffectDef::Composite(&[
+                        AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+                        AppliedEffectDef::set_base_power_toughness(
+                            ValueDef::Constant(0),
+                            ValueDef::Constant(0),
+                        ),
+                        AppliedEffectDef::add_ability(&abilities::haste()),
+                    ]),
+                    duration: ResolvedEffectDurationDef::Permanent,
+                },
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant($amount),
+                },
+                EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+                    "When that land dies or is exiled, return it to the battlefield tapped.",
+                    TriggerEventDef::AnyOf(&[
+                        TriggerEventDef::ZoneChanged(
+                            ZoneChangeEventMatcherDef::new(
+                                ObjectPredicateDef::HasType(CardType::Creature),
+                                Some(ZoneKind::Battlefield),
+                                Some(ZoneKind::Graveyard),
+                            )
+                            .among(crate::Binding!("earthbent")),
+                        ),
+                        TriggerEventDef::ZoneChanged(
+                            ZoneChangeEventMatcherDef::new(
+                                ObjectPredicateDef::Any,
+                                Some(ZoneKind::Battlefield),
+                                Some(ZoneKind::Exile),
+                            )
+                            .among(crate::Binding!("earthbent")),
+                        ),
+                    ]),
+                    EffectDef::WithBattlefieldArrival {
+                        arrival: BattlefieldArrivalDef {
+                            modifications: &[BattlefieldEntryModificationDef::Tapped],
+                            ..BattlefieldArrivalDef::DEFAULT
+                        },
+                        effect: &EffectDef::move_to_zone(
+                            EffectRecipientDef::object(
+                                ObjectRefDef::ZoneChangeResultOfTriggeringObject,
+                            ),
+                            ZoneKind::Battlefield,
+                            ZonePlacement::Top,
+                        ),
+                    },
+                ))),
+            ]),
+        })
+    };
+}
+
 // TLA 1 — Aang's Journey
 pub(in crate::card::sets) static AANG_S_JOURNEY: CardRecord = CardRecord::new(
     "Aang's Journey",
@@ -194,6 +261,7 @@ pub(in crate::card::sets) static AANG_S_JOURNEY: CardRecord = CardRecord::new(
                  then shuffle.\nYou gain 2 life.",
                 EffectDef::Sequence(&[
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[
@@ -216,6 +284,7 @@ pub(in crate::card::sets) static AANG_S_JOURNEY: CardRecord = CardRecord::new(
                             crate::AdditionalCostIndex::PRIMARY,
                         ),
                         then: &EffectDef::SearchZone {
+                            exile_face_down: false,
                             player: EffectRecipientDef::Controller,
                             source: ZoneKind::Library,
                             object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Shrine")),
@@ -1710,13 +1779,57 @@ pub(in crate::card::sets) static IGUANA_PARROT: CardRecord = CardRecord::new(
 );
 
 // TLA 57 — Invasion Submersible
-// Audit: unsupported — Needs waterbend payment combining generic mana with tapping untapped
-// artifacts and creatures, including creatures unable to pay their own tap costs.
 pub(in crate::card::sets) static INVASION_SUBMERSIBLE: CardRecord = CardRecord::new(
     "Invasion Submersible",
     "af5299f5-1633-4c07-ade5-fd47e29ea4aa",
     "Sylvain Sarrailh",
-    CardRules::unsupported(),
+    CardRules::new_vehicle(mana_cost!("{2}{U}"), 0, 0).with_abilities(&[
+        abilities::enters_trigger_with_targets(
+            "When this Vehicle enters, return up to one other target nonland \
+                 permanent to its owner's hand.",
+            &[AbilityTargetDef::up_to(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                        ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+                    ]),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: None,
+                    owner: None,
+                },
+                1,
+            )],
+            EffectDef::move_to_zone(
+                EffectRecipientDef::Target(TargetIndex::PRIMARY),
+                ZoneKind::Hand,
+                ZonePlacement::Top,
+            ),
+        ),
+        crate::card::sets::y2025::aetherdrift::exhaust(
+            AbilityDef::activated(
+                "Exhaust — Waterbend {3}: This Vehicle becomes an artifact creature. Put \
+                 three +1/+1 counters on it. (While paying a waterbend cost, you can tap \
+                 your artifacts and creatures to help. Each one pays for {1}. Activate \
+                 each exhaust ability only once.)",
+                &[CostDef::Mana(mana_cost!("{3}"))],
+                EffectDef::Sequence(&[
+                    EffectDef::Apply {
+                        recipient: EffectRecipientDef::Source,
+                        effect: AppliedEffectDef::add_card_types(
+                            CardTypeSet::single(CardType::Artifact).with(CardType::Creature),
+                        ),
+                        duration: ResolvedEffectDurationDef::Permanent,
+                    },
+                    EffectDef::AddCounters {
+                        object: EffectRecipientDef::Source,
+                        kind: CounterKind::PlusOnePlusOne,
+                        amount: ValueDef::Constant(3),
+                    },
+                ]),
+            )
+            .with_tap_for_generic(CardTypeSet::single(CardType::Artifact).with(CardType::Creature)),
+        ),
+    ]),
 );
 
 // TLA 58 — It'll Quench Ya!
@@ -3829,6 +3942,7 @@ pub(in crate::card::sets) static PRICE_OF_FREEDOM: CardRecord = CardRecord::new(
                         ObjectRefDef::Target(TargetIndex::PRIMARY),
                     )),
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                             ObjectRefDef::Target(TargetIndex::PRIMARY),
                         )),
@@ -4365,14 +4479,37 @@ pub(in crate::card::sets) static BADGERMOLE: CardRecord = CardRecord::new(
 );
 
 // TLA 167 — Badgermole Cub
-// Audit: unsupported — Needs earthbend land animation and its independent delayed
-// death-or-exile return trigger, preserving the affected object identity through ability
-// removal and its subsequent zone change.
 pub(in crate::card::sets) static BADGERMOLE_CUB: CardRecord = CardRecord::new(
     "Badgermole Cub",
     "340c5799-4964-44dd-8c48-8f3f3aba5211",
     "Nathaniel Himawan",
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{1}{G}"), &["Badger", "Mole"], 2, 2).with_abilities(&[
+        AbilityDef::triggered_with_targets(
+            "When this creature enters, earthbend 1.",
+            TriggerEventDef::zone_changed(
+                ObjectPredicateDef::Source,
+                None,
+                Some(ZoneKind::Battlefield),
+            ),
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Land),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::You),
+                    owner: None,
+                },
+            )],
+            earthbend!(1),
+        ),
+        AbilityDef::triggered_mana(
+            "Whenever you tap a creature for mana, add an additional {G}.",
+            TriggerEventDef::tapped_for_mana(ObjectPredicateDef::All(&[
+                ObjectPredicateDef::HasType(CardType::Creature),
+                ObjectPredicateDef::ControlledBy(PlayerRelation::You),
+            ])),
+            EffectDef::AddMana(AddManaEffectDef::one(ManaColor::Green)),
+        ),
+    ]),
 );
 
 // TLA 168 — The Boulder, Ready to Rumble
@@ -4422,6 +4559,7 @@ pub(in crate::card::sets) static CYCLE_OF_RENEWAL: CardRecord = CardRecord::new(
                     )),
                 }),
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -4651,6 +4789,7 @@ pub(in crate::card::sets) static KYOSHI_ISLAND_PLAZA: CardRecord = CardRecord::n
                  control. Put those cards onto the battlefield tapped, then \
                  shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -4689,6 +4828,7 @@ pub(in crate::card::sets) static KYOSHI_ISLAND_PLAZA: CardRecord = CardRecord::n
                     Some(ZoneKind::Battlefield),
                 ),
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -5119,6 +5259,7 @@ pub(in crate::card::sets) static SHARED_ROOTS: CardRecord = CardRecord::new(
             "Search your library for a basic land card, put it onto the \
              battlefield tapped, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -5306,6 +5447,7 @@ pub(in crate::card::sets) static UNLUCKY_CABBAGE_MERCHANT: CardRecord = CardReco
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::Sequence(&[
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[
@@ -6930,14 +7072,44 @@ pub(in crate::card::sets) static AIRSHIP_ENGINE_ROOM: CardRecord = CardRecord::n
 );
 
 // TLA 266 — Ba Sing Se
-// Audit: unsupported — Needs earthbend land animation and its independent delayed
-// death-or-exile return trigger, preserving the affected object identity through ability
-// removal and its subsequent zone change.
 pub(in crate::card::sets) static BA_SING_SE: CardRecord = CardRecord::new(
     "Ba Sing Se",
     "bdf3b2be-d0cd-4a3c-a10e-82d32c12d3bd",
     "Andreas Rocha",
-    CardRules::unsupported(),
+    CardRules::new_land(&[]).with_abilities(&[
+        AbilityDef::as_enters(
+            "This land enters tapped unless you control a basic land.",
+            ReplacementEffectDef::Conditional {
+                condition: ConditionDef::Exists(ObjectQueryDef::matching(
+                    ObjectPredicateDef::All(&[
+                        ObjectPredicateDef::HasType(CardType::Land),
+                        ObjectPredicateDef::Supertype(CardSupertype::Basic),
+                    ]),
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                )),
+                if_true: &[],
+                if_false: &[ReplacementEffectDef::ModifyBattlefieldEntry(
+                    BattlefieldEntryModificationDef::Tapped,
+                )],
+            },
+        ),
+        abilities::tap_for(ManaColor::Green),
+        AbilityDef::activated_with_targets(
+            "{2}{G}, {T}: Earthbend 2. Activate only as a sorcery.",
+            &[CostDef::Mana(mana_cost!("{2}{G}")), CostDef::TapSource],
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Object {
+                    object: ObjectPredicateDef::HasType(CardType::Land),
+                    zones: &[ZoneKind::Battlefield],
+                    controller: Some(PlayerRelation::You),
+                    owner: None,
+                },
+            )],
+            earthbend!(2),
+        )
+        .with_activation_timing(ActivationTimingDef::SorcerySpeed),
+    ]),
 );
 
 // TLA 267 — Boiling Rock Prison

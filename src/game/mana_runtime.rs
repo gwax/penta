@@ -1,3 +1,4 @@
+use super::payment::allocation::PaymentPool;
 use super::{
     AbilityDef, AbilityOrigin, AbilityProcedureDef, Action, ActivatedAbilityDef, AddManaEffectDef,
     AppliedStackEffect, CharacteristicContext, CommittedTriggerEvent, ConditionDef, CostDef,
@@ -6,7 +7,6 @@ use super::{
     ManaSelectionDef, ManaSource, ManaSpendEffectDef, ManaTypeDef, ManaTypeFilterDef,
     ManaTypeSetDef, ManaTypeSourceDef, ObjectCountConditionDef, ObjectRefDef, ObjectSetDef,
     Permanent, PlayerId, RetiredObject, StackObject, TriggerContext, TriggerEventObject, ZoneKind,
-    pay_cost_with_generic_strategy,
 };
 use crate::ManaPaymentChoice;
 use crate::card::ManaSplit;
@@ -321,6 +321,8 @@ impl Game {
                                       combination,
                                       also| {
                 activations.push(ManaAbilityActivation {
+                    controller: permanent.controller,
+                    source_types: self.permanent_types(permanent).unwrap_or_default(),
                     source: permanent.card.id,
                     ability: origin,
                     color,
@@ -530,32 +532,68 @@ impl Game {
             // irrelevant. Spending restrictions and riders are likewise
             // properties of the resulting mana, not of its type.
             if let Some(effect) = Self::shared_add_mana_effect(&definition, &effective.ability) {
+                let source_types = self.permanent_types(permanent).unwrap_or_default();
+                let tapped = definition.costs.contains(&CostDef::TapSource);
+                let amount = effect.variable_amount.map_or(effect.amount, |value| {
+                    self.mana_ability_value(value, permanent)
+                });
+                let amount = self.mana_amount_for(
+                    AddManaEffectDef { amount, ..effect },
+                    permanent.controller,
+                    permanent.card.id,
+                );
+                let mut outputs = Vec::new();
                 match effect.mana {
                     ManaSelectionDef::Amounts(amounts) => {
                         let pool = self.players[permanent.controller.index()].mana_pool;
-                        colors.extend(
-                            self.mana_amounts_for(amounts, permanent, pool)
+                        let split = self.mana_amounts_for(amounts, permanent, pool);
+                        outputs.push((
+                            split.iter().map(|(color, _)| color).collect::<Vec<_>>(),
+                            split
                                 .iter()
-                                .map(|(color, _)| color),
-                        );
-                    }
-                    ManaSelectionDef::One(kind) => {
-                        colors.extend(self.mana_type_for_source(kind, permanent.card.id));
-                    }
-                    ManaSelectionDef::Choice(types) | ManaSelectionDef::Combination(types) => {
-                        visiting.push(permanent.card.id);
-                        colors.extend(self.mana_types_for_set(permanent, types, visiting));
-                        visiting.pop();
+                                .map(|(_, amount)| usize::from(amount))
+                                .sum::<usize>(),
+                        ));
                     }
                     ManaSelectionDef::ChoiceOfBundles(bundles) => {
-                        colors.extend(
-                            bundles
-                                .iter()
-                                .flat_map(|bundle| bundle.iter().map(|(color, _)| color)),
-                        );
+                        for bundle in bundles {
+                            outputs.push((
+                                bundle.iter().map(|(color, _)| color).collect(),
+                                bundle.iter().map(|(_, amount)| usize::from(amount)).sum(),
+                            ));
+                        }
                     }
-                    ManaSelectionDef::ColorsOfLinkedExiles => {
-                        colors.extend(self.linked_exile_colors(permanent.card.id));
+                    other => {
+                        let types = match other {
+                            ManaSelectionDef::One(kind) => self
+                                .mana_type_for_source(kind, permanent.card.id)
+                                .into_iter()
+                                .collect(),
+                            ManaSelectionDef::Choice(types)
+                            | ManaSelectionDef::Combination(types) => {
+                                visiting.push(permanent.card.id);
+                                let colors = self.mana_types_for_set(permanent, types, visiting);
+                                visiting.pop();
+                                colors
+                            }
+                            ManaSelectionDef::ColorsOfLinkedExiles => {
+                                self.linked_exile_colors(permanent.card.id)
+                            }
+                            _ => unreachable!("bundles were handled above"),
+                        };
+                        outputs.push((types, usize::from(amount)));
+                    }
+                }
+                for (mut types, mut count) in outputs {
+                    if let Some(also) = effect.also {
+                        types.push(also);
+                        count += 1;
+                    }
+                    if self.replaces_tapped_mana(permanent.controller, source_types, tapped, count)
+                    {
+                        colors.push(ManaColor::Colorless);
+                    } else if count > 0 {
+                        colors.extend(types);
                     }
                 }
             }
@@ -618,39 +656,7 @@ impl Game {
         divisions
     }
 
-    pub(super) fn mana_production(activation: &ManaAbilityActivation) -> ManaPool {
-        let mut pool = ManaPool::default();
-        if let Some(combination) = activation.combination {
-            for (color, amount) in combination.iter() {
-                pool.add_color(color, amount);
-            }
-            if let Some(also) = activation.effect.also {
-                pool.add_color(also, 1);
-            }
-            if let Some(triggered) = &activation.triggered_mana {
-                for split in triggered {
-                    for (color, amount) in split.iter() {
-                        pool.add_color(color, amount);
-                    }
-                }
-            }
-            return pool;
-        }
-        pool.add_color(activation.color, activation.effect.amount);
-        if let Some(also) = activation.effect.also {
-            pool.add_color(also, 1);
-        }
-        if let Some(triggered) = &activation.triggered_mana {
-            for split in triggered {
-                for (color, amount) in split.iter() {
-                    pool.add_color(color, amount);
-                }
-            }
-        }
-        pool
-    }
-
-    pub(super) fn mana_for_activation(activation: &ManaAbilityActivation) -> Vec<Mana> {
+    pub(super) fn raw_mana_for_activation(activation: &ManaAbilityActivation) -> Vec<Mana> {
         let mana = Mana::from_ability(
             activation.color,
             ManaSource {
@@ -696,6 +702,15 @@ impl Game {
 
     pub(super) fn add_mana(&mut self, player: PlayerId, mana: impl IntoIterator<Item = Mana>) {
         for mana in mana {
+            if let Some(source) = mana.source {
+                let source = super::AbilitySourceRef {
+                    object: source.object,
+                    ability: source.ability,
+                };
+                if !self.mana_producing_abilities_this_turn.contains(&source) {
+                    self.mana_producing_abilities_this_turn.push(source);
+                }
+            }
             self.players[player.index()]
                 .mana_pool
                 .add_color(mana.color, 1);
@@ -713,110 +728,6 @@ impl Game {
             player,
             std::iter::repeat_n(Mana::unrestricted(color), usize::from(amount)),
         );
-    }
-
-    #[cfg(test)]
-    pub(super) fn eligible_mana_pool(
-        &self,
-        player: PlayerId,
-        purpose: &ManaPaymentPurpose,
-    ) -> ManaPool {
-        self.eligible_mana_pool_for_cost(player, purpose, ManaCost::default())
-    }
-
-    pub(super) fn eligible_mana_pool_for_cost(
-        &self,
-        player: PlayerId,
-        purpose: &ManaPaymentPurpose,
-        cost: ManaCost,
-    ) -> ManaPool {
-        let aggregate = self.players[player.index()].mana_pool;
-        let mut eligible = ManaPool::default();
-        let mut tracked = ManaPool::default();
-        for mana in &self.players[player.index()].mana {
-            if tracked.amount(mana.color) >= aggregate.amount(mana.color) {
-                continue;
-            }
-            tracked.add_color(mana.color, 1);
-            if self.mana_can_pay_for_cost(*mana, purpose, cost) {
-                eligible.add_color(mana.color, 1);
-            }
-        }
-        // Compatibility callers and tests may still write aggregate pools
-        // directly. Any units without per-mana records are unrestricted.
-        for color in [
-            ManaColor::White,
-            ManaColor::Blue,
-            ManaColor::Black,
-            ManaColor::Red,
-            ManaColor::Green,
-            ManaColor::Colorless,
-        ] {
-            eligible.add_color(
-                color,
-                aggregate
-                    .amount(color)
-                    .saturating_sub(tracked.amount(color)),
-            );
-        }
-        eligible
-    }
-
-    pub(super) fn pay_player_cost_for(
-        &mut self,
-        player: PlayerId,
-        cost: ManaCost,
-        x: u16,
-        purpose: &ManaPaymentPurpose,
-    ) -> Vec<Mana> {
-        let obligation = self.mana_payment_obligation(player, cost, x, purpose);
-        if let Some(payment) = self.explicit_mana_payment.take() {
-            let spent = self
-                .commit_mana_payment(&obligation, &payment)
-                .expect("the selected payment satisfies the frozen cost");
-            self.explicit_mana_payment = self.explicit_mana_payment_tail.pop_front();
-            return spent;
-        }
-        let (cost, x) = (obligation.cost, obligation.x);
-        self.reconcile_mana(player);
-        self.activate_repeatable_life_mana_for_shortfall(player, cost, x, purpose);
-        let before = self.eligible_mana_pool_for_cost(player, purpose, cost);
-        let after = self.mana_payment_remainder(player, before, cost, x, purpose);
-        let available = self.payment_mana_units(player);
-        let mut units = Vec::new();
-        for color in ManaColor::ALL {
-            let count = before.amount(color).saturating_sub(after.amount(color));
-            for _ in 0..count {
-                let index = available
-                    .iter()
-                    .enumerate()
-                    .filter(|(index, mana)| {
-                        !units.contains(index)
-                            && mana.color == color
-                            && self.mana_can_pay_for_cost(**mana, purpose, cost)
-                    })
-                    .max_by_key(|(_, mana)| {
-                        (
-                            Self::mana_has_spend_effect_for(**mana, purpose),
-                            !mana.restrictions.is_empty(),
-                        )
-                    })
-                    .map(|(index, _)| index)
-                    .expect("a proposed payment has every required mana unit");
-                units.push(index);
-            }
-        }
-        self.commit_mana_payment(&obligation, &super::payment::BoundManaPayment { units })
-            .expect("automatic payment satisfies shared validation")
-    }
-
-    pub(super) fn pay_player_cost(
-        &mut self,
-        player: PlayerId,
-        cost: ManaCost,
-        x: u16,
-    ) -> Vec<Mana> {
-        self.pay_player_cost_for(player, cost, x, &ManaPaymentPurpose::Other)
     }
 
     pub(super) fn apply_spent_mana_to_spell(&self, object: &mut StackObject, spent: &[Mana]) {
@@ -981,3 +892,7 @@ impl Game {
 
 include!("mana_runtime/spend_questions.rs");
 include!("mana_runtime/triggered.rs");
+
+include!("mana_runtime/production.rs");
+
+include!("mana_runtime/spending.rs");

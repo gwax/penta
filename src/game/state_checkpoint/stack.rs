@@ -212,6 +212,7 @@ pub(super) fn detached_stack_snapshot_allowing(
         resolved_continuous_effects: continuous,
         last_known_colors: object.last_known_colors.map(ColorSet::to_flags),
         colors: object.colors.map(ColorSet::to_flags),
+        mana_spent: cast.map_or(0, |cast| cast.mana_spent),
         colors_of_mana_spent: cast.map_or([false; 5], |cast| cast.colors_of_mana_spent.to_flags()),
         phyrexian_symbols_paid_with_life: cast
             .map_or(0, |cast| cast.phyrexian_symbols_paid_with_life),

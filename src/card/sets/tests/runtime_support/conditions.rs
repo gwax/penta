@@ -75,7 +75,8 @@ fn shared_condition_value(value: ValueDef, static_context: bool) -> bool {
         // condition walk has in hand. Not offered to a static clause:
         // sizing a creature by its own power would read the layer being
         // computed.
-        ValueDef::SourcePower
+        ValueDef::ManaSpentToCast(_)
+        | ValueDef::SourcePower
         | ValueDef::LandsPlayedThisTurn(_)
         | ValueDef::LibrarySize(_)
         | ValueDef::SpellsCastThisGame(_)
@@ -135,6 +136,7 @@ pub(in super::super) fn shared_trigger_condition(condition: TriggerConditionDef)
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
+        | TriggerConditionDef::SourceProducedManaThisTurn
         | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::OpponentWasDealtDamageThisTurn

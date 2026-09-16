@@ -467,6 +467,7 @@ pub(in crate::card::sets) static FLESHWRITHER: CardRecord = CardRecord::new(
                 CostDef::SacrificeSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -714,6 +715,7 @@ pub(in crate::card::sets) static SUMMONER_S_PACT: CardRecord = CardRecord::new(
          game.",
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -891,9 +893,19 @@ pub(in crate::card::sets) static COALITION_RELIC: CardRecord = CardRecord::new(
             // the pool watches a charge counter leave: what is observable is that the
             // counters are gone and that many mana arrived.
             EffectDef::Sequence(&[
-                EffectDef::AddMana(AddManaEffectDef::any_color().with_variable_amount(
-                    ValueDef::CountersOnSource(CounterKind::named("charge")),
-                )),
+                EffectDef::AddMana(
+                    AddManaEffectDef::combination(
+                        &[
+                            ManaColor::White,
+                            ManaColor::Blue,
+                            ManaColor::Black,
+                            ManaColor::Red,
+                            ManaColor::Green,
+                        ],
+                        1,
+                    )
+                    .with_variable_amount(ValueDef::CountersOnSource(CounterKind::named("charge"))),
+                ),
                 EffectDef::RemoveAllCounters {
                     object: EffectRecipientDef::Source,
                     kind: Some(CounterKind::named("charge")),

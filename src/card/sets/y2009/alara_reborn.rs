@@ -160,6 +160,7 @@ pub(in crate::card::sets) static WARGATE: CardRecord = CardRecord::new(
         "Search your library for a permanent card with mana value X \
          or less, put it onto the battlefield, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

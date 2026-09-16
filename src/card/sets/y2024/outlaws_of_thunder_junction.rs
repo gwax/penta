@@ -452,6 +452,7 @@ pub(in crate::card::sets) static CLAIM_JUMPER: CardRecord = CardRecord::new(
                             label: "Search",
                             effect: EffectDef::Sequence(&[
                                 EffectDef::SearchZone {
+                                    exile_face_down: false,
                                     player: EffectRecipientDef::Controller,
                                     source: ZoneKind::Library,
                                     object: ObjectPredicateDef::Subtype(SubtypeDef::from_name(
@@ -491,6 +492,7 @@ pub(in crate::card::sets) static CLAIM_JUMPER: CardRecord = CardRecord::new(
                                     then: &EffectDef::May {
                                         player: EffectRecipientDef::Controller,
                                         effect: &EffectDef::SearchZone {
+                                            exile_face_down: false,
                                             player: EffectRecipientDef::Controller,
                                             source: ZoneKind::Library,
                                             object: ObjectPredicateDef::Subtype(
@@ -539,6 +541,7 @@ pub(in crate::card::sets) static CLAIM_JUMPER: CardRecord = CardRecord::new(
                                 then: &EffectDef::May {
                                     player: EffectRecipientDef::Controller,
                                     effect: &EffectDef::SearchZone {
+                                        exile_face_down: false,
                                         player: EffectRecipientDef::Controller,
                                         source: ZoneKind::Library,
                                         object: ObjectPredicateDef::Subtype(SubtypeDef::from_name(
@@ -1700,7 +1703,7 @@ pub(in crate::card::sets) static FLEETING_REFLECTION: CardRecord = CardRecord::n
             EffectDef::BecomeCopyOf {
                 object: EffectRecipientDef::Target(TargetIndex(1)),
                 copier: Some(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
-                exceptions: CopyExceptionsDef::NONE,
+                exceptions: &CopyExceptionsDef::NONE,
                 duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
             },
         ]),
@@ -1878,6 +1881,8 @@ pub(in crate::card::sets) static THE_KEY_TO_THE_VAULT: CardRecord = CardRecord::
                                 ),
                             }),
                             EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                                cast_only: false,
+                                maximum_spell_mana_value: None,
                                 objects: ObjectSetDef::ZoneChangeSuccessorsOfBinding(
                                     crate::Binding!("exiled"),
                                 ),
@@ -3051,6 +3056,7 @@ pub(in crate::card::sets) static INSATIABLE_AVARICE: CardRecord = CardRecord::ne
                 "Search your library for a card, then shuffle and put that \
                  card on top.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Any,
@@ -3109,6 +3115,7 @@ pub(in crate::card::sets) static LIVELY_DIRGE: CardRecord = CardRecord::new(
                 "Search your library for a card, put it into your graveyard, \
                  then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Any,
@@ -5180,6 +5187,7 @@ pub(in crate::card::sets) static DANCE_OF_THE_TUMBLEWEEDS: CardRecord = CardReco
                 "Search your library for a basic land card or a Desert card, \
                  put it onto the battlefield, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -5510,6 +5518,7 @@ pub(in crate::card::sets) static MAP_THE_FRONTIER: CardRecord = CardRecord::new(
          Desert cards, put them onto the battlefield tapped, then \
          shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::AnyOf(&[
@@ -5592,6 +5601,7 @@ pub(in crate::card::sets) static OUTCASTER_GREENBLADE: CardRecord = CardRecord::
              land card or a Desert card, reveal it, put it into your hand, \
              then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::AnyOf(&[
@@ -6003,6 +6013,7 @@ pub(in crate::card::sets) static SPINEWOODS_ARMADILLO: CardRecord = CardRecord::
             &[CostDef::Mana(mana_cost!("{1}{G}")), CostDef::DiscardSource],
             EffectDef::Sequence(&[
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::AnyOf(&[
@@ -7132,7 +7143,7 @@ pub(in crate::card::sets) static LAZAV_FAMILIAR_STRANGER: CardRecord = CardRecor
                                         ),
                                     ),
                                     copier: None,
-                                    exceptions: CopyExceptionsDef::NONE,
+                                    exceptions: &CopyExceptionsDef::NONE,
                                     duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
                                 },
                             },
@@ -8064,6 +8075,7 @@ pub(in crate::card::sets) static SILVER_DEPUTY: CardRecord = CardRecord::new(
              basic land card or a Desert card, reveal it, then shuffle and \
              put it on top.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::AnyOf(&[

@@ -314,6 +314,15 @@ fn validate_static_apply(
         EffectRecipientSetDef::Objects(objects) => {
             if !(static_object_set_supported(objects)
                 || (source_zones == [ZoneKind::Battlefield]
+                    && matches!(
+                        effect,
+                        AppliedEffectDef::Characteristic(
+                            CharacteristicOperationDef::Colors(_)
+                                | CharacteristicOperationDef::Color(_)
+                        )
+                    )
+                    && recipient.object_query().is_some_and(static_query_supported))
+                || (source_zones == [ZoneKind::Battlefield]
                     && static_creature_type_effect(effect)
                     && static_creature_type_query_supported(recipient)))
             {
@@ -352,6 +361,7 @@ fn stack_static_applied_effect_supported(effect: AppliedEffectDef, external_gran
                     .copied()
                     .all(|effect| stack_static_applied_effect_supported(effect, external_grants))
         }
+        AppliedEffectDef::Rule(AppliedRuleDef::CannotSpendManaToCast) => !external_grants,
         AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) => true,
         // The stack listener currently executes source-cast triggers. Other
         // ability categories need their own zone-aware execution boundary.
@@ -438,7 +448,8 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             crate::card::PlayerRuleDef::ApplyToMatchingSpell { .. },
         )) => false,
         AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
-            crate::card::PlayerRuleDef::LegendRuleDoesNotApplyTo(predicate),
+            crate::card::PlayerRuleDef::LegendRuleDoesNotApplyTo(predicate)
+            | crate::card::PlayerRuleDef::HexproofFrom(predicate),
         )) => static_object_predicate_supported(*predicate),
         // Read by the cleanup step, by the same walk and for the same reason.
         // The colour permission is read the same way, from the mana payment
@@ -448,6 +459,8 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             // Read by whoever is being shown the game rather than by any
             // step of it: a public top card changes what an observation
             // says and nothing else.
+            | AppliedRuleDef::TappedManaBecomesColorless { .. }
+            | AppliedRuleDef::MaySpendManaAsAnyColor
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::MayPlayAdditionalLands(_)
             | AppliedRuleDef::MayPlayAnyNumberOfLands
@@ -537,12 +550,18 @@ fn static_object_characteristic_supported(
             types != crate::card::CardTypeSet::EMPTY
                 && (static_direct_characteristic_recipient(recipient)
                     || (types == crate::card::CardTypeSet::single(CardType::Creature)
-                        || types == crate::card::CardTypeSet::single(CardType::Land))
+                        || types == crate::card::CardTypeSet::single(CardType::Land)
+                        || types == crate::card::CardTypeSet::single(CardType::Artifact))
                         && static_type_animation_query_supported(recipient))
         }
-        CharacteristicOperationDef::Color(_)
-        | CharacteristicOperationDef::Colors(_)
-        | CharacteristicOperationDef::Subtypes(_) => static_animation_query_supported(recipient),
+        CharacteristicOperationDef::Color(_) | CharacteristicOperationDef::Colors(_) => {
+            static_direct_characteristic_recipient(recipient)
+                || recipient.object_query().is_some_and(|query| {
+                    static_query_supported(query)
+                        && static_animation_predicate_supported(query.object, false)
+                })
+        }
+        CharacteristicOperationDef::Subtypes(_) => static_animation_query_supported(recipient),
         CharacteristicOperationDef::Supertypes(operation) => {
             let supertypes = match operation {
                 SetOperationDef::Add(supertypes)
@@ -597,12 +616,15 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         }
         // Zero extra blocks would be a rule that grants nothing.
         AppliedRuleDef::MayBlockAdditionalCreatures(extra) => extra > 0,
-        AppliedRuleDef::CannotBeCountered
+        AppliedRuleDef::CannotSpendManaToCast
+        | AppliedRuleDef::CannotBeCountered
         // Ascend belongs to a player, so nothing about an object reads it.
         | AppliedRuleDef::Ascend
         | AppliedRuleDef::KnownCards(_)
         // Trigger modification applies to abilities controlled by a player.
         | AppliedRuleDef::ModifyTriggers(_)
+        | AppliedRuleDef::TappedManaBecomesColorless { .. }
+        | AppliedRuleDef::MaySpendManaAsAnyColor
         | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
         | AppliedRuleDef::MayPlayAdditionalLands(_)
         | AppliedRuleDef::MayPlayAnyNumberOfLands
@@ -931,37 +953,6 @@ fn static_direct_characteristic_recipient(recipient: EffectRecipientDef) -> bool
     )
 }
 
-fn static_damage_matcher_supported(matcher: DamageEventMatcherDef) -> bool {
-    let source = match matcher.source {
-        DamageSourceMatcherDef::Any
-        | DamageSourceMatcherDef::Group(_)
-        | DamageSourceMatcherDef::AffectedObject => true,
-        DamageSourceMatcherDef::Object(reference) | DamageSourceMatcherDef::Except(reference) => {
-            static_damage_object_reference_supported(reference)
-        }
-        DamageSourceMatcherDef::Matching(predicate) => static_object_predicate_supported(predicate),
-    };
-    let recipient = match matcher.recipient {
-        DamageRecipientMatcherDef::Any | DamageRecipientMatcherDef::AffectedObject => true,
-        DamageRecipientMatcherDef::Recipients(recipients) => recipients
-            .object_reference()
-            .is_some_and(static_damage_object_reference_supported),
-        DamageRecipientMatcherDef::MatchingObject(predicate) => {
-            static_object_predicate_supported(predicate)
-        }
-        DamageRecipientMatcherDef::PlayerAndCreaturesControlledBy(_)
-        | DamageRecipientMatcherDef::PlayerOrPlaneswalker => false,
-    };
-    source && recipient
-}
-
-fn static_damage_object_reference_supported(reference: ObjectRefDef) -> bool {
-    matches!(
-        reference,
-        ObjectRefDef::Source | ObjectRefDef::AttachedToSource
-    )
-}
-
 fn trigger_modification_cause_supported(event: crate::card::TriggerEventDef) -> bool {
     match event {
         crate::card::TriggerEventDef::ZoneChanged(matcher) => {
@@ -980,5 +971,7 @@ include!("program_context/effect_operation_names.rs");
 include!("program_context/static_conditions.rs");
 include!("program_context/static_predicates.rs");
 include!("program_context/static_values.rs");
+
+include!("program_context/static_damage.rs");
 
 include!("program_context/cost_programs.rs");

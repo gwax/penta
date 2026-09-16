@@ -3740,6 +3740,7 @@ pub(in crate::card::sets) static NATURE_S_LORE: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{1}{G}")).with_ability(AbilityDef::spell(
         "Search your library for a Forest card, put that card onto the battlefield, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
@@ -4132,6 +4133,7 @@ pub(in crate::card::sets) static ALTAR_OF_BONE: CardRecord = CardRecord::new(
             "Search your library for a creature card, reveal it, put it \
              into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Creature),

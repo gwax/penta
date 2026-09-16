@@ -8,10 +8,11 @@ use super::{
 impl Game {
     /// Offers a search over the cards a predicate admits. Hidden-zone choices
     /// stay private; graveyards and exile are already public information.
-    #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::too_many_arguments, clippy::fn_params_excessive_bools)]
     pub(super) fn queue_zone_search(
         &mut self,
         player: PlayerId,
+        exile_face_down: bool,
         source_zone: ZoneKind,
         predicate: ObjectPredicateDef,
         minimum: usize,
@@ -92,6 +93,7 @@ impl Game {
             false,
             options,
             DecisionContinuation::SearchZone {
+                exile_face_down,
                 controller,
                 source: source_zone,
                 destination,

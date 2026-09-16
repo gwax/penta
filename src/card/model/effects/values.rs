@@ -321,6 +321,8 @@ impl ObjectQueryDef {
 /// last-known-information selection to the runtime source reference.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ValueDef {
+    /// A number captured by an enclosing `BindValue` program.
+    BoundValue(Binding),
     Constant(i32),
     /// Unspent mana held by the named player, optionally filtered by type.
     /// Counts units regardless of their spending restrictions or provenance.
@@ -569,6 +571,8 @@ pub enum ValueDef {
     /// points at. Read live, so an effect that mills as it goes sees
     /// the library it started with only if it asks first.
     TargetLibrarySize(TargetIndex),
+    /// The current life total of a targeted player.
+    TargetLifeTotal(TargetIndex),
     /// A player's life total, read live. Distinct from the fateful-hour
     /// conditions, which compare it: this is the number itself, for the
     /// clauses that spend it as an amount.
@@ -591,6 +595,8 @@ pub enum ValueDef {
     /// how "where X is the mana value of the exiled card" finds the card it
     /// means.
     ObjectManaValue(ObjectRefDef),
+    /// All mana units actually spent on this cast, including colorless mana.
+    ManaSpentToCast(ObjectRefDef),
 }
 
 /// A value and the constant it is multiplied by, for "+N/+N for each ...".

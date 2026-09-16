@@ -282,6 +282,7 @@ impl Game {
                 // taps its own source is never offered on mana only that
                 // source could have made.
                 let payment_purpose = ManaPaymentPurpose::Ability {
+                    tap_for_generic: definition.tap_for_generic,
                     source: permanent.card.id,
                     taps_source,
                     leaves_source,
@@ -737,6 +738,7 @@ impl Game {
                 continue;
             };
             let purpose = ManaPaymentPurpose::Ability {
+                tap_for_generic: definition.tap_for_generic,
                 source: ongoing.source.object,
                 taps_source: false,
                 leaves_source: false,

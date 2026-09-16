@@ -29,6 +29,7 @@ pub(super) fn pay_cost(pool: &mut ManaPool, cost: ManaCost, x: u16) {
 /// Spends a pool against one cost. `spread_generic_colors` pays the generic
 /// portion across as many colours as it can instead of draining them in
 /// order, which is what converge wants and nothing else does.
+#[cfg(test)]
 pub(super) fn pay_cost_with_generic_strategy(
     pool: &mut ManaPool,
     cost: ManaCost,
@@ -45,20 +46,30 @@ pub(super) fn pay_cost_with_generic_strategy(
         generic_order,
         spread_generic_colors,
     )
-    .expect("an authoritative payment is affordable");
+    .expect("an authoritative payment is affordable")
+    .mana;
 }
 
 /// The pool left after one globally consistent allocation to the cost.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn payment_remainder(
-    pool: ManaPool,
+    pool: impl Into<PaymentPool>,
     cost: ManaCost,
     x: u16,
     flexible_preference: &impl Fn(ManaColor) -> u16,
     generic_order: &[ManaColor],
     spread_generic_colors: bool,
-) -> Option<ManaPool> {
-    let mut remaining = pool;
+) -> Option<PaymentPool> {
+    let pool = pool.into();
+    if pool.needs_symbol_allocation() {
+        return super::payment::allocation::symbol_payment_remainder(
+            pool,
+            PaymentPool::default(),
+            cost,
+            x,
+        );
+    }
+    let mut remaining = pool.mana;
     for color in ManaColor::ALL {
         let required = mana_cost_amount(cost, color);
         if remaining.amount(color) < required {
@@ -77,12 +88,14 @@ pub(super) fn payment_remainder(
         spread_generic_colors,
         ManaPool::default(),
     )
+    .map(Into::into)
 }
 
 /// Whether every supplied mana unit can be allocated to the obligation.
 /// Unlike automatic allocation, this accepts a player's choice to use the
 /// generic branch of a two-brid symbol even when its colored branch is available.
-pub(super) fn exact_mana_payment(pool: ManaPool, cost: ManaCost, x: u16) -> bool {
+pub(super) fn exact_mana_payment(pool: impl Into<PaymentPool>, cost: ManaCost, x: u16) -> bool {
+    let pool = pool.into();
     payment_including_units(pool, pool, cost, x)
 }
 
@@ -90,11 +103,19 @@ pub(super) fn exact_mana_payment(pool: ManaPool, cost: ManaCost, x: u16) -> bool
 /// complete allocation. This allocates the supplied pool, without searching for
 /// mana sources or choosing a different prefix for the player.
 pub(super) fn payment_including_units(
-    mut pool: ManaPool,
-    mut required: ManaPool,
+    pool: impl Into<PaymentPool>,
+    required: impl Into<PaymentPool>,
     cost: ManaCost,
     x: u16,
 ) -> bool {
+    let pool = pool.into();
+    let required = required.into();
+    if pool.needs_symbol_allocation() || required.needs_symbol_allocation() {
+        return super::payment::allocation::symbol_payment_remainder(pool, required, cost, x)
+            .is_some();
+    }
+    let mut pool = pool.mana;
+    let mut required = required.mana;
     for color in ManaColor::ALL {
         let fixed = mana_cost_amount(cost, color);
         if pool.amount(color) < fixed || required.amount(color) > pool.amount(color) {
@@ -357,6 +378,11 @@ pub(super) fn fold_restricted_x(cost: ManaCost, x: u16, color: ManaColor) -> (Ma
         // accepts it, so there is nothing to fold.
         ManaColor::Colorless => return (cost, x),
     }
+    let index = ManaColor::ALL
+        .iter()
+        .position(|candidate| *candidate == color)
+        .expect("known mana color");
+    folded.restricted_generic[index] = folded.restricted_generic[index].saturating_add(amount);
     (folded, 0)
 }
 

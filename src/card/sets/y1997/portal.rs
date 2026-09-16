@@ -399,6 +399,7 @@ pub(in crate::card::sets) static PERSONAL_TUTOR: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{U}")).with_abilities(&[AbilityDef::spell(
         "Search your library for a sorcery card, reveal it, then shuffle and put that card on top.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Sorcery),
@@ -928,6 +929,7 @@ pub(in crate::card::sets) static WOOD_ELVES: CardRecord = CardRecord::new(
             "When this creature enters, search your library for a Forest \
              card, put that card onto the battlefield, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasAnyBasicLandType(&[

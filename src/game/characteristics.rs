@@ -193,6 +193,7 @@ impl Game {
                     base_power_toughness: None,
                     colors: None,
                     added_creature_types: Vec::new(),
+                    replaced_creature_types: None,
                     no_mana_cost: false,
                 })
             }
@@ -215,6 +216,7 @@ impl Game {
                 base_power_toughness: None,
                 colors: None,
                 added_creature_types: Vec::new(),
+                replaced_creature_types: None,
                 no_mana_cost: false,
             })
     }
@@ -293,6 +295,7 @@ impl Game {
             base_power_toughness: None,
             colors: None,
             added_creature_types: Vec::new(),
+            replaced_creature_types: None,
             no_mana_cost: false,
         };
         let mut faces = match permanent.card.definition {
@@ -352,6 +355,7 @@ impl Game {
             colors: self.effective_colors(permanent, &rules),
             subtypes: self.effective_subtypes(permanent),
             mana_value: self.permanent_mana_value(permanent),
+            mana_cost_has_x: rules.mana_cost().is_some_and(|cost| cost.variable_x),
             power: self.power_ignoring_static_effects(permanent),
             toughness: self.toughness_ignoring_static_effects(permanent),
             keywords: self.keyword_mask(permanent, None),
@@ -409,6 +413,7 @@ impl Game {
             colors: self.effective_colors(permanent, &rules),
             subtypes: self.effective_subtypes_with_prospective(permanent, prospective),
             mana_value: self.permanent_mana_value(permanent),
+            mana_cost_has_x: rules.mana_cost().is_some_and(|cost| cost.variable_x),
             power: self.power_ignoring_static_effects(permanent),
             toughness: self.toughness_ignoring_static_effects(permanent),
             keywords: self.keyword_mask(permanent, Some(prospective)),

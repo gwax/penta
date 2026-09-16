@@ -40,6 +40,7 @@ fn trigger_event_object_zone(event: TriggerEventDef) -> Option<ZoneKind> {
         | TriggerEventDef::BlocksOrBecomesBlockedBy { .. }
         | TriggerEventDef::Blocks { .. }
         | TriggerEventDef::BecomesBlockedBy { .. }
+        | TriggerEventDef::CountersCross { .. }
         | TriggerEventDef::CountersPlaced { .. }
         | TriggerEventDef::Transforms(_) => Some(ZoneKind::Battlefield),
         // The named object is the spell or ability rather than what it

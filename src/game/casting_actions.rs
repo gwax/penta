@@ -288,6 +288,7 @@ impl Game {
                                         definition: definition.id, controller: player, form: option.form.clone(),
                                         alternative: alternative_kind,
         x: 0,
+        spend_any_color: self.card_mana_is_any_color(card.id),
         reserved_life_payment: 0,
                                     }))
                                 } else if cost.variable_x {
@@ -326,6 +327,7 @@ impl Game {
                                                     form: option.form.clone(),
                                                     alternative: alternative_kind,
         x: 0,
+        spend_any_color: self.card_mana_is_any_color(card.id),
         reserved_life_payment: total_life,
                                                 };
                                                 let maximum = self.maximum_spell_x_for(
@@ -372,6 +374,13 @@ impl Game {
                                 );
                                 for x in self.payment_query.x_values(min_x, max_x) {
                                     let spell = super::SpellView { x, ..spell };
+                                    if source_zone == CastSourceZone::Exile
+                                        && self.exile_play_permission(card.id, player)
+                                            .and_then(|permission| permission.maximum_spell_mana_value)
+                                            .is_some_and(|maximum| self.spell_view_characteristics(spell)
+                                                .is_none_or(|view| view.mana_value > maximum))
+                                    { continue; }
+
 
                                     if (source_zone == CastSourceZone::Library || costs.permission_source().is_some()) && self.selected_play_permission(card, player, option, x, &costs).is_none() { continue; }
                                     // A permission that bounds what it
@@ -514,6 +523,7 @@ impl Game {
                                                     form: option.form.clone(),
                                                     alternative: alternative_kind,
         x,
+        spend_any_color: self.card_mana_is_any_color(card.id),
         reserved_life_payment: cast_life
                                                         .saturating_add(permission_life)
                                                         .saturating_add(phyrexian_life),

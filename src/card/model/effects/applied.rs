@@ -79,7 +79,10 @@ pub enum AbilityOperationDef {
     /// top supplies Conspicuous Snoop's. Unlike [`Self::Add`], the abilities
     /// are read at the moment the layer is walked and each one keeps its own
     /// grant identity.
-    AddActivatedAbilitiesOf { cards: ActivatedAbilityCardsDef, object: ObjectPredicateDef },
+    AddActivatedAbilitiesOf {
+        cards: ActivatedAbilityCardsDef,
+        object: ObjectPredicateDef,
+    },
 }
 
 /// One layer-7 operation over power and toughness.
@@ -201,7 +204,11 @@ pub enum PlayerRuleDef {
     /// The affected player cannot be targeted by spells or abilities their
     /// opponents control. Unlike protection, this does not prevent damage or
     /// make an Aura that is already attached fall off.
+    /// All spells controlled by the affected player are uncounterable.
+    SpellsCannotBeCountered,
     Hexproof,
+    /// Hexproof restricted to targeting sources with this quality.
+    HexproofFrom(&'static ObjectPredicateDef),
     /// The affected player cannot be targeted by spells or abilities at all,
     /// their own included. Unlike [`Self::Hexproof`] the rule is not
     /// controller-relative, which is the whole difference between shroud and
@@ -232,6 +239,12 @@ pub enum PlayerRuleDef {
 /// top-level effect variant.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AppliedRuleDef {
+    /// Normalize a matching tapped source's production to one colorless mana.
+    /// Instances of this replacement commute: each produces the same single unit.
+    TappedManaBecomesColorless {
+        types: CardTypeSet,
+        minimum: u16,
+    },
     /// The affected creature assigns no combat damage. This is a constraint
     /// on the assignment rather than a shield over the result: an attacker
     /// under it is not asked how to divide its damage at all, so trample has
@@ -257,6 +270,8 @@ pub enum AppliedRuleDef {
     /// combat assignment reads the other one.
     AssignsCombatDamageEqualToToughness,
     CannotBeCountered,
+    /// No mana may be spent on this spell, including increased and additional costs.
+    CannotSpendManaToCast,
     /// "If one or more tokens would be created under your control, twice
     /// that many of those tokens are created instead." A replacement on the
     /// creation rather than an effect of its own, so it applies to every
@@ -289,10 +304,15 @@ pub enum AppliedRuleDef {
     /// and about one turn, so they will name their own scopes rather than
     /// widening this one.
     MaySpendManaAsAnyColorForCreatureAbilities,
+    /// Any payment made by the affected player may use mana of any color.
+    MaySpendManaAsAnyColor,
     /// The selected cards are continuously known to the recipient players.
     KnownCards(ObjectQueryDef),
     /// The selected cards gain plot and may be plotted from their current zone.
-    MayPlot { cards: ObjectQueryDef, ability: &'static AbilityDef },
+    MayPlot {
+        cards: ObjectQueryDef,
+        ability: &'static AbilityDef,
+    },
     /// Modify occurrences caused by matching events. Suppression takes
     /// precedence over every additional occurrence.
     ModifyTriggers(&'static TriggerModificationDef),

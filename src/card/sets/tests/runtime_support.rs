@@ -535,7 +535,8 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     }
                     // A triggered mana ability resolves without an offer to
                     // read an amount off, so this one stays outside.
-                    EffectDef::BindOutput { .. }
+                    EffectDef::BindValue { .. }
+                    | EffectDef::BindOutput { .. }
                     | EffectDef::WithRule { .. }
                     | EffectDef::ContinueReplacedDraw
                     | EffectDef::AddManaEqualTo { .. }
@@ -564,6 +565,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::PayOr(_)
                     | EffectDef::WithCosts { .. }
                     | EffectDef::PreventDamage { .. }
+                    | EffectDef::Repeat { .. }
                     | EffectDef::May { .. }
                     | EffectDef::None
                     | EffectDef::DealDamage(_)
@@ -661,6 +663,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::BecomeMonarch { .. }
                     | EffectDef::VoteForPermanentToExile { .. }
                     | EffectDef::DamageCannotBePreventedThisTurn
+                    | EffectDef::ExileUntilSourceLeaves { .. }
                     | EffectDef::ExileLinkedToSource { .. }
                     | EffectDef::MayPlayWithoutPaying { .. }
                     | EffectDef::ExileGrantingOwnerPlay { .. }

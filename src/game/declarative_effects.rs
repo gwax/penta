@@ -53,6 +53,31 @@ impl Game {
             "entered",
         );
         match scoped.effect {
+            EffectDef::ExileUntilSourceLeaves { object: recipient } => {
+                self.resolve_duration_exile(recipient, object, &context, scoped);
+            }
+            EffectDef::Repeat { player, .. } => {
+                for target in self.effect_recipients(player, object, &context, scoped) {
+                    if let Target::Player(player) = target {
+                        self.queue_optional_effect(
+                            player,
+                            object,
+                            context.fork_resolution(),
+                            scoped,
+                        );
+                    }
+                }
+            }
+            EffectDef::BindValue {
+                binding,
+                value,
+                effect,
+            } => {
+                let value = self.effect_value(value, object, &context, scoped);
+                let mut context = context.fork_resolution();
+                context.bind_value(binding, value);
+                self.resolve_effect_def(scoped.with_effect(*effect), object, context);
+            }
             EffectDef::Perform(action) => self.resolve_game_action(action, object, context, scoped),
             EffectDef::WithRule { rule, effect } => {
                 self.resolve_effect_def(
@@ -836,7 +861,7 @@ impl Game {
                 let Some(mut copy) = self.copiable_values_of(target) else {
                     return;
                 };
-                copy::apply_copy_exceptions(self, &mut copy, exceptions, object);
+                copy::apply_copy_exceptions(self, &mut copy, *exceptions, object);
                 let expiration = duration.map(|duration| {
                     Self::continuous_effect_expiration(
                         duration,

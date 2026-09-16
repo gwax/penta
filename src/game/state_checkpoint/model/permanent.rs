@@ -90,6 +90,8 @@ pub(super) struct PermanentSnapshot {
     /// on the wire so older readers can still restore sunburst correctly.
     #[serde(default, skip_serializing_if = "stack::no_colors_spent")]
     pub(super) cast_colors_of_mana_spent: [bool; 5],
+    #[serde(default)]
+    pub(super) cast_mana_spent: u16,
     #[serde(default, skip_serializing_if = "emptiness::is_zero_u16")]
     pub(super) cast_phyrexian_symbols_paid_with_life: u16,
     /// The alternative this permanent's spell was cast with, by its stable

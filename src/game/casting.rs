@@ -248,7 +248,7 @@ impl Game {
         }
         self.run_explicit_funding(player);
         self.price_explicit_mana_production(player, &mut activation);
-        let produced_mana = Self::mana_for_activation(&activation);
+        let produced_mana = Self::raw_mana_for_activation(&activation);
         // Mana and stack-using abilities share per-turn and per-object history.
         if let Some(permanent) = self
             .battlefield
@@ -327,6 +327,7 @@ impl Game {
         activation: &super::ManaAbilityActivation,
         produced_mana: Vec<Mana>,
     ) {
+        let produced_mana = self.replace_tapped_mana(activation, produced_mana);
         self.add_mana(player, produced_mana);
         if activation.effect.damage_to_controller > 0 {
             self.damage_target_from(
@@ -422,6 +423,7 @@ impl Game {
         };
         let exile_if_put_into_graveyard =
             self.cast_exiles_if_put_into_graveyard(card_id, &signature, offer);
+        let spend_any_color = self.card_mana_is_any_color(card_id);
         let (granted_by_permission, cast_via_suspend) =
             self.spend_cast_permissions(player, card_id, &signature, source_zone, alternative_kind);
         self.take_answered_cast_offer(card_id);
@@ -492,6 +494,7 @@ impl Game {
                 .clone(),
             alternative: alternative_kind,
             x,
+            spend_any_color,
             reserved_life_payment: life,
         };
         self.pay_cast_life_and_energy(player, life, opponent_life_gain, energy);
@@ -788,7 +791,14 @@ impl Game {
         let (mana_cost, mana_x) = if let Some(bound) = self.explicit_cast_contributions.take() {
             (bound.remaining.cost, bound.remaining.x)
         } else {
-            self.residual_cost_after_contributions(cost, x, &purpose, &plan, true)
+            self.residual_cost_after_contributions(
+                stack_object.controller,
+                cost,
+                x,
+                &purpose,
+                &plan,
+                true,
+            )
         };
         // The spell's nonmana life bill was paid before this continuation
         // began. Do not reserve it a second time when repeatable life mana
@@ -802,6 +812,7 @@ impl Game {
                 form,
                 alternative,
                 x: chosen_x,
+                spend_any_color,
                 ..
             } => ManaPaymentPurpose::Spell {
                 object: *object,
@@ -811,6 +822,7 @@ impl Game {
                 form: form.clone(),
                 alternative: *alternative,
                 x: *chosen_x,
+                spend_any_color: *spend_any_color,
                 reserved_life_payment: 0,
             },
             ManaPaymentPurpose::Ability { .. }
@@ -827,6 +839,7 @@ impl Game {
             .cast
             .as_mut()
             .expect("a cast spell retains its context through payment");
+        cast_context.mana_spent = u16::try_from(spent_mana.len()).unwrap_or(u16::MAX);
         for mana in &spent_mana {
             if mana.color != ManaColor::Colorless {
                 cast_context.colors_of_mana_spent =

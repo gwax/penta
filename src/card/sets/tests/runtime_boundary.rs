@@ -295,6 +295,7 @@ fn decision_effects_suspend_inside_shared_stack_sequences() {
     static SEQUENCE_WITH_PAYMENT: [EffectDef; 2] = [OPTIONAL_TAP, UNTAP];
     static SEQUENCE_WITH_DELAYED_MAY: [EffectDef; 2] = [DELAYED_MAY, UNTAP];
     static SEARCH: EffectDef = EffectDef::SearchZone {
+        exile_face_down: false,
         player: EffectRecipientDef::Controller,
         source: ZoneKind::Library,
         object: ObjectPredicateDef::Any,
@@ -336,6 +337,7 @@ fn decision_effects_suspend_inside_shared_stack_sequences() {
 #[test]
 fn zone_search_boundary_rejects_ambiguous_or_incoherent_shapes() {
     let search = |source, destination, maximum, shuffle, attachment| EffectDef::SearchZone {
+        exile_face_down: false,
         player: EffectRecipientDef::Controller,
         source,
         object: ObjectPredicateDef::Any,

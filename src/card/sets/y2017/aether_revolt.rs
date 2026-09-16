@@ -124,6 +124,7 @@ pub(in crate::card::sets) static TROPHY_MAGE: CardRecord = CardRecord::new(
              an artifact card with mana value 3, reveal it, put it into \
              your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -156,6 +157,7 @@ pub(in crate::card::sets) static WHIR_OF_INVENTION: CardRecord = CardRecord::new
             "Search your library for an artifact card with mana value X \
              or less, put it onto the battlefield, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

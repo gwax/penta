@@ -255,6 +255,7 @@ fn tutors_and_fetch_lands_use_declarative_zone_searches() {
     assert_eq!(
         enlightened.declarative_effect(),
         Some(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::AnyOf(&[
@@ -314,6 +315,7 @@ fn tutors_and_fetch_lands_use_declarative_zone_searches() {
         assert_eq!(
             ability.declarative_effect(),
             Some(EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasAnyBasicLandType(basic_land_types),
@@ -344,6 +346,7 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
     assert_eq!(
         *effect,
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Swamp]),
@@ -366,6 +369,7 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
     assert_eq!(
         seek.declarative_effect(),
         Some(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -391,6 +395,7 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
     assert_eq!(
         farseek.declarative_effect(),
         Some(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasAnyBasicLandType(&[
@@ -416,6 +421,7 @@ fn standard_search_cards_preserve_may_reveal_and_cardinality_semantics() {
     assert_eq!(
         rangers_path.declarative_effect(),
         Some(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),

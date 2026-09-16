@@ -116,6 +116,7 @@ pub(in crate::card::sets) static SETTLE_THE_WRECKAGE: CardRecord = CardRecord::n
             then: &EffectDef::May {
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -926,6 +927,7 @@ pub(in crate::card::sets) static FIELD_OF_RUIN: CardRecord = CardRecord::new(
                     then: None,
                 },
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::EachPlayer,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

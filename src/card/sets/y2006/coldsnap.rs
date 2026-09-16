@@ -112,6 +112,7 @@ pub(in crate::card::sets) static ARCUM_DAGSSON: CardRecord = CardRecord::new(
             EffectDef::Sequence(&[
                 EffectDef::sacrifice(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

@@ -525,6 +525,8 @@ impl Game {
             EffectDef::ForEachInBinding { effect, .. }
             | EffectDef::WithBattlefieldArrival { effect, .. }
             | EffectDef::WithRule { effect, .. }
+            | EffectDef::Repeat { effect, .. }
+            | EffectDef::BindValue { effect, .. }
             | EffectDef::BindOutput { effect, .. } => Self::immediate_attachment_target(*effect),
             EffectDef::DealDamage(damage) => damage
                 .continuation()
@@ -645,6 +647,7 @@ impl Game {
                 | EffectDef::BecomeMonarch { .. }
                 | EffectDef::VoteForPermanentToExile { .. }
                 | EffectDef::DamageCannotBePreventedThisTurn
+                | EffectDef::ExileUntilSourceLeaves { .. }
                 | EffectDef::ExileLinkedToSource { .. }
                 | EffectDef::ExileGrantingControllerPlayThisTurn { .. }
                 | EffectDef::MayPlayWithoutPaying { .. }

@@ -125,6 +125,7 @@ pub(in crate::card::sets) static FABRICATE: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{2}{U}")).with_abilities(&[AbilityDef::spell(
         "Search your library for an artifact card, reveal it, put it into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Artifact),
@@ -336,6 +337,7 @@ pub(in crate::card::sets) static SYLVAN_SCRYING: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{1}{G}")).with_abilities(&[AbilityDef::spell(
         "Search your library for a land card, reveal it, put it into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Land),
@@ -855,6 +857,7 @@ pub(in crate::card::sets) static SOLEMN_SIMULACRUM: CardRecord = CardRecord::new
              a basic land card, put that card onto the battlefield \
              tapped, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

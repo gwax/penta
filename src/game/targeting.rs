@@ -139,6 +139,7 @@ impl Game {
             attacking_or_blocking: false,
             keywords,
             mana_value: rules.mana_cost().map_or(0, ManaCost::mana_value),
+            mana_cost_has_x: rules.mana_cost().is_some_and(|cost| cost.variable_x),
             power: stats.map(|stats| stats.power),
             toughness: stats.map(|stats| stats.toughness),
             supertypes,
@@ -202,6 +203,7 @@ impl Game {
         let mut colors = [false; 5];
         let mut subtypes = crate::card::SubtypeSet::EMPTY;
         let mut mana_value = 0;
+        let mut mana_cost_has_x = false;
         let mut power = None;
         let mut toughness = None;
         let mut supertypes = [false; CardSupertype::COUNT];
@@ -221,6 +223,7 @@ impl Game {
             }
             subtypes = subtypes.union(Self::defined_subtypes(&part.rules));
             mana_value += part.rules.mana_cost().map_or(0, ManaCost::mana_value);
+            mana_cost_has_x |= part.rules.mana_cost().is_some_and(|cost| cost.variable_x);
             if let Some(stats) = part.rules.creature_stats() {
                 // A characteristic-defining ability answers here too: what a
                 // predicate asks of a card in a graveyard is what that card
@@ -281,6 +284,7 @@ impl Game {
             attacking_or_blocking: false,
             keywords,
             mana_value,
+            mana_cost_has_x,
             power,
             toughness,
             supertypes,

@@ -17,6 +17,8 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
             "Sequence"
         }
         EffectDef::WithRule { .. } => "WithRule",
+        EffectDef::Repeat { .. } => "Repeat",
+        EffectDef::BindValue { .. } => "BindValue",
         EffectDef::BindOutput { .. } => "BindOutput",
         EffectDef::Randomized { .. } => "Randomized",
         EffectDef::RollDie(_) => "RollDie",
@@ -126,6 +128,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::VoteForPermanentToExile { .. } => "VoteForPermanentToExile",
         EffectDef::DamageCannotBePreventedThisTurn => "DamageCannotBePreventedThisTurn",
         EffectDef::May { .. } => "May",
+        EffectDef::ExileUntilSourceLeaves { .. } => "ExileUntilSourceLeaves",
         EffectDef::ExileLinkedToSource { .. } => "ExileLinkedToSource",
         EffectDef::PermitLookAtExiled { .. } => "PermitLookAtExiled",
         EffectDef::MayPlayWithoutPaying { .. } => "MayPlayWithoutPaying",

@@ -1,3 +1,4 @@
+use super::payment::allocation::PaymentPool;
 use crate::action::{AbilityOrigin, ManaColor};
 use crate::card::{AddManaEffectDef, AppliedEffectDef, CostDef, ManaSplit, SpellForm};
 use crate::ids::{CardDefinitionId, GameObjectId, PlayerId};
@@ -28,6 +29,7 @@ pub(super) enum ManaPaymentPurpose {
         /// Frozen before the card leaves its source zone: the proposed spell
         /// is local to the payment continuation until all costs are paid.
         commander_owner: Option<PlayerId>,
+        spend_any_color: bool,
         form: SpellForm,
         alternative: Option<crate::card::AlternativeCastKindDef>,
         x: u16,
@@ -36,6 +38,7 @@ pub(super) enum ManaPaymentPurpose {
         reserved_life_payment: u16,
     },
     Ability {
+        tap_for_generic: crate::card::CardTypeSet,
         source: GameObjectId,
         /// Whether the ability taps its source to pay for itself. When it
         /// does, that source cannot also be tapped for mana, so it is barred
@@ -93,6 +96,9 @@ impl ManaActivationChoices {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct ManaAbilityActivation {
+    pub(super) controller: PlayerId,
+    /// Source characteristics when the activation is chosen, retained through sacrificed-source costs.
+    pub(super) source_types: crate::card::CardTypeSet,
     pub(super) source: GameObjectId,
     pub(super) ability: AbilityOrigin,
     pub(super) color: ManaColor,
@@ -135,7 +141,7 @@ pub(super) struct ManaAbilityActivation {
 pub(super) struct ManaSourceOutput {
     pub(super) kind: PlannedPaymentKind,
     /// Mana this output actually puts into the player's pool.
-    pub(super) production: ManaPool,
+    pub(super) production: PaymentPool,
     /// Colored payment supplied directly without producing mana.
     pub(super) colored_contribution: ManaPool,
     pub(super) generic_payment: u16,
@@ -168,11 +174,12 @@ pub(super) enum ManaContributionKind {
     Convoke,
     Delve,
     Improvise,
+    TapPermanent,
 }
 
 impl ManaContributionKind {
     pub(super) const fn taps_source(self) -> bool {
-        matches!(self, Self::Convoke | Self::Improvise)
+        matches!(self, Self::Convoke | Self::Improvise | Self::TapPermanent)
     }
 
     pub(super) const fn exiles_source(self) -> bool {
@@ -268,12 +275,12 @@ impl PlannedPaymentKind {
 /// a `{C}` symbol.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(super) struct PaymentCapacity {
-    pub(super) mana: ManaPool,
+    pub(super) mana: PaymentPool,
     pub(super) generic: u16,
 }
 
 impl PaymentCapacity {
-    pub(super) const fn from_mana(mana: ManaPool) -> Self {
+    pub(super) const fn from_mana(mana: PaymentPool) -> Self {
         Self { mana, generic: 0 }
     }
 
@@ -287,14 +294,14 @@ impl PaymentCapacity {
 
     pub(super) fn add_output(&mut self, output: &ManaSourceOutput) {
         self.mana.add(output.production);
-        self.mana.add(output.colored_contribution);
+        self.mana.direct.add(output.colored_contribution);
         self.generic = self.generic.saturating_add(output.generic_payment);
     }
 
     #[allow(dead_code)]
     pub(super) fn add_planned(&mut self, payment: &PlannedManaActivation) {
         self.mana.add(payment.production);
-        self.mana.add(payment.colored_contribution);
+        self.mana.direct.add(payment.colored_contribution);
         self.generic = self.generic.saturating_add(payment.generic_payment);
     }
 }
@@ -304,7 +311,7 @@ pub(super) struct PlannedManaActivation {
     pub(super) source: GameObjectId,
     pub(super) kind: PlannedPaymentKind,
     /// Mana this activation actually produces.
-    pub(super) production: ManaPool,
+    pub(super) production: PaymentPool,
     /// Colored payment supplied directly by this source.
     pub(super) colored_contribution: ManaPool,
     /// Capacity that pays generic only; nonzero only for a colorless creature

@@ -332,6 +332,7 @@ pub(in crate::card::sets) static UGIN_EYE_OF_THE_STORMS: CardRecord = CardRecord
                 // "Any number": the bound is the library, so the search offers everything
                 // that matches and takes as many as its controller wants.
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -352,6 +353,8 @@ pub(in crate::card::sets) static UGIN_EYE_OF_THE_STORMS: CardRecord = CardRecord
                     // than by anything about exile, since a card that was already there is not
                     // one of them.
                     then: Some(&EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                        cast_only: false,
+                        maximum_spell_mana_value: None,
                         objects: ObjectSetDef::Binding(ParentBinding),
                         // "Until end of turn" is printed, so this one outlives its resolution.
                         duration: FreePlayDurationDef::UntilEndOfTurn,
@@ -1752,6 +1755,7 @@ pub(in crate::card::sets) static DRAGONSTORM_FORECASTER: CardRecord = CardRecord
              hand, then shuffle.",
             &[CostDef::Mana(mana_cost!("{2}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::AnyOf(&[
@@ -2081,7 +2085,7 @@ pub(in crate::card::sets) static NAGA_FLESHCRAFTER: CardRecord = CardRecord::new
                             )),
                             object: ObjectRefDef::Target(TargetIndex::PRIMARY),
                         })),
-                        exceptions: CopyExceptionsDef::NONE,
+                        exceptions: &CopyExceptionsDef::NONE,
                         duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
                     },
                 ]),
@@ -3800,6 +3804,7 @@ pub(in crate::card::sets) static MAGMATIC_HELLKITE: CardRecord = CardRecord::new
                     then: None,
                 },
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                         ObjectRefDef::Target(TargetIndex::PRIMARY),
                     )),
@@ -4820,7 +4825,7 @@ pub(in crate::card::sets) static BLOOMVINE_REGENT: CardRecord = CardRecord::new(
                             &const {
                                 [
                                     EffectDef::SearchZone {
-                                        player: EffectRecipientDef::Controller,
+                exile_face_down: false,                                        player: EffectRecipientDef::Controller,
                                         source: ZoneKind::Library,
                                         object: ObjectPredicateDef::All(
                                             &const {
@@ -5025,6 +5030,7 @@ pub(in crate::card::sets) static ENCROACHING_DRAGONSTORM: CardRecord = CardRecor
              two basic land cards, put them onto the battlefield tapped, \
              then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Supertype(CardSupertype::Basic),
@@ -5347,6 +5353,7 @@ pub(in crate::card::sets) static NATURE_S_RHYTHM: CardRecord = CardRecord::new(
             "Search your library for a creature card with mana value X or less, put it \
              onto the battlefield, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -5472,6 +5479,7 @@ pub(in crate::card::sets) static ROAMER_S_ROUTINE: CardRecord = CardRecord::new(
             "Search your library for a basic land card, put it onto the battlefield \
              tapped, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -5598,6 +5606,7 @@ fn sagu_wildling_composition() -> CardComposition {
                     "Search your library for a basic land card, reveal it, put it \
                      into your hand, then shuffle.",
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[
@@ -8021,6 +8030,7 @@ pub(in crate::card::sets) static ABZAN_MONUMENT: CardRecord = CardRecord::new(
              Plains, Swamp, or Forest card, reveal it, put it into your \
              hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -8196,6 +8206,7 @@ pub(in crate::card::sets) static EMBERMOUTH_SENTINEL: CardRecord = CardRecord::n
                         amount: 1,
                     },
                     then: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::Supertype(CardSupertype::Basic),
@@ -8211,6 +8222,7 @@ pub(in crate::card::sets) static EMBERMOUTH_SENTINEL: CardRecord = CardRecord::n
                         then: None,
                     },
                     otherwise: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::Supertype(CardSupertype::Basic),
@@ -8276,6 +8288,7 @@ pub(in crate::card::sets) static JESKAI_MONUMENT: CardRecord = CardRecord::new(
              Island, Mountain, or Plains card, reveal it, put it into your \
              hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -8327,6 +8340,7 @@ pub(in crate::card::sets) static MARDU_MONUMENT: CardRecord = CardRecord::new(
              Mountain, Plains, or Swamp card, reveal it, put it into your \
              hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -8422,6 +8436,7 @@ pub(in crate::card::sets) static SULTAI_MONUMENT: CardRecord = CardRecord::new(
              Swamp, Forest, or Island card, reveal it, put it into your \
              hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -8473,6 +8488,7 @@ pub(in crate::card::sets) static TEMUR_MONUMENT: CardRecord = CardRecord::new(
              Forest, Island, or Mountain card, reveal it, put it into your \
              hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -8783,6 +8799,7 @@ pub(in crate::card::sets) static MAELSTROM_OF_THE_SPIRIT_DRAGON: CardRecord = Ca
                 CostDef::SacrificeSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Dragon")),

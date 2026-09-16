@@ -283,6 +283,7 @@ pub(in crate::card::sets) static SOLVE_THE_EQUATION: CardRecord = CardRecord::ne
         "Search your library for an instant or sorcery card, reveal \
          it, put it into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::AnyOf(&[
@@ -783,6 +784,7 @@ pub(in crate::card::sets) static CAMPUS_GUIDE: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

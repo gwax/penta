@@ -515,6 +515,7 @@ impl Game {
                 }
             }
             EffectDef::SearchZone {
+                exile_face_down,
                 player: recipient,
                 source: source_zone,
                 object: predicate,
@@ -582,6 +583,7 @@ impl Game {
                     if let Target::Player(player) = target {
                         self.queue_zone_search(
                             player,
+                            exile_face_down,
                             source_zone,
                             predicate,
                             minimum,

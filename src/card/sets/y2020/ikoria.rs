@@ -158,6 +158,7 @@ pub(in crate::card::sets) static FARFINDER: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -2320,6 +2321,7 @@ pub(in crate::card::sets) static WHISPER_SQUAD: CardRecord = CardRecord::new(
              put it onto the battlefield tapped, then shuffle.",
             &[CostDef::Mana(mana_cost!("{1}{B}"))],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::NameEquals(CardNameDef::Literal("Whisper Squad")),
@@ -3576,6 +3578,7 @@ pub(in crate::card::sets) static MIGRATION_PATH: CardRecord = CardRecord::new(
             "Search your library for up to two basic land cards, put them \
              onto the battlefield tapped, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Supertype(CardSupertype::Basic),
@@ -5110,6 +5113,7 @@ pub(in crate::card::sets) static FIEND_ARTISAN: CardRecord = CardRecord::new(
                 ])),
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -5143,13 +5147,36 @@ pub(in crate::card::sets) static GYRUDA_DOOM_OF_DEPTHS: CardRecord = CardRecord:
 );
 
 // IKO 222 — Jegantha, the Wellspring
-// Audit: unsupported — Needs a per-card mana-symbol multiplicity requirement and a payment restriction
-// forbidding generic-cost payment; the shared Companion selection and access are implemented.
 pub(in crate::card::sets) static JEGANTHA_THE_WELLSPRING: CardRecord = CardRecord::new(
     "Jegantha, the Wellspring",
     "1d52e527-3835-4350-8c01-0f2d5d623b9c",
     "Chris Rahn",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{4}{R/G}"), &["Elemental", "Elk"], 5, 5)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            companion(
+                "Companion — No card in your starting deck has more than one of the same \
+                 mana symbol in its mana cost. (If this card is your chosen companion, \
+                 you may put it into your hand from outside the game for {3} as a \
+                 sorcery.)",
+                DeckCards::All.all(CardRequirement::DistinctManaSymbols),
+            ),
+            AbilityDef::activated_mana(
+                "{T}: Add {W}{U}{B}{R}{G}. This mana can't be spent to pay generic mana \
+                 costs.",
+                &[CostDef::TapSource],
+                EffectDef::AddMana(
+                    AddManaEffectDef::amounts(&[
+                        (ManaColor::White, ValueDef::Constant(1)),
+                        (ManaColor::Blue, ValueDef::Constant(1)),
+                        (ManaColor::Black, ValueDef::Constant(1)),
+                        (ManaColor::Red, ValueDef::Constant(1)),
+                        (ManaColor::Green, ValueDef::Constant(1)),
+                    ])
+                    .with_restrictions(&[ManaRestrictionDef::CannotPayGeneric]),
+                ),
+            ),
+        ]),
 );
 
 // IKO 223 — Jubilant Skybonder

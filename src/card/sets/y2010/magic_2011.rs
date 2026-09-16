@@ -742,6 +742,7 @@ pub(in crate::card::sets) static HOARDING_DRAGON: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasType(CardType::Artifact),
@@ -1020,6 +1021,7 @@ pub(in crate::card::sets) static CULTIVATE: CardRecord = CardRecord::new(
          other into your hand, then shuffle.",
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -1115,6 +1117,7 @@ pub(in crate::card::sets) static FAUNA_SHAMAN: CardRecord = CardRecord::new(
                 CostDef::discard(ObjectPredicateDef::HasType(CardType::Creature)),
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -1229,6 +1232,7 @@ pub(in crate::card::sets) static PRIMEVAL_TITAN: CardRecord = CardRecord::new(
                 // Any land card, not just a basic: the two it finds are usually the two the
                 // deck was built around.
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasType(CardType::Land),

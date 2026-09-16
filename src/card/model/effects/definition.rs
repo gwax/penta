@@ -1,10 +1,29 @@
 /// Declarative effect primitives interpreted by the rules engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectDef {
+    /// A one-shot exile with an immediate return when this source leaves (CR 610.3).
+    /// The card returns to the zone it left, under its owner if that zone is the battlefield.
+    ExileUntilSourceLeaves {
+        object: EffectRecipientDef,
+    },
+    /// Offer a fresh decision before each iteration, retaining the enclosing resolution.
+    Repeat {
+        player: EffectRecipientDef,
+        effect: &'static EffectDef,
+    },
+    /// Evaluate a number once and retain it through the nested program, including decisions.
+    BindValue {
+        binding: Binding,
+        value: ValueDef,
+        effect: &'static EffectDef,
+    },
     /// Execute a shared game-action program under ordinary resolution rules.
     Perform(super::GameActionDef),
     /// Supply a lexical cost parameter to an inspectable effect program.
-    WithCosts { costs: &'static [CostDef], effect: &'static EffectDef },
+    WithCosts {
+        costs: &'static [CostDef],
+        effect: &'static EffectDef,
+    },
     AddCounters {
         object: EffectRecipientDef,
         kind: CounterKind,
@@ -57,22 +76,32 @@ pub enum EffectDef {
     /// An Aura spell attaching itself to what it enchants. The permanent the
     /// spell becomes is what attaches, so this is only meaningful on the spell
     /// clause of an Aura.
-    Attach { object: EffectRecipientDef },
+    Attach {
+        object: EffectRecipientDef,
+    },
     /// The mirror of [`Self::Attach`]: the named permanent moves onto this
     /// ability's own source, which is what "attach it to this creature" says.
-    AttachToSource { object: EffectRecipientDef },
+    AttachToSource {
+        object: EffectRecipientDef,
+    },
     /// Soulbond's pairing. The chosen creature and the ability's source
     /// record each other; the pair is symmetric and survives until one of
     /// them stops being a creature its controller controls.
-    PairWithSource { object: EffectRecipientDef },
+    PairWithSource {
+        object: EffectRecipientDef,
+    },
     /// Reconfigure's paired attach/unattach procedure. A selected creature
     /// becomes the new host; selecting none ends this attachment incarnation.
-    Reconfigure { object: EffectRecipientDef },
+    Reconfigure {
+        object: EffectRecipientDef,
+    },
     /// Detach the named Equipment or Fortification without moving it. This is
     /// a rules action rather than a zone change: Elbrus does it immediately
     /// before transforming, while the host and both objects remain otherwise
     /// unchanged.
-    Unattach { object: EffectRecipientDef },
+    Unattach {
+        object: EffectRecipientDef,
+    },
     /// Phase the recipient out. It is treated as though it does not exist
     /// until it phases in, which happens before its controller untaps during
     /// their next untap step (CR 702.25). Phasing is not a zone change:
@@ -91,7 +120,7 @@ pub enum EffectDef {
         /// Everything the copy has or replaces as part of the copy process.
         /// An empty definition is a plain copy; additions may include a
         /// reference to this very ability.
-        exceptions: CopyExceptionsDef,
+        exceptions: &'static CopyExceptionsDef,
         /// How long the copy lasts. A copy with no stated duration is
         /// indefinite, which is what almost every printed one is.
         duration: Option<ResolvedEffectDurationDef>,
@@ -604,9 +633,13 @@ pub enum EffectDef {
     /// "You may cast that card this turn." The cost is still owed and the
     /// timing rules still apply: the graveyard is merely a legal place to
     /// cast the named card from, until the turn ends.
-    PermitCastFromGraveyardThisTurn { object: EffectRecipientDef },
+    PermitCastFromGraveyardThisTurn {
+        object: EffectRecipientDef,
+    },
     /// Marks current exile objects as plotted, regardless of their abilities.
-    BecomePlotted { object: EffectRecipientDef },
+    BecomePlotted {
+        object: EffectRecipientDef,
+    },
     /// "Look at a card at random in target player's hand." Private to the
     /// looker rather than published, and one card rather than the hand.
     LookAtRandomCardInHand {
@@ -775,7 +808,6 @@ pub enum EffectDef {
         controller: Option<PlayerRelation>,
     },
 
-
     /// Several players make non-targeting permanent choices before the
     /// resulting partition is exposed to an ordinary nested effect.
     ChooseForEachPlayer(super::ChooseForEachPlayerDef),
@@ -825,6 +857,8 @@ pub enum EffectDef {
     /// "a card" is compulsory when one exists, while a qualified hidden-zone
     /// search may legally fail to find and therefore uses a minimum of zero.
     SearchZone {
+        /// Hide the arriving card in exile; the searcher already knows its identity.
+        exile_face_down: bool,
         player: EffectRecipientDef,
         source: ZoneKind,
         object: ObjectPredicateDef,
@@ -895,7 +929,9 @@ pub enum EffectDef {
     TakeExtraTurn {
         player: EffectRecipientDef,
     },
-    Tap { object: EffectRecipientDef },
+    Tap {
+        object: EffectRecipientDef,
+    },
     /// "Put it onto the battlefield, then <clause about it>." What enters is
     /// a new object, so the arrival is saved in `binding` for the clause that
     /// names it.
@@ -906,6 +942,10 @@ pub enum EffectDef {
         then: &'static EffectDef,
     },
     /// Turns a double-faced permanent over to its other face.
-    Transform { object: EffectRecipientDef },
-    Untap { object: EffectRecipientDef },
+    Transform {
+        object: EffectRecipientDef,
+    },
+    Untap {
+        object: EffectRecipientDef,
+    },
 }

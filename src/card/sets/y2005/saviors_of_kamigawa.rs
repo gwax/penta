@@ -279,6 +279,7 @@ pub(in crate::card::sets) static SEEK_THE_HORIZON: CardRecord = CardRecord::new(
         "Search your library for up to three basic land reveal them, \
          put them into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

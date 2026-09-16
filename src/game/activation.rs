@@ -168,6 +168,7 @@ impl Game {
             sacrificed_mana_value: 0,
         };
         let payment_purpose = ManaPaymentPurpose::Ability {
+            tap_for_generic: definition.tap_for_generic,
             source,
             taps_source: false,
             leaves_source: true,
@@ -276,12 +277,14 @@ impl Game {
             return false;
         };
         let purpose = ManaPaymentPurpose::Ability {
+            tap_for_generic: definition.tap_for_generic,
             source,
             taps_source: false,
             leaves_source: false,
         };
-        self.activate_mana_for_cost_avoiding_for(player, cost, 0, None, &purpose);
-        let _ = self.pay_player_cost_for(player, cost, 0, &purpose);
+        let (cost, payment_x) =
+            self.activate_mana_for_cost_avoiding_for(player, cost, 0, None, &purpose);
+        let _ = self.pay_player_cost_for(player, cost, payment_x, &purpose);
         let frozen = FrozenActivatedAbility {
             origin: ongoing.source.ability,
             definition: Some(Box::new(ongoing.ability)),
@@ -364,6 +367,7 @@ impl Game {
                 sacrificed_mana_value: 0,
             };
             let payment_purpose = ManaPaymentPurpose::Ability {
+                tap_for_generic: definition.tap_for_generic,
                 source,
                 taps_source: false,
                 leaves_source: false,
@@ -633,6 +637,7 @@ impl Game {
             if let Some(cost) = payable_mana_cost {
                 let cost = self.announced_activation_cost(player, cost, mana_payment);
                 let payment_purpose = ManaPaymentPurpose::Ability {
+                    tap_for_generic: definition.tap_for_generic,
                     source,
                     taps_source,
                     leaves_source,
@@ -650,7 +655,7 @@ impl Game {
                         return;
                     }
                 }
-                self.activate_mana_for_cost_with_options_for(
+                let (cost, payment_x) = self.activate_mana_for_cost_with_options_for(
                     player,
                     cost,
                     x,
@@ -660,7 +665,7 @@ impl Game {
                     },
                     &payment_purpose,
                 );
-                let _ = self.pay_player_cost_for(player, cost, x, &payment_purpose);
+                let _ = self.pay_player_cost_for(player, cost, payment_x, &payment_purpose);
             }
             if definition.costs.iter().any(|cost| {
                 matches!(

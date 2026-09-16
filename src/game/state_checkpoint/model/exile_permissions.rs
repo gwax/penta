@@ -10,6 +10,8 @@ use super::ManaCostSnapshot;
 #[serde(rename_all = "camelCase")]
 #[allow(clippy::struct_excessive_bools)]
 pub(in crate::game::state_checkpoint) struct ExilePlayPermissionSnapshot {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(in crate::game::state_checkpoint) maximum_spell_mana_value: Option<u16>,
     pub(in crate::game::state_checkpoint) card: u32,
     pub(in crate::game::state_checkpoint) player: usize,
     pub(in crate::game::state_checkpoint) cost: String,

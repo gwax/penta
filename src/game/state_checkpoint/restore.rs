@@ -104,14 +104,28 @@ impl Game {
         )?;
         for player in [PlayerId::One, PlayerId::Two] {
             if let Some(chosen) = checkpoint.chosen_companions[player.index()] {
-                if catalog.get(chosen.definition).and_then(crate::card::CardDefinition::companion).is_none() {
+                if catalog
+                    .get(chosen.definition)
+                    .and_then(crate::card::CardDefinition::companion)
+                    .is_none()
+                {
                     return Err("chosen companion has no companion ability".into());
                 }
                 if checkpoint.companion_outside_game[player.index()] {
-                    if chosen.used { return Err("used companion cannot remain outside the game".into()); }
+                    if chosen.used {
+                        return Err("used companion cannot remain outside the game".into());
+                    }
                     let cards = &mut outside_game[player.index()];
-                    let index = cards.iter().position(|card| card.id == chosen.card && card.definition == chosen.definition)
-                        .or_else(|| cards.iter().position(|card| card.definition == chosen.definition))
+                    let index = cards
+                        .iter()
+                        .position(|card| {
+                            card.id == chosen.card && card.definition == chosen.definition
+                        })
+                        .or_else(|| {
+                            cards
+                                .iter()
+                                .position(|card| card.definition == chosen.definition)
+                        })
                         .ok_or("chosen companion is absent from outside-game hypothesis")?;
                     cards[index].id = chosen.card;
                 }
@@ -298,6 +312,17 @@ impl Game {
                 .map(exile_play::parse_permission)
                 .collect::<Result<Vec<_>, String>>()?,
             monarch: checkpoint.monarch.map(player_from_index).transpose()?,
+            duration_exiles: checkpoint
+                .duration_exiles
+                .iter()
+                .map(|(source, card, zone)| {
+                    (
+                        GameObjectId(*source),
+                        GameObjectId(*card),
+                        wire::parse_zone_kind(*zone),
+                    )
+                })
+                .collect(),
             linked_exiles: checkpoint
                 .linked_exiles
                 .iter()
@@ -330,6 +355,14 @@ impl Game {
             resolved_player_protections,
             resolved_player_rules,
             emblems: Vec::new(),
+            mana_producing_abilities_this_turn: checkpoint
+                .mana_producing_abilities_this_turn
+                .iter()
+                .map(|source| AbilitySourceRef {
+                    object: GameObjectId(source.object),
+                    ability: ability_origin_from_snapshot(source.ability),
+                })
+                .collect(),
             spells_cast_this_turn: checkpoint.spells_cast_this_turn,
             total_spells_cast: checkpoint.spells_cast_this_game,
             spells_cast_last_turn: checkpoint.spells_cast_last_turn,

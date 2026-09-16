@@ -117,6 +117,9 @@ pub(super) struct PendingBattlefieldExitBatch {
 /// the optional box.
 #[derive(Clone, Debug)]
 pub(super) enum BattlefieldExitCompletion {
+    ExileUntilSourceLeaves {
+        source: GameObjectId,
+    },
     MechanicPerformed {
         mechanic: crate::card::MechanicId,
         player: PlayerId,

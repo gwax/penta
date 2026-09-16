@@ -64,6 +64,8 @@ use crate::card::DividedTotal;
 use crate::card::EffectChoiceDef;
 use crate::card::EffectDef;
 use crate::card::EffectRecipientDef;
+use crate::card::FreePlayDef;
+use crate::card::FreePlayDurationDef;
 use crate::card::GameActionDef;
 use crate::card::InstalledTriggerDef;
 use crate::card::ManaColor;
@@ -3074,14 +3076,73 @@ pub(in crate::card::sets) static BARROW_NAUGHTY: CardRecord = CardRecord::new(
 );
 
 // WOE 82 — Beseech the Mirror
-// Audit: unsupported — Needs a free-cast offer bounded by the selected spell form's mana value
-// and a face-down searched-card binding; checking the card before spell-form selection is
-// insufficient for Adventures and other alternate spells.
 pub(in crate::card::sets) static BESEECH_THE_MIRROR: CardRecord = CardRecord::new(
     "Beseech the Mirror",
     "18c59776-e1f1-4197-a128-db1d603f56b7",
     "Cynthia Sheppard",
-    CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{1}{B}{B}{B}")).with_abilities(&[
+        AbilityDef::optional_additional_cost(
+            "Bargain (You may sacrifice an artifact, enchantment, or token as you cast \
+             this spell.)",
+            OptionalAdditionalCostAbilityDef {
+                kind: OptionalAdditionalCostKindDef::Bargain,
+                label: OptionalAdditionalCostKindDef::Bargain.label(),
+                resolution_destination: SpellResolutionDestinationDef::Graveyard,
+                costs: &[CostDef::Sacrifice {
+                    object: ObjectPredicateDef::AnyOf(&[
+                        ObjectPredicateDef::HasType(CardType::Artifact),
+                        ObjectPredicateDef::HasType(CardType::Enchantment),
+                        ObjectPredicateDef::Token,
+                    ]),
+                    quantity: CostQuantityDef::Fixed(1),
+                }],
+            },
+        ),
+        AbilityDef::spell(
+            "Search your library for a card, exile it face down, then shuffle. If this \
+             spell was bargained, you may cast the exiled card without paying its mana \
+             cost if that spell's mana value is 4 or less. Put the exiled card into your \
+             hand if it wasn't cast this way.",
+            EffectDef::SearchZone {
+                player: EffectRecipientDef::Controller,
+                source: ZoneKind::Library,
+                object: ObjectPredicateDef::Any,
+                minimum: 1,
+                maximum: ValueDef::Constant(1),
+                reveal: false,
+                destination: ZoneKind::Exile,
+                exile_face_down: true,
+                placement: ZonePlacement::Top,
+                shuffle: true,
+                enters_tapped: false,
+                attachment: None,
+                binding: Some(crate::Binding!("searched")),
+                then: Some(&EffectDef::Sequence(&[
+                    EffectDef::IfCondition {
+                        condition: &TriggerConditionDef::SourcePaidAdditionalCost(
+                            AdditionalCostIndex::PRIMARY,
+                        ),
+                        then: &EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                            objects: ObjectSetDef::Binding(crate::Binding!("searched")),
+                            duration: FreePlayDurationDef::WhileResolving,
+                            mandatory: false,
+                            grants_haste: false,
+                            cast_only: true,
+                            maximum_spell_mana_value: Some(4),
+                        }),
+                    },
+                    EffectDef::move_to_zone(
+                        EffectRecipientDef::objects(ObjectSetDef::InZone {
+                            objects: &ObjectSetDef::Binding(crate::Binding!("searched")),
+                            zone: ZoneKind::Exile,
+                        }),
+                        ZoneKind::Hand,
+                        ZonePlacement::Top,
+                    ),
+                ])),
+            },
+        ),
+    ]),
 );
 
 // WOE 83 — Candy Grapple
@@ -5989,6 +6050,7 @@ pub(in crate::card::sets) static BRAVE_THE_WILDS: CardRecord = CardRecord::new(
                     },
                 },
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -6284,6 +6346,7 @@ pub(in crate::card::sets) static THE_HUNTSMAN_S_REDEMPTION: CardRecord = CardRec
                         CardType::Creature,
                     ))],
                     &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::AnyOf(&[
@@ -6500,6 +6563,7 @@ pub(in crate::card::sets) static RETURN_FROM_THE_WILDS: CardRecord = CardRecord:
                 "Search your library for a basic land card, put it onto the \
                  battlefield tapped, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -7356,7 +7420,7 @@ pub(in crate::card::sets) static LIKENESS_LOOTER: CardRecord = CardRecord::new(
                 EffectDef::BecomeCopyOf {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     copier: None,
-                    exceptions: CopyExceptionsDef::NONE.with_abilities(&[
+                    exceptions: &CopyExceptionsDef::NONE.with_abilities(&[
                         CopyAbilityDef::Ability(&abilities::flying()),
                         CopyAbilityDef::This,
                     ]),
@@ -8223,6 +8287,7 @@ pub(in crate::card::sets) static KELLAN_THE_FAE_BLOODED: CardRecord = CardRecord
                     "Search your library for an Aura or Equipment card, reveal it, \
                      put it into your hand, then shuffle.",
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::AnyOf(

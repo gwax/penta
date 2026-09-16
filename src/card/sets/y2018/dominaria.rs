@@ -12,6 +12,7 @@ use crate::card::BattlefieldEntryModificationDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
+use crate::card::CardTypeSet;
 use crate::card::ChoiceVisibilityDef;
 use crate::card::ChooseCardsFromCollectionDef;
 use crate::card::ChooseDef;
@@ -19,7 +20,10 @@ use crate::card::ChooseObjectOrderDef;
 use crate::card::CollectionInspectionDef;
 use crate::card::ComparisonDef;
 use crate::card::CopyExceptionsDef;
+use crate::card::CostAdjustmentDef;
+use crate::card::CostAmountDef;
 use crate::card::CostDef;
+use crate::card::CostModificationDef;
 use crate::card::CounterKind;
 use crate::card::CreateTokenDef;
 use crate::card::CreatedTokensDef;
@@ -41,6 +45,9 @@ use crate::card::PlayerSetDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::RevealObjectsDef;
+use crate::card::SpellCastQueryDef;
+use crate::card::SpellCostConditionDef;
+use crate::card::SpellCostModificationDef;
 use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
 use crate::card::TokenDef;
@@ -400,6 +407,7 @@ pub(in crate::card::sets) static FINAL_PARTING: CardRecord = CardRecord::new(
          and the other into your graveyard. Then shuffle.",
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,
@@ -637,6 +645,7 @@ pub(in crate::card::sets) static GROW_FROM_THE_ASHES: CardRecord = CardRecord::n
                     crate::AdditionalCostIndex::PRIMARY,
                 ),
                 then: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -655,6 +664,7 @@ pub(in crate::card::sets) static GROW_FROM_THE_ASHES: CardRecord = CardRecord::n
                     then: None,
                 },
                 otherwise: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -810,13 +820,38 @@ pub(in crate::card::sets) static TEFERI_HERO_OF_DOMINARIA: CardRecord = CardReco
 );
 
 // DOM 213 — Damping Sphere
-// Audit: unsupported — Needs a static replacement changing a land ability producing two or more
-// mana into exactly {C}.
 pub(in crate::card::sets) static DAMPING_SPHERE: CardRecord = CardRecord::new(
     "Damping Sphere",
     "a5c7d16b-8f4e-42b9-be24-3cb091932d7c",
     "Adam Paquette",
-    CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "If a land is tapped for two or more mana, it produces {C} instead of any \
+             other type and amount.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::EachPlayer,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::TappedManaBecomesColorless {
+                    types: CardTypeSet::single(CardType::Land),
+                    minimum: 2,
+                }),
+            },
+        ),
+        AbilityDef::static_ability(
+            "Each spell a player casts costs {1} more to cast for each other spell that \
+             player has cast this turn.",
+            EffectDef::ModifyCost(CostModificationDef::Spell(SpellCostModificationDef {
+                spell: ObjectPredicateDef::Any,
+                caster: PlayerRelation::Any,
+                condition: SpellCostConditionDef::Always,
+                adjustment: CostAdjustmentDef::Add(CostAmountDef::Generic(
+                    ValueDef::CountSpellsCastThisTurn(&SpellCastQueryDef {
+                        player: PlayerRelation::You,
+                        spell: ObjectPredicateDef::Any,
+                    }),
+                )),
+            })),
+        ),
+    ]),
 );
 
 // DOM 217 — Helm of the Host

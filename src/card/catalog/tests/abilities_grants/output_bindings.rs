@@ -39,18 +39,20 @@ fn later_sequence_steps_may_read_explicitly_bound_effect_outputs() {
         let reversed = Box::leak(Box::new([count_bound, bound]));
         assert_eq!(
             super::validate_ability_targets(&[], EffectDef::Sequence(reversed)),
-            Err(GrantedAbilityValidationError::ObjectSetBindingReferenceOutOfScope {
-                binding: Binding!("produced_cards"),
-            }),
+            Err(
+                GrantedAbilityValidationError::ObjectSetBindingReferenceOutOfScope {
+                    binding: Binding!("produced_cards"),
+                }
+            ),
             "the binding is unavailable before its producer publishes it",
         );
     }
 
     let consume_reveal = EffectDef::GainLife {
         recipient: EffectRecipientDef::Controller,
-        amount: ValueDef::CountObjects(Box::leak(Box::new(ObjectSetDef::Binding(
-            Binding!("revealed_card"),
-        )))),
+        amount: ValueDef::CountObjects(Box::leak(Box::new(ObjectSetDef::Binding(Binding!(
+            "revealed_card"
+        ))))),
     };
     let reveal = EffectDef::BindOutput {
         effect: &EffectDef::RevealAtRandomFromHand {
@@ -93,15 +95,17 @@ fn resolving_card_name_choices_require_and_expose_a_typed_binding() {
     };
     let valid = Box::leak(Box::new([bound_name, *consume_name]));
     super::validate_ability_targets(&[], EffectDef::Sequence(valid))
-    .expect("the continuation may consume the explicitly chosen name");
+        .expect("the continuation may consume the explicitly chosen name");
 
     let reversed = Box::leak(Box::new([*consume_name, bound_name]));
     assert_eq!(
         super::validate_ability_targets(&[], EffectDef::Sequence(reversed)),
-        Err(GrantedAbilityValidationError::UnsupportedEffectProgramContext {
-            context: "card-name binding",
-            operation: "a binding declared for another value kind",
-        }),
+        Err(
+            GrantedAbilityValidationError::UnsupportedEffectProgramContext {
+                context: "card-name binding",
+                operation: "a binding declared for another value kind",
+            }
+        ),
         "the chosen name is unavailable before its binding step",
     );
 
@@ -113,10 +117,12 @@ fn resolving_card_name_choices_require_and_expose_a_typed_binding() {
                 effect: producer,
             },
         ),
-        Err(GrantedAbilityValidationError::UnsupportedEffectProgramContext {
-            context: "binding",
-            operation: "BindOutput requires a durable labeled binding",
-        }),
+        Err(
+            GrantedAbilityValidationError::UnsupportedEffectProgramContext {
+                context: "binding",
+                operation: "BindOutput requires a durable labeled binding",
+            }
+        ),
     );
 }
 
@@ -165,9 +171,9 @@ fn effect_output_bindings_are_lexical_and_set_valued() {
     let reads_own_binding = EffectDef::BindOutput {
         effect: Box::leak(Box::new(EffectDef::Mill {
             player: EffectRecipientDef::Controller,
-            amount: ValueDef::CountObjects(Box::leak(Box::new(ObjectSetDef::Binding(
-                Binding!("cards"),
-            )))),
+            amount: ValueDef::CountObjects(Box::leak(Box::new(ObjectSetDef::Binding(Binding!(
+                "cards"
+            ))))),
         })),
         binding: Binding!("cards"),
     };
@@ -186,16 +192,18 @@ fn effect_output_bindings_are_lexical_and_set_valued() {
     };
     let count_cards = EffectDef::GainLife {
         recipient: EffectRecipientDef::Controller,
-        amount: ValueDef::CountObjects(Box::leak(Box::new(
-            ObjectSetDef::Binding(Binding!("cards")),
-        ))),
+        amount: ValueDef::CountObjects(Box::leak(Box::new(ObjectSetDef::Binding(Binding!(
+            "cards"
+        ))))),
     };
     let invalid_escape = Box::leak(Box::new([branch_local, count_cards]));
     assert_eq!(
         super::validate_ability_targets(&[], EffectDef::Sequence(invalid_escape)),
-        Err(GrantedAbilityValidationError::ObjectSetBindingReferenceOutOfScope {
-            binding: Binding!("cards"),
-        }),
+        Err(
+            GrantedAbilityValidationError::ObjectSetBindingReferenceOutOfScope {
+                binding: Binding!("cards"),
+            }
+        ),
         "a binding declared only inside a branch does not escape that branch",
     );
 
@@ -251,10 +259,12 @@ fn producer_continuations_require_and_expose_parent_binding() {
     });
     assert!(matches!(
         super::validate_ability_targets(&[], independent),
-        Err(GrantedAbilityValidationError::UnsupportedEffectProgramContext {
-            context: "then continuation does not consume its declared binding; use Sequence",
-            ..
-        })
+        Err(
+            GrantedAbilityValidationError::UnsupportedEffectProgramContext {
+                context: "then continuation does not consume its declared binding; use Sequence",
+                ..
+            }
+        )
     ));
 }
 
@@ -284,6 +294,7 @@ fn binding_labels_are_unique_across_sibling_branches() {
 fn search_maximum_consumes_an_existing_output_binding() {
     const CARDS: crate::Binding = Binding!("exiled");
     let search = EffectDef::SearchZone {
+        exile_face_down: false,
         player: EffectRecipientDef::Controller,
         source: ZoneKind::Library,
         object: ObjectPredicateDef::HasType(CardType::Land),
@@ -301,7 +312,9 @@ fn search_maximum_consumes_an_existing_output_binding() {
     assert!(super::validate_ability_targets(&[], search).is_err());
     let bound = EffectDef::WithZoneMoveResult {
         effect: Box::leak(Box::new(EffectDef::move_to_zone(
-            EffectRecipientDef::Source, ZoneKind::Exile, ZonePlacement::Top,
+            EffectRecipientDef::Source,
+            ZoneKind::Exile,
+            ZonePlacement::Top,
         ))),
         binding: CARDS,
         then: Box::leak(Box::new(search)),

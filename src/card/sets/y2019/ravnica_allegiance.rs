@@ -33,6 +33,8 @@ use crate::card::ObjectQueryDef;
 use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PayOrDef;
+use crate::card::PlayActionMatcherDef;
+use crate::card::PlayRestrictionDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
@@ -43,6 +45,7 @@ use crate::card::SumValueDef;
 use crate::card::TriggerConditionDef;
 use crate::card::TriggerEventDef;
 use crate::card::TurnStepDef;
+use crate::card::ValueComparisonDef;
 use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
@@ -490,14 +493,53 @@ pub(in crate::card::sets) static GROWTH_SPIRAL: CardRecord = CardRecord::new(
 );
 
 // RNA 189 — Lavinia, Azorius Renegade
-// Audit: unsupported — Cast history exposes colors of mana spent but not the total amount
-// spent. Zero colors also matches a spell paid entirely with colorless mana, so it cannot
-// implement the no-mana-spent trigger.
 pub(in crate::card::sets) static LAVINIA_AZORIUS_RENEGADE: CardRecord = CardRecord::new(
     "Lavinia, Azorius Renegade",
     "c497d496-1232-4614-93b0-9864fa93c29f",
     "Steven Belledin",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{W}{U}"), &["Human", "Soldier"], 2, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Each opponent can't cast noncreature spells with mana value greater than \
+                 the number of lands that player controls.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::Opponent,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(
+                        PlayRestrictionDef::new(
+                            PlayActionMatcherDef::CastSpell,
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::NoncreatureSpell,
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::ManaValueAtMostValue(
+                                    ValueDef::CountMatchingObjects(&ObjectQueryDef::matching(
+                                        ObjectPredicateDef::HasType(CardType::Land),
+                                        &[ZoneKind::Battlefield],
+                                        PlayerRelation::Opponent,
+                                    )),
+                                )),
+                            ]),
+                        ),
+                    )),
+                },
+            ),
+            AbilityDef::triggered_if(
+                "Whenever an opponent casts a spell, if no mana was spent to cast it, \
+                 counter that spell.",
+                TriggerEventDef::spell_cast(ObjectPredicateDef::ControlledBy(
+                    PlayerRelation::Opponent,
+                )),
+                &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
+                    left: ValueDef::ManaSpentToCast(ObjectRefDef::TriggeringObject),
+                    comparison: ComparisonDef::Equal,
+                    right: ValueDef::Constant(0),
+                }),
+                EffectDef::Counter {
+                    object: EffectRecipientDef::object(ObjectRefDef::TriggeringObject),
+                    zone: ZoneKind::Graveyard,
+                    placement: ZonePlacement::Top,
+                },
+            ),
+        ]),
 );
 
 // RNA 195 — Prime Speaker Vannifar
@@ -520,6 +562,7 @@ pub(in crate::card::sets) static PRIME_SPEAKER_VANNIFAR: CardRecord = CardRecord
                 ])),
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

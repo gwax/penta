@@ -7,11 +7,13 @@ use crate::card::AbilityDef;
 use crate::card::AbilityTargetDef;
 use crate::card::AddManaEffectDef;
 use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::BattlefieldEntryModificationDef;
 use crate::card::CardNameDef;
 use crate::card::CardRules;
 use crate::card::CardType;
 use crate::card::CardTypeSet;
+use crate::card::ColorSet;
 use crate::card::CostDef;
 use crate::card::CounterKind;
 use crate::card::CreatureTypeSetDef;
@@ -87,6 +89,7 @@ pub(in crate::card::sets) static RESHAPE: CardRecord = CardRecord::new(
          mana value X or less, put it onto the battlefield, then \
          shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -232,6 +235,7 @@ pub(in crate::card::sets) static AETHER_VIAL: CardRecord = CardRecord::new(
              hand onto the battlefield.",
             &[CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Hand,
                 object: ObjectPredicateDef::All(&[
@@ -450,13 +454,50 @@ pub(in crate::card::sets) static LEONIN_BOLA: CardRecord = CardRecord::new(
 );
 
 // DST 130 — Mycosynth Lattice
-// Audit: unsupported — No global permission lets every player spend mana as any color for all
-// payments; the existing spend-as-any-color rule is restricted to creature abilities.
 pub(in crate::card::sets) static MYCOSYNTH_LATTICE: CardRecord = CardRecord::new(
     "Mycosynth Lattice",
     "e7e7f15a-074a-4137-88ca-e5d376d146fd",
     "Anthony S. Waters & Cara Mitten",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_artifact(mana_cost!("{6}")).with_abilities(&[
+        AbilityDef::static_ability(
+            "All permanents are artifacts in addition to their other types.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Any,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::Any,
+                ),
+                effect: AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Artifact)),
+            },
+        ),
+        AbilityDef::static_ability(
+            "All cards that aren't on the battlefield, spells, and permanents are \
+             colorless.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Any,
+                    &[
+                        ZoneKind::Library,
+                        ZoneKind::Hand,
+                        ZoneKind::Graveyard,
+                        ZoneKind::Exile,
+                        ZoneKind::Command,
+                        ZoneKind::Stack,
+                        ZoneKind::Battlefield,
+                    ],
+                    PlayerRelation::Any,
+                ),
+                effect: AppliedEffectDef::set_colors(ColorSet::empty()),
+            },
+        ),
+        AbilityDef::static_ability(
+            "Players may spend mana as though it were mana of any color.",
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::EachPlayer,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::MaySpendManaAsAnyColor),
+            },
+        ),
+    ]),
 );
 
 // DST 138 — Serum Powder

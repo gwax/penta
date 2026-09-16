@@ -1511,6 +1511,7 @@ pub(in crate::card::sets) static EXTRACT: CardRecord = CardRecord::new(
             AbilityTargetPredicate::Player(PlayerRelation::Any),
         )],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,
@@ -2293,6 +2294,7 @@ pub(in crate::card::sets) static DIABOLIC_TUTOR: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{2}{B}{B}")).with_ability(AbilityDef::spell(
         "Search your library for a card, put that card into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,
@@ -2338,6 +2340,7 @@ pub(in crate::card::sets) static ENTOMB: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell(
         "Search your library for a card, put that card into your graveyard, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,

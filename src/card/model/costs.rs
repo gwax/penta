@@ -650,6 +650,8 @@ pub enum ManaSelectionDef {
 /// A restriction carried by produced mana until that mana is spent.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ManaRestrictionDef {
+    /// This unit can pay a non-generic symbol only.
+    CannotPayGeneric,
     /// At least one alternative must permit the payment. The outer
     /// `AddManaEffectDef::restrictions` slice remains a conjunction.
     AnyOf(&'static [ManaRestrictionDef]),

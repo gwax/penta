@@ -34,6 +34,7 @@ pub(super) enum ExilePlayCost {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[allow(clippy::struct_excessive_bools)]
 pub(super) struct ExilePlayPermission {
+    pub(super) maximum_spell_mana_value: Option<u16>,
     pub(super) card: GameObjectId,
     /// Who may play it. An Adventure returns to its spell controller; a card
     /// taken off somebody's library is played by whoever took it.
@@ -198,6 +199,7 @@ impl Game {
         player: PlayerId,
     ) {
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: ExilePlayCost::Printed,
@@ -259,6 +261,7 @@ impl Game {
     /// hid it to say so.
     pub(super) fn permit_look_while_exiled(&mut self, card: GameObjectId, player: PlayerId) {
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: ExilePlayCost::Printed,
@@ -298,6 +301,7 @@ impl Game {
     /// says otherwise (CR 713.2). Both players may still count them.
     pub(super) fn hide_from_everyone_while_exiled(&mut self, card: GameObjectId, owner: PlayerId) {
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player: owner,
             cost: ExilePlayCost::Printed,
@@ -323,6 +327,7 @@ impl Game {
     /// and so does an adventure nobody takes.
     pub(super) fn permit_adventure_return(&mut self, card: GameObjectId, player: PlayerId) {
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: ExilePlayCost::Printed,
@@ -348,6 +353,7 @@ impl Game {
     pub(super) fn permit_free_play_this_turn(&mut self, card: GameObjectId, player: PlayerId) {
         let active = self.active_player;
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: ExilePlayCost::Free,
@@ -375,6 +381,7 @@ impl Game {
     pub(super) fn permit_face_down_play_this_turn(&mut self, card: GameObjectId, player: PlayerId) {
         let active = self.active_player;
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: ExilePlayCost::Printed,
@@ -407,6 +414,7 @@ impl Game {
         player: PlayerId,
     ) {
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: ExilePlayCost::Printed,
@@ -450,6 +458,7 @@ impl Game {
         player: PlayerId,
     ) {
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: ExilePlayCost::Printed,
@@ -479,6 +488,7 @@ impl Game {
     pub(super) fn permit_cast_this_turn(&mut self, card: GameObjectId, player: PlayerId) {
         let active = self.active_player;
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: ExilePlayCost::Printed,
@@ -504,6 +514,7 @@ impl Game {
     /// the permission lasts as long as the card sits in exile.
     pub(super) fn permit_energy_cast(&mut self, card: GameObjectId, player: PlayerId) {
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: ExilePlayCost::EnergyEqualToManaValue,
@@ -539,6 +550,7 @@ impl Game {
         cast_only: bool,
     ) {
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player: owner,
             cost: ExilePlayCost::Printed,
@@ -567,6 +579,7 @@ impl Game {
     pub(super) fn permit_foretold_cast(&mut self, card: GameObjectId, owner: PlayerId) {
         let turn = self.turns_started[owner.index()];
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player: owner,
             cost: ExilePlayCost::Foretell,
@@ -697,6 +710,7 @@ impl Game {
     pub(super) fn permit_graveyard_cast_this_turn(&mut self, card: GameObjectId, player: PlayerId) {
         let active = self.active_player;
         self.exile_play_permissions.push(ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: ExilePlayCost::Printed,

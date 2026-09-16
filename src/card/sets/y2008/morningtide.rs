@@ -338,6 +338,7 @@ pub(in crate::card::sets) static FERTILID: CardRecord = CardRecord::new(
                 AbilityTargetPredicate::Player(PlayerRelation::Any),
             )],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

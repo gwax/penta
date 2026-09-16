@@ -1557,6 +1557,7 @@ pub(in crate::card::sets) static RUNE_SCARRED_DEMON: CardRecord = CardRecord::ne
             "When this creature enters, search your library for a card, \
              put it into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,

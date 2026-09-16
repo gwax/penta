@@ -377,6 +377,7 @@ pub(in crate::card::sets) static KODAMA_S_REACH: CardRecord = CardRecord::new(
              other into your hand, then shuffle.",
             EffectDef::Sequence(&[
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -447,6 +448,7 @@ pub(in crate::card::sets) static SAKURA_TRIBE_ELDER: CardRecord = CardRecord::ne
              onto the battlefield tapped, then shuffle.",
             &[CostDef::SacrificeSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -480,6 +482,7 @@ pub(in crate::card::sets) static TIME_OF_NEED: CardRecord = CardRecord::new(
         "Search your library for a legendary creature card, reveal \
          it, put it into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

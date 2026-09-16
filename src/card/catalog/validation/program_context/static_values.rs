@@ -6,6 +6,9 @@
 // into `program_context.rs`, so the imports here are that module's.
 
 fn static_source_value_supported(value: ValueDef) -> bool {
+    if let ValueDef::CountMatchingObjects(query) = value {
+        return static_query_supported(*query);
+    }
     matches!(
         value,
         ValueDef::Constant(_)
@@ -111,6 +114,7 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::MatchedCount
         | ValueDef::MatchedCardTypes
         | ValueDef::MatchedManaValue
+        | ValueDef::BoundValue(_)
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::PlayerCounters { .. }
@@ -119,11 +123,13 @@ fn static_power_toughness_value_supported(value: ValueDef) -> bool {
         | ValueDef::SpellsCastThisGame(_)
         | ValueDef::TargetPower(_)
         | ValueDef::TargetToughness(_)
+        | ValueDef::TargetLifeTotal(_)
         | ValueDef::TargetLibrarySize(_)
         | ValueDef::LifeTotal(_)
         | ValueDef::StartingLifeTotal
         | ValueDef::TargetManaValue(_)
         | ValueDef::ObjectPower(_)
+        | ValueDef::ManaSpentToCast(_)
         | ValueDef::ObjectManaValue(_)
         | ValueDef::DistinctTargets
         | ValueDef::DividedAmongTargets
@@ -139,17 +145,18 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
     match value {
         ValueDef::Constant(_) => true,
         ValueDef::ColorIntersectionCount(sets) => sets.iter().all(|set| {
-            *set != crate::card::ColorSetDef::Binding(crate::ParentBinding) && matches!(
-                set,
-                crate::card::ColorSetDef::Fixed(_)
-                    | crate::card::ColorSetDef::OfObject(
-                        ObjectRefDef::Source
-                            | ObjectRefDef::ResolvingObject
-                            | ObjectRefDef::AttachedToSource
-                            | ObjectRefDef::CreatingSource
-                    )
-                    | crate::card::ColorSetDef::Binding(_)
-            )
+            *set != crate::card::ColorSetDef::Binding(crate::ParentBinding)
+                && matches!(
+                    set,
+                    crate::card::ColorSetDef::Fixed(_)
+                        | crate::card::ColorSetDef::OfObject(
+                            ObjectRefDef::Source
+                                | ObjectRefDef::ResolvingObject
+                                | ObjectRefDef::AttachedToSource
+                                | ObjectRefDef::CreatingSource
+                        )
+                        | crate::card::ColorSetDef::Binding(_)
+                )
         }),
         ValueDef::ColorCount(reference) => matches!(
             reference,
@@ -222,6 +229,7 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::MatchedCardTypes
         | ValueDef::MatchedManaValue
         | ValueDef::CountObjects(_)
+        | ValueDef::BoundValue(_)
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::PlayerCounters { .. }
@@ -231,11 +239,13 @@ fn static_cost_reduction_value_supported(value: ValueDef) -> bool {
         | ValueDef::CountSpellsCastThisTurn(_)
         | ValueDef::TargetPower(_)
         | ValueDef::TargetToughness(_)
+        | ValueDef::TargetLifeTotal(_)
         | ValueDef::TargetLibrarySize(_)
         | ValueDef::LifeTotal(_)
         | ValueDef::StartingLifeTotal
         | ValueDef::TargetManaValue(_)
         | ValueDef::ObjectPower(_)
+        | ValueDef::ManaSpentToCast(_)
         | ValueDef::ObjectManaValue(_)
         | ValueDef::DistinctTargets
         | ValueDef::DividedAmongTargets
