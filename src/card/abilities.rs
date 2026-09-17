@@ -575,6 +575,7 @@ pub use intrinsic_costs::*;
 
 #[path = "abilities/list.rs"]
 mod list;
+pub use list::{conditional, grants};
 
 /// Echo (CR 702.29): "At the beginning of your upkeep, if this came under
 /// your control since the beginning of your last upkeep, sacrifice it unless

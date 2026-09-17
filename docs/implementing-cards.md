@@ -202,8 +202,28 @@ not affect the link.
 
 The originating-set helpers also own `wilds_of_eldraine::bargain()`,
 `odyssey::threshold(&[...])`, and `avatar_the_last_airbender::earthbend(n)`.
-Threshold wraps a list of static clauses or activated abilities and can be
-flattened with `ability_list!`. Earthbend targets the primary land target and
+Threshold uses `abilities::conditional(&THRESHOLD, abilities)`: its fixed
+condition is your graveyard count >= 7. Conditional groups govern whether an
+object has their members; they preserve each member's category, program, and
+attachment identity. Nested groups require every enclosing condition. Losing a
+group does not cancel an activation or trigger already on the stack.
+
+Use `abilities::conditional(condition, &[...])` for static inclusion and flatten
+it with `ability_list!` alongside ordinary clauses. The current supported slice
+is battlefield static, activated, triggered, and battlefield keyword abilities,
+with nonrecursive conditions over nonbattlefield card counts, life, counters,
+Class level, or tapped status. Casting clauses, replacement abilities,
+characteristic-defining abilities, and conditions that depend on the derived
+ability set are rejected.
+
+The same list can be granted with
+`AppliedEffectDef::Composite(&abilities::grants(&[...]))`. Each member retains
+its own grant identity, including across checkpoints. A condition around the
+grant effect reads the granting source; a member's presence condition reads the
+object that receives that ability. Existing grant restrictions still apply:
+granted executable static abilities currently support power/toughness effects.
+
+Earthbend targets the primary land target and
 installs an independent delayed return trigger, so removing the land's abilities
 does not erase that return.
 

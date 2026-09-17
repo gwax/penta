@@ -25,6 +25,7 @@ use crate::{
 include!("abilities/target_choosers.rs");
 include!("abilities/entry_values.rs");
 include!("abilities/granted_static.rs");
+include!("abilities/presence.rs");
 include!("abilities/cost_bindings.rs");
 
 pub(super) fn validate_alternative_cast_abilities(

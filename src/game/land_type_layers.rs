@@ -259,6 +259,9 @@ impl Game {
                     && ability.declarative_effect().is_some()
             })
         {
+            if !self.ability_presence_holds(source, ability.presence) {
+                continue;
+            }
             let mut component_order = 0;
             let context = AppliedLandTypeContext {
                 text_words,

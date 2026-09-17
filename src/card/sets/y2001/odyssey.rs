@@ -87,44 +87,11 @@ static THRESHOLD: TriggerConditionDef = TriggerConditionDef::ObjectCount {
     amount: 7,
 };
 
-/// Apply threshold to a group of static clauses and/or activations. Static
-/// effects are read continuously; an activation checks threshold when announced,
-/// so emptying the graveyard afterwards does not undo an ability on the stack.
-///
-/// # Panics
-/// Panics for categories other than static and activated clauses, or for an
-/// activation that already has its own condition.
-pub(in crate::card::sets) const fn threshold<const N: usize>(
-    abilities: &'static [AbilityDef; N],
-) -> [AbilityDef; N] {
-    let mut result = *abilities;
-    let mut index = 0;
-    while index < N {
-        let original = &abilities[index];
-        match original.definition {
-            crate::card::DeclarativeAbilityDef::Static(_) => {
-                let crate::card::AbilityProgramDef::Effects(effect) = &original.effect.definition
-                else {
-                    panic!("a static threshold clause needs an effect program");
-                };
-                result[index].effect =
-                    crate::card::AbilityEffectDef::declarative(EffectDef::IfCondition {
-                        condition: &THRESHOLD,
-                        then: effect,
-                    });
-            }
-            crate::card::DeclarativeAbilityDef::Activated(definition) => {
-                assert!(
-                    definition.condition.is_none(),
-                    "threshold would replace an activation condition"
-                );
-                result[index] = original.with_activation_condition(&THRESHOLD);
-            }
-            _ => panic!("threshold expects static clauses or activations"),
-        }
-        index += 1;
-    }
-    result
+/// Threshold includes these abilities while your graveyard has seven or more cards.
+pub(in crate::card::sets) const fn threshold<const ABILITY_COUNT: usize>(
+    abilities: &'static [AbilityDef; ABILITY_COUNT],
+) -> [AbilityDef; ABILITY_COUNT] {
+    abilities::conditional(&THRESHOLD, abilities)
 }
 
 /// Printed set identity and stable catalog slug.

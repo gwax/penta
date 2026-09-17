@@ -245,6 +245,7 @@ fn lattice_allows_any_color_but_does_not_pay_colorless_symbols() {
     );
 }
 
+mod conditional_ability_groups;
 mod effects;
 mod payments;
 mod revisions;

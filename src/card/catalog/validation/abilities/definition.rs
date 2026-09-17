@@ -5,6 +5,7 @@ fn validate_ability_definition(
     cost_bindings: &[crate::Binding],
     cast_player_bindings: &[crate::Binding],
 ) -> Result<(), GrantedAbilityValidationError> {
+    validate_ability_presence(ability)?;
     let mut grant_sites = program_ability_grant_sites(ability.effect.definition);
     if let Some(modal) = ability.modal() {
         grant_sites = modal
@@ -48,7 +49,8 @@ fn validate_ability_definition(
         DeclarativeAbilityDef::AlternativeCast(alternative) => (None, alternative.targets, false),
         DeclarativeAbilityDef::OptionalAdditionalCost(_)
         | DeclarativeAbilityDef::Keyword(_)
-        | DeclarativeAbilityDef::DeckConstruction(_) | DeclarativeAbilityDef::Companion(_) => (None, &[][..], false),
+        | DeclarativeAbilityDef::DeckConstruction(_)
+        | DeclarativeAbilityDef::Companion(_) => (None, &[][..], false),
     };
 
     if source_zones.is_some_and(<[ZoneKind]>::is_empty) {
@@ -95,7 +97,8 @@ fn validate_ability_definition_references(
         | DeclarativeAbilityDef::SpecialAction(_)
         | DeclarativeAbilityDef::Pregame(_)
         | DeclarativeAbilityDef::Keyword(_)
-        | DeclarativeAbilityDef::DeckConstruction(_) | DeclarativeAbilityDef::Companion(_) => None,
+        | DeclarativeAbilityDef::DeckConstruction(_)
+        | DeclarativeAbilityDef::Companion(_) => None,
     };
     let chosen_cost_card_binding = match ability.definition {
         DeclarativeAbilityDef::Activated(definition) => {
