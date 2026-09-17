@@ -57,7 +57,8 @@ impl Game {
                     source, controller, effect, context, choices,
                 );
             }
-            EffectDef::None
+            EffectDef::RecordAbilityUse
+            | EffectDef::None
             | EffectDef::ContinueReplacedDraw
             | EffectDef::Randomized { .. }
             | EffectDef::RollDie(_)

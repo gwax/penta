@@ -1258,7 +1258,7 @@ pub(in crate::card::sets) static BURNING_WISH: CardRecord = CardRecord::new(
              your hand. Exile Burning Wish.",
             EffectDef::ChooseCards {
                 player: EffectRecipientDef::Controller,
-                sources: &[CardChoiceSourceDef::OutsideGame],
+                sources: &[CardChoiceSourceDef::Sideboard],
                 object: ObjectPredicateDef::HasType(CardType::Sorcery),
                 minimum: 0,
                 maximum: 1,

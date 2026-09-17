@@ -6,7 +6,7 @@ fn set_outside_game(
     definitions: &[CardDefinitionId],
 ) -> Vec<CardInstance> {
     let cards = game.build_zone(player, definitions).unwrap();
-    game.players[player.index()].outside_game = cards.clone();
+    game.players[player.index()].sideboard = cards.clone();
     cards
 }
 
@@ -107,7 +107,7 @@ fn old_school_ring_offers_owned_exile_and_sideboard_then_resumes_the_draws() {
 
     choose_option_from_zone(&mut game, DecisionZone::OutsideGame);
 
-    assert!(game.players[0].outside_game.is_empty());
+    assert!(game.players[0].sideboard.is_empty());
     let imported = game.players[0]
         .hand
         .iter()
@@ -178,7 +178,7 @@ fn non_old_school_ring_uses_oracle_outside_game_source_only() {
 fn an_impossible_ring_choice_still_replaces_the_draw_without_decking() {
     let mut game = ready_game();
     game.format = Format::IsdM14Standard;
-    game.players[0].outside_game.clear();
+    game.players[0].sideboard.clear();
     game.players[0].library.clear();
     resolve_ring_activation(&mut game);
     let event_start = game.events().len();
@@ -291,7 +291,7 @@ fn ring_suspends_the_remaining_clauses_of_a_declarative_effect_sequence() {
 
 #[test]
 fn replacement_effect_tail_finishes_before_later_draws_and_outer_effects() {
-    static SOURCES: [CardChoiceSourceDef; 1] = [CardChoiceSourceDef::OutsideGame];
+    static SOURCES: [CardChoiceSourceDef; 1] = [CardChoiceSourceDef::Sideboard];
     static REPLACEMENT_EFFECTS: [EffectDef; 2] = [
         EffectDef::ChooseCards {
             player: EffectRecipientDef::Controller,

@@ -114,6 +114,7 @@ pub(crate) const fn effect_kind(value: crate::EffectDef) -> &'static str {
         crate::EffectDef::RevealAtRandomFromHand { .. } => "RevealAtRandomFromHand",
         crate::EffectDef::RevealHand { .. } => "RevealHand",
         crate::EffectDef::RemoveFromCombat { .. } => "RemoveFromCombat",
+        crate::EffectDef::RecordAbilityUse => "RecordAbilityUse",
         crate::EffectDef::None => "None",
         crate::EffectDef::PayOr(..) => "PayOr",
         crate::EffectDef::ForEachInBinding { .. } => "ForEachInBinding",

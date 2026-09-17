@@ -168,7 +168,7 @@ impl Game {
             sacrificed_mana_value: 0,
         };
         let payment_purpose = ManaPaymentPurpose::Ability {
-            tap_for_generic: definition.tap_for_generic,
+            waterbend: crate::card::costs::waterbend_amount(definition.costs),
             source,
             taps_source: false,
             leaves_source: true,
@@ -277,7 +277,7 @@ impl Game {
             return false;
         };
         let purpose = ManaPaymentPurpose::Ability {
-            tap_for_generic: definition.tap_for_generic,
+            waterbend: crate::card::costs::waterbend_amount(definition.costs),
             source,
             taps_source: false,
             leaves_source: false,
@@ -367,7 +367,7 @@ impl Game {
                 sacrificed_mana_value: 0,
             };
             let payment_purpose = ManaPaymentPurpose::Ability {
-                tap_for_generic: definition.tap_for_generic,
+                waterbend: crate::card::costs::waterbend_amount(definition.costs),
                 source,
                 taps_source: false,
                 leaves_source: false,
@@ -402,7 +402,7 @@ impl Game {
             let activation_label = effective.ability.label;
             for cost in definition.costs {
                 match cost {
-                    CostDef::Mana(_) | CostDef::PayLife(_) => {}
+                    CostDef::Mana(_) | CostDef::Waterbend(_) | CostDef::PayLife(_) => {}
                     CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. } => {
                         unreachable!("hand abilities cannot price another chosen card")
                     }
@@ -637,7 +637,7 @@ impl Game {
             if let Some(cost) = payable_mana_cost {
                 let cost = self.announced_activation_cost(player, cost, mana_payment);
                 let payment_purpose = ManaPaymentPurpose::Ability {
-                    tap_for_generic: definition.tap_for_generic,
+                    waterbend: crate::card::costs::waterbend_amount(definition.costs),
                     source,
                     taps_source,
                     leaves_source,
@@ -707,7 +707,7 @@ impl Game {
                     }
                     // The open-ended removal never reaches payment: mana
                     // enumeration replaced it with a sized one.
-                    CostDef::Mana(_) | CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. }
+                    CostDef::Mana(_) | CostDef::Waterbend(_) | CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. }
                     | CostDef::ReturnUnblockedAttackerToHand
                     | CostDef::TapPermanents { .. }
                     // Paid by decision after everything else, the way a

@@ -17,9 +17,9 @@ fn cast(game: &mut Game, definition: CardDefinitionId, target: Option<Target>) {
 }
 
 #[test]
-fn burning_wish_takes_only_an_outside_game_sorcery_and_exiles_itself() {
+fn burning_wish_takes_only_a_sideboard_sorcery_and_exiles_itself() {
     let mut game = ready_game();
-    game.players[0].outside_game = game
+    game.players[0].sideboard = game
         .build_zone(
             PlayerId::One,
             &[cards::LIGHTNING_BOLT, cards::FOREST, cards::WRATH_OF_GOD],
@@ -31,7 +31,7 @@ fn burning_wish_takes_only_an_outside_game_sorcery_and_exiles_itself() {
     drain_pending(&mut game);
     assert_eq!(game.players[0].hand.len(), 1);
     assert_eq!(game.players[0].hand[0].definition, cards::WRATH_OF_GOD);
-    assert_eq!(game.players[0].outside_game.len(), 2);
+    assert_eq!(game.players[0].sideboard.len(), 2);
     assert!(
         game.players[0]
             .exile
@@ -247,6 +247,7 @@ fn lattice_allows_any_color_but_does_not_pay_colorless_symbols() {
 
 mod effects;
 mod payments;
+mod revisions;
 
 fn activate_mana(game: &mut Game, source: GameObjectId) {
     let action = game

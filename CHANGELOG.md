@@ -26,7 +26,7 @@ the bot-wire epoch.
   multi-chapter counter crossings, waterbend payments, and mana-symbol restrictions.
   Color-spending permissions preserve colored symbols; generic-only contributions
   and Jegantha's mana remain distinct from ordinary mana.
-- Checkpoint format 21 adds mana-payment facts, mana-production history, numeric
+- Checkpoint format 21 adds mana-payment facts, explicit ability-use history, numeric
   bindings, immediate exile durations, copy-type replacements, hidden-search and
   single-color mana continuations, and color-specific hexproof keywords. Regenerate
   format 20 checkpoints and advertise `reconstruction.checkpoint.v21` when using

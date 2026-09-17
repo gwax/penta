@@ -156,7 +156,7 @@ impl Game {
                         DecisionZone::Exile,
                         ZoneKind::Exile,
                     ),
-                    CardChoiceSourceDef::OutsideGame
+                    CardChoiceSourceDef::Sideboard
                         if self
                             .format
                             .commander_definition()
@@ -164,8 +164,8 @@ impl Game {
                     {
                         continue;
                     }
-                    CardChoiceSourceDef::OutsideGame => (
-                        &self.players[player.index()].outside_game,
+                    CardChoiceSourceDef::Sideboard => (
+                        &self.players[player.index()].sideboard,
                         DecisionZone::OutsideGame,
                         ZoneKind::Hand,
                     ),
@@ -213,7 +213,7 @@ impl Game {
             if sources.iter().any(|source| {
                 matches!(
                     source,
-                    CardChoiceSourceDef::OutsideGame
+                    CardChoiceSourceDef::Sideboard
                         | CardChoiceSourceDef::Zone(ZoneKind::Library | ZoneKind::Hand)
                 )
             }) {

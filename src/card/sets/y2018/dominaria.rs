@@ -42,7 +42,6 @@ use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::PlayerSetDef;
-use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::RevealObjectsDef;
 use crate::card::SpellCastQueryDef;
@@ -59,6 +58,7 @@ use crate::card::ValueDef;
 use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
+use crate::card::{ReplacementAbilityDef, ReplacementEffectDef, ReplacementEventDef};
 use crate::ids::Binding;
 use crate::ids::ParentBinding;
 use crate::ids::TargetIndex;
@@ -825,16 +825,17 @@ pub(in crate::card::sets) static DAMPING_SPHERE: CardRecord = CardRecord::new(
     "a5c7d16b-8f4e-42b9-be24-3cb091932d7c",
     "Adam Paquette",
     CardRules::new_artifact(mana_cost!("{2}")).with_abilities(&[
-        AbilityDef::static_ability(
+        AbilityDef::defined_replacement(
             "If a land is tapped for two or more mana, it produces {C} instead of any \
              other type and amount.",
-            EffectDef::StaticApply {
-                recipient: EffectRecipientDef::EachPlayer,
-                effect: AppliedEffectDef::Rule(AppliedRuleDef::TappedManaBecomesColorless {
-                    types: CardTypeSet::single(CardType::Land),
-                    minimum: 2,
-                }),
-            },
+            ReplacementAbilityDef::new().with_event(ReplacementEventDef::TappedForMana {
+                source_types: CardTypeSet::single(CardType::Land),
+                minimum_amount: 2,
+            }),
+            ReplacementEffectDef::Sequence(&[
+                ReplacementEffectDef::SetManaType(ManaColor::Colorless),
+                ReplacementEffectDef::SetEventAmount(1),
+            ]),
         ),
         AbilityDef::static_ability(
             "Each spell a player casts costs {1} more to cast for each other spell that \

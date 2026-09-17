@@ -251,44 +251,6 @@ pub(in crate::card::sets) static TEZZERET_THE_SEEKER: CardRecord = CardRecord::n
 );
 
 // ALA 63 — Ad Nauseam
-// The mandatory reveal and each optional repetition execute the same procedure.
-macro_rules! ad_nauseam_reveal {
-    ($cards:expr, $value:expr) => {
-        EffectDef::BindObjects(BindObjectsDef {
-            source: ObjectCollectionSourceDef::TopCards {
-                player: PlayerRefDef::EffectController,
-                count: ValueDef::Constant(1),
-            },
-            binding: $cards,
-            then: &EffectDef::Sequence(&[
-                EffectDef::RevealObjects(RevealObjectsDef {
-                    input: ObjectSetDef::Binding($cards),
-                    then: &EffectDef::None,
-                }),
-                EffectDef::BindValue {
-                    binding: $value,
-                    value: ValueDef::AggregateObjectValues(&ObjectValueAggregateDef {
-                        objects: ObjectSetDef::Binding($cards),
-                        select: ObjectValueDef::ManaValue,
-                        operation: AggregateOperationDef::Sum,
-                    }),
-                    effect: &EffectDef::Sequence(&[
-                        EffectDef::move_to_zone(
-                            EffectRecipientDef::objects(ObjectSetDef::Binding($cards)),
-                            ZoneKind::Hand,
-                            ZonePlacement::Top,
-                        ),
-                        EffectDef::LoseLife {
-                            recipient: EffectRecipientDef::Controller,
-                            amount: ValueDef::BoundValue($value),
-                        },
-                    ]),
-                },
-            ]),
-        })
-    };
-}
-
 pub(in crate::card::sets) static AD_NAUSEAM: CardRecord = CardRecord::new(
     "Ad Nauseam",
     "0a4ce4a1-65e3-4b40-be35-8fc55a968ec8",
@@ -296,19 +258,47 @@ pub(in crate::card::sets) static AD_NAUSEAM: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{3}{B}{B}")).with_ability(AbilityDef::spell(
         "Reveal the top card of your library and put that card into your hand. You lose \
          life equal to its mana value. You may repeat this process any number of times.",
-        EffectDef::Sequence(&[
-            ad_nauseam_reveal!(
-                crate::Binding!("first-card"),
-                crate::Binding!("first-value")
-            ),
-            EffectDef::Repeat {
-                player: EffectRecipientDef::Controller,
-                effect: &ad_nauseam_reveal!(
-                    crate::Binding!("next-card"),
-                    crate::Binding!("next-value")
-                ),
-            },
-        ]),
+        EffectDef::Repeat {
+            mandatory_first: true,
+            player: EffectRecipientDef::Controller,
+            // Freeze the revealed mana value before moving the card.
+            effect: &EffectDef::BindObjects(BindObjectsDef {
+                source: ObjectCollectionSourceDef::TopCards {
+                    player: PlayerRefDef::EffectController,
+                    count: ValueDef::Constant(1),
+                },
+                binding: crate::Binding!("revealed-card"),
+                then: &EffectDef::Sequence(&[
+                    EffectDef::RevealObjects(RevealObjectsDef {
+                        input: ObjectSetDef::Binding(crate::Binding!("revealed-card")),
+                        then: &EffectDef::None,
+                    }),
+                    EffectDef::BindValue {
+                        binding: crate::Binding!("revealed-mana-value"),
+                        value: ValueDef::AggregateObjectValues(&ObjectValueAggregateDef {
+                            objects: ObjectSetDef::Binding(crate::Binding!("revealed-card")),
+                            select: ObjectValueDef::ManaValue,
+                            operation: AggregateOperationDef::Sum,
+                        }),
+                        effect: &EffectDef::Sequence(&[
+                            EffectDef::move_to_zone(
+                                EffectRecipientDef::objects(ObjectSetDef::Binding(
+                                    crate::Binding!("revealed-card"),
+                                )),
+                                ZoneKind::Hand,
+                                ZonePlacement::Top,
+                            ),
+                            EffectDef::LoseLife {
+                                recipient: EffectRecipientDef::Controller,
+                                amount: ValueDef::BoundValue(crate::Binding!(
+                                    "revealed-mana-value"
+                                )),
+                            },
+                        ]),
+                    },
+                ]),
+            }),
+        },
     )),
 );
 

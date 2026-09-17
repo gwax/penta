@@ -14,6 +14,12 @@ use crate::{Binding, CardTypeSet, card::CardNameSetDef};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ReplacementEventDef {
+    /// An activated mana ability whose cost taps its source would produce mana.
+    /// Match the source's pre-cost types and the prospective production amount.
+    TappedForMana {
+        source_types: CardTypeSet,
+        minimum_amount: u16,
+    },
     /// The object carrying this ability would enter the battlefield.
     SourceEntersBattlefield,
     /// A matching object would enter the battlefield.
@@ -274,6 +280,10 @@ pub enum ReplacementChoiceDef {
 /// engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ReplacementEffectDef {
+    /// Replace the amount carried by the prospective event.
+    SetEventAmount(u16),
+    /// Change every produced unit's type, retaining its source and spend riders.
+    SetManaType(super::ManaColor),
     Sequence(&'static [ReplacementEffectDef]),
     /// Declare a durable labeled binding and let an entry-time producer
     /// populate it. Keeping the label outside the producer makes the data

@@ -244,8 +244,8 @@ fn an_emblem_rebuilds_with_identity_and_source_provenance() {
             "p2": definitions(&game.players[PlayerId::Two.index()].library),
         },
         "outsideGame": {
-            "p1": definitions(&game.players[PlayerId::One.index()].outside_game),
-            "p2": definitions(&game.players[PlayerId::Two.index()].outside_game),
+            "p1": definitions(&game.players[PlayerId::One.index()].sideboard),
+            "p2": definitions(&game.players[PlayerId::Two.index()].sideboard),
         },
     });
     assert_eq!(observation_json["checkpoint"]["hasDeferredState"], false);

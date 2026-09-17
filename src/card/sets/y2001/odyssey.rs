@@ -87,6 +87,46 @@ static THRESHOLD: TriggerConditionDef = TriggerConditionDef::ObjectCount {
     amount: 7,
 };
 
+/// Apply threshold to a group of static clauses and/or activations. Static
+/// effects are read continuously; an activation checks threshold when announced,
+/// so emptying the graveyard afterwards does not undo an ability on the stack.
+///
+/// # Panics
+/// Panics for categories other than static and activated clauses, or for an
+/// activation that already has its own condition.
+pub(in crate::card::sets) const fn threshold<const N: usize>(
+    abilities: &'static [AbilityDef; N],
+) -> [AbilityDef; N] {
+    let mut result = *abilities;
+    let mut index = 0;
+    while index < N {
+        let original = &abilities[index];
+        match original.definition {
+            crate::card::DeclarativeAbilityDef::Static(_) => {
+                let crate::card::AbilityProgramDef::Effects(effect) = &original.effect.definition
+                else {
+                    panic!("a static threshold clause needs an effect program");
+                };
+                result[index].effect =
+                    crate::card::AbilityEffectDef::declarative(EffectDef::IfCondition {
+                        condition: &THRESHOLD,
+                        then: effect,
+                    });
+            }
+            crate::card::DeclarativeAbilityDef::Activated(definition) => {
+                assert!(
+                    definition.condition.is_none(),
+                    "threshold would replace an activation condition"
+                );
+                result[index] = original.with_activation_condition(&THRESHOLD);
+            }
+            _ => panic!("threshold expects static clauses or activations"),
+        }
+        index += 1;
+    }
+    result
+}
+
 /// Printed set identity and stable catalog slug.
 pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
     code: "ODY",
@@ -4185,21 +4225,18 @@ pub(in crate::card::sets) static KROSAN_BEAST: CardRecord = CardRecord::new(
     "Kev Walker",
     // A 1/1 for four that becomes an 8/8. Nothing in between: it is dead
     // weight until the graveyard fills and unanswerable afterwards.
-    CardRules::new_creature(mana_cost!("{3}{G}"), &["Squirrel", "Beast"], 1, 1).with_ability(
-        AbilityDef::static_ability(
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Squirrel", "Beast"], 1, 1).with_abilities(
+        &threshold(&[AbilityDef::static_ability(
             "Threshold — This creature gets +7/+7 as long as there are seven or more \
              cards in your graveyard.",
-            EffectDef::IfCondition {
-                condition: &THRESHOLD,
-                then: &EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::modify_power_toughness(
-                        ValueDef::Constant(7),
-                        ValueDef::Constant(7),
-                    ),
-                },
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(7),
+                    ValueDef::Constant(7),
+                ),
             },
-        ),
+        )]),
     ),
 );
 
@@ -4220,21 +4257,18 @@ pub(in crate::card::sets) static METAMORPHIC_WURM: CardRecord = CardRecord::new(
     "Thomas M. Baxa",
     // A 3/3 that becomes a 7/7, which is the middle of the threshold curve
     // and the one that is playable before it turns on.
-    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Elephant", "Wurm"], 3, 3).with_ability(
-        AbilityDef::static_ability(
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Elephant", "Wurm"], 3, 3).with_abilities(
+        &threshold(&[AbilityDef::static_ability(
             "Threshold — This creature gets +4/+4 as long as there are seven or more \
              cards in your graveyard.",
-            EffectDef::IfCondition {
-                condition: &THRESHOLD,
-                then: &EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::modify_power_toughness(
-                        ValueDef::Constant(4),
-                        ValueDef::Constant(4),
-                    ),
-                },
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(4),
+                    ValueDef::Constant(4),
+                ),
             },
-        ),
+        )]),
     ),
 );
 
@@ -4542,22 +4576,19 @@ pub(in crate::card::sets) static SPRINGING_TIGER: CardRecord = CardRecord::new(
     "Arnie Swekel",
     // A fair 3/3 that quietly becomes a 5/5, which is what a common was
     // allowed to do.
-    CardRules::new_creature(mana_cost!("{3}{G}"), &["Cat"], 3, 3).with_ability(
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Cat"], 3, 3).with_abilities(&threshold(&[
         AbilityDef::static_ability(
             "Threshold — This creature gets +2/+2 as long as there are seven or more \
              cards in your graveyard.",
-            EffectDef::IfCondition {
-                condition: &THRESHOLD,
-                then: &EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::modify_power_toughness(
-                        ValueDef::Constant(2),
-                        ValueDef::Constant(2),
-                    ),
-                },
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
             },
         ),
-    ),
+    ])),
 );
 
 // ODY 273 — Squirrel Mob

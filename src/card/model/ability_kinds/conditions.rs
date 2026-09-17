@@ -10,8 +10,8 @@
 /// ability would go on the stack, and again as it resolves.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TriggerConditionDef {
-    /// Positive mana production by this source incarnation and ability during this turn.
-    SourceProducedManaThisTurn,
+    /// Whether this source incarnation and ability explicitly recorded a use this turn.
+    SourceAbilityUsedThisTurn,
     /// Read the current top card without revealing it. An empty library never matches.
     /// At least this many different powers among creatures you control (coven).
     ControlsCreaturesWithDifferentPowers(u8),

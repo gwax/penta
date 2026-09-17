@@ -1498,8 +1498,9 @@ them.
 ### Checkpoint format 21
 
 Format 21 preserves the Legacy card rules state added for immediate exile returns,
-restricted mana symbols, single-color production choices, frozen numeric bindings,
-copy creature-type replacements, and selected-spell casting bounds. Reconstruction
+restricted mana symbols, explicit ability-use history, single-color production
+choices, frozen numeric bindings, copy creature-type replacements, and
+selected-spell casting bounds. Reconstruction
 clients must advertise `reconstruction.checkpoint.v21` and regenerate older saved
 checkpoints. Ordinary action and observation shapes are unchanged.
 

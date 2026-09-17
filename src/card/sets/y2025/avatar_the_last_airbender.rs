@@ -181,69 +181,69 @@ const MONK_TOKEN: TokenCharacteristics =
 
 // Earthbend's delayed trigger is independent of the animation and its creator.
 // Capturing the exact land keeps a later return from inheriting either effect.
-macro_rules! earthbend {
-    ($amount:expr) => {
-        EffectDef::BindObjects(BindObjectsDef {
-            source: ObjectCollectionSourceDef::ObjectSet(ObjectSetDef::LegalTargets(
-                TargetIndex::PRIMARY,
-            )),
-            binding: crate::Binding!("earthbent"),
-            then: &EffectDef::Sequence(&[
-                EffectDef::Apply {
-                    recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    effect: AppliedEffectDef::Composite(&[
-                        AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
-                        AppliedEffectDef::set_base_power_toughness(
-                            ValueDef::Constant(0),
-                            ValueDef::Constant(0),
-                        ),
-                        AppliedEffectDef::add_ability(&abilities::haste()),
-                    ]),
-                    duration: ResolvedEffectDurationDef::Permanent,
-                },
-                EffectDef::AddCounters {
-                    object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
-                    kind: CounterKind::PlusOnePlusOne,
-                    amount: ValueDef::Constant($amount),
-                },
-                EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
-                    "When that land dies or is exiled, return it to the battlefield tapped.",
-                    TriggerEventDef::AnyOf(&[
-                        TriggerEventDef::ZoneChanged(
-                            ZoneChangeEventMatcherDef::new(
-                                ObjectPredicateDef::HasType(CardType::Creature),
-                                Some(ZoneKind::Battlefield),
-                                Some(ZoneKind::Graveyard),
-                            )
-                            .among(crate::Binding!("earthbent")),
-                        ),
-                        TriggerEventDef::ZoneChanged(
-                            ZoneChangeEventMatcherDef::new(
-                                ObjectPredicateDef::Any,
-                                Some(ZoneKind::Battlefield),
-                                Some(ZoneKind::Exile),
-                            )
-                            .among(crate::Binding!("earthbent")),
-                        ),
-                    ]),
-                    EffectDef::WithBattlefieldArrival {
-                        arrival: BattlefieldArrivalDef {
-                            modifications: &[BattlefieldEntryModificationDef::Tapped],
-                            ..BattlefieldArrivalDef::DEFAULT
-                        },
-                        effect: &EffectDef::move_to_zone(
-                            EffectRecipientDef::object(
-                                ObjectRefDef::ZoneChangeResultOfTriggeringObject,
-                            ),
-                            ZoneKind::Battlefield,
-                            ZonePlacement::Top,
-                        ),
-                    },
-                ))),
-            ]),
-        })
-    };
+pub(in crate::card::sets) const fn earthbend(amount: i32) -> EffectDef {
+    EffectDef::BindValue {
+        binding: crate::Binding!("earthbend-amount"),
+        value: ValueDef::Constant(amount),
+        effect: &EARTHBEND_EFFECT,
+    }
 }
+
+const EARTHBEND_EFFECT: EffectDef = EffectDef::BindObjects(BindObjectsDef {
+    source: ObjectCollectionSourceDef::ObjectSet(ObjectSetDef::LegalTargets(TargetIndex::PRIMARY)),
+    binding: crate::Binding!("earthbent"),
+    then: &EffectDef::Sequence(&[
+        EffectDef::Apply {
+            recipient: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            effect: AppliedEffectDef::Composite(&[
+                AppliedEffectDef::add_card_types(CardTypeSet::single(CardType::Creature)),
+                AppliedEffectDef::set_base_power_toughness(
+                    ValueDef::Constant(0),
+                    ValueDef::Constant(0),
+                ),
+                AppliedEffectDef::add_ability(&abilities::haste()),
+            ]),
+            duration: ResolvedEffectDurationDef::Permanent,
+        },
+        EffectDef::AddCounters {
+            object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
+            kind: CounterKind::PlusOnePlusOne,
+            amount: ValueDef::BoundValue(crate::Binding!("earthbend-amount")),
+        },
+        EffectDef::InstallTrigger(InstalledTriggerDef::once(&AbilityDef::triggered(
+            "When that land dies or is exiled, return it to the battlefield tapped.",
+            TriggerEventDef::AnyOf(&[
+                TriggerEventDef::ZoneChanged(
+                    ZoneChangeEventMatcherDef::new(
+                        ObjectPredicateDef::HasType(CardType::Creature),
+                        Some(ZoneKind::Battlefield),
+                        Some(ZoneKind::Graveyard),
+                    )
+                    .among(crate::Binding!("earthbent")),
+                ),
+                TriggerEventDef::ZoneChanged(
+                    ZoneChangeEventMatcherDef::new(
+                        ObjectPredicateDef::Any,
+                        Some(ZoneKind::Battlefield),
+                        Some(ZoneKind::Exile),
+                    )
+                    .among(crate::Binding!("earthbent")),
+                ),
+            ]),
+            EffectDef::WithBattlefieldArrival {
+                arrival: BattlefieldArrivalDef {
+                    modifications: &[BattlefieldEntryModificationDef::Tapped],
+                    ..BattlefieldArrivalDef::DEFAULT
+                },
+                effect: &EffectDef::move_to_zone(
+                    EffectRecipientDef::object(ObjectRefDef::ZoneChangeResultOfTriggeringObject),
+                    ZoneKind::Battlefield,
+                    ZonePlacement::Top,
+                ),
+            },
+        ))),
+    ]),
+});
 
 // TLA 1 — Aang's Journey
 pub(in crate::card::sets) static AANG_S_JOURNEY: CardRecord = CardRecord::new(
@@ -1805,30 +1805,27 @@ pub(in crate::card::sets) static INVASION_SUBMERSIBLE: CardRecord = CardRecord::
                 ZonePlacement::Top,
             ),
         ),
-        crate::card::sets::y2025::aetherdrift::exhaust(
-            AbilityDef::activated(
-                "Exhaust — Waterbend {3}: This Vehicle becomes an artifact creature. Put \
+        crate::card::sets::y2025::aetherdrift::exhaust(AbilityDef::activated(
+            "Exhaust — Waterbend {3}: This Vehicle becomes an artifact creature. Put \
                  three +1/+1 counters on it. (While paying a waterbend cost, you can tap \
                  your artifacts and creatures to help. Each one pays for {1}. Activate \
                  each exhaust ability only once.)",
-                &[CostDef::Mana(mana_cost!("{3}"))],
-                EffectDef::Sequence(&[
-                    EffectDef::Apply {
-                        recipient: EffectRecipientDef::Source,
-                        effect: AppliedEffectDef::add_card_types(
-                            CardTypeSet::single(CardType::Artifact).with(CardType::Creature),
-                        ),
-                        duration: ResolvedEffectDurationDef::Permanent,
-                    },
-                    EffectDef::AddCounters {
-                        object: EffectRecipientDef::Source,
-                        kind: CounterKind::PlusOnePlusOne,
-                        amount: ValueDef::Constant(3),
-                    },
-                ]),
-            )
-            .with_tap_for_generic(CardTypeSet::single(CardType::Artifact).with(CardType::Creature)),
-        ),
+            &[CostDef::Waterbend(3)],
+            EffectDef::Sequence(&[
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::add_card_types(
+                        CardTypeSet::single(CardType::Artifact).with(CardType::Creature),
+                    ),
+                    duration: ResolvedEffectDurationDef::Permanent,
+                },
+                EffectDef::AddCounters {
+                    object: EffectRecipientDef::Source,
+                    kind: CounterKind::PlusOnePlusOne,
+                    amount: ValueDef::Constant(3),
+                },
+            ]),
+        )),
     ]),
 );
 
@@ -4499,7 +4496,7 @@ pub(in crate::card::sets) static BADGERMOLE_CUB: CardRecord = CardRecord::new(
                     owner: None,
                 },
             )],
-            earthbend!(1),
+            earthbend(1),
         ),
         AbilityDef::triggered_mana(
             "Whenever you tap a creature for mana, add an additional {G}.",
@@ -7106,7 +7103,7 @@ pub(in crate::card::sets) static BA_SING_SE: CardRecord = CardRecord::new(
                     owner: None,
                 },
             )],
-            earthbend!(2),
+            earthbend(2),
         )
         .with_activation_timing(ActivationTimingDef::SorcerySpeed),
     ]),

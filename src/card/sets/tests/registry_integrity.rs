@@ -479,7 +479,7 @@ fn ring_uses_declarative_format_and_draw_replacement_constructs() {
         old_school_sources,
         &[
             CardChoiceSourceDef::Zone(ZoneKind::Exile),
-            CardChoiceSourceDef::OutsideGame,
+            CardChoiceSourceDef::Sideboard,
         ]
     );
     assert_eq!(old_school_destination, ZoneKind::Hand);
@@ -491,7 +491,7 @@ fn ring_uses_declarative_format_and_draw_replacement_constructs() {
     else {
         panic!("Oracle Ring should choose an owned card");
     };
-    assert_eq!(oracle_sources, &[CardChoiceSourceDef::OutsideGame]);
+    assert_eq!(oracle_sources, &[CardChoiceSourceDef::Sideboard]);
     assert_eq!(oracle_destination, ZoneKind::Hand);
 }
 

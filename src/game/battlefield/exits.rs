@@ -622,6 +622,8 @@ impl Game {
             }
             ReplacementEffectDef::ModifyBattlefieldEntry(_)
             | ReplacementEffectDef::BindOutput { .. }
+            | ReplacementEffectDef::SetEventAmount(_)
+            | ReplacementEffectDef::SetManaType(_)
             | ReplacementEffectDef::MultiplyEventAmount(_)
             | ReplacementEffectDef::AddToEventAmount(_)
             | ReplacementEffectDef::Choose(_)

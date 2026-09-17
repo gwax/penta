@@ -4563,7 +4563,7 @@ pub(in crate::card::sets) static NORTH_WIND_AVATAR: CardRecord = CardRecord::new
             &TriggerConditionDef::SourceWasCast,
             EffectDef::ChooseCards {
                 player: EffectRecipientDef::Controller,
-                sources: &[CardChoiceSourceDef::OutsideGame],
+                sources: &[CardChoiceSourceDef::Sideboard],
                 object: ObjectPredicateDef::Any,
                 minimum: 0,
                 maximum: 1,

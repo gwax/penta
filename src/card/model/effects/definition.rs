@@ -1,13 +1,20 @@
 /// Declarative effect primitives interpreted by the rules engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum EffectDef {
+    /// Mark this source incarnation and ability as used until the next turn.
+    /// The enclosing program chooses its success point; merely triggering or
+    /// declining an optional instruction does not consume the use.
+    RecordAbilityUse,
+
     /// A one-shot exile with an immediate return when this source leaves (CR 610.3).
     /// The card returns to the zone it left, under its owner if that zone is the battlefield.
     ExileUntilSourceLeaves {
         object: EffectRecipientDef,
     },
-    /// Offer a fresh decision before each iteration, retaining the enclosing resolution.
+    /// Repeat a procedure, retaining the enclosing resolution across decisions.
     Repeat {
+        /// Execute the first iteration before offering the repeat choice.
+        mandatory_first: bool,
         player: EffectRecipientDef,
         effect: &'static EffectDef,
     },

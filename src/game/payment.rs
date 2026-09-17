@@ -245,7 +245,7 @@ pub(in crate::game) fn mana_ability_payment_purpose(
     costs: &[super::CostDef],
 ) -> ManaPaymentPurpose {
     ManaPaymentPurpose::Ability {
-        tap_for_generic: crate::card::CardTypeSet::empty(),
+        waterbend: 0,
         source,
         taps_source: costs.contains(&super::CostDef::TapSource),
         leaves_source: costs.iter().any(|cost| {

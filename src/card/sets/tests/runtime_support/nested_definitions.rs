@@ -330,6 +330,8 @@ pub(super) fn shared_entry_replacement_effect(effect: ReplacementEffectDef) -> b
         | ReplacementEffectDef::RegenerateDestroyedObject
         | ReplacementEffectDef::RemoveDamageFromDestroyedObject
         | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+        | ReplacementEffectDef::SetEventAmount(_)
+        | ReplacementEffectDef::SetManaType(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
         // A draw's clause rather than an entry's.
         | ReplacementEffectDef::AddToEventAmount(_) => false,
@@ -361,6 +363,8 @@ pub(in super::super) fn shared_begin_turn_replacement_effect(effect: Replacement
         | ReplacementEffectDef::RemoveDamageFromDestroyedObject
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+        | ReplacementEffectDef::SetEventAmount(_)
+        | ReplacementEffectDef::SetManaType(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
@@ -459,6 +463,8 @@ pub(in super::super) fn shared_battlefield_exit_replacement_effect(
         | ReplacementEffectDef::RegenerateDestroyedObject
         | ReplacementEffectDef::RemoveDamageFromDestroyedObject
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::SetEventAmount(_)
+        | ReplacementEffectDef::SetManaType(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
@@ -490,7 +496,8 @@ pub(in super::super) fn shared_destruction_replacement_effect(
 
 pub(super) fn shared_replacement_event(event: ReplacementEventDef) -> bool {
     match event {
-        ReplacementEventDef::SourceEntersBattlefield
+        ReplacementEventDef::TappedForMana { .. }
+        | ReplacementEventDef::SourceEntersBattlefield
         | ReplacementEventDef::WouldGainLife(_)
         | ReplacementEventDef::WouldDraw { .. }
         | ReplacementEventDef::WouldBeginTurn { .. } => true,
@@ -629,6 +636,8 @@ pub(in super::super) fn assert_nested_replacement_definition_abilities(
         | ReplacementEffectDef::RemoveDamageFromDestroyedObject
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+        | ReplacementEffectDef::SetEventAmount(_)
+        | ReplacementEffectDef::SetManaType(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)

@@ -14,7 +14,8 @@ use super::{
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum CardChoiceSourceDef {
     Zone(ZoneKind),
-    OutsideGame,
+    /// Outside-the-game instructions use the player's registered sideboard.
+    Sideboard,
 }
 
 /// A reusable condition evaluated in an effect's source and event context.

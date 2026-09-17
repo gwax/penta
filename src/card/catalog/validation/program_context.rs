@@ -352,6 +352,20 @@ fn static_creature_type_effect(effect: AppliedEffectDef) -> bool {
     }
 }
 
+fn spell_mana_restriction_supported(restriction: crate::card::ManaRestrictionDef) -> bool {
+    use crate::card::ManaRestrictionDef;
+    match restriction {
+        ManaRestrictionDef::AnyOf(alternatives) => alternatives
+            .iter()
+            .copied()
+            .all(spell_mana_restriction_supported),
+        ManaRestrictionDef::CastSpell(_)
+        | ManaRestrictionDef::CannotCastSpell(_)
+        | ManaRestrictionDef::CastYourCommander => true,
+        _ => false,
+    }
+}
+
 fn stack_static_applied_effect_supported(effect: AppliedEffectDef, external_grants: bool) -> bool {
     match effect {
         AppliedEffectDef::Composite(effects) => {
@@ -361,7 +375,9 @@ fn stack_static_applied_effect_supported(effect: AppliedEffectDef, external_gran
                     .copied()
                     .all(|effect| stack_static_applied_effect_supported(effect, external_grants))
         }
-        AppliedEffectDef::Rule(AppliedRuleDef::CannotSpendManaToCast) => !external_grants,
+        AppliedEffectDef::Rule(AppliedRuleDef::ManaPaymentRestriction(restriction)) => {
+            !external_grants && spell_mana_restriction_supported(restriction)
+        }
         AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered) => true,
         // The stack listener currently executes source-cast triggers. Other
         // ability categories need their own zone-aware execution boundary.
@@ -459,7 +475,6 @@ fn static_player_applied_effect_supported(effect: AppliedEffectDef) -> bool {
             // Read by whoever is being shown the game rather than by any
             // step of it: a public top card changes what an observation
             // says and nothing else.
-            | AppliedRuleDef::TappedManaBecomesColorless { .. }
             | AppliedRuleDef::MaySpendManaAsAnyColor
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::MayPlayAdditionalLands(_)
@@ -616,14 +631,13 @@ fn static_object_rule_supported(recipient: EffectRecipientDef, rule: AppliedRule
         }
         // Zero extra blocks would be a rule that grants nothing.
         AppliedRuleDef::MayBlockAdditionalCreatures(extra) => extra > 0,
-        AppliedRuleDef::CannotSpendManaToCast
+        AppliedRuleDef::ManaPaymentRestriction(_)
         | AppliedRuleDef::CannotBeCountered
         // Ascend belongs to a player, so nothing about an object reads it.
         | AppliedRuleDef::Ascend
         | AppliedRuleDef::KnownCards(_)
         // Trigger modification applies to abilities controlled by a player.
         | AppliedRuleDef::ModifyTriggers(_)
-        | AppliedRuleDef::TappedManaBecomesColorless { .. }
         | AppliedRuleDef::MaySpendManaAsAnyColor
         | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
         | AppliedRuleDef::MayPlayAdditionalLands(_)

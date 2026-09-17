@@ -70,7 +70,6 @@ fn validate_applied_effect_shapes(
         // Each names a player and carries nothing else.
         AppliedEffectDef::Rule(
             AppliedRuleDef::Ascend
-            | AppliedRuleDef::TappedManaBecomesColorless { .. }
             | AppliedRuleDef::MaySpendManaAsAnyColor
             | AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities
             | AppliedRuleDef::MayPlayAdditionalLands(_)

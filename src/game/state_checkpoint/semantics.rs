@@ -526,6 +526,8 @@ fn collect_replacement_effects(
         | ReplacementEffectDef::RemoveDamageFromDestroyedObject
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+        | ReplacementEffectDef::SetEventAmount(_)
+        | ReplacementEffectDef::SetManaType(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
@@ -595,6 +597,8 @@ pub(super) fn replacement_child_effects(effect: ReplacementEffectDef) -> Vec<Eff
         | ReplacementEffectDef::RemoveDamageFromDestroyedObject
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+        | ReplacementEffectDef::SetEventAmount(_)
+        | ReplacementEffectDef::SetManaType(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
@@ -823,6 +827,8 @@ fn collect_replacement_copy_abilities(
         | ReplacementEffectDef::RemoveDamageFromDestroyedObject
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+        | ReplacementEffectDef::SetEventAmount(_)
+        | ReplacementEffectDef::SetManaType(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)

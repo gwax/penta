@@ -38,7 +38,8 @@ pub(super) enum ManaPaymentPurpose {
         reserved_life_payment: u16,
     },
     Ability {
-        tap_for_generic: crate::card::CardTypeSet,
+        /// Maximum direct generic contributions, derived from the waterbend cost.
+        waterbend: u16,
         source: GameObjectId,
         /// Whether the ability taps its source to pay for itself. When it
         /// does, that source cannot also be tapped for mana, so it is barred
@@ -174,12 +175,12 @@ pub(super) enum ManaContributionKind {
     Convoke,
     Delve,
     Improvise,
-    TapPermanent,
+    Waterbend,
 }
 
 impl ManaContributionKind {
     pub(super) const fn taps_source(self) -> bool {
-        matches!(self, Self::Convoke | Self::Improvise | Self::TapPermanent)
+        matches!(self, Self::Convoke | Self::Improvise | Self::Waterbend)
     }
 
     pub(super) const fn exiles_source(self) -> bool {

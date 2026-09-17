@@ -424,7 +424,7 @@ impl Game {
         self.turn_phase_resume = None;
         self.spells_cast_last_turn = self.spells_cast_this_turn;
         self.spells_cast_this_turn = [0; 2];
-        self.mana_producing_abilities_this_turn.clear();
+        self.abilities_used_this_turn.clear();
         self.spell_cast_history_this_turn.clear();
         self.cards_drawn_this_turn = [0; 2];
         self.cards_discarded_this_turn = [0; 2];

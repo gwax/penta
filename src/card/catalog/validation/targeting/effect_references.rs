@@ -841,7 +841,7 @@ fn validate_effect_references(
         | EffectDef::RevealHand { player } => {
             validate_recipient_target_references(player, target_count, scope)
         }
-        EffectDef::Repeat { player, effect } | EffectDef::May { player, effect }
+        EffectDef::Repeat { player, effect, .. } | EffectDef::May { player, effect }
         | EffectDef::ReplaceNextDrawThisTurn { player, effect } => {
             validate_recipient_target_references(player, target_count, scope)?;
             validate_effect_references(*effect, target_count, scope)
@@ -969,6 +969,7 @@ fn validate_effect_references(
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)
+        | EffectDef::RecordAbilityUse
         | EffectDef::None
         | EffectDef::ContinueReplacedDraw
         | EffectDef::AddManaEqualTo { .. }

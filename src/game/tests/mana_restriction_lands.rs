@@ -30,7 +30,7 @@ fn cast_purpose(definition: CardDefinitionId) -> ManaPaymentPurpose {
 
 fn ability_purpose(source: GameObjectId) -> ManaPaymentPurpose {
     ManaPaymentPurpose::Ability {
-        tap_for_generic: crate::card::CardTypeSet::empty(),
+        waterbend: 0,
         source,
         taps_source: false,
         leaves_source: false,

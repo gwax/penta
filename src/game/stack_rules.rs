@@ -147,7 +147,8 @@ impl Game {
                 .iter()
                 .chain(payment.otherwise.iter())
                 .any(|effect| Self::effect_applies_to_source(**effect, expected)),
-            EffectDef::None
+            EffectDef::RecordAbilityUse
+            | EffectDef::None
             | EffectDef::ContinueReplacedDraw
             | EffectDef::Randomized { .. }
             | EffectDef::RollDie(_)

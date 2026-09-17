@@ -552,7 +552,7 @@ struct PlayerState {
     /// Cards the player brought in their sideboard. Outside the game is not
     /// a zone, so ordinary zone queries and observations never walk this
     /// collection.
-    outside_game: Vec<CardInstance>,
+    sideboard: Vec<CardInstance>,
     /// The single public pregame designation and its special-action usage.
     companion: Option<CompanionState>,
     mana_pool: ManaPool,
@@ -751,7 +751,7 @@ pub struct Game {
     /// How many spells each player has cast this turn, and how many they cast
     /// during the turn before. The werewolves ask about the turn that just
     /// ended, which is only knowable if it was counted while it happened.
-    mana_producing_abilities_this_turn: Vec<AbilitySourceRef>,
+    abilities_used_this_turn: Vec<AbilitySourceRef>,
     spells_cast_this_turn: [u16; 2],
     spells_cast_last_turn: [u16; 2],
     /// The stack incarnations of spells cast this turn. Their locked stack

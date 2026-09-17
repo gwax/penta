@@ -12,6 +12,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Perform(crate::card::GameActionDef::Named { .. }) => "NamedAction",
         EffectDef::Perform(crate::card::GameActionDef::Choice(_)) => "ActionChoice",
         EffectDef::Perform(crate::card::GameActionDef::Exile { .. }) => "Exile",
+        EffectDef::RecordAbilityUse => "RecordAbilityUse",
         EffectDef::None => "None",
         EffectDef::Sequence(_) | EffectDef::Perform(crate::card::GameActionDef::Sequence(_)) => {
             "Sequence"

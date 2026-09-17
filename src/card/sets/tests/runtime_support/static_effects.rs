@@ -323,7 +323,10 @@ fn shared_static_effect_at(source_zones: &[ZoneKind], effect: EffectDef, root: b
             let stack_source_effect = source_zones == [ZoneKind::Stack]
                 && recipient == EffectRecipientDef::Source
                 && (shared_cannot_be_countered_effect(effect)
-                    || effect == AppliedEffectDef::Rule(AppliedRuleDef::CannotSpendManaToCast));
+                    || matches!(
+                        effect,
+                        AppliedEffectDef::Rule(AppliedRuleDef::ManaPaymentRestriction(_))
+                    ));
             let battlefield_stack_effect = root
                 && battlefield_only(source_zones)
                 && recipient.object_query().is_some_and(|query| {
@@ -402,6 +405,7 @@ fn shared_static_effect_at(source_zones: &[ZoneKind], effect: EffectDef, root: b
         | EffectDef::InstallTrigger(_)
         | EffectDef::ReflexiveTrigger(_)
         | EffectDef::ContinueReplacedDraw
+        | EffectDef::RecordAbilityUse
         | EffectDef::None
         | EffectDef::AddMana(_)
         | EffectDef::AddManaEqualTo { .. }

@@ -53,8 +53,38 @@ impl Game {
             "entered",
         );
         match scoped.effect {
+            EffectDef::RecordAbilityUse => {
+                if let Some(ability) = object.ability_origin() {
+                    let source = super::AbilitySourceRef {
+                        object: object.source.unwrap_or(object.id),
+                        ability,
+                    };
+                    if !self.abilities_used_this_turn.contains(&source) {
+                        self.abilities_used_this_turn.push(source);
+                    }
+                }
+            }
+
             EffectDef::ExileUntilSourceLeaves { object: recipient } => {
                 self.resolve_duration_exile(recipient, object, &context, scoped);
+            }
+            EffectDef::Repeat {
+                mandatory_first: true,
+                player,
+                effect,
+            } => {
+                self.resolve_effects_in_order(
+                    vec![
+                        scoped.with_effect(*effect),
+                        scoped.with_effect(EffectDef::Repeat {
+                            mandatory_first: false,
+                            player,
+                            effect,
+                        }),
+                    ],
+                    object,
+                    context,
+                );
             }
             EffectDef::Repeat { player, .. } => {
                 for target in self.effect_recipients(player, object, &context, scoped) {

@@ -3081,23 +3081,7 @@ pub(in crate::card::sets) static BESEECH_THE_MIRROR: CardRecord = CardRecord::ne
     "18c59776-e1f1-4197-a128-db1d603f56b7",
     "Cynthia Sheppard",
     CardRules::new_sorcery(mana_cost!("{1}{B}{B}{B}")).with_abilities(&[
-        AbilityDef::optional_additional_cost(
-            "Bargain (You may sacrifice an artifact, enchantment, or token as you cast \
-             this spell.)",
-            OptionalAdditionalCostAbilityDef {
-                kind: OptionalAdditionalCostKindDef::Bargain,
-                label: OptionalAdditionalCostKindDef::Bargain.label(),
-                resolution_destination: SpellResolutionDestinationDef::Graveyard,
-                costs: &[CostDef::Sacrifice {
-                    object: ObjectPredicateDef::AnyOf(&[
-                        ObjectPredicateDef::HasType(CardType::Artifact),
-                        ObjectPredicateDef::HasType(CardType::Enchantment),
-                        ObjectPredicateDef::Token,
-                    ]),
-                    quantity: CostQuantityDef::Fixed(1),
-                }],
-            },
-        ),
+        bargain(),
         AbilityDef::spell(
             "Search your library for a card, exile it face down, then shuffle. If this \
              spell was bargained, you may cast the exiled card without paying its mana \

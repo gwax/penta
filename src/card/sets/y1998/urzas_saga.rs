@@ -1850,8 +1850,8 @@ pub(in crate::card::sets) static CARRION_BEETLES: CardRecord = CardRecord::new(
 );
 
 // USG 123 — Contamination
-// Audit: unsupported — Mana replacement cannot replace both the type and total amount produced by
-// each land mana event with exactly one black mana.
+// Audit: unsupported — Conflicting mana-production replacements need player-chosen ordering
+// before this can coexist faithfully with Damping Sphere.
 pub(in crate::card::sets) static CONTAMINATION: CardRecord = CardRecord::new(
     "Contamination",
     "86067dfe-65c3-4c96-bccd-b3915d6663f9",
@@ -3668,30 +3668,46 @@ pub(in crate::card::sets) static CARPET_OF_FLOWERS: CardRecord = CardRecord::new
                     player: PlayerRelation::You,
                 },
             ]),
-            &TriggerConditionDef::Not(&TriggerConditionDef::SourceProducedManaThisTurn),
+            &TriggerConditionDef::Not(&TriggerConditionDef::SourceAbilityUsedThisTurn),
             &[AbilityTargetDef::exactly_one(
                 AbilityTargetPredicate::Player(PlayerRelation::Opponent),
             )],
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
-                effect: &EffectDef::AddMana(AddManaEffectDef {
-                    variable_amount: Some(ValueDef::CountMatchingObjects(
-                        &ObjectQueryDef::controlled_by(
+                effect: &EffectDef::IfCondition {
+                    condition: &TriggerConditionDef::ObjectCount {
+                        query: ObjectQueryDef::controlled_by(
                             ObjectPredicateDef::Subtype(SubtypeDef::from_name("Island")),
                             &[ZoneKind::Battlefield],
                             crate::card::PlayerSetDef::One(PlayerRefDef::Target(
                                 TargetIndex::PRIMARY,
                             )),
                         ),
-                    )),
-                    ..AddManaEffectDef::choice(&[
-                        ManaColor::White,
-                        ManaColor::Blue,
-                        ManaColor::Black,
-                        ManaColor::Red,
-                        ManaColor::Green,
-                    ])
-                }),
+                        comparison: crate::card::ComparisonDef::GreaterOrEqual,
+                        amount: 1,
+                    },
+                    then: &EffectDef::Sequence(&[
+                        EffectDef::AddMana(AddManaEffectDef {
+                            variable_amount: Some(ValueDef::CountMatchingObjects(
+                                &ObjectQueryDef::controlled_by(
+                                    ObjectPredicateDef::Subtype(SubtypeDef::from_name("Island")),
+                                    &[ZoneKind::Battlefield],
+                                    crate::card::PlayerSetDef::One(PlayerRefDef::Target(
+                                        TargetIndex::PRIMARY,
+                                    )),
+                                ),
+                            )),
+                            ..AddManaEffectDef::choice(&[
+                                ManaColor::White,
+                                ManaColor::Blue,
+                                ManaColor::Black,
+                                ManaColor::Red,
+                                ManaColor::Green,
+                            ])
+                        }),
+                        EffectDef::RecordAbilityUse,
+                    ]),
+                },
             },
         ),
     ),

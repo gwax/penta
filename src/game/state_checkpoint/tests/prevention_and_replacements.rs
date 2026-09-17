@@ -886,7 +886,7 @@ fn resolved_prevention_retains_controller_lki_and_rejects_spliced_provenance() {
 #[test]
 fn ring_replacement_and_outside_game_choice_reconstruct_and_resume() {
     let mut game = crate::game::tests::ready_game();
-    game.players[PlayerId::One.index()].outside_game = game
+    game.players[PlayerId::One.index()].sideboard = game
         .build_zone(PlayerId::One, &[crate::card::cards::SERRA_ANGEL])
         .expect("outside-game card builds");
     let ring = game
@@ -967,7 +967,7 @@ fn ring_replacement_and_outside_game_choice_reconstruct_and_resume() {
             },
         )
         .expect("rebuilt Ring choice resumes");
-    assert!(rebuilt.players[0].outside_game.is_empty());
+    assert!(rebuilt.players[0].sideboard.is_empty());
     assert!(
         rebuilt.players[0]
             .hand

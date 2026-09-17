@@ -239,12 +239,6 @@ pub enum PlayerRuleDef {
 /// top-level effect variant.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AppliedRuleDef {
-    /// Normalize a matching tapped source's production to one colorless mana.
-    /// Instances of this replacement commute: each produces the same single unit.
-    TappedManaBecomesColorless {
-        types: CardTypeSet,
-        minimum: u16,
-    },
     /// The affected creature assigns no combat damage. This is a constraint
     /// on the assignment rather than a shield over the result: an attacker
     /// under it is not asked how to divide its damage at all, so trample has
@@ -270,8 +264,10 @@ pub enum AppliedRuleDef {
     /// combat assignment reads the other one.
     AssignsCombatDamageEqualToToughness,
     CannotBeCountered,
-    /// No mana may be spent on this spell, including increased and additional costs.
-    CannotSpendManaToCast,
+    /// Apply this restriction to every mana unit offered to pay for this spell.
+    /// It composes with restrictions carried by the mana itself and covers the
+    /// entire casting payment, including additional costs and increases.
+    ManaPaymentRestriction(super::ManaRestrictionDef),
     /// "If one or more tokens would be created under your control, twice
     /// that many of those tokens are created instead." A replacement on the
     /// creation rather than an effect of its own, so it applies to every

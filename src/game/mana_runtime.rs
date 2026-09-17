@@ -589,10 +589,9 @@ impl Game {
                         types.push(also);
                         count += 1;
                     }
-                    if self.replaces_tapped_mana(permanent.controller, source_types, tapped, count)
-                    {
-                        colors.push(ManaColor::Colorless);
-                    } else if count > 0 {
+                    let (types, count) =
+                        self.replaced_mana_shape(source_types, tapped, types, count);
+                    if count > 0 {
                         colors.extend(types);
                     }
                 }
@@ -702,15 +701,6 @@ impl Game {
 
     pub(super) fn add_mana(&mut self, player: PlayerId, mana: impl IntoIterator<Item = Mana>) {
         for mana in mana {
-            if let Some(source) = mana.source {
-                let source = super::AbilitySourceRef {
-                    object: source.object,
-                    ability: source.ability,
-                };
-                if !self.mana_producing_abilities_this_turn.contains(&source) {
-                    self.mana_producing_abilities_this_turn.push(source);
-                }
-            }
             self.players[player.index()]
                 .mana_pool
                 .add_color(mana.color, 1);

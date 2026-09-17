@@ -406,7 +406,7 @@ fn validate_effect_target_shapes(
             }
             Ok(())
         }
-        EffectDef::Repeat { player, effect }
+        EffectDef::Repeat { player, effect, .. }
         | EffectDef::May { player, effect }
         | EffectDef::ReplaceNextDrawThisTurn { player, effect } => {
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
@@ -735,6 +735,7 @@ fn validate_effect_target_shapes(
         EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::ModifyCost(_)
+        | EffectDef::RecordAbilityUse
         | EffectDef::None
         | EffectDef::ContinueReplacedDraw
         | EffectDef::DamageCannotBePreventedThisTurn

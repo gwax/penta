@@ -144,7 +144,7 @@ pub(in crate::card::sets) static KARN_THE_GREAT_CREATOR: CardRecord = CardRecord
                 EffectDef::ChooseCards {
                     player: EffectRecipientDef::Controller,
                     sources: &[
-                        CardChoiceSourceDef::OutsideGame,
+                        CardChoiceSourceDef::Sideboard,
                         CardChoiceSourceDef::Zone(ZoneKind::Exile),
                     ],
                     object: ObjectPredicateDef::HasType(CardType::Artifact),

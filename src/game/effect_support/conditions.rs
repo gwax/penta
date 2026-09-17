@@ -732,13 +732,12 @@ impl Game {
                             amount,
                         )
                     }),
-                TriggerConditionDef::SourceProducedManaThisTurn => ability.is_some_and(|origin| {
-                    self.mana_producing_abilities_this_turn.contains(
-                        &crate::game::AbilitySourceRef {
+                TriggerConditionDef::SourceAbilityUsedThisTurn => ability.is_some_and(|origin| {
+                    self.abilities_used_this_turn
+                        .contains(&crate::game::AbilitySourceRef {
                             object: source,
                             ability: origin,
-                        },
-                    )
+                        })
                 }),
                 TriggerConditionDef::SourceResolutionsThisTurn { comparison, amount } => ability
                     .is_some_and(|origin| {

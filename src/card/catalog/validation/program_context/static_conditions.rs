@@ -26,7 +26,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         TriggerConditionDef::SourceActivationsThisTurn { .. }
         // Both count something about a resolution, which a static walk is
         // not one of.
-        | TriggerConditionDef::SourceProducedManaThisTurn
+        | TriggerConditionDef::SourceAbilityUsedThisTurn
         | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::TargetMatches { .. }
         // And this reads a binding, which only a resolution has.

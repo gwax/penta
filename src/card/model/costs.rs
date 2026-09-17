@@ -25,6 +25,9 @@ pub enum CostDef {
         count: &'static ValueDef,
     },
     Mana(ManaCost),
+    /// Pay this generic mana cost; each artifact or creature tapped while
+    /// paying may cover {1} of this portion only (CR 701.67).
+    Waterbend(u16),
     /// Pay the same mana cost a computed number of times. Fixed single
     /// payments should use [`Self::Mana`]; this form preserves quantities
     /// such as chosen X and the number of selected modes.

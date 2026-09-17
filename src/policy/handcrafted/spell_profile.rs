@@ -551,6 +551,7 @@ impl HandcraftedPolicy {
             | EffectDef::WinTheGame { .. }
             | EffectDef::CopyStackObject(_)
             | EffectDef::ChangeStackTargets(_)
+            | EffectDef::RecordAbilityUse
             | EffectDef::None
             | EffectDef::ContinueReplacedDraw
             | EffectDef::AddMana(_)

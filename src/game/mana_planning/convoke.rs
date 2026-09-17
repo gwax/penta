@@ -3,12 +3,12 @@ pub(in crate::game) struct ManaContributionKinds {
     pub(in crate::game) convoke: bool,
     pub(in crate::game) delve: bool,
     pub(in crate::game) improvise: bool,
-    pub(in crate::game) tap_for_generic: crate::card::CardTypeSet,
+    pub(in crate::game) waterbend: u16,
 }
 
 impl ManaContributionKinds {
     const fn any(self) -> bool {
-        self.convoke || self.delve || self.improvise || !self.tap_for_generic.is_empty()
+        self.convoke || self.delve || self.improvise || self.waterbend > 0
     }
 }
 
@@ -19,12 +19,9 @@ impl Game {
         &self,
         purpose: &ManaPaymentPurpose,
     ) -> ManaContributionKinds {
-        if let ManaPaymentPurpose::Ability {
-            tap_for_generic, ..
-        } = purpose
-        {
+        if let ManaPaymentPurpose::Ability { waterbend, .. } = purpose {
             return ManaContributionKinds {
-                tap_for_generic: *tap_for_generic,
+                waterbend: *waterbend,
                 ..ManaContributionKinds::default()
             };
         }
@@ -52,7 +49,7 @@ impl Game {
             convoke: has(KeywordAbility::Convoke),
             delve: has(KeywordAbility::Delve),
             improvise: has(KeywordAbility::Improvise),
-            tap_for_generic: crate::card::CardTypeSet::empty(),
+            waterbend: 0,
         }
     }
 
@@ -118,14 +115,16 @@ impl Game {
         if !permanent.tapped
             && self.permanent_types(permanent).is_some_and(|types| {
                 (kinds.improvise && types.contains(CardType::Artifact))
-                    || types.intersects(kinds.tap_for_generic)
+                    || (kinds.waterbend > 0
+                        && (types.contains(CardType::Artifact)
+                            || types.contains(CardType::Creature)))
             })
         {
             outputs.push(ManaSourceOutput {
                 kind: PlannedPaymentKind::Contribution(if kinds.improvise {
                     ManaContributionKind::Improvise
                 } else {
-                    ManaContributionKind::TapPermanent
+                    ManaContributionKind::Waterbend
                 }),
                 production: crate::game::payment::allocation::PaymentPool::default(),
                 colored_contribution: ManaPool::default(),

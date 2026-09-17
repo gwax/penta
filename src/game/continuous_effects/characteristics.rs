@@ -693,7 +693,7 @@ impl Game {
             .or_else(|| {
                 self.players
                     .iter()
-                    .flat_map(|player| player.outside_game.iter())
+                    .flat_map(|player| player.sideboard.iter())
                     .find(|card| card.id == object)
                     .map(|card| card.definition)
             })
@@ -762,7 +762,7 @@ impl Game {
         }
         self.players
             .iter()
-            .flat_map(|player| player.outside_game.iter())
+            .flat_map(|player| player.sideboard.iter())
             .find(|card| card.id == object)
             .and_then(|card| self.catalog.get(card.definition))
             .map_or([false; 5], |definition| definition.rules.colors())

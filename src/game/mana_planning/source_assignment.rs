@@ -286,7 +286,12 @@ impl Game {
             request.options.avoid,
         );
         let found = if contributions.any() {
-            search.assign_contributions(0, starting_pool, request.life_available)
+            search.assign_contributions(
+                0,
+                starting_pool,
+                request.life_available,
+                contributions.waterbend,
+            )
         } else {
             search.assign_flexible(0, starting_pool, request.life_available)
         };
@@ -903,6 +908,7 @@ impl PaymentAssignmentSearch<'_> {
         index: usize,
         pool: PaymentCapacity,
         life_available: u16,
+        waterbend_remaining: u16,
     ) -> bool {
         let mut found = self.consider_solution(pool, life_available);
         let payment_capacity =
@@ -915,7 +921,10 @@ impl PaymentAssignmentSearch<'_> {
         for output_index in 0..output_count {
             let output = self.sources[index].outputs[output_index].clone();
             let payment = planned_payment(&self.sources[index], output.clone());
-            if output.life_payment > life_available
+            let waterbend =
+                u16::from(payment.kind.contribution() == Some(ManaContributionKind::Waterbend));
+            if waterbend > waterbend_remaining
+                || output.life_payment > life_available
                 || self
                     .assignment
                     .iter()
@@ -928,10 +937,15 @@ impl PaymentAssignmentSearch<'_> {
             next.add_output(&output);
             let life_payment = output.life_payment;
             self.push_output(index, output);
-            found |= self.assign_contributions(index + 1, next, life_available - life_payment);
+            found |= self.assign_contributions(
+                index + 1,
+                next,
+                life_available - life_payment,
+                waterbend_remaining - waterbend,
+            );
             self.assignment.pop();
         }
 
-        found | self.assign_contributions(index + 1, pool, life_available)
+        found | self.assign_contributions(index + 1, pool, life_available, waterbend_remaining)
     }
 }

@@ -16,7 +16,7 @@ impl Game {
         let verb = match contribution.kind {
             super::super::ManaContributionKind::Convoke => "Convoke",
             super::super::ManaContributionKind::Delve => "Delve",
-            super::super::ManaContributionKind::TapPermanent => "Tap",
+            super::super::ManaContributionKind::Waterbend => "Waterbend",
             super::super::ManaContributionKind::Improvise => "Improvise with",
         };
         self.payment_card_option(

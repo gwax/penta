@@ -313,6 +313,23 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             return false;
         };
         return match definition.event {
+            ReplacementEventDef::TappedForMana { .. } => {
+                fn supported(effect: ReplacementEffectDef) -> bool {
+                    match effect {
+                        ReplacementEffectDef::Sequence(effects) => {
+                            effects.iter().copied().all(supported)
+                        }
+                        ReplacementEffectDef::SetEventAmount(_)
+                        | ReplacementEffectDef::SetManaType(_) => true,
+                        _ => false,
+                    }
+                }
+                battlefield_only(definition.source_zones)
+                    && !definition.optional
+                    && !definition.once
+                    && definition.condition.is_none()
+                    && supported(effect)
+            }
             ReplacementEventDef::SourceEntersBattlefield => {
                 battlefield_only(definition.source_zones)
                     && shared_replacement_event(definition.event)
@@ -567,6 +584,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::PreventDamage { .. }
                     | EffectDef::Repeat { .. }
                     | EffectDef::May { .. }
+                    | EffectDef::RecordAbilityUse
                     | EffectDef::None
                     | EffectDef::DealDamage(_)
                     | EffectDef::Fight { .. }

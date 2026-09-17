@@ -239,6 +239,8 @@ impl Game {
             | ReplacementEffectDef::Conditional { .. }
             | ReplacementEffectDef::PayOr { .. }
             | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+            | ReplacementEffectDef::SetEventAmount(_)
+            | ReplacementEffectDef::SetManaType(_)
             | ReplacementEffectDef::MultiplyEventAmount(_)
             | ReplacementEffectDef::AddToEventAmount(_)
             | ReplacementEffectDef::Choose(_)
@@ -284,6 +286,8 @@ impl Game {
             | ReplacementEffectDef::Conditional { .. }
             | ReplacementEffectDef::PayOr { .. }
             | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+            | ReplacementEffectDef::SetEventAmount(_)
+            | ReplacementEffectDef::SetManaType(_)
             | ReplacementEffectDef::MultiplyEventAmount(_)
             | ReplacementEffectDef::AddToEventAmount(_)
             | ReplacementEffectDef::Choose(_)

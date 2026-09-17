@@ -38,7 +38,6 @@ use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
-use crate::card::PlayerSetDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::SacrificedAmountDef;
 use crate::card::SubtypeDef;
@@ -51,6 +50,7 @@ use crate::card::ZoneKind;
 use crate::card::ZonePlacement;
 use crate::card::abilities;
 use crate::card::sets::y1993::alpha as catalog_lea;
+use crate::card::sets::y2001::odyssey::threshold;
 use crate::ids::ParentBinding;
 use crate::mana_cost;
 
@@ -1124,30 +1124,21 @@ pub(in crate::card::sets) static PUTRID_IMP: CardRecord = CardRecord::new(
     "Putrid Imp",
     "1b9e6c5c-4bc4-4f41-8c2c-f5b8c97c53c5",
     "Wayne England",
-    CardRules::new_creature(mana_cost!("{B}"), &["Zombie", "Imp"], 1, 1).with_abilities(&[
-        AbilityDef::activated(
-            "Discard a card: This creature gains flying until end of turn.",
-            &[CostDef::discard(ObjectPredicateDef::Any)],
-            EffectDef::Apply {
-                recipient: EffectRecipientDef::Source,
-                effect: AppliedEffectDef::add_ability(&abilities::flying()),
-                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
-            },
-        ),
-        AbilityDef::static_ability(
-            "Threshold — As long as there are seven or more cards in your graveyard, this \
-             creature gets +1/+1 and can't block.",
-            EffectDef::IfCondition {
-                condition: &TriggerConditionDef::ObjectCount {
-                    query: ObjectQueryDef::owned_by(
-                        ObjectPredicateDef::Any,
-                        &[ZoneKind::Graveyard],
-                        PlayerSetDef::Related(PlayerRelation::You),
-                    ),
-                    comparison: ComparisonDef::GreaterOrEqual,
-                    amount: 7,
+    CardRules::new_creature(mana_cost!("{B}"), &["Zombie", "Imp"], 1, 1).with_abilities(
+        &crate::ability_list![
+            [AbilityDef::activated(
+                "Discard a card: This creature gains flying until end of turn.",
+                &[CostDef::discard(ObjectPredicateDef::Any)],
+                EffectDef::Apply {
+                    recipient: EffectRecipientDef::Source,
+                    effect: AppliedEffectDef::add_ability(&abilities::flying()),
+                    duration: ResolvedEffectDurationDef::UntilEndOfTurn,
                 },
-                then: &EffectDef::StaticApply {
+            ),],
+            threshold(&[AbilityDef::static_ability(
+                "Threshold — As long as there are seven or more cards in your graveyard, this \
+             creature gets +1/+1 and can't block.",
+                EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
                     effect: AppliedEffectDef::Composite(&[
                         AppliedEffectDef::modify_power_toughness(
@@ -1162,9 +1153,9 @@ pub(in crate::card::sets) static PUTRID_IMP: CardRecord = CardRecord::new(
                         )),
                     ]),
                 },
-            },
-        ),
-    ]),
+            )]),
+        ],
+    ),
 );
 
 // TOR 78 — Rancid Earth

@@ -82,7 +82,7 @@ impl Game {
                 tap_cost_payer,
             },
             ManaPaymentPurpose::Ability {
-                tap_for_generic: definition.tap_for_generic,
+                waterbend: crate::card::costs::waterbend_amount(definition.costs),
                 source,
                 taps_source,
                 leaves_source,
@@ -134,7 +134,7 @@ impl Game {
                     x,
                     ManaPlanOptions::default(),
                     ManaPaymentPurpose::Ability {
-                        tap_for_generic: definition.tap_for_generic,
+                        waterbend: crate::card::costs::waterbend_amount(definition.costs),
                         source,
                         taps_source: false,
                         leaves_source: false,

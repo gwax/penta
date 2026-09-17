@@ -531,7 +531,7 @@ fn color_layers_cultivator_mana_covers_three_independent_permissions() {
         game.apply(PlayerId::One, action).unwrap();
         let mana = *game.players[0].mana.last().unwrap();
         let ability = |source| ManaPaymentPurpose::Ability {
-            tap_for_generic: crate::card::CardTypeSet::empty(),
+            waterbend: 0,
             source,
             taps_source: false,
             leaves_source: false,

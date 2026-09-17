@@ -156,7 +156,7 @@ pub(in crate::game::state_checkpoint) fn stack_source_requires_hidden_rebinding(
     [PlayerId::One, PlayerId::Two].into_iter().any(|player| {
         let state = &game.players[player.index()];
         state.library.iter().any(|card| card.id == object)
-            || state.outside_game.iter().any(|card| card.id == object)
+            || state.sideboard.iter().any(|card| card.id == object)
             || (player != viewer && state.hand.iter().any(|card| card.id == object))
             || state.exile.iter().any(|card| {
                 card.id == object

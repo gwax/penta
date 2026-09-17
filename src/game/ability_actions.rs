@@ -282,7 +282,7 @@ impl Game {
                 // taps its own source is never offered on mana only that
                 // source could have made.
                 let payment_purpose = ManaPaymentPurpose::Ability {
-                    tap_for_generic: definition.tap_for_generic,
+                    waterbend: crate::card::costs::waterbend_amount(definition.costs),
                     source: permanent.card.id,
                     taps_source,
                     leaves_source,
@@ -350,6 +350,7 @@ impl Game {
                         // Always payable: a hand of nothing discards nothing,
                         // which is a legal way to pay it.
                         | CostDef::DiscardHand
+                        | CostDef::Waterbend(_)
                         | CostDef::ManaCostOf(_)
                         | CostDef::ManaValueOfTarget { .. }
                         | CostDef::TapSource
@@ -738,7 +739,7 @@ impl Game {
                 continue;
             };
             let purpose = ManaPaymentPurpose::Ability {
-                tap_for_generic: definition.tap_for_generic,
+                waterbend: crate::card::costs::waterbend_amount(definition.costs),
                 source: ongoing.source.object,
                 taps_source: false,
                 leaves_source: false,

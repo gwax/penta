@@ -51,7 +51,7 @@ impl Game {
         let outside = self
             .players
             .iter()
-            .flat_map(|player| &player.outside_game)
+            .flat_map(|player| &player.sideboard)
             .collect::<Vec<_>>();
         let omitted = retained
             .iter()
@@ -76,7 +76,7 @@ impl Game {
                 .map(|physical| physical.definition)
                 .collect(),
             sideboard: self.players[seat.index()]
-                .outside_game
+                .sideboard
                 .iter()
                 .map(|card| card.definition)
                 .collect(),
@@ -219,7 +219,7 @@ impl Game {
                 .chain(&mut player.graveyard)
                 .chain(&mut player.exile)
                 .chain(&mut player.command)
-                .chain(&mut player.outside_game)
+                .chain(&mut player.sideboard)
             {
                 assign(
                     &mut self.physical_cards,

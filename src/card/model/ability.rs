@@ -709,23 +709,6 @@ impl AbilityDef {
         self.activations_each_turn(1)
     }
 
-    /// Untapped permanents of these types may each pay one generic mana of this activation.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the clause is not an activated ability.
-    #[must_use]
-    pub const fn with_tap_for_generic(mut self, types: super::CardTypeSet) -> Self {
-        match self.definition {
-            DeclarativeAbilityDef::Activated(mut definition) => {
-                definition.tap_for_generic = types;
-                self.definition = DeclarativeAbilityDef::Activated(definition);
-            }
-            _ => panic!("tap contributions require an activated ability"),
-        }
-        self
-    }
-
     /// This ability may be activated once from this object, across all turns.
     ///
     /// # Panics

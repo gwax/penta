@@ -95,7 +95,7 @@ fn validated_sideboards_are_retained_outside_the_game_without_perturbing_main_id
             main_objects(&without_sideboards)
         );
 
-        let outside = &with_sideboards.players[player.index()].outside_game;
+        let outside = &with_sideboards.players[player.index()].sideboard;
         assert_eq!(
             outside
                 .iter()

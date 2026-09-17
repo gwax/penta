@@ -1672,7 +1672,7 @@ pub(in crate::card::sets) static RING_OF_MARUF: CardRecord = CardRecord::new(
                     player: EffectRecipientDef::Controller,
                     sources: &[
                         CardChoiceSourceDef::Zone(ZoneKind::Exile),
-                        CardChoiceSourceDef::OutsideGame,
+                        CardChoiceSourceDef::Sideboard,
                     ],
                     object: ObjectPredicateDef::Any,
                     minimum: 1,
@@ -1683,7 +1683,7 @@ pub(in crate::card::sets) static RING_OF_MARUF: CardRecord = CardRecord::new(
                 },
                 otherwise: &EffectDef::ChooseCards {
                     player: EffectRecipientDef::Controller,
-                    sources: &[CardChoiceSourceDef::OutsideGame],
+                    sources: &[CardChoiceSourceDef::Sideboard],
                     object: ObjectPredicateDef::Any,
                     minimum: 1,
                     maximum: 1,

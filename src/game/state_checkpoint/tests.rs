@@ -788,8 +788,8 @@ fn true_hidden_hypothesis(game: &Game, viewer: PlayerId) -> Value {
             "p2": definitions(&game.players[PlayerId::Two.index()].library),
         },
         "outsideGame": {
-            "p1": definitions(&game.players[PlayerId::One.index()].outside_game),
-            "p2": definitions(&game.players[PlayerId::Two.index()].outside_game),
+            "p1": definitions(&game.players[PlayerId::One.index()].sideboard),
+            "p2": definitions(&game.players[PlayerId::Two.index()].sideboard),
         },
         "drawnThisTurn": {
             (seat_label(opponent)): drawn_indices,

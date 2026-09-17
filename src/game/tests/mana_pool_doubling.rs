@@ -333,7 +333,7 @@ fn jeweled_lotus_follows_physical_identity_into_hand_and_rejects_other_uses() {
     assert!(!game.mana_can_pay_for(
         mana,
         &ManaPaymentPurpose::Ability {
-            tap_for_generic: crate::card::CardTypeSet::empty(),
+            waterbend: 0,
             source: held,
             taps_source: false,
             leaves_source: false

@@ -249,6 +249,8 @@ impl Game {
             | ReplacementEffectDef::RegenerateDestroyedObject
             | ReplacementEffectDef::RemoveDamageFromDestroyedObject
             | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+            | ReplacementEffectDef::SetEventAmount(_)
+            | ReplacementEffectDef::SetManaType(_)
             | ReplacementEffectDef::MultiplyEventAmount(_)
             | ReplacementEffectDef::AddToEventAmount(_) => Some(pending),
         }

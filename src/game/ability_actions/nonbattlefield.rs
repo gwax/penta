@@ -139,7 +139,7 @@ impl Game {
                 let minimum_mana_cost =
                     self.minimum_activation_mana_cost(&definition, card.id, mana_cost);
                 let payment_purpose = ManaPaymentPurpose::Ability {
-                    tap_for_generic: definition.tap_for_generic,
+                    waterbend: crate::card::costs::waterbend_amount(definition.costs),
                     source: card.id,
                     taps_source: false,
                     leaves_source: false,
@@ -271,7 +271,7 @@ impl Game {
                         return;
                     }
                     let payment_purpose = ManaPaymentPurpose::Ability {
-                        tap_for_generic: definition.tap_for_generic,
+                        waterbend: crate::card::costs::waterbend_amount(definition.costs),
                         source: card.id,
                         taps_source: false,
                         leaves_source: false,

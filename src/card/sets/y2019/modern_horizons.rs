@@ -1459,7 +1459,11 @@ pub(in crate::card::sets) static HOGAAK_ARISEN_NECROPOLIS: CardRecord = CardReco
                 "You can't spend mana to cast this spell.",
                 EffectDef::StaticApply {
                     recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotSpendManaToCast),
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::ManaPaymentRestriction(
+                        // No permitted mana-payment alternative. Convoke and delve
+                        // remain available because they do not spend mana.
+                        crate::card::ManaRestrictionDef::AnyOf(&[]),
+                    )),
                 },
             )
             .with_source_zones(&[ZoneKind::Stack]),

@@ -136,7 +136,7 @@ pub(in super::super) fn shared_trigger_condition(condition: TriggerConditionDef)
         | TriggerConditionDef::SourceCounters { .. }
         | TriggerConditionDef::ControlsGreatestPowerCreature
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
-        | TriggerConditionDef::SourceProducedManaThisTurn
+        | TriggerConditionDef::SourceAbilityUsedThisTurn
         | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::OpponentWasDealtDamageThisTurn

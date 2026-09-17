@@ -242,7 +242,7 @@ fn drum_preserves_a_source_reserved_for_another_abilitys_tap_symbol() {
         mana_cost!("{G}"),
         0,
         &ManaPaymentPurpose::Ability {
-            tap_for_generic: crate::card::CardTypeSet::empty(),
+            waterbend: 0,
             source: helper,
             taps_source: true,
             leaves_source: false
@@ -253,7 +253,7 @@ fn drum_preserves_a_source_reserved_for_another_abilitys_tap_symbol() {
         mana_cost!("{G}"),
         0,
         &ManaPaymentPurpose::Ability {
-            tap_for_generic: crate::card::CardTypeSet::empty(),
+            waterbend: 0,
             source: helper,
             taps_source: false,
             leaves_source: true

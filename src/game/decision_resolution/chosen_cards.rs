@@ -88,7 +88,7 @@ impl Game {
                 if destination != ZoneKind::Hand {
                     continue;
                 }
-                let Some(card) = remove_card(&mut self.players[player.index()].outside_game, id)
+                let Some(card) = remove_card(&mut self.players[player.index()].sideboard, id)
                 else {
                     continue;
                 };

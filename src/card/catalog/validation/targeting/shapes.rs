@@ -576,7 +576,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
-        | TriggerConditionDef::SourceProducedManaThisTurn
+        | TriggerConditionDef::SourceAbilityUsedThisTurn
         | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::OpponentWasDealtDamageThisTurn

@@ -163,7 +163,7 @@ impl Game {
             command: command_zones[player.index()].clone(),
             graveyard: graveyards[player.index()].clone(),
             exile: exiles[player.index()].clone(),
-            outside_game: outside_game[player.index()].clone(),
+            sideboard: outside_game[player.index()].clone(),
             companion: checkpoint.chosen_companions[player.index()],
             mana_pool: mana_pools[player.index()],
             mana: mana[player.index()].clone(),
@@ -355,8 +355,8 @@ impl Game {
             resolved_player_protections,
             resolved_player_rules,
             emblems: Vec::new(),
-            mana_producing_abilities_this_turn: checkpoint
-                .mana_producing_abilities_this_turn
+            abilities_used_this_turn: checkpoint
+                .abilities_used_this_turn
                 .iter()
                 .map(|source| AbilitySourceRef {
                     object: GameObjectId(source.object),

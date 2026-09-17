@@ -113,8 +113,7 @@ pub(in crate::game::state_checkpoint) struct GameSnapshot {
     /// because no supported card could create one.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(in crate::game::state_checkpoint) resolved_player_rules: Vec<ResolvedPlayerRuleSnapshot>,
-    pub(in crate::game::state_checkpoint) mana_producing_abilities_this_turn:
-        Vec<AbilitySourceSnapshot>,
+    pub(in crate::game::state_checkpoint) abilities_used_this_turn: Vec<AbilitySourceSnapshot>,
     pub(in crate::game::state_checkpoint) spells_cast_this_turn: [u16; 2],
     pub(in crate::game::state_checkpoint) spells_cast_last_turn: [u16; 2],
     /// Additive: older checkpoints have no predicate-filterable cast history.
