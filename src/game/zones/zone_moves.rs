@@ -148,7 +148,16 @@ impl Game {
 
         let owner = card.owner;
         let before_move = card.clone();
-        self.remember_card_characteristics(&card, Some(from));
+        // A battlefield arrival reuses the card's object ID for its entering
+        // permanent, so recording a retired entry here would shadow that live
+        // object with an entry that has no successor. The checkpoint then
+        // reads the entry as a hidden-zone reference it cannot rebind and
+        // fails the decision closed, as a library-to-battlefield shockland
+        // entry did. Other destinations mint a fresh ID with a successor, so
+        // only they keep last-known information here.
+        if destination != ZoneKind::Battlefield {
+            self.remember_card_characteristics(&card, Some(from));
+        }
         let cards = match from {
             ZoneKind::Library => &mut self.players[owner.index()].library,
             ZoneKind::Hand => &mut self.players[owner.index()].hand,
