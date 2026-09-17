@@ -249,14 +249,52 @@ const BIRD_TOKEN: TokenCharacteristics =
         ));
 
 // FIN 1 — Summon: Bahamut
-// Audit: unsupported — Needs one printed Saga ability to represent several chapter numbers and
-// to remain identifiable to the Saga final-chapter rules; the current Saga authoring and
-// recognition path represents exactly one chapter per ability.
 pub(in crate::card::sets) static SUMMON_BAHAMUT: CardRecord = CardRecord::new(
     "Summon: Bahamut",
     "95318d85-4a08-47ac-a43d-ea83c0bea81c",
     "Arif Wijaya",
-    CardRules::unsupported(),
+    CardRules::new_enchantment_creature(mana_cost!("{9}"), &["Saga", "Dragon"], 9, 9)
+        .with_abilities(&[
+            abilities::saga_chapters_with_targets(
+                &[1, 2],
+                "I, II — Destroy up to one target nonland permanent.",
+                &[AbilityTargetDef::up_to(
+                    AbilityTargetPredicate::Object {
+                        object: ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(
+                            CardType::Land,
+                        )),
+                        zones: &[ZoneKind::Battlefield],
+                        controller: None,
+                        owner: None,
+                    },
+                    1,
+                )],
+                EffectDef::destroy_target(TargetIndex::PRIMARY),
+            ),
+            abilities::saga_chapter(
+                3,
+                "III — Draw two cards.",
+                abilities::draw_cards(ValueDef::Constant(2)),
+            ),
+            abilities::saga_chapter(
+                4,
+                "IV — Mega Flare — This creature deals damage equal to the total mana \
+                 value of other permanents you control to each opponent.",
+                EffectDef::damage(
+                    EffectRecipientDef::Opponent,
+                    ValueDef::AggregateObjectValues(&ObjectValueAggregateDef {
+                        objects: ObjectSetDef::Query(ObjectQueryDef::matching(
+                            ObjectPredicateDef::Not(&ObjectPredicateDef::Source),
+                            &[ZoneKind::Battlefield],
+                            PlayerRelation::You,
+                        )),
+                        select: ObjectValueDef::ManaValue,
+                        operation: AggregateOperationDef::Sum,
+                    }),
+                ),
+            ),
+            abilities::flying(),
+        ]),
 );
 
 // FIN 2 — Ultima, Origin of Oblivion
@@ -722,6 +760,7 @@ pub(in crate::card::sets) static DELIVERY_MOOGLE: CardRecord = CardRecord::new(
                     EffectChoiceDef {
                         label: "Search your library.",
                         effect: EffectDef::SearchZone {
+                            exile_face_down: false,
                             player: EffectRecipientDef::Controller,
                             source: ZoneKind::Library,
                             object: ObjectPredicateDef::All(&[
@@ -743,6 +782,7 @@ pub(in crate::card::sets) static DELIVERY_MOOGLE: CardRecord = CardRecord::new(
                     EffectChoiceDef {
                         label: "Search your graveyard.",
                         effect: EffectDef::SearchZone {
+                            exile_face_down: false,
                             player: EffectRecipientDef::Controller,
                             source: ZoneKind::Graveyard,
                             object: ObjectPredicateDef::All(&[
@@ -902,6 +942,7 @@ pub(in crate::card::sets) static FROM_FATHER_TO_SON: CardRecord = CardRecord::ne
             EffectDef::IfElseCondition {
                 condition: &TriggerConditionDef::SourceCastFrom(ZoneKind::Graveyard),
                 then: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Vehicle")),
@@ -917,6 +958,7 @@ pub(in crate::card::sets) static FROM_FATHER_TO_SON: CardRecord = CardRecord::ne
                     then: None,
                 },
                 otherwise: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Vehicle")),
@@ -1106,6 +1148,7 @@ pub(in crate::card::sets) static MAGITEK_INFANTRY: CardRecord = CardRecord::new(
                  Infantry, put it onto the battlefield tapped, then shuffle.",
                 &[CostDef::Mana(mana_cost!("{2}{W}"))],
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::NameEquals(CardNameDef::Literal(
@@ -4390,6 +4433,7 @@ pub(in crate::card::sets) static CALL_THE_MOUNTAIN_CHOCOBO: CardRecord = CardRec
              this token gets +1/+0 until end of turn.\"",
             EffectDef::Sequence(&[
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Mountain")),
@@ -4961,6 +5005,7 @@ pub(in crate::card::sets) static SANDWORM: CardRecord = CardRecord::new(
                         ObjectRefDef::Target(TargetIndex::PRIMARY),
                     )),
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                             ObjectRefDef::Target(TargetIndex::PRIMARY),
                         )),
@@ -5281,6 +5326,8 @@ pub(in crate::card::sets) static TRIPLE_TRIAD: CardRecord = CardRecord::new(
                     ),
                     binding: crate::Binding!("exiled"),
                     then: &EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                    cast_only: false,
+                    maximum_spell_mana_value: None,
                         objects: ObjectSetDef::Union(&[
                             ObjectSetDef::Matching {
                                 objects: &ObjectSetDef::ZoneChangeSuccessorsOfBinding(crate::Binding!("exiled")),
@@ -6287,6 +6334,7 @@ pub(in crate::card::sets) static SAZH_KATZROY: CardRecord = CardRecord::new(
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::AnyOf(&[
@@ -6406,6 +6454,7 @@ pub(in crate::card::sets) static SIDEQUEST_RAISE_A_CHOCOBO: CardRecord = CardRec
                          tapped, then shuffle.",
                         TriggerEventDef::transforms(ObjectPredicateDef::Source),
                         EffectDef::SearchZone {
+                            exile_face_down: false,
                             player: EffectRecipientDef::Controller,
                             source: ZoneKind::Library,
                             object: ObjectPredicateDef::HasType(CardType::Land),
@@ -7148,6 +7197,7 @@ pub(in crate::card::sets) static GLADIOLUS_AMICITIA: CardRecord = CardRecord::ne
                 "When Gladiolus Amicitia enters, search your library for a \
                  land card, put it onto the battlefield tapped, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasType(CardType::Land),
@@ -8650,6 +8700,7 @@ pub(in crate::card::sets) static WORLD_MAP: CardRecord = CardRecord::new(
                 CostDef::SacrificeSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -8677,6 +8728,7 @@ pub(in crate::card::sets) static WORLD_MAP: CardRecord = CardRecord::new(
                 CostDef::SacrificeSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Land),
@@ -8838,6 +8890,8 @@ pub(in crate::card::sets) static CLIVE_S_HIDEAWAY: CardRecord = CardRecord::new(
                     right: ValueDef::Constant(4),
                 }),
                 then: &EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                    cast_only: false,
+                    maximum_spell_mana_value: None,
                     objects: ObjectSetDef::LinkedExiles,
                     duration: FreePlayDurationDef::WhileResolving,
                     mandatory: false,

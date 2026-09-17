@@ -456,6 +456,8 @@ pub(in crate::card::sets) static DJERU_AND_HAZORET: CardRecord = CardRecord::new
                             }),
                         }),
                         EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                            cast_only: false,
+                            maximum_spell_mana_value: None,
                             objects: ObjectSetDef::Binding(Binding!(
                                 "djeru_and_hazoret_exiled_successors"
                             )),
@@ -975,6 +977,7 @@ pub(in crate::card::sets) static REALMBREAKER_THE_INVASION_TREE: CardRecord = Ca
                     CostDef::SacrificeSource,
                 ],
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Praetor")),

@@ -23,12 +23,14 @@ fn cast_purpose(definition: CardDefinitionId) -> ManaPaymentPurpose {
         form: SpellForm::Part(CardPartId::PRIMARY),
         alternative: None,
         x: 0,
+        spend_any_color: false,
         reserved_life_payment: 0,
     }
 }
 
 fn ability_purpose(source: GameObjectId) -> ManaPaymentPurpose {
     ManaPaymentPurpose::Ability {
+        waterbend: 0,
         source,
         taps_source: false,
         leaves_source: false,

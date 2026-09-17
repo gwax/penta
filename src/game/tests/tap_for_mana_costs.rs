@@ -242,6 +242,7 @@ fn drum_preserves_a_source_reserved_for_another_abilitys_tap_symbol() {
         mana_cost!("{G}"),
         0,
         &ManaPaymentPurpose::Ability {
+            waterbend: 0,
             source: helper,
             taps_source: true,
             leaves_source: false
@@ -252,6 +253,7 @@ fn drum_preserves_a_source_reserved_for_another_abilitys_tap_symbol() {
         mana_cost!("{G}"),
         0,
         &ManaPaymentPurpose::Ability {
+            waterbend: 0,
             source: helper,
             taps_source: false,
             leaves_source: true

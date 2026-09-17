@@ -660,6 +660,11 @@ pub(in crate::game::state_checkpoint) fn mana_cost_snapshot(cost: ManaCost) -> M
         additional_flexible.pop();
     }
     ManaCostSnapshot {
+        restricted_generic: if cost.restricted_generic.iter().all(|amount| *amount == 0) {
+            Vec::new()
+        } else {
+            cost.restricted_generic.to_vec()
+        },
         generic: cost.generic,
         white: cost.white,
         blue: cost.blue,
@@ -693,7 +698,15 @@ pub(in crate::game::state_checkpoint) fn mana_cost_from_snapshot(
     {
         *slot = *amount;
     }
+    let mut restricted_generic = [0; 6];
+    for (slot, amount) in restricted_generic
+        .iter_mut()
+        .zip(&snapshot.restricted_generic)
+    {
+        *slot = *amount;
+    }
     ManaCost {
+        restricted_generic,
         generic: snapshot.generic,
         white: snapshot.white,
         blue: snapshot.blue,

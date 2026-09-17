@@ -125,7 +125,9 @@ impl Game {
                 ability.definition,
                 DeclarativeAbilityDef::Static(definition)
                     if definition.source_zones.contains(&input.zone)
-            ) && ability.declarative_effect().is_some_and(|effect| kind.may_be_supplied_by(effect))
+            ) && ability
+                .declarative_effect()
+                .is_some_and(|effect| kind.may_be_supplied_by(effect))
         });
         if !supplies_static_effect {
             return ControlFlow::Continue(());
@@ -151,13 +153,11 @@ impl Game {
                 continue;
             }
             let origin = Self::authored_ability_origin(source_presentation, attached.id);
+            if !self.ability_presence_holds(source, ability.presence) {
+                continue;
+            }
             if input.check_layer_survival
-                && !self.static_ability_survives_at_start(
-                    source,
-                    origin,
-                    effect,
-                    input.timestamp,
-                )
+                && !self.static_ability_survives_at_start(source, origin, effect, input.timestamp)
             {
                 continue;
             }
@@ -201,11 +201,18 @@ impl Game {
             }
             if !ability.applications.as_ref().map_or_else(
                 || kind.may_be_supplied_by(ability.reference_effect),
-                |applications| applications.iter().any(|application| application.supplies(lane)),
+                |applications| {
+                    applications
+                        .iter()
+                        .any(|application| application.supplies(lane))
+                },
             ) {
                 continue;
             }
             let origin = Self::authored_ability_origin(source_presentation, ability.id);
+            if !self.ability_presence_holds(source, ability.presence) {
+                continue;
+            }
             if input.check_layer_survival
                 && !self.static_ability_survives_at_start(
                     source,

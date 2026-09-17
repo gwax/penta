@@ -94,6 +94,7 @@ mod decision_search_resolution;
 mod decision_simultaneous_choice;
 mod decision_state;
 mod declarative_effects;
+mod duration_exile;
 mod effect_support;
 mod effect_values;
 mod endure;
@@ -233,10 +234,7 @@ use trigger_state::{
 };
 
 use lifecycle::backing_cards;
-use mana_planning::{
-    add_mana_cost, configured_base_mana_cost, fold_restricted_x, mana_cost_value,
-    pay_cost_with_generic_strategy,
-};
+use mana_planning::{add_mana_cost, configured_base_mana_cost, fold_restricted_x, mana_cost_value};
 #[cfg(test)]
 use mana_planning::{can_pay, pay_cost};
 use targeting::{
@@ -554,7 +552,7 @@ struct PlayerState {
     /// Cards the player brought in their sideboard. Outside the game is not
     /// a zone, so ordinary zone queries and observations never walk this
     /// collection.
-    outside_game: Vec<CardInstance>,
+    sideboard: Vec<CardInstance>,
     /// The single public pregame designation and its special-action usage.
     companion: Option<CompanionState>,
     mana_pool: ManaPool,
@@ -662,6 +660,7 @@ pub struct Game {
     creatures_died_this_turn: u16,
     /// Cards exiled by an object that promises to bring them back, paired
     /// with whatever exiled them. Oblivion Ring is the shape.
+    duration_exiles: Vec<(GameObjectId, GameObjectId, ZoneKind)>,
     linked_exiles: Vec<(GameObjectId, GameObjectId)>,
     /// How many plays each limited play permission has been used for
     /// this turn. "Once during each of your turns" is a bound on the
@@ -752,6 +751,7 @@ pub struct Game {
     /// How many spells each player has cast this turn, and how many they cast
     /// during the turn before. The werewolves ask about the turn that just
     /// ended, which is only knowable if it was counted while it happened.
+    abilities_used_this_turn: Vec<AbilitySourceRef>,
     spells_cast_this_turn: [u16; 2],
     spells_cast_last_turn: [u16; 2],
     /// The stack incarnations of spells cast this turn. Their locked stack

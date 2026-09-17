@@ -48,6 +48,8 @@ pub(crate) const SUSPEND_REMOVE_TIME: EffectDef = EffectDef::RemoveCounters {
 };
 
 pub(crate) const SUSPEND_PLAY: EffectDef = EffectDef::MayPlayWithoutPaying(FreePlayDef {
+    cast_only: false,
+    maximum_spell_mana_value: None,
     objects: ObjectSetDef::One(ObjectRefDef::Source),
     duration: FreePlayDurationDef::WhileResolving,
     mandatory: true,

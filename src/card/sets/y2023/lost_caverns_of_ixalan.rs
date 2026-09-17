@@ -4666,6 +4666,7 @@ pub(in crate::card::sets) static GLIMPSE_THE_CORE: CardRecord = CardRecord::new(
                 "Search your library for a basic Forest card, put that card \
                  onto the battlefield tapped, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -5746,7 +5747,7 @@ pub(in crate::card::sets) static DEEPFATHOM_ECHO: CardRecord = CardRecord::new(
                             "copied"
                         ))),
                         copier: None,
-                        exceptions: CopyExceptionsDef::NONE,
+                        exceptions: &CopyExceptionsDef::NONE,
                         duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
                     },
                 }),
@@ -6358,6 +6359,7 @@ pub(in crate::card::sets) static COMPASS_GNOME: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::AnyOf(&[
@@ -6861,6 +6863,7 @@ pub(in crate::card::sets) static SCAMPERING_SURVEYOR: CardRecord = CardRecord::n
              land card or Cave card, put it onto the battlefield tapped, \
              then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::AnyOf(&[
@@ -7264,6 +7267,7 @@ pub(in crate::card::sets) static PROMISING_VEIN: CardRecord = CardRecord::new(
                 CostDef::SacrificeSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -7584,6 +7588,7 @@ pub(in crate::card::sets) static VOLATILE_FAULT: CardRecord = CardRecord::new(
                         ObjectRefDef::Target(TargetIndex::PRIMARY),
                     )),
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                             ObjectRefDef::Target(TargetIndex::PRIMARY),
                         )),

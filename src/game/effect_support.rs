@@ -921,7 +921,8 @@ impl Game {
                 .unwrap_or(object.controller),
             TargetChooserDef::Opponent => object.controller.opponent(),
         };
-        Self::without_excluded_source(
+        let previous = self.prospective_x.replace(Some(object.x()));
+        let legal = Self::without_excluded_source(
             definition,
             source,
             self.ability_targets_matching_with_selections_for_chooser(
@@ -933,7 +934,9 @@ impl Game {
                 ability.context.trigger,
             ),
         )
-        .contains(&target)
+        .contains(&target);
+        self.prospective_x.set(previous);
+        legal
     }
 }
 

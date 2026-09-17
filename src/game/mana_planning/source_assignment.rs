@@ -29,7 +29,7 @@ struct ManaPlanSelection {
 impl ManaPlanSelection {
     fn new(
         available: Vec<PlannedManaActivation>,
-        mana: ManaPool,
+        mana: PaymentPool,
         avoid: Option<GameObjectId>,
     ) -> Self {
         Self {
@@ -87,9 +87,9 @@ impl ManaPlanSelection {
     fn pay_hybrid(&mut self, cost: ManaCost) -> Option<()> {
         // Hybrid pairs must be assigned together. In particular, one white
         // capacity cannot independently satisfy both `{W/U}` and `{W/B}`.
-        while !can_cover_hybrid_cost(self.pool.mana, cost) {
+        while !can_cover_hybrid_cost(self.pool.mana.mana, cost) {
             let covered = maximum_hybrid_payment(
-                mana_available_for_hybrid(self.pool.mana, cost),
+                mana_available_for_hybrid(self.pool.mana.mana, cost),
                 cost,
                 &|_| false,
             )
@@ -102,7 +102,7 @@ impl ManaPlanSelection {
                     let mut next = self.pool;
                     next.add_planned(activation);
                     maximum_hybrid_payment(
-                        mana_available_for_hybrid(next.mana, cost),
+                        mana_available_for_hybrid(next.mana.mana, cost),
                         cost,
                         &|_| false,
                     )
@@ -243,13 +243,14 @@ impl Game {
         &self,
         request: ManaPlanningRequest<'_>,
     ) -> Option<Vec<PlannedManaActivation>> {
-        let (cost, x) = self.restrict_x(request.cost, request.x, request.purpose);
+        let (cost, x) = self.restrict_x(request.player, request.cost, request.x, request.purpose);
         let mana = self.eligible_mana_pool_for_cost(request.player, request.purpose, request.cost);
         let starting_pool = PaymentCapacity::from_mana(mana);
         let contributions = self.payment_contributions(request.purpose);
-        let life_mana_enabled = self
-            .repeatable_colorless_life_mana_activation(request.player)
-            .is_some();
+        let life_mana_enabled = self.payment_allows_mana(request.purpose)
+            && self
+                .repeatable_colorless_life_mana_activation(request.player)
+                .is_some();
         // An ability that taps its source as a cost cannot also tap it for
         // mana, so that source is not a candidate at all.
         let barred = match request.purpose {
@@ -285,7 +286,12 @@ impl Game {
             request.options.avoid,
         );
         let found = if contributions.any() {
-            search.assign_contributions(0, starting_pool, request.life_available)
+            search.assign_contributions(
+                0,
+                starting_pool,
+                request.life_available,
+                contributions.waterbend,
+            )
         } else {
             search.assign_flexible(0, starting_pool, request.life_available)
         };
@@ -308,7 +314,7 @@ impl Game {
             .enumerate()
         {
             let activations = self.eligible_payment_activations(permanent, request, cost);
-            let mana_outputs = Self::planned_outputs(&activations, request.purpose);
+            let mana_outputs = self.planned_outputs(&activations, request.purpose, cost);
             let mut outputs = mana_outputs.clone();
             if contributions.any() && request.options.tap_cost_payer != Some(permanent.card.id) {
                 let contribution_outputs =
@@ -351,7 +357,7 @@ impl Game {
             .filter(|activation| !Self::activation_consumes_reserved(activation, request.reserved))
         {
             let outputs =
-                Self::planned_outputs(core::slice::from_ref(&activation), request.purpose);
+                self.planned_outputs(core::slice::from_ref(&activation), request.purpose, cost);
             if let Some(existing) = sources
                 .iter_mut()
                 .find(|source| source.source == activation.source)
@@ -378,7 +384,7 @@ impl Game {
                     source: card.id,
                     outputs: vec![ManaSourceOutput {
                         kind: PlannedPaymentKind::Contribution(ManaContributionKind::Delve),
-                        production: ManaPool::default(),
+                        production: crate::game::payment::allocation::PaymentPool::default(),
                         colored_contribution: ManaPool::default(),
                         generic_payment: 1,
                         life_payment: 0,
@@ -406,10 +412,11 @@ impl Game {
         // benefits this payment. Players can still manually choose a
         // different mana ability before casting.
         activations.sort_by_key(|activation| {
-            let benefits_payment = Self::mana_for_activation(activation)
+            let benefits_payment = self
+                .mana_for_activation(activation)
                 .first()
                 .is_some_and(|mana| Self::mana_has_spend_effect_for(*mana, request.purpose));
-            let production = Self::mana_production(activation);
+            let production = self.mana_production(activation);
             let pays_colored_symbol = colored_mana().into_iter().any(|color| {
                 production.amount(color) > 0
                     && (mana_cost_amount(cost, color) > 0 || hybrid_pays_with(cost, color))
@@ -456,7 +463,7 @@ impl Game {
             ManaPaymentPurpose::Spell { object, .. }
                 if activation.cost_object == Some(*object)
         );
-        Self::mana_for_activation(activation)
+        self.mana_for_activation(activation)
             .first()
             .is_some_and(|mana| self.mana_can_pay_for_cost(*mana, request.purpose, request.cost))
             // "Activate only as an instant": paying for a spell is not a
@@ -498,16 +505,10 @@ impl Game {
 }
 
 fn can_cover_payment(capacity: PaymentCapacity, cost: ManaCost, x: u16) -> bool {
-    if capacity.generic == 0 {
-        return can_pay(capacity.mana, cost, x);
-    }
-    let mut mana_only = cost;
-    mana_only.generic = cost
-        .generic
-        .saturating_add(x.saturating_mul(cost.x_multiplier))
-        .saturating_sub(capacity.generic);
-    mana_only.variable_x = false;
-    can_pay(capacity.mana, mana_only, 0)
+    let mut pool = capacity.mana;
+    pool.direct
+        .add_color(ManaColor::Colorless, capacity.generic);
+    can_pay(pool, cost, x)
 }
 
 fn with_life_mana_capacity(
@@ -540,11 +541,14 @@ fn normalized_payment_capacity(
     cost: ManaCost,
     x: u16,
 ) -> PaymentCapacity {
+    if capacity.mana.needs_symbol_allocation() {
+        return capacity;
+    }
     let generic_required = cost
         .generic
         .saturating_add(x.saturating_mul(cost.x_multiplier));
     let mut normalized = PaymentCapacity {
-        mana: ManaPool::default(),
+        mana: PaymentPool::default(),
         generic: capacity.generic.min(generic_required),
     };
     for color in ManaColor::ALL {
@@ -602,7 +606,8 @@ fn assign_independent_mana_sources(
     )]);
 
     for source in sources {
-        let mut next: BTreeMap<(ManaPool, u16, u16), Vec<PlannedManaActivation>> = BTreeMap::new();
+        let mut next: BTreeMap<(PaymentPool, u16, u16), Vec<PlannedManaActivation>> =
+            BTreeMap::new();
         for ((mana, generic, life_spent), plan) in states {
             for output in &source.outputs {
                 let next_life = life_spent.saturating_add(output.life_payment);
@@ -846,6 +851,9 @@ fn remaining_sources_can_cover_required_colors(
     pool: PaymentCapacity,
     cost: ManaCost,
 ) -> bool {
+    if pool.mana.any_color {
+        return true;
+    }
     let fixed_colors_fit = colored_mana()
         .into_iter()
         .chain(core::iter::once(ManaColor::Colorless))
@@ -884,7 +892,9 @@ fn remaining_sources_can_cover_required_colors(
             .fold(0_u16, u16::saturating_add);
         optimistic.add_color(color, additional);
     }
-    can_cover_hybrid_cost(optimistic, cost)
+    let mut colored = optimistic.mana;
+    colored.add(optimistic.direct);
+    can_cover_hybrid_cost(colored, cost)
 }
 
 /// Finds one complete contribution-aware payment. Unlike ordinary mana
@@ -898,6 +908,7 @@ impl PaymentAssignmentSearch<'_> {
         index: usize,
         pool: PaymentCapacity,
         life_available: u16,
+        waterbend_remaining: u16,
     ) -> bool {
         let mut found = self.consider_solution(pool, life_available);
         let payment_capacity =
@@ -910,7 +921,10 @@ impl PaymentAssignmentSearch<'_> {
         for output_index in 0..output_count {
             let output = self.sources[index].outputs[output_index].clone();
             let payment = planned_payment(&self.sources[index], output.clone());
-            if output.life_payment > life_available
+            let waterbend =
+                u16::from(payment.kind.contribution() == Some(ManaContributionKind::Waterbend));
+            if waterbend > waterbend_remaining
+                || output.life_payment > life_available
                 || self
                     .assignment
                     .iter()
@@ -923,10 +937,15 @@ impl PaymentAssignmentSearch<'_> {
             next.add_output(&output);
             let life_payment = output.life_payment;
             self.push_output(index, output);
-            found |= self.assign_contributions(index + 1, next, life_available - life_payment);
+            found |= self.assign_contributions(
+                index + 1,
+                next,
+                life_available - life_payment,
+                waterbend_remaining - waterbend,
+            );
             self.assignment.pop();
         }
 
-        found | self.assign_contributions(index + 1, pool, life_available)
+        found | self.assign_contributions(index + 1, pool, life_available, waterbend_remaining)
     }
 }

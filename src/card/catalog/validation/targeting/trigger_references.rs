@@ -117,6 +117,7 @@ fn validate_trigger_object_predicate(
         | ObjectPredicateDef::NoncreatureSpell
         | ObjectPredicateDef::Color(_)
         | ObjectPredicateDef::ColorCount(_)
+        | ObjectPredicateDef::ManaCostHasX
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::PowerAtLeast(_)
         | ObjectPredicateDef::PowerExactly(_)
@@ -186,6 +187,7 @@ fn trigger_predicate_requires_live_battlefield(predicate: ObjectPredicateDef) ->
         | ObjectPredicateDef::Subtype(_)
         | ObjectPredicateDef::NameEquals(_)
         | ObjectPredicateDef::NameIn(_)
+        | ObjectPredicateDef::ManaCostHasX
         | ObjectPredicateDef::ManaValueAtMost(_)
         | ObjectPredicateDef::FaceUpInExile
         | ObjectPredicateDef::GenericManaCostAtMost(_)
@@ -415,6 +417,11 @@ fn validate_trigger_event_references(
     if !matches!(event, TriggerEventDef::Simultaneous(_)) && event.contains_simultaneous() {
         return Err(unsupported_trigger_event(event));
     }
+    if let TriggerEventDef::CountersCross { thresholds, .. } = event
+        && !thresholds.valid()
+    {
+        return Err(unsupported_trigger_event(event));
+    }
     match event {
         TriggerEventDef::Simultaneous(definition) => {
             if definition.minimum == 0
@@ -514,6 +521,9 @@ fn validate_trigger_event_references(
         | TriggerEventDef::BecomesBlocked(predicate)
         | TriggerEventDef::Blocks { blocked: predicate }
         | TriggerEventDef::BecomesBlockedBy { blocker: predicate }
+        | TriggerEventDef::CountersCross {
+            object: predicate, ..
+        }
         | TriggerEventDef::CountersPlaced {
             object: predicate, ..
         }

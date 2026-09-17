@@ -130,7 +130,7 @@ fn karn_restart_is_not_a_conclusion_and_retained_cards_wait_for_pregame() {
         assert_eq!(game.players[0].life, 20);
         assert_eq!(game.players[1].exile.len(), 1);
         assert_eq!(game.players[1].exile[0].definition, cards::RUNECLAW_BEAR);
-        assert_eq!(game.players[1].outside_game.len(), 15);
+        assert_eq!(game.players[1].sideboard.len(), 15);
         keep(&mut game);
         let bear = game
             .battlefield

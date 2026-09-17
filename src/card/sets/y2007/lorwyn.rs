@@ -11,6 +11,7 @@ use crate::card::AbilityTargetPredicate;
 use crate::card::AddManaEffectDef;
 use crate::card::AggregateOperationDef;
 use crate::card::AppliedEffectDef;
+use crate::card::AppliedRuleDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
 use crate::card::CardType;
@@ -34,6 +35,8 @@ use crate::card::ObjectRefDef;
 use crate::card::ObjectSetDef;
 use crate::card::ObjectValueAggregateDef;
 use crate::card::ObjectValueDef;
+use crate::card::PlayActionMatcherDef;
+use crate::card::PlayRestrictionDef;
 use crate::card::PlayerRefDef;
 use crate::card::PlayerRelation;
 use crate::card::ResolvedEffectDurationDef;
@@ -601,6 +604,7 @@ pub(in crate::card::sets) static ELVISH_HARBINGER: CardRecord = CardRecord::new(
              an Elf card, reveal it, then shuffle and put that card on \
              top.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Elf")),
@@ -659,12 +663,44 @@ pub(in crate::card::sets) static IMPERIOUS_PERFECT: CardRecord = CardRecord::new
 );
 
 // LRW 248 — Gaddock Teeg
-// Audit: unsupported — Needs a printed-mana-cost X predicate in static casting prohibitions.
 pub(in crate::card::sets) static GADDOCK_TEEG: CardRecord = CardRecord::new(
     "Gaddock Teeg",
     "32c16e1b-f4ce-409f-928a-42c666adac9d",
     "Greg Staples",
-    CardRules::unsupported(),
+    CardRules::new_creature(mana_cost!("{G}{W}"), &["Kithkin", "Advisor"], 2, 2)
+        .with_supertype(CardSupertype::Legendary)
+        .with_abilities(&[
+            AbilityDef::static_ability(
+                "Noncreature spells with mana value 4 or greater can't be cast.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::EachPlayer,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(
+                        PlayRestrictionDef::new(
+                            PlayActionMatcherDef::CastSpell,
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::NoncreatureSpell,
+                                ObjectPredicateDef::Not(&ObjectPredicateDef::ManaValueAtMost(3)),
+                            ]),
+                        ),
+                    )),
+                },
+            ),
+            AbilityDef::static_ability(
+                "Noncreature spells with {X} in their mana costs can't be cast.",
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::EachPlayer,
+                    effect: AppliedEffectDef::Rule(AppliedRuleDef::CannotPlay(
+                        PlayRestrictionDef::new(
+                            PlayActionMatcherDef::CastSpell,
+                            ObjectPredicateDef::All(&[
+                                ObjectPredicateDef::NoncreatureSpell,
+                                ObjectPredicateDef::ManaCostHasX,
+                            ]),
+                        ),
+                    )),
+                },
+            ),
+        ]),
 );
 
 // LRW 257 — Herbal Poultice
@@ -774,6 +810,7 @@ pub(in crate::card::sets) static WANDERER_S_TWIG: CardRecord = CardRecord::new(
          shuffle.",
         &[CostDef::Mana(mana_cost!("{1}")), CostDef::SacrificeSource],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -828,6 +865,8 @@ pub(in crate::card::sets) static MOSSWORT_BRIDGE: CardRecord = CardRecord::new(
                     right: ValueDef::Constant(10),
                 }),
                 then: &EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                    cast_only: false,
+                    maximum_spell_mana_value: None,
                     objects: ObjectSetDef::LinkedExiles,
                     duration: FreePlayDurationDef::WhileResolving,
                     mandatory: false,
@@ -865,6 +904,8 @@ pub(in crate::card::sets) static SHELLDOCK_ISLE: CardRecord = CardRecord::new(
             // ability resolves and no longer, so a player who declines has
             // to pay the {U} and the tap again to be asked twice.
             EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                cast_only: false,
+                maximum_spell_mana_value: None,
                 objects: ObjectSetDef::LinkedExiles,
                 duration: FreePlayDurationDef::WhileResolving,
                 mandatory: false,

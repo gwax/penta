@@ -124,7 +124,7 @@ pub(in crate::game) fn ready_game_with_seed(seed: u64) -> Game {
         player.hand.clear();
         player.graveyard.clear();
         player.exile.clear();
-        player.outside_game.clear();
+        player.sideboard.clear();
         player.life = i16::from(rules::STARTING_LIFE);
         player.mana_pool = ManaPool::default();
         player.mana.clear();
@@ -171,8 +171,8 @@ pub(in crate::game) fn checkpoint_fixture(
             "p2": definitions(&game.players[PlayerId::Two.index()].library),
         },
         "outsideGame": {
-            "p1": definitions(&game.players[PlayerId::One.index()].outside_game),
-            "p2": definitions(&game.players[PlayerId::Two.index()].outside_game),
+            "p1": definitions(&game.players[PlayerId::One.index()].sideboard),
+            "p2": definitions(&game.players[PlayerId::Two.index()].sideboard),
         },
         "drawnThisTurn": {(opponent_label): drawn_indices},
     });
@@ -459,6 +459,7 @@ pub(in crate::game) fn copied_characteristics(
         base_power_toughness: None,
         colors: None,
         added_creature_types: Vec::new(),
+        replaced_creature_types: None,
         no_mana_cost: false,
     }
 }

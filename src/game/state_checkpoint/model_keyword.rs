@@ -33,6 +33,12 @@ pub(super) enum KeywordSnapshot {
     Flash,
     Hexproof,
     HexproofFromMonocolored,
+    HexproofFromWhite,
+    HexproofFromBlue,
+    HexproofFromBlack,
+    HexproofFromRed,
+    HexproofFromGreen,
+
     Shroud,
     Unleash,
     Intimidate,

@@ -76,7 +76,14 @@ impl Game {
         frame: &PaymentFrame,
         chosen: &[BoundContribution],
     ) -> Vec<BoundContribution> {
-        let kinds = self.payment_contributions(&frame.obligation.purpose);
+        let mut kinds = self.payment_contributions(&frame.obligation.purpose);
+        let used = chosen
+            .iter()
+            .filter(|c| c.kind == ManaContributionKind::Waterbend)
+            .count();
+        kinds.waterbend = kinds
+            .waterbend
+            .saturating_sub(u16::try_from(used).unwrap_or(u16::MAX));
         let mut candidates = Vec::new();
         for permanent in self
             .battlefield
@@ -179,7 +186,7 @@ impl Game {
             .map(|(order, contribution)| PlannedManaActivation {
                 source: contribution.source,
                 kind: PlannedPaymentKind::Contribution(contribution.kind),
-                production: ManaPool::default(),
+                production: crate::game::payment::allocation::PaymentPool::default(),
                 // The bound residual bill owns symbol allocation. These compatibility
                 // fields are irrelevant to its execution; only the resource is paid.
                 colored_contribution: ManaPool::default(),

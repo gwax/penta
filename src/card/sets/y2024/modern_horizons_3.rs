@@ -236,6 +236,7 @@ const fn landscape_abilities(
             fetch_text,
             &LANDSCAPE_FETCH_COST,
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: basics,
@@ -1051,6 +1052,7 @@ pub(in crate::card::sets) static WHITE_ORCHID_PHANTOM: CardRecord = CardRecord::
                 EffectDef::May {
                     player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[
@@ -2455,6 +2457,7 @@ pub(in crate::card::sets) static SOWING_MYCOSPAWN: CardRecord = CardRecord::new(
                  card, put it onto the battlefield, then shuffle.",
             TriggerEventDef::spell_cast(ObjectPredicateDef::Source),
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Land),
@@ -3146,6 +3149,7 @@ pub(in crate::card::sets) static SHELTERING_LANDSCAPE: CardRecord = CardRecord::
              card, put it onto the battlefield tapped, then shuffle.",
             &LANDSCAPE_FETCH_COST,
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 // The Naya half of the same cycle, and the same shape: three basics, a
@@ -3221,7 +3225,7 @@ pub(in crate::card::sets) static SHIFTING_WOODLAND: CardRecord = CardRecord::new
             EffectDef::BecomeCopyOf {
                 object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                 copier: None,
-                exceptions: CopyExceptionsDef::NONE,
+                exceptions: &CopyExceptionsDef::NONE,
                 duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
             },
         )
@@ -3388,6 +3392,7 @@ pub(in crate::card::sets) static URZA_S_CAVE: CardRecord = CardRecord::new(
                 CostDef::SacrificeSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Land),
@@ -4046,6 +4051,7 @@ pub(in crate::card::sets) static SUNDERING_ERUPTION_VOLCANIC_FISSURE: CardRecord
                                     TargetIndex::PRIMARY,
                                 ),
                                 effect: &EffectDef::SearchZone {
+                                    exile_face_down: false,
                                     player: EffectRecipientDef::ControllerOfTarget(
                                         TargetIndex::PRIMARY,
                                     ),
@@ -4251,6 +4257,7 @@ pub(in crate::card::sets) static WATERLOGGED_TEACHINGS_INUNDATED_ARCHIVE: CardRe
                     "Search your library for an instant card or a card with \
                      flash, reveal it, put it into your hand, then shuffle.",
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::AnyOf(&[
@@ -4569,6 +4576,7 @@ pub(in crate::card::sets) static GRIM_SERVANT: CardRecord = CardRecord::new(
              control counts toward your devotion to black.)",
             EffectDef::Sequence(&[
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::ManaValueAtMostValue(ValueDef::DevotionTo(
@@ -5437,6 +5445,7 @@ pub(in crate::card::sets) static WIGHT_OF_THE_RELIQUARY: CardRecord = CardRecord
                 },
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Land),

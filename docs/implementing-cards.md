@@ -200,6 +200,62 @@ Other clauses that refer to a particular alternative cost can use
 `.with_alternative_cost_binding(binding)` on that cost. Ability order does
 not affect the link.
 
+The originating-set helpers also own `wilds_of_eldraine::bargain()`,
+`odyssey::threshold(&[...])`, and `avatar_the_last_airbender::earthbend(n)`.
+Threshold uses `abilities::conditional(&THRESHOLD, abilities)`: its fixed
+condition is your graveyard count >= 7. Conditional groups govern whether an
+object has their members; they preserve each member's category, program, and
+attachment identity. Nested groups require every enclosing condition. Losing a
+group does not cancel an activation or trigger already on the stack.
+
+Use `abilities::conditional(condition, &[...])` for static inclusion and flatten
+it with `ability_list!` alongside ordinary clauses. The current supported slice
+is battlefield static, activated, triggered, and battlefield keyword abilities,
+with nonrecursive conditions over nonbattlefield card counts, life, counters,
+Class level, or tapped status. Casting clauses, replacement abilities,
+characteristic-defining abilities, and conditions that depend on the derived
+ability set are rejected.
+
+The same list can be granted with
+`AppliedEffectDef::Composite(&abilities::grants(&[...]))`. Each member retains
+its own grant identity, including across checkpoints. A condition around the
+grant effect reads the granting source; a member's presence condition reads the
+object that receives that ability. Existing grant restrictions still apply:
+granted executable static abilities currently support power/toughness effects.
+
+Earthbend targets the primary land target and
+installs an independent delayed return trigger, so removing the land's abilities
+does not erase that return.
+
+`CostDef::Waterbend(n)` contributes a generic mana obligation plus permission to
+tap artifacts or creatures for at most `n` of its generic symbols. It shares the
+convoke/improvise payment machinery; increases and separate mana costs do not
+expand that allowance. The current supported authoring slice is a fixed cost
+on a battlefield activation.
+
+Use `EffectDef::RecordAbilityUse` at a program's successful-use point and
+`TriggerConditionDef::SourceAbilityUsedThisTurn` to check it. The marker is scoped
+to the source incarnation and ability, survives checkpoints, and clears each
+turn. It is separate from activation, triggering, and resolution counts. Carpet
+of Flowers records a use after adding a positive amount; declining or adding
+zero records nothing.
+
+Mana-production replacements use `ReplacementEventDef::TappedForMana` and
+compose `SetManaType` with `SetEventAmount` in an ordinary replacement program.
+The production query, payment planner, and actual mana addition share that
+interpreter. The current built-in applications have identical outcomes when
+several apply; cards needing a choice among conflicting mana replacements need
+that ordering boundary before being marked complete.
+
+`AppliedRuleDef::ManaPaymentRestriction` reuses the existing mana restriction
+predicates for an intrinsic spell's complete payment. The supported predicates
+concern the spell being paid for. Hogaak declares `ManaRestrictionDef::AnyOf(&[])`,
+so no mana payment is permitted; its convoke and delve contributions remain
+ordinary nonmana payments.
+
+An outside-the-game card selection uses `CardChoiceSourceDef::Sideboard`.
+The engine has no separate collection of unregistered outside-the-game cards.
+
 `Binding!("name")` accepts any nonempty local name without global registration.
 Effect bindings belong to one resolution and its continuations; ordinary clones
 have independent binding state. Runtime slots are allocated within that scope

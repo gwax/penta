@@ -348,6 +348,7 @@ pub(in crate::card::sets) static BRING_TO_LIGHT: CardRecord = CardRecord::new(
          that card, then shuffle. You may cast that card without \
          paying its mana cost.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -370,6 +371,8 @@ pub(in crate::card::sets) static BRING_TO_LIGHT: CardRecord = CardRecord::new(
             attachment: None,
             binding: Some(Binding!("bring_card")),
             then: Some(&EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                cast_only: false,
+                maximum_spell_mana_value: None,
                 objects: ObjectSetDef::Binding(Binding!("bring_card")),
                 duration: FreePlayDurationDef::WhileResolving,
                 mandatory: false,
@@ -422,6 +425,7 @@ pub(in crate::card::sets) static SANCTUM_OF_UGIN: CardRecord = CardRecord::new(
             EffectDef::PayOr(PayOrDef::optional(
                 &[CostDef::sacrifice_permanent(ObjectPredicateDef::Source)],
                 &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

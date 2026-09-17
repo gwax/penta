@@ -45,6 +45,7 @@ impl DeckCards {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum CardRequirement {
+    DistinctManaSymbols,
     ManaValueAtMost(u16),
     ManaValueAtLeast(u16),
     HasActivatedAbility,

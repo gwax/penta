@@ -145,6 +145,7 @@ impl Game {
                         form: option.form.clone(),
                         alternative,
                         x: choices.x(),
+                        spend_any_color: self.card_mana_is_any_color(*card),
                         reserved_life_payment: total_life,
                     },
                 ))

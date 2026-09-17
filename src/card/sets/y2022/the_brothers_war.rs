@@ -474,6 +474,7 @@ pub(in crate::card::sets) static BUSHWHACK: CardRecord = CardRecord::new(
                 "Search your library for a basic land card, reveal it, put it into your hand, \
                  then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -812,6 +813,7 @@ pub(in crate::card::sets) static DEMOLITION_FIELD: CardRecord = CardRecord::new(
                         ObjectRefDef::Target(TargetIndex::PRIMARY),
                     )),
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::player(PlayerRefDef::ControllerOf(
                             ObjectRefDef::Target(TargetIndex::PRIMARY),
                         )),
@@ -835,6 +837,7 @@ pub(in crate::card::sets) static DEMOLITION_FIELD: CardRecord = CardRecord::new(
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[

@@ -532,6 +532,7 @@ impl Game {
                 );
             },
         );
+        self.return_expired_duration_exiles();
     }
 
     fn batch_trigger_context(

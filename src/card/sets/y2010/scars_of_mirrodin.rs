@@ -4141,6 +4141,7 @@ pub(in crate::card::sets) static HORIZON_SPELLBOMB: CardRecord = CardRecord::new
                 CostDef::SacrificeSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -4237,6 +4238,7 @@ pub(in crate::card::sets) static KULDOTHA_FORGEMASTER: CardRecord = CardRecord::
                 },
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Artifact),

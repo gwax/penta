@@ -2465,6 +2465,7 @@ pub(in crate::card::sets) static BITTERHEART_WITCH: CardRecord = CardRecord::new
                 AbilityTargetPredicate::Player(PlayerRelation::Any),
             )],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -4998,6 +4999,7 @@ pub(in crate::card::sets) static GARRUK_RELENTLESS: CardRecord = CardRecord::new
                                         player: EffectRecipientDef::Controller,
                                         object: ObjectPredicateDef::HasType(CardType::Creature),
                                         then: Some(&EffectDef::SearchZone {
+                                            exile_face_down: false,
                                             player: EffectRecipientDef::Controller,
                                             source: ZoneKind::Library,
                                             object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -6436,6 +6438,7 @@ pub(in crate::card::sets) static TRAVELERS_AMULET: CardRecord = CardRecord::new(
          shuffle.",
         &[CostDef::Mana(mana_cost!("{1}")), CostDef::SacrificeSource],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

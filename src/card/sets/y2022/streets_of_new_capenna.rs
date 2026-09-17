@@ -498,6 +498,7 @@ pub(in crate::card::sets) static TOPIARY_STOMPER: CardRecord = CardRecord::new(
                 "When this creature enters, search your library for a basic \
                  land card, put it onto the battlefield tapped, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

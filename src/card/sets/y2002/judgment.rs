@@ -12,6 +12,7 @@ use crate::card::AggregateOperationDef;
 use crate::card::AlternativeCastKindDef;
 use crate::card::AppliedEffectDef;
 use crate::card::AppliedRuleDef;
+use crate::card::CardChoiceSourceDef;
 use crate::card::CardNameDef;
 use crate::card::CardRules;
 use crate::card::CardSupertype;
@@ -46,6 +47,7 @@ use crate::card::PowerToughnessOperationDef;
 use crate::card::ReplacementChoiceDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ResolvedEffectDurationDef;
+use crate::card::SpellResolutionDestinationDef;
 use crate::card::StaticApplyDef;
 use crate::card::SubtypeDef;
 use crate::card::TokenCharacteristics;
@@ -1246,12 +1248,27 @@ pub(in crate::card::sets) static BROWBEAT: CardRecord = CardRecord::new(
 );
 
 // JUD 83 — Burning Wish
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static BURNING_WISH: CardRecord = CardRecord::new(
     "Burning Wish",
     "1c9b692a-e832-4612-a6ec-93b52f6a0410",
     "Scott M. Fischer",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{1}{R}")).with_ability(
+        AbilityDef::spell(
+            "You may reveal a sorcery card you own from outside the game and put it into \
+             your hand. Exile Burning Wish.",
+            EffectDef::ChooseCards {
+                player: EffectRecipientDef::Controller,
+                sources: &[CardChoiceSourceDef::Sideboard],
+                object: ObjectPredicateDef::HasType(CardType::Sorcery),
+                minimum: 0,
+                maximum: 1,
+                reveal: true,
+                destination: ZoneKind::Hand,
+                placement: ZonePlacement::Top,
+            },
+        )
+        .with_resolution_destination(SpellResolutionDestinationDef::Exile),
+    ),
 );
 
 // JUD 84 — Dwarven Bloodboiler
@@ -1639,6 +1656,7 @@ pub(in crate::card::sets) static CENTAUR_ROOTCASTER: CardRecord = CardRecord::ne
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

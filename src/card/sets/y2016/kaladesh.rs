@@ -923,6 +923,7 @@ pub(in crate::card::sets) static INVENTORS_FAIR: CardRecord = CardRecord::new(
                     CostDef::SacrificeSource,
                 ],
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasType(CardType::Artifact),

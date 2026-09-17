@@ -3468,6 +3468,7 @@ pub(in crate::card::sets) static ARCHDRUID_S_CHARM: CardRecord = CardRecord::new
                  Otherwise, put it into your hand. Then shuffle.",
                 EffectDef::Sequence(&[
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::AnyOf(&[
@@ -4093,6 +4094,7 @@ pub(in crate::card::sets) static THEY_WENT_THIS_WAY: CardRecord = CardRecord::ne
          Draw a card.\")",
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -5018,7 +5020,7 @@ pub(in crate::card::sets) static LAZAV_WEARER_OF_FACES: CardRecord = CardRecord:
                             crate::Binding!("chosen"),
                         )),
                         copier: None,
-                        exceptions: CopyExceptionsDef::NONE,
+                        exceptions: &CopyExceptionsDef::NONE,
                         duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
                     },
                 }),
@@ -6140,6 +6142,7 @@ pub(in crate::card::sets) static ESCAPE_TUNNEL: CardRecord = CardRecord::new(
              land card, put it onto the battlefield tapped, then shuffle.",
             &[CostDef::TapSource, CostDef::SacrificeSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

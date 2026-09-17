@@ -268,14 +268,15 @@ impl Game {
                 continue;
             };
             self.permit_free_play_this_turn(card, player);
-            if permission.grants_haste
-                && let Some(granted) = self
-                    .exile_play_permissions
-                    .iter_mut()
-                    .rev()
-                    .find(|granted| granted.card == card && granted.player == player)
+            if let Some(granted) = self
+                .exile_play_permissions
+                .iter_mut()
+                .rev()
+                .find(|granted| granted.card == card && granted.player == player)
             {
-                granted.grants_haste = true;
+                granted.grants_haste = permission.grants_haste;
+                granted.maximum_spell_mana_value = permission.maximum_spell_mana_value;
+                granted.lands_may_be_played = !permission.cast_only;
             }
             if permission.duration == crate::card::FreePlayDurationDef::UntilEndOfTurn {
                 continue;

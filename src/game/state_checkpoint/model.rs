@@ -513,6 +513,8 @@ pub(super) struct EffectResolutionContextSnapshot {
     pub(super) bindings: std::collections::BTreeMap<String, EffectBindingSnapshot>,
     #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
     pub(super) card_name_bindings: std::collections::BTreeMap<String, String>,
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub(super) number_bindings: std::collections::BTreeMap<String, i32>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

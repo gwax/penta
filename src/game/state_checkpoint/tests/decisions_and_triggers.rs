@@ -39,8 +39,8 @@ fn a_supported_draw_action_window_rebuilds_and_resumes() {
             "p2": definitions(&game.players[PlayerId::Two.index()].library),
         },
         "outsideGame": {
-            "p1": definitions(&game.players[PlayerId::One.index()].outside_game),
-            "p2": definitions(&game.players[PlayerId::Two.index()].outside_game),
+            "p1": definitions(&game.players[PlayerId::One.index()].sideboard),
+            "p2": definitions(&game.players[PlayerId::Two.index()].sideboard),
         },
     });
 
@@ -65,7 +65,7 @@ fn a_supported_draw_action_window_rebuilds_and_resumes() {
     assert_eq!(
         std::array::from_fn::<_, 2, _>(|index| {
             rebuilt.players[index]
-                .outside_game
+                .sideboard
                 .iter()
                 .map(|card| card.definition)
                 .collect::<Vec<_>>()

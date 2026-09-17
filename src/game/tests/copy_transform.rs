@@ -38,6 +38,7 @@ fn synthetic_double_faced_token(
             base_power_toughness: None,
             colors: None,
             added_creature_types: Vec::new(),
+            replaced_creature_types: None,
             no_mana_cost: false,
         },
     });
@@ -60,6 +61,7 @@ fn single_faced_card_copying_incubator_cannot_transform() {
         base_power_toughness: None,
         colors: None,
         added_creature_types: Vec::new(),
+        replaced_creature_types: None,
         no_mana_cost: false,
     });
     let copier_id = copier.card.id;
@@ -242,6 +244,7 @@ fn sacrificed_card_copying_token_remains_nontoken_on_the_stack() {
         base_power_toughness: None,
         colors: None,
         added_creature_types: Vec::new(),
+        replaced_creature_types: None,
         no_mana_cost: false,
     });
     let source = copier.card.id;

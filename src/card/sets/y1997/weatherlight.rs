@@ -1195,6 +1195,7 @@ pub(in crate::card::sets) static BURIED_ALIVE: CardRecord = CardRecord::new(
         "Search your library for up to three creature cards, put \
          them into your graveyard, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -2696,6 +2697,7 @@ pub(in crate::card::sets) static LLANOWAR_SENTINEL: CardRecord = CardRecord::new
             EffectDef::PayOr(PayOrDef::optional(
                 &[CostDef::Mana(mana_cost!("{1}{G}"))],
                 &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::NameEquals(CardNameDef::Literal(

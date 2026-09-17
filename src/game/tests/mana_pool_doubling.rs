@@ -163,6 +163,7 @@ fn mana_pool_doubling_lotus_mana_cannot_cast_an_ordinary_spell_or_eligible_legen
             form: SpellForm::Part(CardPartId::PRIMARY),
             alternative: None,
             x: 0,
+            spend_any_color: false,
             reserved_life_payment: 0,
         };
         assert_eq!(game.eligible_mana_pool(PlayerId::One, &spell).total(), 0);
@@ -219,6 +220,7 @@ fn spell_payment(game: &Game, object: GameObjectId, controller: PlayerId) -> Man
         form: SpellForm::Part(CardPartId::PRIMARY),
         alternative: None,
         x: 0,
+        spend_any_color: false,
         reserved_life_payment: 0,
     }
 }
@@ -331,6 +333,7 @@ fn jeweled_lotus_follows_physical_identity_into_hand_and_rejects_other_uses() {
     assert!(!game.mana_can_pay_for(
         mana,
         &ManaPaymentPurpose::Ability {
+            waterbend: 0,
             source: held,
             taps_source: false,
             leaves_source: false

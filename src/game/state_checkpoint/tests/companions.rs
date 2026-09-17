@@ -43,7 +43,7 @@ fn companion_brought_in_by_another_effect_does_not_spend_its_special_action() {
         PlayerId::One,
         Some(cards::LURRUS_OF_THE_DREAM_DEN),
     );
-    let moved = game.players[0].outside_game.remove(0);
+    let moved = game.players[0].sideboard.remove(0);
     let (moved, _) = game.zone_change_card(moved);
     game.players[0].hand.push(moved);
     let (_, restored) = rebuild_current_checkpoint(&game, PlayerId::Two, 18);

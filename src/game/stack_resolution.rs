@@ -107,6 +107,7 @@ impl Game {
                     base_power_toughness: None,
                     colors: object.colors,
                     added_creature_types: Vec::new(),
+                    replaced_creature_types: None,
                     no_mana_cost: false,
                 };
                 let base = object.face_down.map_or_else(
@@ -145,6 +146,7 @@ impl Game {
                         base_power_toughness: None,
                         colors: object.colors,
                         added_creature_types: Vec::new(),
+                        replaced_creature_types: None,
                         no_mana_cost: false,
                     },
                     double_faced,

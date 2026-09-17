@@ -198,10 +198,10 @@ fn validate_query_shape(
     {
         validate_player_set_shape(players, targets)?;
     }
-    if let Some(relative @ (ZonePositionDef::Above(_) | ZonePositionDef::Below(_))) = query.position {
+    if let Some(relative @ (ZonePositionDef::Above(_) | ZonePositionDef::Below(_))) = query.position
+    {
         let reference = match relative {
-            ZonePositionDef::Above(reference)
-            | ZonePositionDef::Below(reference) => reference,
+            ZonePositionDef::Above(reference) | ZonePositionDef::Below(reference) => reference,
             ZonePositionDef::FromTop(_) => unreachable!("relative positions only"),
         };
         validate_object_reference_shape(reference, targets)?;
@@ -359,7 +359,7 @@ fn validate_value_shape(
         ValueDef::CountObjects(objects) | ValueDef::CardTypesAmongObjects(objects) => {
             validate_object_set_shape(*objects, targets)
         }
-        ValueDef::TargetLibrarySize(target) => {
+        ValueDef::TargetLifeTotal(target) | ValueDef::TargetLibrarySize(target) => {
             validate_target_shape(target, targets, RecipientExpectation::Player, true)
         }
         ValueDef::TargetPower(target)
@@ -376,6 +376,7 @@ fn validate_value_shape(
         }),
         ValueDef::ColorCount(reference)
         | ValueDef::ObjectPower(reference)
+        | ValueDef::ManaSpentToCast(reference)
         | ValueDef::ObjectManaValue(reference) => {
             validate_object_reference_shape(reference, targets)
         }
@@ -416,6 +417,7 @@ fn validate_value_shape(
         | ValueDef::MatchedCount
         | ValueDef::MatchedCardTypes
         | ValueDef::MatchedManaValue
+        | ValueDef::BoundValue(_)
         | ValueDef::BoundObjectCount(_)
         | ValueDef::SpellsCastBeforeThisTurn
         | ValueDef::PlayerCounters { .. }
@@ -574,6 +576,7 @@ fn validate_trigger_condition_shape(
         | TriggerConditionDef::SourceCastAtInstantSpeed
         | TriggerConditionDef::SourceLoyalty { .. }
         | TriggerConditionDef::SourceActivationsThisTurn { .. }
+        | TriggerConditionDef::SourceAbilityUsedThisTurn
         | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::SourceDealtDamageToOpponentThisTurn
         | TriggerConditionDef::OpponentWasDealtDamageThisTurn
@@ -874,12 +877,19 @@ fn validate_play_permission_shapes(
 ) -> Result<(), GrantedAbilityValidationError> {
     validate_recipient_shape(recipient, targets, RecipientExpectation::Player)?;
     if static_effect && !static_play_rule_recipient_supported(recipient) {
-        return Err(GrantedAbilityValidationError::UnsupportedStaticPlayerRecipient { recipient: Box::new(recipient) });
+        return Err(
+            GrantedAbilityValidationError::UnsupportedStaticPlayerRecipient {
+                recipient: Box::new(recipient),
+            },
+        );
     }
     validate_object_predicate_shape(restriction.object, targets)?;
     if let Some(ability) = benefit.and_then(|benefit| benefit.on_play) {
         let definition = reflexive_trigger_definition(ability)?;
-        validate_reflexive_trigger_references(ability, BindingScope::empty(&BindingRegistry::default()))?;
+        validate_reflexive_trigger_references(
+            ability,
+            BindingScope::empty(&BindingRegistry::default()),
+        )?;
         validate_program_target_shapes(ability.effect.definition, definition.targets, None)?;
     }
     Ok(())

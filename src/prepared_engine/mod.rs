@@ -79,6 +79,7 @@ impl PreparedStaticProgram {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct PreparedStaticAbility {
+    pub(crate) presence: Option<crate::card::AbilityPresenceDef>,
     pub(crate) id: AbilityId,
     pub(crate) source_zones: &'static [ZoneKind],
     pub(crate) reference_effect: EffectDef,

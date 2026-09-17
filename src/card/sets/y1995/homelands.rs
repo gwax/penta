@@ -927,6 +927,7 @@ pub(in crate::card::sets) static MERCHANT_SCROLL: CardRecord = CardRecord::new(
         "Search your library for a blue instant card, reveal that \
          card, put it into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -2367,6 +2368,7 @@ pub(in crate::card::sets) static RENEWAL: CardRecord = CardRecord::new(
             ),
             EffectDef::Sequence(&[
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

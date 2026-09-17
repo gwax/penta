@@ -77,15 +77,127 @@ impl Game {
         self.mana_can_pay_for_cost(mana, purpose, ManaCost::default())
     }
 
+    fn spell_mana_restrictions(&self, purpose: &ManaPaymentPurpose) -> Vec<ManaRestrictionDef> {
+        use crate::card::{AppliedEffectDef, AppliedRuleDef, EffectRecipientDef};
+        fn collect_applied(effect: AppliedEffectDef, result: &mut Vec<ManaRestrictionDef>) {
+            match effect {
+                AppliedEffectDef::Composite(effects) => {
+                    for effect in effects {
+                        collect_applied(*effect, result);
+                    }
+                }
+                AppliedEffectDef::Rule(AppliedRuleDef::ManaPaymentRestriction(restriction)) => {
+                    result.push(restriction);
+                }
+                _ => {}
+            }
+        }
+        fn collect(effect: EffectDef, result: &mut Vec<ManaRestrictionDef>) {
+            match effect {
+                EffectDef::StaticApply {
+                    recipient: EffectRecipientDef::Source,
+                    effect,
+                } => {
+                    collect_applied(effect, result);
+                }
+                EffectDef::Sequence(effects) => {
+                    for effect in effects {
+                        collect(*effect, result);
+                    }
+                }
+                _ => {}
+            }
+        }
+        let ManaPaymentPurpose::Spell {
+            definition,
+            form,
+            alternative,
+            ..
+        } = purpose
+        else {
+            return Vec::new();
+        };
+        if alternative
+            .and_then(crate::card::AlternativeCastKindDef::face_down)
+            .is_some()
+        {
+            return Vec::new();
+        }
+        let Some(definition) = self.catalog.get(*definition) else {
+            return Vec::new();
+        };
+        let parts: &[crate::CardPartId] = match form {
+            crate::card::SpellForm::Part(part) => core::slice::from_ref(part),
+            crate::card::SpellForm::Combined(parts) => parts,
+        };
+        let mut restrictions = Vec::new();
+        for part in parts.iter().filter_map(|part| definition.part(*part)) {
+            for attached in part.rules.indexed_abilities() {
+                let ability = attached.definition;
+                if matches!(ability.definition, DeclarativeAbilityDef::Static(definition)
+                    if definition.source_zones.contains(&ZoneKind::Stack))
+                    && let Some(effect) = ability.declarative_effect()
+                {
+                    collect(effect, &mut restrictions);
+                }
+            }
+        }
+        restrictions
+    }
+
+    pub(in crate::game) fn payment_allows_mana(&self, purpose: &ManaPaymentPurpose) -> bool {
+        // Spell-side restrictions currently concern the payment's spell, not
+        // the produced unit. Use the same predicate for floating and generated mana.
+        self.spell_mana_restrictions(purpose)
+            .iter()
+            .all(|restriction| {
+                self.mana_restriction_allows(
+                    Mana::unrestricted(ManaColor::Colorless),
+                    purpose,
+                    ManaCost::default(),
+                    *restriction,
+                )
+            })
+    }
+
+    pub(super) fn mana_requires_nongeneric(
+        &self,
+        mana: Mana,
+        purpose: &ManaPaymentPurpose,
+        cost: ManaCost,
+    ) -> bool {
+        fn permits_generic(
+            game: &Game,
+            mana: Mana,
+            purpose: &ManaPaymentPurpose,
+            cost: ManaCost,
+            restriction: ManaRestrictionDef,
+        ) -> bool {
+            match restriction {
+                ManaRestrictionDef::CannotPayGeneric => false,
+                ManaRestrictionDef::AnyOf(alternatives) => alternatives
+                    .iter()
+                    .any(|restriction| permits_generic(game, mana, purpose, cost, *restriction)),
+                other => game.mana_restriction_allows(mana, purpose, cost, other),
+            }
+        }
+        !mana
+            .restrictions
+            .iter()
+            .all(|restriction| permits_generic(self, mana, purpose, cost, *restriction))
+    }
+
     pub(super) fn mana_can_pay_for_cost(
         &self,
         mana: Mana,
         purpose: &ManaPaymentPurpose,
         cost: ManaCost,
     ) -> bool {
-        mana.restrictions
-            .iter()
-            .all(|restriction| self.mana_restriction_allows(mana, purpose, cost, *restriction))
+        self.payment_allows_mana(purpose)
+            && mana
+                .restrictions
+                .iter()
+                .all(|restriction| self.mana_restriction_allows(mana, purpose, cost, *restriction))
             && match purpose {
                 ManaPaymentPurpose::Payment { snow: true, .. } => mana
                     .source
@@ -114,6 +226,7 @@ impl Game {
         restriction: ManaRestrictionDef,
     ) -> bool {
         match &restriction {
+            ManaRestrictionDef::CannotPayGeneric => true,
             ManaRestrictionDef::AnyOf(alternatives) => alternatives
                 .iter()
                 .any(|alternative| self.mana_restriction_allows(mana, purpose, cost, *alternative)),

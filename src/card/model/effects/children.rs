@@ -67,7 +67,23 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         EffectDef::WithCosts { costs, effect } => std::iter::once(*effect)
             .chain(cost_action_effects(costs))
             .collect(),
-        EffectDef::BindOutput { effect, .. }
+        // The optional tail is derived from the same authored loop, so a
+        // checkpoint can address the continuation without redeclaring bindings.
+        EffectDef::Repeat {
+            mandatory_first: true,
+            player,
+            effect,
+        } => vec![
+            *effect,
+            EffectDef::Repeat {
+                mandatory_first: false,
+                player,
+                effect,
+            },
+        ],
+        EffectDef::Repeat { effect, .. }
+        | EffectDef::BindValue { effect, .. }
+        | EffectDef::BindOutput { effect, .. }
         | EffectDef::WithRule { effect, .. }
         | EffectDef::ForEachInBinding { effect, .. }
         | EffectDef::May { effect, .. }
@@ -197,6 +213,8 @@ pub(crate) fn child_effects(effect: EffectDef) -> Vec<EffectDef> {
         | EffectDef::MayCastTargetWithoutPaying { .. }
         | EffectDef::RevealHand { .. }
         | EffectDef::RemoveFromCombat { .. }
+        | EffectDef::ExileUntilSourceLeaves { .. }
+        | EffectDef::RecordAbilityUse
         | EffectDef::None
         | EffectDef::DamageCannotBePreventedThisTurn
         | EffectDef::PreventDamage { .. }

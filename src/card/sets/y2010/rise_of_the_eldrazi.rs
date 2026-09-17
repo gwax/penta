@@ -816,6 +816,7 @@ pub(in crate::card::sets) static EVOLVING_WILDS: CardRecord = CardRecord::new(
          battlefield tapped, then shuffle.",
         &[CostDef::TapSource, CostDef::SacrificeSource],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

@@ -277,6 +277,7 @@ pub(in crate::card::sets) static DARK_PETITION: CardRecord = CardRecord::new(
          {B}{B}{B}.",
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,
@@ -539,6 +540,7 @@ pub(in crate::card::sets) static WOODLAND_BELLOWER: CardRecord = CardRecord::new
              a nonlegendary green creature card with mana value 3 or \
              less, put it onto the battlefield, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

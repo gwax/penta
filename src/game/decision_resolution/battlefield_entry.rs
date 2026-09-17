@@ -109,6 +109,7 @@ impl Game {
                 base_power_toughness,
                 colors,
                 added_creature_types,
+                replaced_creature_types,
                 no_mana_cost,
                 added_abilities,
             } => {
@@ -145,6 +146,10 @@ impl Game {
                         }
                         if let Some(colors) = colors {
                             copy.colors = Some(colors);
+                        }
+                        if replaced_creature_types.is_some() {
+                            copy.replaced_creature_types = replaced_creature_types;
+                            copy.added_creature_types.clear();
                         }
                         copy.added_creature_types.extend(added_creature_types);
                         copy.no_mana_cost |= no_mana_cost;

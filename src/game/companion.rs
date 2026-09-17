@@ -41,7 +41,7 @@ impl Game {
         }
         actions.extend(
             state
-                .outside_game
+                .sideboard
                 .iter()
                 .filter(|card| {
                     state
@@ -55,7 +55,7 @@ impl Game {
     pub(super) fn take_companion(&mut self, player: PlayerId, card: GameObjectId) {
         let state = &self.players[player.index()];
         let Some(index) = state
-            .outside_game
+            .sideboard
             .iter()
             .position(|candidate| candidate.id == card)
         else {
@@ -69,7 +69,7 @@ impl Game {
         }
         self.activate_mana_for_cost(player, COMPANION_COST, 0);
         let _spent = self.pay_player_cost(player, COMPANION_COST, 0);
-        let moved = self.players[player.index()].outside_game.remove(index);
+        let moved = self.players[player.index()].sideboard.remove(index);
         // Outside the game is not a zone, but arriving in a hand is still a
         // new object: nothing that watched the card out there may follow it
         // in.
@@ -88,7 +88,7 @@ impl Game {
     pub(super) fn eligible_companions(&self, player: PlayerId) -> Vec<super::CardInstance> {
         let state = &self.players[player.index()];
         state
-            .outside_game
+            .sideboard
             .iter()
             .filter(|card| {
                 crate::deck::validate_companion_requirement(
@@ -134,7 +134,7 @@ impl Game {
     ) {
         if let Some(id) = card {
             let card = self.players[player.index()]
-                .outside_game
+                .sideboard
                 .iter()
                 .find(|card| card.id == id)
                 .expect("the choice names an eligible outside-game card");

@@ -34,11 +34,13 @@ use crate::card::ObjectSetDef;
 use crate::card::PlayActionMatcherDef;
 use crate::card::PlayRestrictionDef;
 use crate::card::PlayerRelation;
+use crate::card::PlayerRuleDef;
 use crate::card::PlayerSetDef;
 use crate::card::ReplacementEffectDef;
 use crate::card::ReplacementEventDef;
 use crate::card::ResolvedEffectDurationDef;
 use crate::card::RevealObjectsDef;
+use crate::card::SpellCastQueryDef;
 use crate::card::StackTargetAggregationDef;
 use crate::card::StackTargetFilterDef;
 use crate::card::TokenCharacteristics;
@@ -407,6 +409,7 @@ pub(in crate::card::sets) static SCHEMING_SYMMETRY: CardRecord = CardRecord::new
             ValueDef::Constant(2),
         )],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,
@@ -616,6 +619,7 @@ pub(in crate::card::sets) static ELVISH_RECLAIMER: CardRecord = CardRecord::new(
                 },
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Land),
@@ -666,13 +670,71 @@ pub(in crate::card::sets) static LEYLINE_OF_ABUNDANCE: CardRecord = CardRecord::
 );
 
 // M20 198 — Veil of Summer
-// Audit: unsupported — Hexproof has no color-specific player or permanent rule. Ordinary
-// hexproof would also stop opposing red, green, white, and colorless sources.
 pub(in crate::card::sets) static VEIL_OF_SUMMER: CardRecord = CardRecord::new(
     "Veil of Summer",
     "aa686c34-1c11-469f-93c2-f9891aea521f",
     "Lake Hurwitz",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_instant(mana_cost!("{G}")).with_ability(AbilityDef::spell(
+        "Draw a card if an opponent has cast a blue or black spell this turn. Spells you \
+         control can't be countered this turn. You and permanents you control gain \
+         hexproof from blue and from black until end of turn.",
+        EffectDef::Sequence(&[
+            EffectDef::IfCondition {
+                condition: &TriggerConditionDef::ValueComparison(&ValueComparisonDef {
+                    left: ValueDef::CountSpellsCastThisTurn(&SpellCastQueryDef {
+                        player: PlayerRelation::Opponent,
+                        spell: ObjectPredicateDef::AnyOf(&[
+                            ObjectPredicateDef::Color(ManaColor::Blue),
+                            ObjectPredicateDef::Color(ManaColor::Black),
+                        ]),
+                    }),
+                    comparison: ComparisonDef::Greater,
+                    right: ValueDef::Constant(0),
+                }),
+                then: &EffectDef::DrawCards {
+                    recipient: EffectRecipientDef::Controller,
+                    amount: ValueDef::Constant(1),
+                },
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
+                    PlayerRuleDef::SpellsCannotBeCountered,
+                )),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::Controller,
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
+                        PlayerRuleDef::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Blue)),
+                    )),
+                    AppliedEffectDef::Rule(AppliedRuleDef::PlayerRule(
+                        PlayerRuleDef::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Black)),
+                    )),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+            EffectDef::Apply {
+                recipient: EffectRecipientDef::matching_objects(
+                    ObjectPredicateDef::Any,
+                    &[ZoneKind::Battlefield],
+                    PlayerRelation::You,
+                ),
+                effect: AppliedEffectDef::Composite(&[
+                    AppliedEffectDef::add_ability(&AbilityDef::keyword(
+                        "Hexproof from blue",
+                        KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Blue)),
+                    )),
+                    AppliedEffectDef::add_ability(&AbilityDef::keyword(
+                        "Hexproof from black",
+                        KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Black)),
+                    )),
+                ]),
+                duration: ResolvedEffectDurationDef::UntilEndOfTurn,
+            },
+        ]),
+    )),
 );
 
 // M20 208 — Empyrean Eagle

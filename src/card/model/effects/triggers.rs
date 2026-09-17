@@ -116,6 +116,52 @@ impl SimultaneousTriggerDef {
     }
 }
 
+/// Counter thresholds named by one printed ability. Each crossed threshold
+/// creates a separate trigger, including a placement that crosses several.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum CounterThresholdsDef {
+    One(u8),
+    Several(&'static [u8]),
+}
+impl CounterThresholdsDef {
+    #[must_use]
+    pub const fn maximum(self) -> u8 {
+        match self {
+            Self::One(value) => value,
+            Self::Several(values) => {
+                let mut maximum = 0;
+                let mut index = 0;
+                while index < values.len() {
+                    if values[index] > maximum {
+                        maximum = values[index];
+                    }
+                    index += 1;
+                }
+                maximum
+            }
+        }
+    }
+    pub(crate) fn crossed(self, before: u16, after: u16) -> usize {
+        let crosses = |value| before < u16::from(value) && u16::from(value) <= after;
+        match self {
+            Self::One(value) => usize::from(crosses(value)),
+            Self::Several(values) => values.iter().filter(|&&value| crosses(value)).count(),
+        }
+    }
+    pub(crate) fn valid(self) -> bool {
+        match self {
+            Self::One(value) => value > 0,
+            Self::Several(values) => {
+                !values.is_empty()
+                    && values
+                        .iter()
+                        .enumerate()
+                        .all(|(index, value)| *value > 0 && !values[..index].contains(value))
+            }
+        }
+    }
+}
+
 /// The committed event observed by a triggered ability.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum TriggerEventDef {
@@ -363,6 +409,12 @@ pub enum TriggerEventDef {
     /// can raise it, so the event names the level and nothing else.
     BecomesLevel(u8),
     /// One or more counters of this kind were put on a matching object.
+    /// One occurrence for each threshold crossed by a single counter placement.
+    CountersCross {
+        object: ObjectPredicateDef,
+        kind: crate::card::CounterKind,
+        thresholds: CounterThresholdsDef,
+    },
     /// One event per placement rather than one per counter: "whenever one
     /// or more +1/+1 counters are put on this creature" fires once for a
     /// pair of them, which is what the wording is for.

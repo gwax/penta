@@ -11,19 +11,13 @@ impl Game {
             EffectDef::Sequence(effects) => {
                 for effect in effects {
                     self.triggered_mana_choice_options(
-                        *effect,
-                        source,
-                        controller,
-                        produced,
-                        choices,
+                        *effect, source, controller, produced, choices,
                     );
                 }
             }
             EffectDef::AddMana(effect) => {
                 let types = match effect.mana {
-                    ManaSelectionDef::Choice(types) | ManaSelectionDef::Combination(types) => {
-                        types
-                    }
+                    ManaSelectionDef::Choice(types) | ManaSelectionDef::Combination(types) => types,
                     ManaSelectionDef::One(_)
                     | ManaSelectionDef::ColorsOfLinkedExiles
                     | ManaSelectionDef::Amounts(_)
@@ -40,8 +34,7 @@ impl Game {
                     .iter()
                     .copied()
                     .filter(|color| {
-                        types.filter == ManaTypeFilterDef::AnyType
-                            || *color != ManaColor::Colorless
+                        types.filter == ManaTypeFilterDef::AnyType || *color != ManaColor::Colorless
                     })
                     .collect::<Vec<_>>();
                 let amount = self.mana_amount_for(effect, controller, source);
@@ -55,9 +48,7 @@ impl Game {
                             split
                         })
                         .collect(),
-                    ManaSelectionDef::Combination(_) => {
-                        Self::mana_combinations(&domain, amount)
-                    }
+                    ManaSelectionDef::Combination(_) => Self::mana_combinations(&domain, amount),
                     _ => unreachable!("only choice-bearing mana effects reach this branch"),
                 };
                 choices.push(options);
@@ -118,7 +109,8 @@ impl Game {
                 if !activation.costs.contains(&CostDef::TapSource) {
                     return vec![activation];
                 }
-                let mut produced = Self::mana_for_activation(&activation)
+                let mut produced = self
+                    .mana_for_activation(&activation)
                     .into_iter()
                     .map(|mana| mana.color)
                     .collect::<Vec<_>>();

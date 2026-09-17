@@ -285,7 +285,7 @@ impl Game {
             options,
             DecisionContinuation::Payment(PaymentDecision::Mana {
                 target,
-                obligation,
+                obligation: Box::new(obligation),
                 selected,
             }),
         );
@@ -372,7 +372,7 @@ impl Game {
                 obligation,
                 selected: units,
             } => {
-                self.resolve_exact_mana(target, obligation, units, selected);
+                self.resolve_exact_mana(target, *obligation, units, selected);
             }
         }
     }

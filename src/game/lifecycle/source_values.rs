@@ -4,6 +4,7 @@ use crate::card::PlayerRelation;
 impl Game {
     /// The values a predicate can read while matching, where the only context
     /// is the ability's source. Anything wider stays outside the boundary.
+    #[allow(clippy::too_many_lines)]
     pub(in crate::game) fn value_from_source(
         &self,
         value: ValueDef,
@@ -11,6 +12,21 @@ impl Game {
     ) -> Option<i32> {
         match value {
             ValueDef::Constant(amount) => Some(amount),
+            ValueDef::CountMatchingObjects(query) => {
+                let controller = self.current_or_last_known_controller(source)?;
+                Some(
+                    i32::try_from(
+                        self.objects_matching_query(
+                            *query,
+                            controller,
+                            source,
+                            TriggerContext::empty(),
+                        )
+                        .len(),
+                    )
+                    .unwrap_or(i32::MAX),
+                )
+            }
             ValueDef::AggregateObjectValues(aggregate) => {
                 let crate::card::ObjectSetDef::Query(query) = aggregate.objects else {
                     return None;

@@ -22,6 +22,7 @@ impl Game {
 
     pub(in crate::game) fn restrict_x(
         &self,
+        player: super::super::PlayerId,
         cost: ManaCost,
         x: u16,
         purpose: &ManaPaymentPurpose,
@@ -30,43 +31,49 @@ impl Game {
         // and "spend only black mana on X" still has to find black for the X
         // portion: the permission loosens what is printed, and the
         // restriction is then applied to the result.
-        let cost = self.cost_after_color_permissions(cost, purpose);
+        let _ = player;
         self.x_spend_restriction(purpose)
             .map_or((cost, x), |color| fold_restricted_x(cost, x, color))
     }
 
-    /// The cost as this payment may actually pay it. Agatha's Soul Cauldron
-    /// lets its controller treat any mana as any colour while activating an
-    /// ability of a creature they control, which is the same thing as the
-    /// coloured symbols in that cost having been generic all along.
-    fn cost_after_color_permissions(
+    /// Color-spending permissions change which units can satisfy a symbol,
+    /// without changing a colored symbol into a generic cost.
+    pub(in crate::game) fn may_spend_any_color(
         &self,
-        cost: ManaCost,
+        player: super::super::PlayerId,
         purpose: &ManaPaymentPurpose,
-    ) -> ManaCost {
+    ) -> bool {
+        if self.player_rule_applies(player, AppliedRuleDef::MaySpendManaAsAnyColor) {
+            return true;
+        }
+        if matches!(
+            purpose,
+            ManaPaymentPurpose::Spell {
+                spend_any_color: true,
+                ..
+            }
+        ) {
+            return true;
+        }
         let ManaPaymentPurpose::Ability { source, .. } = purpose else {
-            return cost;
+            return false;
         };
         let Some(permanent) = self
             .battlefield
             .iter()
             .find(|permanent| permanent.card.id == *source)
         else {
-            return cost;
+            return false;
         };
         if !self
             .permanent_types(permanent)
             .is_some_and(CardTypeSet::is_creature)
         {
-            return cost;
+            return false;
         }
-        if self.player_rule_applies(
+        self.player_rule_applies(
             permanent.controller,
             AppliedRuleDef::MaySpendManaAsAnyColorForCreatureAbilities,
-        ) {
-            cost.as_any_color()
-        } else {
-            cost
-        }
+        )
     }
 }

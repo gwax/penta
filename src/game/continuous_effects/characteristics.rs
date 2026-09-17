@@ -405,7 +405,50 @@ impl Game {
                 player,
                 AppliedRuleDef::PlayerRule(crate::card::PlayerRuleDef::Hexproof),
             ))
+            && (player == targeting_controller
+                || !self.player_has_hexproof_from(player, source, source_is_spell))
             && !self.player_is_protected_from(player, source, source_is_spell)
+    }
+
+    fn player_has_hexproof_from(
+        &self,
+        player: PlayerId,
+        targeting_source: GameObjectId,
+        source_is_spell: bool,
+    ) -> bool {
+        let Some(object) = self.protection_source_characteristics(targeting_source) else {
+            return false;
+        };
+        let matches = |source: crate::game::AbilitySourceRef, rule| {
+            let AppliedRuleDef::PlayerRule(crate::card::PlayerRuleDef::HexproofFrom(predicate)) =
+                rule
+            else {
+                return false;
+            };
+            self.trigger_object_matches_with_text_source(
+                *predicate,
+                &object,
+                source.object,
+                source_is_spell,
+                Some(player),
+                Self::text_source_for_ability_origin(source.object, source.ability),
+            )
+        };
+        if self.resolved_player_rules.iter().any(|resolved| {
+            resolved.affected_player == player
+                && self.continuous_effect_expiration_is_active(
+                    resolved.expiration,
+                    resolved.source.object,
+                )
+                && matches(resolved.source, AppliedRuleDef::PlayerRule(resolved.rule))
+        }) {
+            return true;
+        }
+        let mut found = false;
+        self.visit_player_static_rules_with_origin(player, |source, rule| {
+            found |= matches(source, rule);
+        });
+        found
     }
 
     /// A protection outlives the permanent that granted it, so what decides
@@ -650,7 +693,7 @@ impl Game {
             .or_else(|| {
                 self.players
                     .iter()
-                    .flat_map(|player| player.outside_game.iter())
+                    .flat_map(|player| player.sideboard.iter())
                     .find(|card| card.id == object)
                     .map(|card| card.definition)
             })
@@ -719,7 +762,7 @@ impl Game {
         }
         self.players
             .iter()
-            .flat_map(|player| player.outside_game.iter())
+            .flat_map(|player| player.sideboard.iter())
             .find(|card| card.id == object)
             .and_then(|card| self.catalog.get(card.definition))
             .map_or([false; 5], |definition| definition.rules.colors())

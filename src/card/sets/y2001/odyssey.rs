@@ -87,6 +87,13 @@ static THRESHOLD: TriggerConditionDef = TriggerConditionDef::ObjectCount {
     amount: 7,
 };
 
+/// Threshold includes these abilities while your graveyard has seven or more cards.
+pub(in crate::card::sets) const fn threshold<const ABILITY_COUNT: usize>(
+    abilities: &'static [AbilityDef; ABILITY_COUNT],
+) -> [AbilityDef; ABILITY_COUNT] {
+    abilities::conditional(&THRESHOLD, abilities)
+}
+
 /// Printed set identity and stable catalog slug.
 pub const SET: crate::card::CardSet = crate::card::CardSet::new(&crate::card::CardSetMetadata {
     code: "ODY",
@@ -1511,6 +1518,7 @@ pub(in crate::card::sets) static EXTRACT: CardRecord = CardRecord::new(
             AbilityTargetPredicate::Player(PlayerRelation::Any),
         )],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Target(TargetIndex::PRIMARY),
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,
@@ -2293,6 +2301,7 @@ pub(in crate::card::sets) static DIABOLIC_TUTOR: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{2}{B}{B}")).with_ability(AbilityDef::spell(
         "Search your library for a card, put that card into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,
@@ -2338,6 +2347,7 @@ pub(in crate::card::sets) static ENTOMB: CardRecord = CardRecord::new(
     CardRules::new_instant(mana_cost!("{B}")).with_ability(AbilityDef::spell(
         "Search your library for a card, put that card into your graveyard, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,
@@ -4182,21 +4192,18 @@ pub(in crate::card::sets) static KROSAN_BEAST: CardRecord = CardRecord::new(
     "Kev Walker",
     // A 1/1 for four that becomes an 8/8. Nothing in between: it is dead
     // weight until the graveyard fills and unanswerable afterwards.
-    CardRules::new_creature(mana_cost!("{3}{G}"), &["Squirrel", "Beast"], 1, 1).with_ability(
-        AbilityDef::static_ability(
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Squirrel", "Beast"], 1, 1).with_abilities(
+        &threshold(&[AbilityDef::static_ability(
             "Threshold — This creature gets +7/+7 as long as there are seven or more \
              cards in your graveyard.",
-            EffectDef::IfCondition {
-                condition: &THRESHOLD,
-                then: &EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::modify_power_toughness(
-                        ValueDef::Constant(7),
-                        ValueDef::Constant(7),
-                    ),
-                },
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(7),
+                    ValueDef::Constant(7),
+                ),
             },
-        ),
+        )]),
     ),
 );
 
@@ -4217,21 +4224,18 @@ pub(in crate::card::sets) static METAMORPHIC_WURM: CardRecord = CardRecord::new(
     "Thomas M. Baxa",
     // A 3/3 that becomes a 7/7, which is the middle of the threshold curve
     // and the one that is playable before it turns on.
-    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Elephant", "Wurm"], 3, 3).with_ability(
-        AbilityDef::static_ability(
+    CardRules::new_creature(mana_cost!("{3}{G}{G}"), &["Elephant", "Wurm"], 3, 3).with_abilities(
+        &threshold(&[AbilityDef::static_ability(
             "Threshold — This creature gets +4/+4 as long as there are seven or more \
              cards in your graveyard.",
-            EffectDef::IfCondition {
-                condition: &THRESHOLD,
-                then: &EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::modify_power_toughness(
-                        ValueDef::Constant(4),
-                        ValueDef::Constant(4),
-                    ),
-                },
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(4),
+                    ValueDef::Constant(4),
+                ),
             },
-        ),
+        )]),
     ),
 );
 
@@ -4539,22 +4543,19 @@ pub(in crate::card::sets) static SPRINGING_TIGER: CardRecord = CardRecord::new(
     "Arnie Swekel",
     // A fair 3/3 that quietly becomes a 5/5, which is what a common was
     // allowed to do.
-    CardRules::new_creature(mana_cost!("{3}{G}"), &["Cat"], 3, 3).with_ability(
+    CardRules::new_creature(mana_cost!("{3}{G}"), &["Cat"], 3, 3).with_abilities(&threshold(&[
         AbilityDef::static_ability(
             "Threshold — This creature gets +2/+2 as long as there are seven or more \
              cards in your graveyard.",
-            EffectDef::IfCondition {
-                condition: &THRESHOLD,
-                then: &EffectDef::StaticApply {
-                    recipient: EffectRecipientDef::Source,
-                    effect: AppliedEffectDef::modify_power_toughness(
-                        ValueDef::Constant(2),
-                        ValueDef::Constant(2),
-                    ),
-                },
+            EffectDef::StaticApply {
+                recipient: EffectRecipientDef::Source,
+                effect: AppliedEffectDef::modify_power_toughness(
+                    ValueDef::Constant(2),
+                    ValueDef::Constant(2),
+                ),
             },
         ),
-    ),
+    ])),
 );
 
 // ODY 273 — Squirrel Mob

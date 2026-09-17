@@ -1611,7 +1611,7 @@ pub(in crate::card::sets) static MIRRORFORM: CardRecord = CardRecord::new(
                         PlayerRelation::You,
                     ),
                 ))),
-                exceptions: CopyExceptionsDef::NONE,
+                exceptions: &CopyExceptionsDef::NONE,
                 duration: None,
             },
         ),
@@ -3183,6 +3183,7 @@ pub(in crate::card::sets) static MORNSONG_ARIA: CardRecord = CardRecord::new(
                         amount: ValueDef::Constant(3),
                     },
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::EventPlayer,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::Any,
@@ -4593,6 +4594,7 @@ pub(in crate::card::sets) static FORMIDABLE_SPEAKER: CardRecord = CardRecord::ne
             EffectDef::PayOr(PayOrDef::optional(
                 &[CostDef::DiscardCards(1)],
                 &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -4960,6 +4962,7 @@ pub(in crate::card::sets) static PRISMATIC_UNDERCURRENTS: CardRecord = CardRecor
              among permanents you control. Reveal those cards, put them \
              into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Supertype(CardSupertype::Basic),
@@ -5203,6 +5206,7 @@ pub(in crate::card::sets) static TEND_THE_SPRIGS: CardRecord = CardRecord::new(
          flying.)",
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Supertype(CardSupertype::Basic),

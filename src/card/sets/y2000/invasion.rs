@@ -1088,6 +1088,7 @@ pub(in crate::card::sets) static MANIPULATE_FATE: CardRecord = CardRecord::new(
         "Search your library for three cards, exile them, then shuffle.\nDraw a card.",
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,
@@ -3706,6 +3707,7 @@ pub(in crate::card::sets) static QUIRION_TRAILBLAZER: CardRecord = CardRecord::n
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -4433,6 +4435,7 @@ pub(in crate::card::sets) static FRENZIED_TILLING: CardRecord = CardRecord::new(
             // Tapped, so the land it fetches does not pay for anything this turn --
             // which is the whole reason a five-mana Stone Rain is playable.
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -5272,6 +5275,7 @@ pub(in crate::card::sets) static PLANAR_PORTAL: CardRecord = CardRecord::new(
         "{6}, {T}: Search your library for a card, put that card into your hand, then shuffle.",
         &[CostDef::Mana(mana_cost!("{6}")), CostDef::TapSource],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,

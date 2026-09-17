@@ -465,7 +465,7 @@ impl Game {
     ) -> Vec<(GameObjectId, crate::CardDefinitionId)> {
         let state = &self.players[viewer.index()];
         state
-            .outside_game
+            .sideboard
             .iter()
             .filter(|card| {
                 state

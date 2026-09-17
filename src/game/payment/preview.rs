@@ -7,7 +7,7 @@ use super::{ManaPaymentObligation, resources::PaymentReservation};
 #[derive(Clone, Debug)]
 pub(in crate::game) enum PaymentProbe {
     Requested,
-    Ready(PaymentFrame),
+    Ready(Box<PaymentFrame>),
 }
 
 #[derive(Clone, Debug)]
@@ -30,11 +30,11 @@ impl Game {
         if self.payment_probe.is_none() {
             return false;
         }
-        self.payment_probe = Some(PaymentProbe::Ready(PaymentFrame {
+        self.payment_probe = Some(PaymentProbe::Ready(Box::new(PaymentFrame {
             obligation: self.mana_payment_obligation(player, cost, x, purpose),
             reserved,
             allows_mana_abilities,
-        }));
+        })));
         true
     }
 
@@ -81,7 +81,7 @@ impl Game {
         preview.start_payment_operation(player, action)?;
         preview.answer_payment_announcements(answers)?;
         let frame = match preview.payment_probe.take()? {
-            PaymentProbe::Ready(frame) => Some(frame),
+            PaymentProbe::Ready(frame) => Some(*frame),
             PaymentProbe::Requested if !preview.pending_decisions.is_empty() => None,
             PaymentProbe::Requested => return None,
         };

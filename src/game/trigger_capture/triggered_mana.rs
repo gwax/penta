@@ -35,9 +35,12 @@ impl Game {
     ) {
         match effect {
             EffectDef::Perform(
-                crate::card::GameActionDef::Choose(_) | crate::card::GameActionDef::Sequence(_) | crate::card::GameActionDef::Choice(_) | crate::card::GameActionDef::Named { .. },
+                crate::card::GameActionDef::Choose(_)
+                | crate::card::GameActionDef::Sequence(_)
+                | crate::card::GameActionDef::Choice(_)
+                | crate::card::GameActionDef::Named { .. },
             ) => (),
-            EffectDef::BindOutput { effect, .. } => {
+            EffectDef::BindValue { effect, .. } | EffectDef::BindOutput { effect, .. } => {
                 self.resolve_triggered_mana_effect_with_choices(
                     source, controller, *effect, context, choices,
                 );
@@ -54,7 +57,8 @@ impl Game {
                     source, controller, effect, context, choices,
                 );
             }
-            EffectDef::None
+            EffectDef::RecordAbilityUse
+            | EffectDef::None
             | EffectDef::ContinueReplacedDraw
             | EffectDef::Randomized { .. }
             | EffectDef::RollDie(_)
@@ -91,7 +95,8 @@ impl Game {
             | EffectDef::DrawCards { .. }
             | EffectDef::Discard { .. }
             | EffectDef::Perform(
-                crate::card::GameActionDef::DiscardCards { .. } | crate::card::GameActionDef::Exile { .. }
+                crate::card::GameActionDef::DiscardCards { .. }
+                | crate::card::GameActionDef::Exile { .. }
                 | crate::card::GameActionDef::Sacrifice { .. }
                 | crate::card::GameActionDef::SacrificeYours { .. }
                 | crate::card::GameActionDef::GainControl { .. }
@@ -148,6 +153,7 @@ impl Game {
             | EffectDef::ChangeText { .. }
             | EffectDef::ChooseColor { .. }
             | EffectDef::BecomeCopyOf { .. }
+            | EffectDef::Repeat { .. }
             | EffectDef::May { .. }
             | EffectDef::CannotBeForcedToSacrifice
             | EffectDef::CannotBeForcedToDiscard
@@ -164,6 +170,7 @@ impl Game {
             | EffectDef::BecomeMonarch { .. }
             | EffectDef::VoteForPermanentToExile { .. }
             | EffectDef::DamageCannotBePreventedThisTurn
+            | EffectDef::ExileUntilSourceLeaves { .. }
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::PermitLookAtExiled { .. }
             | EffectDef::MayPlayWithoutPaying { .. }

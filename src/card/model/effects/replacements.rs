@@ -14,6 +14,12 @@ use crate::{Binding, CardTypeSet, card::CardNameSetDef};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ReplacementEventDef {
+    /// An activated mana ability whose cost taps its source would produce mana.
+    /// Match the source's pre-cost types and the prospective production amount.
+    TappedForMana {
+        source_types: CardTypeSet,
+        minimum_amount: u16,
+    },
     /// The object carrying this ability would enter the battlefield.
     SourceEntersBattlefield,
     /// A matching object would enter the battlefield.
@@ -129,10 +135,18 @@ pub enum ReplacementConditionDef {
 /// the battlefield.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum BattlefieldEntryModificationDef {
+    /// Put this permanent into combat attacking, choosing a legal defender as it enters.
+    Attacking,
     Tapped,
     /// Establish a noncopiable layer-4 type-setting effect before replacement
     /// effects inspect the prospective permanent. It lasts for this object.
     SetCardTypes(CardTypeSet),
+    /// Noncopiable base characteristics established before entering.
+    SetBasePowerToughness {
+        power: i16,
+        toughness: i16,
+    },
+    AddCreatureTypes(&'static super::CreatureTypeSetDef),
     AddCounters {
         kind: CounterKind,
         amount: u16,
@@ -266,6 +280,10 @@ pub enum ReplacementChoiceDef {
 /// engine.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum ReplacementEffectDef {
+    /// Replace the amount carried by the prospective event.
+    SetEventAmount(u16),
+    /// Change every produced unit's type, retaining its source and spend riders.
+    SetManaType(super::ManaColor),
     Sequence(&'static [ReplacementEffectDef]),
     /// Declare a durable labeled binding and let an entry-time producer
     /// populate it. Keeping the label outside the producer makes the data
@@ -367,5 +385,21 @@ pub(crate) fn replacement_tokens(
             .flat_map(|effect| replacement_tokens(*effect))
             .collect(),
         _ => Vec::new(),
+    }
+}
+
+impl BattlefieldEntryModificationDef {
+    pub(crate) const fn applied_effect(self) -> Option<super::AppliedEffectDef> {
+        Some(match self {
+            Self::SetCardTypes(types) => super::AppliedEffectDef::set_card_types(types),
+            Self::SetBasePowerToughness { power, toughness } => {
+                super::AppliedEffectDef::set_base_power_toughness(
+                    ValueDef::Constant(power as i32),
+                    ValueDef::Constant(toughness as i32),
+                )
+            }
+            Self::AddCreatureTypes(types) => super::AppliedEffectDef::add_creature_types(*types),
+            _ => return None,
+        })
     }
 }

@@ -3,12 +3,12 @@ impl Game {
     fn mana_payment_remainder(
         &self,
         player: PlayerId,
-        pool: ManaPool,
+        pool: PaymentPool,
         cost: ManaCost,
         x: u16,
         purpose: &ManaPaymentPurpose,
-    ) -> ManaPool {
-        let mut after = pool;
+    ) -> PaymentPool {
+        let after = pool;
         let has_eligible_spend_effect = |color| {
             self.players[player.index()].mana.iter().any(|mana| {
                 mana.color == color
@@ -42,15 +42,15 @@ impl Game {
                 )
             });
         }
-        pay_cost_with_generic_strategy(
-            &mut after,
+        super::mana_planning::payment_remainder(
+            after,
             cost,
             x,
             &hybrid_preference,
             &generic_order,
             spread_generic_colors,
-        );
-        after
+        )
+        .expect("an authoritative payment is affordable")
     }
 
     fn unspent_pool_after_mana_costs(
@@ -68,7 +68,7 @@ impl Game {
         );
         for cost in costs {
             if let CostDef::Mana(cost) = cost {
-                let cost = self.restrict_x(*cost, 0, &purpose).0;
+                let cost = self.restrict_x(player, *cost, 0, &purpose).0;
                 if self.payment_query.unfunded()
                     && !self.pool_covers_cost_for(player, cost, &purpose)
                 {

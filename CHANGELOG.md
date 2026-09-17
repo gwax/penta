@@ -20,6 +20,18 @@ the bot-wire epoch.
 
 ## Unreleased
 
+- Complete the 24 previously unsupported card identities in the included Legacy
+  decks. Shared rules additions cover repeated resolution, frozen numeric bindings,
+  immediate exile durations, selected-spell mana-value bounds, entry characteristics,
+  multi-chapter counter crossings, waterbend payments, and mana-symbol restrictions.
+  Color-spending permissions preserve colored symbols; generic-only contributions
+  and Jegantha's mana remain distinct from ordinary mana.
+- Checkpoint format 21 adds mana-payment facts, explicit ability-use history, numeric
+  bindings, immediate exile durations, copy-type replacements, hidden-search and
+  single-color mana continuations, and color-specific hexproof keywords. Regenerate
+  format 20 checkpoints and advertise `reconstruction.checkpoint.v21` when using
+  reconstruction. The ordinary bot protocol and replay versions are unchanged.
+
 - Companion now uses composable starting-deck requirements and a pregame reveal
   decision before opening hands. Only the chosen card can be taken, once per
   game. Both players observe its designation and usage through the additive

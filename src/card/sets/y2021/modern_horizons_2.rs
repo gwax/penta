@@ -871,6 +871,7 @@ pub(in crate::card::sets) static UNMARKED_GRAVE: CardRecord = CardRecord::new(
         "Search your library for a nonlegendary card, put that card \
          into your graveyard, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Not(&ObjectPredicateDef::Supertype(
@@ -938,6 +939,7 @@ pub(in crate::card::sets) static VILE_ENTOMBER: CardRecord = CardRecord::new(
                 "When this creature enters, search your library for a card, \
                  put that card into your graveyard, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Any,
@@ -2178,6 +2180,7 @@ pub(in crate::card::sets) static URZA_S_SAGA: CardRecord = CardRecord::new(
                 "III — Search your library for an artifact card with mana \
                  cost {0} or {1}, put it onto the battlefield, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     // "Mana cost {0} or {1}" is the printed cost, not the mana
@@ -2220,6 +2223,7 @@ pub(in crate::card::sets) static PROFANE_TUTOR: CardRecord = CardRecord::new(
         AbilityDef::spell(
             "Search your library for a card, put that card into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,
@@ -2337,6 +2341,8 @@ pub(in crate::card::sets) static DAUTHI_VOIDWALKER: CardRecord = CardRecord::new
                 maximum: 1,
                 visibility: ChoiceVisibilityDef::Public,
                 then: &EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                    cast_only: false,
+                    maximum_spell_mana_value: None,
                     objects: ObjectSetDef::Binding(ParentBinding),
                     duration: FreePlayDurationDef::WhileResolving,
                     mandatory: false,

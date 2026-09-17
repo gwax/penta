@@ -166,6 +166,7 @@ impl Game {
                 );
             }
             DecisionContinuation::ChosenColorMana {
+                same_color,
                 controller,
                 mut prototype,
                 remaining,
@@ -180,12 +181,23 @@ impl Game {
                     return;
                 };
                 prototype.color = color;
-                self.add_mana(controller, std::iter::once(prototype));
+                self.add_mana(
+                    controller,
+                    std::iter::repeat_n(
+                        prototype,
+                        usize::from(if same_color { remaining } else { 1 }),
+                    ),
+                );
                 self.queue_chosen_color_mana(
                     controller,
                     prototype,
-                    remaining.saturating_sub(1),
+                    if same_color {
+                        0
+                    } else {
+                        remaining.saturating_sub(1)
+                    },
                     choosable,
+                    same_color,
                 );
             }
             DecisionContinuation::ChooseColor {
@@ -571,7 +583,15 @@ impl Game {
                 effect,
             } => {
                 if options.contains(&1) {
-                    self.resolve_effect_def(effect, &object, context);
+                    if let EffectDef::Repeat { effect: body, .. } = effect.effect {
+                        self.resolve_effects_in_order(
+                            vec![effect.with_effect(*body), effect],
+                            &object,
+                            context,
+                        );
+                    } else {
+                        self.resolve_effect_def(effect, &object, context);
+                    }
                     // "When you do", once the clause has actually happened.
                     self.capture_optional_effect_taken(&object);
                 }
@@ -846,6 +866,7 @@ impl Game {
                 }
             }
             DecisionContinuation::SearchZone {
+                exile_face_down,
                 controller,
                 source,
                 destination,
@@ -862,6 +883,7 @@ impl Game {
                     player,
                     &selected,
                     SearchResolution {
+                        exile_face_down,
                         controller,
                         source,
                         destination,
@@ -961,24 +983,4 @@ impl Game {
     }
 }
 
-/// The cards an answered search selected, in the order the options offered
-/// them.
-fn selected_cards(
-    offered: &[super::DecisionOption],
-    options: &[u32],
-) -> Vec<(super::GameObjectId, super::CardDefinitionId)> {
-    options
-        .iter()
-        .filter_map(|selected| {
-            offered
-                .iter()
-                .find(|option| option.id == *selected)
-                .and_then(|option| option.card)
-                .and_then(|(object, characteristics)| {
-                    characteristics
-                        .card_definition()
-                        .map(|definition| (object, definition))
-                })
-        })
-        .collect()
-}
+use chosen_cards::selected_cards;

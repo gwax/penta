@@ -73,6 +73,7 @@ pub(in crate::card::sets) static IRON_MAN_TITAN_OF_INNOVATION: CardRecord = Card
                             )),
                         ]))],
                         &EffectDef::SearchZone {
+                            exile_face_down: false,
                             player: EffectRecipientDef::Controller,
                             source: ZoneKind::Library,
                             object: ObjectPredicateDef::All(&[

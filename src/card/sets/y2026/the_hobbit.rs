@@ -219,6 +219,7 @@ pub(in crate::card::sets) static OLD_THRUSH: CardRecord = CardRecord::new(
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[
@@ -260,6 +261,7 @@ pub(in crate::card::sets) static TROOP_OF_PONIES: CardRecord = CardRecord::new(
             ],
             EffectDef::Sequence(&[
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -4512,6 +4514,7 @@ pub(in crate::card::sets) static DOWN_IN_THE_VALLEY: CardRecord = CardRecord::ne
                 "I — Search your library for a basic land card, reveal it, put \
                  it into your hand, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -6315,6 +6318,7 @@ pub(in crate::card::sets) static THE_ARKENSTONE: CardRecord = CardRecord::new(
                  put it into your hand, then shuffle. (Then exile this card. \
                  You may cast the artifact later from exile.)",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -6528,6 +6532,7 @@ pub(in crate::card::sets) static THROR_S_MAP: CardRecord = CardRecord::new(
                 "When Thrór's Map enters, search your library for a basic land \
                  card, reveal it, put it into your hand, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -6699,6 +6704,7 @@ pub(in crate::card::sets) static HOBBIT_HOLE: CardRecord = CardRecord::new(
              land card, put it onto the battlefield tapped, then shuffle.",
             &[CostDef::TapSource, CostDef::SacrificeSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

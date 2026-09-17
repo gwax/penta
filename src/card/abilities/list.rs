@@ -1,3 +1,42 @@
+use crate::card::{AbilityDef, AbilityPresenceDef, AppliedEffectDef, TriggerConditionDef};
+
+/// Include this ordered group of abilities while the static condition holds.
+/// Members retain their categories, programs, and stable attachment positions.
+/// Nested groups require all enclosing conditions. The condition is evaluated
+/// for the object possessing the abilities, including when they are granted.
+#[must_use]
+pub const fn conditional<const ABILITY_COUNT: usize>(
+    condition: &'static TriggerConditionDef,
+    abilities: &'static [AbilityDef; ABILITY_COUNT],
+) -> [AbilityDef; ABILITY_COUNT] {
+    let mut result = *abilities;
+    let mut index = 0;
+    while index < ABILITY_COUNT {
+        result[index].presence = Some(AbilityPresenceDef {
+            condition,
+            inherited: &abilities[index].presence,
+        });
+        index += 1;
+    }
+    result
+}
+
+/// Grant every member of an ordered ability group. Compose the returned
+/// components with `AppliedEffectDef::Composite`; each member keeps its own
+/// structural grant identity, presence conditions, and ordinary grant semantics.
+#[must_use]
+pub const fn grants<const ABILITY_COUNT: usize>(
+    abilities: &'static [AbilityDef; ABILITY_COUNT],
+) -> [AppliedEffectDef; ABILITY_COUNT] {
+    let mut result = [AppliedEffectDef::Composite(&[]); ABILITY_COUNT];
+    let mut index = 0;
+    while index < ABILITY_COUNT {
+        result[index] = AppliedEffectDef::add_ability(&abilities[index]);
+        index += 1;
+    }
+    result
+}
+
 /// Flattens groups of ordinary abilities into one constant array, in order.
 /// Mechanic constructors can return several clauses without requiring their
 /// callers to select each clause separately.

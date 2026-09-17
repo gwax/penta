@@ -12,11 +12,14 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::Perform(crate::card::GameActionDef::Named { .. }) => "NamedAction",
         EffectDef::Perform(crate::card::GameActionDef::Choice(_)) => "ActionChoice",
         EffectDef::Perform(crate::card::GameActionDef::Exile { .. }) => "Exile",
+        EffectDef::RecordAbilityUse => "RecordAbilityUse",
         EffectDef::None => "None",
         EffectDef::Sequence(_) | EffectDef::Perform(crate::card::GameActionDef::Sequence(_)) => {
             "Sequence"
         }
         EffectDef::WithRule { .. } => "WithRule",
+        EffectDef::Repeat { .. } => "Repeat",
+        EffectDef::BindValue { .. } => "BindValue",
         EffectDef::BindOutput { .. } => "BindOutput",
         EffectDef::Randomized { .. } => "Randomized",
         EffectDef::RollDie(_) => "RollDie",
@@ -126,6 +129,7 @@ const fn effect_operation_name(effect: EffectDef) -> &'static str {
         EffectDef::VoteForPermanentToExile { .. } => "VoteForPermanentToExile",
         EffectDef::DamageCannotBePreventedThisTurn => "DamageCannotBePreventedThisTurn",
         EffectDef::May { .. } => "May",
+        EffectDef::ExileUntilSourceLeaves { .. } => "ExileUntilSourceLeaves",
         EffectDef::ExileLinkedToSource { .. } => "ExileLinkedToSource",
         EffectDef::PermitLookAtExiled { .. } => "PermitLookAtExiled",
         EffectDef::MayPlayWithoutPaying { .. } => "MayPlayWithoutPaying",

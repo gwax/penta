@@ -213,6 +213,7 @@ pub(in crate::card::sets) static MAGDA_BRAZEN_OUTLAW: CardRecord = CardRecord::n
                     count: 5,
                 }],
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::AnyOf(&[
@@ -1104,6 +1105,7 @@ pub(in crate::card::sets) static THE_WORLD_TREE: CardRecord = CardRecord::new(
                 CostDef::SacrificeSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("God")),

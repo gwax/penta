@@ -1544,6 +1544,7 @@ pub(in crate::card::sets) static LAY_OF_THE_LAND: CardRecord = CardRecord::new(
         "Search your library for a basic land card, reveal it, put \
          it into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

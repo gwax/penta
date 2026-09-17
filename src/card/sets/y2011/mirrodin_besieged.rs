@@ -545,7 +545,7 @@ pub(in crate::card::sets) static CRYPTOPLASM: CardRecord = CardRecord::new(
                 effect: &EffectDef::BecomeCopyOf {
                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                     copier: None,
-                    exceptions: CopyExceptionsDef::NONE.with_abilities(&[CopyAbilityDef::This]),
+                    exceptions: &CopyExceptionsDef::NONE.with_abilities(&[CopyAbilityDef::This]),
                     duration: None,
                 },
             },
@@ -796,6 +796,7 @@ pub(in crate::card::sets) static TREASURE_MAGE: CardRecord = CardRecord::new(
              an artifact card with mana value 6 or greater, reveal it, \
              put it into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -1774,6 +1775,7 @@ pub(in crate::card::sets) static GREEN_SUN_S_ZENITH: CardRecord = CardRecord::ne
              onto the battlefield, then shuffle. Shuffle Green Sun's Zenith into its owner's \
              library.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 // "With mana value X or less", where X is what this spell was cast for. The
@@ -2060,6 +2062,7 @@ pub(in crate::card::sets) static VIRIDIAN_EMISSARY: CardRecord = CardRecord::new
              basic land card, put it onto the battlefield tapped, then \
              shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

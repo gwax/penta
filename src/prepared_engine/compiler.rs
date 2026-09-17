@@ -100,6 +100,7 @@ fn compile_static_program(abilities: &[AbilityDef]) -> PreparedStaticProgram {
         let mut compiler = StaticAbilityCompiler::default();
         let prepared = compiler.compile_effect(effect);
         prepared_abilities.push(PreparedStaticAbility {
+            presence: ability.presence,
             id: crate::AbilityId::from_index(index)
                 .expect("validated card parts contain at most 256 abilities"),
             source_zones: definition.source_zones,

@@ -259,6 +259,9 @@ impl Game {
                     && ability.declarative_effect().is_some()
             })
         {
+            if !self.ability_presence_holds(source, ability.presence) {
+                continue;
+            }
             let mut component_order = 0;
             let context = AppliedLandTypeContext {
                 text_words,
@@ -566,6 +569,7 @@ impl Game {
             | ObjectPredicateDef::SharesColorWith(_)
             | ObjectPredicateDef::ColorCount(_)
             | ObjectPredicateDef::Subtype(_)
+            | ObjectPredicateDef::ManaCostHasX
             | ObjectPredicateDef::ManaValueAtMost(_)
             | ObjectPredicateDef::FaceUpInExile
             | ObjectPredicateDef::GenericManaCostAtMost(_)
@@ -818,6 +822,14 @@ impl Game {
         let retained = SubtypeSet::from_names(self.retained_printed_subtypes(permanent));
         let text_words = self.text_word_map_for_permanent(permanent);
         let mut subtypes = defined.union(retained);
+        if let Some(types) = permanent
+            .active_copy_values()
+            .and_then(|copy| copy.replaced_creature_types.as_ref())
+        {
+            subtypes = subtypes
+                .difference(SubtypeSet::family(SubtypeFamily::Creature))
+                .union(SubtypeSet::from_names(types));
+        }
         if !text_words.basic_land_types_are_identity() {
             let before = subtypes;
             for land_type in BasicLandType::ALL {

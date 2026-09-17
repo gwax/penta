@@ -3029,6 +3029,7 @@ pub(in crate::card::sets) static GATECREEPER_VINE: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::AnyOf(&[
@@ -3897,6 +3898,8 @@ pub(in crate::card::sets) static EPIC_EXPERIMENT: CardRecord = CardRecord::new(
                     remainder: Binding!("epic_experiment_rest"),
                     then: &EffectDef::Sequence(&[
                         EffectDef::MayPlayWithoutPaying(FreePlayDef {
+                            cast_only: false,
+                            maximum_spell_mana_value: None,
                             objects: ObjectSetDef::Binding(Binding!("epic_experiment_castable")),
                             duration: FreePlayDurationDef::WhileResolving,
                             mandatory: false,
@@ -3991,6 +3994,7 @@ pub(in crate::card::sets) static FIREMIND_S_FORESIGHT: CardRecord = CardRecord::
          shuffle.",
         EffectDef::Sequence(&[
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -4009,6 +4013,7 @@ pub(in crate::card::sets) static FIREMIND_S_FORESIGHT: CardRecord = CardRecord::
                 then: None,
             },
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -4027,6 +4032,7 @@ pub(in crate::card::sets) static FIREMIND_S_FORESIGHT: CardRecord = CardRecord::
                 then: None,
             },
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -4357,6 +4363,7 @@ pub(in crate::card::sets) static JARAD_S_ORDERS: CardRecord = CardRecord::new(
          them. Put one into your hand and the other into your \
          graveyard. Then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Creature),

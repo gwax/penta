@@ -10,6 +10,21 @@
 use super::{CounterKind, Game, GameObjectId, Permanent, PlayerId};
 
 impl Game {
+    pub(super) fn crossed_counter_thresholds(
+        &self,
+        object: GameObjectId,
+        kind: crate::CounterKind,
+        thresholds: crate::card::CounterThresholdsDef,
+        amount: u16,
+    ) -> usize {
+        let Some(permanent) = self.battlefield.iter().find(|p| p.card.id == object) else {
+            return 0;
+        };
+        let after = permanent.counters(kind);
+        let before = after.saturating_sub(amount);
+        thresholds.crossed(before, after)
+    }
+
     fn is_saga(&self, permanent: &Permanent) -> bool {
         self.effective_subtypes(permanent)
             .contains(crate::card::Subtype::Saga)

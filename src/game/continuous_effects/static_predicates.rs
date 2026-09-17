@@ -205,7 +205,8 @@ impl Game {
             predicate @ (ObjectPredicateDef::NameEquals(_) | ObjectPredicateDef::NameIn(_)) => {
                 self.static_name_predicate_matches_lazily(predicate, source, affected)
             }
-            ObjectPredicateDef::ManaValueAtMost(_)
+            ObjectPredicateDef::ManaCostHasX
+        | ObjectPredicateDef::ManaValueAtMost(_)
             | ObjectPredicateDef::FaceUpInExile
             | ObjectPredicateDef::GenericManaCostAtMost(_)
             | ObjectPredicateDef::ManaValueEqualTo(_)

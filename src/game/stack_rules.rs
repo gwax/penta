@@ -52,7 +52,9 @@ impl Game {
     #[allow(clippy::too_many_lines)]
     pub(super) fn effect_applies_to_source(effect: EffectDef, expected: AppliedEffectDef) -> bool {
         match effect {
-            EffectDef::BindOutput { effect, .. }
+            EffectDef::Repeat { effect, .. }
+            | EffectDef::BindValue { effect, .. }
+            | EffectDef::BindOutput { effect, .. }
             | EffectDef::WithBattlefieldArrival { effect, .. }
             | EffectDef::WithCosts { effect, .. }
             | EffectDef::WithRule { effect, .. } => {
@@ -145,7 +147,8 @@ impl Game {
                 .iter()
                 .chain(payment.otherwise.iter())
                 .any(|effect| Self::effect_applies_to_source(**effect, expected)),
-            EffectDef::None
+            EffectDef::RecordAbilityUse
+            | EffectDef::None
             | EffectDef::ContinueReplacedDraw
             | EffectDef::Randomized { .. }
             | EffectDef::RollDie(_)
@@ -244,6 +247,7 @@ impl Game {
             | EffectDef::BecomeMonarch { .. }
             | EffectDef::VoteForPermanentToExile { .. }
             | EffectDef::DamageCannotBePreventedThisTurn
+            | EffectDef::ExileUntilSourceLeaves { .. }
             | EffectDef::ExileLinkedToSource { .. }
             | EffectDef::MayPlayWithoutPaying { .. }
             | EffectDef::ExileGrantingOwnerPlay { .. }
@@ -311,6 +315,9 @@ impl Game {
         !self.stack_spell_has_static_effect(
             object,
             AppliedEffectDef::Rule(AppliedRuleDef::CannotBeCountered),
+        ) && !self.player_rule_applies(
+            object.controller,
+            AppliedRuleDef::PlayerRule(crate::card::PlayerRuleDef::SpellsCannotBeCountered),
         ) && !self.battlefield_static_effect_makes_spell_uncounterable(object)
             && !object.applied_effects.iter().any(|applied| {
                 Self::applied_effect_contains(

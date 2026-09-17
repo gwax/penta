@@ -39,6 +39,7 @@ fn restore_permanent_cast_context(
         || state.cast_x > 0
         || state.cast_kicks > 0
         || !state.cast_additional_costs.is_empty()
+        || state.cast_mana_spent > 0
         || state.cast_colors > 0
         || state.cast_phyrexian_symbols_paid_with_life > 0
         || !state.cast_exiled_payment_cards.is_empty()
@@ -70,6 +71,7 @@ fn restore_permanent_cast_context(
         repeatable_additional_costs: state.cast_kicks,
         additional_costs: state.cast_additional_costs.clone(),
         colors_of_mana_spent,
+        mana_spent: state.cast_mana_spent,
         phyrexian_symbols_paid_with_life: state.cast_phyrexian_symbols_paid_with_life,
         exiled_payment_cards: state
             .cast_exiled_payment_cards

@@ -24,7 +24,7 @@ impl Game {
         }
         self.match_context = if mode == MatchMode::FirstToTwoWins {
             let decks = [PlayerId::One, PlayerId::Two].map(|seat| {
-                let outside = &self.players[seat.index()].outside_game;
+                let outside = &self.players[seat.index()].sideboard;
                 let outside_ids = outside
                     .iter()
                     .flat_map(|card| super::backing_cards(&card.backing))

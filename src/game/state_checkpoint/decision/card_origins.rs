@@ -23,8 +23,18 @@ fn visible_decision_card_origins(
                 std::iter::once(action.source).chain(action.cost_objects.iter().copied())
             })
             .collect::<Vec<_>>(),
-        DecisionContinuation::PaySpecialAction { source, action: crate::game::special_action_payments::PaidSpecialAction::Plot, .. }
-            if game.card_in_nonbattlefield_zone(*source).is_some_and(|(zone, card)| zone == crate::card::ZoneKind::Library && card.owner == viewer) => vec![*source],
+        DecisionContinuation::PaySpecialAction {
+            source,
+            action: crate::game::special_action_payments::PaidSpecialAction::Plot,
+            ..
+        } if game
+            .card_in_nonbattlefield_zone(*source)
+            .is_some_and(|(zone, card)| {
+                zone == crate::card::ZoneKind::Library && card.owner == viewer
+            }) =>
+        {
+            vec![*source]
+        }
         _ => Vec::new(),
     };
     // A chained choice may currently offer only one slice of a group that an
@@ -33,9 +43,9 @@ fn visible_decision_card_origins(
     let revealed_context_objects = decision_referenced_object_ids(&pending.continuation)
         .into_iter()
         .filter(|object| {
-            game.events.iter().any(|event| {
-                matches!(event, GameEvent::CardRevealed { card, .. } if card == object)
-            })
+            game.events.iter().any(
+                |event| matches!(event, GameEvent::CardRevealed { card, .. } if card == object),
+            )
         });
     for object in option_objects
         .chain(continuation_objects)
@@ -68,7 +78,7 @@ pub(super) fn hidden_card_origin(
         for (zone, cards) in [
             (DecisionZoneSnapshot::Hand, &player.hand),
             (DecisionZoneSnapshot::Library, &player.library),
-            (DecisionZoneSnapshot::OutsideGame, &player.outside_game),
+            (DecisionZoneSnapshot::OutsideGame, &player.sideboard),
         ] {
             if let Some(index) = cards.iter().position(|card| card.id == object) {
                 return Some((seat, zone, index));

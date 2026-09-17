@@ -17,6 +17,7 @@ struct BindingScope<'registry> {
     objects: u64,
     object_sets: u64,
     card_names: u64,
+    numbers: u64,
     escaping_object_sets: u64,
     parent_object: Option<u8>,
     parent_object_set: Option<u8>,
@@ -47,6 +48,7 @@ impl<'registry> BindingScope<'registry> {
             objects: 0,
             object_sets: 0,
             card_names: 0,
+            numbers: 0,
             escaping_object_sets: 0,
             parent_object: None,
             parent_object_set: None,
@@ -281,3 +283,32 @@ impl<'registry> BindingScope<'registry> {
 }
 
 include!("name_binding_scope.rs");
+
+impl BindingScope<'_> {
+    fn with_number(self, binding: Binding) -> Result<Self, GrantedAbilityValidationError> {
+        let bit = self.declare_binding(binding)?;
+        Ok(Self {
+            numbers: self.numbers | bit,
+            ..self
+        })
+    }
+
+    fn validate_number_reference(
+        self,
+        binding: Binding,
+    ) -> Result<(), GrantedAbilityValidationError> {
+        let bit = self
+            .binding_bit(binding, false)?
+            .filter(|bit| self.numbers & bit != 0)
+            .ok_or(
+                GrantedAbilityValidationError::UnsupportedEffectProgramContext {
+                    context: "number binding",
+                    operation: "a number binding outside its lexical scope",
+                },
+            )?;
+        self.bindings
+            .binding_reads
+            .set(self.bindings.binding_reads.get() | bit);
+        Ok(())
+    }
+}

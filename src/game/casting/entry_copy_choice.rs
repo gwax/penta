@@ -58,6 +58,13 @@ impl Game {
                 retain_printed_subtypes: false,
                 base_power_toughness: exceptions.base_power_toughness,
                 colors: exceptions.colors,
+                replaced_creature_types: exceptions.replaced_creature_types.map(|types| {
+                    if types.all {
+                        crate::card::CREATURE_TYPES.to_vec()
+                    } else {
+                        types.named.iter().map(crate::card::Subtype::name).collect()
+                    }
+                }),
                 added_creature_types: exceptions
                     .added_creature_types
                     .named

@@ -23,7 +23,10 @@ impl Game {
                 Self::effect_animates_source(Some(*on_success))
                     || Self::effect_animates_source(Some(*on_failure))
             }
-            Some(EffectDef::RollDie(roll)) => roll.outcomes().iter().any(|(_, effect)| Self::effect_animates_source(Some(*effect))),
+            Some(EffectDef::RollDie(roll)) => roll
+                .outcomes()
+                .iter()
+                .any(|(_, effect)| Self::effect_animates_source(Some(*effect))),
             Some(EffectDef::FlipCoin { on_win, on_loss }) => {
                 Self::effect_animates_source(Some(*on_win))
                     || Self::effect_animates_source(Some(*on_loss))
@@ -54,15 +57,9 @@ impl Game {
     pub(super) fn activated_ability_mana_cost(
         definition: &ActivatedAbilityDef,
     ) -> Option<ManaCost> {
-        let mut cost = ManaCost::default();
-        let mut has_mana_cost = false;
-        for ability_cost in definition.costs {
-            if let CostDef::Mana(mana) = ability_cost {
-                cost = add_mana_cost(cost, *mana);
-                has_mana_cost = true;
-            }
-        }
-        has_mana_cost.then_some(cost)
+        crate::card::costs::includes_fixed_mana_payment(definition.costs)
+            .then(|| crate::card::costs::mana_cost(definition.costs, None))
+            .flatten()
     }
 
     /// The complete mana portion of an activation after its object cost has
@@ -79,6 +76,10 @@ impl Game {
         let mut has_mana_cost = false;
         for ability_cost in definition.costs {
             match ability_cost {
+                CostDef::Waterbend(amount) => {
+                    cost = add_mana_cost(cost, ManaCost::new(*amount, 0));
+                    has_mana_cost = true;
+                }
                 CostDef::Mana(mana) => {
                     cost = add_mana_cost(cost, *mana);
                     has_mana_cost = true;

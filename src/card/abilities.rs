@@ -575,6 +575,7 @@ pub use intrinsic_costs::*;
 
 #[path = "abilities/list.rs"]
 mod list;
+pub use list::{conditional, grants};
 
 /// Echo (CR 702.29): "At the beginning of your upkeep, if this came under
 /// your control since the beginning of your last upkeep, sacrifice it unless
@@ -766,6 +767,7 @@ pub const fn typecycling_with_costs(
         text,
         costs,
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object,

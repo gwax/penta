@@ -270,6 +270,7 @@ pub(in crate::card::sets) static OATH_OF_LIEGES: CardRecord = CardRecord::new(
             )
             .chosen_by_event_player()],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::EventPlayer,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Supertype(CardSupertype::Basic),
@@ -609,6 +610,7 @@ pub(in crate::card::sets) static WELKIN_HAWK: CardRecord = CardRecord::new(
              card named Welkin Hawk, reveal that card, put it into your \
              hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::NameEquals(CardNameDef::NameOf(ObjectRefDef::Source)),
@@ -3205,6 +3207,7 @@ pub(in crate::card::sets) static SURVIVAL_OF_THE_FITTEST: CardRecord = CardRecor
             CostDef::discard(ObjectPredicateDef::HasType(CardType::Creature)),
         ],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Creature),

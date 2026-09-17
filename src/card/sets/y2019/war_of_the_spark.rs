@@ -144,7 +144,7 @@ pub(in crate::card::sets) static KARN_THE_GREAT_CREATOR: CardRecord = CardRecord
                 EffectDef::ChooseCards {
                     player: EffectRecipientDef::Controller,
                     sources: &[
-                        CardChoiceSourceDef::OutsideGame,
+                        CardChoiceSourceDef::Sideboard,
                         CardChoiceSourceDef::Zone(ZoneKind::Exile),
                     ],
                     object: ObjectPredicateDef::HasType(CardType::Artifact),
@@ -802,6 +802,7 @@ pub(in crate::card::sets) static FINALE_OF_DEVASTATION: CardRecord = CardRecord:
                     EffectChoiceDef {
                         label: "Search your library.",
                         effect: EffectDef::SearchZone {
+                            exile_face_down: false,
                             player: EffectRecipientDef::Controller,
                             source: ZoneKind::Library,
                             object: ObjectPredicateDef::All(&[
@@ -823,6 +824,7 @@ pub(in crate::card::sets) static FINALE_OF_DEVASTATION: CardRecord = CardRecord:
                     EffectChoiceDef {
                         label: "Search your graveyard.",
                         effect: EffectDef::SearchZone {
+                            exile_face_down: false,
                             player: EffectRecipientDef::Controller,
                             source: ZoneKind::Graveyard,
                             object: ObjectPredicateDef::All(&[
@@ -1010,6 +1012,7 @@ pub(in crate::card::sets) static NISSA_WHO_SHAKES_THE_WORLD: CardRecord = CardRe
                         )],
                     ),
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
@@ -1109,6 +1112,7 @@ pub(in crate::card::sets) static NEOFORM: CardRecord = CardRecord::new(
                 controller: PlayerRelation::You,
             },
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -1425,7 +1429,7 @@ pub(in crate::card::sets) static SAHEELI_SUBLIME_ARTIFICER: CardRecord = CardRec
                 EffectDef::BecomeCopyOf {
                     object: EffectRecipientDef::Target(TargetIndex(1)),
                     copier: Some(EffectRecipientDef::Target(TargetIndex::PRIMARY)),
-                    exceptions: CopyExceptionsDef::NONE
+                    exceptions: &CopyExceptionsDef::NONE
                         .with_added_types(CardTypeSet::single(CardType::Artifact)),
                     duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
                 },

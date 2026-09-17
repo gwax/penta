@@ -117,6 +117,7 @@ pub(in crate::card::sets) static RECRUITER_OF_THE_GUARD: CardRecord = CardRecord
              a creature card with toughness 2 or less, reveal it, put it \
              into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

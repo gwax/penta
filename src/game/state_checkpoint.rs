@@ -565,7 +565,7 @@ impl Game {
             ],
             chosen_companions: self.players.each_ref().map(|player| player.companion),
             companion_outside_game: self.players.each_ref().map(|player| {
-                player.companion.is_some_and(|chosen| player.outside_game.iter().any(|card| card.id == chosen.card))
+                player.companion.is_some_and(|chosen| player.sideboard.iter().any(|card| card.id == chosen.card))
             }),
             tried_to_draw_from_empty_library: [
                 self.players[0].tried_to_draw_from_empty_library,
@@ -574,6 +574,8 @@ impl Game {
             mana,
             creature_died_this_turn: self.creature_died_this_turn,
             creatures_died_this_turn: self.creatures_died_this_turn,
+            duration_exiles: self.duration_exiles.iter().map(|(source, card, zone)|
+                (source.0, card.0, zone_kind_snapshot(*zone))).collect(),
             linked_exiles: self
                 .linked_exiles
                 .iter()
@@ -609,6 +611,9 @@ impl Game {
             resolved_play_permissions,
             resolved_player_protections,
             resolved_player_rules,
+            abilities_used_this_turn: self.abilities_used_this_turn.iter()
+                .map(|source| AbilitySourceSnapshot { object: source.object.0,
+                    ability: ability_origin_snapshot(source.ability) }).collect(),
             spells_cast_this_turn: self.spells_cast_this_turn,
             spells_cast_this_game: self.total_spells_cast,
             spells_cast_last_turn: self.spells_cast_last_turn,

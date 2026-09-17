@@ -802,6 +802,7 @@ pub(in crate::card::sets) static TINKER: CardRecord = CardRecord::new(
                 CostQuantityDef::Fixed(1),
             ),
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::HasType(CardType::Artifact),
@@ -1731,6 +1732,7 @@ pub(in crate::card::sets) static CROP_ROTATION: CardRecord = CardRecord::new(
             CostQuantityDef::Fixed(1),
         ),
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Land),

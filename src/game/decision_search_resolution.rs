@@ -12,7 +12,9 @@ use super::{
 
 /// Everything the answered search still needs, gathered from its
 /// continuation so the resolver takes one argument rather than ten.
+#[allow(clippy::struct_excessive_bools)]
 pub(super) struct SearchResolution {
+    pub(super) exile_face_down: bool,
     pub(super) controller: PlayerId,
     pub(super) source: ZoneKind,
     pub(super) destination: ZoneKind,
@@ -26,6 +28,7 @@ pub(super) struct SearchResolution {
 }
 
 impl Game {
+    #[allow(clippy::too_many_lines)]
     pub(super) fn resolve_completed_search(
         &mut self,
         player: PlayerId,
@@ -33,6 +36,7 @@ impl Game {
         resolution: SearchResolution,
     ) {
         let SearchResolution {
+            exile_face_down,
             controller,
             source,
             destination,
@@ -116,6 +120,13 @@ impl Game {
                     landed.map(|(landed, _)| Target::Card(landed.id))
                 };
                 if let Some(landed) = landed {
+                    if exile_face_down
+                        && destination == ZoneKind::Exile
+                        && let Target::Card(card) = landed
+                    {
+                        self.hide_from_everyone_while_exiled(card, player);
+                        self.permit_look_while_exiled(card, player);
+                    }
                     moved.push(landed);
                 }
             }
@@ -129,20 +140,19 @@ impl Game {
                 follow_up.context.bind_runtime_object_group(binding, moved);
             }
         }
+        // Queue both operations ahead of the enclosing effect tail. In particular,
+        // a while-resolving cast must observe the already-shuffled library.
+        if let Some(follow_up) = follow_up {
+            self.pending_procedures
+                .push_front(PendingProcedure::ResolveEffects {
+                    effects: vec![follow_up.effect],
+                    object: Box::new(follow_up.object),
+                    context: follow_up.context,
+                });
+        }
         if shuffle {
-            // Putting a searched-for permanent onto the battlefield can
-            // suspend for an as-enters choice. Finish that prospective
-            // entry before carrying out the search's subsequent
-            // shuffle, but still precede any enclosing effect tail.
             self.pending_procedures
                 .push_front(PendingProcedure::ShuffleLibrary { player });
-        }
-        if let Some(follow_up) = follow_up {
-            self.resolve_nested_effect_before_later(
-                follow_up.effect,
-                &follow_up.object,
-                follow_up.context,
-            );
         }
     }
 }

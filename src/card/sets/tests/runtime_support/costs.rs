@@ -172,7 +172,8 @@ pub(in super::super) fn shared_activated_costs(zones: &[ZoneKind], costs: &[Cost
             }
             // A fixed object sacrifice is supported only when it names the
             // source whose activation is being checked.
-            CostDef::ManaCostOf(ObjectRefDef::Binding(_))
+            CostDef::Waterbend(_)
+            | CostDef::ManaCostOf(ObjectRefDef::Binding(_))
             | CostDef::SacrificeObject(
                 ObjectRefDef::Source | ObjectRefDef::AbilityGrantSource,
             )

@@ -22,6 +22,7 @@ impl Game {
             form: option.form.clone(),
             alternative: None,
             x: 0,
+            spend_any_color: self.card_mana_is_any_color(card),
             reserved_life_payment: 0,
         };
         let mana = self.available_mana_ceiling(player, &purpose);

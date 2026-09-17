@@ -846,22 +846,6 @@ impl Game {
                 .permission_additional_alternative_mana(card, option, configuration)
                 .unwrap_or_default();
         }
-        // "You may spend mana as though it were mana of any color to cast
-        // that spell": what the payer owes stops being a colour and becomes
-        // an amount.
-        if self.card_mana_is_any_color(card) {
-            cost = ManaCost {
-                generic: cost
-                    .generic
-                    .saturating_add(cost.white + cost.blue + cost.black + cost.red + cost.green),
-                white: 0,
-                blue: 0,
-                black: 0,
-                red: 0,
-                green: 0,
-                ..cost
-            };
-        }
         for selected in configuration.additional() {
             let (_, held) = self.card_in_nonbattlefield_zone(card)?;
             let definition = self.catalog.get(held.definition)?;

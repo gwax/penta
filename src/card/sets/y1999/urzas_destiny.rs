@@ -116,6 +116,7 @@ pub(in crate::card::sets) static ACADEMY_RECTOR: CardRecord = CardRecord::new(
                             },
                         ),
                         then: &EffectDef::SearchZone {
+                            exile_face_down: false,
                             player: EffectRecipientDef::Controller,
                             source: ZoneKind::Library,
                             object: ObjectPredicateDef::HasType(CardType::Enchantment),
@@ -3057,6 +3058,7 @@ pub(in crate::card::sets) static PATTERN_OF_REBIRTH: CardRecord = CardRecord::ne
                 EffectDef::May {
                     player: EffectRecipientDef::ControllerOfTriggeringObject,
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::ControllerOfTriggeringObject,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -3290,6 +3292,7 @@ pub(in crate::card::sets) static YAVIMAYA_ELDER: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -3381,6 +3384,7 @@ pub(in crate::card::sets) static BRAIDWOOD_SEXTANT: CardRecord = CardRecord::new
             CostDef::SacrificeSource,
         ],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

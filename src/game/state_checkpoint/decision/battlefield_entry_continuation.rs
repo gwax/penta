@@ -260,6 +260,7 @@ fn parse_battlefield_entry_continuation(
             base_power_toughness,
             colors,
             added_creature_types,
+            replaced_creature_types,
             no_mana_cost,
             added_abilities,
         } => DecisionContinuation::BattlefieldEntryCopy {
@@ -279,6 +280,19 @@ fn parse_battlefield_entry_continuation(
                 }
                 colors
             }),
+            replaced_creature_types: replaced_creature_types
+                .as_ref()
+                .map(|types| {
+                    types
+                        .iter()
+                        .map(|name| {
+                            crate::card::creature_type_name(name).ok_or_else(|| {
+                                "checkpoint entry copy names an unknown creature type".to_owned()
+                            })
+                        })
+                        .collect::<Result<Vec<_>, String>>()
+                })
+                .transpose()?,
             added_creature_types: added_creature_types
                 .iter()
                 .map(|name| {

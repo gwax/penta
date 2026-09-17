@@ -6,6 +6,11 @@ use super::{FlexibleManaSymbol, HybridPair, ManaColor};
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 pub struct ManaCost {
+    /// The subset of fixed-color requirements that are generic symbols with a
+    /// spending restriction (for example Drain Life's X). Printed costs carry zeros.
+    /// Keeping their origin prevents spend-as-any-color and non-generic-only mana
+    /// from treating a restricted generic payment as a colored symbol.
+    pub restricted_generic: [u16; 6],
     pub generic: u16,
     pub white: u16,
     pub blue: u16,
@@ -110,6 +115,7 @@ impl ManaCost {
             additional_flexible: [0; FlexibleManaSymbol::ADDITIONAL_COUNT],
             variable_x: false,
             x_multiplier: 0,
+            restricted_generic: [0; 6],
         };
         let mut offset = 0;
         let mut saw_generic = false;
@@ -354,6 +360,7 @@ impl ManaCost {
             additional_flexible: [0; FlexibleManaSymbol::ADDITIONAL_COUNT],
             variable_x: false,
             x_multiplier: 0,
+            restricted_generic: [0; 6],
         }
     }
 
@@ -378,6 +385,7 @@ impl ManaCost {
             additional_flexible: [0; FlexibleManaSymbol::ADDITIONAL_COUNT],
             variable_x: false,
             x_multiplier: 0,
+            restricted_generic: [0; 6],
         }
     }
 
@@ -413,40 +421,7 @@ impl ManaCost {
             additional_flexible: [0; FlexibleManaSymbol::ADDITIONAL_COUNT],
             variable_x: true,
             x_multiplier: 1,
-        }
-    }
-
-    /// The same cost with every coloured requirement turned generic, for a
-    /// payment allowed to spend mana as though it were mana of any colour.
-    ///
-    /// Hybrid symbols come along, since a symbol any colour pays is already
-    /// satisfied by a permission that makes every colour interchangeable.
-    /// `{C}` does not: colourless is not a colour, so a permission that
-    /// speaks about colours leaves those symbols exactly where they were.
-    #[must_use]
-    pub const fn as_any_color(self) -> Self {
-        let mut generic = self.generic;
-        generic = generic
-            .saturating_add(self.white)
-            .saturating_add(self.blue)
-            .saturating_add(self.black)
-            .saturating_add(self.red)
-            .saturating_add(self.green);
-        let mut symbol = 0;
-        while symbol < FlexibleManaSymbol::COUNT {
-            generic = generic.saturating_add(self.flexible_count(FlexibleManaSymbol::ALL[symbol]));
-            symbol += 1;
-        }
-        Self {
-            generic,
-            white: 0,
-            blue: 0,
-            black: 0,
-            red: 0,
-            green: 0,
-            hybrid: [0; HybridPair::COUNT],
-            additional_flexible: [0; FlexibleManaSymbol::ADDITIONAL_COUNT],
-            ..self
+            restricted_generic: [0; 6],
         }
     }
 
@@ -464,6 +439,7 @@ impl ManaCost {
             additional_flexible: [0; FlexibleManaSymbol::ADDITIONAL_COUNT],
             variable_x: true,
             x_multiplier: 1,
+            restricted_generic: [0; 6],
         }
     }
 
@@ -489,6 +465,7 @@ impl ManaCost {
             additional_flexible: [0; FlexibleManaSymbol::ADDITIONAL_COUNT],
             variable_x: true,
             x_multiplier,
+            restricted_generic: [0; 6],
         }
     }
 
@@ -559,6 +536,7 @@ impl ManaCost {
             additional_flexible: [0; FlexibleManaSymbol::ADDITIONAL_COUNT],
             variable_x: false,
             x_multiplier: 0,
+            restricted_generic: [0; 6],
         }
     }
 }
@@ -627,6 +605,10 @@ impl ManaCost {
         for index in 0..FlexibleManaSymbol::ADDITIONAL_COUNT {
             self.additional_flexible[index] = self.additional_flexible[index]
                 .saturating_add(additional.additional_flexible[index]);
+        }
+        for index in 0..6 {
+            self.restricted_generic[index] =
+                self.restricted_generic[index].saturating_add(additional.restricted_generic[index]);
         }
         self.variable_x |= additional.variable_x;
         self.x_multiplier = self.x_multiplier.saturating_add(additional.x_multiplier);

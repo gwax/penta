@@ -131,6 +131,7 @@ pub(in crate::card::sets) static INFERNAL_TUTOR: CardRecord = CardRecord::new(
                 amount: 0,
             },
             then: &EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,
@@ -164,6 +165,7 @@ pub(in crate::card::sets) static INFERNAL_TUTOR: CardRecord = CardRecord::new(
                         then: &EffectDef::None,
                     }),
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::NameEquals(CardNameDef::NameOf(
@@ -506,6 +508,7 @@ pub(in crate::card::sets) static GHOST_QUARTER: CardRecord = CardRecord::new(
                 EffectDef::May {
                     player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::ControllerOfTarget(TargetIndex::PRIMARY),
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[

@@ -62,6 +62,7 @@ pub(in crate::card::sets) static HELIOD_S_PILGRIM: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Aura")),

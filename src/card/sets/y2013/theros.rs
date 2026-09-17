@@ -373,6 +373,7 @@ pub(in crate::card::sets) static ORDEAL_OF_NYLEA: CardRecord = CardRecord::new(
                     player: PlayerRelation::You,
                 },
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -425,6 +426,7 @@ pub(in crate::card::sets) static BURNISHED_HART: CardRecord = CardRecord::new(
              then shuffle.",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::SacrificeSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

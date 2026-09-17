@@ -709,6 +709,7 @@ pub(in crate::card::sets) static RAMOSIAN_COMMANDER: CardRecord = CardRecord::ne
              or less, put it onto the battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{6}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 // "Rebel permanent card", so a Rebel instant would not
@@ -747,6 +748,7 @@ pub(in crate::card::sets) static RAMOSIAN_LIEUTENANT: CardRecord = CardRecord::n
              or less, put it onto the battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{4}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 // "Rebel permanent card", so a Rebel instant would not
@@ -795,6 +797,7 @@ pub(in crate::card::sets) static RAMOSIAN_SERGEANT: CardRecord = CardRecord::new
              or less, put it onto the battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 // "Rebel permanent card", so a Rebel instant would not
@@ -2060,6 +2063,7 @@ pub(in crate::card::sets) static CATERAN_BRUTE: CardRecord = CardRecord::new(
              2 or less, put it onto the battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{2}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -2103,6 +2107,7 @@ pub(in crate::card::sets) static CATERAN_KIDNAPPERS: CardRecord = CardRecord::ne
              3 or less, put it onto the battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -2146,6 +2151,7 @@ pub(in crate::card::sets) static CATERAN_PERSUADER: CardRecord = CardRecord::new
              1 or less, put it onto the battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{1}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -3021,12 +3027,36 @@ pub(in crate::card::sets) static UNDERTAKER: CardRecord = CardRecord::new(
 );
 
 // MMQ 168 — Unmask
-// Audit: unsupported — Card rules have not been implemented.
 pub(in crate::card::sets) static UNMASK: CardRecord = CardRecord::new(
     "Unmask",
     "2db7a0e6-eea5-4fa6-ac14-401411b106cc",
     "rk post",
-    crate::card::CardRules::unsupported(),
+    CardRules::new_sorcery(mana_cost!("{3}{B}")).with_abilities(&[
+        AbilityDef::alternative_cast(
+            &[CostDef::exile(
+                ObjectPredicateDef::Color(ManaColor::Black),
+                ZoneKind::Hand,
+                CostQuantityDef::Fixed(1),
+            )],
+            AlternativeCastKindDef::AlternativeCost,
+            Some(
+                "You may exile a black card from your hand rather than pay this spell's mana \
+             cost.",
+            ),
+            EffectDef::None,
+        ),
+        AbilityDef::spell_with_targets(
+            "Target player reveals their hand. You choose a nonland card from it. That \
+             player discards that card.",
+            &[AbilityTargetDef::exactly_one(
+                AbilityTargetPredicate::Player(PlayerRelation::Any),
+            )],
+            EffectDef::Sequence(&abilities::reveal_hand_and_discard_chosen_card(
+                PlayerRefDef::Target(TargetIndex::PRIMARY),
+                ObjectPredicateDef::Not(&ObjectPredicateDef::HasType(CardType::Land)),
+            )),
+        ),
+    ]),
 );
 
 // MMQ 169 — Unnatural Hunger
@@ -4868,6 +4898,7 @@ pub(in crate::card::sets) static SILVERGLADE_ELEMENTAL: CardRecord = CardRecord:
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
@@ -4903,6 +4934,7 @@ pub(in crate::card::sets) static SILVERGLADE_PATHFINDER: CardRecord = CardRecord
                 CostDef::discard(ObjectPredicateDef::Any),
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -5230,6 +5262,7 @@ pub(in crate::card::sets) static ASSEMBLY_HALL: CardRecord = CardRecord::new(
             CostDef::RevealCardFromHand(ObjectPredicateDef::HasType(CardType::Creature)),
         ],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::NameEquals(CardNameDef::NameOf(

@@ -812,6 +812,7 @@ pub(in crate::card::sets) static WISHCLAW_TALISMAN: CardRecord = CardRecord::new
             // two counters they may spend on their own turn.
             EffectDef::Sequence(&[
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Any,
@@ -2143,6 +2144,7 @@ pub(in crate::card::sets) static FABLED_PASSAGE: CardRecord = CardRecord::new(
          land.",
         &[CostDef::TapSource, CostDef::SacrificeSource],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

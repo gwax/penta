@@ -321,9 +321,14 @@ mod companion {
         .expect("a legal game");
         if matches!(game.pregame, Some(Pregame::Companion(_))) {
             let decision = game.observe(PlayerId::One).decision.unwrap();
-            game.apply(PlayerId::One, Action::ChooseDecision {
-                decision: decision.id, options: vec![decision.options[0].id],
-            }).unwrap();
+            game.apply(
+                PlayerId::One,
+                Action::ChooseDecision {
+                    decision: decision.id,
+                    options: vec![decision.options[0].id],
+                },
+            )
+            .unwrap();
         }
         game.pregame = None;
         game.step = Step::PrecombatMain;
@@ -370,7 +375,7 @@ mod companion {
             "it went from outside the game to the hand",
         );
         assert!(
-            game.players[0].outside_game.is_empty(),
+            game.players[0].sideboard.is_empty(),
             "and is no longer out there",
         );
         assert_eq!(game.players[0].mana_pool.total(), 0, "three mana paid");

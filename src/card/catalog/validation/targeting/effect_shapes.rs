@@ -149,7 +149,10 @@ fn validate_effect_target_shapes(
                     if query.zones == [ZoneKind::Battlefield])
             {
                 validate_battlefield_binding_continuation(
-                    *definition.then, definition.binding, targets, triggering_object_zone,
+                    *definition.then,
+                    definition.binding,
+                    targets,
+                    triggering_object_zone,
                 )
             } else {
                 validate_effect_target_shapes(*definition.then, targets, triggering_object_zone)
@@ -221,6 +224,10 @@ fn validate_effect_target_shapes(
                 validate_object_predicate_shape(*predicate, targets)?;
             }
             validate_effect_target_shapes(*definition.then, targets, triggering_object_zone)
+        }
+        EffectDef::BindValue { value, effect, .. } => {
+            validate_value_shape(value, targets)?;
+            validate_effect_target_shapes(*effect, targets, triggering_object_zone)
         }
         EffectDef::WithRule { effect, .. }
         | EffectDef::BindOutput { effect, .. }
@@ -399,7 +406,8 @@ fn validate_effect_target_shapes(
             }
             Ok(())
         }
-        EffectDef::May { player, effect }
+        EffectDef::Repeat { player, effect, .. }
+        | EffectDef::May { player, effect }
         | EffectDef::ReplaceNextDrawThisTurn { player, effect } => {
             validate_recipient_shape(player, targets, RecipientExpectation::Player)?;
             validate_effect_target_shapes(*effect, targets, triggering_object_zone)
@@ -436,6 +444,7 @@ fn validate_effect_target_shapes(
             | GameActionDef::GainControl { object, .. }
             | GameActionDef::MoveToZone { object, .. },
         )
+        | EffectDef::ExileUntilSourceLeaves { object }
         | EffectDef::Explore { object }
         | EffectDef::Regenerate { object }
         | EffectDef::Tap { object }
@@ -527,9 +536,12 @@ fn validate_effect_target_shapes(
             ..
         }) => {
             if let crate::card::TokenDef::Binding(crate::ParentBinding) = token {
-                return Err(GrantedAbilityValidationError::UnsupportedEffectProgramContext {
-                    context: "token binding", operation: "requires a durable labeled binding",
-                });
+                return Err(
+                    GrantedAbilityValidationError::UnsupportedEffectProgramContext {
+                        context: "token binding",
+                        operation: "requires a durable labeled binding",
+                    },
+                );
             }
             validate_value_shape(count, targets)?;
             if let crate::card::TokenDef::Copy(copy) = token {
@@ -608,7 +620,8 @@ fn validate_effect_target_shapes(
                 | DeclarativeAbilityDef::SpecialAction(_)
                 | DeclarativeAbilityDef::Pregame(_)
                 | DeclarativeAbilityDef::Keyword(_)
-                | DeclarativeAbilityDef::DeckConstruction(_) | DeclarativeAbilityDef::Companion(_) => None,
+                | DeclarativeAbilityDef::DeckConstruction(_)
+                | DeclarativeAbilityDef::Companion(_) => None,
             };
             validate_program_target_shapes(
                 trigger.ability.effect.definition,
@@ -722,6 +735,7 @@ fn validate_effect_target_shapes(
         EffectDef::PutSourceOntoBattlefieldAttacking
         | EffectDef::VoteForPermanentToExile { .. }
         | EffectDef::ModifyCost(_)
+        | EffectDef::RecordAbilityUse
         | EffectDef::None
         | EffectDef::ContinueReplacedDraw
         | EffectDef::DamageCannotBePreventedThisTurn
@@ -936,7 +950,11 @@ mod recipient_shape_tests {
                     effect: cannot_play(),
                 },
             ),
-            Err(GrantedAbilityValidationError::UnsupportedStaticPlayerRecipient { recipient: Box::new(recipient) },),
+            Err(
+                GrantedAbilityValidationError::UnsupportedStaticPlayerRecipient {
+                    recipient: Box::new(recipient)
+                },
+            ),
         );
     }
 }

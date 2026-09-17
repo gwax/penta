@@ -65,6 +65,7 @@ pub(in crate::card::sets) static SPELLSEEKER: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     // A cheap instant or sorcery: the body is beside the point, and what it

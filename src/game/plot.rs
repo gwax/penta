@@ -146,6 +146,7 @@ impl Game {
             return None;
         }
         Some(super::ExilePlayPermission {
+            maximum_spell_mana_value: None,
             card,
             player,
             cost: super::ExilePlayCost::Free,

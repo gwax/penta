@@ -154,7 +154,7 @@ impl Game {
                     graveyard: Vec::new(),
                     exile: Vec::new(),
                     command: Vec::new(),
-                    outside_game: Vec::new(),
+                    sideboard: Vec::new(),
                     companion: None,
                     mana_pool: ManaPool::default(),
                     mana: Vec::new(),
@@ -199,7 +199,7 @@ impl Game {
                     definition,
                     owner: player,
                 });
-                players[player.index()].outside_game.push(CardInstance {
+                players[player.index()].sideboard.push(CardInstance {
                     id: object_id,
                     definition,
                     owner: player,
@@ -261,6 +261,7 @@ impl Game {
             creature_died_this_turn: false,
             creatures_died_this_turn: 0,
             lost_life_this_turn: [false; 2],
+            duration_exiles: Vec::new(),
             linked_exiles: Vec::new(),
             play_permission_uses: Vec::new(),
             monarch: None,
@@ -278,6 +279,7 @@ impl Game {
             resolved_attack_restrictions: Vec::new(),
             resolved_play_permissions: Vec::new(),
             emblems: Vec::new(),
+            abilities_used_this_turn: Vec::new(),
             spells_cast_this_turn: [0; 2],
             spells_cast_last_turn: [0; 2],
             spell_cast_history_this_turn: Vec::new(),

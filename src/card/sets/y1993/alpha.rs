@@ -1928,7 +1928,7 @@ pub(in crate::card::sets) static VESUVAN_DOPPELGANGER: CardRecord = CardRecord::
                                 effect: &EffectDef::BecomeCopyOf {
                                     object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                                     copier: None,
-                                    exceptions: CopyExceptionsDef::NONE
+                                    exceptions: &CopyExceptionsDef::NONE
                                         .with_colors(ColorSet::from_colors(&[ManaColor::Blue]))
                                         .with_abilities(&[CopyAbilityDef::This]),
                                     duration: None,
@@ -2247,6 +2247,7 @@ pub(in crate::card::sets) static DEMONIC_TUTOR: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{1}{B}")).with_abilities(&[AbilityDef::spell(
         "Search your library for a card, put that card into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,

@@ -586,6 +586,7 @@ impl Game {
                     }
                 })
                 .is_some_and(|subtype| object.subtypes.contains(subtype)),
+            ObjectPredicateDef::ManaCostHasX => object.mana_cost_has_x,
             ObjectPredicateDef::ManaValueAtMost(limit) => object.mana_value <= u16::from(limit),
             ObjectPredicateDef::ManaValueEqualTo(value) => self
                 .value_from_source(value, source)

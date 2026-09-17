@@ -261,6 +261,7 @@ pub(in crate::card::sets) static DEFIANT_FALCON: CardRecord = CardRecord::new(
              battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{4}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -1239,6 +1240,7 @@ pub(in crate::card::sets) static SEAHUNTER: CardRecord = CardRecord::new(
              card, put it onto the battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -2176,6 +2178,7 @@ pub(in crate::card::sets) static RATHI_ASSASSIN: CardRecord = CardRecord::new(
              battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -2234,6 +2237,7 @@ pub(in crate::card::sets) static RATHI_FIEND: CardRecord = CardRecord::new(
              battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -2281,6 +2285,7 @@ pub(in crate::card::sets) static RATHI_INTIMIDATOR: CardRecord = CardRecord::new
              battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{2}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -3073,6 +3078,7 @@ pub(in crate::card::sets) static MOGGCATCHER: CardRecord = CardRecord::new(
              card, put it onto the battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -3388,6 +3394,7 @@ pub(in crate::card::sets) static NESTING_WURM: CardRecord = CardRecord::new(
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::NameEquals(CardNameDef::Literal("Nesting Wurm")),
@@ -3430,6 +3437,7 @@ pub(in crate::card::sets) static PACK_HUNT: CardRecord = CardRecord::new(
             ObjectPredicateDef::HasType(CardType::Creature),
         )],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::NameEquals(CardNameDef::NameOf(ObjectRefDef::Target(
@@ -3692,6 +3700,7 @@ pub(in crate::card::sets) static SKYSHROUD_CLAIM: CardRecord = CardRecord::new(
         "Search your library for up to two Forest cards, put \
          them onto the battlefield, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Forest")),
@@ -3747,6 +3756,7 @@ pub(in crate::card::sets) static SKYSHROUD_POACHER: CardRecord = CardRecord::new
              card, put it onto the battlefield, then shuffle.",
             &[CostDef::Mana(mana_cost!("{3}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -3801,6 +3811,7 @@ pub(in crate::card::sets) static SKYSHROUD_SENTINEL: CardRecord = CardRecord::ne
             EffectDef::May {
                 player: EffectRecipientDef::Controller,
                 effect: &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::NameEquals(CardNameDef::Literal(

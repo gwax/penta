@@ -12,7 +12,7 @@ pub(in crate::game) enum PaymentDecision {
     Funding(PaymentDraft),
     Mana {
         target: PaymentTarget,
-        obligation: ManaPaymentObligation,
+        obligation: Box<ManaPaymentObligation>,
         selected: Vec<usize>,
     },
 }

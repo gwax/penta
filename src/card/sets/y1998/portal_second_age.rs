@@ -198,6 +198,7 @@ pub(in crate::card::sets) static GOBLIN_MATRON: CardRecord = CardRecord::new(
              a Goblin card, reveal that card, put it into your hand, \
              then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Goblin")),

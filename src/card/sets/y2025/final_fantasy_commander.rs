@@ -207,7 +207,7 @@ pub(in crate::card::sets) static GOGO_MYSTERIOUS_MIME: CardRecord = CardRecord::
                         EffectDef::BecomeCopyOf {
                             object: EffectRecipientDef::Target(TargetIndex::PRIMARY),
                             copier: None,
-                            exceptions: CopyExceptionsDef::NONE.with_name("Gogo, Mysterious Mime"),
+                            exceptions: &CopyExceptionsDef::NONE.with_name("Gogo, Mysterious Mime"),
                             duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
                         },
                         EffectDef::Apply {

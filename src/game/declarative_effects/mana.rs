@@ -10,6 +10,7 @@ use super::super::{
 };
 
 impl Game {
+    #[allow(clippy::too_many_lines)]
     pub(super) fn resolve_mana_effect(
         &mut self,
         scoped: ScopedEffect,
@@ -118,7 +119,13 @@ impl Game {
                         choosable = choosable.with(*color);
                     }
                 }
-                self.queue_chosen_color_mana(object.controller, prototype, amount, choosable);
+                self.queue_chosen_color_mana(
+                    object.controller,
+                    prototype,
+                    amount,
+                    choosable,
+                    matches!(effect.mana, ManaSelectionDef::Choice(_)),
+                );
             }
             EffectDef::AddManaEqualTo { color, amount } => {
                 let amount = self

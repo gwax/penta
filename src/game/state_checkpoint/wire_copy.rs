@@ -37,6 +37,20 @@ pub(super) fn parse_copiable_characteristics(
         }),
         // Interned against the catalog's own vocabulary, so a checkpoint
         // naming a type nothing prints is refused rather than inventing one.
+        replaced_creature_types: snapshot
+            .replaced_creature_types
+            .as_ref()
+            .map(|types| {
+                types
+                    .iter()
+                    .map(|name| {
+                        crate::card::creature_type_name(name).ok_or_else(|| {
+                            "checkpoint copy names an unknown creature type".to_owned()
+                        })
+                    })
+                    .collect::<Result<Vec<_>, String>>()
+            })
+            .transpose()?,
         added_creature_types: snapshot
             .added_creature_types
             .iter()

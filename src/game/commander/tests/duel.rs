@@ -114,11 +114,11 @@ fn duel_commander_casting_from_hand_does_not_lock_the_command_zone() {
 fn duel_commander_outside_game_effects_offer_no_cards() {
     let mut game = duel();
     let card = game.players[0].library.pop().unwrap();
-    game.players[0].outside_game.push(card);
+    game.players[0].sideboard.push(card);
     let source = game.players[0].command[0].id;
     let queued = game.queue_owned_card_choice(
         PlayerId::One,
-        &[crate::card::CardChoiceSourceDef::OutsideGame],
+        &[crate::card::CardChoiceSourceDef::Sideboard],
         crate::card::ObjectPredicateDef::Any,
         0,
         1,
@@ -131,7 +131,7 @@ fn duel_commander_outside_game_effects_offer_no_cards() {
     );
     assert!(!queued);
     assert!(game.pending_decisions.is_empty());
-    assert_eq!(game.players[0].outside_game.len(), 1);
+    assert_eq!(game.players[0].sideboard.len(), 1);
 }
 
 #[test]

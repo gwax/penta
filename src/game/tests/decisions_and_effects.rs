@@ -305,6 +305,7 @@ fn a_qualified_hidden_zone_search_may_fail_to_find() {
     let source = spell(10_000, cards::DEMONIC_TUTOR, PlayerId::One, 0);
     game.resolve_effect_def(
         ScopedEffect::primary(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Artifact),
@@ -369,6 +370,7 @@ fn search_zone_resolves_a_computed_mana_value_bound_before_filtering() {
 
     game.resolve_effect_def(
         ScopedEffect::primary(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::ManaValueAtMostValue(ValueDef::CountMatchingObjects(
@@ -415,6 +417,7 @@ fn search_zone_moves_multiple_selected_cards_in_one_resolution() {
     let source = spell(10_000, cards::DEMONIC_TUTOR, PlayerId::One, 0);
     game.resolve_effect_def(
         ScopedEffect::primary(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Any,
@@ -480,6 +483,7 @@ fn searching_to_library_top_reveals_and_preserves_the_card_object() {
     let source = spell(10_000, cards::DEMONIC_TUTOR, PlayerId::One, 0);
     game.resolve_effect_def(
         ScopedEffect::primary(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Artifact),
@@ -552,6 +556,7 @@ fn search_zone_can_move_a_public_graveyard_card_to_hand() {
     let source = spell(10_000, cards::DEMONIC_TUTOR, PlayerId::One, 0);
     game.resolve_effect_def(
         ScopedEffect::primary(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Graveyard,
             object: ObjectPredicateDef::Any,
@@ -600,6 +605,7 @@ fn search_zone_supports_private_hands_and_public_exile() {
         .push(card(10_101, cards::LIGHTNING_BOLT, PlayerId::One));
     hand_game.resolve_effect_def(
         ScopedEffect::primary(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Hand,
             object: ObjectPredicateDef::Any,
@@ -639,6 +645,7 @@ fn search_zone_supports_private_hands_and_public_exile() {
         .push(card(10_102, cards::SERRA_ANGEL, PlayerId::One));
     exile_game.resolve_effect_def(
         ScopedEffect::primary(EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Exile,
             object: ObjectPredicateDef::Any,

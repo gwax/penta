@@ -168,6 +168,7 @@ impl Game {
             sacrificed_mana_value: 0,
         };
         let payment_purpose = ManaPaymentPurpose::Ability {
+            waterbend: crate::card::costs::waterbend_amount(definition.costs),
             source,
             taps_source: false,
             leaves_source: true,
@@ -276,12 +277,14 @@ impl Game {
             return false;
         };
         let purpose = ManaPaymentPurpose::Ability {
+            waterbend: crate::card::costs::waterbend_amount(definition.costs),
             source,
             taps_source: false,
             leaves_source: false,
         };
-        self.activate_mana_for_cost_avoiding_for(player, cost, 0, None, &purpose);
-        let _ = self.pay_player_cost_for(player, cost, 0, &purpose);
+        let (cost, payment_x) =
+            self.activate_mana_for_cost_avoiding_for(player, cost, 0, None, &purpose);
+        let _ = self.pay_player_cost_for(player, cost, payment_x, &purpose);
         let frozen = FrozenActivatedAbility {
             origin: ongoing.source.ability,
             definition: Some(Box::new(ongoing.ability)),
@@ -364,6 +367,7 @@ impl Game {
                 sacrificed_mana_value: 0,
             };
             let payment_purpose = ManaPaymentPurpose::Ability {
+                waterbend: crate::card::costs::waterbend_amount(definition.costs),
                 source,
                 taps_source: false,
                 leaves_source: false,
@@ -398,7 +402,7 @@ impl Game {
             let activation_label = effective.ability.label;
             for cost in definition.costs {
                 match cost {
-                    CostDef::Mana(_) | CostDef::PayLife(_) => {}
+                    CostDef::Mana(_) | CostDef::Waterbend(_) | CostDef::PayLife(_) => {}
                     CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. } => {
                         unreachable!("hand abilities cannot price another chosen card")
                     }
@@ -633,6 +637,7 @@ impl Game {
             if let Some(cost) = payable_mana_cost {
                 let cost = self.announced_activation_cost(player, cost, mana_payment);
                 let payment_purpose = ManaPaymentPurpose::Ability {
+                    waterbend: crate::card::costs::waterbend_amount(definition.costs),
                     source,
                     taps_source,
                     leaves_source,
@@ -650,7 +655,7 @@ impl Game {
                         return;
                     }
                 }
-                self.activate_mana_for_cost_with_options_for(
+                let (cost, payment_x) = self.activate_mana_for_cost_with_options_for(
                     player,
                     cost,
                     x,
@@ -660,7 +665,7 @@ impl Game {
                     },
                     &payment_purpose,
                 );
-                let _ = self.pay_player_cost_for(player, cost, x, &payment_purpose);
+                let _ = self.pay_player_cost_for(player, cost, payment_x, &payment_purpose);
             }
             if definition.costs.iter().any(|cost| {
                 matches!(
@@ -702,7 +707,7 @@ impl Game {
                     }
                     // The open-ended removal never reaches payment: mana
                     // enumeration replaced it with a sized one.
-                    CostDef::Mana(_) | CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. }
+                    CostDef::Mana(_) | CostDef::Waterbend(_) | CostDef::ManaCostOf(_) | CostDef::ManaValueOfTarget { .. }
                     | CostDef::ReturnUnblockedAttackerToHand
                     | CostDef::TapPermanents { .. }
                     // Paid by decision after everything else, the way a

@@ -183,6 +183,7 @@ impl Game {
         prototype: Mana,
         remaining: u16,
         choosable: ColorSet,
+        same_color: bool,
     ) {
         let colors = Self::chosen_mana_colors(choosable);
         if remaining == 0 || colors.is_empty() {
@@ -209,6 +210,7 @@ impl Game {
             false,
             options,
             DecisionContinuation::ChosenColorMana {
+                same_color,
                 controller,
                 prototype,
                 remaining,

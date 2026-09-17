@@ -39,6 +39,66 @@ impl Drop for StaticAbilityLayerGuard {
 }
 
 impl Game {
+    pub(super) fn ability_presence_holds(
+        &self,
+        permanent: &Permanent,
+        mut presence: Option<crate::card::AbilityPresenceDef>,
+    ) -> bool {
+        while let Some(group) = presence {
+            if !self.ability_presence_condition_holds(permanent, group.condition) {
+                return false;
+            }
+            presence = *group.inherited;
+        }
+        true
+    }
+
+    fn ability_presence_condition_holds(
+        &self,
+        permanent: &Permanent,
+        condition: &crate::card::TriggerConditionDef,
+    ) -> bool {
+        use super::effect_support::compare;
+        use crate::card::TriggerConditionDef;
+        // Local state must come from the supplied view, including a prospective
+        // permanent or a last-known snapshot, rather than a live ID lookup.
+        match condition {
+            TriggerConditionDef::All(conditions) => conditions
+                .iter()
+                .all(|condition| self.ability_presence_condition_holds(permanent, condition)),
+            TriggerConditionDef::AnyOf(conditions) => conditions
+                .iter()
+                .any(|condition| self.ability_presence_condition_holds(permanent, condition)),
+            TriggerConditionDef::Not(condition) => {
+                !self.ability_presence_condition_holds(permanent, condition)
+            }
+            TriggerConditionDef::SourceIsTapped => permanent.tapped,
+            TriggerConditionDef::SourceIsUntapped | TriggerConditionDef::SourceUntapped => {
+                !permanent.tapped
+            }
+            TriggerConditionDef::SourceCounters {
+                kind,
+                comparison,
+                amount,
+            } => compare(
+                &permanent.counters.count(*kind),
+                *comparison,
+                &u16::from(*amount),
+            ),
+            TriggerConditionDef::SourceClassLevel { comparison, level } => {
+                compare(&permanent.class_level.unwrap_or(1), *comparison, level)
+            }
+            _ => self.trigger_condition_holds(
+                condition,
+                permanent.card.id,
+                permanent.controller,
+                super::TriggerContext::empty(),
+                None,
+                None,
+            ),
+        }
+    }
+
     /// Stack spells share the permanent layer's ordered operations and grant
     /// identities. Evaluate live against the selected spell view, both while
     /// proposing a cast and when capturing its triggers after payment.
@@ -84,7 +144,13 @@ impl Game {
         // CR 114.5: emblems are not permanents. Battlefield ability-removal
         // effects cannot remove the abilities their creation effect defined.
         if permanent.card.definition == super::ObjectKind::Emblem {
-            return true;
+            return self
+                .collect_base_effective_abilities(permanent, None)
+                .iter()
+                .any(|effective| {
+                    effective.origin == origin
+                        && self.ability_presence_holds(permanent, effective.ability.presence)
+                });
         }
         self.collect_effective_abilities(permanent, None)
             .into_iter()
@@ -197,7 +263,11 @@ impl Game {
             }) else {
                 continue;
             };
-            if visitor(effective, timestamp.max(permanent.timestamp)).is_break() {
+            if self.ability_presence_holds(
+                prospective.unwrap_or(permanent),
+                effective.ability.presence,
+            ) && visitor(effective, timestamp.max(permanent.timestamp)).is_break()
+            {
                 return ControlFlow::Break(());
             }
         }
@@ -213,6 +283,12 @@ impl Game {
         for operation in self.collect_ability_layer_operations(permanent, prospective) {
             Self::apply_ability_layer_operation(&mut abilities, &operation);
         }
+        abilities.retain(|effective| {
+            self.ability_presence_holds(
+                prospective.unwrap_or(permanent),
+                effective.ability.presence,
+            )
+        });
         abilities
     }
 

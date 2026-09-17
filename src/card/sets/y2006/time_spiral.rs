@@ -134,6 +134,7 @@ pub(in crate::card::sets) static AMROU_SCOUT: CardRecord = CardRecord::new(
              then shuffle.",
             &[CostDef::Mana(mana_cost!("{4}")), CostDef::TapSource],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -2009,6 +2010,7 @@ pub(in crate::card::sets) static MYSTICAL_TEACHINGS: CardRecord = CardRecord::ne
             "Search your library for an instant card or a card with \
              flash, reveal it, put it into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::AnyOf(&[
@@ -2982,6 +2984,7 @@ pub(in crate::card::sets) static DEMONIC_COLLUSION: CardRecord = CardRecord::new
         AbilityDef::spell(
             "Search your library for a card, put that card into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,
@@ -5695,6 +5698,7 @@ pub(in crate::card::sets) static GREENSEEKER: CardRecord = CardRecord::new(
                 CostDef::discard(ObjectPredicateDef::Any),
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -5916,6 +5920,7 @@ pub(in crate::card::sets) static MWONVULI_ACID_MOSS: CardRecord = CardRecord::ne
                     then: None,
                 },
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Forest]),
@@ -6139,6 +6144,7 @@ pub(in crate::card::sets) static SEARCH_FOR_TOMORROW: CardRecord = CardRecord::n
         AbilityDef::spell(
             "Search your library for a basic land card, put it onto the battlefield, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -7085,6 +7091,7 @@ pub(in crate::card::sets) static SCION_OF_THE_UR_DRAGON: CardRecord = CardRecord
                 &[CostDef::Mana(mana_cost!("{2}"))],
                 EffectDef::Sequence(&[
                     EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::All(&[
@@ -7111,7 +7118,7 @@ pub(in crate::card::sets) static SCION_OF_THE_UR_DRAGON: CardRecord = CardRecord
                                 ParentBinding,
                             )),
                             copier: None,
-                            exceptions: CopyExceptionsDef::NONE,
+                            exceptions: &CopyExceptionsDef::NONE,
                             duration: Some(ResolvedEffectDurationDef::UntilEndOfTurn),
                         }),
                     },
@@ -7916,6 +7923,7 @@ pub(in crate::card::sets) static FLAGSTONES_OF_TROKAIR: CardRecord = CardRecord:
                 EffectDef::May {
                     player: EffectRecipientDef::Controller,
                     effect: &EffectDef::SearchZone {
+                        exile_face_down: false,
                         player: EffectRecipientDef::Controller,
                         source: ZoneKind::Library,
                         object: ObjectPredicateDef::HasAnyBasicLandType(&[BasicLandType::Plains]),
@@ -8078,6 +8086,7 @@ pub(in crate::card::sets) static TERRAMORPHIC_EXPANSE: CardRecord = CardRecord::
          land card, put it onto the battlefield tapped, then shuffle.",
         &[CostDef::TapSource, CostDef::SacrificeSource],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[

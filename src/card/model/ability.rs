@@ -29,8 +29,19 @@ pub struct AbilityDef {
     /// resolving successfully. Replacement of an individual effect does not
     /// suppress completion. The optional condition reads copied cast choices.
     pub resolution_event: Option<&'static ResolutionEventDef>,
+    /// Static membership in an authored ability group; not an activation or
+    /// intervening-if condition. Once on the stack, the ability is independent.
+    pub presence: Option<AbilityPresenceDef>,
     pub definition: DeclarativeAbilityDef,
     pub effect: AbilityEffectDef,
+}
+
+/// One shared condition on an ability group. Nested groups retain their outer
+/// conditions without changing the member's rules category or program.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct AbilityPresenceDef {
+    pub condition: &'static TriggerConditionDef,
+    pub inherited: &'static Option<AbilityPresenceDef>,
 }
 
 /// Named action emitted after successful resolution of the whole stack object.
@@ -478,6 +489,7 @@ impl AbilityDef {
             text,
             label: None,
             resolution_event: None,
+            presence: None,
             definition: DeclarativeAbilityDef::Static(StaticAbilityDef::new()),
             effect: AbilityEffectDef::declarative(EffectDef::None),
         }
@@ -504,6 +516,7 @@ impl AbilityDef {
             text,
             label: None,
             resolution_event: None,
+            presence: None,
             definition: DeclarativeAbilityDef::DeckConstruction(permission),
             effect: AbilityEffectDef::declarative(EffectDef::None),
         }
@@ -535,6 +548,7 @@ impl AbilityDef {
             text,
             label: None,
             resolution_event: None,
+            presence: None,
             definition: DeclarativeAbilityDef::Replacement(definition),
             effect: AbilityEffectDef::replacement_program(effect),
         }
@@ -603,6 +617,7 @@ impl AbilityDef {
             text,
             label: None,
             resolution_event: None,
+            presence: None,
             definition,
             effect: AbilityEffectDef::declarative(effect),
         }
@@ -712,7 +727,6 @@ impl AbilityDef {
     /// This ability may be activated once from this object, across all turns.
     ///
     /// # Panics
-    ///
     /// Panics if the clause is not an activated ability.
     #[must_use]
     pub const fn once_per_object(mut self) -> Self {
@@ -787,6 +801,14 @@ impl AbilityDef {
         let DeclarativeAbilityDef::Triggered(triggered) = self.definition else {
             return None;
         };
+        if let TriggerEventDef::CountersCross {
+            kind: crate::card::CounterKind::Lore,
+            thresholds,
+            ..
+        } = triggered.event
+        {
+            return Some(thresholds.maximum());
+        }
         let TriggerEventDef::While { event, condition } = triggered.event else {
             return None;
         };

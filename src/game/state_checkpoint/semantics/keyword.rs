@@ -40,6 +40,21 @@ pub(in crate::game::state_checkpoint) fn keyword_snapshot(
         KeywordAbility::HexproofFrom(&ObjectPredicateDef::ColorCount(1)) => {
             KeywordSnapshot::HexproofFromMonocolored
         }
+        KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::White)) => {
+            KeywordSnapshot::HexproofFromWhite
+        }
+        KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Blue)) => {
+            KeywordSnapshot::HexproofFromBlue
+        }
+        KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Black)) => {
+            KeywordSnapshot::HexproofFromBlack
+        }
+        KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Red)) => {
+            KeywordSnapshot::HexproofFromRed
+        }
+        KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Green)) => {
+            KeywordSnapshot::HexproofFromGreen
+        }
         KeywordAbility::HexproofFrom(_) => {
             panic!("checkpoint cannot encode an unauthored hexproof quality")
         }
@@ -185,6 +200,22 @@ pub(in crate::game::state_checkpoint) const fn parse_keyword(
         KeywordSnapshot::Reach => KeywordAbility::Reach,
         KeywordSnapshot::Flash => KeywordAbility::Flash,
         KeywordSnapshot::Hexproof => KeywordAbility::Hexproof,
+        KeywordSnapshot::HexproofFromWhite => {
+            KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::White))
+        }
+        KeywordSnapshot::HexproofFromBlue => {
+            KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Blue))
+        }
+        KeywordSnapshot::HexproofFromBlack => {
+            KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Black))
+        }
+        KeywordSnapshot::HexproofFromRed => {
+            KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Red))
+        }
+        KeywordSnapshot::HexproofFromGreen => {
+            KeywordAbility::HexproofFrom(&ObjectPredicateDef::Color(ManaColor::Green))
+        }
+
         KeywordSnapshot::HexproofFromMonocolored => {
             KeywordAbility::HexproofFrom(&ObjectPredicateDef::ColorCount(1))
         }

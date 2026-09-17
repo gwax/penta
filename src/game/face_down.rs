@@ -24,6 +24,7 @@ impl Game {
             colors: [false; 5],
             subtypes: crate::card::SubtypeSet::EMPTY,
             mana_value: 0,
+            mana_cost_has_x: false,
             power: None,
             toughness: None,
             supertypes: [false; super::CardSupertype::COUNT],

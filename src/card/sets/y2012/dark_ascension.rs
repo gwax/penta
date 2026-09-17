@@ -91,6 +91,7 @@ static CAST_FROM_GRAVEYARD: TriggerConditionDef =
 /// "Search your library for a basic land card, put it onto the battlefield
 /// tapped, then shuffle."
 static FETCH_A_BASIC_TAPPED: EffectDef = EffectDef::SearchZone {
+    exile_face_down: false,
     player: EffectRecipientDef::Controller,
     source: ZoneKind::Library,
     object: ObjectPredicateDef::All(&[
@@ -1549,6 +1550,7 @@ pub(in crate::card::sets) static INCREASING_AMBITION: CardRecord = CardRecord::n
                         EffectDef::IfElseCondition {
                             condition: &CAST_FROM_GRAVEYARD,
                             then: &EffectDef::SearchZone {
+                                exile_face_down: false,
                                 player: EffectRecipientDef::Controller,
                                 source: ZoneKind::Library,
                                 object: ObjectPredicateDef::Any,
@@ -1564,6 +1566,7 @@ pub(in crate::card::sets) static INCREASING_AMBITION: CardRecord = CardRecord::n
                                 then: None,
                             },
                             otherwise: &EffectDef::SearchZone {
+                                exile_face_down: false,
                                 player: EffectRecipientDef::Controller,
                                 source: ZoneKind::Library,
                                 object: ObjectPredicateDef::Any,

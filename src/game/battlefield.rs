@@ -39,7 +39,7 @@ impl Game {
                     .or_else(|| {
                         self.players
                             .iter()
-                            .flat_map(|player| player.outside_game.iter())
+                            .flat_map(|player| player.sideboard.iter())
                             .find(|card| card.id == id)
                     })
                     .and_then(|card| self.catalog.get(card.definition))

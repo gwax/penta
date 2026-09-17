@@ -652,6 +652,7 @@ pub(in crate::card::sets) static DIABOLIC_INTENT: CardRecord = CardRecord::new(
                 CostQuantityDef::Fixed(1),
             ),
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::Any,
@@ -1760,6 +1761,7 @@ pub(in crate::card::sets) static ELADAMRI_S_CALL: CardRecord = CardRecord::new(
         "Search your library for a creature card, reveal that card, \
          put it into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::HasType(CardType::Creature),
@@ -2415,6 +2417,7 @@ pub(in crate::card::sets) static TERMINAL_MORAINE: CardRecord = CardRecord::new(
                 CostDef::SacrificeSource,
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[

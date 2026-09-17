@@ -207,6 +207,7 @@ pub(in crate::card::sets) static BESEECH_THE_QUEEN: CardRecord = CardRecord::new
          equal to the number of lands you control, reveal it, put it \
          into your hand, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::ManaValueAtMostValue(ValueDef::CountMatchingObjects(

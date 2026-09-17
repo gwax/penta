@@ -26,6 +26,7 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         TriggerConditionDef::SourceActivationsThisTurn { .. }
         // Both count something about a resolution, which a static walk is
         // not one of.
+        | TriggerConditionDef::SourceAbilityUsedThisTurn
         | TriggerConditionDef::SourceResolutionsThisTurn { .. }
         | TriggerConditionDef::TargetMatches { .. }
         // And this reads a binding, which only a resolution has.
@@ -67,5 +68,38 @@ fn static_trigger_condition_supported(condition: TriggerConditionDef) -> bool {
         | TriggerConditionDef::SourceIsUntapped
         | TriggerConditionDef::ControllerLifeAtMost(_)
         | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife => true,
+    }
+}
+
+/// Presence is read while discovering the ability set, so it must not ask
+/// for characteristics derived from that same set or a stack-event binding.
+pub(super) fn ability_presence_condition_supported(condition: TriggerConditionDef) -> bool {
+    match condition {
+        TriggerConditionDef::All(conditions) | TriggerConditionDef::AnyOf(conditions) => conditions
+            .iter()
+            .copied()
+            .all(ability_presence_condition_supported),
+        TriggerConditionDef::Not(condition) => ability_presence_condition_supported(*condition),
+        TriggerConditionDef::ObjectCount { query, .. } => {
+            query.zones.iter().all(|zone| {
+                matches!(
+                    zone,
+                    ZoneKind::Hand
+                        | ZoneKind::Library
+                        | ZoneKind::Graveyard
+                        | ZoneKind::Exile
+                        | ZoneKind::Command
+                )
+            }) && query.object == ObjectPredicateDef::Any
+                && static_query_supported(query)
+        }
+        TriggerConditionDef::SourceClassLevel { .. }
+        | TriggerConditionDef::SourceCounters { .. }
+        | TriggerConditionDef::SourceIsTapped
+        | TriggerConditionDef::SourceIsUntapped
+        | TriggerConditionDef::SourceUntapped
+        | TriggerConditionDef::ControllerLifeAtMost(_)
+        | TriggerConditionDef::ControllerLifeAtMostHalfStartingLife => true,
+        _ => false,
     }
 }

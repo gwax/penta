@@ -267,6 +267,7 @@ impl Game {
             ValueDef::ManaInPool { player, color } => {
                 i32::from(self.mana_in_pool_value(player, color, object.controller, None))
             }
+            ValueDef::BoundValue(binding) => context.bound_value(binding).unwrap_or(0),
             ValueDef::Constant(value) => value,
             ValueDef::CreaturesDiedThisTurn => i32::from(self.creatures_died_this_turn),
             // A count of players, not of life: the clause asks how many
@@ -376,6 +377,16 @@ impl Game {
                     )
                 })
                 .map_or(0, |player| i32::from(self.players[player.index()].life)),
+            ValueDef::TargetLifeTotal(target) => {
+                Self::chosen_targets(object, scoped.target_slot(target))
+                    .find_map(|target| match target {
+                        Target::Player(player) => {
+                            Some(i32::from(self.players[player.index()].life))
+                        }
+                        _ => None,
+                    })
+                    .unwrap_or(0)
+            }
             ValueDef::TargetLibrarySize(target) => {
                 Self::chosen_targets(object, scoped.target_slot(target))
                     .find_map(|target| match target {
@@ -415,6 +426,10 @@ impl Game {
                 .effect_object_reference_id(reference, object, context, scoped)
                 .and_then(|referenced| self.current_or_last_known_power(referenced))
                 .map_or(0, i32::from),
+            ValueDef::ManaSpentToCast(reference) => self
+                .effect_object_reference_id(reference, object, context, scoped)
+                .and_then(|referenced| self.cast_context_for(referenced, Some(object)))
+                .map_or(0, |cast| i32::from(cast.mana_spent)),
             ValueDef::ObjectManaValue(reference) => self
                 .effect_object_reference_id(reference, object, context, scoped)
                 .and_then(|referenced| self.current_or_last_known_mana_value(referenced))

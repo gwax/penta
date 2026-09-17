@@ -115,14 +115,14 @@ impl Game {
     ) {
         self.lose_life(player, crate::card::costs::life_cost(costs));
         let cost = self.announced_activation_cost(player, cost, announced.mana_payment);
-        self.activate_mana_for_cost_avoiding_for(
+        let (cost, payment_x) = self.activate_mana_for_cost_avoiding_for(
             player,
             cost,
             announced.x,
             announced.cost_objects.first().copied(),
             announced.payment_purpose,
         );
-        let _ = self.pay_player_cost_for(player, cost, announced.x, announced.payment_purpose);
+        let _ = self.pay_player_cost_for(player, cost, payment_x, announced.payment_purpose);
     }
 
     pub(super) fn pay_nonbattlefield_move_cost(

@@ -313,6 +313,23 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
             return false;
         };
         return match definition.event {
+            ReplacementEventDef::TappedForMana { .. } => {
+                fn supported(effect: ReplacementEffectDef) -> bool {
+                    match effect {
+                        ReplacementEffectDef::Sequence(effects) => {
+                            effects.iter().copied().all(supported)
+                        }
+                        ReplacementEffectDef::SetEventAmount(_)
+                        | ReplacementEffectDef::SetManaType(_) => true,
+                        _ => false,
+                    }
+                }
+                battlefield_only(definition.source_zones)
+                    && !definition.optional
+                    && !definition.once
+                    && definition.condition.is_none()
+                    && supported(effect)
+            }
             ReplacementEventDef::SourceEntersBattlefield => {
                 battlefield_only(definition.source_zones)
                     && shared_replacement_event(definition.event)
@@ -535,7 +552,8 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     }
                     // A triggered mana ability resolves without an offer to
                     // read an amount off, so this one stays outside.
-                    EffectDef::BindOutput { .. }
+                    EffectDef::BindValue { .. }
+                    | EffectDef::BindOutput { .. }
                     | EffectDef::WithRule { .. }
                     | EffectDef::ContinueReplacedDraw
                     | EffectDef::AddManaEqualTo { .. }
@@ -564,7 +582,9 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::PayOr(_)
                     | EffectDef::WithCosts { .. }
                     | EffectDef::PreventDamage { .. }
+                    | EffectDef::Repeat { .. }
                     | EffectDef::May { .. }
+                    | EffectDef::RecordAbilityUse
                     | EffectDef::None
                     | EffectDef::DealDamage(_)
                     | EffectDef::Fight { .. }
@@ -661,6 +681,7 @@ pub(super) fn shared_definition_ability(ability: &AbilityDef) -> bool {
                     | EffectDef::BecomeMonarch { .. }
                     | EffectDef::VoteForPermanentToExile { .. }
                     | EffectDef::DamageCannotBePreventedThisTurn
+                    | EffectDef::ExileUntilSourceLeaves { .. }
                     | EffectDef::ExileLinkedToSource { .. }
                     | EffectDef::MayPlayWithoutPaying { .. }
                     | EffectDef::ExileGrantingOwnerPlay { .. }

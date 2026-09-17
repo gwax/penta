@@ -113,6 +113,7 @@ pub(in crate::card::sets) static IMPERIAL_RECRUITER: CardRecord = CardRecord::ne
                 Some(ZoneKind::Battlefield),
             ),
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::All(&[
@@ -154,6 +155,7 @@ pub(in crate::card::sets) static THREE_VISITS: CardRecord = CardRecord::new(
     CardRules::new_sorcery(mana_cost!("{1}{G}")).with_abilities(&[AbilityDef::spell(
         "Search your library for a Forest card, put it onto the battlefield, then shuffle.",
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Forest")),

@@ -164,6 +164,8 @@ pub enum ObjectPredicateDef {
     /// holds the card's own definition can answer it, so the catalog
     /// boundary keeps it out of static and stack contexts.
     GenericManaCostAtMost(u8),
+    /// The selected characteristics include an X symbol, regardless of its chosen value.
+    ManaCostHasX,
     /// Power at least this much, for "power N or greater". Target legality
     /// reads real current power, so a creature a Crusade has pumped qualifies.
     /// Trigger and static matching still read power without continuous

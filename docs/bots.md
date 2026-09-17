@@ -269,7 +269,7 @@ A clone forks the *true* state, hidden zones included. That is right for
 self-play but wrong for a search bot in a hosted match: its rollouts must use
 worlds consistent with its observation, not cards only the host knows.
 
-The optional `reconstruction.checkpoint.v20` capability advertises a hidden-safe
+The optional `reconstruction.checkpoint.v21` capability advertises a hidden-safe
 current-state checkpoint in each observation. The checkpoint was introduced in
 protocol 19, expanded in protocol 21 into the complete typed snapshot described
 below, and given its own nested format version in protocol 22. Protocol 26's
@@ -509,7 +509,7 @@ world it can search.
 | field | meaning |
 | --- | --- |
 | `protocolVersion` | the breaking bot-wire epoch; protocol 33 objects are open-world, but an epoch mismatch requires migration |
-| `protocolCapabilities` | optional named facilities emitted by this engine; includes `reconstruction.checkpoint.v20`, `match.first-to-two-wins.v1` and `rules.restart-game.v1`; ignore unknown entries |
+| `protocolCapabilities` | optional named facilities emitted by this engine; includes `reconstruction.checkpoint.v21`, `match.first-to-two-wins.v1` and `rules.restart-game.v1`; ignore unknown entries |
 | `simulationFingerprint` | a conservative identity of simulation source and build requirements; pin it for training and require it for reconstruction |
 | `engineVersion` | package-release provenance; it is not an exact simulation identity |
 | `format` | the rules/deck profile slug: `"old-school-93-94"`, `"premodern"`, `"isd-m14-standard"`, `"som-m13-standard"`, `"vintage-cube"`, or `"pauper-cube"` |
@@ -1123,12 +1123,12 @@ see the designation and whether its once-per-game action has been used. The
 existing `companions` list still contains only the viewer's available companion.
 This field is advertised by `observation.chosen-companions.v1`.
 
-Checkpoint format 20 stores this designation, whether its original object
+Checkpoint format 20 introduced storage for this designation, whether its original object
 remains outside the game, and the pregame selection continuation. Bringing it
 into the game through another effect does not spend its Companion action.
 Format 19's eligible-card lists cannot be migrated into an honest pregame choice;
-reconstruction consumers must require
-`reconstruction.checkpoint.v20` and regenerate older checkpoints. Ordinary bot
+current reconstruction consumers must require
+`reconstruction.checkpoint.v21` and regenerate older checkpoints. Ordinary bot
 protocol vocabulary is unchanged: selection uses existing decisions, and taking
 the chosen card still uses `TakeCompanion`.
 
@@ -1490,10 +1490,19 @@ Protocol 22 splits wire compatibility from conservative source identity:
   `requiredSimulationFingerprint` to refuse a different simulation before it
   is listed or assigned.
 
-The current optional capability is `reconstruction.checkpoint.v20`. An ordinary
+The current optional capability is `reconstruction.checkpoint.v21`. An ordinary
 hosted bot that only reads `legalActions` should declare an empty capability
 list; do not copy the server's advertised capabilities without implementing
 them.
+
+### Checkpoint format 21
+
+Format 21 preserves the Legacy card rules state added for immediate exile returns,
+restricted mana symbols, explicit ability-use history, single-color production
+choices, frozen numeric bindings, copy creature-type replacements, and
+selected-spell casting bounds. Reconstruction
+clients must advertise `reconstruction.checkpoint.v21` and regenerate older saved
+checkpoints. Ordinary action and observation shapes are unchanged.
 
 ### Migrating from protocol 20
 

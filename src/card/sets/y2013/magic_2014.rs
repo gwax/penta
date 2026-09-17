@@ -2932,6 +2932,7 @@ pub(in crate::card::sets) static RING_OF_THREE_WISHES: CardRecord = CardRecord::
                 },
             ],
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 // "A card", with no restriction at all, which is the whole

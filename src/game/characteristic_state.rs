@@ -102,6 +102,7 @@ pub(super) struct CopiableCharacteristics {
     /// ones. Interned names rather than the authored slice, so a restored
     /// copy holds the same `&'static str` the cards do.
     pub(super) added_creature_types: Vec<&'static str>,
+    pub(super) replaced_creature_types: Option<Vec<&'static str>>,
     /// "With no mana cost", which is what zeroes an eternalized token's mana
     /// value.
     pub(super) no_mana_cost: bool,

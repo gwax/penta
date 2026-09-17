@@ -25,6 +25,7 @@ use crate::{
 include!("abilities/target_choosers.rs");
 include!("abilities/entry_values.rs");
 include!("abilities/granted_static.rs");
+include!("abilities/presence.rs");
 include!("abilities/cost_bindings.rs");
 
 pub(super) fn validate_alternative_cast_abilities(
@@ -552,6 +553,19 @@ fn validate_ability_program(ability: &AbilityDef) -> Result<(), GrantedAbilityVa
             DeclarativeAbilityDef::Replacement(definition),
             AbilityProgramDef::Replacement(effect),
         ) => {
+            if matches!(definition.event, ReplacementEventDef::TappedForMana { .. })
+                && (definition.source_zones != [ZoneKind::Battlefield]
+                    || definition.optional
+                    || definition.once
+                    || definition.condition.is_some())
+            {
+                return Err(
+                    GrantedAbilityValidationError::UnsupportedReplacementProgram {
+                        event: definition.event,
+                        operation: "mana production replacements require an unconditional battlefield source",
+                    },
+                );
+            }
             if let Err(operation) = validate_replacement_program_for_event(definition.event, effect)
             {
                 return Err(
@@ -577,11 +591,22 @@ fn validate_ability_program(ability: &AbilityDef) -> Result<(), GrantedAbilityVa
     Ok(())
 }
 
+fn validate_mana_replacement_program(effect: ReplacementEffectDef) -> Result<(), &'static str> {
+    match effect {
+        ReplacementEffectDef::Sequence(effects) => effects
+            .iter()
+            .try_for_each(|effect| validate_mana_replacement_program(*effect)),
+        ReplacementEffectDef::SetManaType(_) | ReplacementEffectDef::SetEventAmount(_) => Ok(()),
+        _ => Err(replacement_operation_name(effect)),
+    }
+}
+
 fn validate_replacement_program_for_event(
     event: ReplacementEventDef,
     effect: ReplacementEffectDef,
 ) -> Result<(), &'static str> {
     match event {
+        ReplacementEventDef::TappedForMana { .. } => validate_mana_replacement_program(effect),
         ReplacementEventDef::SourceEntersBattlefield
         | ReplacementEventDef::ObjectEntersBattlefield { .. } => {
             validate_entry_replacement_program(effect)
@@ -752,6 +777,8 @@ fn validate_entry_replacement_program(effect: ReplacementEffectDef) -> Result<()
         | ReplacementEffectDef::RegenerateDestroyedObject
         | ReplacementEffectDef::RemoveDamageFromDestroyedObject
         | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+        | ReplacementEffectDef::SetEventAmount(_)
+        | ReplacementEffectDef::SetManaType(_)
         | ReplacementEffectDef::MultiplyEventAmount(_) => Err(replacement_operation_name(effect)),
     }
 }
@@ -793,6 +820,8 @@ fn validate_begin_turn_replacement_program(
         | ReplacementEffectDef::RemoveDamageFromDestroyedObject
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
         | ReplacementEffectDef::PlaceCountersOnMovedObject { .. }
+        | ReplacementEffectDef::SetEventAmount(_)
+        | ReplacementEffectDef::SetManaType(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
@@ -846,6 +875,8 @@ fn validate_battlefield_exit_replacement_program(
         | ReplacementEffectDef::RegenerateDestroyedObject
         | ReplacementEffectDef::RemoveDamageFromDestroyedObject
         | ReplacementEffectDef::ModifyBattlefieldEntry(_)
+        | ReplacementEffectDef::SetEventAmount(_)
+        | ReplacementEffectDef::SetManaType(_)
         | ReplacementEffectDef::MultiplyEventAmount(_)
         | ReplacementEffectDef::AddToEventAmount(_)
         | ReplacementEffectDef::Choose(_)
@@ -867,6 +898,8 @@ const fn replacement_operation_name(effect: ReplacementEffectDef) -> &'static st
         ReplacementEffectDef::RemoveDamageFromDestroyedObject => "RemoveDamageFromDestroyedObject",
         ReplacementEffectDef::ModifyBattlefieldEntry(_) => "ModifyBattlefieldEntry",
         ReplacementEffectDef::MultiplyEventAmount(_) => "MultiplyEventAmount",
+        ReplacementEffectDef::SetEventAmount(_) => "SetEventAmount",
+        ReplacementEffectDef::SetManaType(_) => "SetManaType",
         ReplacementEffectDef::AddToEventAmount(_) => "AddToEventAmount",
         ReplacementEffectDef::Choose(_) => "Choose",
         ReplacementEffectDef::LookAtHand(_) => "LookAtHand",

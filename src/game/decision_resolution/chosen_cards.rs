@@ -88,7 +88,7 @@ impl Game {
                 if destination != ZoneKind::Hand {
                     continue;
                 }
-                let Some(card) = remove_card(&mut self.players[player.index()].outside_game, id)
+                let Some(card) = remove_card(&mut self.players[player.index()].sideboard, id)
                 else {
                     continue;
                 };
@@ -144,4 +144,26 @@ impl Game {
             self.pending_procedures.append(later);
         }
     }
+}
+
+/// The cards an answered search selected, in the order the options offered
+/// them.
+pub(super) fn selected_cards(
+    offered: &[crate::game::DecisionOption],
+    options: &[u32],
+) -> Vec<(crate::GameObjectId, crate::CardDefinitionId)> {
+    options
+        .iter()
+        .filter_map(|selected| {
+            offered
+                .iter()
+                .find(|option| option.id == *selected)
+                .and_then(|option| option.card)
+                .and_then(|(object, characteristics)| {
+                    characteristics
+                        .card_definition()
+                        .map(|definition| (object, definition))
+                })
+        })
+        .collect()
 }

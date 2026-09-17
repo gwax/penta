@@ -156,6 +156,7 @@ pub(super) enum EffectBindingValue {
     Object(Option<Target>),
     Objects(Vec<Target>),
     CardName(String),
+    Number(i32),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -246,9 +247,12 @@ impl EffectResolutionContext {
         self.bindings
             .with(|bindings| match bindings.values.get(label) {
                 Some(EffectBindingValue::Object(object)) => *object,
-                Some(EffectBindingValue::Objects(_) | EffectBindingValue::CardName(_)) | None => {
-                    None
-                }
+                Some(
+                    EffectBindingValue::Objects(_)
+                    | EffectBindingValue::CardName(_)
+                    | EffectBindingValue::Number(_),
+                )
+                | None => None,
             })
     }
 
@@ -289,9 +293,12 @@ impl EffectResolutionContext {
         self.bindings
             .with(|bindings| match bindings.values.get(label) {
                 Some(EffectBindingValue::Objects(objects)) => objects.clone(),
-                Some(EffectBindingValue::Object(_) | EffectBindingValue::CardName(_)) | None => {
-                    Vec::new()
-                }
+                Some(
+                    EffectBindingValue::Object(_)
+                    | EffectBindingValue::CardName(_)
+                    | EffectBindingValue::Number(_),
+                )
+                | None => Vec::new(),
             })
     }
 
@@ -363,7 +370,7 @@ impl EffectResolutionContext {
                     EffectBindingValue::Objects(group) => {
                         group.retain(|object| !objects.contains(object));
                     }
-                    EffectBindingValue::CardName(_) => {}
+                    EffectBindingValue::CardName(_) | EffectBindingValue::Number(_) => {}
                 }
             }
         });
@@ -400,7 +407,7 @@ impl EffectResolutionContext {
             |binding| match binding {
                 EffectBindingValue::Object(object) => object.iter().copied().collect::<Vec<_>>(),
                 EffectBindingValue::Objects(objects) => objects.clone(),
-                EffectBindingValue::CardName(_) => Vec::new(),
+                EffectBindingValue::CardName(_) | EffectBindingValue::Number(_) => Vec::new(),
             },
         ));
         targets
@@ -450,6 +457,7 @@ pub(super) struct TriggerEventObject {
     pub(super) colors: [bool; 5],
     pub(super) subtypes: crate::card::SubtypeSet,
     pub(super) mana_value: u16,
+    pub(super) mana_cost_has_x: bool,
     /// Current power where one exists: a battlefield creature reports what it
     /// is now, not what it was printed as.
     pub(super) power: Option<i16>,

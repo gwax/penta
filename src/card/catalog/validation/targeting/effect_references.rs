@@ -56,6 +56,17 @@ fn validate_effect_references(
     scope: BindingScope<'_>,
 ) -> Result<(), GrantedAbilityValidationError> {
     match effect {
+        EffectDef::BindValue { binding, value, effect } => {
+            validate_value_target_references(value, target_count, scope)?;
+            let nested = scope.with_number(binding)?;
+            validate_effect_references(*effect, target_count, nested)?;
+            if !nested.binding_was_read(binding) {
+                return Err(GrantedAbilityValidationError::UnsupportedEffectProgramContext {
+                    context: "number binding", operation: "a number binding never read by its continuation",
+                });
+            }
+            Ok(())
+        }
         EffectDef::WithRule { effect, .. } => {
             validate_effect_references(*effect, target_count, scope)
         }
@@ -607,6 +618,7 @@ fn validate_effect_references(
             validate_effect_references(*then, target_count, scope)
         }
         EffectDef::MayCastTargetWithoutPaying { object, .. }
+        | EffectDef::ExileUntilSourceLeaves { object }
         | EffectDef::Explore { object }
         | EffectDef::LoseTheGame { player: object }
         | EffectDef::WinTheGame { player: object }
@@ -829,7 +841,7 @@ fn validate_effect_references(
         | EffectDef::RevealHand { player } => {
             validate_recipient_target_references(player, target_count, scope)
         }
-        EffectDef::May { player, effect }
+        EffectDef::Repeat { player, effect, .. } | EffectDef::May { player, effect }
         | EffectDef::ReplaceNextDrawThisTurn { player, effect } => {
             validate_recipient_target_references(player, target_count, scope)?;
             validate_effect_references(*effect, target_count, scope)
@@ -957,6 +969,7 @@ fn validate_effect_references(
         | EffectDef::LandwalkCanBeBlocked(_)
         | EffectDef::CannotAttackUnless(_)
         | EffectDef::CannotAttackIf(_)
+        | EffectDef::RecordAbilityUse
         | EffectDef::None
         | EffectDef::ContinueReplacedDraw
         | EffectDef::AddManaEqualTo { .. }

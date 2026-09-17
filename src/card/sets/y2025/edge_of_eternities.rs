@@ -173,6 +173,7 @@ const LANDER_TOKEN: TokenCharacteristics = TokenCharacteristics::artifact(&["Lan
             CostDef::SacrificeSource,
         ],
         EffectDef::SearchZone {
+            exile_face_down: false,
             player: EffectRecipientDef::Controller,
             source: ZoneKind::Library,
             object: ObjectPredicateDef::All(&[
@@ -220,6 +221,7 @@ pub(in crate::card::sets) static ANTICAUSAL_VESTIGE: CardRecord = CardRecord::ne
             EffectDef::Sequence(&[
                 abilities::draw_cards(ValueDef::Constant(1)),
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Hand,
                     object: ObjectPredicateDef::All(&[
@@ -326,6 +328,7 @@ pub(in crate::card::sets) static TEZZERET_CRUEL_CAPTAIN: CardRecord = CardRecord
                  shuffle.",
                 &[CostDef::Loyalty(ValueDef::Constant(-3))],
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     // A one-mana artifact, which is what the deck this is in is made of.
@@ -976,6 +979,7 @@ pub(in crate::card::sets) static HONORED_KNIGHT_CAPTAIN: CardRecord = CardRecord
                     CostDef::SacrificeSource,
                 ],
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::Subtype(SubtypeDef::from_name("Equipment")),
@@ -1399,6 +1403,7 @@ pub(in crate::card::sets) static THE_SERIEMA: CardRecord = CardRecord::new(
                  creature card, reveal it, put it into your hand, then \
                  shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[
@@ -1529,6 +1534,7 @@ pub(in crate::card::sets) static STARFIELD_SHEPHERD: CardRecord = CardRecord::ne
              Plains card or a creature card with mana value 1 or less, \
              reveal it, put it into your hand, then shuffle.",
             EffectDef::SearchZone {
+                exile_face_down: false,
                 player: EffectRecipientDef::Controller,
                 source: ZoneKind::Library,
                 object: ObjectPredicateDef::AnyOf(&[
@@ -2688,6 +2694,7 @@ pub(in crate::card::sets) static SCOUR_FOR_SCRAP: CardRecord = CardRecord::new(
                 "Search your library for an artifact card, reveal it, put it \
                  into your hand, then shuffle.",
                 EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::HasType(CardType::Artifact),
@@ -6335,6 +6342,7 @@ pub(in crate::card::sets) static LARVAL_SCOUTLANDER: CardRecord = CardRecord::ne
                     ObjectPredicateDef::Subtype(SubtypeDef::from_name("Lander")),
                 ]))],
                 &EffectDef::SearchZone {
+                    exile_face_down: false,
                     player: EffectRecipientDef::Controller,
                     source: ZoneKind::Library,
                     object: ObjectPredicateDef::All(&[

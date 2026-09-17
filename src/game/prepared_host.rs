@@ -184,6 +184,13 @@ impl Game {
             return None;
         }
         let program = self.prepared_static_program(Self::effective_rules_source(permanent))?;
+        if program
+            .base_abilities()
+            .iter()
+            .any(|(_, ability)| ability.presence.is_some())
+        {
+            return None;
+        }
         if self
             .battlefield
             .iter()
