@@ -224,6 +224,50 @@ impl Game {
         context: EffectResolutionContext,
     ) {
         match scoped.effect {
+            EffectDef::SearchZones {
+                searcher,
+                owner,
+                zones,
+                binding,
+                then,
+            } => {
+                let Some(searcher) =
+                    self.effect_player_reference(searcher, object, &context, scoped)
+                else {
+                    return;
+                };
+                let Some(owner) = self.effect_player_reference(owner, object, &context, scoped)
+                else {
+                    return;
+                };
+                if zones.contains(&ZoneKind::Library) {
+                    self.capture_battlefield_triggers(
+                        &super::super::CommittedTriggerEvent::LibrarySearched {
+                            player: searcher,
+                            owner,
+                        },
+                    );
+                }
+                let mut cards = Vec::new();
+                for zone in zones {
+                    let members = match zone {
+                        ZoneKind::Hand => &self.players[owner.index()].hand,
+                        ZoneKind::Graveyard => &self.players[owner.index()].graveyard,
+                        ZoneKind::Library => &self.players[owner.index()].library,
+                        ZoneKind::Exile => &self.players[owner.index()].exile,
+                        _ => continue,
+                    };
+                    for card in members {
+                        let target = Target::Card(card.id);
+                        if !cards.contains(&target) {
+                            cards.push(target);
+                        }
+                    }
+                }
+                let mut context = context;
+                context.bind_object_group(binding, cards);
+                self.resolve_effect_def(scoped.with_effect(*then), object, context);
+            }
             EffectDef::BindObjects(definition) => {
                 let Some(cards) =
                     self.effect_object_collection(definition.source, object, &context, scoped)
@@ -467,5 +511,50 @@ impl Game {
             context.bind_object_group(binding, moved);
         }
         self.resolve_effect_def(scoped.with_effect(*definition.then), object, context);
+    }
+}
+
+impl Game {
+    pub(in crate::game) fn resolve_for_each_in_binding(
+        &mut self,
+        objects: crate::game::RuntimeBinding,
+        binding: crate::game::RuntimeBinding,
+        mut next: usize,
+        effect: ScopedEffect,
+        object: &StackObject,
+        context: EffectResolutionContext,
+    ) {
+        let members = context.runtime_object_group(&objects);
+        let mut later_procedures = std::mem::take(&mut self.pending_procedures);
+        while let Some(member) = members.get(next).copied() {
+            let consumed = next;
+            next += 1;
+            let mut iteration = context.clone();
+            if let Some(live) = self.live_group_before(&members, consumed) {
+                iteration.bind_runtime_object_group(&objects, live);
+            }
+            iteration.bind_runtime_single_object(&binding, Some(member));
+            self.resolve_effect_def(effect, object, iteration);
+            if !self.pending_decisions.is_empty()
+                || !self.pending_events.is_empty()
+                || !self.pending_procedures.is_empty()
+            {
+                if next < members.len() {
+                    self.pending_procedures.push_back(
+                        crate::game::PendingProcedure::ForEachInBinding {
+                            objects,
+                            binding,
+                            next,
+                            effect,
+                            object: Box::new(object.clone()),
+                            context,
+                        },
+                    );
+                }
+                self.pending_procedures.append(&mut later_procedures);
+                return;
+            }
+        }
+        self.pending_procedures.append(&mut later_procedures);
     }
 }

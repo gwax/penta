@@ -851,7 +851,7 @@ fn remaining_sources_can_cover_required_colors(
     pool: PaymentCapacity,
     cost: ManaCost,
 ) -> bool {
-    if pool.mana.any_color {
+    if pool.mana.any_color || pool.mana.any_type {
         return true;
     }
     let fixed_colors_fit = colored_mana()
