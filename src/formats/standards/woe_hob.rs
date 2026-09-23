@@ -1,8 +1,8 @@
 //! Fixed paper Standard snapshot for the September 8, 2026 event corpus.
 //!
-//! Set window: https://magic.wizards.com/en/news/feature/the-hobbit-release-notes
-//! Bans: https://magic.wizards.com/en/banned-restricted-list (checked 2026-09-22),
-//! including https://magic.wizards.com/en/news/announcements/banned-and-restricted-august-10-2026.
+//! Set window: <https://magic.wizards.com/en/news/feature/the-hobbit-release-notes>
+//! Bans: <https://magic.wizards.com/en/banned-restricted-list> (checked 2026-09-22),
+//! including <https://magic.wizards.com/en/news/announcements/banned-and-restricted-august-10-2026>.
 //! Arena's best-of-one-only Leyline of Resonance ban does not apply.
 
 use super::super::{CONSTRUCTED_RULES, SetFormatDefinition};
