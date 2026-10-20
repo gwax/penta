@@ -1,0 +1,490 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://penta.local/schemas/pilot-v2.json",
+  "title": "Penta native pilot-v2 (compose with shared pilot-v1 definitions)",
+  "$ref": "#/$defs/PilotPacket",
+  "$defs": {
+    "ObjectSummary": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string"
+        },
+        "objectId": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "controller": {
+          "$ref": "#/$defs/Seat"
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Seat"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "current": {
+          "$ref": "#/$defs/ExactObject"
+        },
+        "counters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Counter"
+          }
+        },
+        "tapped": {
+          "type": "boolean"
+        },
+        "canAttack": {
+          "type": "boolean"
+        },
+        "enteredThisTurn": {
+          "type": "boolean"
+        },
+        "power": {
+          "type": "integer"
+        },
+        "toughness": {
+          "type": "integer"
+        },
+        "damage": {
+          "type": "integer"
+        },
+        "loyalty": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "reference"
+      ],
+      "additionalProperties": false,
+      "description": "Current visible object. Omitted routine flags are false or empty; current retains nondefault flags and unknown fields. Full canonical values, including absent versus null and metadata, are available through reference. enteredThisTurn is the protocol controller-turn timestamp flag, not a claim of summoning sickness; use canAttack and legal actions."
+    },
+    "ZoneSummary": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObjectSummary"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ZoneSummary"
+          }
+        }
+      ]
+    },
+    "ZoneSummaries": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ZoneSummary"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "items",
+        "total",
+        "reference"
+      ],
+      "additionalProperties": false
+    },
+    "PrintedSummary": {
+      "type": "object",
+      "properties": {
+        "rulesText": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "manaCost": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "typeLine": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "power": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "toughness": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "loyalty": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PrintedPart"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PrintedPart": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "name": {
+          "type": "string"
+        },
+        "rulesText": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "manaCost": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "typeLine": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "power": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "toughness": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "loyalty": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PrintedPart"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "Rule": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CompleteRule"
+        },
+        {
+          "$ref": "#/$defs/CachedRule"
+        }
+      ]
+    },
+    "NativePlayChoice": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "index"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              }
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "maxItems": 4096
+            }
+          },
+          "required": [
+            "decision",
+            "options"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "NativeInteractionChoice": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              }
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "maxItems": 4096
+            }
+          },
+          "required": [
+            "decision",
+            "options"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "NativeYieldPlan": {
+      "type": "object",
+      "properties": {
+        "until": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/YieldCondition"
+          },
+          "minItems": 1,
+          "maxItems": 16
+        },
+        "maxPasses": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        }
+      },
+      "required": [
+        "until"
+      ],
+      "additionalProperties": false
+    },
+    "NativeInteractionRequest": {
+      "description": "Explicit actions followed by an optional conditional yield. Empty choices require a yield. Local next/interact maxWaitMs is not a host argument.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "requestId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "revision": {
+              "type": "string",
+              "minLength": 1
+            },
+            "choices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/NativeInteractionChoice"
+              },
+              "minItems": 1,
+              "maxItems": 64
+            },
+            "yield": {
+              "$ref": "#/$defs/NativeYieldPlan"
+            },
+            "waitMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 25000
+            },
+            "afterEvent": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "requestId",
+            "revision",
+            "choices"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "requestId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "revision": {
+              "type": "string",
+              "minLength": 1
+            },
+            "choices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/NativeInteractionChoice"
+              },
+              "minItems": 0,
+              "maxItems": 0
+            },
+            "yield": {
+              "$ref": "#/$defs/NativeYieldPlan"
+            },
+            "waitMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 25000
+            },
+            "afterEvent": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "requestId",
+            "revision",
+            "choices",
+            "yield"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "CompleteRule": {
+      "type": "object",
+      "properties": {
+        "definition": {
+          "type": "string"
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "printed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrintedSummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "printedPreviouslySent": {
+          "type": "boolean",
+          "description": "True only when printed is null because this persistent session already delivered the exact same printed summary. A full view restores printed details; reference always provides the complete catalog entry."
+        }
+      },
+      "required": [
+        "definition",
+        "available",
+        "name",
+        "printed",
+        "reference"
+      ],
+      "additionalProperties": false
+    },
+    "CachedRule": {
+      "type": "object",
+      "properties": {
+        "definition": {
+          "type": "string"
+        },
+        "printed": {
+          "type": "null"
+        },
+        "printedPreviouslySent": {
+          "const": true
+        },
+        "reference": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "definition",
+        "printed",
+        "printedPreviouslySent",
+        "reference"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

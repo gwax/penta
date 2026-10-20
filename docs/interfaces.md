@@ -38,8 +38,10 @@ when the legal action list and decision selection schema leave no alternative.
 Runners may submit it through ordinary `apply`; they must retain visible events
 and any decision information before advancing. The canonical JSON observation
 offers the same query as optional `forcedAction` (`actions.forced.v1`). Existing
-native runners retain their explicit one-action semantics; hosted sessions use
-the query to advance forced steps after each submitted command.
+native runners retain their explicit one-action semantics. Hosted sessions and
+the [native single-match host](native-matches.md) use the query to advance forced
+steps after submitted commands. The native host uses `session::ExactSession`;
+both adapters retain seat-visible information through `session::SessionUpdates`.
 
 ## Observations and events
 
@@ -120,6 +122,34 @@ not one exact-version comparison:
   around unchanged canonical bot observations. Its exact-pacing configuration
   and `sessionAct` journal command require browser/host replay version 4. Agent
   presentation deltas and menu references are adapter output, not bot-wire changes.
+- The [native single-match host](native-matches.md) has a separate HTTP API with
+  observation envelope `apiVersion: 1` and debug bundle `nativeReplayVersion: 2`.
+  Its organizer and seat capabilities, request receipts, and volatile transcripts
+  belong to that host contract. Native debug replay requires the same simulation
+  fingerprint and compares the reconstructed final seat observations. Version 2
+  records conditional yield passes and the actual forced continuation prefix;
+  version 1 bundles remain readable under their matching fingerprint. Replay
+  does not restore a running host. The additive `yield` and `cancelYield`
+  operations use typed OR conditions and ordinary validated priority passes.
+  The native client defaults to `pilot-v2`, with typed concise object summaries,
+  full-detail references, and explicit current versus acceptance-time yield state.
+  Its composed JSON Schema and generated TypeScript types version presentation
+  separately; `pilot-v1`, `decision-v1`, and exact views remain available. The
+  optional JSON-lines CLI session retains local connection, measurement, and
+  delivered printed-rule state. An explicit `full:true` refresh restores printed
+  context; current state and choices remain complete. It makes no game choices
+  or automatic mutation retries. Additive `interact` submits explicit actions
+  and an optional yield under one idempotent receipt. Session `next`/`interact`
+  renew read-only waits within a bounded budget and cache the public catalog.
+  A loopback, seat-authenticated session transport also supports finite CLI
+  requests without losing local context. Optional seat-local `afterEvent`
+  delivery cursors preserve ordered events independently of action resets;
+  v2 sessions acknowledge written output and `full:true` replays that history.
+  Canonical observation references and exact replay remain unchanged.
+  Large v2 menus retain an inline prefix with typed action-family summaries;
+  repeated delivered rules use explicit minimal cached rows.
+  These versions are independent of the hosted
+  journal, canonical bot protocol, and reconstruction checkpoint versions.
 
 Query `protocol_version()`, `simulation_fingerprint()`, and `engine_version()`
 through the relevant binding. Release history and migration notes live in the

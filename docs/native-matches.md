@@ -1,0 +1,412 @@
+# Native single-match host
+
+`penta-host` owns one match in one native process. It calls the shared Rust
+engine directly; it does not start Vite, a browser, WASM, or the hosted-room
+daemon. The existing [hosted session workflow](bot-sessions.md) remains available.
+The native host, one-shot client, and optional persistent CLI session make no model calls. Pilots choose
+exact actions or explicitly authorize conditional priority passes.
+
+## Start and distribute seats
+
+Build the host with `make build-native-host`. Start the resulting binary
+with registered format and deck names:
+
+```sh
+target/release/penta-host --format FORMAT_SLUG --p1-deck P1_DECK --p2-deck P2_DECK --match-mode first-to-two-wins --port 0
+```
+
+Replace the uppercase placeholders with actual registry values, quoting names
+containing spaces. `one-conclusion` is also supported. Port zero asks the OS for
+an available port. Keep the process running; its startup stdout is JSON:
+
+```json
+{"apiVersion":1,"server":"http://127.0.0.1:PORT","organizerSecret":"SECRET","status":"ready"}
+```
+
+The organizer calls `seats` with its secret. Every native client invocation
+accepts a single JSON object, inline, through `@FILE`, or through stdin (`-`):
+
+```sh
+node tools/penta-agent/native.mjs seats -
+```
+
+Supply `{"server":"http://127.0.0.1:PORT","secret":"ORGANIZER_SECRET"}` on stdin.
+The result contains `seats.p1.secret` and `seats.p2.secret`. Give each pilot only
+the server URL and its own seat secret. Retain the organizer secret separately.
+Start pilots with fresh model context so they do not inherit the organizer's
+launch output or the other seat's secret. For Codex subagents, use
+`fork_turns: "none"` and pass only the seat assignment, skill, URL, and own secret.
+The client never writes credentials, connection handles, retry bodies or
+observations to disk. Stdin avoids putting credentials in command arguments;
+tool transcripts may still contain submitted inputs.
+
+## Persistent local client
+
+For agent tools, use a memory-only local session with finite request commands.
+Start the session once, supplying the engine URL and seat secret on stdin:
+
+```sh
+node tools/penta-agent/session-rpc.mjs serve -
+```
+
+The initialization object is `{"server":"http://127.0.0.1:PORT","secret":"SEAT_SECRET"}`.
+Close stdin after this object. Keep the process running and retain its returned
+`clientServer` URL. For every request, start a finite command:
+
+```sh
+node tools/penta-agent/session-rpc.mjs call -
+```
+
+Supply `{"clientServer":"RETURNED_URL","secret":"SEAT_SECRET","request":{"method":"next"}}`
+on stdin. The command exits when the reply arrives, while the local session
+retains catalog, rule, and event delivery context. This avoids the fixed output
+collection delay that some terminal tools impose on persistent PTYs. In Codex,
+use a 30000-ms initial `exec_command` yield for the finite call; it returns early
+when the process exits. Poll only if the command is still running.
+
+The session binds to loopback, authenticates every request with the same seat
+secret, and rejects concurrent requests. It writes no files. Send
+`{"method":"shutdown"}` as the request to close this local session; the match
+host remains running. After a disconnected caller, the next valid request
+refreshes delivered context. Resolve an uncertain mutation before playing again.
+This transport acknowledges HTTP delivery, not whether a model read the reply;
+use `full:true` after any lost tool output.
+
+The JSON-lines client remains available for callers with responsive streaming I/O:
+
+```sh
+node tools/penta-agent/native.mjs session
+```
+
+Send one initialization line containing `{"server":"http://127.0.0.1:PORT","secret":"SEAT_SECRET"}`.
+After `{"status":"initialized"}`, send one explicit request per line:
+
+```json
+{"method":"observe"}
+```
+
+Later requests omit credentials and return the ordinary response directly.
+For example, `{"method":"choose","ticket":"REVISION:a7","requestId":"move-1","waitMs":25000}`.
+Requests execute serially. An individual request error returns `{"error":"..."}`
+and leaves the client running; invalid initialization ends it. Each input line
+is limited to 1 MiB. EOF exits without closing the match host.
+
+For a local agent terminal, start `stty -echo && node tools/penta-agent/native.mjs session`
+in a persistent PTY, then write JSON lines to that terminal session. Use the local
+shell runtime that can reach the loopback host. `native.mjs` is a CLI entrypoint;
+programmatic callers import `nativeCommand` from `native-client.mjs`.
+
+### One pilot turn per interaction
+
+Prefer `{"method":"next"}` for the initial decision and `interact` thereafter.
+Each interaction contains exact choices already decided by the pilot, optionally
+followed by an explicit yield policy:
+
+```json
+{"method":"interact","requestId":"move-1","revision":"CURRENT_REVISION","choices":[{"action":{"type":"PlayLand","card":12}}],"yield":{"until":[{"type":"nextStep","step":"BeginningOfCombat"},{"type":"opponentActs"}]}}
+```
+
+Copy the complete displayed action rather than reconstructing it from this
+example. A displayed `ChooseDecision` action already containing `decision` and
+`options` can be copied the same way; the client converts it to the explicit
+decision wrapper. `choices: []` with a yield installs only that pass instruction.
+Targets, explicit payment choices, and newly arising decisions remain the
+pilot's. Choosing an automatic-payment action delegates mana-source selection
+to the engine; explicitly activate mana sources first when their use matters.
+
+The host validates the whole request shape and yield before mutation, executes
+the accepted action prefix, then installs the yield only if the entire intended
+batch succeeded. A new own non-priority decision, completion, pause, or partial
+batch leaves the yield unapplied. `host.receipt.yieldInstallation` reports the
+result and reason; `yieldAtAcceptance` records the policy before automatic passes.
+The policy can remain armed while the opponent acts. Identical retries return
+the same receipt without repeating choices or installing another policy.
+
+The session submits once with a 25-second wait, then renews read-only waits
+internally until the seat is ready, complete, or paused. Local `maxWaitMs`
+defaults to and is capped at 60000; zero disables waiting. A bounded timeout or
+read failure returns `sessionWait` and preserves the committed receipt. Use
+`next` to continue waiting. A failed initial mutation may be uncertain: recover
+its receipt or retry identical arguments before choosing again.
+These are session operations; one-shot `interact` accepts only host `waitMs`.
+The session caches the public catalog after its first successful retrieval.
+
+`{"method":"sessionStats"}` returns local `callsByMethod`, `errors`, `outputBytes`,
+and `elapsedMs` without contacting the host. Counts include dispatched failures
+but exclude `sessionStats`; bytes count serialized stdout before that stats
+response, including initialization and errors. Credentials remain in memory.
+The client generates no request IDs, chooses no actions, and performs no retries.
+It additionally reports command durations, underlying HTTP counts and durations,
+request bytes, reserialized response JSON bytes, and internal wait renewals.
+`inputGapMs` measures time from writing a ready response to receiving the next
+request; it includes model, tool, and scheduling delays and is not model-only
+reasoning time. Organizer status/export contain lifetime host `commandMetrics`,
+excluding authority lock waiting and HTTP long waits. Byte counts are token-cost
+proxies, not tokenizer or billing measurements.
+
+The session prints each new or changed card's printed summary, then marks
+identical repeats using only `definition`, `reference`, `printed: null`, and
+`printedPreviouslySent: true`. Current state and choices remain available
+through inline data and references.
+After context loss, send
+`{"method":"observe","full":true}` to reprint rules and event history. `full` is a local boolean
+option, stripped before the host request; it also works on `wait` and mutations.
+A fresh client session starts with no remembered rules. One-shot commands always
+remain self-contained. Only successfully written inline rules count as delivered;
+paged or unavailable rules do not.
+
+Native v2 sessions also retain an explicit event delivery cursor. The host's
+optional `afterEvent` argument returns the seat's ordered stream as
+`events:{after,next,items}`. It is independent of manual action resets and request
+idempotency; identical events remain distinct. Invalid cursors fail before a
+mutation. Each seat can retrieve only its own stream.
+
+The session sends its last delivered cursor through all internal waits and
+advances it after writing the resulting packet. `position.updates` contains
+every newly delivered event inline; `host.eventDelivery` reports the boundaries.
+While waiting without a position, `host.eventDelivery.items` carries the events.
+An explicit `full:true` resets the cursor to zero. The raw `receipt` operation
+returns its receipt and optional `events` envelope without a v2 position.
+Receipt updates remain unchanged, so receipt events may also appear in the
+delivery stream. One-shot and legacy clients retain snapshot updates unless
+they explicitly request a cursor.
+
+## Play and reconnect
+
+Use the same invocation pattern for each method. All inputs include `server`
+and `secret`; the examples below show the additional fields.
+
+| Method | Additional fields | Purpose |
+| --- | --- | --- |
+| `observe` | none | Current seat view |
+| `wait` | `waitMs` up to 25000 | Bounded wait for a seat view |
+| `choose` | `ticket`, `requestId`, optional `options` | Submit one displayed choice |
+| `play` | `revision`, `choices`, `requestId` | Submit an explicitly decided batch |
+| `interact` | `revision`, `choices`, `requestId`, optional `yield`, `waitMs` | Submit choices and an explicit continuation together |
+| `yield` | `revision`, `until`, `requestId`, optional `maxPasses`, `waitMs` | Pass priority until any requested condition matches |
+| `cancelYield` | `requestId` | Cancel this seat's retained yield instruction |
+| `concede` | `requestId` | Concede |
+| `receipt` | `requestId` | Recover a submitted request's outcome |
+| `transcript` | optional `offset`, `limit` up to 100 | Recover seat-visible history |
+| `note` | `text` | Retain a seat note in host memory |
+| `catalog` | none | Public canonical card catalog |
+| `inspect_ref` | `reference`, optional `offset`, `limit` up to 100 | Inspect a current compact-view reference |
+
+Responses distinguish `ready`, `waiting`, `complete`, and `paused`. At `ready`,
+the default `pilot-v2` presentation supplies choices and revision-bound
+tickets such as `REVISION:a7`. Submit that ticket unchanged:
+
+```json
+{"server":"http://127.0.0.1:PORT","secret":"SEAT_SECRET","ticket":"REVISION:a7","requestId":"p1-move-17"}
+```
+
+A decision ticket requires the explicitly selected option IDs in `options`,
+including `[]` when choosing an empty selection. Order matters. A single `play`
+accepts `{index}`, `{decision, options}`, or `{action}`. Multi-choice batches
+require exact action values or explicit decisions because indices can change.
+Copy a displayed action into `{action: ...}` unchanged: the native client removes
+only its observation `index` metadata before submission. All other action fields
+remain exact; retries do not mutate the caller's request.
+Native `play` does not accept tickets or bare actions. For example:
+
+```json
+{
+  "revision": "CURRENT_REVISION",
+  "requestId": "attack-1",
+  "choices": [
+    {"action": {"type": "DeclareAttacker", "attacker": 12}},
+    {"action": {"type": "DeclareAttacker", "attacker": 18}}
+  ]
+}
+```
+
+Copy the complete displayed action, including any fields beyond this example.
+Use `choose` for one ticket. The exported schema's `NativePlayChoice` describes
+the supported wrapper shapes; malformed entries fail locally before submission.
+An accepted prefix remains committed and is reported in the receipt; ticket
+resolution for batches is not provided by this stateless adapter.
+`host.receipt.updates` in the typed view preserves this seat's new events and automatic inspections
+across the entire accepted prefix, including when the next view is `waiting`.
+Read these alongside the current observation; retries return the same receipt.
+Supply `waitMs: 25000` with a submission to wait for the next own decision in
+the same request. Waiting never chooses another action.
+
+Choose a new request ID for each logical mutation and retain its exact method
+and arguments until the outcome is known. After a timeout or lost output,
+resend the identical request or query `receipt`; never invent a replacement ID.
+The host retains receipts in memory across client restarts. The client does
+not generate IDs, retry automatically, or remember the last submission.
+
+To reconnect a pilot, keep the host running and reuse that seat's server URL
+and secret. Resolve an uncertain submission first, then call `observe` and
+page through `transcript` as needed. A new model process does not require a new
+match or a new CLI daemon. `note` can retain a concise strategic reminder for
+that seat, but model conversation context is not automatically transferred.
+Stop the old pilot before handing control to its replacement; reusing a seat
+secret does not revoke the old pilot's access.
+
+Compact references are rebuilt from the current same-revision view. They expire
+when the revision changes; call `observe` again after a stale-reference error.
+Pass `presentation: "exact"` to receive the host's raw response, including the
+canonical observation. A catalog failure leaves the typed position available
+with unavailable printed references and a warning. If rendering itself fails
+after a committed move, the adapter returns the exact response and a
+presentation warning, preserving the receipt.
+
+## Typed pilot presentation
+
+The native client defaults to `pilot-v2`. Read its complete, self-contained
+JSON Schema without a running match or credentials:
+
+```sh
+node tools/penta-agent/native.mjs schema
+```
+
+The [v2 schema definitions](../tools/penta-agent/pilot-v2.schema.json) compose with
+[shared definitions](../tools/penta-agent/pilot.schema.json); the CLI resolves
+them into one schema. [Generated TypeScript](../tools/penta-agent/pilot-v2.d.ts)
+comes from the same composed contract. Regenerate it with
+`node tools/penta-agent/generate-pilot-v2-types.mjs`.
+
+Every position response has `presentation`, `status`, `revision`, `host`, and
+`position`. Waiting or paused views have no playable position. Ready positions
+contain named `situation`, `players`, `zones`, `updates`, `choices`, `decision`,
+`facts`, `provenance`, and `rules` fields. Collections consistently use
+`{items, total, reference}`: `items` is always an array, and `reference` identifies
+additional detail. An absent canonical zone is explicitly null.
+
+Zone entries summarize current visible objects with typed IDs, names,
+controllers, tapped state, combat availability, power/toughness, damage, and
+counters when applicable. Nondefault and unknown fields remain in `current`.
+Each entry's `reference` retrieves its unchanged canonical object; the position's
+`reference` retrieves the complete seat observation. Printed rules remain usable
+inline, with full catalog records inspectable. These references reveal only
+information already available to the authenticated seat. References are opaque,
+47-character identifiers bound to the current revision; copy them unchanged.
+
+Each choice retains a revision-bound `ticket`, concise `label`, and exact
+`action`. All actions, payment variants, and decision options remain available;
+large menus retain an inline prefix and a reference to the entire ordered menu.
+Continue inspection at `choices.items.length`. `choiceGroups` lists each action
+family's example label, first index, and count, allowing a targeted inspection
+at that index. Group summaries never substitute for exact choices or remove
+payment and target variants. Labels identify targets, including self-targets,
+and distinguish abilities without embedding their full descriptors. Exact fields
+remain authoritative. Selection decisions retain bounds, option IDs, and order.
+Ability labels use stable intrinsic IDs and short origin fingerprints, so changing
+the available menu does not renumber an ability.
+
+`host.currentYield` is the current active or stopped policy.
+`host.receipt.yieldAtAcceptance` is the immutable snapshot when a yield request
+was accepted, so its pass count may be older. `host.receipt.updates` preserves
+accepted batch events, while `position.updates` contains the current snapshot
+history or the explicit event delivery interval when a cursor was requested.
+Waiting exposes neither an opponent revision nor their choice count.
+
+`presentation: "pilot-v1"` retains the earlier full typed view and its original
+yield field names. `presentation: "decision-v1"` retains the previous compact
+view, and `presentation: "exact"` bypasses presentation. The hosted adapter keeps
+its existing default. To retrieve the older schema, use
+`node tools/penta-agent/native.mjs schema '{"presentation":"pilot-v1"}'`.
+
+## Conditional priority yields
+
+The usual instruction is "pass until a particular phase or step, unless the
+opponent does something." Conditions are a typed OR list, not a natural-language
+program. For example, call `yield` with the current revision:
+
+```json
+{
+  "server": "http://127.0.0.1:PORT",
+  "secret": "SEAT_SECRET",
+  "requestId": "p1-yield-17",
+  "revision": "CURRENT_REVISION",
+  "until": [
+    {"type": "nextStep", "step": "End", "activeSeat": "either"},
+    {"type": "opponentActs"}
+  ],
+  "waitMs": 25000
+}
+```
+
+This passes ordinary priority until the next end step begins or an opponent
+action interrupts it, whichever happens first. It stays active while the other
+pilot plays and across client reconnects. It returns control at the next legal
+decision for this seat; it cannot interrupt resolution or grant priority.
+
+| Condition | Meaning |
+| --- | --- |
+| `nextStep` | Stop on a future entry into `step`, optionally on `self`, `opponent`, or `either` player's turn |
+| `opponentActs` | Stop for an opponent's visible spell, ability, land, mana activation, or combat declaration |
+| `opponentCastsSpell` | Stop specifically when the opponent casts a spell |
+| `nonManaAction` | Stop when this seat has a legal alternative other than passing or activating a mana ability |
+
+`nextStep` uses the canonical names `Upkeep`, `Draw`, `PrecombatMain`,
+`BeginningOfCombat`, `DeclareAttackers`, `DeclareBlockers`, `CombatDamage`,
+`EndOfCombat`, `PostcombatMain`, `End`, and `Cleanup`. Use `PrecombatMain`,
+`BeginningOfCombat`, or `PostcombatMain` for the corresponding phase boundary.
+The current occurrence does not count: requesting `End` during an end step
+targets a later end step. A skipped step does not count as an entry.
+
+Add `{"type":"nonManaAction"}` to the example when the pilot also wants to
+reconsider as soon as another legal action is available. Explicit payment
+entry counts as a non-mana action; the host does not guess whether a payment
+will enable a useful play. If this condition already matches, yielding stops
+without passing. `opponentActs` includes mana, so pilots wanting a narrower
+interruption should select `opponentCastsSpell` explicitly.
+
+Every non-priority decision requiring a pilot stops the yield; attackers,
+blockers, targets, payments, and other selections still belong to the pilot.
+The engine continues to advance uniquely determined continuations, such as
+finishing an empty attack declaration. The instruction expires at a game
+boundary and after `maxPasses` automatic passes (default 64,
+maximum 256), or can be stopped with `cancelYield`. Conditions are evaluated
+using only the yielding seat's visible information. The host retains the
+stop reason and the seat's updates, and records each actual pass for replay.
+Yielding does not change the engine's classification of forced actions.
+
+## Lifetime, isolation and debug export
+
+All match state, receipts, transcripts and notes are volatile host memory.
+Closing the client does not close the host. A hard host crash, process exit,
+or machine restart loses the live match; this is not a durable restart service.
+Keep the original host alive for reconnects.
+
+The organizer can call `status`, `export`, and `close`. Export before closing
+when a debug record is wanted:
+
+```sh
+node tools/penta-agent/native.mjs export - > native-match-export.json
+```
+
+Supply the organizer's server and secret through stdin. This explicitly saved
+debug bundle can contain information hidden from players; do not give it to
+pilots during play or treat it as a sanitized public transcript. Export is not
+a promise of an import/resume facility. Call `close` with the organizer secret
+when the match is no longer needed.
+
+An unexpected engine failure restores the last committed position and pauses
+play. The organizer can still export the accepted command prefix, last good
+observations, failing command, and bounded diagnostics. Completed matches also
+stay available until explicit close. Transcripts retain seat-visible positions,
+choices, receipts and notes; their historical positions omit the large derived
+reconstruction checkpoint, which remains available in current exact observations.
+
+Check that a saved bundle reproduces its committed position with:
+
+```sh
+target/release/penta-host replay native-match-export.json
+```
+
+Replay requires the same simulation fingerprint and native replay version. It
+compares both final seat observations and reports the failed command separately;
+it does not automatically retry that command. The private seed is encoded as a
+decimal string so JSON tools preserve its full precision. Exports omit credentials.
+
+Seat credentials select the host's seat-specific observations and operations;
+the organizer is separate from the pilots. This is not a hardened sandbox:
+same-user agents with unrestricted shell, process inspection or access to each
+other's tool transcripts may bypass intended secrecy. For enforced isolation,
+restrict pilots to seat-bound tools and prevent access to organizer credentials,
+other pilots' inputs, and host memory. Separate model prompts alone provide an
+honor-system boundary.

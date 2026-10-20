@@ -20,6 +20,39 @@ the bot-wire epoch.
 
 ## Unreleased
 
+- Add a native single-match host and stateless agent CLI. Each pilot receives
+  a separate seat capability, current exact-session choices, retry receipts,
+  seat-visible history and private notes. The organizer can export a private
+  debug bundle and explicitly close the match. State stays in memory across
+  pilot reconnects; a host restart does not restore it. Engine failures during
+  a command restore its preceding committed position and pause play for export.
+  A typed `interact` operation combines exact actions and an optional yield;
+  persistent sessions renew read-only waits and cache the public catalog.
+  Pilot input gaps, HTTP work, and organizer-only host durations are measured
+  separately. Pilots can explicitly yield until any of several typed conditions matches,
+  commonly a future phase/step boundary or an opponent action. Passes retain
+  seat-visible updates, remain cancellable, and never select non-priority
+  decisions. The native client defaults to a concise typed `pilot-v2` view with consistent
+  collections, full-detail references, exact action fields, a JSON Schema, and
+  generated TypeScript declarations; `pilot-v1`, `decision-v1`, and exact views
+  remain available. Displayed actions can be submitted directly, and current
+  yield state is distinguished from its acceptance snapshot. An optional local
+  JSON-lines client keeps credentials in memory, reuses delivered printed rules
+  with explicit full refresh, and reports interaction metrics. Opaque references
+  are shorter, ability labels stay stable across menus, and typed native batch
+  wrappers reject malformed inputs before contacting the host.
+  A seat-authenticated loopback session supports finite request commands to
+  avoid persistent-terminal collection delays. Seat-local event cursors deliver
+  ordered new events without heuristic deduplication; full refresh restores the
+  stream. Large menus retain an inline prefix and action-family lookup summaries,
+  and repeated rules use minimal explicit cached rows.
+  The native observation envelope uses API 1 and debug bundles use native replay
+  2 with recorded yield passes and forced prefixes for exact-fingerprint replay
+  verification. Replay 1 remains readable under a matching fingerprint.
+  These are separate contracts;
+  the canonical bot protocol, checkpoint format and hosted journal version do
+  not change. See [native matches](docs/native-matches.md).
+
 - Add playable Standard: WOE-HOB with the nineteen-set paper card pool through
   The Hobbit, the August 2026 bans, and all sixteen September 8 MTGO event
   decks. Native/binding setup accepts `woe-hob-standard`; the browser picker

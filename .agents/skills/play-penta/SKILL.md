@@ -5,6 +5,111 @@ description: Start or join a Penta game and play an assigned seat through the se
 
 # Play Penta
 
+## Native host route
+
+When given a native `penta-host` server URL and seat secret, use
+`node tools/penta-agent/native.mjs METHOD -` with JSON on stdin containing
+`server`, `secret`, and the method's arguments. Follow `docs/native-matches.md`.
+This route uses no hosted connection handle, shared agent daemon, or credential
+files. Do not run the hosted `up`/`attach` commands for a native assignment.
+
+For repeated play, use the maintained memory-only local session. Start
+`node tools/penta-agent/session-rpc.mjs serve -` with `{server, secret}` on
+stdin, then close stdin. Keep this process running and retain `clientServer`
+from its startup reply. For each request, run the finite command
+`node tools/penta-agent/session-rpc.mjs call -` with
+`{clientServer, secret, request: {method, ...args}}` on stdin. Use
+`exec_command` with an initial yield of 30000 ms; it returns early when the
+request command exits. Poll only while that finite process is still running.
+This avoids persistent PTY collection delays while retaining session context.
+Use the local shell runtime that can reach the loopback host.
+
+Repeated rules use minimal rows containing `definition`, `reference`,
+`printed: null`, and `printedPreviouslySent: true`. The session also delivers
+new seat-visible events using an explicit cursor; identical events remain
+distinct. Current state and choices remain complete. After context compaction
+or lost tool output, send `{"method":"observe","full":true}` to restore rules
+and event history. `sessionStats` returns calls, bytes, timings, and errors.
+Send `{"method":"shutdown"}` to close only your local session after play.
+The JSON-lines `native.mjs session` route remains available for streaming
+callers; avoid long fixed PTY output-collection intervals.
+
+For normal native play, start with `{"method":"next"}` and then use one
+`interact` request per decision. Supply `requestId`, current `revision`, and
+`choices: [{action: COMPLETE_DISPLAYED_ACTION}, ...]`, plus optional
+`yield: {until: [...], maxPasses: 64}` when you have explicitly decided to pass
+until those conditions. Empty choices with a yield are supported. Displayed
+`ChooseDecision` actions include their option IDs and can be copied directly.
+The session submits once and renews read-only waits internally for up to 60
+seconds (`maxWaitMs`, local only); it returns the next actionable view with the
+original receipt. Read `host.receipt.yieldInstallation`: a partial batch or new
+own decision prevents installation. If `sessionWait` says timeout/error, use
+`next` to continue waiting. Never resubmit a known committed move just to wait.
+No per-move explanation or commentary is needed. Inspect only when
+information necessary for your decision is missing; preserve all wanted windows.
+
+Call `observe` for an immediate refresh. Native output defaults to typed `pilot-v2`: read
+`position.choices.items`, where each entry has `ticket`, `label`, and exact
+`action`. Collections always use `{items,total,reference}`; `position` is null
+while waiting or paused. Large menus keep an inline prefix; `choiceGroups`
+provides example labels and first indices for targeted inspection. The reference
+still addresses every choice; continue sequential inspection at the inline item
+count. Never treat a group summary as an exact action. Zone summaries retain current state; their `reference`
+retrieves full canonical detail. `position.reference` retrieves the complete own
+observation. Use `host.currentYield` for the current policy and
+`host.receipt.yieldAtAcceptance` for the immutable acceptance snapshot.
+Use `node tools/penta-agent/native.mjs schema` to read the JSON Schema without
+credentials; `tools/penta-agent/pilot-v2.d.ts` provides generated TypeScript types.
+Then call `choose` with the displayed revision-bound `ticket` and
+a caller-retained unique `requestId`. Decision tickets require explicit option
+IDs in `options`. Retain each exact mutation until its outcome is known; retry
+the identical method and arguments after uncertain output, or query `receipt`.
+Read `host.receipt.updates` alongside the current position after each submission,
+including when waiting; it preserves this seat's events and automatic inspections
+across the accepted batch prefix. `position.updates` contains the newly delivered
+event interval; waiting views carry events in `host.eventDelivery.items`. Receipt
+updates may overlap this stream. Canonical observation references remain exact.
+Use `wait` with at most 25000 ms while waiting. Use `inspect_ref` for omitted
+details and `presentation: "exact"` for canonical output. Native `play` takes
+`choices: [{action: EXACT_ACTION}, ...]` or `{decision: ID, options: [IDs]}`
+entries. Native batches reject tickets and bare action objects; use `choose` for
+a single ticket. The exported `NativePlayChoice` schema describes these wrappers.
+Copy a displayed
+action directly into `{action: ...}`; the client removes only its `index` metadata.
+`choose` and `play` also accept `waitMs: 25000` to submit and wait in one call.
+
+For "pass until phase X unless the opponent acts", call `yield` with the current
+`revision`, a new `requestId`, and an OR list such as
+`until: [{type:"nextStep",step:"End"},{type:"opponentActs"}]`.
+Use `PrecombatMain`, `BeginningOfCombat`, or `PostcombatMain` for those phase
+boundaries. `nextStep` means a future entry, not the current occurrence;
+`activeSeat` optionally selects `self`, `opponent`, or `either`.
+`opponentActs` includes mana activations. Use `opponentCastsSpell` for a narrower
+interrupt, or add `nonManaAction` to stop when another legal action is available.
+This is an explicit decision to pass the covered priority windows, not a change
+to which actions are forced. Non-forced decisions still need the pilot.
+Read `host.currentYield` for the stop reason; `cancelYield` with a new `requestId` cancels
+the instruction. Yields expire at game boundaries and the requested pass limit
+(`maxPasses`, default 64, maximum 256). Conditions and updates survive reconnects
+while the host remains alive.
+
+After model context loss, reuse the same seat secret, resolve any uncertain
+move, call `observe`, and recover seat-visible `transcript` pages and notes.
+Keep the host alive: state is volatile and a host crash loses the live match.
+Only the organizer obtains both seats, exports private debug data, or closes
+the host. Never inspect the other pilot's credentials, transcript or process.
+This workflow is not a hardened sandbox for agents sharing unrestricted shell
+access. When asked to start a native match, follow the native guide's binary
+startup and distribute only each pilot's own credential.
+Start each pilot with fresh context, not inherited organizer history. With
+Codex subagents, use `fork_turns: "none"` and a brief containing the skill,
+server URL, assigned seat, and only that seat's secret.
+
+## Hosted route
+
+The instructions below apply only to hosted room/connection assignments. Native
+server/seat-secret assignments use the route above, including its batch shapes.
+
 Use `node tools/penta-agent/cli.mjs COMMAND 'JSON'` from the repository root.
 Arguments can also come from `@FILE` or `-` for stdin; use those for credentials.
 The maintained client handles transport and presentation. All gameplay choices

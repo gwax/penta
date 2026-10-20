@@ -155,6 +155,13 @@ make lint-web
   focused test). The client needs only Node; no package installation is required.
   Shared hosted-session changes also use `make test-bot-sessions` and, when the
   WASM contract changes, `make test-web-wasm-contract PATTERN='session API'`.
+- `tools/penta-host/**` uses `make test-native-host FILTER=<name>` for the
+  affected capability, receipt, transcript, failure-recovery, or replay behavior.
+  `make build-native-host` builds its release binary without web/WASM dependencies.
+  Native CLI changes also use `make test-penta-agent PATTERN=<name>`.
+  Shared `src/session/**` behavior starts with
+  `make test-engine-unit FILTER=session`; add the hosted-session lane only when
+  its adapter behavior or contract changes.
 - Agent guidance and skill entrypoints use `make test-agent-guidance`.
   Performance-tool implementation changes add `make test-profile-attribution`;
   Magic-reference implementation changes add `make test-magic-references`.

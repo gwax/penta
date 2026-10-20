@@ -1919,6 +1919,23 @@ itself, not a change to the core engine: a local `penta.Game`, and the
 `observe()` fields the engine emits directly, are unaffected either way, since
 neither the registry nor a room's own deck configuration exists there.
 
+## Native single-match sessions
+
+For two externally controlled seats without web or WASM startup, use the
+[native single-match host](native-matches.md). One process owns the authoritative
+match; a stateless CLI authenticates each call with that pilot's seat secret.
+It uses the same canonical observations and exact-session forced advancement,
+with revision-bound tickets, caller-supplied request IDs, seat-visible transcripts,
+and private notes. Reconnect to the existing host with the same credential;
+retry an uncertain mutation with its identical method and arguments.
+
+The organizer has a separate capability for distributing seats, inspecting
+status, exporting a private debug bundle, and explicitly closing the host.
+Active and completed matches remain in memory until close or process exit.
+A host crash loses unexported state; same-user unrestricted shell access is
+not a hardened isolation boundary. Native API 1 and native replay 1 are separate
+from bot-wire versioning and the hosted room journal.
+
 ## Hosted games over WebSocket
 
 For either-seat control, human versus Astra, compact observations, and agent CLI commands,

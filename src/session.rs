@@ -1,0 +1,263 @@
+//! Transport-independent, externally controlled matches with exact choices.
+//!
+//! Hosts own authentication, revisions, durable journals, and retry receipts.
+//! This layer owns only rules execution and information visible to each seat.
+
+mod updates;
+
+pub use updates::SessionUpdates;
+
+use crate::match_play::MatchMode;
+use crate::{Action, CardCatalog, Format, Game, PlayerId, poc, protocol};
+use serde_json::Value;
+
+const FORCED_ACTION_LIMIT: usize = 50_000;
+
+/// An authoritative match controlled by two external seats.
+///
+/// Cloning supports a host's rollback before committing a durable command.
+/// It is not a serialized checkpoint or an observation reconstruction.
+#[derive(Clone)]
+pub struct ExactSession {
+    game: Game,
+    catalog: CardCatalog,
+    updates: SessionUpdates,
+}
+
+impl ExactSession {
+    /// Starts a match using registered decks. Call `advance_forced` before
+    /// offering the first observation and after each accepted command.
+    ///
+    /// # Errors
+    /// Rejects unknown decks or invalid match setup.
+    pub fn new(
+        format: Format,
+        p1_deck: &str,
+        p2_deck: &str,
+        seed: u64,
+        mode: MatchMode,
+    ) -> Result<Self, String> {
+        let catalog = poc::catalog().map_err(|error| error.to_string())?;
+        let deck = |name| {
+            protocol::deck_by_name_for_format(format, name)
+                .ok_or_else(|| format!("unknown deck for {}: {name}", format.slug()))
+        };
+        let mut game = Game::new_with_format(
+            format,
+            catalog.clone(),
+            [deck(p1_deck)?, deck(p2_deck)?],
+            seed,
+        )
+        .map_err(|error| error.to_string())?;
+        game.set_match_mode(mode)?;
+        Ok(Self {
+            game,
+            catalog,
+            updates: SessionUpdates::default(),
+        })
+    }
+
+    /// Returns canonical seat-safe protocol data and retained session updates.
+    #[must_use]
+    pub fn observe(&self, seat: PlayerId) -> Value {
+        let observation = self.game.observe(seat);
+        let actions = protocol::protocol_actions(&observation);
+        let mut value = protocol::observation_json_for_format(
+            &self.catalog,
+            self.game.format(),
+            &observation,
+            self.game.in_pregame(),
+            &actions,
+        );
+        value["match"] = self.game.match_json(seat);
+        value["updates"] = self.updates.json(&self.catalog, seat);
+        value
+    }
+
+    /// Returns the seat holding the next decision.
+    #[must_use]
+    pub fn decision_seat(&self) -> Option<PlayerId> {
+        self.game.decision_player()
+    }
+
+    /// Applies exactly one indexed action, exact action value, or explicit
+    /// decision selection. Action values omit the observation's `index` field.
+    ///
+    /// # Errors
+    /// Rejects malformed choices, stale decisions, out-of-turn submissions,
+    /// and choices not legal in the current observation.
+    pub fn apply_choice(&mut self, seat: PlayerId, choice: &Value) -> Result<(), String> {
+        if self.decision_seat() != Some(seat) {
+            return Err("the seat does not hold a decision".into());
+        }
+        let choice = choice.as_object().ok_or("invalid choice")?;
+        let observation = self.game.observe(seat);
+        let actions = protocol::protocol_actions(&observation);
+        let action = if choice.len() == 1 && choice.contains_key("index") {
+            let index = uint(&choice["index"])?;
+            actions
+                .get(usize::try_from(index).map_err(|_| "illegal action index")?)
+                .cloned()
+                .ok_or("illegal action index")?
+        } else if choice.len() == 2
+            && choice.contains_key("decision")
+            && choice.contains_key("options")
+        {
+            let decision = uint(&choice["decision"])?;
+            if observation.decision.as_ref().map(|value| value.id) != Some(decision) {
+                return Err("stale decision".into());
+            }
+            let options = choice["options"].as_array().ok_or("invalid options")?;
+            if options.len() > 4096 {
+                return Err("too many decision options".into());
+            }
+            Action::ChooseDecision {
+                decision,
+                options: options.iter().map(uint).collect::<Result<_, _>>()?,
+            }
+        } else if choice.len() == 1 && choice.contains_key("action") {
+            let wanted = &choice["action"];
+            let object = wanted.as_object().ok_or("invalid exact action")?;
+            if object.contains_key("index") || !object.get("type").is_some_and(Value::is_string) {
+                return Err("exact actions require a type and omit index".into());
+            }
+            let mut matches = actions
+                .into_iter()
+                .filter(|action| protocol::action_json(action) == *wanted);
+            let action = matches
+                .next()
+                .ok_or("the exact action is not uniquely legal")?;
+            if matches.next().is_some() {
+                return Err("the exact action is not uniquely legal".into());
+            }
+            action
+        } else {
+            return Err("choose an index, an exact action, or decision and option IDs".into());
+        };
+        self.apply_manual(seat, action)
+    }
+
+    /// Concedes this seat's current game, regardless of priority.
+    ///
+    /// # Errors
+    /// Rejects a concession the engine cannot accept.
+    pub fn concede(&mut self, seat: PlayerId) -> Result<(), String> {
+        self.apply_manual(seat, Action::Concede)
+    }
+
+    fn apply_manual(&mut self, seat: PlayerId, action: Action) -> Result<(), String> {
+        let cursor = self.game.event_cursor();
+        self.game
+            .apply(seat, action)
+            .map_err(|error| error.to_string())?;
+        self.updates.clear(seat);
+        self.updates.record(&self.game, cursor, None);
+        Ok(())
+    }
+
+    /// Applies a legal ordinary priority pass without acknowledging retained updates.
+    /// Hosts use this only for an explicitly authorized, bounded yield policy.
+    ///
+    /// # Errors
+    /// Rejects a pass outside this seat's ordinary priority window.
+    pub fn pass_priority_retaining_updates(&mut self, seat: PlayerId) -> Result<(), String> {
+        let observation = self.game.observe(seat);
+        if self.decision_seat() != Some(seat)
+            || observation.decision.is_some()
+            || !protocol::protocol_actions(&observation).contains(&Action::PassPriority)
+        {
+            return Err("the seat does not hold ordinary priority".into());
+        }
+        let cursor = self.game.event_cursor();
+        self.game
+            .apply(seat, Action::PassPriority)
+            .map_err(|error| error.to_string())?;
+        self.updates.record(&self.game, cursor, None);
+        Ok(())
+    }
+
+    /// Advances only unique continuations, preserving seat-visible events and
+    /// automatic inspection decisions until that seat's next accepted command.
+    ///
+    /// # Errors
+    /// Returns an engine error or a bounded-continuation limit failure. Hosts
+    /// should restore their pre-command clone before retrying a failed commit.
+    pub fn advance_forced(&mut self) -> Result<(), String> {
+        self.advance_forced_until(|_| false).map(|_| ())
+    }
+
+    /// Advances unique continuations until a host's seat-visible stop guard fires.
+    /// Returns the exact applied prefix length for deterministic host replay.
+    ///
+    /// # Errors
+    /// Returns an engine error or the bounded-continuation limit failure.
+    pub fn advance_forced_until(
+        &mut self,
+        mut stop: impl FnMut(&Self) -> bool,
+    ) -> Result<usize, String> {
+        for count in 0..FORCED_ACTION_LIMIT {
+            if stop(self) || !self.advance_one_forced()? {
+                return Ok(count);
+            }
+        }
+        Err("game exceeded its forced action limit".into())
+    }
+
+    /// Replays a recorded forced prefix without recomputing a host policy.
+    ///
+    /// # Errors
+    /// Rejects excessive counts, a prefix beyond available forced actions, or engine errors.
+    pub fn advance_forced_exact(&mut self, count: usize) -> Result<(), String> {
+        if count > FORCED_ACTION_LIMIT {
+            return Err("invalid forced prefix length".into());
+        }
+        for _ in 0..count {
+            if !self.advance_one_forced()? {
+                return Err("forced prefix exceeds available continuations".into());
+            }
+        }
+        Ok(())
+    }
+
+    fn advance_one_forced(&mut self) -> Result<bool, String> {
+        let Some((seat, action)) = self.game.forced_action() else {
+            return Ok(false);
+        };
+        let observation = self.game.observe(seat);
+        let cursor = self.game.event_cursor();
+        self.game
+            .apply(seat, action.clone())
+            .map_err(|error| error.to_string())?;
+        self.updates.record(
+            &self.game,
+            cursor,
+            observation
+                .decision
+                .as_ref()
+                .map(|decision| (decision, &action)),
+        );
+        Ok(true)
+    }
+
+    /// Whether the complete match has concluded.
+    #[must_use]
+    pub fn is_finished(&self) -> bool {
+        self.game.result().is_some()
+    }
+
+    /// Public catalog data for this match's format.
+    #[must_use]
+    pub fn catalog_json(&self) -> Value {
+        protocol::catalog_json_for_format(&self.catalog, self.game.format())
+    }
+}
+
+fn uint(value: &Value) -> Result<u32, String> {
+    value
+        .as_u64()
+        .and_then(|value| u32::try_from(value).ok())
+        .ok_or_else(|| "choice identifiers must be unsigned 32-bit integers".into())
+}
+
+#[cfg(test)]
+mod tests;
