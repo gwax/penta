@@ -91,3 +91,82 @@ retained events. Remaining feedback:
 
 Private artifacts are under
 `target/agent-matches/2026-10-20T08-51-43-888Z-improvement-round1/`.
+
+## Improvement round 2: retained rules and explicit native inputs
+
+Harness: `8bc5a2a0f3d4f746365dadbac6f5b1ed316423d0`; the same release host.
+The session remembers successfully delivered printed summaries, marks identical
+repeats explicitly, and reprints them after `full:true`. Current state, choices,
+and events remain complete. References shrink to 47 opaque characters; ability
+identities remain stable across legal menus. `NativePlayChoice` validates native
+batch wrappers before submission, and the guide distinguishes them from hosted
+ticket batches.
+
+On round one's identical 220 retained observations, median serialized view size
+fell from 15,093 bytes to 13,124 with shorter references and stable labels, then
+to 10,892 with session rule reuse. Total bytes fell from 3,276,749 to 2,417,960
+(26%). This synthetic sequence includes intermediate yield observations that
+pilots did not necessarily receive, excludes receipts, and assumes sequential
+delivery without a full refresh. It measures presentation changes, not actual
+client traffic or game-time speedup.
+
+Two fresh GPT-6 Astra Medium pilots completed the second Sligh mirror. P1 won
+18 to −1 on turn 19. Exact replay reproduced all 378 commands and both final
+observations. This longer attrition game took about 32 minutes including setup.
+All 380 retained seat observations validated under the current typed view.
+
+| Measurement | Round 1 | Round 2 |
+| --- | ---: | ---: |
+| Accepted mutation requests | 95 | 107 |
+| Recorded yield passes | 151 | 312 |
+| Manual priority passes | 8 | 4 |
+| Client calls | 124 | 159 |
+| Client output bytes | 1,527,484 | 1,694,754 |
+| Bytes per client call | 12,318 | 10,659 |
+| Client errors | 2 | 2 |
+| Context compactions, both pilots | 2 | 2 |
+| Successful full refreshes | — | 2 |
+
+Round two's yield count includes 275 optional windows and 37 already forced
+windows; the engine also performed 119 separate forced continuations. Both
+pilots reported no missed intended priority window, output truncation, or lost
+gameplay information. Their full refreshes each restored 16 printed definitions
+at the same current revision, then normal rule reuse resumed.
+
+The native batch-shape errors from round one did not recur. Both round-two
+errors instead came from selecting a decision ticket without separately passing
+explicit option IDs. Each returned HTTP 400 without mutation and recovered on
+retry. P1 also received one safe accepted-prefix stop: declaring the last eligible
+attacker already finished declarations, so a redundant finish action was refused.
+
+The reduction in bytes per call is descriptive: the games had different
+positions, request mixes, and lengths. Total output and elapsed time increased
+in the longer game. The controlled saved-position comparison supports smaller
+views; these games do not establish an end-to-end speedup.
+
+### Remaining priorities after the two rounds
+
+1. **Explicit decision tickets.** Twelve Chaos Orb alternatives shared a generic
+   label despite distinct object options. A displayed action already contained
+   options, yet `choose` required them again. Show the selected objects and
+   explicit-options requirement clearly, or design a concrete-choice operation
+   that can submit precisely the displayed selection.
+2. **Event delivery cursors.** P2 repeatedly received 74 retained updates spanning
+   turns 12–16. A seat-scoped cursor should acknowledge delivery independently
+   of manual game actions, preserve repeated events and ordered disclosures, and
+   provide an explicit full-history refresh. Avoid heuristic event deduplication.
+3. **Descriptive ability and decision context.** Stable fingerprints help identity,
+   but labels still need effects such as “animate.” Preserve originating effect
+   context when a decision source has left the battlefield; remove duplicate
+   target wording.
+4. **Large-menu and payment visibility.** A 30-choice menu required an extra
+   inspection because paging removes all inline items. Automatic payment also
+   consumed both Mountains when an untapped Factory could have preserved red
+   mana; explicit preactivation remained available, but a payment preview would
+   make that consequence clearer.
+
+Private artifacts are under
+`target/agent-matches/2026-10-20T09-19-17-529Z-improvement-round2/`.
+Both pilot clients and the host exited cleanly after export. The two rounds
+retain all game choices, existing web-client support, and native replay data;
+they do not add direct native replay import or live spectating to the browser.
