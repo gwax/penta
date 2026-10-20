@@ -46,6 +46,7 @@ export class PilotV2View extends PilotView {
       const choices = read(position.choices).map(choice => ({ ...choice,
         label: conciseActionLabel(choice.action, names, view.observation.decision) }));
       position.choices = this.collection("choices", choices);
+      if (position.choices.reference) position.choiceGroups = choiceGroups(choices);
       position.rules = this.collection("rules", read(position.rules).map(rule => {
         const card = rule.reference ? this.references.get(rule.reference).value : null;
         return { definition: rule.definition, available: rule.available, name: rule.name,
@@ -53,6 +54,21 @@ export class PilotV2View extends PilotView {
       }));
     }
     validatePilotV2(packet);
+  }
+
+  collection(kind, items) {
+    const collection = super.collection(kind, items);
+    if (kind === "choices" && collection.reference) {
+      let bytes = 0;
+      // Keep a useful prefix without truncating any exact action. The reference
+      // still addresses the complete ordered menu; continue at items.length.
+      for (const item of items.slice(0, 20)) {
+        bytes += Buffer.byteLength(JSON.stringify(item));
+        if (bytes > 6000) break;
+        collection.items.push(item);
+      }
+    }
+    return collection;
   }
 
   summary(value, path) {
@@ -67,6 +83,17 @@ export class PilotV2View extends PilotView {
     if (Object.keys(current).length) summary.current = current;
     return summary;
   }
+}
+
+function choiceGroups(choices) {
+  const groups = new Map();
+  for (const { action, label } of choices) {
+    const key = digest([action.type, action.card, action.source, action.ability, action.decision]);
+    const group = groups.get(key);
+    if (group) group.count++;
+    else groups.set(key, { example: label, firstIndex: action.index, count: 1 });
+  }
+  return [...groups.values()];
 }
 
 function concisePrinted(card) {

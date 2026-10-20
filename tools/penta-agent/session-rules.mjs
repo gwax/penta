@@ -24,10 +24,11 @@ export class SessionRules {
         if (!rule.available) updates.set(rule.definition, null);
         return rule;
       }
-      const key = semanticKey(rule.printed);
+      const { reference: _reference, ...known } = rule;
+      const key = semanticKey(known);
       updates.set(rule.definition, key);
       if (this.#printed.get(rule.definition) !== key) return rule;
-      return { ...rule, printed: null, printedPreviouslySent: true };
+      return { definition: rule.definition, printed: null, printedPreviouslySent: true, reference: rule.reference };
     });
     return {
       packet: { ...packet, position: { ...packet.position, rules: { ...collection, items } } },

@@ -87,7 +87,7 @@ test("full is local, resets printed knowledge across waiting, and actual compres
     return method === "wait" ? { status: "waiting", position: null } : value;
   });
   assert.deepEqual(result.replies[1], value);
-  assert.deepEqual(result.replies[2].position.rules.items[0], { definition: "d", available: true, printed: null, printedPreviouslySent: true });
+  assert.deepEqual(result.replies[2].position.rules.items[0], { definition: "d", printed: null, printedPreviouslySent: true });
   assert.deepEqual(result.replies[4], value);
   assert.ok(calls.every(call => !Object.hasOwn(call.args, "full")));
   const lines = result.text.trimEnd().split("\n");
@@ -160,4 +160,28 @@ test("bounded waits return explicit timeout and read failure preserves committed
   });
   assert.deepEqual(failed.replies[1].receipt, receipt);
   assert.equal(failed.replies[1].sessionWait.reason, "error");
+});
+
+test("v2 session acknowledges delivered event cursors and full resets replay", async () => {
+  const calls = [];
+  const startup = `${JSON.stringify({ ...connection, presentation: "pilot-v2" })}\n`;
+  const result = await session([startup, '{"method":"observe"}\n{"method":"interact","maxWaitMs":60000}\n{"method":"observe","full":true}\n'], async (method, args) => {
+    calls.push({ method, args });
+    const waiting = method === "interact";
+    return { status: waiting ? "waiting" : "ready", host: { eventDelivery: { after: args.afterEvent, next: calls.length } } };
+  });
+  assert.deepEqual(calls.map(call => [call.method, call.args.afterEvent]), [["observe", 0], ["interact", 1], ["wait", 1], ["observe", 0]]);
+  assert.equal(result.replies[2].host.eventDelivery.next, 3);
+});
+
+test("failed output does not acknowledge events", async () => {
+  const startup = `${JSON.stringify({ ...connection, presentation: "pilot-v2" })}\n`;
+  let writes = 0;
+  const output = { write(_line, callback) { callback(++writes === 2 ? new Error("output failed") : null); } };
+  const cursors = [];
+  await runNativeSession(Readable.from([startup, '{"method":"observe"}\n{"method":"observe"}\n']), output, async (_method, args) => {
+    cursors.push(args.afterEvent);
+    return { status: "ready", host: { eventDelivery: { after: args.afterEvent, next: 4 } } };
+  });
+  assert.deepEqual(cursors, [0, 0]);
 });

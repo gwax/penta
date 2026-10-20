@@ -42,7 +42,37 @@ tool transcripts may still contain submitted inputs.
 
 ## Persistent local client
 
-For repeated local play, run the maintained JSON-lines client in a terminal:
+For agent tools, use a memory-only local session with finite request commands.
+Start the session once, supplying the engine URL and seat secret on stdin:
+
+```sh
+node tools/penta-agent/session-rpc.mjs serve -
+```
+
+The initialization object is `{"server":"http://127.0.0.1:PORT","secret":"SEAT_SECRET"}`.
+Close stdin after this object. Keep the process running and retain its returned
+`clientServer` URL. For every request, start a finite command:
+
+```sh
+node tools/penta-agent/session-rpc.mjs call -
+```
+
+Supply `{"clientServer":"RETURNED_URL","secret":"SEAT_SECRET","request":{"method":"next"}}`
+on stdin. The command exits when the reply arrives, while the local session
+retains catalog, rule, and event delivery context. This avoids the fixed output
+collection delay that some terminal tools impose on persistent PTYs. In Codex,
+use a 30000-ms initial `exec_command` yield for the finite call; it returns early
+when the process exits. Poll only if the command is still running.
+
+The session binds to loopback, authenticates every request with the same seat
+secret, and rejects concurrent requests. It writes no files. Send
+`{"method":"shutdown"}` as the request to close this local session; the match
+host remains running. After a disconnected caller, the next valid request
+refreshes delivered context. Resolve an uncertain mutation before playing again.
+This transport acknowledges HTTP delivery, not whether a model read the reply;
+use `full:true` after any lost tool output.
+
+The JSON-lines client remains available for callers with responsive streaming I/O:
 
 ```sh
 node tools/penta-agent/native.mjs session
@@ -113,13 +143,30 @@ excluding authority lock waiting and HTTP long waits. Byte counts are token-cost
 proxies, not tokenizer or billing measurements.
 
 The session prints each new or changed card's printed summary, then marks
-identical repeats with `printed: null, printedPreviouslySent: true`. Current
-state, choices, and updates remain complete. After context loss, send
-`{"method":"observe","full":true}` to reprint rules. `full` is a local boolean
+identical repeats using only `definition`, `reference`, `printed: null`, and
+`printedPreviouslySent: true`. Current state and choices remain complete.
+After context loss, send
+`{"method":"observe","full":true}` to reprint rules and event history. `full` is a local boolean
 option, stripped before the host request; it also works on `wait` and mutations.
 A fresh client session starts with no remembered rules. One-shot commands always
 remain self-contained. Only successfully written inline rules count as delivered;
 paged or unavailable rules do not.
+
+Native v2 sessions also retain an explicit event delivery cursor. The host's
+optional `afterEvent` argument returns the seat's ordered stream as
+`events:{after,next,items}`. It is independent of manual action resets and request
+idempotency; identical events remain distinct. Invalid cursors fail before a
+mutation. Each seat can retrieve only its own stream.
+
+The session sends its last delivered cursor through all internal waits and
+advances it after writing the resulting packet. `position.updates` contains
+every newly delivered event inline; `host.eventDelivery` reports the boundaries.
+While waiting without a position, `host.eventDelivery.items` carries the events.
+An explicit `full:true` resets the cursor to zero. The raw `receipt` operation
+returns its receipt and optional `events` envelope without a v2 position.
+Receipt updates remain unchanged, so receipt events may also appear in the
+delivery stream. One-shot and legacy clients retain snapshot updates unless
+they explicitly request a cursor.
 
 ## Play and reconnect
 
@@ -236,7 +283,11 @@ information already available to the authenticated seat. References are opaque,
 
 Each choice retains a revision-bound `ticket`, concise `label`, and exact
 `action`. All actions, payment variants, and decision options remain available;
-large menus are explicitly paged. Labels identify targets, including self-targets,
+large menus retain an inline prefix and a reference to the entire ordered menu.
+Continue inspection at `choices.items.length`. `choiceGroups` lists each action
+family's example label, first index, and count, allowing a targeted inspection
+at that index. Group summaries never substitute for exact choices or remove
+payment and target variants. Labels identify targets, including self-targets,
 and distinguish abilities without embedding their full descriptors. Exact fields
 remain authoritative. Selection decisions retain bounds, option IDs, and order.
 Ability labels use stable intrinsic IDs and short origin fingerprints, so changing
@@ -245,7 +296,8 @@ the available menu does not renumber an ability.
 `host.currentYield` is the current active or stopped policy.
 `host.receipt.yieldAtAcceptance` is the immutable snapshot when a yield request
 was accepted, so its pass count may be older. `host.receipt.updates` preserves
-accepted batch events, while `position.updates` retains the current seat history.
+accepted batch events, while `position.updates` contains the current snapshot
+history or the explicit event delivery interval when a cursor was requested.
 Waiting exposes neither an opponent revision nor their choice count.
 
 `presentation: "pilot-v1"` retains the earlier full typed view and its original

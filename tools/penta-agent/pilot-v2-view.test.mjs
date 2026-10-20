@@ -44,7 +44,7 @@ test("v2 never loses choices, decision options or update history when paging", (
       assert.deepEqual(Object.keys(collection), ["items", "total", "reference"]);
       const rows = [...collection.items];
       if (collection.reference) {
-        let offset = 0;
+        let offset = collection.items.length;
         do { const page = view.inspect(collection.reference, { offset }); rows.push(...page.items); offset = page.nextOffset; } while (offset !== null);
       }
       assert.deepEqual(rows.map(item => item.action ?? item), expected);
@@ -193,4 +193,18 @@ test("v2 concrete decision labels identify selected option IDs without changing 
   assert.match(choices[1].label, /select \[9\] Chaos Orb/);
   assert.match(choices[2].label, /select no options/);
   assert.deepEqual(choices.map(choice => choice.action), legalActions);
+});
+
+test("v2 large menus retain an inline prefix and expose every action family", () => {
+  const legalActions = [
+    ...Array.from({ length: 40 }, (_, index) => ({ index, type: "CastSpell", card: 4, x: index, detail: "x".repeat(400) })),
+    { index: 40, type: "PlayLand", card: 5 },
+  ];
+  const view = render({ legalActions, hand: [{ objectId: 4, name: "Fireball" }, { objectId: 5, name: "Mountain" }] });
+  const { choices, choiceGroups } = view.packet.position;
+  assert.ok(choices.items.length > 0 && choices.items.length < choices.total);
+  assert.deepEqual(choiceGroups.map(group => [group.firstIndex, group.count]), [[0, 40], [40, 1]]);
+  assert.match(choiceGroups[1].example, /Mountain/);
+  assert.equal(view.inspect(choices.reference, { offset: 40, limit: 1 }).items[0].action.type, "PlayLand");
+  validatePilotV2(view.packet);
 });

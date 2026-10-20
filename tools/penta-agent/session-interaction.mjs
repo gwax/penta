@@ -4,7 +4,7 @@ export async function sessionInteraction(method, args, connection, command, stat
   if (!Number.isInteger(maxWaitMs) || maxWaitMs < 0 || maxWaitMs > 60_000) {
     throw new Error("maxWaitMs must be an integer from 0 to 60000");
   }
-  if (method === "next" && Object.keys(request).length) throw new Error("next accepts only maxWaitMs and full");
+  if (method === "next" && Object.keys(request).some(key => key !== "afterEvent")) throw new Error("next accepts only maxWaitMs and full");
   const deadline = performance.now() + maxWaitMs;
   // A zero budget still permits the initial read/submission without a long poll.
   const signal = maxWaitMs ? AbortSignal.timeout(maxWaitMs) : undefined;
@@ -16,7 +16,7 @@ export async function sessionInteraction(method, args, connection, command, stat
   while (result.status === "waiting" && performance.now() < deadline) {
     stats.waitRenewals++;
     try {
-      result = await command("wait", { ...connection, waitMs: Math.min(25_000, Math.max(1, Math.floor(deadline - performance.now()))) }, { signal });
+      result = await command("wait", { ...connection, ...(request.afterEvent !== undefined ? { afterEvent: request.afterEvent } : {}), waitMs: Math.min(25_000, Math.max(1, Math.floor(deadline - performance.now()))) }, { signal });
     } catch (error) {
       // The submission succeeded. Preserve its receipt even if a later read fails.
       result = { ...result, sessionWait: { reason: signal?.aborted ? "timeout" : "error", error: error.message } };

@@ -53,6 +53,8 @@ export async function runNativeSession(input, output, command = createNativeClie
   const interactionStats = { waitRenewals: 0 };
   const inputGapMs = { count: 0, total: 0, max: 0 };
   let readyAt;
+  let eventCursor = 0;
+  const seatViewMethods = new Set(["observe", "wait", "choose", "play", "interact", "next", "concede", "yield", "cancelYield", "receipt"]);
 
   const printedRules = new SessionRules();
   const countedMethods = new Set(["seats", "status", "export", "close", "observe", "wait", "choose", "play", "interact", "next", "concede", "yield", "cancelYield", "receipt", "transcript", "note", "catalog", "inspect_ref", "schema"]);
@@ -86,7 +88,7 @@ export async function runNativeSession(input, output, command = createNativeClie
       if (full !== undefined && typeof full !== "boolean") throw new Error("full must be a boolean");
       // Reset before dispatch even if it returns waiting/no position or fails.
       // The next inline rules are then self-contained after context loss.
-      if (full === true) printedRules.reset();
+      if (full === true) { printedRules.reset(); eventCursor = 0; }
       if (method === "sessionStats") {
         if (Object.keys(args).length) throw new Error("sessionStats accepts no arguments");
         await reply({ callsByMethod: { ...callsByMethod }, commandElapsedMs: { ...commandElapsedMs }, wire: command.stats ?? null, ...interactionStats, inputGapMs: { ...inputGapMs }, errors, outputBytes, elapsedMs: Math.floor(performance.now() - startedAt) });
@@ -101,6 +103,8 @@ export async function runNativeSession(input, output, command = createNativeClie
         inputGapMs.max = Math.max(inputGapMs.max, gap);
         readyAt = undefined;
       }
+      const delivery = (args.presentation ?? connection.presentation ?? "pilot-v2") === "pilot-v2" && seatViewMethods.has(method);
+      if (delivery) args.afterEvent = eventCursor;
       const dispatchAt = performance.now();
       let result;
       try {
@@ -113,6 +117,8 @@ export async function runNativeSession(input, output, command = createNativeClie
       const prepared = printedRules.prepare(result);
       await reply(prepared.packet);
       prepared.commit();
+      const delivered = result.host?.eventDelivery ?? result.events;
+      if (delivery && Number.isSafeInteger(delivered?.next)) eventCursor = delivered.next;
       if (result.status === "ready") readyAt = performance.now();
     } catch (error) {
       errors++;

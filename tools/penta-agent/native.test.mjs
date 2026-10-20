@@ -228,3 +228,35 @@ test("interact rejects decision fields it cannot preserve before sending", async
   }
   assert.equal(transport.calls.length, 0);
 });
+
+test("v2 event delivery replaces snapshot updates without losing duplicates or paging", async () => {
+  const items = Array.from({ length: 150 }, () => ({ type: "same-event", text: "duplicate occurrences are meaningful" }));
+  const transport = mock(method => method === "catalog" ? { cards: [] } : {
+    ...ready, observation: { ...observation, updates: [{ type: "old-snapshot" }] }, events: { after: 7, next: 157, items },
+  });
+  const result = await nativeCommand("observe", { ...credentials, afterEvent: 7 }, transport.fetch);
+  assert.deepEqual(result.position.updates, { items, total: 150, reference: null });
+  assert.deepEqual(result.host.eventDelivery, { after: 7, next: 157 });
+  assert.equal(Object.hasOwn(result.host, "events"), false);
+  const canonical = await nativeCommand("inspect_ref", { ...credentials, reference: result.position.reference }, transport.fetch);
+  assert.deepEqual(canonical.items[0].updates, [{ type: "old-snapshot" }]);
+  assert.deepEqual(result.position.updates.items, items);
+});
+
+test("waiting v2 responses retain delivered events without a position", async () => {
+  const events = { after: 0, next: 2, items: [{ type: "one" }, { type: "two" }] };
+  const transport = mock(() => ({ apiVersion: 1, status: "waiting", events }));
+  const result = await nativeCommand("wait", { ...credentials, afterEvent: 0 }, transport.fetch);
+  assert.deepEqual(result.host.eventDelivery, events);
+  assert.equal(result.position, null);
+  assert.equal(Object.hasOwn(result.host, "events"), false);
+  const exact = await nativeCommand("wait", { ...credentials, presentation: "exact", afterEvent: 0 }, transport.fetch);
+  assert.deepEqual(exact.events, events);
+});
+
+test("event cursor does not invalidate interaction contract validation", async () => {
+  const transport = mock(() => ({ status: "waiting" }));
+  await nativeCommand("interact", { ...credentials, requestId: "m", revision: "r", choices: [{ action: { type: "PassPriority" } }], afterEvent: 0 }, transport.fetch);
+  assert.equal(transport.calls[0].args.afterEvent, 0);
+  await assert.rejects(nativeCommand("interact", { ...credentials, requestId: "m", revision: "r", choices: [], afterEvent: -1 }, transport.fetch), /afterEvent/);
+});

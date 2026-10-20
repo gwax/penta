@@ -159,6 +159,10 @@ async fn dispatch(state: &Authority, request: Request) -> Result<Value, HostErro
     )?;
     // Subscribe before the first read/commit so a move between reading a waiting
     // view and parking cannot be missed.
+    let mut observation_args = json!({});
+    if let Some(after) = command.args.get("afterEvent") {
+        observation_args["afterEvent"] = after.clone();
+    }
     let mut changes = state.changed.subscribe();
     let mut view = execute(state.clone(), token.clone(), command).await?;
     if view["status"] != "waiting" || wait_ms == 0 {
@@ -179,7 +183,7 @@ async fn dispatch(state: &Authority, request: Request) -> Result<Value, HostErro
             token.clone(),
             Command {
                 method: "observe".into(),
-                args: json!({}),
+                args: observation_args.clone(),
             },
         )
         .await?;

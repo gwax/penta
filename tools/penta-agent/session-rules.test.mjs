@@ -18,7 +18,7 @@ test("only repeated semantic printed summaries are omitted, without changing oth
   const before = structuredClone(original);
   assert.deepEqual(deliver(cache, original), before);
   const repeated = deliver(cache, original);
-  assert.deepEqual(repeated.position.rules.items, [{ ...rule(), printed: null, printedPreviouslySent: true }]);
+  assert.deepEqual(repeated.position.rules.items, [{ definition: "d", printed: null, printedPreviouslySent: true, reference: "r:d" }]);
   assert.deepEqual({ ...repeated.position, rules: undefined }, { ...original.position, rules: undefined });
   assert.deepEqual(repeated.host, original.host);
   assert.deepEqual(original, before);
@@ -61,4 +61,16 @@ test("uncommitted output, reset, independent sessions, exact and pilot-v1 never 
     assert.deepEqual(deliver(cache, legacy), legacy);
     assert.deepEqual(deliver(cache, legacy), legacy);
   }
+});
+
+
+test("cached rows retain current references and reprint changed metadata", () => {
+  const cache = new SessionRules();
+  deliver(cache, packet([rule()]));
+  const refreshed = { ...rule(), reference: "new-reference" };
+  assert.deepEqual(deliver(cache, packet([refreshed])).position.rules.items[0], {
+    definition: "d", printed: null, printedPreviouslySent: true, reference: "new-reference",
+  });
+  const renamed = { ...refreshed, name: "Changed card name" };
+  assert.deepEqual(deliver(cache, packet([renamed])).position.rules.items[0], renamed);
 });

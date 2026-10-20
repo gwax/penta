@@ -1,6 +1,7 @@
 //! A single match's volatile authority. No files, model calls, or strategic choices.
 
 mod config;
+mod events;
 mod interaction;
 mod metrics;
 mod play;
@@ -57,6 +58,7 @@ pub struct Host {
     seed: u64,
     session: ExactSession,
     observations: [Value; 2],
+    event_logs: [Vec<Value>; 2],
     organizer: String,
     seats: [String; 2],
     revision: String,
@@ -86,11 +88,18 @@ impl Host {
     fn with_seed(config: Config, seed: u64) -> std::result::Result<Self, String> {
         let session = config.session(seed)?;
         let observations = [PlayerId::One, PlayerId::Two].map(|seat| session.observe(seat));
+        let event_logs = observations.each_ref().map(|observation| {
+            observation["updates"]
+                .as_array()
+                .expect("canonical updates")
+                .clone()
+        });
         let mut host = Self {
             config,
             seed,
             session,
             observations,
+            event_logs,
             organizer: secret()?,
             seats: [secret()?, secret()?],
             revision: secret()?,
@@ -147,7 +156,7 @@ impl Host {
         }
         match access {
             Access::Organizer => self.organize(method, args),
-            Access::Seat(seat) => self.pilot(seat, method, args),
+            Access::Seat(seat) => self.deliver(seat, method, args),
         }
     }
 
@@ -292,6 +301,7 @@ impl Host {
             "config":self.config, "seed":self.seed.to_string(), "commands":self.journal,
             "status":self.status(), "failure":self.failure,
             "observations":{"p1":self.observations[0],"p2":self.observations[1]},
+            "events":{"p1":self.event_logs[0],"p2":self.event_logs[1]},
             "transcripts":{"p1":self.transcripts[0],"p2":self.transcripts[1]},
             "receipts":{"p1":self.receipts[0].values().map(|r| &r.value).collect::<Vec<_>>(),
                         "p2":self.receipts[1].values().map(|r| &r.value).collect::<Vec<_>>()},

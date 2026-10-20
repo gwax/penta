@@ -47,8 +47,10 @@ export async function nativeCommand(method, input, fetcher = fetch, context = {}
   if (!methods.has(method) && method !== "inspect_ref") throw new Error(`unknown native command: ${method}`);
   if (args.waitMs !== undefined && (!Number.isInteger(args.waitMs) || args.waitMs < 0 || args.waitMs > 25_000)) throw new Error("waitMs must be an integer from 0 to 25000");
   if ((mutations.has(method) || method === "receipt") && (typeof args.requestId !== "string" || !args.requestId || Buffer.byteLength(args.requestId, "utf8") > 128)) throw new Error("requestId must contain 1 to 128 UTF-8 bytes; retain it for retries");
-  if (method === "yield") validateContract(args, "YieldRequest");
-  if (method === "cancelYield") validateContract(args, "CancelYieldRequest");
+  const { afterEvent, ...contractArgs } = args;
+  if (afterEvent !== undefined && (!Number.isSafeInteger(afterEvent) || afterEvent < 0)) throw new Error("afterEvent must be a nonnegative safe integer");
+  if (method === "yield") validateContract(contractArgs, "YieldRequest");
+  if (method === "cancelYield") validateContract(contractArgs, "CancelYieldRequest");
   if (method === "interact") {
     if (Array.isArray(args.choices)) args.choices = args.choices.map(choice => {
       if (choice?.action?.type !== "ChooseDecision") return choice;
@@ -59,7 +61,7 @@ export async function nativeCommand(method, input, fetcher = fetch, context = {}
       const { decision, options } = choice.action;
       return { decision, options };
     });
-    validateContract(args, "NativeInteractionRequest", pilotV2Schema);
+    validateContract({ ...contractArgs, choices: args.choices }, "NativeInteractionRequest", pilotV2Schema);
   }
   if (method === "play" || method === "interact") {
     if (!Array.isArray(args.choices) || (!args.choices.length && !(method === "interact" && args.yield)) || args.choices.length > 64) throw new Error("choices must contain 1 to 64 entries");
@@ -113,6 +115,11 @@ export async function nativeCommand(method, input, fetcher = fetch, context = {}
     return result;
   };
   const build = async view => {
+    const events = presentation === "pilot-v2" ? view.events : null;
+    if (events) {
+      const { events: _events, ...rest } = view;
+      view = rest;
+    }
     let catalog = null;
     if (view.observation) {
       try { catalog = context.catalog ?? await request("catalog", {}); context.catalog = catalog; }
@@ -121,9 +128,16 @@ export async function nativeCommand(method, input, fetcher = fetch, context = {}
         view = { ...view, presentationWarning: "Public catalog unavailable; exact choices and observation fields retained. Printed rules may be unavailable." };
       }
     }
-    return presentation === "pilot-v2" ? new PilotV2View(view, catalog)
+    const rendered = presentation === "pilot-v2" ? new PilotV2View(view, catalog)
       : presentation === "pilot-v1" ? new PilotView(view, catalog)
       : new DecisionView(view, catalog, new Set(), true, { id: view.revision });
+    if (events) {
+      rendered.packet.host.eventDelivery = { after: events.after, next: events.next,
+        ...(!rendered.packet.position ? { items: events.items } : {}) };
+      // Cursor acknowledgement covers every item, so event deliveries cannot page.
+      if (rendered.packet.position) rendered.packet.position.updates = { items: events.items, total: events.items.length, reference: null };
+    }
+    return rendered;
   };
   if (method === "inspect_ref") {
     const { reference, ...paging } = args;

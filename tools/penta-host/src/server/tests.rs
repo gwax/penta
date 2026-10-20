@@ -67,7 +67,13 @@ fn loopback_waits_allow_other_requests_and_close_releases_pending_clients() {
         "waiting"
     );
 
-    let waiting_stream = send(&address, &seats[1], "wait", json!({"waitMs":25_000}), false);
+    let waiting_stream = send(
+        &address,
+        &seats[1],
+        "wait",
+        json!({"waitMs":25_000,"afterEvent":0}),
+        false,
+    );
     let (completed, completion) = mpsc::channel();
     let waiting = thread::spawn(move || completed.send(receive(waiting_stream)).unwrap());
     assert_eq!(request(&organizer, "status", json!({})).0, 200);
@@ -76,10 +82,11 @@ fn loopback_waits_allow_other_requests_and_close_releases_pending_clients() {
         request(&seats[0], "choose", choice.clone()).1["receipt"]["accepted"],
         1
     );
-    assert_eq!(
-        completion.recv_timeout(Duration::from_secs(10)).unwrap().1["status"],
-        "ready"
-    );
+    let delivered = completion.recv_timeout(Duration::from_secs(10)).unwrap().1;
+    assert_eq!(delivered["status"], "ready");
+    assert_eq!(delivered["events"]["after"], 0);
+    let observed = request(&seats[1], "observe", json!({"afterEvent":0})).1;
+    assert_eq!(delivered["events"], observed["events"]);
     waiting.join().unwrap();
     assert_eq!(
         request(&seats[0], "choose", choice).1["receipt"]["accepted"],

@@ -181,57 +181,14 @@
       "additionalProperties": false
     },
     "Rule": {
-      "type": "object",
-      "properties": {
-        "definition": {
-          "type": "string"
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CompleteRule"
         },
-        "available": {
-          "type": "boolean"
-        },
-        "name": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "printed": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/PrintedSummary"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "reference": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "printedPreviouslySent": {
-          "type": "boolean",
-          "description": "True only when printed is null because this persistent session already delivered the exact same printed summary. A full view restores printed details; reference always provides the complete catalog entry."
+        {
+          "$ref": "#/$defs/CachedRule"
         }
-      },
-      "required": [
-        "definition",
-        "available",
-        "name",
-        "printed",
-        "reference"
-      ],
-      "additionalProperties": false
+      ]
     },
     "NativePlayChoice": {
       "oneOf": [
@@ -396,6 +353,10 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 25000
+            },
+            "afterEvent": {
+              "type": "integer",
+              "minimum": 0
             }
           },
           "required": [
@@ -432,6 +393,10 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 25000
+            },
+            "afterEvent": {
+              "type": "integer",
+              "minimum": 0
             }
           },
           "required": [
@@ -443,6 +408,83 @@
           "additionalProperties": false
         }
       ]
+    },
+    "CompleteRule": {
+      "type": "object",
+      "properties": {
+        "definition": {
+          "type": "string"
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "printed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrintedSummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "printedPreviouslySent": {
+          "type": "boolean",
+          "description": "True only when printed is null because this persistent session already delivered the exact same printed summary. A full view restores printed details; reference always provides the complete catalog entry."
+        }
+      },
+      "required": [
+        "definition",
+        "available",
+        "name",
+        "printed",
+        "reference"
+      ],
+      "additionalProperties": false
+    },
+    "CachedRule": {
+      "type": "object",
+      "properties": {
+        "definition": {
+          "type": "string"
+        },
+        "printed": {
+          "type": "null"
+        },
+        "printedPreviouslySent": {
+          "const": true
+        },
+        "reference": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "definition",
+        "printed",
+        "printedPreviouslySent",
+        "reference"
+      ],
+      "additionalProperties": false
     }
   }
 }

@@ -141,6 +141,13 @@ not one exact-version comparison:
   or automatic mutation retries. Additive `interact` submits explicit actions
   and an optional yield under one idempotent receipt. Session `next`/`interact`
   renew read-only waits within a bounded budget and cache the public catalog.
+  A loopback, seat-authenticated session transport also supports finite CLI
+  requests without losing local context. Optional seat-local `afterEvent`
+  delivery cursors preserve ordered events independently of action resets;
+  v2 sessions acknowledge written output and `full:true` replays that history.
+  Canonical observation references and exact replay remain unchanged.
+  Large v2 menus retain an inline prefix with typed action-family summaries;
+  repeated delivered rules use explicit minimal cached rows.
   These versions are independent of the hosted
   journal, canonical bot protocol, and reconstruction checkpoint versions.
 

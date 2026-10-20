@@ -20,10 +20,22 @@ export function composePilotV2Schema() {
       reason: { enum: [null, "notRequested", "partialBatch", "paused", "complete", "decision"] },
     }, required: ["status", "reason"], additionalProperties: false,
   };
+  schema.$defs.Host.properties.eventDelivery = {
+    type: "object", properties: {
+      after: { type: "integer", minimum: 0 }, next: { type: "integer", minimum: 0 },
+      items: { type: "array", items: { $ref: "#/$defs/JsonValue" } },
+    }, required: ["after", "next"], additionalProperties: false,
+  };
   for (const variant of schema.$defs.PilotPacket.oneOf) variant.properties.presentation.const = "pilot-v2";
   const position = schema.$defs.Position;
   position.properties.reference = { type: "string" };
   position.required.push("reference");
+  position.properties.choiceGroups = {
+    type: "array", items: { type: "object", properties: {
+      example: { type: "string" }, firstIndex: { type: "integer", minimum: 0 },
+      count: { type: "integer", minimum: 1 },
+    }, required: ["example", "firstIndex", "count"], additionalProperties: false },
+  };
   for (const value of Object.values(position.properties.zones.properties)) value.anyOf[0].$ref = "#/$defs/ZoneSummaries";
   return schema;
 }

@@ -13,17 +13,26 @@ When given a native `penta-host` server URL and seat secret, use
 This route uses no hosted connection handle, shared agent daemon, or credential
 files. Do not run the hosted `up`/`attach` commands for a native assignment.
 
-For repeated play, use the maintained local shell runner rather than writing a
-transport helper: start `stty -echo && node tools/penta-agent/native.mjs session`
-in a persistent PTY. Send `{server, secret}` once; after the initialized reply,
-send one `{method, ...args}` JSON line per request. Use that terminal session for
-all later calls. Repeated printed rules use `printed: null` with
-`printedPreviouslySent: true`; after context compaction, send
-`{"method":"observe","full":true}` to restore printed context. Current state,
-choices, and updates remain complete. EOF exits the client. `sessionStats` returns call/error counts,
-output bytes, and elapsed time without contacting the host. A separate JavaScript
-tool runtime may not reach this loopback host. The CLI is not an importable module;
-programmatic callers use `nativeCommand` from `tools/penta-agent/native-client.mjs`.
+For repeated play, use the maintained memory-only local session. Start
+`node tools/penta-agent/session-rpc.mjs serve -` with `{server, secret}` on
+stdin, then close stdin. Keep this process running and retain `clientServer`
+from its startup reply. For each request, run the finite command
+`node tools/penta-agent/session-rpc.mjs call -` with
+`{clientServer, secret, request: {method, ...args}}` on stdin. Use
+`exec_command` with an initial yield of 30000 ms; it returns early when the
+request command exits. Poll only while that finite process is still running.
+This avoids persistent PTY collection delays while retaining session context.
+Use the local shell runtime that can reach the loopback host.
+
+Repeated rules use minimal rows containing `definition`, `reference`,
+`printed: null`, and `printedPreviouslySent: true`. The session also delivers
+new seat-visible events using an explicit cursor; identical events remain
+distinct. Current state and choices remain complete. After context compaction
+or lost tool output, send `{"method":"observe","full":true}` to restore rules
+and event history. `sessionStats` returns calls, bytes, timings, and errors.
+Send `{"method":"shutdown"}` to close only your local session after play.
+The JSON-lines `native.mjs session` route remains available for streaming
+callers; avoid long fixed PTY output-collection intervals.
 
 For normal native play, start with `{"method":"next"}` and then use one
 `interact` request per decision. Supply `requestId`, current `revision`, and
@@ -36,14 +45,16 @@ seconds (`maxWaitMs`, local only); it returns the next actionable view with the
 original receipt. Read `host.receipt.yieldInstallation`: a partial batch or new
 own decision prevents installation. If `sessionWait` says timeout/error, use
 `next` to continue waiting. Never resubmit a known committed move just to wait.
-Use a terminal read wait of 30000 ms so routine waiting does not create rapid
-polling. No per-move explanation or commentary is needed. Inspect only when
+No per-move explanation or commentary is needed. Inspect only when
 information necessary for your decision is missing; preserve all wanted windows.
 
 Call `observe` for an immediate refresh. Native output defaults to typed `pilot-v2`: read
 `position.choices.items`, where each entry has `ticket`, `label`, and exact
 `action`. Collections always use `{items,total,reference}`; `position` is null
-while waiting or paused. Zone summaries retain current state; their `reference`
+while waiting or paused. Large menus keep an inline prefix; `choiceGroups`
+provides example labels and first indices for targeted inspection. The reference
+still addresses every choice; continue sequential inspection at the inline item
+count. Never treat a group summary as an exact action. Zone summaries retain current state; their `reference`
 retrieves full canonical detail. `position.reference` retrieves the complete own
 observation. Use `host.currentYield` for the current policy and
 `host.receipt.yieldAtAcceptance` for the immutable acceptance snapshot.
@@ -55,7 +66,9 @@ IDs in `options`. Retain each exact mutation until its outcome is known; retry
 the identical method and arguments after uncertain output, or query `receipt`.
 Read `host.receipt.updates` alongside the current position after each submission,
 including when waiting; it preserves this seat's events and automatic inspections
-across the accepted batch prefix.
+across the accepted batch prefix. `position.updates` contains the newly delivered
+event interval; waiting views carry events in `host.eventDelivery.items`. Receipt
+updates may overlap this stream. Canonical observation references remain exact.
 Use `wait` with at most 25000 ms while waiting. Use `inspect_ref` for omitted
 details and `presentation: "exact"` for canonical output. Native `play` takes
 `choices: [{action: EXACT_ACTION}, ...]` or `{decision: ID, options: [IDs]}`

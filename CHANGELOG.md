@@ -41,6 +41,11 @@ the bot-wire epoch.
   with explicit full refresh, and reports interaction metrics. Opaque references
   are shorter, ability labels stay stable across menus, and typed native batch
   wrappers reject malformed inputs before contacting the host.
+  A seat-authenticated loopback session supports finite request commands to
+  avoid persistent-terminal collection delays. Seat-local event cursors deliver
+  ordered new events without heuristic deduplication; full refresh restores the
+  stream. Large menus retain an inline prefix and action-family lookup summaries,
+  and repeated rules use minimal explicit cached rows.
   The native observation envelope uses API 1 and debug bundles use native replay
   2 with recorded yield passes and forced prefixes for exact-fingerprint replay
   verification. Replay 1 remains readable under a matching fingerprint.

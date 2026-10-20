@@ -152,8 +152,10 @@ impl Host {
                 .map_err(Failure::Engine)?;
             let observations =
                 [PlayerId::One, PlayerId::Two].map(|seat| self.session.observe(seat));
+            let manual_seat = (choice != &json!({"autoPass":true})).then_some(seat);
+            let events = crate::events::appended(&self.observations, &observations, manual_seat)?;
             let revision = secret().map_err(Failure::Engine)?;
-            Ok((observations, revision, forced))
+            Ok((observations, revision, forced, events))
         }))
         .unwrap_or_else(|_| {
             Err(Failure::Engine(
@@ -161,7 +163,10 @@ impl Host {
             ))
         });
         match applied {
-            Ok((observations, revision, forced)) => {
+            Ok((observations, revision, forced, events)) => {
+                for (log, appended) in self.event_logs.iter_mut().zip(events) {
+                    log.extend(appended);
+                }
                 self.yields = policies;
                 self.observations = observations;
                 self.revision = revision;
