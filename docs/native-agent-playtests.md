@@ -170,3 +170,138 @@ Private artifacts are under
 Both pilot clients and the host exited cleanly after export. The two rounds
 retain all game choices, existing web-client support, and native replay data;
 they do not add direct native replay import or live spectating to the browser.
+
+## Latency round 1: combined interactions and measured waiting
+
+Harness and release host: `c5e704ad1`. Two fresh GPT-6 Astra Medium pilots
+played another Sligh mirror. `interact` combined already-decided exact choices
+with an optional explicit yield; the persistent session renewed bounded
+read-only waits and cached the public catalog. Concrete decision labels carried
+the chosen option IDs. New counters separated host execution, client HTTP work,
+waiting, and the gap before the next pilot request.
+
+P2 won on turn 14, with life totals −2 / 3. Exact replay reproduced all 310
+journal commands and both final observations. The host exported at 701.296
+seconds after startup (11 minutes 41 seconds). There were 44 interaction
+requests, 48 manual choices, 262 yielded passes, two manual priority passes,
+and 56 separate forced continuations.
+
+The clients made 51 calls and emitted 561,135 bytes. Neither pilot reported an
+error, context compaction, or missed desired response window. Three bounded
+waits timed out and resumed through `next`. Both pilots appended a redundant
+attack finish once; the already accepted attackers stayed committed, but the
+partial batch prevented yield installation and required another interaction.
+
+The first part of this game exposed an orchestration problem: a persistent
+PTY's `write_stdin` waited its full requested 30 seconds even when a complete
+response was already available. Both pilots observed it, and an isolated
+immediate-echo process reproduced a 30.0019-second tool wait. At roughly
+393 seconds, terminal collection changed to one-second writes and five-second
+empty polls. The harness code stayed unchanged, but this game therefore does
+**not** have a fixed orchestration baseline for elapsed-time comparison.
+The pilots still reported 27 polling responses without a new decision between
+them after counting empty output and timeout responses.
+
+Recorded host command execution totaled 1.967 seconds, including 1.598 seconds
+for `interact`. These figures exclude lock acquisition, HTTP long waits,
+transport, rendering, model work, and terminal collection. Client wait durations
+overlap across seats and must not be added into a match wall-time estimate.
+Each client fetched the roughly 21 MB public catalog once.
+
+Feedback drove the next cycle:
+
+- Replace persistent-terminal request collection with finite commands that
+  exit as soon as the reply arrives, retaining session context in memory.
+- Deliver new events through an explicit seat cursor. P2's upkeep-to-main
+  interaction repeated 38 old events alongside three new ones.
+- Keep useful choices inline when a menu is large. P1 needed inspections for
+  a land and Ball Lightning when 29- and 54-choice menus were entirely paged.
+- Trim cached rule rows while preserving explicit references and full refresh.
+
+Private exports, transcripts, feedback, counters, timing correction, and replay
+verification are under
+`target/agent-matches/2026-10-20T14-52-55-116Z-latency-round1/`.
+The host and both clients exited after collection.
+
+## Latency round 2: finite requests and event delivery
+
+Harness and release host: `660dd01be`. A loopback session retains credentials,
+catalog, delivered rules, and event cursor in memory. Each agent command is a
+finite process, so terminal tools return when its response is ready.
+Disconnect recovery restores context; uncertain mutations still require receipt
+recovery or identical retries. No mutation retry or gameplay choice is automated.
+
+Seat-local event streams preserve repeated events and private inspections
+without heuristic deduplication. Normal delivery contains new events, while
+`full:true` reprints history and rules. Canonical observations and their
+references remain unchanged. Large menus retain an exact inline prefix plus
+typed family summaries pointing to the full menu. Cached rule rows retain their
+definition and reference with an explicit previously-delivered marker.
+
+On latency round one's identical 312 retained observations, minimal cached rows
+and partial menus reduced synthetic total view bytes from 3,369,060 to 3,279,303
+(2.7%). Median size was 10,931 versus 10,631 bytes. All four entirely paged menus
+now had inline choices. This comparison excludes receipts and event-cursor
+savings, includes intermediate yield observations, and assumes sequential rule
+delivery. It is a presentation comparison, not live traffic or game timing.
+
+Two fresh GPT-6 Astra Medium pilots completed the second game with this fixed
+harness and orchestration. P1 won 16–0 on turn 17. Exact replay reproduced all
+431 commands and both final observations. The host exported at 605.616 seconds
+after startup (10 minutes 6 seconds).
+
+| Measurement | Latency round 1 | Latency round 2 |
+| --- | ---: | ---: |
+| Global turn at completion | 14 | 17 |
+| Host elapsed time at export | 701.296 s | 605.616 s |
+| Journal commands | 310 | 431 |
+| Interaction requests | 44 | 72 |
+| Manual choices | 48 | 80 |
+| Yielded / manual priority passes | 262 / 2 | 351 / 1 |
+| Separate forced continuations | 56 | 29 |
+| Client calls | 51 | 74 |
+| Client output bytes | 561,135 | 859,497 |
+| Bytes per client call | 11,003 | 11,615 |
+| Client errors / context compactions | 0 / 0 | 0 / 0 |
+| Recorded host execution | 1.967 s | 2.008 s |
+
+The second game needed only one extra gameplay terminal poll. P1's 41 calls and
+P2's 33 calls otherwise returned directly from finite request processes. There
+were no inspections or surfaced session timeouts; three read-only waits renewed
+internally. Both pilots reported no missed desired response window. Each local
+session and the host closed cleanly after export.
+
+This is evidence that the transport removes unproductive collection delay,
+supported by the isolated PTY reproduction and finite-process tests. The
+different deals, positions, game lengths, and first game's mid-run cadence
+change prevent a controlled end-to-end speedup claim. Actual total bytes and
+bytes per call **increased** in the second game. Byte counts are a token-cost
+proxy, not tokenization or billing measurements; live token savings are not
+established by these two games.
+
+Remaining feedback is concrete:
+
+1. **Bound presentation size.** P1 still received 4,252 tool-output tokens for
+   one combat outcome (`p1-32`); battlefield, graveyard, and rule references
+   remain bulky. Its tool output budget truncated `p1-26` and `p1-40`, although
+   it reported no lost needed decision information. Attribute bytes by section
+   before further compression. Any paged event delivery must acknowledge only
+   delivered items, and state deltas must retain explicit full refresh.
+2. **Expose payment consequences.** In `p2-21`, animating a second Factory used
+   the first intended blocker as a mana source. This was one material pilot
+   payment error, with no API failure. Explicitly floating mana was available;
+   a preview would make automatic source selection easier to assess.
+3. **Disambiguate targets and compound decisions.** Chain Lightning's copy
+   required payment, copy confirmation, then target selection (`p2-23`–`p2-25`).
+   Three Ironclaw Orcs options had identical labels. The targets happened to be
+   equivalent here, but object IDs and source context would avoid inspection
+   when they differ. Preserve separate choices when new information matters.
+4. **Add precise stack stop conditions.** P1 wanted to stop after its spell
+   resolved. `nonManaAction` instead stopped immediately because a Factory
+   activation was available (`p1-18`), requiring another interaction. A typed
+   stack/object condition could express that intent without skipping responses.
+
+Private evidence is under
+`target/agent-matches/2026-10-20T15-16-31-501Z-latency-round2/`.
+Both new games retained every legal choice and exact replay compatibility.
+The hosted web client remains available for human-versus-agent games.

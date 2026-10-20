@@ -110,7 +110,9 @@ Copy the complete displayed action rather than reconstructing it from this
 example. A displayed `ChooseDecision` action already containing `decision` and
 `options` can be copied the same way; the client converts it to the explicit
 decision wrapper. `choices: []` with a yield installs only that pass instruction.
-All targets, payment choices, and newly arising decisions remain the pilot's.
+Targets, explicit payment choices, and newly arising decisions remain the
+pilot's. Choosing an automatic-payment action delegates mana-source selection
+to the engine; explicitly activate mana sources first when their use matters.
 
 The host validates the whole request shape and yield before mutation, executes
 the accepted action prefix, then installs the yield only if the entire intended
@@ -144,7 +146,8 @@ proxies, not tokenizer or billing measurements.
 
 The session prints each new or changed card's printed summary, then marks
 identical repeats using only `definition`, `reference`, `printed: null`, and
-`printedPreviouslySent: true`. Current state and choices remain complete.
+`printedPreviouslySent: true`. Current state and choices remain available
+through inline data and references.
 After context loss, send
 `{"method":"observe","full":true}` to reprint rules and event history. `full` is a local boolean
 option, stripped before the host request; it also works on `wait` and mutations.
