@@ -13,16 +13,38 @@ When given a native `penta-host` server URL and seat secret, use
 This route uses no hosted connection handle, shared agent daemon, or credential
 files. Do not run the hosted `up`/`attach` commands for a native assignment.
 
-Call `observe`, then `choose` with the displayed revision-bound `ticket` and
+Call `observe`. Native output defaults to typed `pilot-v1`: read
+`position.choices.items`, where each entry has `ticket`, `label`, and exact
+`action`. Collections always use `{items,total,reference}`; `position` is null
+while waiting or paused. `host` contains receipts and the seat's yield state.
+Use `node tools/penta-agent/native.mjs schema` to read the JSON Schema without
+credentials; `tools/penta-agent/pilot.d.ts` provides generated TypeScript types.
+Then call `choose` with the displayed revision-bound `ticket` and
 a caller-retained unique `requestId`. Decision tickets require explicit option
 IDs in `options`. Retain each exact mutation until its outcome is known; retry
 the identical method and arguments after uncertain output, or query `receipt`.
-Read `receipt.updates` alongside the current observation after each submission,
+Read `host.receipt.updates` alongside the current position after each submission,
 including when waiting; it preserves this seat's events and automatic inspections
 across the accepted batch prefix.
 Use `wait` with at most 25000 ms while waiting. Use `inspect_ref` for omitted
 details and `presentation: "exact"` for canonical output. Native `play` takes
 exact action/decision choices, not hosted-client ticket batches.
+`choose` and `play` also accept `waitMs: 25000` to submit and wait in one call.
+
+For "pass until phase X unless the opponent acts", call `yield` with the current
+`revision`, a new `requestId`, and an OR list such as
+`until: [{type:"nextStep",step:"End"},{type:"opponentActs"}]`.
+Use `PrecombatMain`, `BeginningOfCombat`, or `PostcombatMain` for those phase
+boundaries. `nextStep` means a future entry, not the current occurrence;
+`activeSeat` optionally selects `self`, `opponent`, or `either`.
+`opponentActs` includes mana activations. Use `opponentCastsSpell` for a narrower
+interrupt, or add `nonManaAction` to stop when another legal action is available.
+This is an explicit decision to pass the covered priority windows, not a change
+to which actions are forced. Non-forced decisions still need the pilot.
+Read `host.yield` for the stop reason; `cancelYield` with a new `requestId` cancels
+the instruction. Yields expire at game boundaries and the requested pass limit
+(`maxPasses`, default 64, maximum 256). Conditions and updates survive reconnects
+while the host remains alive.
 
 After model context loss, reuse the same seat secret, resolve any uncertain
 move, call `observe`, and recover seat-visible `transcript` pages and notes.

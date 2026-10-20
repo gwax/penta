@@ -26,8 +26,16 @@ the bot-wire epoch.
   debug bundle and explicitly close the match. State stays in memory across
   pilot reconnects; a host restart does not restore it. Engine failures during
   a command restore its preceding committed position and pause play for export.
+  Pilots can explicitly yield until any of several typed conditions matches,
+  commonly a future phase/step boundary or an opponent action. Passes retain
+  seat-visible updates, remain cancellable, and never select non-priority
+  decisions. The native client defaults to a concrete `pilot-v1` view with
+  consistent collections, exact action fields, a JSON Schema, and generated
+  TypeScript declarations; the previous `decision-v1` and exact views remain.
   The native observation envelope uses API 1 and debug bundles use native replay
-  1 with exact-fingerprint replay verification. These are separate contracts;
+  2 with recorded yield passes and forced prefixes for exact-fingerprint replay
+  verification. Replay 1 remains readable under a matching fingerprint.
+  These are separate contracts;
   the canonical bot protocol, checkpoint format and hosted journal version do
   not change. See [native matches](docs/native-matches.md).
 

@@ -1,0 +1,1069 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://penta.local/schemas/pilot-v1.json",
+ "title": "Penta native pilot-v1",
+ "$ref": "#/$defs/PilotPacket",
+ "$defs": {
+  "JsonValue": {
+   "anyOf": [
+    {
+     "type": "null"
+    },
+    {
+     "type": "boolean"
+    },
+    {
+     "type": "number"
+    },
+    {
+     "type": "string"
+    },
+    {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/JsonValue"
+     }
+    },
+    {
+     "type": "object",
+     "additionalProperties": {
+      "$ref": "#/$defs/JsonValue"
+     }
+    }
+   ]
+  },
+  "Seat": {
+   "enum": [
+    "p1",
+    "p2"
+   ]
+  },
+  "Step": {
+   "enum": [
+    "Upkeep",
+    "Draw",
+    "PrecombatMain",
+    "BeginningOfCombat",
+    "DeclareAttackers",
+    "DeclareBlockers",
+    "CombatDamage",
+    "EndOfCombat",
+    "PostcombatMain",
+    "End",
+    "Cleanup"
+   ]
+  },
+  "ExactObject": {
+   "type": "object",
+   "additionalProperties": {
+    "$ref": "#/$defs/JsonValue"
+   }
+  },
+  "Action": {
+   "type": "object",
+   "properties": {
+    "index": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "type": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "index",
+    "type"
+   ],
+   "additionalProperties": {
+    "$ref": "#/$defs/JsonValue"
+   }
+  },
+  "Choice": {
+   "type": "object",
+   "properties": {
+    "ticket": {
+     "type": "string"
+    },
+    "label": {
+     "type": "string"
+    },
+    "action": {
+     "$ref": "#/$defs/Action"
+    }
+   },
+   "required": [
+    "ticket",
+    "label",
+    "action"
+   ],
+   "additionalProperties": false
+  },
+  "Collection": {
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/JsonValue"
+     }
+    },
+    "total": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "reference": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "required": [
+    "items",
+    "total",
+    "reference"
+   ],
+   "additionalProperties": false
+  },
+  "Choices": {
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/Choice"
+     }
+    },
+    "total": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "reference": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "required": [
+    "items",
+    "total",
+    "reference"
+   ],
+   "additionalProperties": false
+  },
+  "Rule": {
+   "type": "object",
+   "properties": {
+    "definition": {
+     "type": "string"
+    },
+    "available": {
+     "type": "boolean"
+    },
+    "name": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "printed": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/ExactObject"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "reference": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "required": [
+    "definition",
+    "available",
+    "name",
+    "printed",
+    "reference"
+   ],
+   "additionalProperties": false
+  },
+  "Rules": {
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/Rule"
+     }
+    },
+    "total": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "reference": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "required": [
+    "items",
+    "total",
+    "reference"
+   ],
+   "additionalProperties": false
+  },
+  "Situation": {
+   "type": "object",
+   "properties": {
+    "seat": {
+     "$ref": "#/$defs/Seat"
+    },
+    "activeSeat": {
+     "$ref": "#/$defs/Seat"
+    },
+    "prioritySeat": {
+     "$ref": "#/$defs/Seat"
+    },
+    "turn": {
+     "type": "integer"
+    },
+    "activeTurn": {
+     "type": "integer"
+    },
+    "step": {
+     "$ref": "#/$defs/Step"
+    },
+    "pregame": {
+     "type": "boolean"
+    },
+    "regularCombatDamagePending": {
+     "type": "boolean"
+    },
+    "result": {
+     "anyOf": [
+      {
+       "type": "object",
+       "properties": {
+        "winner": {
+         "anyOf": [
+          {
+           "$ref": "#/$defs/Seat"
+          },
+          {
+           "type": "null"
+          }
+         ]
+        },
+        "reason": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "winner",
+        "reason"
+       ],
+       "additionalProperties": {
+        "$ref": "#/$defs/JsonValue"
+       }
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "required": [],
+   "additionalProperties": {
+    "$ref": "#/$defs/JsonValue"
+   }
+  },
+  "ManaPool": {
+   "type": "object",
+   "properties": {
+    "white": {
+     "type": "integer"
+    },
+    "blue": {
+     "type": "integer"
+    },
+    "black": {
+     "type": "integer"
+    },
+    "red": {
+     "type": "integer"
+    },
+    "green": {
+     "type": "integer"
+    },
+    "colorless": {
+     "type": "integer"
+    }
+   },
+   "required": [],
+   "additionalProperties": {
+    "$ref": "#/$defs/JsonValue"
+   }
+  },
+  "Counter": {
+   "type": "object",
+   "properties": {
+    "name": {
+     "type": "string"
+    },
+    "count": {
+     "type": "integer"
+    }
+   },
+   "required": [
+    "name",
+    "count"
+   ],
+   "additionalProperties": {
+    "$ref": "#/$defs/JsonValue"
+   }
+  },
+  "Players": {
+   "type": "object",
+   "properties": {
+    "life": {
+     "type": "array",
+     "items": {
+      "type": "integer"
+     },
+     "minItems": 2,
+     "maxItems": 2
+    },
+    "poison": {
+     "type": "array",
+     "items": {
+      "type": "integer"
+     },
+     "minItems": 2,
+     "maxItems": 2
+    },
+    "energy": {
+     "type": "array",
+     "items": {
+      "type": "integer"
+     },
+     "minItems": 2,
+     "maxItems": 2
+    },
+    "librarySizes": {
+     "type": "array",
+     "items": {
+      "type": "integer"
+     },
+     "minItems": 2,
+     "maxItems": 2
+    },
+    "faceDownExileSizes": {
+     "type": "array",
+     "items": {
+      "type": "integer"
+     },
+     "minItems": 2,
+     "maxItems": 2
+    },
+    "manaPools": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/ManaPool"
+     },
+     "minItems": 2,
+     "maxItems": 2
+    },
+    "playerCounters": {
+     "type": "array",
+     "items": {
+      "type": "array",
+      "items": {
+       "$ref": "#/$defs/Counter"
+      }
+     },
+     "minItems": 2,
+     "maxItems": 2
+    },
+    "monarch": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/Seat"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "opponentHandSize": {
+     "type": "integer"
+    }
+   },
+   "required": [],
+   "additionalProperties": {
+    "$ref": "#/$defs/JsonValue"
+   }
+  },
+  "DecisionSchema": {
+   "type": "object",
+   "properties": {
+    "id": {
+     "type": "integer"
+    },
+    "minimum": {
+     "type": "integer"
+    },
+    "maximum": {
+     "type": "integer"
+    },
+    "ordered": {
+     "type": "boolean"
+    },
+    "cancellable": {
+     "type": "boolean"
+    }
+   },
+   "required": [
+    "id",
+    "minimum",
+    "maximum"
+   ],
+   "additionalProperties": {
+    "$ref": "#/$defs/JsonValue"
+   }
+  },
+  "Decision": {
+   "type": "object",
+   "properties": {
+    "schema": {
+     "$ref": "#/$defs/DecisionSchema"
+    },
+    "options": {
+     "$ref": "#/$defs/Collection"
+    }
+   },
+   "required": [
+    "schema",
+    "options"
+   ],
+   "additionalProperties": false
+  },
+  "Position": {
+   "type": "object",
+   "properties": {
+    "situation": {
+     "$ref": "#/$defs/Situation"
+    },
+    "players": {
+     "$ref": "#/$defs/Players"
+    },
+    "zones": {
+     "type": "object",
+     "properties": {
+      "hand": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Collection"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "battlefield": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Collection"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "stack": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Collection"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "graveyards": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Collection"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "exiles": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Collection"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "emblems": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Collection"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "companions": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Collection"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "cardCounters": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Collection"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      }
+     },
+     "required": [
+      "hand",
+      "battlefield",
+      "stack",
+      "graveyards",
+      "exiles",
+      "emblems",
+      "companions",
+      "cardCounters"
+     ],
+     "additionalProperties": false
+    },
+    "updates": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/Collection"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "choices": {
+     "$ref": "#/$defs/Choices"
+    },
+    "decision": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/Decision"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "facts": {
+     "$ref": "#/$defs/ExactObject"
+    },
+    "provenance": {
+     "type": "object",
+     "properties": {
+      "reference": {
+       "type": "string"
+      }
+     },
+     "required": [
+      "reference"
+     ],
+     "additionalProperties": false
+    },
+    "rules": {
+     "$ref": "#/$defs/Rules"
+    }
+   },
+   "required": [
+    "situation",
+    "players",
+    "zones",
+    "updates",
+    "choices",
+    "decision",
+    "facts",
+    "provenance",
+    "rules"
+   ],
+   "additionalProperties": false
+  },
+  "YieldCondition": {
+   "oneOf": [
+    {
+     "type": "object",
+     "properties": {
+      "type": {
+       "const": "nextStep"
+      },
+      "step": {
+       "$ref": "#/$defs/Step"
+      },
+      "activeSeat": {
+       "enum": [
+        "self",
+        "opponent",
+        "either"
+       ]
+      }
+     },
+     "required": [
+      "type",
+      "step"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "object",
+     "properties": {
+      "type": {
+       "const": "opponentCastsSpell"
+      }
+     },
+     "required": [
+      "type"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "object",
+     "properties": {
+      "type": {
+       "const": "nonManaAction"
+      }
+     },
+     "required": [
+      "type"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "object",
+     "properties": {
+      "type": {
+       "const": "opponentActs"
+      }
+     },
+     "required": [
+      "type"
+     ],
+     "additionalProperties": false
+    }
+   ]
+  },
+  "YieldRequest": {
+   "type": "object",
+   "properties": {
+    "requestId": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 128,
+     "description": "Caller-retained identity; native host also limits UTF-8 encoding to 128 bytes."
+    },
+    "revision": {
+     "type": "string",
+     "minLength": 1
+    },
+    "until": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/YieldCondition"
+     },
+     "minItems": 1,
+     "maxItems": 16
+    },
+    "maxPasses": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 256
+    },
+    "waitMs": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 25000
+    }
+   },
+   "required": [
+    "requestId",
+    "revision",
+    "until"
+   ],
+   "additionalProperties": false
+  },
+  "CancelYieldRequest": {
+   "type": "object",
+   "properties": {
+    "requestId": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 128,
+     "description": "Caller-retained identity; native host also limits UTF-8 encoding to 128 bytes."
+    }
+   },
+   "required": [
+    "requestId"
+   ],
+   "additionalProperties": false
+  },
+  "Host": {
+   "type": "object",
+   "properties": {
+    "apiVersion": {
+     "const": 1
+    },
+    "status": {
+     "enum": [
+      "ready",
+      "waiting",
+      "complete",
+      "paused"
+     ]
+    },
+    "revision": {
+     "type": "string"
+    },
+    "yield": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/YieldState"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "receipt": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/Receipt"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "presentationWarning": {
+     "type": "string"
+    }
+   },
+   "required": [
+    "apiVersion",
+    "status"
+   ],
+   "additionalProperties": {
+    "$ref": "#/$defs/JsonValue"
+   }
+  },
+  "PilotPacket": {
+   "oneOf": [
+    {
+     "type": "object",
+     "properties": {
+      "presentation": {
+       "const": "pilot-v1"
+      },
+      "status": {
+       "const": "ready"
+      },
+      "revision": {
+       "type": "string"
+      },
+      "host": {
+       "$ref": "#/$defs/Host"
+      },
+      "position": {
+       "$ref": "#/$defs/Position"
+      }
+     },
+     "required": [
+      "presentation",
+      "status",
+      "revision",
+      "host",
+      "position"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "object",
+     "properties": {
+      "presentation": {
+       "const": "pilot-v1"
+      },
+      "status": {
+       "const": "waiting"
+      },
+      "revision": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "host": {
+       "$ref": "#/$defs/Host"
+      },
+      "position": {
+       "type": "null"
+      }
+     },
+     "required": [
+      "presentation",
+      "status",
+      "revision",
+      "host",
+      "position"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "object",
+     "properties": {
+      "presentation": {
+       "const": "pilot-v1"
+      },
+      "status": {
+       "const": "complete"
+      },
+      "revision": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "host": {
+       "$ref": "#/$defs/Host"
+      },
+      "position": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Position"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      }
+     },
+     "required": [
+      "presentation",
+      "status",
+      "revision",
+      "host",
+      "position"
+     ],
+     "additionalProperties": false
+    },
+    {
+     "type": "object",
+     "properties": {
+      "presentation": {
+       "const": "pilot-v1"
+      },
+      "status": {
+       "const": "paused"
+      },
+      "revision": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "host": {
+       "$ref": "#/$defs/Host"
+      },
+      "position": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/Position"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      }
+     },
+     "required": [
+      "presentation",
+      "status",
+      "revision",
+      "host",
+      "position"
+     ],
+     "additionalProperties": false
+    }
+   ]
+  },
+  "YieldState": {
+   "type": "object",
+   "properties": {
+    "requestId": {
+     "type": "string",
+     "maxLength": 128,
+     "minLength": 1,
+     "description": "Caller-retained identity; native host also limits UTF-8 encoding to 128 bytes."
+    },
+    "status": {
+     "enum": [
+      "active",
+      "stopped"
+     ]
+    },
+    "until": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/YieldCondition"
+     }
+    },
+    "maxPasses": {
+     "type": "integer"
+    },
+    "passes": {
+     "type": "integer"
+    },
+    "stopReason": {
+     "anyOf": [
+      {
+       "enum": [
+        "condition",
+        "decision",
+        "gameEnded",
+        "passLimit",
+        "cancelled",
+        "paused"
+       ]
+      },
+      {
+       "type": "null"
+      }
+     ]
+    },
+    "conditionIndex": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "required": [
+    "requestId",
+    "status",
+    "until",
+    "maxPasses",
+    "passes",
+    "stopReason",
+    "conditionIndex"
+   ],
+   "additionalProperties": false
+  },
+  "Receipt": {
+   "type": "object",
+   "properties": {
+    "requestId": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 128
+    },
+    "accepted": {
+     "anyOf": [
+      {
+       "type": "boolean"
+      },
+      {
+       "type": "integer",
+       "minimum": 0
+      }
+     ]
+    },
+    "updates": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/JsonValue"
+     }
+    },
+    "stopped": {
+     "type": "string"
+    },
+    "yield": {
+     "anyOf": [
+      {
+       "$ref": "#/$defs/YieldState"
+      },
+      {
+       "type": "null"
+      }
+     ]
+    }
+   },
+   "required": [
+    "requestId",
+    "accepted"
+   ],
+   "additionalProperties": {
+    "$ref": "#/$defs/JsonValue"
+   }
+  }
+ }
+}

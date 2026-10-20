@@ -1,9 +1,10 @@
-//! A single match's volatile authority. No files, model calls, or game policy.
+//! A single match's volatile authority. No files, model calls, or strategic choices.
 
 mod config;
 mod play;
 mod replay;
 pub mod server;
+mod yielding;
 
 pub use config::Config;
 pub use replay::replay_bundle;
@@ -62,6 +63,7 @@ pub struct Host {
     receipts: [BTreeMap<String, Receipt>; 2],
     diagnostics: VecDeque<Value>,
     failure: Option<Value>,
+    yields: [Option<yielding::YieldPolicy>; 2],
     catalog: Option<Value>,
     started: Instant,
     closed: bool,
@@ -94,6 +96,7 @@ impl Host {
             receipts: [BTreeMap::new(), BTreeMap::new()],
             diagnostics: VecDeque::new(),
             failure: None,
+            yields: [None, None],
             catalog: None,
             started: Instant::now(),
             closed: false,
@@ -173,6 +176,7 @@ impl Host {
                 Ok(self.view(seat))
             }
             "choose" | "play" | "concede" => self.play(seat, method, args),
+            "yield" | "cancelYield" => self.yield_request(seat, method, args),
             "receipt" => {
                 keys(args, &["requestId"])?;
                 let id = request_id(args)?;
@@ -226,6 +230,14 @@ impl Host {
     }
 
     fn view(&self, seat: PlayerId) -> Value {
+        let mut view = self.base_view(seat);
+        view["yield"] = self.yields[seat.index()]
+            .as_ref()
+            .map_or(Value::Null, yielding::YieldPolicy::json);
+        view
+    }
+
+    fn base_view(&self, seat: PlayerId) -> Value {
         if self.failure.is_some() {
             return json!({"apiVersion":1,"status":"paused",
                 "message":"Match paused after an engine failure; the organizer can export diagnostics."});
@@ -268,7 +280,7 @@ impl Host {
 
     fn export(&self) -> Value {
         json!({
-            "nativeReplayVersion":1,
+            "nativeReplayVersion":2,
             "simulationFingerprint":protocol::SIMULATION_FINGERPRINT,
             "protocolVersion":protocol::PROTOCOL_VERSION,
             "engineVersion":protocol::ENGINE_VERSION,

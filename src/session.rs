@@ -155,6 +155,27 @@ impl ExactSession {
         Ok(())
     }
 
+    /// Applies a legal ordinary priority pass without acknowledging retained updates.
+    /// Hosts use this only for an explicitly authorized, bounded yield policy.
+    ///
+    /// # Errors
+    /// Rejects a pass outside this seat's ordinary priority window.
+    pub fn pass_priority_retaining_updates(&mut self, seat: PlayerId) -> Result<(), String> {
+        let observation = self.game.observe(seat);
+        if self.decision_seat() != Some(seat)
+            || observation.decision.is_some()
+            || !protocol::protocol_actions(&observation).contains(&Action::PassPriority)
+        {
+            return Err("the seat does not hold ordinary priority".into());
+        }
+        let cursor = self.game.event_cursor();
+        self.game
+            .apply(seat, Action::PassPriority)
+            .map_err(|error| error.to_string())?;
+        self.updates.record(&self.game, cursor, None);
+        Ok(())
+    }
+
     /// Advances only unique continuations, preserving seat-visible events and
     /// automatic inspection decisions until that seat's next accepted command.
     ///
@@ -162,25 +183,60 @@ impl ExactSession {
     /// Returns an engine error or a bounded-continuation limit failure. Hosts
     /// should restore their pre-command clone before retrying a failed commit.
     pub fn advance_forced(&mut self) -> Result<(), String> {
-        for _ in 0..FORCED_ACTION_LIMIT {
-            let Some((seat, action)) = self.game.forced_action() else {
-                return Ok(());
-            };
-            let observation = self.game.observe(seat);
-            let cursor = self.game.event_cursor();
-            self.game
-                .apply(seat, action.clone())
-                .map_err(|error| error.to_string())?;
-            self.updates.record(
-                &self.game,
-                cursor,
-                observation
-                    .decision
-                    .as_ref()
-                    .map(|decision| (decision, &action)),
-            );
+        self.advance_forced_until(|_| false).map(|_| ())
+    }
+
+    /// Advances unique continuations until a host's seat-visible stop guard fires.
+    /// Returns the exact applied prefix length for deterministic host replay.
+    ///
+    /// # Errors
+    /// Returns an engine error or the bounded-continuation limit failure.
+    pub fn advance_forced_until(
+        &mut self,
+        mut stop: impl FnMut(&Self) -> bool,
+    ) -> Result<usize, String> {
+        for count in 0..FORCED_ACTION_LIMIT {
+            if stop(self) || !self.advance_one_forced()? {
+                return Ok(count);
+            }
         }
         Err("game exceeded its forced action limit".into())
+    }
+
+    /// Replays a recorded forced prefix without recomputing a host policy.
+    ///
+    /// # Errors
+    /// Rejects excessive counts, a prefix beyond available forced actions, or engine errors.
+    pub fn advance_forced_exact(&mut self, count: usize) -> Result<(), String> {
+        if count > FORCED_ACTION_LIMIT {
+            return Err("invalid forced prefix length".into());
+        }
+        for _ in 0..count {
+            if !self.advance_one_forced()? {
+                return Err("forced prefix exceeds available continuations".into());
+            }
+        }
+        Ok(())
+    }
+
+    fn advance_one_forced(&mut self) -> Result<bool, String> {
+        let Some((seat, action)) = self.game.forced_action() else {
+            return Ok(false);
+        };
+        let observation = self.game.observe(seat);
+        let cursor = self.game.event_cursor();
+        self.game
+            .apply(seat, action.clone())
+            .map_err(|error| error.to_string())?;
+        self.updates.record(
+            &self.game,
+            cursor,
+            observation
+                .decision
+                .as_ref()
+                .map(|decision| (decision, &action)),
+        );
+        Ok(true)
     }
 
     /// Whether the complete match has concluded.

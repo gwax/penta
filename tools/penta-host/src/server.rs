@@ -201,7 +201,9 @@ async fn execute(state: Authority, token: String, command: Command) -> Result<Va
         let before = (host.journal.len(), host.failure.is_some(), host.is_closed());
         let result = host.request(&token, &command.method, &command.args);
         let after = (host.journal.len(), host.failure.is_some(), host.is_closed());
-        if before != after {
+        if before != after
+            || (result.is_ok() && matches!(command.method.as_str(), "yield" | "cancelYield"))
+        {
             state
                 .changed
                 .send_modify(|generation| *generation = generation.wrapping_add(1));

@@ -58,6 +58,8 @@ fn capabilities_isolate_organizer_seats_and_private_transcripts() {
         "choose",
         "play",
         "concede",
+        "yield",
+        "cancelYield",
         "receipt",
         "transcript",
         "note",
@@ -241,7 +243,7 @@ fn completed_match_remains_readable_and_export_replays_until_explicit_close() {
     assert!(!host.is_closed());
     let bundle = host.request(&organizer, "export", &json!({})).unwrap();
     assert_eq!(bundle["seed"], u64::MAX.to_string());
-    assert_eq!(bundle["nativeReplayVersion"], 1);
+    assert_eq!(bundle["nativeReplayVersion"], 2);
     for field in [
         "config",
         "commands",

@@ -9,7 +9,7 @@ use crate::Config;
 /// # Errors
 /// Rejects incompatible provenance, malformed commands, and observation divergence.
 pub fn replay_bundle(bundle: &Value) -> Result<Value, String> {
-    if bundle["nativeReplayVersion"] != 1
+    if !matches!(bundle["nativeReplayVersion"].as_u64(), Some(1 | 2))
         || bundle["simulationFingerprint"].as_str() != Some(protocol::SIMULATION_FINGERPRINT)
     {
         return Err("incompatible native replay version or simulation fingerprint".into());
@@ -29,12 +29,22 @@ pub fn replay_bundle(bundle: &Value) -> Result<Value, String> {
             Some("p2") => PlayerId::Two,
             _ => return Err(format!("invalid seat at command {index}")),
         };
-        if command["choice"] == json!({"concede":true}) {
+        if bundle["nativeReplayVersion"] == 2 && command["choice"] == json!({"autoPass":true}) {
+            session.pass_priority_retaining_updates(seat)?;
+        } else if command["choice"] == json!({"concede":true}) {
             session.concede(seat)?;
         } else {
             session.apply_choice(seat, &command["choice"])?;
         }
-        session.advance_forced()?;
+        if bundle["nativeReplayVersion"] == 2 {
+            let count = command["forced"]
+                .as_u64()
+                .and_then(|count| usize::try_from(count).ok())
+                .ok_or("missing forced prefix length")?;
+            session.advance_forced_exact(count)?;
+        } else {
+            session.advance_forced()?;
+        }
     }
     let observations =
         json!({"p1":session.observe(PlayerId::One),"p2":session.observe(PlayerId::Two)});

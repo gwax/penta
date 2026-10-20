@@ -3,7 +3,8 @@
 `penta-host` owns one match in one native process. It calls the shared Rust
 engine directly; it does not start Vite, a browser, WASM, or the hosted-room
 daemon. The existing [hosted session workflow](bot-sessions.md) remains available.
-The native host and its stateless client make no model calls or gameplay choices.
+The native host and its stateless client make no model calls. Pilots choose
+exact actions or explicitly authorize conditional priority passes.
 
 ## Start and distribute seats
 
@@ -50,6 +51,8 @@ and `secret`; the examples below show the additional fields.
 | `wait` | `waitMs` up to 25000 | Bounded wait for a seat view |
 | `choose` | `ticket`, `requestId`, optional `options` | Submit one displayed choice |
 | `play` | `revision`, `choices`, `requestId` | Submit an explicitly decided batch |
+| `yield` | `revision`, `until`, `requestId`, optional `maxPasses`, `waitMs` | Pass priority until any requested condition matches |
+| `cancelYield` | `requestId` | Cancel this seat's retained yield instruction |
 | `concede` | `requestId` | Concede |
 | `receipt` | `requestId` | Recover a submitted request's outcome |
 | `transcript` | optional `offset`, `limit` up to 100 | Recover seat-visible history |
@@ -58,7 +61,7 @@ and `secret`; the examples below show the additional fields.
 | `inspect_ref` | `reference`, optional `offset`, `limit` up to 100 | Inspect a current compact-view reference |
 
 Responses distinguish `ready`, `waiting`, `complete`, and `paused`. At `ready`,
-the default `decision-v1` presentation supplies choices and revision-bound
+the default `pilot-v1` presentation supplies choices and revision-bound
 tickets such as `REVISION:a7`. Submit that ticket unchanged:
 
 ```json
@@ -71,9 +74,11 @@ accepts `{index}`, `{decision, options}`, or `{action}`. Multi-choice batches
 require exact action values or explicit decisions because indices can change.
 An accepted prefix remains committed and is reported in the receipt; ticket
 resolution for batches is not provided by this stateless adapter.
-`receipt.updates` preserves this seat's new events and automatic inspections
+`host.receipt.updates` in the typed view preserves this seat's new events and automatic inspections
 across the entire accepted prefix, including when the next view is `waiting`.
 Read these alongside the current observation; retries return the same receipt.
+Supply `waitMs: 25000` with a submission to wait for the next own decision in
+the same request. Waiting never chooses another action.
 
 Choose a new request ID for each logical mutation and retain its exact method
 and arguments until the outcome is known. After a timeout or lost output,
@@ -92,9 +97,103 @@ secret does not revoke the old pilot's access.
 Compact references are rebuilt from the current same-revision view. They expire
 when the revision changes; call `observe` again after a stale-reference error.
 Pass `presentation: "exact"` to receive the host's raw response, including the
-canonical observation. If compact rendering or catalog fetching fails after
-a committed move, the adapter returns that exact response and a presentation
-warning, preserving the receipt.
+canonical observation. A catalog failure leaves the typed position available
+with unavailable printed references and a warning. If rendering itself fails
+after a committed move, the adapter returns the exact response and a
+presentation warning, preserving the receipt.
+
+## Typed pilot presentation
+
+The native client defaults to `pilot-v1`. Its
+[JSON Schema](../tools/penta-agent/pilot.schema.json) is the source for the
+[TypeScript declarations](../tools/penta-agent/pilot.d.ts). Read the contract
+without a running match or credentials:
+
+```sh
+node tools/penta-agent/native.mjs schema
+```
+
+Every pilot position response has `presentation`, `status`, `revision`, `host`,
+and `position`.
+`position` is null while waiting or paused. Ready positions contain named
+`situation`, `players`, `zones`, `updates`, `choices`, `decision`, `facts`,
+`provenance`, and `rules` fields. Collections consistently use
+`{items, total, reference}`: `items` is always an array, and `reference` is null
+unless more detail requires inspection. No collection switches to a
+`{shared, rows}` table. An absent canonical zone is explicitly null.
+
+Each entry in `position.choices.items` has a `ticket`, a readable `label`,
+and the exact canonical `action`. Selection decisions retain their bounds,
+option IDs, order, and other schema fields. Labels identify player targets;
+exact action fields remain authoritative and distinct choices are never merged.
+Unknown engine fields remain available in the exact action or `facts`.
+`inspect_ref` retrieves explicitly referenced detail.
+
+`host` preserves the native envelope, including receipts and this seat's
+`yield` state. An active or stopped yield reports its conditions, pass count,
+limit, stop reason, and matching condition index. Waiting reveals no opponent
+revision or choice count.
+
+`presentation: "decision-v1"` retains the previous compact native view;
+`presentation: "exact"` bypasses presentation. The hosted adapter keeps its
+existing default. Regenerate declarations after a schema change with
+`node tools/penta-agent/generate-pilot-types.mjs`.
+
+## Conditional priority yields
+
+The usual instruction is "pass until a particular phase or step, unless the
+opponent does something." Conditions are a typed OR list, not a natural-language
+program. For example, call `yield` with the current revision:
+
+```json
+{
+  "server": "http://127.0.0.1:PORT",
+  "secret": "SEAT_SECRET",
+  "requestId": "p1-yield-17",
+  "revision": "CURRENT_REVISION",
+  "until": [
+    {"type": "nextStep", "step": "End", "activeSeat": "either"},
+    {"type": "opponentActs"}
+  ],
+  "waitMs": 25000
+}
+```
+
+This passes ordinary priority until the next end step begins or an opponent
+action interrupts it, whichever happens first. It stays active while the other
+pilot plays and across client reconnects. It returns control at the next legal
+decision for this seat; it cannot interrupt resolution or grant priority.
+
+| Condition | Meaning |
+| --- | --- |
+| `nextStep` | Stop on a future entry into `step`, optionally on `self`, `opponent`, or `either` player's turn |
+| `opponentActs` | Stop for an opponent's visible spell, ability, land, mana activation, or combat declaration |
+| `opponentCastsSpell` | Stop specifically when the opponent casts a spell |
+| `nonManaAction` | Stop when this seat has a legal alternative other than passing or activating a mana ability |
+
+`nextStep` uses the canonical names `Upkeep`, `Draw`, `PrecombatMain`,
+`BeginningOfCombat`, `DeclareAttackers`, `DeclareBlockers`, `CombatDamage`,
+`EndOfCombat`, `PostcombatMain`, `End`, and `Cleanup`. Use `PrecombatMain`,
+`BeginningOfCombat`, or `PostcombatMain` for the corresponding phase boundary.
+The current occurrence does not count: requesting `End` during an end step
+targets a later end step. A skipped step does not count as an entry.
+
+Add `{"type":"nonManaAction"}` to the example when the pilot also wants to
+reconsider as soon as another legal action is available. Explicit payment
+entry counts as a non-mana action; the host does not guess whether a payment
+will enable a useful play. If this condition already matches, yielding stops
+without passing. `opponentActs` includes mana, so pilots wanting a narrower
+interruption should select `opponentCastsSpell` explicitly.
+
+Every non-priority decision requiring a pilot stops the yield; attackers,
+blockers, targets, payments, and other selections still belong to the pilot.
+The engine continues to advance uniquely determined continuations, such as
+finishing an empty attack declaration. The instruction expires at a game
+boundary and after `maxPasses` automatic passes (default 64,
+maximum 256), or can be stopped with `cancelYield`. Conditions are evaluated
+using only the yielding seat's visible information. The host retains the
+stop reason and the seat's updates, and records each actual pass for replay.
+Yielding does not change the engine's classification of forced actions.
 
 ## Lifetime, isolation and debug export
 

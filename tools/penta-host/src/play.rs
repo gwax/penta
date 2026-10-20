@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 
 use crate::{Host, HostError, Receipt, Result, keys, number, request_id, seat_name, secret};
 
-enum Failure {
+pub(crate) enum Failure {
     Invalid(String),
     Engine(String),
 }
@@ -58,8 +58,7 @@ impl Host {
                 } else {
                     session.apply_choice(seat, choice)
                 }
-                .map_err(Failure::Invalid)?;
-                session.advance_forced().map_err(Failure::Engine)
+                .map_err(Failure::Invalid)
             });
             match applied {
                 Ok(()) => {
@@ -87,6 +86,7 @@ impl Host {
         if accepted == 0 && self.failure.is_none() {
             return Err(HostError::new(409, stopped.unwrap_or("no choice accepted")));
         }
+        self.drive_yields();
         let mut receipt = json!({"requestId":id,"accepted":accepted,"updates":updates});
         if let Some(reason) = stopped {
             receipt["stopped"] = json!(reason);
@@ -111,19 +111,28 @@ impl Host {
 
     // Rendering observations is part of the commit: a failure there also restores
     // the last good engine and its cached views, leaving export usable.
-    fn commit(
+    pub(crate) fn commit(
         &mut self,
         seat: PlayerId,
         choice: &Value,
         operation: impl FnOnce(&mut ExactSession) -> std::result::Result<(), Failure>,
     ) -> std::result::Result<(), Failure> {
         let checkpoint = self.session.clone();
+        let mut policies = self.yields.clone();
         let applied = catch_unwind(AssertUnwindSafe(|| {
             operation(&mut self.session)?;
+            if choice == &json!({"autoPass":true}) {
+                policies[seat.index()]
+                    .as_mut()
+                    .expect("active yield")
+                    .passes += 1;
+            }
+            let forced = crate::yielding::advance(&mut self.session, &mut policies)
+                .map_err(Failure::Engine)?;
             let observations =
                 [PlayerId::One, PlayerId::Two].map(|seat| self.session.observe(seat));
             let revision = secret().map_err(Failure::Engine)?;
-            Ok((observations, revision))
+            Ok((observations, revision, forced))
         }))
         .unwrap_or_else(|_| {
             Err(Failure::Engine(
@@ -131,12 +140,14 @@ impl Host {
             ))
         });
         match applied {
-            Ok((observations, revision)) => {
+            Ok((observations, revision, forced)) => {
+                self.yields = policies;
                 self.observations = observations;
                 self.revision = revision;
                 self.journal
-                    .push(json!({"seat":seat_name(seat),"choice":choice}));
+                    .push(json!({"seat":seat_name(seat),"choice":choice,"forced":forced}));
                 self.remember(seat, "choice", choice.clone());
+                self.evaluate_yields();
                 self.remember_views();
                 Ok(())
             }
@@ -147,6 +158,7 @@ impl Host {
                         "afterCommands":self.journal.len()});
                     self.diagnose(json!({"kind":"engineFailure","failure":detail}));
                     self.failure = Some(detail);
+                    self.stop_yields("paused");
                 }
                 Err(failure)
             }

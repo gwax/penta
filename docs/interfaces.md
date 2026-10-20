@@ -123,11 +123,17 @@ not one exact-version comparison:
   and `sessionAct` journal command require browser/host replay version 4. Agent
   presentation deltas and menu references are adapter output, not bot-wire changes.
 - The [native single-match host](native-matches.md) has a separate HTTP API with
-  observation envelope `apiVersion: 1` and debug bundle `nativeReplayVersion: 1`.
+  observation envelope `apiVersion: 1` and debug bundle `nativeReplayVersion: 2`.
   Its organizer and seat capabilities, request receipts, and volatile transcripts
   belong to that host contract. Native debug replay requires the same simulation
-  fingerprint and compares the reconstructed final seat observations. It does
-  not restore a running host. These versions are independent of the hosted
+  fingerprint and compares the reconstructed final seat observations. Version 2
+  records conditional yield passes and the actual forced continuation prefix;
+  version 1 bundles remain readable under their matching fingerprint. Replay
+  does not restore a running host. The additive `yield` and `cancelYield`
+  operations use typed OR conditions and ordinary validated priority passes.
+  The native client's `pilot-v1` JSON Schema and generated TypeScript types
+  version its presentation separately; `decision-v1` and exact views remain
+  available. These versions are independent of the hosted
   journal, canonical bot protocol, and reconstruction checkpoint versions.
 
 Query `protocol_version()`, `simulation_fingerprint()`, and `engine_version()`

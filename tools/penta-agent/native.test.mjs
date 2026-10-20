@@ -22,8 +22,9 @@ test("fresh invocations reproduce revision tickets and inspect references withou
   const first = await nativeCommand("observe", credentials, transport.fetch);
   const second = await nativeCommand("observe", credentials, transport.fetch);
   assert.deepEqual(first, second);
-  assert.equal(first.choices[0].ticket, "revision-one:a7");
-  const details = await nativeCommand("inspect_ref", { ...credentials, reference: first.provenance.reference }, transport.fetch);
+  assert.equal(first.presentation, "pilot-v1");
+  assert.equal(first.position.choices.items[0].ticket, "revision-one:a7");
+  const details = await nativeCommand("inspect_ref", { ...credentials, reference: first.position.provenance.reference }, transport.fetch);
   assert.deepEqual(details.items[0].checkpoint, observation.checkpoint);
   assert.ok(transport.calls.every(call => call.headers.authorization === "Bearer seat-only"));
   assert.ok(transport.calls.every(call => !Object.hasOwn(call.args, "secret")));
@@ -39,22 +40,43 @@ test("choose retries send the exact caller request without observing or generati
   assert.deepEqual(transport.calls[0].args, { ticket: "revision-one:a7", requestId: "move-17" });
 });
 
-test("catalog failure preserves a committed receipt and exact observation", async () => {
+test("catalog failure preserves a playable typed packet and committed receipt", async () => {
   const committed = { ...ready, receipt: { requestId: "m", accepted: 1 } };
   const transport = mock(method => {
     if (method === "catalog") throw new Error("catalog unavailable");
     return committed;
   });
   const result = await nativeCommand("choose", { ...credentials, ticket: "old:a7", requestId: "m" }, transport.fetch);
-  assert.deepEqual(result.receipt, committed.receipt);
-  assert.deepEqual(result.observation, observation);
+  assert.deepEqual(result.host.receipt, committed.receipt);
+  assert.equal(result.presentation, "pilot-v1");
+  assert.match(result.host.presentationWarning, /catalog unavailable/);
+  assert.deepEqual(result.position.choices.items[0].action, observation.legalActions[0]);
+  assert.equal(result.position.choices.items[0].ticket, "revision-one:a7");
+});
+
+test("unsupported observations retain exact committed state as a last resort", async () => {
+  const committed = { ...ready, observation: { ...observation, protocolVersion: 999 },
+    receipt: { requestId: "m", accepted: 1 } };
+  const transport = mock(method => method === "catalog" ? { cards: [] } : committed);
+  const result = await nativeCommand("choose", { ...credentials, ticket: "old:a7", requestId: "m" }, transport.fetch);
   assert.equal(result.presentation, "exact");
+  assert.deepEqual(result.observation, committed.observation);
+  assert.deepEqual(result.receipt, committed.receipt);
 });
 
 test("exact mode bypasses presentation and catalog lookup", async () => {
   const transport = mock(() => ready);
   assert.deepEqual(await nativeCommand("observe", { ...credentials, presentation: "exact" }, transport.fetch), ready);
   assert.deepEqual(transport.calls.map(call => call.method), ["observe"]);
+});
+
+test("organizer status and exports remain raw without presentation warnings", async () => {
+  for (const method of ["status", "export"]) {
+    const result = { status: "complete", nativeReplayVersion: 1, future: {} };
+    const transport = mock(() => result);
+    assert.deepEqual(await nativeCommand(method, credentials, transport.fetch), result);
+    assert.deepEqual(transport.calls.map(call => call.method), [method]);
+  }
 });
 
 test("stale references never inspect a new revision", async () => {
