@@ -135,8 +135,10 @@ not one exact-version comparison:
   full-detail references, and explicit current versus acceptance-time yield state.
   Its composed JSON Schema and generated TypeScript types version presentation
   separately; `pilot-v1`, `decision-v1`, and exact views remain available. The
-  optional JSON-lines CLI session retains only local connection and measurement
-  state; it makes no game choices or automatic retries. These versions are independent of the hosted
+  optional JSON-lines CLI session retains local connection, measurement, and
+  delivered printed-rule state. An explicit `full:true` refresh restores printed
+  context; current state and choices remain complete. It makes no game choices
+  or automatic retries. These versions are independent of the hosted
   journal, canonical bot protocol, and reconstruction checkpoint versions.
 
 Query `protocol_version()`, `simulation_fingerprint()`, and `engine_version()`

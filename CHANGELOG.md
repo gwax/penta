@@ -34,7 +34,10 @@ the bot-wire epoch.
   generated TypeScript declarations; `pilot-v1`, `decision-v1`, and exact views
   remain available. Displayed actions can be submitted directly, and current
   yield state is distinguished from its acceptance snapshot. An optional local
-  JSON-lines client keeps credentials in memory and reports interaction metrics.
+  JSON-lines client keeps credentials in memory, reuses delivered printed rules
+  with explicit full refresh, and reports interaction metrics. Opaque references
+  are shorter, ability labels stay stable across menus, and typed native batch
+  wrappers reject malformed inputs before contacting the host.
   The native observation envelope uses API 1 and debug bundles use native replay
   2 with recorded yield passes and forced prefixes for exact-fingerprint replay
   verification. Replay 1 remains readable under a matching fingerprint.

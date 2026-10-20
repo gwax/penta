@@ -218,6 +218,10 @@
               "type": "null"
             }
           ]
+        },
+        "printedPreviouslySent": {
+          "type": "boolean",
+          "description": "True only when printed is null because this persistent session already delivered the exact same printed summary. A full view restores printed details; reference always provides the complete catalog entry."
         }
       },
       "required": [
@@ -228,6 +232,68 @@
         "reference"
       ],
       "additionalProperties": false
+    },
+    "NativePlayChoice": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "index"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              }
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "maxItems": 4096
+            }
+          },
+          "required": [
+            "decision",
+            "options"
+          ],
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

@@ -72,6 +72,15 @@ but exclude `sessionStats`; bytes count serialized stdout before that stats
 response, including initialization and errors. Credentials remain in memory.
 The client generates no request IDs, chooses no actions, and performs no retries.
 
+The session prints each new or changed card's printed summary, then marks
+identical repeats with `printed: null, printedPreviouslySent: true`. Current
+state, choices, and updates remain complete. After context loss, send
+`{"method":"observe","full":true}` to reprint rules. `full` is a local boolean
+option, stripped before the host request; it also works on `wait` and mutations.
+A fresh client session starts with no remembered rules. One-shot commands always
+remain self-contained. Only successfully written inline rules count as delivered;
+paged or unavailable rules do not.
+
 ## Play and reconnect
 
 Use the same invocation pattern for each method. All inputs include `server`
@@ -107,6 +116,22 @@ require exact action values or explicit decisions because indices can change.
 Copy a displayed action into `{action: ...}` unchanged: the native client removes
 only its observation `index` metadata before submission. All other action fields
 remain exact; retries do not mutate the caller's request.
+Native `play` does not accept tickets or bare actions. For example:
+
+```json
+{
+  "revision": "CURRENT_REVISION",
+  "requestId": "attack-1",
+  "choices": [
+    {"action": {"type": "DeclareAttacker", "attacker": 12}},
+    {"action": {"type": "DeclareAttacker", "attacker": 18}}
+  ]
+}
+```
+
+Copy the complete displayed action, including any fields beyond this example.
+Use `choose` for one ticket. The exported schema's `NativePlayChoice` describes
+the supported wrapper shapes; malformed entries fail locally before submission.
 An accepted prefix remains committed and is reported in the receipt; ticket
 resolution for batches is not provided by this stateless adapter.
 `host.receipt.updates` in the typed view preserves this seat's new events and automatic inspections
@@ -165,13 +190,16 @@ counters when applicable. Nondefault and unknown fields remain in `current`.
 Each entry's `reference` retrieves its unchanged canonical object; the position's
 `reference` retrieves the complete seat observation. Printed rules remain usable
 inline, with full catalog records inspectable. These references reveal only
-information already available to the authenticated seat.
+information already available to the authenticated seat. References are opaque,
+47-character identifiers bound to the current revision; copy them unchanged.
 
 Each choice retains a revision-bound `ticket`, concise `label`, and exact
 `action`. All actions, payment variants, and decision options remain available;
 large menus are explicitly paged. Labels identify targets, including self-targets,
 and distinguish abilities without embedding their full descriptors. Exact fields
 remain authoritative. Selection decisions retain bounds, option IDs, and order.
+Ability labels use stable intrinsic IDs and short origin fingerprints, so changing
+the available menu does not renumber an ability.
 
 `host.currentYield` is the current active or stopped policy.
 `host.receipt.yieldAtAcceptance` is the immutable snapshot when a yield request

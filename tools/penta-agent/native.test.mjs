@@ -118,7 +118,7 @@ test("displayed exact actions round-trip with only top-level action indices remo
       : { status: "waiting" });
   const displayed = await nativeCommand("observe", credentials, transport.fetch);
   const input = { ...credentials, presentation: "exact", revision: ready.revision, requestId: "exact-retry",
-    choices: [{ action: displayed.position.choices.items[0].action }, { decision: "decision-id", options: [2, 1] }] };
+    choices: [{ action: displayed.position.choices.items[0].action }, { decision: 42, options: [2, 1] }] };
   const original = structuredClone(input);
   Object.freeze(input.choices[0].action);
   Object.freeze(input.choices[0]);
@@ -136,7 +136,7 @@ test("displayed exact actions round-trip with only top-level action indices remo
   assert.deepEqual(uncertainBody, { method: "play", args: calls[0].args });
   assert.deepEqual(calls[0].args.choices, [
     { action: { type: "ActivateAbility", abilityIndex: 2, target: { index: 4 }, future: "retained" } },
-    { decision: "decision-id", options: [2, 1] },
+    { decision: 42, options: [2, 1] },
   ]);
   assert.deepEqual(input, original);
 });
@@ -147,4 +147,27 @@ test("invalid exact action containers fail locally with an actionable path", asy
     await assert.rejects(nativeCommand("play", { ...credentials, requestId: "m", revision: "r", choices }, transport.fetch), /choices/);
   }
   assert.equal(transport.calls.length, 0);
+});
+
+test("native batch schema rejects hosted tickets and bare actions before contacting the host", async () => {
+  const transport = mock(() => assert.fail("invalid shape must not contact host"));
+  for (const choices of [[{ ticket: "r:a1" }], [{ type: "DeclareAttacker", attacker: 3 }],
+    [{ action: { type: "PassPriority" }, index: 0 }], [{ decision: 1 }],
+    [{ decision: 1, options: ["wrong"] }], [{ index: 0 }, { index: 1 }]]) {
+    await assert.rejects(nativeCommand("play", { ...credentials, requestId: "m", revision: "r", choices }, transport.fetch),
+      /choices\[0\].*(action|indices)/);
+  }
+  assert.equal(transport.calls.length, 0);
+});
+
+test("opaque v2 references remain stale across revisions and inspect exact current details", async () => {
+  let revision = "revision-one";
+  const transport = mock(method => method === "catalog" ? { cards: [] } : { ...ready, revision });
+  const view = await nativeCommand("observe", credentials, transport.fetch);
+  const reference = view.position.reference;
+  assert.match(reference, /^p2r:[A-Za-z0-9_-]{43}$/);
+  const details = await nativeCommand("inspect_ref", { ...credentials, reference }, transport.fetch);
+  assert.deepEqual(details.items, [observation]);
+  revision = "revision-two";
+  await assert.rejects(nativeCommand("inspect_ref", { ...credentials, reference }, transport.fetch), /stale reference/);
 });

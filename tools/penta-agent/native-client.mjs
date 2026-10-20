@@ -35,11 +35,14 @@ export async function nativeCommand(method, input, fetcher = fetch) {
   if (method === "yield") validateContract(args, "YieldRequest");
   if (method === "cancelYield") validateContract(args, "CancelYieldRequest");
   if (method === "play") {
-    if (!Array.isArray(args.choices) || !args.choices.length) throw new Error("choices must be a nonempty array");
+    if (!Array.isArray(args.choices) || !args.choices.length || args.choices.length > 64) throw new Error("choices must contain 1 to 64 entries");
     args.choices = args.choices.map((choice, index) => {
-      if (!choice || typeof choice !== "object" || Array.isArray(choice)) throw new Error(`choices[${index}] must be an object`);
+      try { validateContract(choice, "NativePlayChoice", pilotV2Schema); }
+      catch {
+        throw new Error(`choices[${index}] must be {action: {...}}, {decision: ID, options: [IDs]}, or a single {index: N}. Wrap a displayed action in {action: ...}; use choose for a ticket.`);
+      }
+      if (args.choices.length > 1 && Object.hasOwn(choice, "index")) throw new Error(`choices[${index}]: batches require {action: ...} or {decision, options}; indices can change between actions`);
       if (!Object.hasOwn(choice, "action")) return choice;
-      if (!choice.action || typeof choice.action !== "object" || Array.isArray(choice.action)) throw new Error(`choices[${index}].action must be an object`);
       // Observation indices are presentation metadata, not canonical action fields.
       const { index: _index, ...action } = choice.action;
       return { ...choice, action };
@@ -78,8 +81,13 @@ export async function nativeCommand(method, input, fetcher = fetch) {
     const { reference, ...paging } = args;
     if (typeof reference !== "string" || !reference) throw new Error("reference must be a nonempty string");
     const view = await request("observe", {});
-    if (!view.observation || !reference.startsWith(`${view.revision}:r`)) throw new Error("stale reference; observe again");
-    return (await build(view)).inspect(reference, paging);
+    const plausible = presentation === "pilot-v2"
+      ? /^p2r:[A-Za-z0-9_-]{43}$/.test(reference)
+      : reference.startsWith(`${view.revision}:r`);
+    if (!view.observation || !plausible) throw new Error("stale reference; observe again");
+    const current = await build(view);
+    if (presentation === "pilot-v2" && !current.references.has(reference)) throw new Error("stale reference; observe again");
+    return current.inspect(reference, paging);
   }
   const result = await request(method, args);
   if (presentation === "exact" || (!result.observation && (!pilot || result.apiVersion !== 1 || !["ready", "waiting", "complete", "paused"].includes(result.status)))) return result;

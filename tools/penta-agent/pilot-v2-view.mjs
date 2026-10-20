@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { PilotView } from "./pilot-view.mjs";
 import { actionLabel, objectNames, objectLabel } from "./decision-labels.mjs";
 import { validatePilotV2 } from "./pilot-v2-contract.mjs";
@@ -13,7 +14,7 @@ const empty = value => value == null || value === false || (typeof value === "ob
 export class PilotV2View extends PilotView {
   reference(kind, value) {
     const suffix = kind === "printed card reference" ? `:${value.definition}` : "";
-    const reference = `${this.id}:r:pilot-v2:${encodeURIComponent(kind + suffix)}`;
+    const reference = `p2r:${digest([this.id, kind, suffix])}`;
     this.references.set(reference, { kind, value: structuredClone(value) });
     return reference;
   }
@@ -42,9 +43,8 @@ export class PilotV2View extends PilotView {
         position.zones[zone] = this.collection(zone, read(collection).map((item, index) => summarize(item, `${zone}.${index}`)));
       }
       const names = objectNames(view.observation);
-      const abilities = new Map();
       const choices = read(position.choices).map(choice => ({ ...choice,
-        label: conciseActionLabel(choice.action, names, abilities) }));
+        label: conciseActionLabel(choice.action, names) }));
       position.choices = this.collection("choices", choices);
       position.rules = this.collection("rules", read(position.rules).map(rule => {
         const card = rule.reference ? this.references.get(rule.reference).value : null;
@@ -82,12 +82,10 @@ function concisePrinted(card) {
   return result;
 }
 
-export function conciseActionLabel(action, names, abilities = new Map()) {
+export function conciseActionLabel(action, names) {
   let label = actionLabel(action, names);
   if (action.ability != null) {
-    const key = JSON.stringify(action.ability);
-    if (!abilities.has(key)) abilities.set(key, abilities.size + 1);
-    label += `; ability ${abilities.get(key)}`;
+    label += `; ability ${abilityLabel(action.ability)}`;
   }
   const targets = [];
   function visit(value) {
@@ -104,4 +102,24 @@ export function conciseActionLabel(action, names, abilities = new Map()) {
   if (action.x != null && action.x !== 0) label += `; X=${action.x}`;
   if (action.modeIds?.length) label += `; modes ${action.modeIds.join(",")}`;
   return label;
+}
+
+// Sort descriptor keys so equivalent JSON objects have the same identity even
+// when a transport or caller changes property insertion order.
+function digest(value) {
+  const canonical = item => Array.isArray(item) ? item.map(canonical)
+    : item && typeof item === "object"
+      ? Object.fromEntries(Object.keys(item).sort().map(key => [key, canonical(item[key])])) : item;
+  return createHash("sha256").update(JSON.stringify(canonical(value))).digest("base64url");
+}
+
+function abilityLabel(ability) {
+  const { kind, abilityId, partId } = ability;
+  if (["printed", "token", "emblem", "faceDown"].includes(kind) && Number.isInteger(abilityId)) {
+    // Printed origins may refer to different definitions on the same source.
+    // A short definition fingerprint distinguishes them without a full UUID.
+    const origin = kind === "printed" ? ` ${digest(ability.definition ?? null).slice(0, 8)}` : "";
+    return `${kind}${origin} ${partId === undefined ? "" : `${partId}.`}${abilityId}`;
+  }
+  return `${kind ?? "other"} ${digest(ability).slice(0, 12)}`;
 }

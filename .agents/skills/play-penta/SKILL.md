@@ -17,7 +17,10 @@ For repeated play, use the maintained local shell runner rather than writing a
 transport helper: start `stty -echo && node tools/penta-agent/native.mjs session`
 in a persistent PTY. Send `{server, secret}` once; after the initialized reply,
 send one `{method, ...args}` JSON line per request. Use that terminal session for
-all later calls. EOF exits the client. `sessionStats` returns call/error counts,
+all later calls. Repeated printed rules use `printed: null` with
+`printedPreviouslySent: true`; after context compaction, send
+`{"method":"observe","full":true}` to restore printed context. Current state,
+choices, and updates remain complete. EOF exits the client. `sessionStats` returns call/error counts,
 output bytes, and elapsed time without contacting the host. A separate JavaScript
 tool runtime may not reach this loopback host. The CLI is not an importable module;
 programmatic callers use `nativeCommand` from `tools/penta-agent/native-client.mjs`.
@@ -40,7 +43,10 @@ including when waiting; it preserves this seat's events and automatic inspection
 across the accepted batch prefix.
 Use `wait` with at most 25000 ms while waiting. Use `inspect_ref` for omitted
 details and `presentation: "exact"` for canonical output. Native `play` takes
-exact action/decision choices, not hosted-client ticket batches. Copy a displayed
+`choices: [{action: EXACT_ACTION}, ...]` or `{decision: ID, options: [IDs]}`
+entries. Native batches reject tickets and bare action objects; use `choose` for
+a single ticket. The exported `NativePlayChoice` schema describes these wrappers.
+Copy a displayed
 action directly into `{action: ...}`; the client removes only its `index` metadata.
 `choose` and `play` also accept `waitMs: 25000` to submit and wait in one call.
 
@@ -72,6 +78,9 @@ Codex subagents, use `fork_turns: "none"` and a brief containing the skill,
 server URL, assigned seat, and only that seat's secret.
 
 ## Hosted route
+
+The instructions below apply only to hosted room/connection assignments. Native
+server/seat-secret assignments use the route above, including its batch shapes.
 
 Use `node tools/penta-agent/cli.mjs COMMAND 'JSON'` from the repository root.
 Arguments can also come from `@FILE` or `-` for stdin; use those for credentials.

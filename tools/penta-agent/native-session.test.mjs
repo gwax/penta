@@ -74,6 +74,35 @@ test("sessionStats measures dispatches, errors and actual output bytes without h
   assert.ok(Number.isInteger(stats.elapsedMs) && stats.elapsedMs >= 0);
 });
 
+test("full is local, resets printed knowledge across waiting, and actual compressed bytes count in stats", async () => {
+  const printed = { rulesText: "A sufficiently long printed rule repeated across observations." };
+  const value = { presentation: "pilot-v2", status: "ready", position: {
+    rules: { items: [{ definition: "d", available: true, printed }], total: 1, reference: null },
+  } };
+  const calls = [];
+  const result = await session([initialization,
+    '{"method":"observe"}\n{"method":"observe","full":false}\n{"method":"wait","full":true}\n{"method":"observe"}\n{"method":"sessionStats"}\n',
+  ], async (method, args) => {
+    calls.push({ method, args });
+    return method === "wait" ? { status: "waiting", position: null } : value;
+  });
+  assert.deepEqual(result.replies[1], value);
+  assert.deepEqual(result.replies[2].position.rules.items[0], { definition: "d", available: true, printed: null, printedPreviouslySent: true });
+  assert.deepEqual(result.replies[4], value);
+  assert.ok(calls.every(call => !Object.hasOwn(call.args, "full")));
+  const lines = result.text.trimEnd().split("\n");
+  assert.equal(result.replies[5].outputBytes, Buffer.byteLength(lines.slice(0, -1).join("\n") + "\n"));
+});
+
+test("invalid full is rejected locally and the next request still runs", async () => {
+  const calls = [];
+  const result = await session([initialization, '{"method":"observe","full":"yes"}\n{"method":"observe"}\n'],
+    async method => { calls.push(method); return { status: "ready" }; });
+  assert.deepEqual(calls, ["observe"]);
+  assert.equal(result.replies[1].error, "full must be a boolean");
+  assert.equal(result.replies[2].status, "ready");
+});
+
 test("CLI session reads stdin and exits cleanly at EOF with JSON-only stdout", async () => {
   const child = spawn(process.execPath, [new URL("./native.mjs", import.meta.url).pathname, "session"], { stdio: "pipe" });
   let stdout = "";

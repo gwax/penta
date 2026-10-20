@@ -1,4 +1,5 @@
 import { nativeCommand, validateNativeConnection } from "./native-client.mjs";
+import { SessionRules } from "./session-rules.mjs";
 
 export const MAX_SESSION_LINE_BYTES = 1024 * 1024;
 
@@ -47,6 +48,7 @@ export async function runNativeSession(input, output, command = nativeCommand) {
   let outputBytes = 0;
   let errors = 0;
   const callsByMethod = {};
+  const printedRules = new SessionRules();
   const countedMethods = new Set(["seats", "status", "export", "close", "observe", "wait", "choose", "play", "concede", "yield", "cancelYield", "receipt", "transcript", "note", "catalog", "inspect_ref", "schema"]);
   const reply = value => new Promise((resolve, reject) => {
     const line = `${JSON.stringify(redact(value, secret))}\n`;
@@ -72,8 +74,12 @@ export async function runNativeSession(input, output, command = nativeCommand) {
         continue;
       }
       if (Object.hasOwn(request, "server") || Object.hasOwn(request, "secret")) throw new Error("session requests must omit server and secret");
-      const { method, ...args } = request;
+      const { method, full, ...args } = request;
       if (typeof method !== "string" || !method) throw new Error("method must be a nonempty string");
+      if (full !== undefined && typeof full !== "boolean") throw new Error("full must be a boolean");
+      // Reset before dispatch even if it returns waiting/no position or fails.
+      // The next inline rules are then self-contained after context loss.
+      if (full === true) printedRules.reset();
       if (method === "sessionStats") {
         if (Object.keys(args).length) throw new Error("sessionStats accepts no arguments");
         await reply({ callsByMethod: { ...callsByMethod }, errors, outputBytes, elapsedMs: Math.floor(performance.now() - startedAt) });
@@ -81,7 +87,9 @@ export async function runNativeSession(input, output, command = nativeCommand) {
       }
       const counter = countedMethods.has(method) ? method : "unknown";
       callsByMethod[counter] = (callsByMethod[counter] ?? 0) + 1;
-      await reply(await command(method, { ...connection, ...args }));
+      const prepared = printedRules.prepare(await command(method, { ...connection, ...args }));
+      await reply(prepared.packet);
+      prepared.commit();
     } catch (error) {
       errors++;
       await reply({ error: error.message });

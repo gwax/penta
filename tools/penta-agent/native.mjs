@@ -13,6 +13,10 @@ Individual request errors keep the session alive; invalid initialization exits.
 Credentials stay in memory. No automatic choices, retries, or request IDs.
 Local sessionStats reports callsByMethod, errors, outputBytes, elapsedMs.
 Stats exclude their own call count and measure bytes before their response.
+Session rules print once per unchanged summary; printedPreviouslySent marks reuse.
+Send {method:"observe",full:true} after context loss to reprint rules.
+Native play choices require {action:{...}}, {decision,options}, or one {index}.
+Use choose for tickets; native play does not accept ticket batches or bare actions.
 Seat methods: observe, wait, choose, play, concede, yield, cancelYield, receipt, transcript, note, catalog.
 Organizer methods: seats, status, export, close.
 Adapter method: inspect_ref {reference, offset?, limit?}.

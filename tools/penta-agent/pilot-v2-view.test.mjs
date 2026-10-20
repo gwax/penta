@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { PilotV2View } from "./pilot-v2-view.mjs";
 import { pilotV2Schema, validatePilotV2 } from "./pilot-v2-contract.mjs";
+import { validateContract } from "./pilot-contract.mjs";
 import { pilotV2Declarations } from "./generate-pilot-v2-types.mjs";
 
 const observation = { protocolVersion: 33, seat: "p1", activeSeat: "p2", prioritySeat: "p1",
@@ -107,4 +108,60 @@ test("v2 printed rules avoid single-part compatibility duplicates and retain mul
     { rulesText: front.rulesText, manaCost: front.manaCost, typeLine: front.typeLine });
   const split = { ...card, structure: { kind: "split", leftPartId: 0, rightPartId: 1 }, parts: [front, back] };
   assert.deepEqual(render(obs, { cards: [split] }).packet.position.rules.items[0].printed.parts, [front, back]);
+});
+
+test("v2 ability identities survive reordered and disappearing actions", () => {
+  const actions = [
+    { index: 0, type: "ActivateAbility", source: 4, ability: { kind: "printed", definition: "d", partId: 0, abilityId: 1 }, targets: [{ type: "permanent", objectId: 4 }] },
+    { index: 1, type: "ActivateAbility", source: 4, ability: { kind: "printed", definition: "d", partId: 0, abilityId: 2 }, targets: [] },
+    { index: 2, type: "ActivateAbility", source: 4, ability: { kind: "granted", source: 7, sourceAbilityId: 3, grantId: 5 }, targets: [] },
+  ];
+  const labels = legalActions => render({ battlefield: [{ objectId: 4, name: "Source" }], legalActions }).packet.position.choices.items;
+  const original = labels(actions);
+  assert.deepEqual(labels([...actions].reverse()).map(choice => choice.label), original.map(choice => choice.label).reverse());
+  for (const [index, action] of actions.entries()) assert.equal(labels([action])[0].label, original[index].label);
+  assert.match(original[0].label, /target #4 Source/);
+  assert.match(original[0].label, /printed .* 0\.1/);
+  const reordered = { ...actions[2], ability: { grantId: 5, sourceAbilityId: 3, source: 7, kind: "granted" } };
+  assert.equal(labels([reordered])[0].label, original[2].label);
+  assert.deepEqual(original.map(choice => choice.action), actions);
+});
+
+test("v2 short references preserve catalog stability and reject other revisions", () => {
+  const revision = "long-native-revision-".repeat(20);
+  const item = { objectId: 4, name: "Card", definition: "d", future: { exact: [false, null] } };
+  const host = { ...envelope({ hand: [item] }), revision };
+  const full = new PilotV2View(host, { cards: [{ definition: "d", name: "Card" }] });
+  const missing = new PilotV2View(host, { cards: [] });
+  const next = new PilotV2View({ ...host, revision: `${revision}next` });
+  const reference = full.packet.position.zones.hand.items[0].reference;
+  assert.match(reference, /^p2r:[A-Za-z0-9_-]{43}$/);
+  assert.equal(reference.length, 47);
+  assert.ok(reference.length < revision.length / 4);
+  assert.equal(reference, missing.packet.position.zones.hand.items[0].reference);
+  assert.deepEqual(full.inspect(reference).items, [item]);
+  assert.deepEqual(missing.inspect(reference).items, [item]);
+  assert.notEqual(reference, next.packet.position.zones.hand.items[0].reference);
+  assert.throws(() => next.inspect(reference), /unknown or expired/);
+  assert.notEqual(reference, full.packet.position.reference);
+  assert.throws(() => full.inspect(`${revision}:r:pilot-v1:hand.0`), /unknown or expired/);
+});
+
+test("v2 schema permits explicit previously-delivered printed summaries", () => {
+  const view = render({ hand: [{ objectId: 4, name: "Card", definition: "d" }] },
+    { cards: [{ definition: "d", name: "Card", rulesText: "Draw a card." }] });
+  const rule = view.packet.position.rules.items[0];
+  rule.printed = null;
+  rule.printedPreviouslySent = true;
+  validatePilotV2(view.packet);
+  assert.equal(view.inspect(rule.reference).items[0].rulesText, "Draw a card.");
+  rule.printedPreviouslySent = "yes";
+  assert.throws(() => validatePilotV2(view.packet), /union/);
+});
+
+
+test("v2 native play choices follow strict host wrapper shapes", () => {
+  const check = value => validateContract(value, "NativePlayChoice", pilotV2Schema);
+  for (const value of [{ index: 0 }, { action: { type: "PassPriority", index: 1, future: null } }, { decision: 1, options: [0, 2] }]) assert.deepEqual(check(value), value);
+  for (const value of [{ index: -1 }, { ticket: "x" }, { index: 0, action: { type: "PassPriority" } }, { action: {} }, { action: { type: 1 } }, { decision: 1, options: [-1] }, { decision: 1, options: Array(4097).fill(0) }, { decision: 1, options: [], future: false }]) assert.throws(() => check(value), /union/);
 });

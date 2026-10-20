@@ -51,3 +51,43 @@ effort, format, and decks. Record the tested commit, exact replay verification,
 accepted requests, manual and yielded passes, response size, and pilot feedback.
 Keep the harness unchanged during a game. Use identical saved positions for
 presentation-size comparisons; report live game elapsed time descriptively.
+
+## Improvement round 1: persistent client and concise views
+
+Harness: `20a90e50c75f20126496a75b02bf826ca5874a81`; unchanged release host
+from `50a04ae2f8997d33acc568e324cb629537b8b8aa`.
+Two fresh GPT-6 Astra Medium pilots used the maintained PTY client and `pilot-v2`.
+P1 won 7–0 on turn 15. Exact replay reproduced 218 commands and both final
+observations. The game took about 21 minutes including setup.
+
+There were 95 accepted mutation requests, 151 yielded priority passes, eight
+manual passes, and 176 separate forced continuations. Both pilots reported no
+missed desired priority window or transport failure. Conditional stops enabled
+responding to Bolt, blockers, and Chaos Orb, including an Orb response to the
+opponent's activation. Both clients exited cleanly; the organizer exported and
+closed the host.
+
+The clients reported 124 calls, 1,527,484 output bytes, and two errors. Both
+errors were malformed native batches after one context compaction per pilot:
+P1 used hosted-style tickets; P2 omitted the `{action: ...}` wrapper. Both were
+refused without mutation, then recovered using exact actions. A redundant attack
+finish also produced a clearly reported accepted-prefix stop.
+
+On this game's 220 retained observations, v2's median was 15,093 bytes versus
+22,341 for v1. On the earlier baseline's identical 194 positions, the median
+fell from 19,011 to 16,327 bytes, while v2 brought all previously paged rules and
+battlefields inline. Consequently some responses grew despite simpler objects.
+These are serialized view measurements excluding receipts, not live token counts
+or controlled game-time comparisons.
+
+Both pilots praised reliable setup, batching, explicit yield timing, and
+retained events. Remaining feedback:
+
+- Repeated printed rules, history, and long references still dominate reading.
+- Ability ordinals change when the legal menu changes.
+- Native batch mistakes need local diagnostics and concrete examples.
+- Generic Chaos Orb selection prompts lack source context and distinct option
+  labels. This remains an engine/presentation follow-up.
+
+Private artifacts are under
+`target/agent-matches/2026-10-20T08-51-43-888Z-improvement-round1/`.
