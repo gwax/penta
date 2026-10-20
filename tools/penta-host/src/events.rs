@@ -1,4 +1,4 @@
-//! Seat-local delivery history follows ExactSession's explicit update reset contract.
+//! Seat-local delivery history follows `ExactSession`'s explicit update reset contract.
 
 use penta::PlayerId;
 use serde_json::{Value, json};

@@ -58,10 +58,50 @@ impl Host {
             ));
         }
         let start = Instant::now();
+        let (accepted, updates, stopped) = self.apply_choices(seat, method, &choices);
+        if accepted == 0 && self.failure.is_none() && method != "interact" {
+            return Err(HostError::new(409, stopped.unwrap_or("no choice accepted")));
+        }
+        let mut receipt = json!({"requestId":id,"accepted":accepted,"updates":updates});
+        if method == "interact" {
+            receipt["yieldInstallation"] =
+                self.interaction_yield(seat, &id, policy, accepted == choices.len());
+            receipt["yield"] = self.yields[seat.index()]
+                .as_ref()
+                .map_or(Value::Null, crate::yielding::YieldPolicy::json);
+        }
+        self.drive_yields();
+        if let Some(reason) = stopped {
+            receipt["stopped"] = json!(reason);
+        }
+        self.receipts[seat.index()].insert(
+            id,
+            Receipt {
+                method: method.into(),
+                args: args.clone(),
+                value: receipt.clone(),
+            },
+        );
+        self.remember(seat, "receipt", receipt.clone());
+        self.diagnose(
+            json!({"kind":"submission","seat":seat_name(seat),"accepted":accepted,
+            "elapsedMicros":start.elapsed().as_micros()}),
+        );
+        let mut view = self.view(seat);
+        view["receipt"] = receipt;
+        Ok(view)
+    }
+
+    fn apply_choices(
+        &mut self,
+        seat: PlayerId,
+        method: &str,
+        choices: &[Value],
+    ) -> (usize, Vec<Value>, Option<&'static str>) {
         let mut accepted = 0;
         let mut updates = Vec::new();
         let mut stopped = None;
-        for choice in &choices {
+        for choice in choices {
             if method != "concede" && self.session.decision_seat() != Some(seat) {
                 stopped = Some("the seat no longer holds a decision");
                 break;
@@ -97,37 +137,7 @@ impl Host {
                 }
             }
         }
-        if accepted == 0 && self.failure.is_none() && method != "interact" {
-            return Err(HostError::new(409, stopped.unwrap_or("no choice accepted")));
-        }
-        let mut receipt = json!({"requestId":id,"accepted":accepted,"updates":updates});
-        if method == "interact" {
-            receipt["yieldInstallation"] =
-                self.interaction_yield(seat, &id, policy, accepted == choices.len());
-            receipt["yield"] = self.yields[seat.index()]
-                .as_ref()
-                .map_or(Value::Null, crate::yielding::YieldPolicy::json);
-        }
-        self.drive_yields();
-        if let Some(reason) = stopped {
-            receipt["stopped"] = json!(reason);
-        }
-        self.receipts[seat.index()].insert(
-            id,
-            Receipt {
-                method: method.into(),
-                args: args.clone(),
-                value: receipt.clone(),
-            },
-        );
-        self.remember(seat, "receipt", receipt.clone());
-        self.diagnose(
-            json!({"kind":"submission","seat":seat_name(seat),"accepted":accepted,
-            "elapsedMicros":start.elapsed().as_micros()}),
-        );
-        let mut view = self.view(seat);
-        view["receipt"] = receipt;
-        Ok(view)
+        (accepted, updates, stopped)
     }
 
     // Rendering observations is part of the commit: a failure there also restores

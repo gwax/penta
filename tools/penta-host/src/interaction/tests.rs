@@ -25,7 +25,9 @@ fn plan() -> Value {
 }
 
 fn args(host: &Host, choices: Value) -> Value {
-    json!({"requestId":"interaction","revision":host.revision,"choices":choices,"yield":plan()})
+    let mut request = json!({"requestId":"interaction","revision":host.revision,"yield":plan()});
+    request["choices"] = choices;
+    request
 }
 
 #[test]
