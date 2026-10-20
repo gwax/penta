@@ -26,7 +26,10 @@ the bot-wire epoch.
   debug bundle and explicitly close the match. State stays in memory across
   pilot reconnects; a host restart does not restore it. Engine failures during
   a command restore its preceding committed position and pause play for export.
-  Pilots can explicitly yield until any of several typed conditions matches,
+  A typed `interact` operation combines exact actions and an optional yield;
+  persistent sessions renew read-only waits and cache the public catalog.
+  Pilot input gaps, HTTP work, and organizer-only host durations are measured
+  separately. Pilots can explicitly yield until any of several typed conditions matches,
   commonly a future phase/step boundary or an opponent action. Passes retain
   seat-visible updates, remain cancellable, and never select non-priority
   decisions. The native client defaults to a concise typed `pilot-v2` view with consistent

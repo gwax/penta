@@ -199,10 +199,17 @@ async fn execute(state: Authority, token: String, command: Command) -> Result<Va
             .lock()
             .map_err(|_| HostError::new(500, "match authority unavailable"))?;
         let before = (host.journal.len(), host.failure.is_some(), host.is_closed());
+        let started = Instant::now();
         let result = host.request(&token, &command.method, &command.args);
+        // Counts host execution only, excluding authority lock acquisition and long waits.
+        host.record_command_duration(&command.method, started.elapsed().as_micros());
         let after = (host.journal.len(), host.failure.is_some(), host.is_closed());
         if before != after
-            || (result.is_ok() && matches!(command.method.as_str(), "yield" | "cancelYield"))
+            || (result.is_ok()
+                && matches!(
+                    command.method.as_str(),
+                    "yield" | "cancelYield" | "interact"
+                ))
         {
             state
                 .changed

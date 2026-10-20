@@ -4,8 +4,8 @@ import { pilotSchema, validateContract } from "./pilot-contract.mjs";
 import { PilotV2View } from "./pilot-v2-view.mjs";
 import { pilotV2Schema } from "./pilot-v2-contract.mjs";
 
-const methods = new Set(["seats", "status", "export", "close", "observe", "wait", "choose", "play", "concede", "yield", "cancelYield", "receipt", "transcript", "note", "catalog"]);
-const mutations = new Set(["choose", "play", "concede", "yield", "cancelYield"]);
+const methods = new Set(["seats", "status", "export", "close", "observe", "wait", "choose", "play", "interact", "concede", "yield", "cancelYield", "receipt", "transcript", "note", "catalog"]);
+const mutations = new Set(["choose", "play", "interact", "concede", "yield", "cancelYield"]);
 
 export function validateNativeConnection({ server, secret, presentation = "pilot-v2" }) {
   let url;
@@ -18,8 +18,23 @@ export function validateNativeConnection({ server, secret, presentation = "pilot
   return url;
 }
 
-/** One invocation, one credential. No connection registry or recovery files. */
-export async function nativeCommand(method, input, fetcher = fetch) {
+/** One serial session owns its public catalog cache and transport counters. */
+export function createNativeClient(fetcher = fetch) {
+  const context = { catalog: null, stats: { callsByMethod: {}, elapsedMsByMethod: {}, requestBytes: 0, responseJsonBytes: 0, elapsedMs: 0 } };
+  let origin;
+  const command = async (method, input, options = {}) => {
+    if (method !== "schema") {
+      const nextOrigin = validateNativeConnection(input).origin;
+      if (origin !== nextOrigin) context.catalog = null;
+      origin = nextOrigin;
+    }
+    return nativeCommand(method, input, fetcher, Object.assign(context, { signal: options.signal }));
+  };
+  command.stats = context.stats;
+  return command;
+}
+
+export async function nativeCommand(method, input, fetcher = fetch, context = {}) {
   if (method === "schema") {
     const presentation = input?.presentation ?? "pilot-v2";
     if (!["pilot-v1", "pilot-v2"].includes(presentation)) throw new Error("schema presentation must be pilot-v1 or pilot-v2");
@@ -34,8 +49,20 @@ export async function nativeCommand(method, input, fetcher = fetch) {
   if ((mutations.has(method) || method === "receipt") && (typeof args.requestId !== "string" || !args.requestId || Buffer.byteLength(args.requestId, "utf8") > 128)) throw new Error("requestId must contain 1 to 128 UTF-8 bytes; retain it for retries");
   if (method === "yield") validateContract(args, "YieldRequest");
   if (method === "cancelYield") validateContract(args, "CancelYieldRequest");
-  if (method === "play") {
-    if (!Array.isArray(args.choices) || !args.choices.length || args.choices.length > 64) throw new Error("choices must contain 1 to 64 entries");
+  if (method === "interact") {
+    if (Array.isArray(args.choices)) args.choices = args.choices.map(choice => {
+      if (choice?.action?.type !== "ChooseDecision") return choice;
+      if (Object.keys(choice).some(key => key !== "action") ||
+          Object.keys(choice.action).some(key => !["index", "type", "decision", "options"].includes(key))) {
+        throw new Error("ChooseDecision accepts only an action wrapper with index, type, decision, and options; unsupported fields cannot be discarded");
+      }
+      const { decision, options } = choice.action;
+      return { decision, options };
+    });
+    validateContract(args, "NativeInteractionRequest", pilotV2Schema);
+  }
+  if (method === "play" || method === "interact") {
+    if (!Array.isArray(args.choices) || (!args.choices.length && !(method === "interact" && args.yield)) || args.choices.length > 64) throw new Error("choices must contain 1 to 64 entries");
     args.choices = args.choices.map((choice, index) => {
       try { validateContract(choice, "NativePlayChoice", pilotV2Schema); }
       catch {
@@ -55,19 +82,40 @@ export async function nativeCommand(method, input, fetcher = fetch) {
     if (args[key] !== undefined && typeof args[key] !== "string") throw new Error(`${key} must be a string`);
   }
   const request = async (operation, body) => {
-    const response = await fetcher(url.href, {
-      method: "POST", headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
-      body: JSON.stringify({ method: operation, args: body }), signal: AbortSignal.timeout(35_000),
-    });
+    const bodyText = JSON.stringify({ method: operation, args: body });
+    const started = performance.now();
+    const stats = context.stats;
+    if (stats) {
+      stats.callsByMethod[operation] = (stats.callsByMethod[operation] ?? 0) + 1;
+      stats.requestBytes += Buffer.byteLength(bodyText);
+    }
+    let response;
     let result;
-    try { result = await response.json(); } catch { throw new Error(`Penta HTTP ${response.status} without JSON; retry uncertain mutations with the identical request`); }
+    try {
+      const timeout = AbortSignal.timeout(35_000);
+      response = await fetcher(url.href, {
+        method: "POST", headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
+        body: bodyText, signal: context.signal ? AbortSignal.any([timeout, context.signal]) : timeout,
+      });
+      try { result = await response.json(); } catch { throw new Error(`Penta HTTP ${response.status} without JSON; retry uncertain mutations with the identical request`); }
+      if (stats) stats.responseJsonBytes += Buffer.byteLength(JSON.stringify(result));
+    } catch (error) {
+      if (mutations.has(operation)) throw new Error(`${error.message}; outcome uncertain for requestId ${body.requestId}; recover its receipt or retry the identical request`);
+      throw error;
+    } finally {
+      if (stats) {
+        const elapsed = performance.now() - started;
+        stats.elapsedMs += elapsed;
+        stats.elapsedMsByMethod[operation] = (stats.elapsedMsByMethod[operation] ?? 0) + elapsed;
+      }
+    }
     if (!response.ok) throw new Error(`Penta HTTP ${response.status}: ${result.error ?? response.statusText}`);
     return result;
   };
   const build = async view => {
     let catalog = null;
     if (view.observation) {
-      try { catalog = await request("catalog", {}); }
+      try { catalog = context.catalog ?? await request("catalog", {}); context.catalog = catalog; }
       catch (error) {
         if (!pilot) throw error;
         view = { ...view, presentationWarning: "Public catalog unavailable; exact choices and observation fields retained. Printed rules may be unavailable." };

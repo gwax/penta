@@ -294,6 +294,155 @@
           "additionalProperties": false
         }
       ]
+    },
+    "NativeInteractionChoice": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "action": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": {
+                "$ref": "#/$defs/JsonValue"
+              }
+            }
+          },
+          "required": [
+            "action"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "maxItems": 4096
+            }
+          },
+          "required": [
+            "decision",
+            "options"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "NativeYieldPlan": {
+      "type": "object",
+      "properties": {
+        "until": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/YieldCondition"
+          },
+          "minItems": 1,
+          "maxItems": 16
+        },
+        "maxPasses": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        }
+      },
+      "required": [
+        "until"
+      ],
+      "additionalProperties": false
+    },
+    "NativeInteractionRequest": {
+      "description": "Explicit actions followed by an optional conditional yield. Empty choices require a yield. Local next/interact maxWaitMs is not a host argument.",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "requestId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "revision": {
+              "type": "string",
+              "minLength": 1
+            },
+            "choices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/NativeInteractionChoice"
+              },
+              "minItems": 1,
+              "maxItems": 64
+            },
+            "yield": {
+              "$ref": "#/$defs/NativeYieldPlan"
+            },
+            "waitMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 25000
+            }
+          },
+          "required": [
+            "requestId",
+            "revision",
+            "choices"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "requestId": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "revision": {
+              "type": "string",
+              "minLength": 1
+            },
+            "choices": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/NativeInteractionChoice"
+              },
+              "minItems": 0,
+              "maxItems": 0
+            },
+            "yield": {
+              "$ref": "#/$defs/NativeYieldPlan"
+            },
+            "waitMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 25000
+            }
+          },
+          "required": [
+            "requestId",
+            "revision",
+            "choices",
+            "yield"
+          ],
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

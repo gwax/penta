@@ -66,11 +66,51 @@ in a persistent PTY, then write JSON lines to that terminal session. Use the loc
 shell runtime that can reach the loopback host. `native.mjs` is a CLI entrypoint;
 programmatic callers import `nativeCommand` from `native-client.mjs`.
 
+### One pilot turn per interaction
+
+Prefer `{"method":"next"}` for the initial decision and `interact` thereafter.
+Each interaction contains exact choices already decided by the pilot, optionally
+followed by an explicit yield policy:
+
+```json
+{"method":"interact","requestId":"move-1","revision":"CURRENT_REVISION","choices":[{"action":{"type":"PlayLand","card":12}}],"yield":{"until":[{"type":"nextStep","step":"BeginningOfCombat"},{"type":"opponentActs"}]}}
+```
+
+Copy the complete displayed action rather than reconstructing it from this
+example. A displayed `ChooseDecision` action already containing `decision` and
+`options` can be copied the same way; the client converts it to the explicit
+decision wrapper. `choices: []` with a yield installs only that pass instruction.
+All targets, payment choices, and newly arising decisions remain the pilot's.
+
+The host validates the whole request shape and yield before mutation, executes
+the accepted action prefix, then installs the yield only if the entire intended
+batch succeeded. A new own non-priority decision, completion, pause, or partial
+batch leaves the yield unapplied. `host.receipt.yieldInstallation` reports the
+result and reason; `yieldAtAcceptance` records the policy before automatic passes.
+The policy can remain armed while the opponent acts. Identical retries return
+the same receipt without repeating choices or installing another policy.
+
+The session submits once with a 25-second wait, then renews read-only waits
+internally until the seat is ready, complete, or paused. Local `maxWaitMs`
+defaults to and is capped at 60000; zero disables waiting. A bounded timeout or
+read failure returns `sessionWait` and preserves the committed receipt. Use
+`next` to continue waiting. A failed initial mutation may be uncertain: recover
+its receipt or retry identical arguments before choosing again.
+These are session operations; one-shot `interact` accepts only host `waitMs`.
+The session caches the public catalog after its first successful retrieval.
+
 `{"method":"sessionStats"}` returns local `callsByMethod`, `errors`, `outputBytes`,
 and `elapsedMs` without contacting the host. Counts include dispatched failures
 but exclude `sessionStats`; bytes count serialized stdout before that stats
 response, including initialization and errors. Credentials remain in memory.
 The client generates no request IDs, chooses no actions, and performs no retries.
+It additionally reports command durations, underlying HTTP counts and durations,
+request bytes, reserialized response JSON bytes, and internal wait renewals.
+`inputGapMs` measures time from writing a ready response to receiving the next
+request; it includes model, tool, and scheduling delays and is not model-only
+reasoning time. Organizer status/export contain lifetime host `commandMetrics`,
+excluding authority lock waiting and HTTP long waits. Byte counts are token-cost
+proxies, not tokenizer or billing measurements.
 
 The session prints each new or changed card's printed summary, then marks
 identical repeats with `printed: null, printedPreviouslySent: true`. Current
@@ -92,6 +132,7 @@ and `secret`; the examples below show the additional fields.
 | `wait` | `waitMs` up to 25000 | Bounded wait for a seat view |
 | `choose` | `ticket`, `requestId`, optional `options` | Submit one displayed choice |
 | `play` | `revision`, `choices`, `requestId` | Submit an explicitly decided batch |
+| `interact` | `revision`, `choices`, `requestId`, optional `yield`, `waitMs` | Submit choices and an explicit continuation together |
 | `yield` | `revision`, `until`, `requestId`, optional `maxPasses`, `waitMs` | Pass priority until any requested condition matches |
 | `cancelYield` | `requestId` | Cancel this seat's retained yield instruction |
 | `concede` | `requestId` | Concede |

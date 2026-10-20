@@ -14,6 +14,12 @@ export function composePilotV2Schema() {
   };
   rename("Host", "yield", "currentYield");
   rename("Receipt", "yield", "yieldAtAcceptance");
+  schema.$defs.Receipt.properties.yieldInstallation = {
+    type: "object", properties: {
+      status: { enum: ["installed", "notInstalled"] },
+      reason: { enum: [null, "notRequested", "partialBatch", "paused", "complete", "decision"] },
+    }, required: ["status", "reason"], additionalProperties: false,
+  };
   for (const variant of schema.$defs.PilotPacket.oneOf) variant.properties.presentation.const = "pilot-v2";
   const position = schema.$defs.Position;
   position.properties.reference = { type: "string" };

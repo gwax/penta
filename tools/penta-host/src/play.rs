@@ -16,6 +16,7 @@ impl Host {
         let allowed: &[&str] = match method {
             "choose" => &["requestId", "ticket", "options", "waitMs"],
             "play" => &["requestId", "revision", "choices", "waitMs"],
+            "interact" => &["requestId", "revision", "choices", "yield", "waitMs"],
             "concede" => &["requestId", "waitMs"],
             _ => unreachable!(),
         };
@@ -33,6 +34,11 @@ impl Host {
             view["receipt"] = previous.value.clone();
             return Ok(view);
         }
+        let policy = if method == "interact" {
+            crate::interaction::validate(args)?
+        } else {
+            None
+        };
         if self.failure.is_some() {
             return Err(HostError::new(
                 409,
@@ -43,6 +49,14 @@ impl Host {
             return Err(HostError::new(409, "match is complete"));
         }
         let choices = self.choices(seat, method, args)?;
+        if choices.is_empty()
+            && !crate::yielding::ordinary_priority(&self.observations[seat.index()])
+        {
+            return Err(HostError::new(
+                409,
+                "yield requires this seat's ordinary priority",
+            ));
+        }
         let start = Instant::now();
         let mut accepted = 0;
         let mut updates = Vec::new();
@@ -83,11 +97,18 @@ impl Host {
                 }
             }
         }
-        if accepted == 0 && self.failure.is_none() {
+        if accepted == 0 && self.failure.is_none() && method != "interact" {
             return Err(HostError::new(409, stopped.unwrap_or("no choice accepted")));
         }
-        self.drive_yields();
         let mut receipt = json!({"requestId":id,"accepted":accepted,"updates":updates});
+        if method == "interact" {
+            receipt["yieldInstallation"] =
+                self.interaction_yield(seat, &id, policy, accepted == choices.len());
+            receipt["yield"] = self.yields[seat.index()]
+                .as_ref()
+                .map_or(Value::Null, crate::yielding::YieldPolicy::json);
+        }
+        self.drive_yields();
         if let Some(reason) = stopped {
             receipt["stopped"] = json!(reason);
         }
@@ -173,13 +194,15 @@ impl Host {
         if self.session.decision_seat() != Some(seat) {
             return Err(HostError::new(409, "the seat does not hold a decision"));
         }
-        if method == "play" {
+        if method == "play" || method == "interact" {
             if args["revision"].as_str() != Some(&self.revision) {
                 return Err(HostError::new(409, "stale revision; observe again"));
             }
             let choices = args["choices"]
                 .as_array()
-                .filter(|choices| !choices.is_empty() && choices.len() <= 64)
+                .filter(|choices| {
+                    (method == "interact" || !choices.is_empty()) && choices.len() <= 64
+                })
                 .ok_or_else(|| HostError::new(400, "choices must contain 1 to 64 entries"))?;
             if choices.len() > 1 && choices.iter().any(|choice| choice.get("index").is_some()) {
                 return Err(HostError::new(

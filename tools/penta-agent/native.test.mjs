@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { nativeCommand } from "./native-client.mjs";
+import { createNativeClient, nativeCommand } from "./native-client.mjs";
 
 const credentials = { server: "http://127.0.0.1:41234", secret: "seat-only" };
 const observation = { protocolVersion: 33, seat: "p1", hand: [], battlefield: [], legalActions: [{ index: 7, type: "PassPriority" }], checkpoint: { marker: "private seat checkpoint" } };
@@ -170,4 +170,61 @@ test("opaque v2 references remain stale across revisions and inspect exact curre
   assert.deepEqual(details.items, [observation]);
   revision = "revision-two";
   await assert.rejects(nativeCommand("inspect_ref", { ...credentials, reference }, transport.fetch), /stale reference/);
+});
+
+
+test("persistent clients cache successful public catalogs per client and retry failures", async () => {
+  let attempts = 0;
+  const transport = mock(method => {
+    if (method !== "catalog") return ready;
+    if (++attempts === 1) throw new Error("unavailable");
+    return { cards: [] };
+  });
+  const client = createNativeClient(transport.fetch);
+  await client("observe", credentials);
+  await client("observe", credentials);
+  await client("observe", credentials);
+  assert.equal(attempts, 2);
+  assert.deepEqual(client.stats.callsByMethod, { observe: 3, catalog: 2 });
+  assert.ok(client.stats.requestBytes > 0);
+  assert.ok(client.stats.responseJsonBytes > 0);
+  await createNativeClient(transport.fetch)("observe", credentials);
+  assert.equal(attempts, 3);
+});
+
+test("interact canonicalizes explicit decision submissions and never retries uncertain writes", async () => {
+  const transport = mock(() => ({ status: "waiting" }));
+  const input = { ...credentials, requestId: "interaction", revision: "r", choices: [
+    { action: { type: "ChooseDecision", decision: 7, options: [2, 3], index: 4 } },
+    { action: { type: "PassPriority", index: 9 } },
+  ] };
+  await nativeCommand("interact", input, transport.fetch);
+  assert.deepEqual(transport.calls[0].args.choices, [{ decision: 7, options: [2, 3] }, { action: { type: "PassPriority" } }]);
+  assert.equal(input.choices[0].action.index, 4);
+  for (const choices of [[], [{ index: 0 }], [{ action: { type: "ChooseDecision", decision: 7 } }]]) {
+    await assert.rejects(nativeCommand("interact", { ...input, choices }, transport.fetch));
+  }
+  let calls = 0;
+  await assert.rejects(nativeCommand("interact", input, async () => { calls++; throw new Error("lost"); }), /lost/);
+  assert.equal(calls, 1);
+});
+
+
+test("persistent catalog cache resets when its origin changes", async () => {
+  const transport = mock(method => method === "catalog" ? { cards: [] } : ready);
+  const client = createNativeClient(transport.fetch);
+  await client("observe", credentials);
+  await client("observe", credentials);
+  await client("observe", { ...credentials, server: "http://127.0.0.1:41235" });
+  await client("observe", credentials);
+  assert.equal(transport.calls.filter(call => call.method === "catalog").length, 3);
+});
+
+test("interact rejects decision fields it cannot preserve before sending", async () => {
+  const transport = mock(() => ({ status: "ready" }));
+  const action = { type: "ChooseDecision", decision: 7, options: [2] };
+  for (const choice of [{ action, future: true }, { action: { ...action, future: true } }]) {
+    await assert.rejects(nativeCommand("interact", { ...credentials, requestId: "m", revision: "r", choices: [choice] }, transport.fetch), /unsupported fields/);
+  }
+  assert.equal(transport.calls.length, 0);
 });

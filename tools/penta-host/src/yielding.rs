@@ -24,6 +24,32 @@ struct YieldArgs {
     wait_ms: usize,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct YieldOptions {
+    until: Vec<Condition>,
+    #[serde(default = "default_passes")]
+    max_passes: usize,
+}
+
+impl YieldOptions {
+    pub(crate) fn parse(value: &Value) -> Result<Self> {
+        let options: Self = serde_json::from_value(value.clone())
+            .map_err(|error| HostError::new(400, format!("invalid yield: {error}")))?;
+        if options.until.is_empty()
+            || options.until.len() > 16
+            || options.max_passes == 0
+            || options.max_passes > MAX_PASSES
+        {
+            return Err(HostError::new(
+                400,
+                "yield requires 1..16 conditions and 1..256 maxPasses",
+            ));
+        }
+        Ok(options)
+    }
+}
+
 const fn default_passes() -> usize {
     64
 }
@@ -56,7 +82,7 @@ impl YieldPolicy {
     }
 }
 
-fn ordinary_priority(observation: &Value) -> bool {
+pub(crate) fn ordinary_priority(observation: &Value) -> bool {
     observation["decision"].is_null()
         && observation["pregame"] == false
         && observation["legalActions"]
@@ -124,22 +150,14 @@ impl Host {
             if options.revision != self.revision {
                 return Err(HostError::new(409, "stale revision; observe again"));
             }
-            let observation = &self.observations[seat.index()];
-            self.yields[seat.index()] = Some(YieldPolicy {
-                request_id: options.request_id,
-                until: options.until,
-                max_passes: options.max_passes,
-                passes: 0,
-                cursor: observation["updates"]
-                    .as_array()
-                    .expect("canonical updates")
-                    .len(),
-                game: observation["match"]["game"].clone(),
-                restarts: observation["match"]["restarts"].clone(),
-                reason: None,
-                condition: None,
-                awaiting_stop: true,
-            });
+            self.install_yield(
+                seat,
+                options.request_id,
+                YieldOptions {
+                    until: options.until,
+                    max_passes: options.max_passes,
+                },
+            );
             // Validation above bounds waiting; the transport owns the actual wait.
             let _ = options.wait_ms;
             self.drive_yields();
@@ -157,6 +175,25 @@ impl Host {
         let mut view = self.view(seat);
         view["receipt"] = receipt;
         Ok(view)
+    }
+
+    pub(crate) fn install_yield(&mut self, seat: PlayerId, id: String, options: YieldOptions) {
+        let observation = &self.observations[seat.index()];
+        self.yields[seat.index()] = Some(YieldPolicy {
+            request_id: id,
+            until: options.until,
+            max_passes: options.max_passes,
+            passes: 0,
+            cursor: observation["updates"]
+                .as_array()
+                .expect("canonical updates")
+                .len(),
+            game: observation["match"]["game"].clone(),
+            restarts: observation["match"]["restarts"].clone(),
+            reason: None,
+            condition: None,
+            awaiting_stop: true,
+        });
     }
 
     pub(crate) fn stop_yields(&mut self, reason: &'static str) {

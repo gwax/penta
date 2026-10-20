@@ -122,3 +122,42 @@ test("CLI session reads stdin and exits cleanly at EOF with JSON-only stdout", a
   assert.match(replies[2].error, /unknown native command/);
   assert.ok(!stdout.includes(connection.secret));
 });
+
+
+test("next renews transport waits without exposing routine waiting responses", async () => {
+  const calls = [];
+  const result = await session([initialization, '{"method":"next"}\n{"method":"sessionStats"}\n'], async (method, args) => {
+    calls.push({ method, args });
+    return { status: calls.length === 3 ? "ready" : "waiting" };
+  });
+  assert.deepEqual(calls.map(call => call.method), ["observe", "wait", "wait"]);
+  assert.equal(result.replies[1].status, "ready");
+  assert.equal(result.replies[2].waitRenewals, 2);
+  assert.ok(calls.slice(1).every(call => call.args.waitMs <= 25_000));
+});
+
+test("interact submits once, retains original receipt across waits, and strips local budget", async () => {
+  const receipt = { requestId: "m", accepted: 1, yieldAtAcceptance: { active: true } };
+  const calls = [];
+  const result = await session([initialization, '{"method":"interact","requestId":"m","revision":"r","choices":[],"maxWaitMs":60000}\n'], async (method, args) => {
+    calls.push({ method, args });
+    return method === "interact" ? { status: "waiting", host: { receipt } }
+      : { status: "ready", host: { receipt: null } };
+  });
+  assert.deepEqual(calls.map(call => call.method), ["interact", "wait"]);
+  assert.equal(calls[0].args.waitMs, 25_000);
+  assert.equal(Object.hasOwn(calls[0].args, "maxWaitMs"), false);
+  assert.deepEqual(result.replies[1].host.receipt, receipt);
+});
+
+test("bounded waits return explicit timeout and read failure preserves committed receipt", async () => {
+  const receipt = { requestId: "m", accepted: 1 };
+  const timed = await session([initialization, '{"method":"next","maxWaitMs":0}\n'], async () => ({ status: "waiting" }));
+  assert.equal(timed.replies[1].sessionWait.reason, "timeout");
+  const failed = await session([initialization, '{"method":"interact","requestId":"m"}\n'], async method => {
+    if (method === "interact") return { status: "waiting", receipt };
+    throw new Error("read failed");
+  });
+  assert.deepEqual(failed.replies[1].receipt, receipt);
+  assert.equal(failed.replies[1].sessionWait.reason, "error");
+});

@@ -1,4 +1,5 @@
-import { nativeCommand, validateNativeConnection } from "./native-client.mjs";
+import { createNativeClient, validateNativeConnection } from "./native-client.mjs";
+import { sessionInteraction } from "./session-interaction.mjs";
 import { SessionRules } from "./session-rules.mjs";
 
 export const MAX_SESSION_LINE_BYTES = 1024 * 1024;
@@ -40,7 +41,7 @@ function redact(value, secret) {
 }
 
 /** First line initializes credentials; subsequent lines are explicit commands. */
-export async function runNativeSession(input, output, command = nativeCommand) {
+export async function runNativeSession(input, output, command = createNativeClient()) {
   let connection;
   let first = true;
   let secret;
@@ -48,8 +49,13 @@ export async function runNativeSession(input, output, command = nativeCommand) {
   let outputBytes = 0;
   let errors = 0;
   const callsByMethod = {};
+  const commandElapsedMs = {};
+  const interactionStats = { waitRenewals: 0 };
+  const inputGapMs = { count: 0, total: 0, max: 0 };
+  let readyAt;
+
   const printedRules = new SessionRules();
-  const countedMethods = new Set(["seats", "status", "export", "close", "observe", "wait", "choose", "play", "concede", "yield", "cancelYield", "receipt", "transcript", "note", "catalog", "inspect_ref", "schema"]);
+  const countedMethods = new Set(["seats", "status", "export", "close", "observe", "wait", "choose", "play", "interact", "next", "concede", "yield", "cancelYield", "receipt", "transcript", "note", "catalog", "inspect_ref", "schema"]);
   const reply = value => new Promise((resolve, reject) => {
     const line = `${JSON.stringify(redact(value, secret))}\n`;
     output.write(line, error => {
@@ -58,6 +64,7 @@ export async function runNativeSession(input, output, command = nativeCommand) {
     });
   });
   for await (const line of lines(input)) {
+    const receivedAt = performance.now();
     try {
       if (line === null) throw new Error(`JSON line exceeds ${MAX_SESSION_LINE_BYTES} bytes`);
       let request;
@@ -82,14 +89,31 @@ export async function runNativeSession(input, output, command = nativeCommand) {
       if (full === true) printedRules.reset();
       if (method === "sessionStats") {
         if (Object.keys(args).length) throw new Error("sessionStats accepts no arguments");
-        await reply({ callsByMethod: { ...callsByMethod }, errors, outputBytes, elapsedMs: Math.floor(performance.now() - startedAt) });
+        await reply({ callsByMethod: { ...callsByMethod }, commandElapsedMs: { ...commandElapsedMs }, wire: command.stats ?? null, ...interactionStats, inputGapMs: { ...inputGapMs }, errors, outputBytes, elapsedMs: Math.floor(performance.now() - startedAt) });
         continue;
       }
       const counter = countedMethods.has(method) ? method : "unknown";
       callsByMethod[counter] = (callsByMethod[counter] ?? 0) + 1;
-      const prepared = printedRules.prepare(await command(method, { ...connection, ...args }));
+      if (readyAt !== undefined) {
+        const gap = receivedAt - readyAt;
+        inputGapMs.count++;
+        inputGapMs.total += gap;
+        inputGapMs.max = Math.max(inputGapMs.max, gap);
+        readyAt = undefined;
+      }
+      const dispatchAt = performance.now();
+      let result;
+      try {
+        result = ["next", "interact"].includes(method)
+          ? await sessionInteraction(method, args, connection, command, interactionStats)
+          : await command(method, { ...connection, ...args });
+      } finally {
+        commandElapsedMs[counter] = (commandElapsedMs[counter] ?? 0) + performance.now() - dispatchAt;
+      }
+      const prepared = printedRules.prepare(result);
       await reply(prepared.packet);
       prepared.commit();
+      if (result.status === "ready") readyAt = performance.now();
     } catch (error) {
       errors++;
       await reply({ error: error.message });

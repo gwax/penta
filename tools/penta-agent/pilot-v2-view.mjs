@@ -44,7 +44,7 @@ export class PilotV2View extends PilotView {
       }
       const names = objectNames(view.observation);
       const choices = read(position.choices).map(choice => ({ ...choice,
-        label: conciseActionLabel(choice.action, names) }));
+        label: conciseActionLabel(choice.action, names, view.observation.decision) }));
       position.choices = this.collection("choices", choices);
       position.rules = this.collection("rules", read(position.rules).map(rule => {
         const card = rule.reference ? this.references.get(rule.reference).value : null;
@@ -82,8 +82,16 @@ function concisePrinted(card) {
   return result;
 }
 
-export function conciseActionLabel(action, names) {
+export function conciseActionLabel(action, names, decision) {
   let label = actionLabel(action, names);
+  if (action.type === "ChooseDecision" && Array.isArray(action.options)) {
+    const options = new Map((decision?.options ?? []).map(option => [option.id, option]));
+    const selections = action.options.map(id => {
+      const option = options.get(id);
+      return `[${id}] ${option?.label ?? option?.card?.name ?? "option"}`;
+    });
+    label += `; select ${selections.length ? selections.join(", ") : "no options"}`;
+  }
   if (action.ability != null) {
     label += `; ability ${abilityLabel(action.ability)}`;
   }

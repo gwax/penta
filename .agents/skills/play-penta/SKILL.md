@@ -25,7 +25,22 @@ output bytes, and elapsed time without contacting the host. A separate JavaScrip
 tool runtime may not reach this loopback host. The CLI is not an importable module;
 programmatic callers use `nativeCommand` from `tools/penta-agent/native-client.mjs`.
 
-Call `observe`. Native output defaults to typed `pilot-v2`: read
+For normal native play, start with `{"method":"next"}` and then use one
+`interact` request per decision. Supply `requestId`, current `revision`, and
+`choices: [{action: COMPLETE_DISPLAYED_ACTION}, ...]`, plus optional
+`yield: {until: [...], maxPasses: 64}` when you have explicitly decided to pass
+until those conditions. Empty choices with a yield are supported. Displayed
+`ChooseDecision` actions include their option IDs and can be copied directly.
+The session submits once and renews read-only waits internally for up to 60
+seconds (`maxWaitMs`, local only); it returns the next actionable view with the
+original receipt. Read `host.receipt.yieldInstallation`: a partial batch or new
+own decision prevents installation. If `sessionWait` says timeout/error, use
+`next` to continue waiting. Never resubmit a known committed move just to wait.
+Use a terminal read wait of 30000 ms so routine waiting does not create rapid
+polling. No per-move explanation or commentary is needed. Inspect only when
+information necessary for your decision is missing; preserve all wanted windows.
+
+Call `observe` for an immediate refresh. Native output defaults to typed `pilot-v2`: read
 `position.choices.items`, where each entry has `ticket`, `label`, and exact
 `action`. Collections always use `{items,total,reference}`; `position` is null
 while waiting or paused. Zone summaries retain current state; their `reference`

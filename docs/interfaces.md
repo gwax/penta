@@ -138,7 +138,10 @@ not one exact-version comparison:
   optional JSON-lines CLI session retains local connection, measurement, and
   delivered printed-rule state. An explicit `full:true` refresh restores printed
   context; current state and choices remain complete. It makes no game choices
-  or automatic retries. These versions are independent of the hosted
+  or automatic mutation retries. Additive `interact` submits explicit actions
+  and an optional yield under one idempotent receipt. Session `next`/`interact`
+  renew read-only waits within a bounded budget and cache the public catalog.
+  These versions are independent of the hosted
   journal, canonical bot protocol, and reconstruction checkpoint versions.
 
 Query `protocol_version()`, `simulation_fingerprint()`, and `engine_version()`

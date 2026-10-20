@@ -1,6 +1,8 @@
 //! A single match's volatile authority. No files, model calls, or strategic choices.
 
 mod config;
+mod interaction;
+mod metrics;
 mod play;
 mod replay;
 pub mod server;
@@ -62,6 +64,7 @@ pub struct Host {
     transcripts: [Vec<Value>; 2],
     receipts: [BTreeMap<String, Receipt>; 2],
     diagnostics: VecDeque<Value>,
+    command_metrics: BTreeMap<String, metrics::CommandMetric>,
     failure: Option<Value>,
     yields: [Option<yielding::YieldPolicy>; 2],
     catalog: Option<Value>,
@@ -95,6 +98,7 @@ impl Host {
             transcripts: [Vec::new(), Vec::new()],
             receipts: [BTreeMap::new(), BTreeMap::new()],
             diagnostics: VecDeque::new(),
+            command_metrics: BTreeMap::new(),
             failure: None,
             yields: [None, None],
             catalog: None,
@@ -158,6 +162,7 @@ impl Host {
                 "decisionSeat":self.session.decision_seat().map(seat_name),
                 "commands":self.journal.len(), "elapsedMs":self.started.elapsed().as_millis(),
                 "failure":self.failure, "simulationFingerprint":protocol::SIMULATION_FINGERPRINT,
+                "commandMetrics":self.command_metrics,
             })),
             "export" => Ok(self.export()),
             "close" => {
@@ -175,7 +180,7 @@ impl Host {
                 number(args, "waitMs", 0, 25_000)?;
                 Ok(self.view(seat))
             }
-            "choose" | "play" | "concede" => self.play(seat, method, args),
+            "choose" | "play" | "concede" | "interact" => self.play(seat, method, args),
             "yield" | "cancelYield" => self.yield_request(seat, method, args),
             "receipt" => {
                 keys(args, &["requestId"])?;
@@ -291,6 +296,7 @@ impl Host {
             "receipts":{"p1":self.receipts[0].values().map(|r| &r.value).collect::<Vec<_>>(),
                         "p2":self.receipts[1].values().map(|r| &r.value).collect::<Vec<_>>()},
             "diagnostics":self.diagnostics, "elapsedMs":self.started.elapsed().as_millis(),
+            "commandMetrics":self.command_metrics,
         })
     }
 }

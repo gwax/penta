@@ -165,3 +165,32 @@ test("v2 native play choices follow strict host wrapper shapes", () => {
   for (const value of [{ index: 0 }, { action: { type: "PassPriority", index: 1, future: null } }, { decision: 1, options: [0, 2] }]) assert.deepEqual(check(value), value);
   for (const value of [{ index: -1 }, { ticket: "x" }, { index: 0, action: { type: "PassPriority" } }, { action: {} }, { action: { type: 1 } }, { decision: 1, options: [-1] }, { decision: 1, options: Array(4097).fill(0) }, { decision: 1, options: [], future: false }]) assert.throws(() => check(value), /union/);
 });
+
+test("v2 interaction schema requires explicit choices or a bounded yield", () => {
+  const check = value => validateContract(value, "NativeInteractionRequest", pilotV2Schema);
+  const base = { requestId: "move-1", revision: "r1", choices: [{ action: { type: "PlayLand", card: 4 } }] };
+  assert.deepEqual(check(base), base);
+  const policy = { until: [{ type: "nextStep", step: "End" }, { type: "opponentActs" }], maxPasses: 64 };
+  check({ ...base, yield: policy });
+  check({ ...base, choices: [], yield: policy });
+  for (const change of [
+    { choices: [] }, { choices: [{ index: 0 }] },
+    { yield: { until: [] } }, { yield: { ...policy, maxPasses: 257 } },
+    { yield: { until: [{ type: "guessWhatIWant" }] } }, { maxWaitMs: 60000 },
+  ]) assert.throws(() => check({ ...base, ...change }), /union/);
+});
+
+test("v2 concrete decision labels identify selected option IDs without changing actions", () => {
+  const legalActions = [
+    { index: 0, type: "ChooseDecision", decision: 2, options: [7] },
+    { index: 1, type: "ChooseDecision", decision: 2, options: [9] },
+    { index: 2, type: "ChooseDecision", decision: 2, options: [] },
+  ];
+  const choices = render({ legalActions, decision: { id: 2, minimum: 0, maximum: 1, options: [
+    { id: 7, label: "Mountain" }, { id: 9, label: "Chaos Orb" },
+  ] } }).packet.position.choices.items;
+  assert.match(choices[0].label, /select \[7\] Mountain/);
+  assert.match(choices[1].label, /select \[9\] Chaos Orb/);
+  assert.match(choices[2].label, /select no options/);
+  assert.deepEqual(choices.map(choice => choice.action), legalActions);
+});
