@@ -5,6 +5,39 @@ description: Start or join a Penta game and play an assigned seat through the se
 
 # Play Penta
 
+## Native host route
+
+When given a native `penta-host` server URL and seat secret, use
+`node tools/penta-agent/native.mjs METHOD -` with JSON on stdin containing
+`server`, `secret`, and the method's arguments. Follow `docs/native-matches.md`.
+This route uses no hosted connection handle, shared agent daemon, or credential
+files. Do not run the hosted `up`/`attach` commands for a native assignment.
+
+Call `observe`, then `choose` with the displayed revision-bound `ticket` and
+a caller-retained unique `requestId`. Decision tickets require explicit option
+IDs in `options`. Retain each exact mutation until its outcome is known; retry
+the identical method and arguments after uncertain output, or query `receipt`.
+Read `receipt.updates` alongside the current observation after each submission,
+including when waiting; it preserves this seat's events and automatic inspections
+across the accepted batch prefix.
+Use `wait` with at most 25000 ms while waiting. Use `inspect_ref` for omitted
+details and `presentation: "exact"` for canonical output. Native `play` takes
+exact action/decision choices, not hosted-client ticket batches.
+
+After model context loss, reuse the same seat secret, resolve any uncertain
+move, call `observe`, and recover seat-visible `transcript` pages and notes.
+Keep the host alive: state is volatile and a host crash loses the live match.
+Only the organizer obtains both seats, exports private debug data, or closes
+the host. Never inspect the other pilot's credentials, transcript or process.
+This workflow is not a hardened sandbox for agents sharing unrestricted shell
+access. When asked to start a native match, follow the native guide's binary
+startup and distribute only each pilot's own credential.
+Start each pilot with fresh context, not inherited organizer history. With
+Codex subagents, use `fork_turns: "none"` and a brief containing the skill,
+server URL, assigned seat, and only that seat's secret.
+
+## Hosted route
+
 Use `node tools/penta-agent/cli.mjs COMMAND 'JSON'` from the repository root.
 Arguments can also come from `@FILE` or `-` for stdin; use those for credentials.
 The maintained client handles transport and presentation. All gameplay choices

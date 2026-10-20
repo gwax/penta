@@ -1,5 +1,9 @@
 # Bot sessions and agent play
 
+For a native engine process with stateless CLI pilots, see
+[Native single-match host](native-matches.md). The workflow below uses hosted
+WASM rooms and retains its existing daemon and recovery behavior.
+
 Penta's hosted room owns one authoritative engine and match journal. A browser,
 an ordinary HTTP bot, and the agent CLI all connect to that room. Either
 engine seat can be driven by a bot; one can also be the existing human browser.

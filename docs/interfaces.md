@@ -38,8 +38,10 @@ when the legal action list and decision selection schema leave no alternative.
 Runners may submit it through ordinary `apply`; they must retain visible events
 and any decision information before advancing. The canonical JSON observation
 offers the same query as optional `forcedAction` (`actions.forced.v1`). Existing
-native runners retain their explicit one-action semantics; hosted sessions use
-the query to advance forced steps after each submitted command.
+native runners retain their explicit one-action semantics. Hosted sessions and
+the [native single-match host](native-matches.md) use the query to advance forced
+steps after submitted commands. The native host uses `session::ExactSession`;
+both adapters retain seat-visible information through `session::SessionUpdates`.
 
 ## Observations and events
 
@@ -120,6 +122,13 @@ not one exact-version comparison:
   around unchanged canonical bot observations. Its exact-pacing configuration
   and `sessionAct` journal command require browser/host replay version 4. Agent
   presentation deltas and menu references are adapter output, not bot-wire changes.
+- The [native single-match host](native-matches.md) has a separate HTTP API with
+  observation envelope `apiVersion: 1` and debug bundle `nativeReplayVersion: 1`.
+  Its organizer and seat capabilities, request receipts, and volatile transcripts
+  belong to that host contract. Native debug replay requires the same simulation
+  fingerprint and compares the reconstructed final seat observations. It does
+  not restore a running host. These versions are independent of the hosted
+  journal, canonical bot protocol, and reconstruction checkpoint versions.
 
 Query `protocol_version()`, `simulation_fingerprint()`, and `engine_version()`
 through the relevant binding. Release history and migration notes live in the

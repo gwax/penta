@@ -37,6 +37,7 @@ mod prepared_engine;
 pub mod protocol;
 mod rng;
 pub mod rules;
+pub mod session;
 
 pub use action::{
     AbilityOrigin, Action, ActionError, AlternativeAbilityCost, AttackDefender,

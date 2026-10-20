@@ -315,7 +315,13 @@ test-web-unit: ## Run fast standalone Node tests outside the WASM suites.
 		echo "No standalone fast web tests discovered"; \
 	fi
 
-.PHONY: test-bot-sessions test-penta-agent penta-agent
+.PHONY: test-bot-sessions test-penta-agent penta-agent test-native-host build-native-host
+test-native-host: ## Test the native in-memory match host, optionally filtered.
+	$(call run_rust_tests,-p penta-host --lib,)
+
+build-native-host: ## Build the native match host without web/WASM dependencies.
+	cargo build --locked --release -p penta-host
+
 test-bot-sessions: ## Test hosted session requests and browser reattachment, optionally filtered.
 	$(call run_web_tests,tests/game-room-session.test.mjs tests/remote-session.test.mjs)
 

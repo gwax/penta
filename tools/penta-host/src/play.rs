@@ -1,0 +1,216 @@
+use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::time::Instant;
+
+use penta::{PlayerId, session::ExactSession};
+use serde_json::{Value, json};
+
+use crate::{Host, HostError, Receipt, Result, keys, number, request_id, seat_name, secret};
+
+enum Failure {
+    Invalid(String),
+    Engine(String),
+}
+
+impl Host {
+    pub(crate) fn play(&mut self, seat: PlayerId, method: &str, args: &Value) -> Result<Value> {
+        let allowed: &[&str] = match method {
+            "choose" => &["requestId", "ticket", "options", "waitMs"],
+            "play" => &["requestId", "revision", "choices", "waitMs"],
+            "concede" => &["requestId", "waitMs"],
+            _ => unreachable!(),
+        };
+        keys(args, allowed)?;
+        number(args, "waitMs", 0, 25_000)?;
+        let id = request_id(args)?.to_owned();
+        if let Some(previous) = self.receipts[seat.index()].get(&id) {
+            if previous.method != method || previous.args != *args {
+                return Err(HostError::new(
+                    409,
+                    "requestId already used with different arguments",
+                ));
+            }
+            let mut view = self.view(seat);
+            view["receipt"] = previous.value.clone();
+            return Ok(view);
+        }
+        if self.failure.is_some() {
+            return Err(HostError::new(
+                409,
+                "match paused; ask the organizer to export diagnostics",
+            ));
+        }
+        if self.session.is_finished() {
+            return Err(HostError::new(409, "match is complete"));
+        }
+        let choices = self.choices(seat, method, args)?;
+        let start = Instant::now();
+        let mut accepted = 0;
+        let mut updates = Vec::new();
+        let mut stopped = None;
+        for choice in &choices {
+            if method != "concede" && self.session.decision_seat() != Some(seat) {
+                stopped = Some("the seat no longer holds a decision");
+                break;
+            }
+            let applied = self.commit(seat, choice, |session| {
+                if method == "concede" {
+                    session.concede(seat)
+                } else {
+                    session.apply_choice(seat, choice)
+                }
+                .map_err(Failure::Invalid)?;
+                session.advance_forced().map_err(Failure::Engine)
+            });
+            match applied {
+                Ok(()) => {
+                    accepted += 1;
+                    updates.extend(
+                        self.observations[seat.index()]["updates"]
+                            .as_array()
+                            .expect("canonical updates")
+                            .iter()
+                            .cloned(),
+                    );
+                }
+                Err(Failure::Invalid(message)) => {
+                    self.diagnose(json!({"kind":"refused","seat":seat_name(seat),
+                        "command":choice,"message":message}));
+                    stopped = Some("choice is not legal in the current position");
+                    break;
+                }
+                Err(Failure::Engine(_)) => {
+                    stopped = Some("engine failure; match paused for organizer inspection");
+                    break;
+                }
+            }
+        }
+        if accepted == 0 && self.failure.is_none() {
+            return Err(HostError::new(409, stopped.unwrap_or("no choice accepted")));
+        }
+        let mut receipt = json!({"requestId":id,"accepted":accepted,"updates":updates});
+        if let Some(reason) = stopped {
+            receipt["stopped"] = json!(reason);
+        }
+        self.receipts[seat.index()].insert(
+            id,
+            Receipt {
+                method: method.into(),
+                args: args.clone(),
+                value: receipt.clone(),
+            },
+        );
+        self.remember(seat, "receipt", receipt.clone());
+        self.diagnose(
+            json!({"kind":"submission","seat":seat_name(seat),"accepted":accepted,
+            "elapsedMicros":start.elapsed().as_micros()}),
+        );
+        let mut view = self.view(seat);
+        view["receipt"] = receipt;
+        Ok(view)
+    }
+
+    // Rendering observations is part of the commit: a failure there also restores
+    // the last good engine and its cached views, leaving export usable.
+    fn commit(
+        &mut self,
+        seat: PlayerId,
+        choice: &Value,
+        operation: impl FnOnce(&mut ExactSession) -> std::result::Result<(), Failure>,
+    ) -> std::result::Result<(), Failure> {
+        let checkpoint = self.session.clone();
+        let applied = catch_unwind(AssertUnwindSafe(|| {
+            operation(&mut self.session)?;
+            let observations =
+                [PlayerId::One, PlayerId::Two].map(|seat| self.session.observe(seat));
+            let revision = secret().map_err(Failure::Engine)?;
+            Ok((observations, revision))
+        }))
+        .unwrap_or_else(|_| {
+            Err(Failure::Engine(
+                "engine panicked while applying this command".into(),
+            ))
+        });
+        match applied {
+            Ok((observations, revision)) => {
+                self.observations = observations;
+                self.revision = revision;
+                self.journal
+                    .push(json!({"seat":seat_name(seat),"choice":choice}));
+                self.remember(seat, "choice", choice.clone());
+                self.remember_views();
+                Ok(())
+            }
+            Err(failure) => {
+                self.session = checkpoint;
+                if let Failure::Engine(message) = &failure {
+                    let detail = json!({"seat":seat_name(seat),"command":choice,"message":message,
+                        "afterCommands":self.journal.len()});
+                    self.diagnose(json!({"kind":"engineFailure","failure":detail}));
+                    self.failure = Some(detail);
+                }
+                Err(failure)
+            }
+        }
+    }
+
+    fn choices(&self, seat: PlayerId, method: &str, args: &Value) -> Result<Vec<Value>> {
+        if method == "concede" {
+            return Ok(vec![json!({"concede":true})]);
+        }
+        // Reject before looking at the deciding seat's observation.
+        if self.session.decision_seat() != Some(seat) {
+            return Err(HostError::new(409, "the seat does not hold a decision"));
+        }
+        if method == "play" {
+            if args["revision"].as_str() != Some(&self.revision) {
+                return Err(HostError::new(409, "stale revision; observe again"));
+            }
+            let choices = args["choices"]
+                .as_array()
+                .filter(|choices| !choices.is_empty() && choices.len() <= 64)
+                .ok_or_else(|| HostError::new(400, "choices must contain 1 to 64 entries"))?;
+            if choices.len() > 1 && choices.iter().any(|choice| choice.get("index").is_some()) {
+                return Err(HostError::new(
+                    400,
+                    "batches require exact actions or explicit decisions",
+                ));
+            }
+            return Ok(choices.clone());
+        }
+        let (revision, index) = args["ticket"]
+            .as_str()
+            .and_then(|ticket| ticket.rsplit_once(":a"))
+            .ok_or_else(|| HostError::new(400, "invalid ticket"))?;
+        if revision != self.revision {
+            return Err(HostError::new(409, "stale ticket; observe again"));
+        }
+        let index = index
+            .parse::<usize>()
+            .map_err(|_| HostError::new(400, "invalid ticket index"))?;
+        let observation = &self.observations[seat.index()];
+        let action = observation["legalActions"]
+            .as_array()
+            .and_then(|actions| actions.get(index))
+            .ok_or_else(|| HostError::new(409, "ticket is not legal"))?;
+        if action["type"] == "ChooseDecision" {
+            let options = args
+                .get("options")
+                .filter(|value| value.is_array())
+                .ok_or_else(|| HostError::new(400, "decision tickets require explicit options"))?;
+            Ok(vec![
+                json!({"decision":action["decision"],"options":options}),
+            ])
+        } else {
+            if args.get("options").is_some() {
+                return Err(HostError::new(
+                    400,
+                    "concrete action tickets do not accept options",
+                ));
+            }
+            Ok(vec![json!({"index":index})])
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests;

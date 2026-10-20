@@ -20,6 +20,17 @@ the bot-wire epoch.
 
 ## Unreleased
 
+- Add a native single-match host and stateless agent CLI. Each pilot receives
+  a separate seat capability, current exact-session choices, retry receipts,
+  seat-visible history and private notes. The organizer can export a private
+  debug bundle and explicitly close the match. State stays in memory across
+  pilot reconnects; a host restart does not restore it. Engine failures during
+  a command restore its preceding committed position and pause play for export.
+  The native observation envelope uses API 1 and debug bundles use native replay
+  1 with exact-fingerprint replay verification. These are separate contracts;
+  the canonical bot protocol, checkpoint format and hosted journal version do
+  not change. See [native matches](docs/native-matches.md).
+
 - Add playable Standard: WOE-HOB with the nineteen-set paper card pool through
   The Hobbit, the August 2026 bans, and all sixteen September 8 MTGO event
   decks. Native/binding setup accepts `woe-hob-standard`; the browser picker
