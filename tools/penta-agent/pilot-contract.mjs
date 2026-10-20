@@ -4,11 +4,11 @@ export const pilotSchema = JSON.parse(readFileSync(new URL("./pilot.schema.json"
 
 /** Validate the deliberately small JSON Schema vocabulary used by this contract.
  * The same schema is consumable by standard draft-2020-12 validators. */
-export function validateContract(value, definition = "PilotPacket") {
+export function validateContract(value, definition = "PilotPacket", schemaDocument = pilotSchema) {
   const visit = (value, schema, path) => {
     if (schema === true) return;
     if (schema === false) throw new Error(`${path}: unexpected field`);
-    if (schema.$ref) return visit(value, pilotSchema.$defs[schema.$ref.split("/").at(-1)], path);
+    if (schema.$ref) return visit(value, schemaDocument.$defs[schema.$ref.split("/").at(-1)], path);
     const alternatives = schema.oneOf ?? schema.anyOf;
     if (alternatives) {
       let matches = 0;
@@ -36,8 +36,8 @@ export function validateContract(value, definition = "PilotPacket") {
       for (const [key, item] of Object.entries(value)) visit(item, schema.properties?.[key] ?? schema.additionalProperties ?? true, `${path}.${key}`);
     }
   };
-  if (!pilotSchema.$defs[definition]) throw new Error(`unknown contract ${definition}`);
-  visit(value, pilotSchema.$defs[definition], definition);
+  if (!schemaDocument.$defs[definition]) throw new Error(`unknown contract ${definition}`);
+  visit(value, schemaDocument.$defs[definition], definition);
   return value;
 }
 

@@ -3,7 +3,7 @@
 `penta-host` owns one match in one native process. It calls the shared Rust
 engine directly; it does not start Vite, a browser, WASM, or the hosted-room
 daemon. The existing [hosted session workflow](bot-sessions.md) remains available.
-The native host and its stateless client make no model calls. Pilots choose
+The native host, one-shot client, and optional persistent CLI session make no model calls. Pilots choose
 exact actions or explicitly authorize conditional priority passes.
 
 ## Start and distribute seats
@@ -40,6 +40,38 @@ The client never writes credentials, connection handles, retry bodies or
 observations to disk. Stdin avoids putting credentials in command arguments;
 tool transcripts may still contain submitted inputs.
 
+## Persistent local client
+
+For repeated local play, run the maintained JSON-lines client in a terminal:
+
+```sh
+node tools/penta-agent/native.mjs session
+```
+
+Send one initialization line containing `{"server":"http://127.0.0.1:PORT","secret":"SEAT_SECRET"}`.
+After `{"status":"initialized"}`, send one explicit request per line:
+
+```json
+{"method":"observe"}
+```
+
+Later requests omit credentials and return the ordinary response directly.
+For example, `{"method":"choose","ticket":"REVISION:a7","requestId":"move-1","waitMs":25000}`.
+Requests execute serially. An individual request error returns `{"error":"..."}`
+and leaves the client running; invalid initialization ends it. Each input line
+is limited to 1 MiB. EOF exits without closing the match host.
+
+For a local agent terminal, start `stty -echo && node tools/penta-agent/native.mjs session`
+in a persistent PTY, then write JSON lines to that terminal session. Use the local
+shell runtime that can reach the loopback host. `native.mjs` is a CLI entrypoint;
+programmatic callers import `nativeCommand` from `native-client.mjs`.
+
+`{"method":"sessionStats"}` returns local `callsByMethod`, `errors`, `outputBytes`,
+and `elapsedMs` without contacting the host. Counts include dispatched failures
+but exclude `sessionStats`; bytes count serialized stdout before that stats
+response, including initialization and errors. Credentials remain in memory.
+The client generates no request IDs, chooses no actions, and performs no retries.
+
 ## Play and reconnect
 
 Use the same invocation pattern for each method. All inputs include `server`
@@ -61,7 +93,7 @@ and `secret`; the examples below show the additional fields.
 | `inspect_ref` | `reference`, optional `offset`, `limit` up to 100 | Inspect a current compact-view reference |
 
 Responses distinguish `ready`, `waiting`, `complete`, and `paused`. At `ready`,
-the default `pilot-v1` presentation supplies choices and revision-bound
+the default `pilot-v2` presentation supplies choices and revision-bound
 tickets such as `REVISION:a7`. Submit that ticket unchanged:
 
 ```json
@@ -72,6 +104,9 @@ A decision ticket requires the explicitly selected option IDs in `options`,
 including `[]` when choosing an empty selection. Order matters. A single `play`
 accepts `{index}`, `{decision, options}`, or `{action}`. Multi-choice batches
 require exact action values or explicit decisions because indices can change.
+Copy a displayed action into `{action: ...}` unchanged: the native client removes
+only its observation `index` metadata before submission. All other action fields
+remain exact; retries do not mutate the caller's request.
 An accepted prefix remains committed and is reported in the receipt; ticket
 resolution for batches is not provided by this stateless adapter.
 `host.receipt.updates` in the typed view preserves this seat's new events and automatic inspections
@@ -104,40 +139,51 @@ presentation warning, preserving the receipt.
 
 ## Typed pilot presentation
 
-The native client defaults to `pilot-v1`. Its
-[JSON Schema](../tools/penta-agent/pilot.schema.json) is the source for the
-[TypeScript declarations](../tools/penta-agent/pilot.d.ts). Read the contract
-without a running match or credentials:
+The native client defaults to `pilot-v2`. Read its complete, self-contained
+JSON Schema without a running match or credentials:
 
 ```sh
 node tools/penta-agent/native.mjs schema
 ```
 
-Every pilot position response has `presentation`, `status`, `revision`, `host`,
-and `position`.
-`position` is null while waiting or paused. Ready positions contain named
-`situation`, `players`, `zones`, `updates`, `choices`, `decision`, `facts`,
-`provenance`, and `rules` fields. Collections consistently use
-`{items, total, reference}`: `items` is always an array, and `reference` is null
-unless more detail requires inspection. No collection switches to a
-`{shared, rows}` table. An absent canonical zone is explicitly null.
+The [v2 schema definitions](../tools/penta-agent/pilot-v2.schema.json) compose with
+[shared definitions](../tools/penta-agent/pilot.schema.json); the CLI resolves
+them into one schema. [Generated TypeScript](../tools/penta-agent/pilot-v2.d.ts)
+comes from the same composed contract. Regenerate it with
+`node tools/penta-agent/generate-pilot-v2-types.mjs`.
 
-Each entry in `position.choices.items` has a `ticket`, a readable `label`,
-and the exact canonical `action`. Selection decisions retain their bounds,
-option IDs, order, and other schema fields. Labels identify player targets;
-exact action fields remain authoritative and distinct choices are never merged.
-Unknown engine fields remain available in the exact action or `facts`.
-`inspect_ref` retrieves explicitly referenced detail.
+Every position response has `presentation`, `status`, `revision`, `host`, and
+`position`. Waiting or paused views have no playable position. Ready positions
+contain named `situation`, `players`, `zones`, `updates`, `choices`, `decision`,
+`facts`, `provenance`, and `rules` fields. Collections consistently use
+`{items, total, reference}`: `items` is always an array, and `reference` identifies
+additional detail. An absent canonical zone is explicitly null.
 
-`host` preserves the native envelope, including receipts and this seat's
-`yield` state. An active or stopped yield reports its conditions, pass count,
-limit, stop reason, and matching condition index. Waiting reveals no opponent
-revision or choice count.
+Zone entries summarize current visible objects with typed IDs, names,
+controllers, tapped state, combat availability, power/toughness, damage, and
+counters when applicable. Nondefault and unknown fields remain in `current`.
+Each entry's `reference` retrieves its unchanged canonical object; the position's
+`reference` retrieves the complete seat observation. Printed rules remain usable
+inline, with full catalog records inspectable. These references reveal only
+information already available to the authenticated seat.
 
-`presentation: "decision-v1"` retains the previous compact native view;
-`presentation: "exact"` bypasses presentation. The hosted adapter keeps its
-existing default. Regenerate declarations after a schema change with
-`node tools/penta-agent/generate-pilot-types.mjs`.
+Each choice retains a revision-bound `ticket`, concise `label`, and exact
+`action`. All actions, payment variants, and decision options remain available;
+large menus are explicitly paged. Labels identify targets, including self-targets,
+and distinguish abilities without embedding their full descriptors. Exact fields
+remain authoritative. Selection decisions retain bounds, option IDs, and order.
+
+`host.currentYield` is the current active or stopped policy.
+`host.receipt.yieldAtAcceptance` is the immutable snapshot when a yield request
+was accepted, so its pass count may be older. `host.receipt.updates` preserves
+accepted batch events, while `position.updates` retains the current seat history.
+Waiting exposes neither an opponent revision nor their choice count.
+
+`presentation: "pilot-v1"` retains the earlier full typed view and its original
+yield field names. `presentation: "decision-v1"` retains the previous compact
+view, and `presentation: "exact"` bypasses presentation. The hosted adapter keeps
+its existing default. To retrieve the older schema, use
+`node tools/penta-agent/native.mjs schema '{"presentation":"pilot-v1"}'`.
 
 ## Conditional priority yields
 

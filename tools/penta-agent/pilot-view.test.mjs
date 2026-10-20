@@ -96,7 +96,7 @@ test("runtime contract rejects malformed known fields and inconsistent totals", 
 });
 
 test("schema is available without credentials and declarations derive from it", async () => {
-  assert.deepEqual(await nativeCommand("schema"), pilotSchema);
+  assert.deepEqual(await nativeCommand("schema", { presentation: "pilot-v1" }), pilotSchema);
   assert.equal(readFileSync(new URL("./pilot.d.ts", import.meta.url), "utf8"), declarations());
   assert.match(declarations(), /"life"\?: \[number, number\]/);
   assert.match(declarations(), /"manaPools"\?: \[ManaPool, ManaPool\]/);

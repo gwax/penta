@@ -1,26 +1,50 @@
 import { DecisionView } from "./decision-view.mjs";
 import { PilotView } from "./pilot-view.mjs";
 import { pilotSchema, validateContract } from "./pilot-contract.mjs";
+import { PilotV2View } from "./pilot-v2-view.mjs";
+import { pilotV2Schema } from "./pilot-v2-contract.mjs";
 
 const methods = new Set(["seats", "status", "export", "close", "observe", "wait", "choose", "play", "concede", "yield", "cancelYield", "receipt", "transcript", "note", "catalog"]);
 const mutations = new Set(["choose", "play", "concede", "yield", "cancelYield"]);
 
-/** One invocation, one credential. No connection registry or recovery files. */
-export async function nativeCommand(method, input, fetcher = fetch) {
-  if (method === "schema") return structuredClone(pilotSchema);
-  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("arguments must be a JSON object");
-  const { server, secret, presentation = "pilot-v1", ...args } = input;
-  const url = new URL(server);
+export function validateNativeConnection({ server, secret, presentation = "pilot-v2" }) {
+  let url;
+  try { url = new URL(server); } catch { throw new Error("server must be an HTTP origin without credentials"); }
   if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.search || url.hash || url.pathname !== "/") {
     throw new Error("server must be an HTTP origin without credentials");
   }
   if (typeof secret !== "string" || !secret) throw new Error("secret must be a nonempty string");
-  if (!["pilot-v1", "decision-v1", "exact"].includes(presentation)) throw new Error("unsupported presentation");
+  if (!["pilot-v2", "pilot-v1", "decision-v1", "exact"].includes(presentation)) throw new Error("unsupported presentation");
+  return url;
+}
+
+/** One invocation, one credential. No connection registry or recovery files. */
+export async function nativeCommand(method, input, fetcher = fetch) {
+  if (method === "schema") {
+    const presentation = input?.presentation ?? "pilot-v2";
+    if (!["pilot-v1", "pilot-v2"].includes(presentation)) throw new Error("schema presentation must be pilot-v1 or pilot-v2");
+    return structuredClone(presentation === "pilot-v1" ? pilotSchema : pilotV2Schema);
+  }
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("arguments must be a JSON object");
+  const { server, secret, presentation = "pilot-v2", ...args } = input;
+  const pilot = presentation === "pilot-v1" || presentation === "pilot-v2";
+  const url = validateNativeConnection({ server, secret, presentation });
   if (!methods.has(method) && method !== "inspect_ref") throw new Error(`unknown native command: ${method}`);
   if (args.waitMs !== undefined && (!Number.isInteger(args.waitMs) || args.waitMs < 0 || args.waitMs > 25_000)) throw new Error("waitMs must be an integer from 0 to 25000");
   if ((mutations.has(method) || method === "receipt") && (typeof args.requestId !== "string" || !args.requestId || Buffer.byteLength(args.requestId, "utf8") > 128)) throw new Error("requestId must contain 1 to 128 UTF-8 bytes; retain it for retries");
   if (method === "yield") validateContract(args, "YieldRequest");
   if (method === "cancelYield") validateContract(args, "CancelYieldRequest");
+  if (method === "play") {
+    if (!Array.isArray(args.choices) || !args.choices.length) throw new Error("choices must be a nonempty array");
+    args.choices = args.choices.map((choice, index) => {
+      if (!choice || typeof choice !== "object" || Array.isArray(choice)) throw new Error(`choices[${index}] must be an object`);
+      if (!Object.hasOwn(choice, "action")) return choice;
+      if (!choice.action || typeof choice.action !== "object" || Array.isArray(choice.action)) throw new Error(`choices[${index}].action must be an object`);
+      // Observation indices are presentation metadata, not canonical action fields.
+      const { index: _index, ...action } = choice.action;
+      return { ...choice, action };
+    });
+  }
   for (const key of ["offset", "limit"]) {
     if (args[key] !== undefined && (!Number.isInteger(args[key]) || args[key] < (key === "limit" ? 1 : 0) || (key === "limit" && args[key] > 100))) throw new Error(`invalid ${key}`);
   }
@@ -42,11 +66,12 @@ export async function nativeCommand(method, input, fetcher = fetch) {
     if (view.observation) {
       try { catalog = await request("catalog", {}); }
       catch (error) {
-        if (presentation !== "pilot-v1") throw error;
+        if (!pilot) throw error;
         view = { ...view, presentationWarning: "Public catalog unavailable; exact choices and observation fields retained. Printed rules may be unavailable." };
       }
     }
-    return presentation === "pilot-v1" ? new PilotView(view, catalog)
+    return presentation === "pilot-v2" ? new PilotV2View(view, catalog)
+      : presentation === "pilot-v1" ? new PilotView(view, catalog)
       : new DecisionView(view, catalog, new Set(), true, { id: view.revision });
   };
   if (method === "inspect_ref") {
@@ -57,10 +82,10 @@ export async function nativeCommand(method, input, fetcher = fetch) {
     return (await build(view)).inspect(reference, paging);
   }
   const result = await request(method, args);
-  if (presentation === "exact" || (!result.observation && (presentation !== "pilot-v1" || result.apiVersion !== 1 || !["ready", "waiting", "complete", "paused"].includes(result.status)))) return result;
+  if (presentation === "exact" || (!result.observation && (!pilot || result.apiVersion !== 1 || !["ready", "waiting", "complete", "paused"].includes(result.status)))) return result;
   try {
     const view = await build(result);
-    if (presentation === "pilot-v1") return view.packet;
+    if (pilot) return view.packet;
     const { observation: _observation, ...envelope } = result;
     return { ...envelope, ...view.packet };
   } catch {

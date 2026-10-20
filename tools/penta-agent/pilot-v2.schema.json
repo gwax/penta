@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://penta.local/schemas/pilot-v2.json",
+  "title": "Penta native pilot-v2 (compose with shared pilot-v1 definitions)",
+  "$ref": "#/$defs/PilotPacket",
+  "$defs": {
+    "ObjectSummary": {
+      "type": "object",
+      "properties": {
+        "reference": {
+          "type": "string"
+        },
+        "objectId": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "controller": {
+          "$ref": "#/$defs/Seat"
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Seat"
+            },
+            {
+              "type": "integer"
+            }
+          ]
+        },
+        "current": {
+          "$ref": "#/$defs/ExactObject"
+        },
+        "counters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Counter"
+          }
+        },
+        "tapped": {
+          "type": "boolean"
+        },
+        "canAttack": {
+          "type": "boolean"
+        },
+        "enteredThisTurn": {
+          "type": "boolean"
+        },
+        "power": {
+          "type": "integer"
+        },
+        "toughness": {
+          "type": "integer"
+        },
+        "damage": {
+          "type": "integer"
+        },
+        "loyalty": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "reference"
+      ],
+      "additionalProperties": false,
+      "description": "Current visible object. Omitted routine flags are false or empty; current retains nondefault flags and unknown fields. Full canonical values, including absent versus null and metadata, are available through reference. enteredThisTurn is the protocol controller-turn timestamp flag, not a claim of summoning sickness; use canAttack and legal actions."
+    },
+    "ZoneSummary": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ObjectSummary"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ZoneSummary"
+          }
+        }
+      ]
+    },
+    "ZoneSummaries": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ZoneSummary"
+          }
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "items",
+        "total",
+        "reference"
+      ],
+      "additionalProperties": false
+    },
+    "PrintedSummary": {
+      "type": "object",
+      "properties": {
+        "rulesText": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "manaCost": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "typeLine": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "power": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "toughness": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "loyalty": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PrintedPart"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "PrintedPart": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "name": {
+          "type": "string"
+        },
+        "rulesText": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "manaCost": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "typeLine": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "power": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "toughness": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "loyalty": {
+          "$ref": "#/$defs/JsonValue"
+        },
+        "parts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PrintedPart"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "Rule": {
+      "type": "object",
+      "properties": {
+        "definition": {
+          "type": "string"
+        },
+        "available": {
+          "type": "boolean"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "printed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PrintedSummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "definition",
+        "available",
+        "name",
+        "printed",
+        "reference"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

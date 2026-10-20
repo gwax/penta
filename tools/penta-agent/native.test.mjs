@@ -22,7 +22,7 @@ test("fresh invocations reproduce revision tickets and inspect references withou
   const first = await nativeCommand("observe", credentials, transport.fetch);
   const second = await nativeCommand("observe", credentials, transport.fetch);
   assert.deepEqual(first, second);
-  assert.equal(first.presentation, "pilot-v1");
+  assert.equal(first.presentation, "pilot-v2");
   assert.equal(first.position.choices.items[0].ticket, "revision-one:a7");
   const details = await nativeCommand("inspect_ref", { ...credentials, reference: first.position.provenance.reference }, transport.fetch);
   assert.deepEqual(details.items[0].checkpoint, observation.checkpoint);
@@ -48,7 +48,7 @@ test("catalog failure preserves a playable typed packet and committed receipt", 
   });
   const result = await nativeCommand("choose", { ...credentials, ticket: "old:a7", requestId: "m" }, transport.fetch);
   assert.deepEqual(result.host.receipt, committed.receipt);
-  assert.equal(result.presentation, "pilot-v1");
+  assert.equal(result.presentation, "pilot-v2");
   assert.match(result.host.presentationWarning, /catalog unavailable/);
   assert.deepEqual(result.position.choices.items[0].action, observation.legalActions[0]);
   assert.equal(result.position.choices.items[0].ticket, "revision-one:a7");
@@ -68,6 +68,16 @@ test("exact mode bypasses presentation and catalog lookup", async () => {
   const transport = mock(() => ready);
   assert.deepEqual(await nativeCommand("observe", { ...credentials, presentation: "exact" }, transport.fetch), ready);
   assert.deepEqual(transport.calls.map(call => call.method), ["observe"]);
+});
+
+test("legacy pilot presentation and schema remain explicitly selectable", async () => {
+  const transport = mock(method => method === "catalog" ? { cards: [] } : ready);
+  const legacy = await nativeCommand("observe", { ...credentials, presentation: "pilot-v1" }, transport.fetch);
+  assert.equal(legacy.presentation, "pilot-v1");
+  const currentSchema = await nativeCommand("schema", {});
+  const legacySchema = await nativeCommand("schema", { presentation: "pilot-v1" });
+  assert.notDeepEqual(currentSchema, legacySchema);
+  await assert.rejects(nativeCommand("schema", { presentation: "exact" }), /schema presentation/);
 });
 
 test("organizer status and exports remain raw without presentation warnings", async () => {
@@ -99,4 +109,42 @@ test("transport errors propagate without replacing the logical request", async (
   const transport = mock(() => ({ status: "waiting", receipt: { requestId: "retained", accepted: 1 } }));
   await nativeCommand("choose", input, transport.fetch);
   assert.equal(transport.calls[0].args.requestId, "retained");
+});
+
+test("displayed exact actions round-trip with only top-level action indices removed", async () => {
+  const action = { index: 7, type: "ActivateAbility", abilityIndex: 2, target: { index: 4 }, future: "retained" };
+  const transport = mock(method => method === "catalog" ? { cards: [] }
+    : method === "observe" ? { ...ready, observation: { ...observation, legalActions: [action] } }
+      : { status: "waiting" });
+  const displayed = await nativeCommand("observe", credentials, transport.fetch);
+  const input = { ...credentials, presentation: "exact", revision: ready.revision, requestId: "exact-retry",
+    choices: [{ action: displayed.position.choices.items[0].action }, { decision: "decision-id", options: [2, 1] }] };
+  const original = structuredClone(input);
+  Object.freeze(input.choices[0].action);
+  Object.freeze(input.choices[0]);
+  Object.freeze(input.choices);
+  Object.freeze(input);
+  let uncertainBody;
+  await assert.rejects(nativeCommand("play", input, async (_url, options) => {
+    uncertainBody = JSON.parse(options.body);
+    throw new Error("lost response");
+  }), /lost response/);
+  await nativeCommand("play", input, transport.fetch);
+  await nativeCommand("play", input, transport.fetch);
+  const calls = transport.calls.filter(call => call.method === "play");
+  assert.deepEqual(calls[0], calls[1]);
+  assert.deepEqual(uncertainBody, { method: "play", args: calls[0].args });
+  assert.deepEqual(calls[0].args.choices, [
+    { action: { type: "ActivateAbility", abilityIndex: 2, target: { index: 4 }, future: "retained" } },
+    { decision: "decision-id", options: [2, 1] },
+  ]);
+  assert.deepEqual(input, original);
+});
+
+test("invalid exact action containers fail locally with an actionable path", async () => {
+  const transport = mock(() => ready);
+  for (const choices of [[], [null], [{ action: null }], [{ action: [] }]]) {
+    await assert.rejects(nativeCommand("play", { ...credentials, requestId: "m", revision: "r", choices }, transport.fetch), /choices/);
+  }
+  assert.equal(transport.calls.length, 0);
 });

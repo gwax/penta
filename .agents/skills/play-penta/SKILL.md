@@ -13,12 +13,24 @@ When given a native `penta-host` server URL and seat secret, use
 This route uses no hosted connection handle, shared agent daemon, or credential
 files. Do not run the hosted `up`/`attach` commands for a native assignment.
 
-Call `observe`. Native output defaults to typed `pilot-v1`: read
+For repeated play, use the maintained local shell runner rather than writing a
+transport helper: start `stty -echo && node tools/penta-agent/native.mjs session`
+in a persistent PTY. Send `{server, secret}` once; after the initialized reply,
+send one `{method, ...args}` JSON line per request. Use that terminal session for
+all later calls. EOF exits the client. `sessionStats` returns call/error counts,
+output bytes, and elapsed time without contacting the host. A separate JavaScript
+tool runtime may not reach this loopback host. The CLI is not an importable module;
+programmatic callers use `nativeCommand` from `tools/penta-agent/native-client.mjs`.
+
+Call `observe`. Native output defaults to typed `pilot-v2`: read
 `position.choices.items`, where each entry has `ticket`, `label`, and exact
 `action`. Collections always use `{items,total,reference}`; `position` is null
-while waiting or paused. `host` contains receipts and the seat's yield state.
+while waiting or paused. Zone summaries retain current state; their `reference`
+retrieves full canonical detail. `position.reference` retrieves the complete own
+observation. Use `host.currentYield` for the current policy and
+`host.receipt.yieldAtAcceptance` for the immutable acceptance snapshot.
 Use `node tools/penta-agent/native.mjs schema` to read the JSON Schema without
-credentials; `tools/penta-agent/pilot.d.ts` provides generated TypeScript types.
+credentials; `tools/penta-agent/pilot-v2.d.ts` provides generated TypeScript types.
 Then call `choose` with the displayed revision-bound `ticket` and
 a caller-retained unique `requestId`. Decision tickets require explicit option
 IDs in `options`. Retain each exact mutation until its outcome is known; retry
@@ -28,7 +40,8 @@ including when waiting; it preserves this seat's events and automatic inspection
 across the accepted batch prefix.
 Use `wait` with at most 25000 ms while waiting. Use `inspect_ref` for omitted
 details and `presentation: "exact"` for canonical output. Native `play` takes
-exact action/decision choices, not hosted-client ticket batches.
+exact action/decision choices, not hosted-client ticket batches. Copy a displayed
+action directly into `{action: ...}`; the client removes only its `index` metadata.
 `choose` and `play` also accept `waitMs: 25000` to submit and wait in one call.
 
 For "pass until phase X unless the opponent acts", call `yield` with the current
@@ -41,7 +54,7 @@ boundaries. `nextStep` means a future entry, not the current occurrence;
 interrupt, or add `nonManaAction` to stop when another legal action is available.
 This is an explicit decision to pass the covered priority windows, not a change
 to which actions are forced. Non-forced decisions still need the pilot.
-Read `host.yield` for the stop reason; `cancelYield` with a new `requestId` cancels
+Read `host.currentYield` for the stop reason; `cancelYield` with a new `requestId` cancels
 the instruction. Yields expire at game boundaries and the requested pass limit
 (`maxPasses`, default 64, maximum 256). Conditions and updates survive reconnects
 while the host remains alive.

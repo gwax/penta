@@ -29,9 +29,12 @@ the bot-wire epoch.
   Pilots can explicitly yield until any of several typed conditions matches,
   commonly a future phase/step boundary or an opponent action. Passes retain
   seat-visible updates, remain cancellable, and never select non-priority
-  decisions. The native client defaults to a concrete `pilot-v1` view with
-  consistent collections, exact action fields, a JSON Schema, and generated
-  TypeScript declarations; the previous `decision-v1` and exact views remain.
+  decisions. The native client defaults to a concise typed `pilot-v2` view with consistent
+  collections, full-detail references, exact action fields, a JSON Schema, and
+  generated TypeScript declarations; `pilot-v1`, `decision-v1`, and exact views
+  remain available. Displayed actions can be submitted directly, and current
+  yield state is distinguished from its acceptance snapshot. An optional local
+  JSON-lines client keeps credentials in memory and reports interaction metrics.
   The native observation envelope uses API 1 and debug bundles use native replay
   2 with recorded yield passes and forced prefixes for exact-fingerprint replay
   verification. Replay 1 remains readable under a matching fingerprint.

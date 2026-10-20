@@ -131,9 +131,12 @@ not one exact-version comparison:
   version 1 bundles remain readable under their matching fingerprint. Replay
   does not restore a running host. The additive `yield` and `cancelYield`
   operations use typed OR conditions and ordinary validated priority passes.
-  The native client's `pilot-v1` JSON Schema and generated TypeScript types
-  version its presentation separately; `decision-v1` and exact views remain
-  available. These versions are independent of the hosted
+  The native client defaults to `pilot-v2`, with typed concise object summaries,
+  full-detail references, and explicit current versus acceptance-time yield state.
+  Its composed JSON Schema and generated TypeScript types version presentation
+  separately; `pilot-v1`, `decision-v1`, and exact views remain available. The
+  optional JSON-lines CLI session retains only local connection and measurement
+  state; it makes no game choices or automatic retries. These versions are independent of the hosted
   journal, canonical bot protocol, and reconstruction checkpoint versions.
 
 Query `protocol_version()`, `simulation_fingerprint()`, and `engine_version()`
