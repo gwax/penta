@@ -50,8 +50,8 @@ The native host defaults to `first-to-two-wins`. Keep the host and seat secrets
 for the entire match. `position.situation.match` reports `wins`, `draws`, `game`,
 and `stage`; an individual game ending does not make the packet `complete`.
 
-At `sideboarding`, each seat receives its own private decision. Expand option
-`defaults`, then select **all option IDs for the next main deck**, including
+At `sideboarding`, follow the seat's private decision prompt. When asked for the
+next main deck, expand option `defaults`, then select **all its option IDs**, including
 retained cards. `Library` marks the current main deck and `OutsideGame` the
 current sideboard. Each copy has its own option ID. Submit the selection with
 the normal `{decision: ID, options: [IDs]}` choice; the engine validates deck
