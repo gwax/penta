@@ -48,6 +48,13 @@ Decision option rows inherit `position.decision.options.defaults`; overlay each
 row on those defaults. Every option ID and label remains inline. Mulligan actions
 are `KeepHand` and `TakeMulligan`; `next` accepts `maxWaitMs`, not `waitMs`.
 
+In `first-to-two-wins`, follow `position.situation.match.stage` between games.
+For sideboarding, select all option IDs for the next main deck, including cards
+you retain; `Library` marks current main-deck copies and `OutsideGame` sideboard
+copies. Your full main-deck and sideboard rules are available in the packet.
+After both submissions, answer the losing seat's play/draw decision. Keep the
+same host and seat secret, and stop only when the packet is `complete`.
+
 Cast actions use `{type:"CastSpell",card,choices:{playOptionId,modeIds?,x?,
 targetSelections?,alternativeCostId?,additionalCostIds?},costObjects?}`. Target
 selections use `{slotId,targets:[{type:"player",seat} or

@@ -151,6 +151,26 @@ decision and with lossless reconstruction tests; no later live decision used
 it. Permission metadata was added after play and validated with focused engine
 tests. These changes do not have a new pair of full-game wall-time measurements.
 
+## Native match lifecycle confirmation
+
+A focused Sligh–The Deck check on 2026-10-21 used a release host with
+`first-to-two-wins`, two persistent `session-rpc` clients, and finite CLI calls
+using the default `pilot-v3` presentation. Concessions ended three games to
+exercise a 2–1 match; this was a lifecycle check, not three model-played games.
+Both seats swapped a main-deck land for Red Elemental Blast at each intermission,
+and the next games retained those submitted decks. The previous loser owned the
+play/draw decision, seat identities remained stable, and completion occurred
+only at two wins. No legacy discovery was used. All 16 journal commands replayed
+with identical final observations. Local evidence is under
+`target/profiles/native-match-confirmation/`.
+
+The first check found a presentation gap: match lists contain bare definition
+IDs, so rules for sideboard cards not yet seen in play were omitted. The client
+now includes printed references for the seat's entire main deck and sideboard.
+The CLI check was repeated successfully after the fix. A focused host regression
+also covers illegal sideboard rejection without state changes, idempotent
+submission retries, private decisions, and stopping a yield at a game boundary.
+
 ## Scope and remaining limits
 
 The reported remote multi-minute `commandMetrics.maxMicros` incidents have not

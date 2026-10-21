@@ -32,6 +32,28 @@ test("proposal state retains all visible objects, options and rules without a me
   assert.deepEqual(view.inspect(position.reference).items, [obs]);
 });
 
+test("sideboarding includes printed rules for the seat's entire main deck and sideboard", () => {
+  const cards = ["main", "side", "hidden"].map(definition => ({ definition,
+    name: definition, rulesText: `Rules for ${definition}`, parts: [] }));
+  const obs = { ...observation, actionContext: { kind: "decision", ordinaryPriority: false },
+    match: { mode: "first-to-two-wins", stage: "sideboarding", wins: [1, 0],
+      main: ["main", "main"], sideboard: ["side"] },
+    checkpoint: { definition: "hidden" },
+    decision: { id: 7, minimum: 2, maximum: 3, options: [
+      { id: 0, label: "main", card: null, zone: "Library" },
+      { id: 1, label: "main", card: null, zone: "Library" },
+      { id: 2, label: "side", card: null, zone: "OutsideGame" },
+    ] } };
+  const view = new PilotV3View({ ...envelope, observation: obs }, { cards });
+  assert.deepEqual(view.packet.position.rules.items.map(rule => rule.definition), ["main", "side"]);
+  assert.deepEqual(view.packet.position.rules.items.map(rule => rule.printed), cards.slice(0, 2));
+  assert.deepEqual(view.packet.position.situation.match, obs.match);
+  assert.deepEqual(view.packet.position.decision.options.items.map(row =>
+    ({ ...view.packet.position.decision.options.defaults, ...row })), obs.decision.options);
+  const missing = new PilotV3View({ ...envelope, observation: obs }, { cards: [] });
+  assert.ok(missing.packet.position.rules.items.every(rule => !rule.available));
+});
+
 test("inline printed rules omit presentation metadata while references preserve the exact catalog", () => {
   const printed = { definition: "d", name: "Mountain", rulesText: "R".repeat(13000),
     isBasicLand: true, manaCost: null, structure: { kind: "single", part: 0 },

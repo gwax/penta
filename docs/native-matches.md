@@ -44,6 +44,28 @@ The client never writes credentials, connection handles, retry bodies or
 observations to disk. Stdin avoids putting credentials in command arguments;
 tool transcripts may still contain submitted inputs.
 
+## First-to-two matches and sideboarding
+
+The native host defaults to `first-to-two-wins`. Keep the host and seat secrets
+for the entire match. `position.situation.match` reports `wins`, `draws`, `game`,
+and `stage`; an individual game ending does not make the packet `complete`.
+
+At `sideboarding`, each seat receives its own private decision. Expand option
+`defaults`, then select **all option IDs for the next main deck**, including
+retained cards. `Library` marks the current main deck and `OutsideGame` the
+current sideboard. Each copy has its own option ID. Submit the selection with
+the normal `{decision: ID, options: [IDs]}` choice; the engine validates deck
+size and the registered card pool. The pilot packet includes printed rules for
+the seat's entire main deck and sideboard, including cards not yet drawn.
+
+After both submissions, `play-draw` asks the previous game's loser to choose
+“Play first” or “Draw first.” After a draw, the prior chooser keeps that choice.
+The host starts the next game with the submitted
+decks and the same seat identities. Yields stop at game boundaries and never
+answer sideboarding or play/draw choices. Continue until packet `status` and
+match `stage` are `complete`, when a seat has two wins. `one-conclusion` skips
+this match lifecycle.
+
 ## Persistent local client
 
 For agent tools, use a memory-only local session with finite request commands.
