@@ -55,6 +55,28 @@ test("inline printed rules omit presentation metadata while references preserve 
   assert.deepEqual(catalog, original);
 });
 
+test("large decision tables factor only known empty metadata and reconstruct every option", () => {
+  const options = Array.from({ length: 325 }, (_, id) => ({ id, label: `Creature type ${id}`,
+    abilityText: null, card: null, members: [], triggerId: null, zone: "None", future: null }));
+  options[1] = { ...options[1], card: { objectId: 2 }, members: [{ name: "Member" }],
+    abilityText: "Choose this", triggerId: 7, zone: "Battlefield" };
+  const obs = { ...observation, decision: { id: 9, minimum: 1, maximum: 1, options } };
+  const before = structuredClone(obs);
+  const view = new PilotV3View({ ...envelope, observation: obs }, { cards: [] });
+  const compact = view.packet.position.decision.options;
+  assert.equal(compact.total, 325);
+  assert.deepEqual(compact.defaults, { abilityText: null, card: null, members: [], triggerId: null, zone: "None" });
+  assert.deepEqual(compact.items[0], { id: 0, label: "Creature type 0", future: null });
+  assert.deepEqual(compact.items.map(item => ({ ...compact.defaults, ...item })), options);
+  assert.deepEqual(view.inspect(view.packet.position.reference).items, [before]);
+  assert.deepEqual(obs, before);
+  assert.ok(JSON.stringify(compact).length < JSON.stringify(options).length / 2);
+  delete options[0].card;
+  const absent = new PilotV3View({ ...envelope, observation: obs }, { cards: [] }).packet.position.decision.options;
+  assert.ok(!Object.hasOwn(absent.defaults, "card"));
+  assert.deepEqual(absent.items.map(item => ({ ...absent.defaults, ...item })), options);
+});
+
 test("native default sends one typed proposal unchanged and never discovers", async () => {
   const calls = [];
   const fetcher = async (_url, options) => {
@@ -71,8 +93,28 @@ test("native default sends one typed proposal unchanged and never discovers", as
   assert.deepEqual(calls[0].args.choices, [{ proposal }]);
   assert.ok(!Object.hasOwn(calls[0].args, "actionInterface"));
   const malformed = structuredClone(proposal); malformed.action.targets = [];
-  await assert.rejects(nativeCommand("interact", { ...credentials, revision: "r1", requestId: "m2", choices: [{ proposal: malformed }] }, fetcher), /contract|match|unknown|allowed|schema|union/i);
+  await assert.rejects(nativeCommand("interact", { ...credentials, revision: "r1", requestId: "m2", choices: [{ proposal: malformed }] }, fetcher), /proposal\.action\.targets: unexpected field/);
   assert.equal(calls.length, 2);
+});
+
+test("native proposal input errors preserve actionable field paths through unions", async () => {
+  const cases = [
+    [{ type: "Mulligan" }, /proposal\.action\.type: expected one of .*"TakeMulligan"/],
+    [{ type: "CastSpell" }, /proposal\.action\.card: required/],
+    [{ type: "CastSpell", card: 1, choices: { x: 65536 } }, /proposal\.action\.choices\.x: number out of bounds/],
+    [{ type: "CastSpell", card: 1, choices: { targetSelections: [{ slotId: 0,
+      targets: [{ type: "player", objectId: 2 }] }] } }, /targets\[0\]\.seat: required/],
+    [{ type: "PlayLand", card: 1, typo: 0 }, /proposal\.action\.typo: unexpected field/],
+  ];
+  for (const method of ["interact", "play"]) {
+    for (const [action, message] of cases) {
+      await assert.rejects(nativeCommand(method, { ...credentials, revision: "r1", requestId: "invalid",
+        choices: [{ proposal: { action } }] }, () => assert.fail("invalid input must not reach the host")), message);
+    }
+  }
+  await assert.rejects(nativeCommand("interact", { ...credentials, revision: "r1", requestId: "invalid",
+    choices: [], yield: { until: [{ type: "stackEmpty" }] } }, () => assert.fail("invalid yield must not reach the host")),
+  /yield\.until\[0\]\.type: expected one of .*"opponentCastsSpell"/);
 });
 
 test("proposal schema rejects malformed targets and generated declarations stay current", () => {

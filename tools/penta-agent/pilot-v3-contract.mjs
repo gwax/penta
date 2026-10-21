@@ -19,6 +19,7 @@ export function composePilotV3Schema() {
   position.properties.actionAbilities = { type: "array", items: { $ref: "#/$defs/ProposalObjectAbilities" } };
   position.required.push("actionInterface", "actionContext", "actionAbilities");
   position.properties.zones = structuredClone(pilotSchema.$defs.Position.properties.zones);
+  schema.$defs.Decision.properties.options = { $ref: "#/$defs/ProposalDecisionOptions" };
   schema.$defs.CompleteRule.properties.printed = { anyOf: [{ $ref: "#/$defs/ExactObject" }, { type: "null" }] };
   Object.assign(schema.$defs, proposalDefinitions, proposalContextDefinitions);
   schema.$defs.NativePlayChoice.oneOf.push(proposalChoice);

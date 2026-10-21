@@ -125,7 +125,7 @@ impl ExactSession {
                 .chain(observation.graveyards.iter().flatten().map(|(id,_)|*id))
                 .chain(observation.exiles.iter().flatten().map(|(id,_)|*id))
                 .chain(observation.command_zones.iter().flatten().map(|(id,_)|*id))
-                .map(|source| serde_json::json!({"source":source.0,"grantedCastCosts":self.game.action_cast_costs(seat,source),"abilities":self.game.action_abilities(source).into_iter().map(|(origin,ability)|protocol::proposal_ability_json(origin,ability)).collect::<Vec<_>>()}))
+                .map(|source| serde_json::json!({"source":source.0,"playPermission":self.game.action_play_permission(seat,source),"grantedCastCosts":self.game.action_cast_costs(seat,source),"abilities":self.game.action_abilities(source).into_iter().map(|(origin,ability)|protocol::proposal_ability_json(origin,ability)).collect::<Vec<_>>()}))
                 .collect();
         }
         value

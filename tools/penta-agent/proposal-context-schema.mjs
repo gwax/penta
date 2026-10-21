@@ -9,6 +9,10 @@ const array = items => ({ type: "array", items });
 const object = (properties, required = Object.keys(properties)) => ({ type: "object", properties, required, additionalProperties: false });
 
 export const proposalContextDefinitions = {
+  ProposalDecisionDefaults: object({ abilityText: { type: "null" }, card: { type: "null" },
+    members: { type: "array", items: ref("JsonValue"), maxItems: 0 }, triggerId: { type: "null" }, zone: { const: "None" } }, []),
+  ProposalDecisionOptions: object({ items: array(ref("ExactObject")), total: number,
+    reference: { type: "null" }, defaults: ref("ProposalDecisionDefaults") }),
   ProposalActionContext: object({
     kind: { enum: ["complete", "waiting", "priority", "decision", "mulligan", "bottomCards", "discardCards", "untap", "declareAttackers", "declareBlockers", "combatDamage"] },
     ordinaryPriority: boolean, minimum: number, maximum: number, attacker: id,
@@ -34,8 +38,15 @@ export const proposalContextDefinitions = {
   }),
   ProposalGrantedCastCost: object({ playOptionId: byte, alternativeCostId: byte,
     kind: { enum: ["granted", "battlefield"] }, text, manaCost: text }),
+  ProposalPlayPermission: object({ sourceZone: { enum: ["exile", "graveyard"] },
+    cost: object({ kind: { enum: ["printed", "alternativeMana", "free", "energyEqualToManaValue", "foretell"] },
+      manaCost: { anyOf: [text, { type: "null" }] } }),
+    surcharge: text, landsMayBePlayed: boolean, adventureReturnOnly: boolean,
+    maximumSpellManaValue: { anyOf: [number, { type: "null" }] },
+    spendAnyColor: boolean, spendAnyType: boolean, grantsHaste: boolean }),
   ProposalObjectAbilities: { oneOf: [
     object({ source: id, abilities: array(ref("ProposalAbilityDescription")),
+      playPermission: { anyOf: [ref("ProposalPlayPermission"), { type: "null" }] },
       grantedCastCosts: array(ref("ProposalGrantedCastCost")) }, ["source", "abilities"]),
     object({ source: id, abilitiesPreviouslySent: { const: true } }),
   ] },

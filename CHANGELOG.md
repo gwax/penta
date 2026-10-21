@@ -23,6 +23,9 @@ the bot-wire epoch.
 - Add a native single-match host and typed proposal interface. The default
   `pilot-v3` client receives complete seat-visible state, printed rules, action
   context, and pending decision options without an exhaustive action menu.
+  Visible objects describe applicable exile/graveyard play permissions and
+  costs. Decision tables factor repeated empty metadata through typed defaults,
+  preserving every option. Local input errors identify the failing field.
   `proposal-v1` accepts a chosen action and optional explicit funding, mana units,
   and contributions through revision-checked, idempotent `play`/`interact` requests.
   Core state-only observation and explicit-payment APIs share engine legality
@@ -34,7 +37,9 @@ the bot-wire epoch.
   and private notes. Explicit conditional yields retain visible events and stop
   for non-forced choices. Persistent JSON-lines and loopback clients renew bounded
   read-only waits, cache printed rules, and retain event cursors; `full:true`
-  restores context. The organizer can export a private debug bundle and close the
+  restores context. The local wait budget does not abort the initial mutation
+  at its host long-poll boundary; the transport timeout still applies.
+  The organizer can export a private debug bundle and close the
   volatile host. A crash does not restore a live match.
   Native API 2 uses replay version 3 for proposals and state-only final
   observations. Older native replay versions retain their original semantics

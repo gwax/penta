@@ -143,6 +143,10 @@ read failure returns `sessionWait` and preserves the committed receipt. Use
 `next` to continue waiting. A failed initial mutation may be uncertain: recover
 its receipt or retry identical arguments before choosing again.
 These are session operations; one-shot `interact` accepts only host `waitMs`.
+The initial read/submission uses the ordinary transport timeout rather than the
+local wait deadline, so a long-poll response at the budget boundary can still
+deliver its committed receipt. The local deadline bounds subsequent read-only
+waits; it can therefore be exceeded by the initial request's transport overhead.
 The session caches the public catalog after its first successful retrieval.
 
 `{"method":"sessionStats"}` returns local `callsByMethod`, `errors`, `outputBytes`,
@@ -164,6 +168,11 @@ identical repeats using only `definition`, `reference`, `printed: null`, and
 `{source, abilitiesPreviouslySent: true}` after successful delivery. Every
 visible source remains listed; changed, new, or reappearing sources include
 full records. Current zones and pending decision options remain complete inline.
+Decision option collections include typed `defaults` for repeated empty metadata.
+Interpret each option as `{...defaults, ...row}`; IDs, labels, order, nonempty
+values, and unknown fields are preserved. The position reference retains the
+exact canonical observation. This avoids repeating null card/trigger metadata
+hundreds of times for choices such as creature types.
 After context loss, send
 `{"method":"observe","full":true}` to reprint rules and event history. `full` is a local boolean
 option, stripped before the host request; it also works on `wait` and mutations.
@@ -244,6 +253,11 @@ the current `playOptionId`, `alternativeCostId`, symbolic mana cost, and grant
 description. These identities include temporary flashback and battlefield
 alternatives that do not appear in the printed catalog. They are metadata;
 the engine still validates timing, permission, targets, and payment.
+The entry's `playPermission` separately describes an applicable exile/graveyard
+permission, its base cost, surcharges, and restrictions. For example, airbend
+reports `cost: {kind: "alternativeMana", manaCost: "{2}"}` and uses the default
+null `alternativeCostId`, rather than a granted-cost ID. These are permission
+terms, not a final cost quote or proof of legal timing; cost modifiers still apply.
 
 Pending decisions retain their explicit IDs, option IDs, ordering and selection
 bounds. Submit `{decision: ID, options: [IDs]}` including `[]` for an empty
@@ -251,6 +265,10 @@ selection. The exported `NativePlayChoice` schema describes the wrappers.
 Malformed proposals fail locally or return a structured
 `host.receipt.rejection: {code, path, message}` from the host. An accepted batch
 prefix remains committed; a rejected proposal does not partially fund or cast.
+Local schema failures retain the offending field path and allowed action tags.
+Combat declarations can automatically finish once no further declaration choice
+remains. A redundant finish in a batch is rejected after the accepted attacks or
+blocks, and its yield is not installed; consult `actionContext` before continuing.
 
 Optional discovery is explicit: call `discover` with
 `presentation: "pilot-v2"`, then `choose` with the returned ticket and a new

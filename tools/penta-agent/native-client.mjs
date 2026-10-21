@@ -71,8 +71,8 @@ export async function nativeCommand(method, input, fetcher = fetch, context = {}
     if (!Array.isArray(args.choices) || (!args.choices.length && !(method === "interact" && args.yield)) || args.choices.length > 64) throw new Error("choices must contain 1 to 64 entries");
     args.choices = args.choices.map((choice, index) => {
       try { validateContract(choice, "NativePlayChoice", contract); }
-      catch {
-        throw new Error(`choices[${index}] must be {proposal: {...}}, {action: {...}}, {decision: ID, options: [IDs]}, or a single {index: N}. Wrap a displayed action in {action: ...}; use choose for a ticket.`);
+      catch (error) {
+        throw new Error(`choices[${index}] must be {proposal: {...}}, {action: {...}}, {decision: ID, options: [IDs]}, or a single {index: N}. ${error.message}. Wrap a displayed action in {action: ...}; use choose for a ticket.`);
       }
       if (args.choices.length > 1 && Object.hasOwn(choice, "index")) throw new Error(`choices[${index}]: batches require {action: ...} or {decision, options}; indices can change between actions`);
       if (!Object.hasOwn(choice, "action")) return choice;

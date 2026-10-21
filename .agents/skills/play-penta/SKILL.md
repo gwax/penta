@@ -44,6 +44,9 @@ pending decision options. Construct your move; no exhaustive action menu is
 needed. Supply `requestId`, current `revision`, and
 `choices: [{proposal: {action: YOUR_TYPED_ACTION, payment?: YOUR_PAYMENT}}]`.
 Answer pending decisions with `{decision: ID, options: [IDs]}`; retain order.
+Decision option rows inherit `position.decision.options.defaults`; overlay each
+row on those defaults. Every option ID and label remains inline. Mulligan actions
+are `KeepHand` and `TakeMulligan`; `next` accepts `maxWaitMs`, not `waitMs`.
 
 Cast actions use `{type:"CastSpell",card,choices:{playOptionId,modeIds?,x?,
 targetSelections?,alternativeCostId?,additionalCostIds?},costObjects?}`. Target
@@ -58,6 +61,9 @@ order and assign sequential slot IDs; mode-local IDs are not combined IDs.
 Cast `costObjects` names resources sacrificed, discarded, or exiled for costs
 (including collect evidence), separately from targets. Inspect an object's
 `grantedCastCosts` for runtime alternative-cost IDs such as granted flashback.
+Its `playPermission` describes an applicable exile/graveyard permission and cost.
+Airbend's `alternativeMana` cost applies with the default/null alternative-cost
+ID; it is not an entry in `grantedCastCosts`. Timing and final payment still apply.
 
 Omitting payment delegates payment planning for your chosen action. When mana
 sources matter, supply `payment:{funding:[{action:ACTIVATE_MANA_ABILITY,
@@ -79,6 +85,9 @@ wait timeout; never resubmit a committed move merely to wait. A rejected
 proposal reports `host.receipt.rejection` with code, path and message; a batch
 can have a committed prefix. Retain the exact mutation until its outcome is
 known and retry identical arguments after uncertain output, or query `receipt`.
+Combat declarations can auto-finish after the last eligible attacker/blocker.
+Avoid blindly appending a finish action; a redundant finish rejects only that
+suffix and prevents installing its yield. Inspect the returned action context.
 
 Use `host.currentYield` for current policy and `yieldAtAcceptance` for the
 acceptance snapshot. Read `host.receipt.updates` alongside `position.updates`;

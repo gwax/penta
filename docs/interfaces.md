@@ -155,7 +155,10 @@ not one exact-version comparison:
   JSON-lines and loopback sessions retain delivered printed rules, unchanged
   per-source ability metadata, and event cursors;
   `full:true` restores that context. Current state and pending options remain
-  complete, and retries never silently choose another action. These versions are
+  complete; option rows overlay typed shared empty-field `defaults`. Per-source
+  `playPermission` describes currently applicable exile/graveyard cost terms
+  separately from granted alternative-cost IDs. Retries never silently choose
+  another action. These versions are
   independent of the hosted journal, canonical bot protocol, binding contracts,
   browser observations, and reconstruction checkpoint versions.
 

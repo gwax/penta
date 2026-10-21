@@ -145,6 +145,39 @@ impl Game {
         abilities
     }
 
+    /// The currently applicable zone permission, without proving timing or
+    /// payment. Hosts include this only for objects visible to the requesting seat.
+    #[must_use]
+    pub fn action_play_permission(
+        &self,
+        player: PlayerId,
+        source: crate::GameObjectId,
+    ) -> Option<Value> {
+        let (zone, _) = self.card_in_nonbattlefield_zone(source)?;
+        let (source_zone, permission) = match zone {
+            crate::ZoneKind::Exile => ("exile", self.exile_play_permission(source, player)?),
+            crate::ZoneKind::Graveyard => {
+                ("graveyard", self.graveyard_cast_permission(source, player)?)
+            }
+            _ => return None,
+        };
+        let mana = match permission.cost {
+            super::ExilePlayCost::AlternativeMana(mana) => Some(mana.to_string()),
+            _ => None,
+        };
+        Some(json!({
+            "sourceZone": source_zone,
+            "cost": {"kind": permission.cost.label(), "manaCost": mana},
+            "surcharge": permission.surcharge.to_string(),
+            "landsMayBePlayed": permission.lands_may_be_played,
+            "adventureReturnOnly": permission.adventure_return_only,
+            "maximumSpellManaValue": permission.maximum_spell_mana_value,
+            "spendAnyColor": permission.spend_any_color,
+            "spendAnyType": permission.spend_any_type,
+            "grantsHaste": permission.grants_haste,
+        }))
+    }
+
     /// Runtime cost identities for a visible card. These describe grants, not
     /// payable action alternatives: no target or funding plans are searched.
     #[must_use]

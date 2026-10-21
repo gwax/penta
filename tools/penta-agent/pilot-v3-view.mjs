@@ -33,6 +33,19 @@ export class PilotV3View extends PilotView {
         delete position.facts[field];
       }
       position.reference = this.reference("proposal observation", view.observation);
+      if (position.decision) {
+        const options = position.decision.options;
+        const defaults = {};
+        // Factor only established empty metadata, never identities, labels, or
+        // unknown fields. Presence checks preserve absent versus explicit null.
+        for (const [key, empty] of Object.entries({ abilityText: null, card: null, members: [], triggerId: null, zone: "None" })) {
+          if (options.items.length && options.items.every(item => Object.hasOwn(item, key))
+              && options.items.some(item => JSON.stringify(item[key]) === JSON.stringify(empty))) defaults[key] = empty;
+        }
+        position.decision.options = { ...options, defaults, items: options.items.map(item =>
+          Object.fromEntries(Object.entries(item).filter(([key, value]) =>
+            !Object.hasOwn(defaults, key) || JSON.stringify(value) !== JSON.stringify(defaults[key])))) };
+      }
       position.rules.items = position.rules.items.map(rule => ({ ...rule,
         printed: rule.reference ? inlinePrintedRules(this.references.get(rule.reference).value) : null }));
     }

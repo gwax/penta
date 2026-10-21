@@ -2,6 +2,33 @@ use super::*;
 use crate::action::{ExplicitFundingStep, ExplicitPayment};
 
 #[test]
+fn direct_actions_play_permission_metadata_tracks_visibility_and_lifetime() {
+    let mut game = ready_game();
+    let bolt = GameObjectId(10_000);
+    game.players[0]
+        .exile
+        .push(card(bolt.0, cards::LIGHTNING_BOLT, PlayerId::One));
+    game.permit_look_while_exiled(bolt, PlayerId::One);
+    assert!(game.action_play_permission(PlayerId::One, bolt).is_none());
+    game.exile_play_permissions.clear();
+    game.permit_energy_cast(bolt, PlayerId::One);
+    let permission = game.action_play_permission(PlayerId::One, bolt).unwrap();
+    assert_eq!(permission["cost"]["kind"], "energyEqualToManaValue");
+    assert!(permission["cost"]["manaCost"].is_null());
+    assert!(game.action_play_permission(PlayerId::Two, bolt).is_none());
+
+    game.exile_play_permissions.clear();
+    let card = game.players[0].exile.pop().unwrap();
+    game.players[0].graveyard.push(card);
+    game.permit_graveyard_cast_this_turn(bolt, PlayerId::One);
+    let permission = game.action_play_permission(PlayerId::One, bolt).unwrap();
+    assert_eq!(permission["sourceZone"], "graveyard");
+    assert_eq!(permission["cost"]["kind"], "printed");
+    game.active_player = PlayerId::Two;
+    assert!(game.action_play_permission(PlayerId::One, bolt).is_none());
+}
+
+#[test]
 fn direct_actions_describe_granted_costs_without_discovery() {
     let mut game = ready_game();
     let bolt = GameObjectId(10_000);
@@ -369,6 +396,12 @@ fn direct_actions_preserve_flashback_and_airbend_permission_costs() {
         .unwrap();
     drain_pending(&mut game);
     assert_eq!(game.players[1].exile.len(), 1);
+    let exiled = game.players[1].exile[0].id;
+    let permission = game.action_play_permission(PlayerId::Two, exiled).unwrap();
+    assert_eq!(permission["sourceZone"], "exile");
+    assert_eq!(permission["cost"]["kind"], "alternativeMana");
+    assert_eq!(permission["cost"]["manaCost"], "{2}");
+    assert!(game.action_play_permission(PlayerId::One, exiled).is_none());
     game.active_player = PlayerId::Two;
     game.priority = PlayerId::Two;
     game.step = Step::PrecombatMain;
@@ -379,6 +412,7 @@ fn direct_actions_preserve_flashback_and_airbend_permission_costs() {
         cast.apply_with_payment(PlayerId::Two, action, &ExplicitPayment::default())
             .unwrap();
         assert!(cast.players[1].exile.is_empty());
+        assert!(cast.action_play_permission(PlayerId::Two, exiled).is_none());
         assert_eq!(cast.players[1].mana_pool.total(), 0);
     }
 }
